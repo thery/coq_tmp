@@ -214,9 +214,9 @@ Qed.
 
 Ltac Zfloor_tac :=
  rify; rewrite /Zceil;
- (* Propagate + and - over Zfloor and Zceil *)
- repeat ((case: ZfloorB_cond; clean_IZR) ||
-         (case: ZfloorD_cond; clean_IZR); rewrite /Zceil); 
+ (* Propagate + over Zfloor *)
+ repeat (case: ZfloorD_cond; clean_IZR); 
+ (* Add bound assumptions *)
  repeat (match goal with 
    |- context [IZR (Zfloor ?x)] => 
       have := Zfloor_bound x;
