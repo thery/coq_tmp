@@ -214,7 +214,7 @@ Qed.
 Ltac Zfloor_tac :=
  rify; rewrite /Zceil;
  (* Propagate + over Zfloor *)
- repeat (case: ZfloorD_cond; clean_IZR); 
+ repeat (rewrite ?(Ropp_plus_distr, Ropp_involutive); case: ZfloorD_cond; clean_IZR); 
  (* Add bound assumptions *)
  repeat (match goal with 
    |- context [IZR (Zfloor ?x)] => 
@@ -284,7 +284,7 @@ Ltac IZR_lra :=
   lra.
 
 (* Some Test *)
-Goal forall z1 z2 z3, Zfloor (IZR z1 - IZR z2 + IZR z3)%R = (z1 - z2 + z3)%Z.
+Goal forall z1 z2 z3, Zceil (IZR z1 - IZR z2 + IZR z3)%R = (z1 - z2 + z3)%Z.
 Proof.
 Zfloor_tac; IZR_lra.
 Qed.
