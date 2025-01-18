@@ -183,7 +183,6 @@ Ltac clean_IZR :=
 Lemma IZR_neq x y  : (x <> y :> Z) -> IZR x <> IZR y.
 Proof. by move=> Hx Hy; case: Hx; apply: eq_IZR. Qed.
 
-
 (* Only handle /\ should use Trocq instead *)
 Ltac rify :=  
 (* Transform the conclusion *)
@@ -202,7 +201,7 @@ repeat (match goal with
 | H : (_ >= _)%Z |- _ => generalize (Z.ge_le _ _ H); clear H; intro H
 | H : (_ > _)%Z |- _ => generalize (Z.gt_lt _ _ H); clear H; intro H
 | H : (_ <= _)%Z |- _ => generalize (IZR_le _ _ H); clear H
-| H : (_ < _)%Z |- _ => generalize (IZR_lt _ _ H); clear H
+| H : (_ < _)%Z |- _ => generalize (Zlt_le_succ _ _ H); clear H; intro H
 | H : (_ = _ :> Z) |- _ => generalize (IZR_eq _ _ H); clear H
 | H : (_ <> _ :> Z) |- _ => generalize (IZR_neq _ _ H); clear H
 end); clean_IZR.
@@ -299,3 +298,4 @@ Goal forall (z : Z) x,  IZR z <= x < IZR z + 1 -> Zfloor x = z.
 Proof.
 Zfloor_tac; IZR_lra.
 Qed.
+
