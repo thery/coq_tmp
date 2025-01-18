@@ -183,7 +183,6 @@ Ltac clean_IZR :=
 Lemma IZR_neq x y  : (x <> y :> Z) -> IZR x <> IZR y.
 Proof. by move=> Hx Hy; case: Hx; apply: eq_IZR. Qed.
 
-Search (_ <= _)%Z Z.succ (_ < _)%Z.
 (* Only handle /\ should use Trocq instead *)
 Ltac rify :=  
 (* Transform the conclusion *)
