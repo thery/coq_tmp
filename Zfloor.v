@@ -44,6 +44,18 @@ split; last by apply: Zfloor_lub; lra.
 apply : lt_IZR; rewrite plus_IZR /=; lra.
 Qed.
 
+Lemma Zfloor_le x y : x <= y -> (Zfloor x <= Zfloor y)%Z.
+Proof.
+move=> H; apply: Zfloor_lub.
+have := Zfloor_bound x; lra.
+Qed.
+
+Lemma Zfloor_addz (z: Z) x : Zfloor (x + IZR z) = (Zfloor x + z)%Z.
+Proof.
+have ZB := Zfloor_bound x.
+by apply: Zfloor_eq; rewrite plus_IZR; lra.
+Qed.
+
 Lemma ZfloorZ (z : Z) : Zfloor (IZR z) = z.
 Proof. apply: Zfloor_eq; lra. Qed.
 
@@ -102,6 +114,21 @@ Proof. by rewrite /Zceil Ropp_involutive. Qed.
 
 Theorem ZfloorN x : (Zfloor (- x) = - Zceil x)%Z.
 Proof. rewrite /Zceil; lia. Qed.
+
+Lemma Zceil_eq (z : Z) x :  IZR z - 1 < x <= IZR z -> Zceil x = z.
+Proof.
+move=> xB; suff : Zfloor (- x) = (- z)%Z by rewrite /Zceil => ->; lia.
+by apply: Zfloor_eq; rewrite opp_IZR; lra.
+Qed.
+
+Lemma Zceil_le x y : x <= y -> (Zceil x <= Zceil y)%Z.
+Proof.
+move=> xLy; apply Z.opp_le_mono; rewrite !Z.opp_involutive.
+by apply: Zfloor_le; lra.
+Qed.
+
+Lemma Zceil_addz (z: Z) x : Zceil (x + IZR z) = (Zceil x + z)%Z.
+Proof. by rewrite /Zceil Ropp_plus_distr -opp_IZR Zfloor_addz; lia. Qed.
 
 Lemma ZceilD_cond r1 r2 : 
   compare_R_Z (r1 + r2) (IZR (Zceil r1) + IZR (Zceil r2) - 1) 
