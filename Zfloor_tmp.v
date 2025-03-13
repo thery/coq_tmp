@@ -5,7 +5,12 @@
 (*                                                                            *)
 (******************************************************************************)
 
-Require Import Reals Lra Lia.
+
+Require Import Reals Lra Lia Zify.
+Goal forall x : nat, (1 <= x) \/ (x <= 1).
+zify.
+lia.
+Qed.
 
 Open Scope R_scope.
 
