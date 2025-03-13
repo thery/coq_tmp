@@ -233,6 +233,13 @@ repeat (match goal with
 | H : (_ <> _ :> Z) |- _ => generalize (IZR_neq _ _ H); clear H
 end); clean_IZR.
 
+Goal forall x y,  x <= y -> (Zfloor y <= Zfloor x)%Z.
+rify.
+lra.
+Qed.
+
+'e
+
 Goal forall x y,  ((x <> y /\ x >= y) -> y <= x)%Z.
 rify.
 lra.
