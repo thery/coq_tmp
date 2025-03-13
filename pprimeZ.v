@@ -32,3 +32,11 @@ Time Compute pprime 1000.
 Time Compute pprime 10000.
 Time Compute pprime 100000.
 
+    
+
+Compute 100000 < 337 * 337.
+Compute 100020 < 337 * 337.
+
+Compute (iota 1 100000).
+Print prime.
+
