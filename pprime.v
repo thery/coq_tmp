@@ -1,3 +1,4 @@
+
 From mathcomp Require Import all_ssreflect.
 
 Definition base := 337.
@@ -7,6 +8,9 @@ Definition lbase :=
      157; 163; 167; 173; 179; 181; 191; 193; 197; 199; 211; 223; 227; 229; 233; 
      239; 241; 251; 257; 263; 269; 271; 277; 281; 283; 293; 307; 311; 313; 317; 
      331; 337].
+
+Fixpoint all {A : Type} (f : A -> bool) (l : seq A) := 
+  if l is a :: l1 then if f a then all f l1 else false else true.
 
 Time Compute all prime lbase.
 

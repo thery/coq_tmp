@@ -15,7 +15,8 @@ Definition lbase :=
      331; 337].
 
 Fixpoint allb (A : Type) (f : A -> _) l := 
-  if l is a :: l1 then andb (f a) (allb A f l1) else true.
+  if l is a :: l1 then if f a then allb A f l1 else false else true.
+  
 Definition prime1 n := andb (1 <? n) 
                       (allb _ (fun p => orb (n <? p * p) (negb ((n mod p) =? 0))) lbase).
 
