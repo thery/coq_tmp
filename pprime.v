@@ -23,7 +23,9 @@ Time Compute all prime1 lbase.
 
 Fixpoint pprime_aux n k res := 
   if n is n1.+1 then
-      let res1 := if prime1 n && prime1 (k - n) then (n,k-n) :: res else res in
+      let res1 := if prime1 n then 
+                      if prime1 (k - n) then (n,k-n) :: res else res
+                  else res in
       pprime_aux n1 k res1 
   else res.
 

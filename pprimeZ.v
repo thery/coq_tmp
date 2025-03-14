@@ -24,7 +24,8 @@ Time Compute allb _ prime1 lbase.
 
 Fixpoint pprime_aux n z k res := 
   if n is S n1 then
-      let res1 := if andb (prime1 z) (prime1 (k - z)) then (z,k-z) :: res else res in
+      let res1 := if prime1 z then if prime1 (k - z) then (z,k-z) :: res else res 
+                  else res in
       pprime_aux n1 (z - 1) k res1 
   else res.
 
