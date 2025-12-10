@@ -82,34 +82,34 @@ pbp_build {{ _ \/ lp:P }} {{ lp:uvar \/ lp:P1 }}
 pbp_build {{ _ -> lp:P }} {{ lp:X -> lp:P1 }} R :-
   get_name X H, !, 
   pbp_build P P1 R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp_build {{lp:P /\ _ -> lp:S }} {{lp:P1 /\ lp:X -> lp:uvar}} 
   {{and1imp lp:R}}
     :- 
   get_name X H, !, 
   pbp_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp_build {{_ /\ lp:P -> lp:S }} {{lp:X /\ lp:P1 -> lp:uvar}} 
   {{and2imp lp:R}}
     :- 
   get_name X H, !, 
   pbp_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp_build {{lp:P \/ _ -> lp:S }} {{lp:P1 \/ lp:X -> lp:uvar}} 
   {{or1imp lp:R1 lp:Z}}  :- 
   get_name X H, !, !,
   pbp_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp_build {{_ \/ lp:P -> lp:S }} {{lp:X \/ lp:P1 -> lp:uvar}} 
   {{or2imp lp:R1 lp:Z}} :- 
   get_name X H, !,
   pbp_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp_build {{(lp:P -> _) -> _ }} {{(lp:P1 -> lp:X) -> lp:uvar}} 
   {{imp1imp lp:T lp:T1}} :- 
   get_name X H, !,
   pbp_build P P1 T,
-  T1 = fun H _  (x\ _).
+  T1 = fun H _  (_\ _).
 pbp_build {{(_ -> lp:P) -> lp:R}} {{(lp:uvar -> lp:P1) -> lp:uvar}} 
   {{imp2imp lp:T _}} :-
   pbp_build {{lp:P -> lp:R}} {{lp:P1 -> _}} T.
@@ -126,22 +126,22 @@ pbp2_build {{ lp:P /\ _ -> lp:R -> lp:S }} {{ lp:P1 /\ lp:X -> lp:R1 -> lp:uvar 
     {{and1impimp lp:T}} :- 
   get_name X H, !, 
   pbp2_build {{ lp:P -> lp:R -> lp:S }} {{ lp:P1 -> lp:R1 -> _ }} T1,
-  T = fun H _ (x\ T1). 
+  T = fun H _ (_\ T1). 
 pbp2_build {{ _ /\ lp:P -> lp:R -> lp:S }} {{ lp:X /\ lp:P1 -> lp:R1 -> lp:uvar }} 
     {{and2impimp lp:T}} :- 
   get_name X H, !, 
   pbp2_build {{ lp:P -> lp:R -> lp:S }} {{ lp:P1 -> lp:R1 -> _ }} T1,
-  T = fun H _ (x\ T1). 
+  T = fun H _ (_\ T1). 
 pbp2_build {{ lp:R -> lp:P /\ _ -> lp:S }} {{ lp:R1 -> lp:P1 /\ lp:X -> lp:uvar }} 
     {{impand1imp lp:T}} :- 
   get_name X H, !, 
   pbp2_build {{ lp:R -> lp:P -> lp:S }} {{ lp:R1 -> lp:P1 -> _ }} T1,
-  T = fun H _ (x\ T1). 
+  T = fun H _ (_\ T1). 
 pbp2_build {{ lp:R -> _ /\ lp:P -> lp:S }} {{ lp:R1 -> lp:X /\ lp:P1 -> lp:uvar }} 
     {{impand2imp lp:T}} :- 
   get_name X H, !, 
   pbp2_build {{ lp:R -> lp:P -> lp:S }} {{ lp:R1 -> lp:P1 -> _ }} T1,
-  T = fun H _ (x\ T1). 
+  T = fun H _ (_\ T1). 
 pbp2_build {{ lp:P \/ _ -> lp:R -> lp:S }} {{ lp:P1 \/ lp:X -> lp:R1 -> lp:uvar }} 
     {{or1impimp lp:T lp:T1}} :- 
   get_name X H, !, 
@@ -194,12 +194,12 @@ pbp2_build {{lp:P /\ _ -> lp:R }} {{lp:P1 /\ lp:X -> lp:R1}}
     {{ and1imp lp:T1}} :- 
   get_name X H, !, 
   pbp2_build {{lp:P -> lp:R}} {{lp:P1 -> lp:R1}} T,
-  T1 = fun H _ (x\T).
+  T1 = fun H _ (_\T).
 pbp2_build {{_ /\ lp:P -> lp:R }} {{lp:X /\ lp:P1 -> lp:R1}} 
     {{ and2imp lp:T1}} :- 
   get_name X H, !, 
   pbp2_build {{lp:P -> lp:R}} {{lp:P1 -> lp:R1}} T,
-  T1 = fun H _ (x\T).
+  T1 = fun H _ (_\T).
 pbp2_build {{lp:P -> lp:R /\ _ }} {{lp:P1 -> lp:R1 /\ lp:uvar }} 
     {{ impand1 lp:T _}} :- 
   pbp2_build {{lp:P -> lp:R}} {{lp:P1 -> lp:R1}} T.
@@ -226,7 +226,7 @@ pbp2_build {{lp:P -> _ -> lp:R }} {{lp:P1 -> lp:X -> lp:R1}}
     {{impimp1 lp:T1}} :- 
   get_name X H, !, 
   pbp2_build {{lp:P -> lp:R}} {{lp:P1 -> lp:R1}} T,
-  T1 = fun H _ (x\ T).
+  T1 = fun H _ (_\ T).
 pbp2_build {{(_ -> lp:P) -> lp:R }} {{(lp:uvar -> lp:P1) -> lp:R1}} 
     {{ imp2imp lp:T _}} :- 
   pbp2_build {{lp:P -> lp:R}} {{lp:P1 -> lp:R1}} T.
@@ -246,18 +246,18 @@ pbp2_build {{ _ \/ lp:P }} {{ lp:uvar \/ lp:P1 }}
 pbp2_build {{ _ -> lp:P }} {{ lp:X -> lp:P1 }} R :-
   get_name X H, !, 
   pbp2_build P P1 R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp2_build {{lp:P /\ _ -> lp:S }} {{lp:P1 /\ lp:X -> lp:S1}} 
   {{and1imp lp:R}} :- 
   get_name X H, !,
   pbp2_build {{lp:P -> lp:S}} {{lp:P1 -> lp:S1 }} R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp2_build {{_ /\ lp:P -> lp:S }} {{lp:X /\ lp:P1 -> lp:S1}} 
   {{and2imp lp:R}}
     :- 
   get_name X H, !, 
   pbp2_build {{lp:P -> lp:S}} {{lp:P1 -> lp:S1}} R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp2_build {{lp:P /\ lp:Q -> lp:R }} {{lp:P1 /\ lp:Q1 -> lp:uvar}} 
   {{and2imp lp:R1}} :- 
   pbp2_build {{lp:P -> lp:Q -> lp:R}} {{lp:P1 -> lp:Q1 -> _}} R1.
@@ -265,12 +265,12 @@ pbp2_build {{lp:P \/ _ -> lp:S }} {{lp:P1 \/ lp:X -> lp:uvar}}
   {{or1imp lp:R1 lp:Z}}  :- 
   get_name X H, !, !,
   pbp2_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp_build {{_ \/ lp:P -> lp:S }} {{lp:X \/ lp:P1 -> lp:uvar}} 
   {{or2imp lp:R1 lp:Z}} :- 
   get_name X H, !,
   pbp2_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp2_build {{(lp:P -> _) -> lp:S }} {{(lp:P1 -> lp:X) -> lp:uvar}} 
   {{imp1imp lp:R1 _}} :-
   get_name X H, !,
@@ -279,7 +279,7 @@ pbp2_build {{(lp:P -> _) -> _ }} {{(lp:P1 -> lp:X) -> lp:uvar}}
   {{imp2imp lp:R1 lp:Z}} :-
   get_name X H, !,
   pbp2_build P P1 R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp2_build {{~  lp:P }} {{~ lp:P1 }} R :-
   pbp2_build {{lp:P -> False}} {{ lp:P1 -> _ }} R.
 pbp2_build {{(~  lp:P) -> _ }} {{~ lp:P1 -> _ }} R :-
@@ -290,7 +290,7 @@ pbp2_build {{ lp:P -> _ -> lp:R }} {{ lp:P1 -> lp:X -> lp:R1 }}
     {{imp1imp lp:T}} :- 
   get_name X H, !, 
   pbp2_build {{ lp:P -> lp:R }} {{ lp:P1 -> lp:R1 }} T1,
-  T = fun H _ (x\ T1). 
+  T = fun H _ (_\ T1). 
 
 
 pbp2_build {{ lp:P /\ _ }} {{ lp:P1 /\ lp:uvar }} 
@@ -308,29 +308,29 @@ pbp2_build {{ _ \/ lp:P }} {{ lp:uvar \/ lp:P1 }}
 pbp2_build {{ _ -> lp:P }} {{ lp:X -> lp:P1 }} R :-
   get_name X H, !, 
   pbp2_build P P1 R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp2_build {{lp:P /\ _ -> lp:S }} {{lp:P1 /\ lp:X -> lp:uvar}} 
   {{and1imp lp:R}}
     :- 
   get_name X H, !, 
   pbp2_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp2_build {{_ /\ lp:P -> lp:S }} {{lp:X /\ lp:P1 -> lp:uvar}} 
   {{and2imp lp:R}}
     :- 
   get_name X H, !, 
   pbp_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  R = fun H _  (x\ R1).
+  R = fun H _  (_\ R1).
 pbp2_build {{lp:P \/ _ -> lp:S }} {{lp:P1 \/ lp:X -> lp:uvar}} 
   {{or1imp lp:R1 lp:Z}}  :- 
   get_name X H, !, !,
   pbp2_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp_build {{_ \/ lp:P -> lp:S }} {{lp:X \/ lp:P1 -> lp:uvar}} 
   {{or2imp lp:R1 lp:Z}} :- 
   get_name X H, !,
   pbp2_build {{lp:P -> lp:S}} {{lp:P1 -> _}} R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp2_build {{(_ -> lp:P) -> lp:S }} {{(lp:uvar -> lp:P1) -> lp:uvar}} 
   {{impimp1 lp:R1 _}}
     :- !,
@@ -339,7 +339,7 @@ pbp2_build {{(lp:P -> _) -> _ }} {{(lp:P1 -> lp:X) -> lp:uvar}}
   {{imp2imp lp:R1 lp:Z}} :-
   get_name X H, !,
   pbp2_build P P1 R1,
-  Z = fun H _  (x\ _).
+  Z = fun H _  (_\ _).
 pbp2_build {{~  lp:P }} {{~ lp:P1 }} R :-
   pbp2_build {{lp:P -> False}} {{ lp:P1 -> _ }} R.
 pbp2_build {{(~  lp:P) -> _ }} {{~ lp:P1 -> _ }} R :-
@@ -389,10 +389,13 @@ Notation "'[' x .. y 'in' p ']' " :=
 Tactic Notation "pbp" uconstr(t) :=
   elpi pbp_tac ltac_open_term:(t).
 
-Lemma test_pbp0 (A B C : Prop) : A /\ B -> A /\ B.
+Lemma test_pbp0 (A B C : Prop) : A /\ B -> B /\ A.
 Proof.
-pbp  [ X in  X /\ Y -> _].
-by pbp [X in X /\ _].
+pbp [Z in  _ -> _ /\ Z].
+move: pbp.
+by pbp [X in X /\ _ -> _].
+move: pbp.
+by pbp [X in Y /\ X -> _].
 Qed.
 
 Lemma test_pbp1 (A B C : Prop) : A /\ B -> A /\ B.
@@ -409,11 +412,11 @@ by pbp [X in X \/ _].
 by pbp [X in _ \/ X].
 Qed.
 
-Lemma test_pbp3 (A B C : Prop) : A \/ B -> A \/ B.
+Lemma test_pbp3 (A B C : Prop) : A \/ B -> B \/ A.
 Proof.
-pbp  [ X Y in  X \/ Z -> Y \/ _].
+pbp  [ X Y in  X \/ Z -> _ \/ Y].
 move: Z.
-pbp  [ X Y in  X  -> _ \/ Y].
+pbp  [ X Y in  X  -> Y \/ _].
 Qed.
 
 Lemma test_pbp4 (A B : Prop) : (B -> A) -> B -> A.
