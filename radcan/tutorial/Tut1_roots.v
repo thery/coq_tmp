@@ -1,3 +1,8 @@
+(******************************************************************************)
+(* Tutorial 1: the root interface posroot (PosRoot.v) and its laws            *)
+(* (PosRootFacts.v), on any numFieldType, rcfType (rootR) and C (n.-root).    *)
+(******************************************************************************)
+
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts RootC RootR.
 Import Order.TTheory GRing.Theory Num.Theory.
@@ -24,7 +29,9 @@ End Tutorial1.
 
 Section Tutorial2.
 Variables (R : rcfType) (C : numClosedFieldType).
-Lemma sqrt2_sqrt3_R : proot (rootR_posroot R) 2 2 * proot (rootR_posroot R) 2 3 = proot (rootR_posroot R) 2 6 :> R.
+Lemma sqrt2_sqrt3_R :
+  proot (rootR_posroot R) 2 2 * proot (rootR_posroot R) 2 3 =
+  proot (rootR_posroot R) 2 6 :> R.
 Proof. exact: sqrt2_sqrt3. Qed.
 Lemma sqrt2_sqrt3_C : 2.-root 2 * 2.-root 3 = 2.-root 6 :> C.
 Proof. by rewrite -!rootC_posrootE sqrt2_sqrt3. Qed.

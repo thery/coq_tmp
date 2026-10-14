@@ -1,11 +1,14 @@
+(******************************************************************************)
+(* Tutorial 12: negative radicands under odd roots, with an oddroot o :       *)
+(* oddroot r in the context (always on rootR), and even roots of negatives.   *)
+(******************************************************************************)
+
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import PosRoot PosRootFacts RootC RootR Syntax Radcan Refine Tactic OddRoot.
+From Radcan Require Import PosRoot PosRootFacts RootC RootR Syntax Radcan.
+From Radcan Require Import Refine Tactic OddRoot.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
-
-(* with an oddroot o : oddroot r in the context, radcan uses the odd mode;  *)
-(* on rootR it always does (rootR_oddroot)                                   *)
 
 Section Odd.
 Variables (F : numFieldType) (r : posroot F) (o : oddroot r) (x : F).
@@ -38,13 +41,13 @@ Variables (F : numFieldType) (r : posroot F) (x : F).
 Goal proot r 3 (- 8) = - 2.
 Proof. Fail radcan. Abort.
 
-(* even roots: the base keeps the sign of the radicand  *)
-(* raw: 0 <= 1 - x (printed -1 * x + 1)   refined: x <= 1 *)
+(* even roots: the base keeps the sign of the radicand;
+   raw: 0 <= 1 - x (printed -1 * x + 1), refined: x <= 1 *)
 Lemma e1 : x <= 1 -> proot r 2 (1 - x) ^+ 2 = 1 - x.
 Proof. move=> x_le1. radcan. Show. exact: x_le1. Qed.
 
-(* x - 1 is in the basis: sqrt (1 - x) still has base 1 - x *)
-(* raw: 0 <= x - 1, 0 <= 1 - x   refined: 1 <= x, x <= 1 *)
+(* x - 1 is in the basis: sqrt (1 - x) still has base 1 - x;
+   raw: 0 <= x - 1, 0 <= 1 - x, refined: 1 <= x, x <= 1 *)
 Lemma e2 : x = 1 -> proot r 2 (x - 1) ^+ 2 + proot r 2 (1 - x) ^+ 2 = 0.
 Proof. move=> x1. radcan. Show. all: by rewrite x1. Qed.
 

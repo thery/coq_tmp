@@ -1,18 +1,19 @@
-(* Number backend of the normaliser.                                         *)
-(*                                                                            *)
-(*   Z2F, pos2F (Syntax.v), Q2F q == Stdlib integers / rationals seen in F   *)
-(*   NUM            == module type of number backends: a type int of          *)
-(*                     integers and a type rat of rationals, the operations   *)
-(*                     used by the normaliser (i_* and c_* ), conversions      *)
-(*                     i_to_Z, c_to_Q to Stdlib Z / Q and their specification *)
-(*                     (exact for int, up to Qeq for rat)                     *)
-(*   ZNum : NUM     == the Stdlib instance (int = Z, rat = Q, kept reduced)  *)
-(*   NumFacts N     == I2F, C2F (the numbers of N seen in F) and their        *)
-(*                     morphism lemmas, derived from the specification        *)
-(* Bases of radicals stay Stdlib positives (p_cmp, p_eqb).                    *)
-(* The Bignums instance (BigZ / BigQ) is in BigBackend.v.                     *)
+(******************************************************************************)
+(* Backend: the number backend of the normaliser.                             *)
+(*   Q2F q        == the Stdlib rational q seen in F (Z2F, pos2F: Syntax.v)   *)
+(*   NUM          == module type of backends: integers int, rationals rat,    *)
+(*                   the operations i_..., c_... of the normaliser and their  *)
+(*                   specification through i_to_Z, c_to_Q (exact on int, up   *)
+(*                   to Qeq on rat); unspecified operations (division,        *)
+(*                   square root, ...) only drive heuristics                  *)
+(*   ZNum : NUM   == the Stdlib instance (int = Z, rat = Q kept reduced)      *)
+(*   NumFacts N   == I2F, C2F (numbers of N seen in F), morphism lemmas       *)
+(* Bases of radicals stay Stdlib positives (p_cmp, p_eqb).  The Bignums       *)
+(* instance is in BigBackend.v.                                               *)
+(******************************************************************************)
 
-From Stdlib Require Import BinNums BinPos BinInt ZArith Lia QArith_base Qreduction.
+From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
+From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax.
 Import Order.TTheory GRing.Theory Num.Theory.
@@ -38,8 +39,6 @@ Section NumSound.
 Variable F : numFieldType.
 Local Open Scope ring_scope.
 
-(* Z2F is a ring morphism *)
-
 Lemma Z2F_opp z : Z2F F (Z.opp z) = - Z2F F z.
 Proof. by case: z => [|p|p] //=; rewrite ?oppr0 ?opprK. Qed.
 
@@ -63,7 +62,8 @@ Proof. by exists (Z.to_nat z), (Z.to_nat (Z.opp z)); lia. Qed.
 Lemma Z2F_add x y : Z2F F (Z.add x y) = Z2F F x + Z2F F y.
 Proof.
 have [a [b ->]] := Zdec x; have [c [d ->]] := Zdec y.
-have -> : Z.add (Z.sub (Z.of_nat a) (Z.of_nat b)) (Z.sub (Z.of_nat c) (Z.of_nat d)) =
+have -> : Z.add (Z.sub (Z.of_nat a) (Z.of_nat b))
+                (Z.sub (Z.of_nat c) (Z.of_nat d)) =
           Z.sub (Z.of_nat (a + c)) (Z.of_nat (b + d)).
   by rewrite !Nat2Z.inj_add; lia.
 by rewrite !Z2F_subnat !natrD opprD addrACA.
@@ -72,7 +72,8 @@ Qed.
 Lemma Z2F_mul x y : Z2F F (Z.mul x y) = Z2F F x * Z2F F y.
 Proof.
 have [a [b ->]] := Zdec x; have [c [d ->]] := Zdec y.
-have -> : Z.mul (Z.sub (Z.of_nat a) (Z.of_nat b)) (Z.sub (Z.of_nat c) (Z.of_nat d)) =
+have -> : Z.mul (Z.sub (Z.of_nat a) (Z.of_nat b))
+                (Z.sub (Z.of_nat c) (Z.of_nat d)) =
           Z.sub (Z.of_nat (a * c + b * d)) (Z.of_nat (a * d + b * c)).
   by rewrite !Nat2Z.inj_add !Nat2Z.inj_mul; lia.
 rewrite !Z2F_subnat !natrD !natrM mulrBl !mulrBr opprB.
@@ -138,7 +139,6 @@ Proof. by case: q => [n d]; rewrite /Q2F /= Z2F_opp mulNr. Qed.
 Lemma Q2F_Z z : Q2F (Qmake z xH) = Z2F F z.
 Proof. by rewrite /Q2F /= pos2F1 divr1. Qed.
 
-
 Lemma Q2F_Qinv q : Q2F (Qinv q) = (Q2F q)^-1.
 Proof.
 case: q => [[|n|n] d]; rewrite /Q2F /Qinv /=.
@@ -170,9 +170,7 @@ Arguments Q2F_opp {F}.
 Arguments Q2F_Z {F}.
 Arguments Q2F_Qinv {F}.
 
-(* ------------------------------------------------------------------------ *)
-(* Number backends                                                           *)
-(* ------------------------------------------------------------------------ *)
+(* Number backends *)
 
 Module Type NUM.
 
@@ -184,8 +182,7 @@ Parameter i_to_Z : int -> Z.
 Parameter i_of_Z : Z -> int.
 Parameter c_to_Q : rat -> Q.
 
-(* integers: only the operations with a specification are trusted, the    *)
-(* others (division, square root, ...) only drive heuristics               *)
+(* integers *)
 Parameter i_zero : int.
 Parameter i_one : int.
 Parameter i_add : int -> int -> int.
@@ -219,21 +216,29 @@ Parameter c_eqb : rat -> rat -> bool.
 Axiom i_of_ZK : forall z, i_to_Z (i_of_Z z) = z.
 Axiom i_zero_spec : i_to_Z i_zero = Z0.
 Axiom i_one_spec : i_to_Z i_one = Z1.
-Axiom i_add_spec : forall a b, i_to_Z (i_add a b) = Z.add (i_to_Z a) (i_to_Z b).
-Axiom i_mul_spec : forall a b, i_to_Z (i_mul a b) = Z.mul (i_to_Z a) (i_to_Z b).
-Axiom i_pow_spec : forall b k, i_to_Z (i_pow b k) = Z.pow (Zpos b) (Z.of_nat k).
+Axiom i_add_spec : forall a b,
+  i_to_Z (i_add a b) = Z.add (i_to_Z a) (i_to_Z b).
+Axiom i_mul_spec : forall a b,
+  i_to_Z (i_mul a b) = Z.mul (i_to_Z a) (i_to_Z b).
+Axiom i_pow_spec : forall b k,
+  i_to_Z (i_pow b k) = Z.pow (Zpos b) (Z.of_nat k).
 Axiom i_eqb_spec : forall a b, i_eqb a b = Z.eqb (i_to_Z a) (i_to_Z b).
 Axiom i_ltb_spec : forall a b, i_ltb a b = Z.ltb (i_to_Z a) (i_to_Z b).
 Axiom i_to_pos_spec : forall a, i_to_pos a = Z.to_pos (i_to_Z a).
 
 Axiom c_zero_spec : Qeq (c_to_Q c_zero) (Qmake Z0 xH).
 Axiom c_one_spec : Qeq (c_to_Q c_one) (Qmake Z1 xH).
-Axiom c_of_int_spec : forall a, Qeq (c_to_Q (c_of_int a)) (Qmake (i_to_Z a) xH).
+Axiom c_of_int_spec : forall a,
+  Qeq (c_to_Q (c_of_int a)) (Qmake (i_to_Z a) xH).
 Axiom c_of_Z_spec : forall z, Qeq (c_to_Q (c_of_Z z)) (Qmake z xH).
-Axiom c_add_spec : forall a b, Qeq (c_to_Q (c_add a b)) (Qplus (c_to_Q a) (c_to_Q b)).
-Axiom c_sub_spec : forall a b, Qeq (c_to_Q (c_sub a b)) (Qminus (c_to_Q a) (c_to_Q b)).
-Axiom c_mul_spec : forall a b, Qeq (c_to_Q (c_mul a b)) (Qmult (c_to_Q a) (c_to_Q b)).
-Axiom c_div_spec : forall a b, Qeq (c_to_Q (c_div a b)) (Qdiv (c_to_Q a) (c_to_Q b)).
+Axiom c_add_spec : forall a b,
+  Qeq (c_to_Q (c_add a b)) (Qplus (c_to_Q a) (c_to_Q b)).
+Axiom c_sub_spec : forall a b,
+  Qeq (c_to_Q (c_sub a b)) (Qminus (c_to_Q a) (c_to_Q b)).
+Axiom c_mul_spec : forall a b,
+  Qeq (c_to_Q (c_mul a b)) (Qmult (c_to_Q a) (c_to_Q b)).
+Axiom c_div_spec : forall a b,
+  Qeq (c_to_Q (c_div a b)) (Qdiv (c_to_Q a) (c_to_Q b)).
 Axiom c_opp_spec : forall a, Qeq (c_to_Q (c_opp a)) (Qopp (c_to_Q a)).
 Axiom c_inv_spec : forall a, Qeq (c_to_Q (c_inv a)) (Qinv (c_to_Q a)).
 Axiom c_is0_spec : forall a, c_is0 a -> Qeq (c_to_Q a) (Qmake Z0 xH).
@@ -254,7 +259,8 @@ Definition i_zero : int := Z0.
 Definition i_one : int := Z1.
 Definition i_add (a b : int) : int := Z.add a b.
 Definition i_mul (a b : int) : int := Z.mul a b.
-Definition i_pow (b : positive) (k : nat) : int := Z.pow (Zpos b) (Z.of_nat k).
+Definition i_pow (b : positive) (k : nat) : int :=
+  Z.pow (Zpos b) (Z.of_nat k).
 Definition i_eqb (a b : int) : bool := Z.eqb a b.
 Definition i_ltb (a b : int) : bool := Z.ltb a b.
 Definition i_rem (a b : int) : int := Z.rem a b.
@@ -289,8 +295,10 @@ Lemma i_mul_spec a b : i_to_Z (i_mul a b) = Z.mul (i_to_Z a) (i_to_Z b).
 Proof. by []. Qed.
 Lemma i_pow_spec b k : i_to_Z (i_pow b k) = Z.pow (Zpos b) (Z.of_nat k).
 Proof. by []. Qed.
-Lemma i_eqb_spec a b : i_eqb a b = Z.eqb (i_to_Z a) (i_to_Z b). Proof. by []. Qed.
-Lemma i_ltb_spec a b : i_ltb a b = Z.ltb (i_to_Z a) (i_to_Z b). Proof. by []. Qed.
+Lemma i_eqb_spec a b : i_eqb a b = Z.eqb (i_to_Z a) (i_to_Z b).
+Proof. by []. Qed.
+Lemma i_ltb_spec a b : i_ltb a b = Z.ltb (i_to_Z a) (i_to_Z b).
+Proof. by []. Qed.
 Lemma i_to_pos_spec a : i_to_pos a = Z.to_pos (i_to_Z a). Proof. by []. Qed.
 
 Lemma c_zero_spec : Qeq (c_to_Q c_zero) (Qmake Z0 xH). Proof. by []. Qed.
@@ -298,13 +306,17 @@ Lemma c_one_spec : Qeq (c_to_Q c_one) (Qmake Z1 xH). Proof. by []. Qed.
 Lemma c_of_int_spec a : Qeq (c_to_Q (c_of_int a)) (Qmake (i_to_Z a) xH).
 Proof. by []. Qed.
 Lemma c_of_Z_spec z : Qeq (c_to_Q (c_of_Z z)) (Qmake z xH). Proof. by []. Qed.
-Lemma c_add_spec a b : Qeq (c_to_Q (c_add a b)) (Qplus (c_to_Q a) (c_to_Q b)).
+Lemma c_add_spec a b :
+  Qeq (c_to_Q (c_add a b)) (Qplus (c_to_Q a) (c_to_Q b)).
 Proof. exact: Qred_correct. Qed.
-Lemma c_sub_spec a b : Qeq (c_to_Q (c_sub a b)) (Qminus (c_to_Q a) (c_to_Q b)).
+Lemma c_sub_spec a b :
+  Qeq (c_to_Q (c_sub a b)) (Qminus (c_to_Q a) (c_to_Q b)).
 Proof. exact: Qred_correct. Qed.
-Lemma c_mul_spec a b : Qeq (c_to_Q (c_mul a b)) (Qmult (c_to_Q a) (c_to_Q b)).
+Lemma c_mul_spec a b :
+  Qeq (c_to_Q (c_mul a b)) (Qmult (c_to_Q a) (c_to_Q b)).
 Proof. exact: Qred_correct. Qed.
-Lemma c_div_spec a b : Qeq (c_to_Q (c_div a b)) (Qdiv (c_to_Q a) (c_to_Q b)).
+Lemma c_div_spec a b :
+  Qeq (c_to_Q (c_div a b)) (Qdiv (c_to_Q a) (c_to_Q b)).
 Proof. exact: Qred_correct. Qed.
 Lemma c_opp_spec a : Qeq (c_to_Q (c_opp a)) (Qopp (c_to_Q a)).
 Proof. by rewrite /Qeq. Qed.
@@ -314,7 +326,8 @@ Lemma c_is0_spec a : c_is0 a -> Qeq (c_to_Q a) (Qmake Z0 xH).
 Proof. by case: a => n d /Z.eqb_eq /= ->; rewrite /Qeq. Qed.
 Lemma c_eqb_spec a b : c_eqb a b -> Qeq (c_to_Q a) (c_to_Q b).
 Proof.
-by case: a b => [n1 d1] [n2 d2] /andP[/Z.eqb_eq /= -> /Pos.eqb_eq /= ->]; rewrite /Qeq.
+case: a b => [n1 d1] [n2 d2] /andP[/Z.eqb_eq /= -> /Pos.eqb_eq /= ->].
+by rewrite /Qeq.
 Qed.
 
 End ZNum.
@@ -360,13 +373,17 @@ Lemma C2F_c_add a b : C2F (c_add a b) = C2F a + C2F b.
 Proof. by rewrite /C2F (Q2F_Qeq _ _ (c_add_spec a b)) Q2F_plus. Qed.
 
 Lemma C2F_c_sub a b : C2F (c_sub a b) = C2F a - C2F b.
-Proof. by rewrite /C2F (Q2F_Qeq _ _ (c_sub_spec a b)) /Qminus Q2F_plus Q2F_opp. Qed.
+Proof.
+by rewrite /C2F (Q2F_Qeq _ _ (c_sub_spec a b)) /Qminus Q2F_plus Q2F_opp.
+Qed.
 
 Lemma C2F_c_mul a b : C2F (c_mul a b) = C2F a * C2F b.
 Proof. by rewrite /C2F (Q2F_Qeq _ _ (c_mul_spec a b)) Q2F_mult. Qed.
 
 Lemma C2F_c_div a b : C2F (c_div a b) = C2F a / C2F b.
-Proof. by rewrite /C2F (Q2F_Qeq _ _ (c_div_spec a b)) /Qdiv Q2F_mult Q2F_Qinv. Qed.
+Proof.
+by rewrite /C2F (Q2F_Qeq _ _ (c_div_spec a b)) /Qdiv Q2F_mult Q2F_Qinv.
+Qed.
 
 Lemma C2F_c_opp a : C2F (c_opp a) = - C2F a.
 Proof. by rewrite /C2F (Q2F_Qeq _ _ (c_opp_spec a)) Q2F_opp. Qed.
@@ -375,7 +392,9 @@ Lemma C2F_c_inv a : C2F (c_inv a) = (C2F a)^-1.
 Proof. by rewrite /C2F (Q2F_Qeq _ _ (c_inv_spec a)) Q2F_Qinv. Qed.
 
 Lemma c_is0P a : c_is0 a -> C2F a = 0.
-Proof. by move/c_is0_spec/Q2F_Qeq; rewrite /C2F => ->; rewrite /Q2F /= mul0r. Qed.
+Proof.
+by move/c_is0_spec/Q2F_Qeq; rewrite /C2F => ->; rewrite /Q2F /= mul0r.
+Qed.
 
 Lemma c_eqbP a b : c_eqb a b -> C2F a = C2F b.
 Proof. by move/c_eqb_spec/Q2F_Qeq; rewrite /C2F. Qed.

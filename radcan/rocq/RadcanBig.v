@@ -1,10 +1,11 @@
-(* The normaliser on the Bignums backend (BigZ / BigQ) and its tactic.        *)
-(*   RadcanBig := RadcanF BigNum   (RadcanBig.radcan_check,                  *)
-(*                RadcanBig.radcan_eq_cond, RadcanBig.radcan_eq_cond0, ...)  *)
-(*   radcan_big        == radcan using RadcanBig (same goals, same side       *)
-(*                        conditions, faster on large numbers)                *)
+(******************************************************************************)
+(* RadcanBig: the normaliser on the Bignums backend, and its tactic.          *)
+(*   RadcanBig := RadcanF BigNum (RadcanBig.radcan_check, ...; the names are  *)
+(*                qualified, importing this file does not change radcan)      *)
+(*   radcan_big        == radcan with RadcanBig: same goals, same side        *)
+(*                        conditions, faster on large numbers                 *)
 (*   radcan_big_with r == the same with an explicit root structure r          *)
-(* The names are qualified: importing this file does not change radcan.      *)
+(******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt.
 From Bignums Require Import BigZ BigQ.
@@ -56,12 +57,13 @@ Ltac radcan_big :=
   | _ => radcan_big0
   end.
 
-(* tests *)
+(* Tests *)
 Section Tests.
 Variables (F : numFieldType) (r : posroot F) (x : F).
 
 Lemma big_t1 : proot r 2 2 * proot r 2 3 = proot r 2 6. Proof. radcan_big. Qed.
-Lemma big_t2 : 1 / (1 + proot r 2 2 + proot r 2 3) = (2 + proot r 2 2 - proot r 2 6) / 4.
+Lemma big_t2 :
+  1 / (1 + proot r 2 2 + proot r 2 3) = (2 + proot r 2 2 - proot r 2 6) / 4.
 Proof. radcan_big. Qed.
 Lemma big_t3 : x - 1 != 0 -> (x ^+ 2 - 1) / (x - 1) = x + 1.
 Proof. move=> h. radcan_big. exact: h. Qed.

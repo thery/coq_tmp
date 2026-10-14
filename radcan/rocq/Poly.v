@@ -1,12 +1,27 @@
-(* Polynomial radicands: exact division (unverified, results always         *)
-(* checked by the callers), decomposition over a basis, and the Collins-style *)
-(* basis of the radicands of a goal (elements with a positive leading        *)
-(* coefficient, normsign in Inverse.v), neg_hints (preferred signs of      *)
-(* bases, M6).                                                               *)
+(******************************************************************************)
+(* Poly: polynomial radicands, in module PolyF N.  A polynomial is an nf      *)
+(* without root monomials, its atoms are the indeterminates.  Nothing here    *)
+(* is verified: callers check every result by multiplication.                 *)
+(*   pdiv p b       == exact division                                         *)
+(*   decompose bs p == p as rem * prod b ^ k over the basis bs                *)
+(*   pgcd f p q     == gcd over Q (main atom, content, primitive              *)
+(*                     pseudo-remainder sequence), primitive with a           *)
+(*                     positive leading coefficient                           *)
+(*   sqf f p        == square-free factors (Yun, recursively on content)      *)
+(*   pb_insert      == insertion in a coprime basis (Collins: A, B become     *)
+(*                     gcd, A / gcd, B / gcd)                                 *)
+(*   gcd_split p d  == common non-constant gcd of p and d                     *)
+(*   mk_basis es    == coprime square-free basis from the radicands of es,    *)
+(*                     their factors and their atoms                          *)
+(*   neg_hints es   == radicands with a negative leading coefficient:         *)
+(*                     preferred signs of the bases                           *)
+(******************************************************************************)
 
-From Stdlib Require Import BinNums BinPos BinInt ZArith Lia QArith_base Qreduction.
+From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
+From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono Factor NF Inverse.
+From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono Factor NF.
+From Radcan Require Import Inverse.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
@@ -17,9 +32,7 @@ Module PolyF (Import N : NUM).
 
 Include InverseF N.
 
-(* ------------------------------------------------------------------------ *)
-(* Exact polynomial division (unverified, results are always checked)        *)
-(* ------------------------------------------------------------------------ *)
+(* Exact division *)
 
 Definition ispoly (p : nf) : bool := all (fun t => nilp t.2.2) p.
 
@@ -66,7 +79,8 @@ Definition const_of (p : nf) : option coef :=
   | _ => None
   end.
 
-Definition isconst (p : nf) : bool := if const_of p is Some _ then true else false.
+Definition isconst (p : nf) : bool :=
+  if const_of p is Some _ then true else false.
 
 Fixpoint dec_one (fuel : nat) (p b : nf) (k : nat) : nat * nf :=
   match fuel with
@@ -77,26 +91,12 @@ Fixpoint dec_one (fuel : nat) (p b : nf) (k : nat) : nat * nf :=
 (* p = rem * prod B ^ k  (to be checked) *)
 Definition decompose (bs : seq nf) (p : nf) : nf * seq (nf * nat) :=
   foldl (fun acc b => let: (p, l) := acc in
-                      let: (k, p') := if isconst b then (0%N, p) else dec_one 32 p b 0 in
+                      let: (k, p') :=
+                        if isconst b then (0%N, p) else dec_one 32 p b 0 in
                       (p', if k is O then l else rcons l (b, k)))
         (p, [::]) bs.
 
-(* Basis of radicands: primitive, normsign (Inverse.v) and below            *)
-
-(* ------------------------------------------------------------------------ *)
-(* Polynomial gcd and square-free decomposition (M7).  Unverified: the       *)
-(* basis only guides decompose, whose result is checked by multiplication,   *)
-(* and the cancellations using a gcd check both products.                   *)
-(* A polynomial is an nf without root monomials; its atoms (variables,      *)
-(* inverse atoms, roots of expressions) are the indeterminates.             *)
-(*   pgcd f p q  == gcd of p and q over Q (recursive: main atom, content,   *)
-(*                  primitive pseudo-remainder sequence), primitive with a   *)
-(*                  positive leading coefficient                             *)
-(*   sqf f p     == the square-free factors of p (Yun's algorithm in the    *)
-(*                  main atom, recursively on the content)                   *)
-(*   pb_insert   == insertion in a coprime basis (Collins: A, B become       *)
-(*                  gcd, A / gcd, B / gcd)                                   *)
-(* ------------------------------------------------------------------------ *)
+(* Gcd and square-free decomposition *)
 
 Definition atom_eqb (a b : atom) : bool := cmp_eqb (atom_cmp a b).
 
@@ -114,11 +114,14 @@ Definition vremove (a : atom) (v : vmono) : vmono :=
   filter (fun bk => ~~ atom_eqb a bk.1) v.
 
 (* degree in a, coefficient of a ^ k *)
-Definition pdeg (a : atom) (p : nf) : nat := foldr (fun t m => maxn (vexp a t.2.1) m) 0%N p.
+Definition pdeg (a : atom) (p : nf) : nat :=
+  foldr (fun t m => maxn (vexp a t.2.1) m) 0%N p.
 
 Definition pcoef (a : atom) (k : nat) (p : nf) : nf :=
-  foldr (fun t acc => if vexp a t.2.1 == k then nf_add [:: (t.1, (vremove a t.2.1, t.2.2))] acc
-                      else acc) [::] p.
+  foldr (fun t acc =>
+           if vexp a t.2.1 == k then
+             nf_add [:: (t.1, (vremove a t.2.1, t.2.2))] acc
+           else acc) [::] p.
 
 Definition pmono (a : atom) (k : nat) : nf := [:: (c_one, (vsingle a k, [::]))].
 
@@ -128,14 +131,16 @@ Definition pderiv (a : atom) (p : nf) : nf :=
   foldr (fun t acc => let k := vexp a t.2.1 in
                       if k is S k' then
                         nf_add (nf_single (c_mul (c_of_Z (Z.of_nat k)) t.1)
-                                          (vmono_mul (vsingle a k') (vremove a t.2.1), t.2.2))
+                                  (vmono_mul (vsingle a k') (vremove a t.2.1),
+                                   t.2.2))
                                acc
                       else acc) [::] p.
 
 Definition pexdiv (p q : nf) : nf := if pdiv p q is Some s then s else p.
 
 Definition pnormal (p : nf) : nf :=
-  if p is [::] then [::] else if isconst p then nf_one else normsign (primitive p).
+  if p is [::] then [::] else
+  if isconst p then nf_one else normsign (primitive p).
 
 (* pseudo-remainder of A by B in a *)
 Definition prem (a : atom) (A B : nf) : nf :=
@@ -148,7 +153,8 @@ Definition prem (a : atom) (A B : nf) : nf :=
       if A is [::] then A else
       let dA := pdeg a A in
       if (dA < dB)%N then A else
-      loop n' (psub (nf_mul lB A) (nf_mul (nf_mul (pcoef a dA A) (pmono a (dA - dB))) B))
+      loop n' (psub (nf_mul lB A)
+                    (nf_mul (nf_mul (pcoef a dA A) (pmono a (dA - dB))) B))
     end in
   loop (pdeg a A).+1 A.
 
@@ -195,7 +201,8 @@ Definition yun (a : atom) (p : nf) : seq nf :=
       let ai := pgcd gcd_fuel b d in
       let b' := pexdiv b ai in
       let c' := pexdiv d ai in
-      (if isconst ai then [::] else [:: ai]) ++ loop n' b' (psub c' (pderiv a b'))
+      (if isconst ai then [::] else [:: ai]) ++
+      loop n' b' (psub c' (pderiv a b'))
     end in
   let b := pexdiv p g in
   loop (pdeg a p).+1 b (psub (pexdiv p' g) (pderiv a b)).
@@ -232,8 +239,7 @@ Fixpoint pb_insert (fuel : nat) (a : nf) (bs : seq nf) : seq nf :=
     end
   end.
 
-(* p / d = p' / d' with p = p' * g and d = d' * g, g a non-constant gcd     *)
-(* (to be checked)                                                           *)
+(* p = p' * g and d = d' * g, g a non-constant gcd (to be checked) *)
 Definition gcd_split (p d : nf) : option (nf * nf * nf) :=
   if ispoly p && ispoly d then
     let g := pgcd gcd_fuel p d in
@@ -259,22 +265,21 @@ Fixpoint mfactors (e : rexpr) : seq rexpr :=
   end.
 
 Definition atoms_of (p : nf) : seq nf :=
-  flatten (map (fun t => map (fun ak => [:: (c_one, ([:: (ak.1, 1%N)], [::]))]) t.2.1) p).
+  flatten (map (fun t =>
+    map (fun ak => [:: (c_one, ([:: (ak.1, 1%N)], [::]))]) t.2.1) p).
 
-(* the basis: coprime square-free polynomials built from the radicands of    *)
-(* the goal, their factors and their atoms                                   *)
 Definition mk_basis (es : seq rexpr) : seq nf :=
   let rs := flatten (map radicands es) in
   let ps := map pnorm rs in
   let fs := map pnorm (flatten (map mfactors rs)) in
-  foldl (fun bs p => foldl (fun bs a => pb_insert 64 (pnormal a) bs) bs (sqf 16 p))
+  foldl (fun bs p =>
+           foldl (fun bs a => pb_insert 64 (pnormal a) bs) bs (sqf 16 p))
         [::] (flatten (map atoms_of ps) ++ fs ++ ps).
 
-(* M6: the radicands (and their factors) of the goal with a negative leading *)
-(* coefficient, made primitive: hints for the choice of the sign of a base  *)
 Definition neg_hints (es : seq rexpr) : seq nf :=
   let rs := flatten (map radicands es) in
-  let ps := map (fun e => primitive (pnorm e)) (rs ++ flatten (map mfactors rs)) in
+  let ps :=
+    map (fun e => primitive (pnorm e)) (rs ++ flatten (map mfactors rs)) in
   filter (fun p => if lead p is Some (c, _) then c_neg c else false) ps.
 
 End PolyF.

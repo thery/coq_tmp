@@ -1,6 +1,12 @@
+(******************************************************************************)
+(* Tutorial 17: inverse atoms (cancellation, primitive form, roots in         *)
+(* denominators).                                                             *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals Lra.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine Tactic RootRstd.
+From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine.
+From Radcan Require Import Tactic RootRstd.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -54,11 +60,13 @@ Lemma m11 : 1 / (x * y) = (1 / x) * (1 / y).
 Proof. radcan. Qed.
 
 (* a root common to all the terms of a denominator is inverted on its own *)
-Lemma m12 : 1 / (proot r 2 2 * x + proot r 2 2) = proot r 2 2 / (2 * (x + 1)).
+Lemma m12 :
+  1 / (proot r 2 2 * x + proot r 2 2) = proot r 2 2 / (2 * (x + 1)).
 Proof. radcan. Qed.
 
 (* exact division when the numerator has roots *)
-Lemma m13 : x != -1 -> (proot r 2 2 * x + proot r 2 2) / (x + 1) = proot r 2 2.
+Lemma m13 : x != -1 ->
+  (proot r 2 2 * x + proot r 2 2) / (x + 1) = proot r 2 2.
 Proof. move=> h. radcan. exact: h. Qed.
 
 Lemma m14 : x != 0 -> x / (proot r 2 2 * x) = proot r 2 2 / 2.

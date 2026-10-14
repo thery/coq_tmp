@@ -1,6 +1,12 @@
+(******************************************************************************)
+(* Tutorial 9: side conditions, raw (radcan_raw), closed by hand or by        *)
+(* lra on Stdlib's R (radcan_Rstd_back).                                      *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals Lra.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Tactic RootRstd.
+From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Tactic.
+From Radcan Require Import RootRstd.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -19,7 +25,7 @@ Proof. move=> x_ge0. radcan_raw. exact: x_ge0. Qed.
 Lemma c4 : 0 <= x -> 0 <= y -> proot r 2 (x * y) = proot r 2 x * proot r 2 y.
 Proof. move=> x_ge0 y_ge0. radcan_raw. Show. all: by []. Qed.
 
-(* the user's goal: three raw conditions, all consequences of 1 < x *)
+(* three raw conditions, all consequences of 1 < x *)
 Lemma c5 : 1 < x ->
   proot r 2 (x ^+ 2 - 1) / proot r 2 (x - 1) = proot r 2 (x + 1).
 Proof.

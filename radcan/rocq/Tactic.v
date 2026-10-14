@@ -1,27 +1,28 @@
-(* Reification of radical expressions into rexpr (Syntax.v).                *)
-(*   radcan_reify r  == changes a goal  a = b  into                          *)
-(*                      rinterp r env ea = rinterp r env eb                   *)
-(* Recognised: + - (opposite and subtraction) * ^-1 (so /) ^+ 0 1 k%:R, roots *)
-(*   proot r n k%:R,  n.-root k%:R (when r is rootC_posroot C),              *)
-(*   rootR n k%:R (when r is rootR_posroot R), with n, k nat numerals > 0;   *)
-(*   a root of a non-numeral with a numeral index becomes RRootE n e.        *)
-(* Any other subterm is an atom: it becomes a variable RVar i, and env       *)
-(* lists the atoms (syntactically distinct terms are distinct atoms).        *)
-(*   radcan       == proves a = b when both sides have the same normal form, *)
-(*                   leaving the side conditions as goals, refined by       *)
-(*                   Refine.v (e.g. 1 < x)                                     *)
-(*   radcan_raw   == the same with the raw conditions (0 <= B, B != 0)       *)
-(*   radcan_with r == the same with an explicit root structure r             *)
+(******************************************************************************)
+(* Tactic: reification into rexpr (Syntax.v) and the radcan tactics.          *)
+(*   radcan_reify r == changes a = b into rinterp r env ea = rinterp r env eb *)
+(*      recognised: + - * ^-1 (so /) ^+ k, 0 1 k%:R, and the roots            *)
+(*      proot r n a, n.-root a (rootC_posroot), rootR n a (rootR_posroot)     *)
+(*      with a numeral index n > 0 (RRoot n p for a numeral radicand p > 0,   *)
+(*      RRootE n e otherwise); any other subterm is an atom RVar i, env lists *)
+(*      the atoms (syntactically distinct terms are distinct atoms)           *)
+(*   radcan        == proves a = b when both sides have the same normal form, *)
+(*                    leaving the side conditions refined by Refine.v         *)
+(*                    (e.g. 1 < x); uses the oddroot / negroot available      *)
+(*   radcan_raw    == the same with the raw conditions (0 <= B, B != 0)       *)
+(*   radcan_with r == radcan with an explicit root structure r                *)
+(******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import PosRoot RootC RootR Syntax Radcan Refine OddRoot NegRootC.
+From Radcan Require Import PosRoot RootC RootR Syntax Radcan Refine OddRoot.
+From Radcan Require Import NegRootC.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
 
-(* in conversion, unfold Z2F first and pos2F last (never natmul first), so *)
-(* a big numeral (Pos.to_nat p)%:R is never expanded in unary                *)
+(* conversion unfolds Z2F first and pos2F last (never natmul first): a big
+   numeral (Pos.to_nat p)%:R is never expanded in unary *)
 Strategy expand [Z2F].
 Strategy 1000 [pos2F].
 
@@ -73,8 +74,7 @@ Ltac radcan_radicand a :=
   | (?k)%:R => radcan_pos k
   end.
 
-(* index of the atom x in env, adding it at the end if absent:            *)
-(* returns (i, env')                                                       *)
+(* (i, env'): index of the atom x in env, added at the end if absent *)
 Ltac radcan_atom x env n :=
   lazymatch env with
   | nil => constr:((n, x :: nil))
@@ -122,7 +122,9 @@ Ltac radcan_reify_term r t env :=
         lazymatch radcan_lit k with
         | true =>
             let p := go a env in
-            lazymatch p with (?x, ?env1) => let k := eval vm_compute in k in constr:((RPow x k, env1)) end
+            lazymatch p with (?x, ?env1) =>
+              let k := eval vm_compute in k in constr:((RPow x k, env1))
+            end
         | false => atom t
         end
     | proot _ ?n ?a =>
@@ -174,17 +176,19 @@ Ltac radcan_find_root :=
   | _ => fail "radcan: no root in the goal"
   end.
 
-(* split the side conditions into separate goals, closing the trivial ones *)
+(* small numerals (Pos.to_nat p)%:R shown as nat literals *)
 Ltac radcan_numerals :=
   rewrite ?/pos2F;
   repeat match goal with
   | |- context [Pos.to_nat ?p] =>
       lazymatch eval vm_compute in (Pos.leb p 1000) with
       | true =>
-          let n := eval vm_compute in (Pos.to_nat p) in change (Pos.to_nat p) with n
+          let n := eval vm_compute in (Pos.to_nat p) in
+          change (Pos.to_nat p) with n
       end
   end.
 
+(* split the side conditions into separate goals, closing the trivial ones *)
 Ltac radcan_split_conds :=
   rewrite ?/all_conds ?/cond_interp ?/all_conds_gen ?/cond_interp_gen /=;
   repeat match goal with |- _ /\ _ => split end;
@@ -198,9 +202,8 @@ Ltac radcan_split_rconds :=
   try exact: I;
   radcan_numerals.
 
-(* refined = true: refined conditions (Refine.v); false: raw conditions.  *)
-(* o = tt: generic checker; o : oddroot r: odd roots of negatives (M6);    *)
-(* o : negroot r: roots of negatives through roots of unity, on C (M9)     *)
+(* refined: refined (Refine.v) or raw conditions; o: tt (generic checker),
+   o : oddroot r (odd mode) or o : negroot r (neg mode) *)
 Ltac radcan_with_gen refined r o :=
   radcan_reify r;
   lazymatch goal with

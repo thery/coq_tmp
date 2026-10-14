@@ -1,3 +1,7 @@
+(******************************************************************************)
+(* Tutorial 5: reification of goals on Stdlib's R (radcan_Rstd).              *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Tactic RootRstd.

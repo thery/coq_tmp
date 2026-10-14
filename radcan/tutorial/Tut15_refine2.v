@@ -1,6 +1,11 @@
+(******************************************************************************)
+(* Tutorial 15: refined conditions with several variables.                    *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals Lra.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine Tactic RootRstd.
+From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine.
+From Radcan Require Import Tactic RootRstd.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -41,9 +46,7 @@ Proof. move=> h. radcan. Show. exact: h. Qed.
 Lemma g7 : x ^+ 2 != 4 -> (x ^+ 2 - 4) / (x ^+ 2 - 4) = 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
-(* a product is nonzero when its factors are: x * y != 0 gives x != 0 and *)
-(* y != 0 (here the normaliser already splits it; Refine.v does it too,   *)
-(* e.g. for x ^+ 3 * y != 0, see refine_ex13)                              *)
+(* x * y != 0 gives x != 0 and y != 0 (see also refine_ex13) *)
 Lemma g8 : x != 0 -> y != 0 -> (x * y) / (x * y) = 1.
 Proof. move=> h1 h2. radcan. Show. all: by []. Qed.
 

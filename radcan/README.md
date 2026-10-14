@@ -29,6 +29,8 @@ Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
   are recorded and left as goals, refined into a readable form: for example
   `√(x²) = x` needs `0 ≤ x`, and `x / x = 1` needs `x ≠ 0`. `radcan_raw`
   leaves the raw conditions instead.
+- **Rationalisation.** Denominators are rationalised, including ones that mix
+  variables and roots: `(x − y)/(√x + √y) = √x − √y`.
 - **Negative numbers under roots.** On ℝ, odd roots of negative numbers are
   handled (`∛(−8) = −2`); on ℂ they go through roots of unity
   (`√(−4) = 2·√(−1)`).
@@ -67,7 +69,7 @@ make -j4
 | `Rstruct.v`, `RootRstd.v` | Stdlib reals as a real closed field; rewriting between Stdlib and mathcomp notation |
 | `Syntax.v` | reified expressions, interpretation, side conditions |
 | `Backend.v`, `BigBackend.v` | number interface; Z/Q and BigZ/BigQ instances |
-| `Mono.v`, `NF.v`, `Factor.v`, `Poly.v`, `Inverse.v`, `Cond.v` | the normaliser and its soundness |
+| `Mono.v`, `NF.v`, `Factor.v`, `Poly.v`, `Inverse.v`, `Ratio.v`, `Cond.v` | the normaliser and its soundness |
 | `Radcan.v`, `RadcanBig.v` | the two instances of the normaliser |
 | `Refine.v`, `OddRoot.v`, `NegRootC.v` | condition refinement, odd roots (ℝ), roots of unity (ℂ) |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |

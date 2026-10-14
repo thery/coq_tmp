@@ -1,6 +1,11 @@
+(******************************************************************************)
+(* Tutorial 6: the radcan tactic on constant radicals.                        *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Tactic RootRstd.
+From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Tactic.
+From Radcan Require Import RootRstd.
 Import GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -16,7 +21,8 @@ End Generic.
 Lemma c1 (C : numClosedFieldType) : (3.-root 2) * (2.-root 2) = 6.-root 32 :> C.
 Proof. radcan. Qed.
 
-Lemma rc1 (R : rcfType) : (rootR 2 2 + rootR 2 3) ^+ 2 = 5 + 2 * rootR 2 (6 : R).
+Lemma rc1 (R : rcfType) :
+  (rootR 2 2 + rootR 2 3) ^+ 2 = 5 + 2 * rootR 2 (6 : R).
 Proof. radcan. Qed.
 
 Local Open Scope R_scope.

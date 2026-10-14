@@ -1,13 +1,15 @@
+(******************************************************************************)
+(* Tutorial 14: polynomial gcd and square-free decomposition of the           *)
+(* radicands: x^2 + 2x + 1 is read as (x + 1)^2 (Yun), the basis is made      *)
+(* coprime (Collins), rational functions cancel through a gcd.  Every         *)
+(* decomposition is checked by multiplication.                                *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals Lra.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine Tactic RootRstd.
+From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine.
+From Radcan Require Import Tactic RootRstd.
 Import Order.TTheory GRing.Theory Num.Theory.
-
-(* M7: polynomial gcd and square-free decomposition of the radicands.       *)
-(* The radicand x^2 + 2x + 1 is recognised as (x + 1)^2 (Yun's algorithm), *)
-(* the basis of the goal is made coprime by gcds (Collins), and rational    *)
-(* functions are cancelled through a gcd.  Every decomposition is checked   *)
-(* by multiplication.                                                       *)
 
 Local Open Scope ring_scope.
 Section Generic.
@@ -27,10 +29,12 @@ Lemma g3 : 1 <= x ^+ 2 -> proot r 2 (x ^+ 4 - 2 * x ^+ 2 + 1) = x ^+ 2 - 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 Lemma g4 : -1 <= x ->
-  proot r 2 (x ^+ 2 + 2 * x + 1) * proot r 2 (x + 1) = (x + 1) * proot r 2 (x + 1).
+  proot r 2 (x ^+ 2 + 2 * x + 1) * proot r 2 (x + 1) =
+  (x + 1) * proot r 2 (x + 1).
 Proof. move=> h. radcan. exact: h. Qed.
 
-Lemma g5 : -1 <= x -> proot r 2 (2 * x ^+ 2 + 4 * x + 2) = (x + 1) * proot r 2 2.
+Lemma g5 : -1 <= x ->
+  proot r 2 (2 * x ^+ 2 + 4 * x + 2) = (x + 1) * proot r 2 2.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* the same base under a cube root *)
@@ -48,7 +52,8 @@ Proof. move=> hy hx. radcan. Show. all: by []. Qed.
 
 (* no root: cancellation through gcd (x^2 - 1, x^2 + 2x + 1) = x + 1 *)
 (* raw: x + 1 != 0   refined: x != -1 *)
-Lemma g9 : x != -1 -> (x ^+ 2 - 1) / (x ^+ 2 + 2 * x + 1) = (x - 1) / (x + 1).
+Lemma g9 : x != -1 ->
+  (x ^+ 2 - 1) / (x ^+ 2 + 2 * x + 1) = (x - 1) / (x + 1).
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 Lemma g10 : x + y != 0 ->
@@ -60,7 +65,8 @@ Local Open Scope R_scope.
 Lemma sg1 (x : R) : -1 <= x -> sqrt (x ^ 2 + 2 * x + 1) = x + 1.
 Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
 
-Lemma sg2 (x : R) : x <> -1 -> (x ^ 2 - 1) / (x ^ 2 + 2 * x + 1) = (x - 1) / (x + 1).
+Lemma sg2 (x : R) : x <> -1 ->
+  (x ^ 2 - 1) / (x ^ 2 + 2 * x + 1) = (x - 1) / (x + 1).
 Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
 
 Lemma sg3 (x y : R) : 0 <= x + y -> sqrt (x ^ 2 + 2 * x * y + y ^ 2) = x + y.

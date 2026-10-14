@@ -1040,6 +1040,93 @@ Lemma sm3 (x : R) : x <> -1 -> (2 * x + 2) / (x + 1) = 2.
 Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
 ```
 
+## Part 18 — rationalising denominators with variables and roots (milestone M11)
+
+A denominator `d` that mixes variables and roots, such as `√x + √y` or
+`x + √2 + ∛9`, used to stay an opaque atom `d⁻¹`. Now `Ratio.v` computes
+`u` and a root-free polynomial `E` with `d · u = E`:
+
+1. the root monomials of `d` (roots of numbers and of polynomials) give a
+   basis, and multiplication by `d` is a matrix whose entries are
+   polynomials in the variables;
+2. a fraction-free Gauss–Jordan (Bareiss) elimination gives `E = det` and
+   `u`; `E` is made primitive with a positive leading coefficient and a
+   common factor of `u` and `E` is removed;
+3. `d · u = E` is **checked** by the normaliser, conditions included. The
+   only new lemma is `d · u = E → E ≠ 0 → d⁻¹ = u · E⁻¹`.
+
+`E ≠ 0` is a new condition. It does not follow from `d ≠ 0`: for `√x + √y`
+at `x = y = 1`, `d = 2` but `E = x − y = 0`. To avoid adding this
+condition to goals that do not need it, rationalisation is a fallback:
+`radcan_check` first normalises without it, and only if the normal forms
+differ does it rationalise every mixed denominator on both sides.
+
+```coq
+Section Rational.
+Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+
+(* the paper's (1) as a quotient *)
+(* raw: 0 <= x, 0 <= y, -1 * y + x != 0   refined: 0 <= x, 0 <= y, x != y *)
+Lemma q1 : 0 <= x -> 0 <= y -> x != y ->
+  (x - y) / (\sqrt x + \sqrt y) = \sqrt x - \sqrt y.
+Proof. move=> hx hy hxy. radcan. all: by []. Qed.
+
+(* refined: 0 <= x, x != 1 *)
+Lemma q2 : 0 <= x -> x != 1 -> 1 / (1 + \sqrt x) = (1 - \sqrt x) / (1 - x).
+Proof. move=> hx h1. radcan. all: by []. Qed.
+
+(* refined: x ^+ 2 != 2 *)
+Lemma q3 : x ^+ 2 != 2 -> 1 / (x + \sqrt 2) = (x - \sqrt 2) / (x ^+ 2 - 2).
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* the paper's (3), with the right E (108 x, not 54 x) *)
+Lemma q4 : 108 * x + 12 * x ^+ 2 + 18 * x ^+ 3 + x ^+ 6 != 6 * x ^+ 4 - 73 ->
+  1 / (x + \sqrt 2 + proot r 3 9) =
+  (- (x + \sqrt 2) * proot r 3 9 + 3 * proot r 3 3 +
+     (x ^+ 2 + 2 * \sqrt 2 * x + 2)) *
+  (x ^+ 3 + 6 * x + 9 - (3 * x ^+ 2 + 2) * \sqrt 2) /
+  (x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73).
+Proof. move=> h. radcan. exact: h. Qed.
+
+Lemma q5 : 0 <= x -> 0 <= y -> x != y ->
+  (\sqrt x + \sqrt y) / (\sqrt x - \sqrt y) =
+  (x + y + 2 * \sqrt x * \sqrt y) / (x - y).
+Proof. move=> hx hy hxy. radcan. all: by []. Qed.
+End Rational.
+
+(* on Stdlib reals *)
+Local Open Scope R_scope.
+Lemma sq1 (x y : R) : 0 <= x -> 0 <= y -> x <> y ->
+  (x - y) / (sqrt x + sqrt y) = sqrt x - sqrt y.
+Proof. move=> hx hy hxy. radcan_Rstd. radcan. all: radcan_Rstd_back; lra. Qed.
+
+Lemma sq2 (x : R) : x ^ 2 <> 2 -> 1 / (x + sqrt 2) = (x - sqrt 2) / (x ^ 2 - 2).
+Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
+```
+
+## The paper's examples (`paper/Paper.v`)
+
+`paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.
+
+| Paper | Result |
+|---|---|
+| §2: `(2^{1/6})^7 = 2·2^{1/6}` | proved |
+| §2 form 2: `√(x⁴+9x³+29x²+39x+18) = (x+3)√(x²+3x+2)` | proved, conditions `-3 <= x`, `-2 <= 3x + x²` |
+| §2: the same plus `∛(x+2)`, over index 6 | proved, condition `-1 <= x` |
+| (1) as an identity `x − y = (√x−√y)(√x+√y)` | proved, conditions `0 <= x`, `0 <= y` |
+| (8): `(x+√2+∛9)·N = (x+√2)³+9` | proved |
+| end of §2: `D · conj(D) = E` | proved with `108 x`; the printed `54 x` is **refused** |
+| (3) as printed | **refused: it is false** (check at `x = 5/2`) |
+| (1) as a quotient `(x−y)/(√x+√y) = √x−√y` | proved (M11), conditions `0 <= x`, `0 <= y`, `x != y` |
+| (3) as a quotient, with the corrected `E` | proved (M11), condition `E != 0` |
+| (2) on ℂ | not proved: with principal roots it is false (`−√2`); the paper's convention needs the cyclotomic relation of `ω₈` |
+| (4) = (6) on ℂ | not proved |
+| §2 nested example `√(x²+3x+3+√(x+1)√(x+1)) = x+2` | not proved (nested roots) |
+
+So `radcan` found two misprints in the paper: in (3) and in the coefficient
+of `x` in `E`.
+
 ## The files
 
 | File | Content |
@@ -1050,6 +1137,7 @@ Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
 | `Syntax.v` | `rexpr`, its interpretation, the conditions `cond` |
 | `Backend.v`, `BigBackend.v` | the number interface `NUM`, Z/Q and BigZ/BigQ instances |
 | `Mono.v`, `NF.v` | atoms, monomials, normal-form arithmetic |
+| `Ratio.v` | rationalisation of denominators with variables and roots |
 | `Factor.v`, `Poly.v` | integer factoring; polynomial exact division, gcd, square-free factoring, basis |
 | `Inverse.v` | inverse by linear algebra, checked |
 | `Cond.v` | radicands, cancellation, conditions, `radcan_check` and soundness |
@@ -1059,6 +1147,9 @@ Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
 | `Examples.v` | normaliser examples with timings |
 
 ## What does not work yet
+
+- Rationalisation (Part 18) is all-or-nothing on a goal and adds the condition `E ≠ 0`,
+  which can be a large polynomial.
 
 - Refinement checks each raw condition against one refined condition; it does not combine
   several bounds (no Fourier–Motzkin).
