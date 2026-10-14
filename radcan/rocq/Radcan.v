@@ -1,0 +1,31 @@
+(* RADCAN for unnested radicals, with variables, division (M2) and          *)
+(* variables under roots with side conditions (M3).                          *)
+(*                                                                            *)
+(* This file gathers the pieces of the normaliser, a functor RadcanF over a  *)
+(* number backend N : NUM, and instantiates it with Stdlib Z / Q:           *)
+(*   RadcanZ := RadcanF ZNum   (exported: radcan_check, radcan_eq_cond, ...) *)
+(* (RadcanBig.v instantiates it with Bignums BigZ / BigQ.)                    *)
+(*   Backend.v  number helpers c_* on Q, i_* on Z, p_* on positive           *)
+(*   Mono.v     radical factors, atoms, monomials, orders                     *)
+(*   Factor.v   factorisation of constant radicands (checked)                *)
+(*   NF.v       normal forms, arithmetic, printing, pnorm                    *)
+(*   Inverse.v  inverses by linear algebra (checked)                         *)
+(*   Poly.v     exact polynomial division, basis of radicands                *)
+(*   Cond.v     normaliser with side conditions, radcan_check, soundness     *)
+(* The side conditions (cond, CGe0, CNeq0, cond_interp, all_conds, ...) are  *)
+(* in Syntax.v.  Main results (Cond.v):                                       *)
+(*   radcan_eq_cond : radcan_check e1 e2 = Some cs -> all_conds r env cs ->  *)
+(*                    rinterp r env e1 = rinterp r env e2                     *)
+(*   radcan_eq      : radcan_check e1 e2 = Some [::] ->                       *)
+(*                    rinterp r env e1 = rinterp r env e2                     *)
+(*   radcan_eq_cond0 : no_root e1 -> no_root e2 ->                          *)
+(*                    radcan_check e1 e2 = Some cs -> all_conds0 env cs ->     *)
+(*                    rinterp0 env e1 = rinterp0 env e2   (no posroot needed)  *)
+(*   radcan_eq_cond_odd (o : oddroot r) : radcan_check_odd e1 e2 = Some cs -> *)
+(*                    all_conds r env cs -> rinterp r env e1 = rinterp r env e2 *)
+(*                    (M6: odd roots of negative radicands, real fields only)  *)
+
+From Radcan Require Export Backend Mono Factor NF Inverse Poly Cond.
+
+Module RadcanZ := RadcanF ZNum.
+Export RadcanZ.
