@@ -1,9 +1,11 @@
-(* The Bignums number backend: int = BigZ, rat = BigQ (machine-integer      *)
-(* based, fast for large numbers under vm_compute).  The specification of    *)
-(* NUM comes from the spec lemmas of Bignums: BigZ.spec_xxx, BigQ.spec_xxx. *)
-(*   BigNum : NUM                                                            *)
+(******************************************************************************)
+(* BigBackend: the Bignums number backend BigNum : NUM, int = BigZ and        *)
+(* rat = BigQ (machine integers, fast on large numbers under vm_compute).     *)
+(* The specification comes from the BigZ.spec_* and BigQ.spec_* lemmas.       *)
+(******************************************************************************)
 
-From Stdlib Require Import BinNums BinPos BinInt ZArith QArith_base Qreduction.
+From Stdlib Require Import BinNums BinPos BinInt ZArith QArith_base.
+From Stdlib Require Import Qreduction.
 From Bignums Require Import BigZ BigQ.
 From mathcomp Require Import ssreflect ssrbool.
 From Radcan Require Import Backend.
@@ -61,19 +63,25 @@ Lemma i_ltb_spec a b : i_ltb a b = Z.ltb (i_to_Z a) (i_to_Z b).
 Proof. exact: BigZ.spec_ltb. Qed.
 Lemma i_to_pos_spec a : i_to_pos a = Z.to_pos (i_to_Z a). Proof. by []. Qed.
 
-Lemma c_zero_spec : Qeq (c_to_Q c_zero) (Qmake Z0 xH). Proof. exact: BigQ.spec_0. Qed.
-Lemma c_one_spec : Qeq (c_to_Q c_one) (Qmake (Zpos xH) xH). Proof. exact: BigQ.spec_1. Qed.
+Lemma c_zero_spec : Qeq (c_to_Q c_zero) (Qmake Z0 xH).
+Proof. exact: BigQ.spec_0. Qed.
+Lemma c_one_spec : Qeq (c_to_Q c_one) (Qmake (Zpos xH) xH).
+Proof. exact: BigQ.spec_1. Qed.
 Lemma c_of_int_spec a : Qeq (c_to_Q (c_of_int a)) (Qmake (i_to_Z a) xH).
 Proof. exact: Qeq_refl. Qed.
 Lemma c_of_Z_spec z : Qeq (c_to_Q (c_of_Z z)) (Qmake z xH).
 Proof. by rewrite /c_to_Q /c_of_Z /= BigZ.spec_of_Z; exact: Qeq_refl. Qed.
-Lemma c_add_spec a b : Qeq (c_to_Q (c_add a b)) (Qplus (c_to_Q a) (c_to_Q b)).
+Lemma c_add_spec a b :
+  Qeq (c_to_Q (c_add a b)) (Qplus (c_to_Q a) (c_to_Q b)).
 Proof. exact: BigQ.spec_add_norm. Qed.
-Lemma c_sub_spec a b : Qeq (c_to_Q (c_sub a b)) (Qminus (c_to_Q a) (c_to_Q b)).
+Lemma c_sub_spec a b :
+  Qeq (c_to_Q (c_sub a b)) (Qminus (c_to_Q a) (c_to_Q b)).
 Proof. exact: BigQ.spec_sub_norm. Qed.
-Lemma c_mul_spec a b : Qeq (c_to_Q (c_mul a b)) (Qmult (c_to_Q a) (c_to_Q b)).
+Lemma c_mul_spec a b :
+  Qeq (c_to_Q (c_mul a b)) (Qmult (c_to_Q a) (c_to_Q b)).
 Proof. exact: BigQ.spec_mul_norm. Qed.
-Lemma c_div_spec a b : Qeq (c_to_Q (c_div a b)) (Qdiv (c_to_Q a) (c_to_Q b)).
+Lemma c_div_spec a b :
+  Qeq (c_to_Q (c_div a b)) (Qdiv (c_to_Q a) (c_to_Q b)).
 Proof. exact: BigQ.spec_div_norm. Qed.
 Lemma c_opp_spec a : Qeq (c_to_Q (c_opp a)) (Qopp (c_to_Q a)).
 Proof. exact: BigQ.spec_opp. Qed.

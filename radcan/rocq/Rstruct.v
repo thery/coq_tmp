@@ -1,8 +1,10 @@
-(* Borrowed from mathcomp-analysis, file reals_stdlib/Rstruct.v (the version  *)
-(* installed in ~/opam-coq.8.20), cut right after the rcfType instance: it     *)
-(* gives Stdlib's R the mathcomp structures up to realClosedFieldType, which  *)
-(* is all RADCAN needs (RootR.v). Same licence as the original (CeCILL-C).    *)
-(* Changes: From Coq -> From Stdlib, mathcomp_extra dropped, cut at line 379. *)
+(******************************************************************************)
+(* Rstruct: Stdlib's R as a mathcomp realClosedFieldType (needed by RootR.v). *)
+(* Borrowed from mathcomp-analysis, reals_stdlib/Rstruct.v, cut right after   *)
+(* the rcfType instance (From Coq -> From Stdlib, mathcomp_extra dropped).    *)
+(* Same licence as the original (CeCILL-C).                                   *)
+(*   RleP, RltP : reflect Stdlib's Rle, Rlt into mathcomp's <=, <             *)
+(******************************************************************************)
 
 (* This file is a modification of an eponymous file from the CoqApprox        *)
 (* library. The header of the original file is reproduced below. Changes are  *)
@@ -32,7 +34,8 @@ liability. See the COPYING file for more details.
 (******************************************************************************)
 
 From Stdlib Require Import ZArith Rdefinitions Raxioms RIneq Rbasic_fun Zwf.
-From Stdlib Require Import Epsilon FunctionalExtensionality Ranalysis1 Rsqrt_def.
+From Stdlib Require Import Epsilon FunctionalExtensionality.
+From Stdlib Require Import Ranalysis1 Rsqrt_def.
 From Stdlib Require Import Rtrigo1 Reals.
 From mathcomp Require Import all_ssreflect ssralg poly mxpoly ssrnum.
 From mathcomp Require Import archimedean.
@@ -193,11 +196,6 @@ rewrite /Rltb /Rleb; apply: (iffP idP); case: Rle_dec=> //=.
 by move=> Nr1Lr2 r1Lr2; case: Nr1Lr2; left.
 Qed.
 
-(*
-Ltac toR := rewrite /GRing.add /GRing.opp /GRing.zero /GRing.mul /GRing.inv
-  /GRing.one //=.
-*)
-
 Section ssreal_struct.
 
 Import GRing.Theory.
@@ -253,11 +251,6 @@ Lemma RleP : forall x y, reflect (Rle x y) (x <= y)%R.
 Proof. exact: RlebP. Qed.
 Lemma RltP : forall x y, reflect (Rlt x y) (x < y)%R.
 Proof. exact: RltbP. Qed.
-(* :TODO: *)
-(* Lemma RgeP : forall x y, reflect (Rge x y) (x >= y)%R. *)
-(* Proof. exact: RlebP. Qed. *)
-(* Lemma RgtP : forall x y, reflect (Rgt x y) (x > y)%R. *)
-(* Proof. exact: RltbP. Qed. *)
 
 Lemma Rreal_axiom (x : R) : (0 <= x)%R || (x <= 0)%R.
 Proof.

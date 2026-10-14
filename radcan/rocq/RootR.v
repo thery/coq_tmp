@@ -1,13 +1,14 @@
-(* The posroot instance on a real closed field.  mathcomp 2.5 (without the  *)
-(* real_closed package) has no n-th root on rcfType, so we build one: the   *)
-(* intermediate value property poly_ivt applied to 'X^n - a%:P on [0, 1+a]  *)
-(* gives a nonnegative root, picked with xchoose.                            *)
-(*   rootR0 n a == the nonnegative n-th root of a when 0 < n and 0 <= a,     *)
-(*                 0 otherwise                                               *)
-(*   rootR n a == the real n-th root: rootR0 n a when 0 <= a,               *)
-(*                - rootR0 n (- a) when a < 0 and n is odd (cube root of -8 *)
-(*                is -2), 0 when a < 0 and n is even (like Stdlib's sqrt)   *)
-(*   rootR_posroot R : posroot R,  rootR_oddroot R : oddroot (rootR_posroot R) *)
+(******************************************************************************)
+(* RootR: the root instances on a real closed field R.  mathcomp has no n-th  *)
+(* root on rcfType: poly_ivt on 'X^n - a%:P over [0, 1 + a] gives a           *)
+(* nonnegative root, picked with xchoose.                                     *)
+(*   rootR0 n a == the nonnegative n-th root of a (0 unless 0 < n, 0 <= a)    *)
+(*   rootR n a  == the real n-th root: rootR0 n a when 0 <= a,                *)
+(*                 - rootR0 n (- a) when a < 0 and n odd, 0 otherwise         *)
+(*                 (like Stdlib's sqrt)                                       *)
+(*   rootR_posroot R : posroot R                                              *)
+(*   rootR_oddroot R : oddroot (rootR_posroot R)                              *)
+(******************************************************************************)
 
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts.
@@ -25,7 +26,8 @@ Variable R : rcfType.
 
 Implicit Types (a b x : R) (n : nat).
 
-Lemma rootR_ex_pos n a : (0 < n)%N -> 0 <= a -> exists2 x, 0 <= x & x ^+ n = a.
+Lemma rootR_ex_pos n a : (0 < n)%N -> 0 <= a ->
+  exists2 x, 0 <= x & x ^+ n = a.
 Proof.
 move=> n0 a0; have a1 : 0 <= 1 + a by rewrite addr_ge0.
 have [|x /andP[x0 _] /rootP] := @poly_ivt R ('X^n - a%:P) 0 (1 + a) a1.
@@ -40,12 +42,12 @@ Definition rootR_spec n a x :=
 
 Lemma rootR_ex n a : exists x, rootR_spec n a x.
 Proof.
-rewrite /rootR_spec; case: (boolP ((0 < n)%N && (0 <= a))) => [/andP[n0 a0]|_].
+rewrite /rootR_spec.
+case: (boolP ((0 < n)%N && (0 <= a))) => [/andP[n0 a0]|_].
   by have [x x0 xa] := rootR_ex_pos n0 a0; exists x; rewrite x0 xa eqxx.
 by exists 0; rewrite lexx eqxx.
 Qed.
 
-(* the nonnegative root, 0 outside 0 < n, 0 <= a *)
 Definition rootR0 n a : R := xchoose (rootR_ex n a).
 
 Lemma rootR0_ge0 n a : 0 <= rootR0 n a.
@@ -63,8 +65,6 @@ move=> /negbTE h; have /andP[_] := xchooseP (rootR_ex n a).
 by rewrite h => /eqP.
 Qed.
 
-(* the real root: odd roots of negative numbers are negative (M6),          *)
-(* even roots of negative numbers are 0                                     *)
 Definition rootR n a : R :=
   if 0 <= a then rootR0 n a else if odd n then - rootR0 n (- a) else 0.
 
@@ -81,7 +81,6 @@ rewrite /rootR; case: n => [|n] /=.
 by rewrite negb_or negbK => /andP[-> /negbTE ->].
 Qed.
 
-(* odd roots of negative numbers *)
 Lemma rootRN n a : odd n -> rootR n (- a) = - rootR n a.
 Proof.
 move=> On; rewrite /rootR On oppr_ge0 opprK.
@@ -102,7 +101,8 @@ by rewrite exprMn !rootRK ?mulr_ge0.
 Qed.
 
 Definition rootR_posroot : posroot R :=
-  PosRoot (fun n a (_ : (0 < n)%N) (a0 : 0 <= a) => rootR_ge0 n a0) rootRK rootRM.
+  PosRoot (fun n a (_ : (0 < n)%N) (a0 : 0 <= a) => rootR_ge0 n a0)
+    rootRK rootRM.
 
 Lemma rootR_posrootE n a : proot rootR_posroot n a = rootR n a.
 Proof. by []. Qed.

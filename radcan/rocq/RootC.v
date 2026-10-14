@@ -1,5 +1,9 @@
-(* The posroot instance on an algebraically closed numeric field, from      *)
-(* ssrnum's n.-root (principal n-th root, nonnegative on nonnegatives).      *)
+(******************************************************************************)
+(* RootC: the root instances on a numClosedFieldType C, from ssrnum's         *)
+(* principal root n.-root (nonnegative on nonnegatives).                      *)
+(*   rootC_posroot C : posroot C,                  proot n a = n.-root a      *)
+(*   rootC_negroot C : negroot (rootC_posroot C),  wroot n = n.-root (-1)     *)
+(******************************************************************************)
 
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts.
@@ -37,7 +41,6 @@ Proof. by apply: proot_eq; rewrite // ?ler0n // expr2 -natrM. Qed.
 
 End RootC.
 
-(* M9: roots of negative numbers through the principal roots of -1 *)
 Section NegRootC.
 
 Variable C : numClosedFieldType.
@@ -50,6 +53,7 @@ Lemma rootC_wrootK n : (0 < n)%N -> n.-root (-1 : C) ^+ n = -1.
 Proof. by move=> n0; rewrite rootCK. Qed.
 
 Definition rootC_negroot : negroot (rootC_posroot C) :=
-  @NegRoot C (rootC_posroot C) (fun n => n.-root (-1)) rootC_prootNw rootC_wrootK.
+  @NegRoot C (rootC_posroot C) (fun n => n.-root (-1))
+    rootC_prootNw rootC_wrootK.
 
 End NegRootC.

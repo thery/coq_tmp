@@ -1,13 +1,18 @@
-(* Monomials and orders.                                                      *)
-(*   fct, mono   == radical factors (b, n, e) = proot n b ^+ e and their lists *)
-(*   atom, vmono == atoms (variables, inverse atoms, roots of expressions)    *)
-(*                  and variable monomials, key == (vmono, mono)              *)
-(*   *_cmp       == total orders used to keep normal forms sorted             *)
-(*   holds cs    == every condition of cs holds (proof device)               *)
-(*   fct_norm, fct_comb, mono_mul == product of root monomials (coefficient   *)
-(*                  times reduced monomial)                                    *)
+(******************************************************************************)
+(* Mono: monomials, their orders and their meaning.                           *)
+(*   fct, mono   == radical factor (b, n, e) = proot n b ^+ e, and lists      *)
+(*   atom        == variable AVar i, inverse AInv e or root ARoot n e of an   *)
+(*                  expression that could not be simplified                   *)
+(*   vmono, key  == variable monomial (sorted (atom, exponent)), and the key  *)
+(*                  (vmono, mono) of a term coef * vmono * mono               *)
+(*   *_cmp       == total orders keeping normal forms sorted                  *)
+(*   holds cs    == every condition of cs holds (proof device)                *)
+(*   MonoF N     == fct_norm, fct_comb, mono_mul: product of root monomials,  *)
+(*                  as an integer coefficient times a reduced monomial        *)
+(******************************************************************************)
 
-From Stdlib Require Import BinNums BinPos BinInt ZArith Lia QArith_base Qreduction.
+From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
+From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax Backend.
 Import Order.TTheory GRing.Theory Num.Theory.
@@ -42,20 +47,15 @@ Fixpoint mono_cmp (m1 m2 : mono) : comparison :=
     end
   end.
 
-(* ------------------------------------------------------------------------ *)
-(* Variables and inverse atoms                                               *)
-(* ------------------------------------------------------------------------ *)
+(* Variables and atoms *)
 
-(* an atom is a variable or the inverse of an expression that could not be  *)
-(* inverted (stored as an expression, canonical when possible)              *)
 Inductive atom : Type :=
   | AVar : nat -> atom
   | AInv : rexpr -> atom              (* (rinterp e)^-1 *)
   | ARoot : positive -> rexpr -> atom. (* proot n (rinterp e) *)
 
-(* variable monomial: sorted (atom, exponent > 0) *)
+(* sorted (atom, exponent > 0) *)
 Definition vmono := seq (atom * nat).
-(* a term is  coefficient * variable monomial * root monomial *)
 Definition key := (vmono * mono)%type.
 
 Definition lex (c1 c2 : comparison) : comparison :=
@@ -124,7 +124,8 @@ Definition key_cmp (k1 k2 : key) : comparison :=
 
 Definition cmp_eqb (c : comparison) : bool := if c is Eq then true else false.
 
-Definition vsingle (a : atom) (k : nat) : vmono := if k is O then [::] else [:: (a, k)].
+Definition vsingle (a : atom) (k : nat) : vmono :=
+  if k is O then [::] else [:: (a, k)].
 
 Definition cond_cmp (c1 c2 : cond) : comparison :=
   match c1, c2 with
@@ -162,7 +163,8 @@ Definition fct_interp (f : fct) : F :=
 
 Definition mono_interp (m : mono) : F := \prod_(f <- m) fct_interp f.
 
-Lemma mono_interp_cons f m : mono_interp (f :: m) = fct_interp f * mono_interp m.
+Lemma mono_interp_cons f m :
+  mono_interp (f :: m) = fct_interp f * mono_interp m.
 Proof. by rewrite /mono_interp big_cons. Qed.
 
 Lemma mono_interp_cat m1 m2 :
@@ -175,7 +177,8 @@ Proof. by rewrite /mono_interp big_nil. Qed.
 Lemma fct_cmp_eq f1 f2 : fct_cmp f1 f2 = Eq -> f1 = f2.
 Proof.
 case: f1 f2 => [[b1 n1] e1] [[b2 n2] e2] /=.
-rewrite /p_cmp; case: Pos.compare_spec => // <-; case: Nat.compare_spec => // <-.
+rewrite /p_cmp; case: Pos.compare_spec => // <-.
+case: Nat.compare_spec => // <-.
 by case: Nat.compare_spec => // <-.
 Qed.
 
@@ -192,7 +195,8 @@ Proof. by case: c1. Qed.
 
 Lemma rexpr_cmp_eq e1 e2 : rexpr_cmp e1 e2 = Eq -> e1 = e2.
 Proof.
-elim: e1 e2 => [a|i|n p|n a IHa|a IHa b IHb|a IHa|a IHa b IHb|a IHa b IHb|a IHa k|a IHa]
+elim: e1 e2 =>
+  [a|i|n p|n a IHa|a IHa b IHb|a IHa|a IHa b IHb|a IHa b IHb|a IHa k|a IHa]
   [b'|j|m q|m c|c d|c|c d|c d|c l|c] //=.
 all: first [ by move/Z.compare_eq ->
            | by case/lexP => /Pos.compare_eq -> /IHa ->
@@ -226,12 +230,12 @@ Qed.
 Lemma cmp_eqbP c : cmp_eqb c -> c = Eq.
 Proof. by case: c. Qed.
 
-
 Lemma exprVpred (x : F) N : (0 < N)%N -> x ^+ N.-1 * (x ^+ N)^-1 = x^-1.
 Proof.
 move=> N0; rewrite -[in x ^+ N](prednK N0) exprS invfM mulrCA.
 have [->|x0] := eqVneq x 0.
-  by case: N.-1 => [|k]; rewrite ?expr0 ?invr1 ?mulr1 // expr0n mul0r invr0 mulr0.
+  case: N.-1 => [|k]; rewrite ?expr0 ?invr1 ?mulr1 //.
+  by rewrite expr0n mul0r invr0 mulr0.
 by rewrite divff ?mulr1 // expf_neq0.
 Qed.
 
@@ -276,7 +280,8 @@ case: k => [|k]; first by rewrite /= vmono_interp_nil expr0.
 by rewrite /= vmono_interp_cons vmono_interp_nil mulr1.
 Qed.
 
-Definition holds (cs : seq cond) : Prop := forall c, List.In c cs -> cond_interp c.
+Definition holds (cs : seq cond) : Prop :=
+  forall c, List.In c cs -> cond_interp c.
 
 Lemma all_condsP cs : all_conds cs -> holds cs.
 Proof.
@@ -292,7 +297,9 @@ by move=> H; split=> c Hc; apply: H; apply: List.in_or_app; [left|right].
 Qed.
 
 Lemma holds_cons c cs : holds (c :: cs) -> cond_interp c /\ holds cs.
-Proof. by move=> H; split; [apply: H; left | move=> c' Hc'; apply: H; right]. Qed.
+Proof.
+by move=> H; split; [apply: H; left | move=> c' Hc'; apply: H; right].
+Qed.
 
 Lemma cond_cmp_eq c1 c2 : cond_cmp c1 c2 = Eq -> c1 = c2.
 Proof. by case: c1 c2 => e1 [] e2 //= /rexpr_cmp_eq ->. Qed.
@@ -329,7 +336,8 @@ Definition atom_interp0 (a : atom) : F :=
   | ARoot n e => rt (Pos.to_nat n) (ri e)
   end.
 
-Definition vmono_interp0 (v : vmono) : F := \prod_(ik <- v) atom_interp0 ik.1 ^+ ik.2.
+Definition vmono_interp0 (v : vmono) : F :=
+  \prod_(ik <- v) atom_interp0 ik.1 ^+ ik.2.
 
 Definition holds0 (cs : seq cond) : Prop :=
   forall c, List.In c cs -> cond_interp_gen c.
@@ -348,7 +356,9 @@ by move=> H; split=> c Hc; apply: H; apply: List.in_or_app; [left|right].
 Qed.
 
 Lemma holds0_cons c cs : holds0 (c :: cs) -> cond_interp_gen c /\ holds0 cs.
-Proof. by move=> H; split; [apply: H; left | move=> c' Hc'; apply: H; right]. Qed.
+Proof.
+by move=> H; split; [apply: H; left | move=> c' Hc'; apply: H; right].
+Qed.
 
 Lemma holds0_dedup cs : holds0 (cdedup cs) -> holds0 cs.
 Proof.
@@ -373,7 +383,8 @@ Proof. by rewrite /vmono_interp0 big_cons. Qed.
 Lemma vmono_mul_sound0 v1 v2 :
   vmono_interp0 (vmono_mul v1 v2) = vmono_interp0 v1 * vmono_interp0 v2.
 Proof.
-elim: v1 v2 => [|[i1 k1] v1 IH1] v2 /=; first by rewrite vmono_interp0_nil mul1r.
+elim: v1 v2 => [|[i1 k1] v1 IH1] v2 /=.
+  by rewrite vmono_interp0_nil mul1r.
 elim: v2 => [|[i2 k2] v2 IH2] /=; first by rewrite vmono_interp0_nil mulr1.
 case E : (atom_cmp i1 i2).
 - by rewrite !vmono_interp0_cons IH1 /= (atom_cmp_eq E) exprD mulrACA.
@@ -383,10 +394,7 @@ Qed.
 
 End MonoSound0.
 
-
-(* ------------------------------------------------------------------------ *)
-(* Products of root monomials: depend on the number backend                  *)
-(* ------------------------------------------------------------------------ *)
+(* Products of root monomials (they depend on the number backend) *)
 
 Module MonoF (Import N : NUM).
 
@@ -458,7 +466,8 @@ have Ng0 : (0 < N %/ g)%N by rewrite divn_gt0 // dvdn_leq // dvdn_gcdl.
 by rewrite -(proot_exprMn r _ Ng0 g0 (pos2F_ge0 b)) -Ng -eg.
 Qed.
 
-Lemma proot_expr_lift n l e a : (0 < n)%N -> (0 < l)%N -> (n %| l)%N -> 0 <= a ->
+Lemma proot_expr_lift n l e a :
+  (0 < n)%N -> (0 < l)%N -> (n %| l)%N -> 0 <= a ->
   proot r n a ^+ e = proot r l a ^+ (e * (l %/ n)).
 Proof.
 move=> n0 l0 nl a0.
@@ -497,8 +506,6 @@ rewrite /p_cmp; case: Pos.compare_spec => [<-|_|_].
 move: IH2; case: (_ m2) => c m /= H.
 by rewrite (mono_interp_cons r _ m) mulrCA H (mono_interp_cons r _ m2) mulrCA.
 Qed.
-
-(* variables and inverse atoms: an environment of atoms of F *)
 
 End MonoMulSound.
 

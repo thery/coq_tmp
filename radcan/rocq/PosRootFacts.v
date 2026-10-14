@@ -1,6 +1,14 @@
-(* Derived facts about a posroot instance, for any numFieldType.            *)
-(* All lemmas follow from the uniqueness of nonnegative n-th roots           *)
-(* (eqrXn2) and the three fields of the record.                              *)
+(******************************************************************************)
+(* PosRootFacts: derived facts on a posroot, oddroot or negroot instance.     *)
+(*                                                                            *)
+(* All lemmas follow from the uniqueness of nonnegative n-th roots (proot_eq, *)
+(* from eqrXn2) and the record fields.                                        *)
+(*   proot_eq     : 0 <= x -> x ^+ n = a -> proot r n a = x                   *)
+(*   prootX, proot_proot, prootV, prootM_big, ... : the usual root laws       *)
+(*   prootNK      : odd roots of reals, given an oddroot                      *)
+(*   oddroot_ge0  : on a realFieldType, the odd law for 0 <= a gives oddroot  *)
+(*   wrootE       : wroot w n = proot r n (-1), given w : negroot r           *)
+(******************************************************************************)
 
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot.
@@ -82,9 +90,11 @@ Lemma proot_inj n a b : (0 < n)%N -> 0 <= a -> 0 <= b ->
   proot r n a = proot r n b -> a = b.
 Proof. by move=> n0 a0 b0 eab; rewrite -(prootK r n0 a0) eab prootK. Qed.
 
-Lemma prootV n a : (0 < n)%N -> 0 <= a -> proot r n a^-1 = (proot r n a)^-1.
+Lemma prootV n a : (0 < n)%N -> 0 <= a ->
+  proot r n a^-1 = (proot r n a)^-1.
 Proof.
-by move=> n0 a0; apply: proot_eq; rewrite ?invr_ge0 ?proot_ge0 // exprVn prootK.
+move=> n0 a0; apply: proot_eq; rewrite ?invr_ge0 ?proot_ge0 //.
+by rewrite exprVn prootK.
 Qed.
 
 Lemma prootM_big (I : Type) n (s : seq I) (P : pred I) (f : I -> F) :
@@ -114,12 +124,13 @@ Qed.
 
 End OddRootFacts.
 
-(* on a realFieldType the odd-root law for 0 <= a gives an oddroot *)
 Lemma oddroot_ge0 (F : realFieldType) (r : posroot F) :
-  (forall n a, odd n -> 0 <= a -> proot r n (- a) = - proot r n a) -> oddroot r.
+  (forall n a, odd n -> 0 <= a -> proot r n (- a) = - proot r n a) ->
+  oddroot r.
 Proof.
 move=> H; split=> n a On; have [a0|a0] := leP 0 a; first exact: H.
-by have := H n (- a) On; rewrite opprK oppr_ge0 => /(_ (ltW a0)) ->; rewrite opprK.
+have := H n (- a) On; rewrite opprK oppr_ge0 => /(_ (ltW a0)) ->.
+by rewrite opprK.
 Qed.
 
 Section NegRootFacts.
@@ -128,14 +139,14 @@ Variables (F : numFieldType) (r : posroot F) (w : negroot r).
 
 Implicit Types (a : F) (n : nat).
 
-(* w n is the n-th root of -1 *)
 Lemma wrootE n : (0 < n)%N -> wroot w n = proot r n (-1).
 Proof. by move=> n0; rewrite (prootNw w n0 ler01) proot_1 // mul1r. Qed.
 
 Lemma prootN1K n : (0 < n)%N -> proot r n (-1) ^+ n = -1.
 Proof. by move=> n0; rewrite -wrootE // wrootK. Qed.
 
-Lemma prootN1 n a : (0 < n)%N -> 0 <= a -> proot r n (- a) = proot r n a * proot r n (-1).
+Lemma prootN1 n a : (0 < n)%N -> 0 <= a ->
+  proot r n (- a) = proot r n a * proot r n (-1).
 Proof. by move=> n0 a0; rewrite (prootNw w n0 a0) wrootE. Qed.
 
 End NegRootFacts.

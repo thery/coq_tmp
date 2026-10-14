@@ -14,6 +14,7 @@ Factor.v
 NF.v
 Inverse.v
 Poly.v
+Ratio.v
 Cond.v
 Radcan.v
 Examples.v

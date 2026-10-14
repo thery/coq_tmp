@@ -1,10 +1,17 @@
-(* Normal forms: sorted lists of (coefficient, key), arithmetic, printing   *)
-(* back to syntax, structural normalisation pnorm, and the root-free        *)
-(* variants (nf_mul0, pnorm0) used by the root-free normaliser.              *)
+(******************************************************************************)
+(* NF: normal forms, sorted lists of (coefficient, key), in module NFF N.     *)
+(*   nf_add, nf_mul, nf_pow, ... == arithmetic on normal forms                *)
+(*   nf_to_rexpr p     == p printed back as an expression                     *)
+(*   pnorm e           == structural normalisation (no simplification, no     *)
+(*                        side condition)                                     *)
+(*   nf_mul0, pnorm0, nf_to_rexpr0 == root-free variants (root monomials      *)
+(*                        ignored), for the root-free normaliser              *)
 (*   nf_interp r env p == value of the normal form p                          *)
 (*   nf_interp0 rt env p == value ignoring root monomials                     *)
+(******************************************************************************)
 
-From Stdlib Require Import BinNums BinPos BinInt ZArith Lia QArith_base Qreduction.
+From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
+From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono Factor.
 Import Order.TTheory GRing.Theory Num.Theory.
@@ -76,9 +83,7 @@ Fixpoint nf_eqb (p1 p2 : nf) : bool :=
   | _, _ => false
   end.
 
-(* ------------------------------------------------------------------------ *)
-(* Back to syntax: printing normal forms                                    *)
-(* ------------------------------------------------------------------------ *)
+(* Printing normal forms back to syntax *)
 
 Fixpoint rprod (l : seq rexpr) : rexpr :=
   match l with
@@ -98,9 +103,12 @@ Definition q_to_rexpr (q : coef) : rexpr :=
   else RMul (RCst (Qnum q')) (RInv (RCst (Zpos (Qden q')))).
 
 Definition atom_to_rexpr (a : atom) : rexpr :=
-  match a with AVar i => RVar i | AInv e => RInv e | ARoot n e => RRootE n e end.
+  match a with
+  | AVar i => RVar i | AInv e => RInv e | ARoot n e => RRootE n e
+  end.
 
-Definition rpow (e : rexpr) (k : nat) : rexpr := if k == 1%N then e else RPow e k.
+Definition rpow (e : rexpr) (k : nat) : rexpr :=
+  if k == 1%N then e else RPow e k.
 
 Definition term_to_rexpr (t : coef * key) : rexpr :=
   let fs := map (fun ak => rpow (atom_to_rexpr ak.1) ak.2) t.2.1 ++
@@ -113,9 +121,7 @@ Definition nf_to_rexpr (p : nf) : rexpr := rsum (map term_to_rexpr (rev p)).
 Definition nf_wf (p : nf) : bool :=
   all (fun t => all (fun f => (0 < f.1.2)%N) t.2.2) p.
 
-(* ------------------------------------------------------------------------ *)
-(* Structural normalisation: no simplification, no side condition           *)
-(* ------------------------------------------------------------------------ *)
+(* Structural normalisation *)
 
 Fixpoint pnorm (e : rexpr) : nf :=
   match e with
@@ -138,7 +144,8 @@ Fixpoint pnorm (e : rexpr) : nf :=
   end.
 
 Definition nf_mul_term0 (c : coef) (v : vmono) (p : nf) : nf :=
-  foldr (fun t acc => nf_add (nf_single (c_mul c t.1) (vmono_mul v t.2.1, [::])) acc)
+  foldr (fun t acc =>
+           nf_add (nf_single (c_mul c t.1) (vmono_mul v t.2.1, [::])) acc)
         [::] p.
 
 Definition nf_mul0 (p1 p2 : nf) : nf :=
@@ -212,7 +219,8 @@ rewrite /nf_single; case: ifP => [/(@c_is0P F _) ->|_].
 by rewrite nf_interp_cons nf_interp_nil addr0.
 Qed.
 
-Lemma nf_add_sound p1 p2 : nf_interp (nf_add p1 p2) = nf_interp p1 + nf_interp p2.
+Lemma nf_add_sound p1 p2 :
+  nf_interp (nf_add p1 p2) = nf_interp p1 + nf_interp p2.
 Proof.
 elim: p1 p2 => [|[c1 m1] p1 IH1] p2 /=; first by rewrite nf_interp_nil add0r.
 elim: p2 => [|[c2 m2] p2 IH2] /=; first by rewrite nf_interp_nil addr0.
@@ -244,7 +252,8 @@ rewrite mulrACA H -!mulrA; congr (_ * _); rewrite mulrCA; congr (_ * _).
 by rewrite [RHS]mulrCA; congr (_ * _); exact: mulrCA.
 Qed.
 
-Lemma nf_mul_sound p1 p2 : nf_interp (nf_mul p1 p2) = nf_interp p1 * nf_interp p2.
+Lemma nf_mul_sound p1 p2 :
+  nf_interp (nf_mul p1 p2) = nf_interp p1 * nf_interp p2.
 Proof.
 elim: p1 => [|[c m] p1 IH] /=; first by rewrite nf_interp_nil mul0r.
 by rewrite nf_add_sound nf_mul_term_sound IH nf_interp_cons mulrDl.
@@ -319,12 +328,15 @@ Proof.
 case: t => c [v m] /= wm.
 have Hf : rinterp r env (rprod
    (map (fun ak => rpow (atom_to_rexpr ak.1) ak.2) v ++
-    map (fun f => rpow (RRoot (Pos.of_nat f.1.2) f.1.1) f.2) m)) = key_interp (v, m).
-  rewrite rprod_sound big_cat !big_map /key_interp /vmono_interp /mono_interp /=.
+    map (fun f => rpow (RRoot (Pos.of_nat f.1.2) f.1.1) f.2) m)) =
+   key_interp (v, m).
+  rewrite rprod_sound big_cat !big_map.
+  rewrite /key_interp /vmono_interp /mono_interp /=.
   congr (_ * _).
     by apply: eq_bigr => ak _; rewrite rpow_sound atom_to_rexpr_sound.
   elim: m wm => [|[[b n] e] m IH] /=; first by rewrite !big_nil.
-  case/andP => n0 /IH; rewrite !big_cons => ->; rewrite rpow_sound /= Nat2Pos.id //.
+  case/andP => n0 /IH; rewrite !big_cons => ->.
+  rewrite rpow_sound /= Nat2Pos.id //.
   by move: n0; case: n.
 have Hg : rinterp r env (rprod (q_to_rexpr c ::
    ([seq rpow (atom_to_rexpr ak.1) ak.2 | ak <- v] ++
@@ -335,14 +347,16 @@ rewrite /term_to_rexpr; case: ifP => [/(@c_eqbP F _ _) Ec|_]; last exact: Hg.
 by rewrite Hf Ec C2F_c_one mul1r.
 Qed.
 
-Lemma nf_to_rexpr_sound p : nf_wf p -> rinterp r env (nf_to_rexpr p) = nf_interp p.
+Lemma nf_to_rexpr_sound p :
+  nf_wf p -> rinterp r env (nf_to_rexpr p) = nf_interp p.
 Proof.
 rewrite /nf_to_rexpr rsum_sound big_map big_rev /nf_interp.
 elim: p => [|t p IH] /=; first by rewrite !big_nil.
 by case/andP => wt /IH; rewrite !big_cons term_to_rexpr_sound // => ->.
 Qed.
 
-Lemma nf_atom1 a : nf_interp [:: (c_one, ([:: (a, 1%N)], [::]))] = atom_interp a.
+Lemma nf_atom1 a :
+  nf_interp [:: (c_one, ([:: (a, 1%N)], [::]))] = atom_interp a.
 Proof.
 rewrite nf_interp_cons nf_interp_nil /key_interp /= vmono_interp_cons.
 by rewrite vmono_interp_nil mono_interp_nil C2F_c_one !mulr1 mul1r addr0 expr1.
@@ -367,9 +381,11 @@ elim: e => [z|i|n p|n e1 IH1|e1 IH1 e2 IH2|e1 IH1|e1 IH1 e2 IH2|e1 IH1 e2 IH2|
 have Hat := nf_atom1 (AInv e1).
 case: e1 IH1 Hat => // [[|d|d]] _ Hat /=; rewrite ?nf_interp_nil ?invr0 //.
   rewrite nf_interp_cons nf_interp_nil /key_interp /= vmono_interp_nil.
-  by rewrite mono_interp_nil ?C2F_c_opp C2F_c_inv C2F_c_of_Z /= !mulr1 ?mul1r addr0.
+  rewrite mono_interp_nil ?C2F_c_opp C2F_c_inv C2F_c_of_Z /=.
+  by rewrite !mulr1 ?mul1r addr0.
 rewrite nf_interp_cons nf_interp_nil /key_interp /= vmono_interp_nil.
-by rewrite mono_interp_nil C2F_c_opp C2F_c_inv C2F_c_of_Z /= !mulr1 addr0 ?invrN.
+rewrite mono_interp_nil C2F_c_opp C2F_c_inv C2F_c_of_Z /=.
+by rewrite !mulr1 addr0 ?invrN.
 Qed.
 
 End NFSound.
@@ -385,8 +401,8 @@ Local Notation atom_interp0 := (atom_interp0 rt env).
 Local Notation vmono_interp0 := (vmono_interp0 rt env).
 Local Notation holds0 := (holds0 rt env).
 
-
-Definition nf_interp0 (p : nf) : F := \sum_(t <- p) C2F t.1 * vmono_interp0 t.2.1.
+Definition nf_interp0 (p : nf) : F :=
+  \sum_(t <- p) C2F t.1 * vmono_interp0 t.2.1.
 
 Lemma nf_interp0_nil : nf_interp0 [::] = 0.
 Proof. by rewrite /nf_interp0 big_nil. Qed.
@@ -402,14 +418,16 @@ case/and3P => /(@c_eqbP F _ _) Hc /cmp_eqbP/key_cmp_eq <- /IH Hp.
 by rewrite !nf_interp0_cons /= Hc Hp.
 Qed.
 
-Lemma nf_single_sound0 c k : nf_interp0 (nf_single c k) = C2F c * vmono_interp0 k.1.
+Lemma nf_single_sound0 c k :
+  nf_interp0 (nf_single c k) = C2F c * vmono_interp0 k.1.
 Proof.
 rewrite /nf_single; case: ifP => [/(@c_is0P F _) ->|_].
   by rewrite nf_interp0_nil mul0r.
 by rewrite nf_interp0_cons nf_interp0_nil addr0.
 Qed.
 
-Lemma nf_add_sound0 p1 p2 : nf_interp0 (nf_add p1 p2) = nf_interp0 p1 + nf_interp0 p2.
+Lemma nf_add_sound0 p1 p2 :
+  nf_interp0 (nf_add p1 p2) = nf_interp0 p1 + nf_interp0 p2.
 Proof.
 elim: p1 p2 => [|[c1 m1] p1 IH1] p2 /=; first by rewrite nf_interp0_nil add0r.
 elim: p2 => [|[c2 m2] p2 IH2] /=; first by rewrite nf_interp0_nil addr0.
@@ -434,13 +452,15 @@ Lemma nf_mul_term0_sound c v p :
   nf_interp0 (nf_mul_term0 c v p) = C2F c * vmono_interp0 v * nf_interp0 p.
 Proof.
 elim: p => [|[c2 [v2 m2]] p IH] /=; first by rewrite nf_interp0_nil mulr0.
-rewrite nf_add_sound0 nf_single_sound0 IH nf_interp0_cons /= mulrDr; congr (_ + _).
+rewrite nf_add_sound0 nf_single_sound0 IH nf_interp0_cons /= mulrDr.
+congr (_ + _).
 rewrite vmono_mul_sound0 C2F_c_mul.
 move: (C2F c) (C2F c2) (vmono_interp0 v) (vmono_interp0 v2) => a b x y.
 by rewrite mulrACA.
 Qed.
 
-Lemma nf_mul0_sound p1 p2 : nf_interp0 (nf_mul0 p1 p2) = nf_interp0 p1 * nf_interp0 p2.
+Lemma nf_mul0_sound p1 p2 :
+  nf_interp0 (nf_mul0 p1 p2) = nf_interp0 p1 * nf_interp0 p2.
 Proof.
 elim: p1 => [|[c [v m]] p1 IH] /=; first by rewrite nf_interp0_nil mul0r.
 by rewrite nf_add_sound0 nf_mul_term0_sound IH nf_interp0_cons mulrDl.
@@ -448,7 +468,8 @@ Qed.
 
 Lemma nf_one_sound0 : nf_interp0 nf_one = 1.
 Proof.
-by rewrite nf_interp0_cons nf_interp0_nil /= vmono_interp0_nil C2F_c_one mulr1 addr0.
+rewrite nf_interp0_cons nf_interp0_nil /= vmono_interp0_nil.
+by rewrite C2F_c_one mulr1 addr0.
 Qed.
 
 Local Arguments nf_mul0 : simpl never.
@@ -521,9 +542,10 @@ Proof. by case: a. Qed.
 Lemma term_to_rexpr_sound0 c v :
   ri (term_to_rexpr (c, (v, [::]))) = C2F c * vmono_interp0 v.
 Proof.
-have Hf : ri (rprod (map (fun ak => rpow (atom_to_rexpr ak.1) ak.2) v ++
-                     map (fun f => rpow (RRoot (Pos.of_nat f.1.2) f.1.1) f.2) [::])) =
-          vmono_interp0 v.
+have Hf : ri (rprod
+   (map (fun ak => rpow (atom_to_rexpr ak.1) ak.2) v ++
+    map (fun f => rpow (RRoot (Pos.of_nat f.1.2) f.1.1) f.2) [::])) =
+   vmono_interp0 v.
   rewrite cats0 rprod_sound0 big_map /vmono_interp0.
   by apply: eq_bigr => ak _; rewrite rpow_sound0 atom_to_rexpr_sound0.
 have Hg : ri (rprod (q_to_rexpr c ::

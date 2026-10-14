@@ -1,9 +1,14 @@
+(******************************************************************************)
+(* Tutorial 13: large numerals, with the Stdlib and Bignums backends.         *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootR Syntax Radcan Refine OddRoot Tactic RootRstd RadcanBig.
+From Radcan Require Import Rstruct PosRoot RootR Syntax Radcan Refine OddRoot.
+From Radcan Require Import Tactic RootRstd RadcanBig.
 
 Local Open Scope R_scope.
-(* big Stdlib numerals: binary all the way, factoring by small primes + gcd basis *)
+(* big numerals stay binary; factoring by small primes and a gcd basis *)
 Lemma b1 : sqrt (1000000007 ^ 2 * 3) = 1000000007 * sqrt 3.
 Proof. radcan_Rstd. radcan. Qed.
 

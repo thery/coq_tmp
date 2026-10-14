@@ -90,6 +90,30 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
   - M10 (done) cleanups found on the way: `x^3/x^3`, `x*x/(x*x)`, `(x^3*y)/(x^3*y)`, `sqrt(x/2 - 1)^2`
     fail (normal forms differ); inverse atoms not rescaled ((2x+2)^-1 vs (x+1)^-1/2).
 
+- Paper examples (`paper/Paper.v`): most of §2 proved; (3) and E misprinted in the paper (refused).
+  Main gap found: rationalising denominators mixing variables and roots (paper (1), (3)) -> M11, now proved.
+- M11 (done): rationalise denominators mixing variables and roots.
+  Method: basis of the root monomials of d (as in M2); the multiplication-by-d matrix has
+  polynomial entries; fraction-free Bareiss elimination (exact polynomial division) gives
+  u (adjugate column) and E = det with d*u = E, E root-free; E made primitive, gcd(u, E)
+  removed (M7); d*u = E CHECKED by normalisation (Bareiss unproved). New lemma:
+  d*u = E -> E != 0 -> d^-1 = u * E^-1. Conditions: E != 0 (new) + those of computing d*u.
+  Used only as a fallback: radcan_check first tries the current normaliser, then retries
+  with mixed denominators rationalised, so existing goals keep their conditions and all
+  statements/tactics are unchanged. Dimension cap as in M2. Targets: paper (1), (3)
+  (corrected), 1/(1+√x), 1/(x+√2), (√x+√y)/(√x−√y). Split: one agent (Inverse.v, Cond.v,
+  Examples.v); main session: tactic tests (F, C, Stdlib R), Paper.v, tutorial part 18.
+
+- M12 (next, user go): combine bounds in the refinement (Refine.v only): 0 <= x-1 and
+  0 <= 3-x -> 1 <= x <= 3; drop conditions implied by several refined ones (small
+  Fourier-Motzkin on affine conditions, checked).
+- M13 (next, user go, parallel with M12): absolute values on real fields: sqrt((x-2)^2) =
+  |x-2| without condition (even roots of even powers give |B|), in the normaliser.
+  Same agent: radicands containing roots are first normalised; if no root is left the
+  radicand is treated as usual (paper §2 nested example sqrt(x^2+3x+3+sqrt(x+1)sqrt(x+1))
+  = x+2). True denesting (sqrt(3+2sqrt 2) = 1+sqrt 2) stays out of scope (paper excludes it).
+  Also: diagnose paper (4)=(6) on C (false for principal roots, or a real gap?).
+
 ## Work split for M0+M1
 
 - Agent 1 (roots): `RootC.v`, `RootR.v`, derived lemmas in `PosRootFacts.v`

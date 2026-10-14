@@ -1,18 +1,19 @@
-(* Factorisation of constant radicands.  Every result is checked by         *)
-(* multiplication, never trusted.                                            *)
-(*   small_primes     == the primes below trial_bound (1000, tunable)         *)
-(*   trial ps n       == trial division of n by the primes ps: (l, m) with   *)
-(*                       n = prod l * m, m without prime factor in ps        *)
-(*   perfect_power m  == (c, k) with m = c ^ k (integer k-th root by Newton) *)
-(*   factor p         == small primes, then the perfect power of the        *)
-(*                       cofactor (which may be a non-prime base)             *)
+(******************************************************************************)
+(* Factor: factorisation of constant radicands.  Results are checked by       *)
+(* multiplication, never trusted.                                             *)
+(*   small_primes     == the primes below trial_bound (1000)                  *)
+(*   trial ps n       == trial division by ps: (l, m), n = prod l * m         *)
+(*   perfect_power m  == (c, k) with m = c ^ k (k-th roots by Newton)         *)
+(*   factor p         == small primes, then perfect power of the cofactor     *)
 (*   cfactor p        == checked factor p (falls back to [:: (p, 1)])         *)
-(*   const_basis ps   == pairwise coprime basis (gcd refinement, paper's     *)
-(*                       form 2 / Collins) of the cofactors of ps            *)
+(*   const_basis ps   == pairwise coprime basis of the cofactors of ps (gcd   *)
+(*                       refinement, paper's form 2 / Collins)                *)
 (*   cb_factor cb p   == p over the small primes and the basis cb             *)
 (*   root_cm n l      == proot n (prod b ^+ f) as coefficient * root monomial *)
+(******************************************************************************)
 
-From Stdlib Require Import BinNums BinPos BinInt ZArith Lia QArith_base Qreduction.
+From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
+From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono.
 Import Order.TTheory GRing.Theory Num.Theory.
@@ -31,7 +32,6 @@ Module FactorF (Import N : NUM).
 
 Include MonoF N.
 
-(* Factorisation (its result is checked, never trusted) *)
 Definition i_of_pos (p : positive) : int := i_of_Z (Zpos p).
 Definition i_of_nat (k : nat) : int := i_of_Z (Z.of_nat k).
 
@@ -41,7 +41,8 @@ Definition small_primes_i : seq int := map i_of_pos small_primes.
 Fixpoint zval (fuel : nat) (n d : int) (k : nat) : nat * int :=
   match fuel with
   | O => (k, n)
-  | S f => if i_eqb (i_rem n d) i_zero then zval f (i_div n d) d k.+1 else (k, n)
+  | S f => if i_eqb (i_rem n d) i_zero then zval f (i_div n d) d k.+1
+           else (k, n)
   end.
 
 (* trial division by the primes ps: n = prod l * m *)
@@ -91,7 +92,8 @@ Fixpoint perfect_power_loop (fuel : nat) (ks : seq nat) (m : int) : int * nat :=
 (* exponents to try: the primes up to the size of m *)
 Definition perfect_power (m : int) : int * nat :=
   let s := i_size m in
-  perfect_power_loop s [seq Pos.to_nat p | p <- small_primes & (Pos.to_nat p <= s)%N] m.
+  perfect_power_loop s
+    [seq Pos.to_nat p | p <- small_primes & (Pos.to_nat p <= s)%N] m.
 
 Definition factor (p : positive) : seq (positive * nat) :=
   let: (l, m) := trial small_primes_i (i_of_pos p) in
@@ -103,7 +105,8 @@ Definition fprod (l : seq (positive * nat)) : int :=
 
 (* checked factorisation: falls back to the trivial one *)
 Definition cfactor (p : positive) : seq (positive * nat) :=
-  let l := factor p in if i_eqb (fprod l) (i_of_pos p) then l else [:: (p, 1%N)].
+  let l := factor p in
+  if i_eqb (fprod l) (i_of_pos p) then l else [:: (p, 1%N)].
 
 (* coprime basis by gcd refinement *)
 Fixpoint cb_insert (fuel : nat) (a : int) (bs : seq int) : seq int :=

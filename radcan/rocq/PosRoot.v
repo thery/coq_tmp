@@ -1,8 +1,14 @@
-(* The interface shared by the R and C instances: an n-th root function     *)
-(* on a numFieldType, specified only on nonnegative arguments.               *)
-(*   proot n a == the n-th root of a; meaningful when 0 <= a and 0 < n       *)
-(* Instances: RootC.v (numClosedFieldType, ssrnum's n.-root) and             *)
-(*            RootR.v (rcfType, root built from poly_ivt).                    *)
+(******************************************************************************)
+(* PosRoot: the n-th root interface shared by the R and C instances.          *)
+(*                                                                            *)
+(*   posroot F == record of a root function proot : nat -> F -> F on a        *)
+(*                numFieldType F, specified for 0 < n and 0 <= a              *)
+(*   oddroot r == odd roots of negatives: proot r n (- a) = - proot r n a     *)
+(*                (instance on rcfType in RootR.v, none on C)                 *)
+(*   negroot r == roots of negatives through wroot n, an n-th root of -1:     *)
+(*                proot r n (- a) = proot r n a * wroot n                     *)
+(*                (instance on C in RootC.v, none on a real field)            *)
+(******************************************************************************)
 
 From mathcomp Require Import all_boot all_order all_algebra.
 Import Order.TTheory GRing.Theory Num.Theory.
@@ -21,22 +27,15 @@ Record posroot (F : numFieldType) := PosRoot {
     proot n (a * b) = proot n a * proot n b
 }.
 
-(* Odd roots of negative numbers (milestone M6).  On a real closed field the *)
-(* real odd root satisfies  proot n (- a) = - proot n a  (RootR.v); on C the  *)
-(* principal root does not (3.-root (-8) is not -2), so there is no instance. *)
-(* On a realFieldType it is enough to check the law for 0 <= a              *)
-(* (oddroot_ge0 in PosRootFacts.v).                                           *)
+(* On a realFieldType it suffices to check 0 <= a (oddroot_ge0). *)
 Record oddroot (F : numFieldType) (r : posroot F) : Prop := OddRoot {
   prootN : forall n a, odd n -> proot r n (- a) = - proot r n a
 }.
 
-(* Roots of negative numbers through roots of unity (milestone M9).  w n is  *)
-(* the paper's omega_n, an n-th root of -1, and the n-th root of a negative  *)
-(* number - a is proot n a * w n.  On C with the principal roots n.-root,    *)
-(* w n = n.-root (-1) (NegRootC.v).  There is no instance on a real field:  *)
-(* -1 has no square root there.                                              *)
+(* wroot n is the paper's omega_n. *)
 Record negroot (F : numFieldType) (r : posroot F) := NegRoot {
   wroot : nat -> F;
-  prootNw : forall n a, (0 < n)%N -> 0 <= a -> proot r n (- a) = proot r n a * wroot n;
+  prootNw : forall n a, (0 < n)%N -> 0 <= a ->
+    proot r n (- a) = proot r n a * wroot n;
   wrootK : forall n, (0 < n)%N -> wroot n ^+ n = -1
 }.

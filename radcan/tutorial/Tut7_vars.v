@@ -1,14 +1,21 @@
+(******************************************************************************)
+(* Tutorial 7: radcan with variables and atoms.                               *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Tactic RootRstd.
+From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Tactic.
+From Radcan Require Import RootRstd.
 Import GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
 Lemma v1 : x * proot r 2 2 = proot r 2 2 * x. Proof. radcan. Qed.
-Lemma v2 : x * proot r 2 2 + x * proot r 2 2 = 2 * x * proot r 2 2. Proof. radcan. Qed.
-Lemma v3 : (x + proot r 2 2) ^+ 2 = x ^+ 2 + 2 * x * proot r 2 2 + 2. Proof. radcan. Qed.
+Lemma v2 : x * proot r 2 2 + x * proot r 2 2 = 2 * x * proot r 2 2.
+Proof. radcan. Qed.
+Lemma v3 : (x + proot r 2 2) ^+ 2 = x ^+ 2 + 2 * x * proot r 2 2 + 2.
+Proof. radcan. Qed.
 Lemma v4 : (x - y * proot r 2 3) * (x + y * proot r 2 3) = x ^+ 2 - 3 * y ^+ 2.
 Proof. radcan. Qed.
 Lemma v5 : (x + proot r 3 2) ^+ 3

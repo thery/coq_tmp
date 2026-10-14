@@ -1,45 +1,34 @@
-(* ------------------------------------------------------------------------ *)
-(* Refinement of the raw side conditions returned by radcan_check            *)
-(*                                                                            *)
-(*   bound              == (neg, n, d) : bool * nat * nat, the number        *)
-(*                         -(n/d) if neg, n/d otherwise (n%:R or n%:R/d%:R)  *)
-(*   amono              == seq (rexpr * nat), a product of powers of atoms   *)
-(*                         (an atom is any rexpr read as a value: x, sqrt x) *)
-(*   side               == seq (bound * amono), a sum of terms c * m, shown  *)
-(*                         as  x + 2 * y - 1  (a term with neg is subtracted)*)
-(*   rc B               == conditions with bounds in B:                       *)
-(*     RRaw c            raw condition c : cond                               *)
-(*     RLow s b i        b <= x_i (s = false) or b < x_i (s = true)           *)
-(*     RUpp s b i        x_i <= b (s = false) or x_i < b (s = true)           *)
-(*     RNeq i b          x_i != b                                             *)
-(*     RCmp s l r        l <= r (s = false) or l < r (s = true), l r : side   *)
-(*     RDiff l r         l != r                                               *)
-(*   rcond              == rc bound (the refined conditions)                  *)
-(*   rcond_interp rt env r, all_rconds rt env rs == their meaning             *)
-(*   poly               == seq (Q * amono), sparse polynomials over atoms,    *)
-(*                         pnorm e is the polynomial of e (checked: pnorm_sound) *)
-(*   refine cs          == the refined conditions                             *)
-(*   refine_sound       : all_rconds rt env (refine cs) -> all_conds_gen rt env cs *)
-(*                                                                            *)
-(* refine computes candidate conditions by unverified heuristics:            *)
-(*  - a condition is read as a polynomial fact 0 <= P or P != 0; a product   *)
-(*    P = A * B (or a monomial c * x^k * y) gives the facts A != 0, B != 0;   *)
-(*  - facts true on constants are dropped, the others are divided by their   *)
-(*    content (0 <= 2x - 2y becomes 0 <= x - y);                             *)
-(*  - an affine fact in one variable becomes a bound (RLow, RUpp, RNeq), per *)
-(*    variable only the strongest bounds are kept, x != c merged into bounds;*)
-(*  - other facts are grouped by their non-constant part (the weakest        *)
-(*    constants are dropped), P != 0 is merged into 0 <= P (giving 0 < P)    *)
-(*    or dropped when implied, and printed with the constant and the        *)
-(*    negative terms on the other side: y < x, 1 <= x ^+ 2, x != y;           *)
-(* then a proved checker verifies that every raw condition follows from a    *)
-(* single refined condition (P = a * Q + b, a b : Q with the right signs),   *)
-(* or, for e != 0, that each factor of e follows from one; if this check     *)
-(* fails, the raw conditions are returned unchanged.                         *)
-(* Only reasoning valid in any numFieldType is used (F may be C).            *)
-(* ------------------------------------------------------------------------ *)
+(******************************************************************************)
+(* Refine: refinement of the raw side conditions returned by radcan_check.    *)
+(*   bound      == (neg, n, d), the number -(n/d) if neg, n/d otherwise       *)
+(*   amono      == product of powers of atoms (any rexpr read as a value)     *)
+(*   side       == sum of terms c * m, shown as x + 2 * y - 1                 *)
+(*   rc B       == refined conditions with bounds in B:                       *)
+(*     RRaw c       raw condition c : cond                                    *)
+(*     RLow s b i   b <= x_i (s = false) or b < x_i (s = true)                *)
+(*     RUpp s b i   x_i <= b or x_i < b                                       *)
+(*     RNeq i b     x_i != b                                                  *)
+(*     RCmp s l r   l <= r or l < r (l r : side)                              *)
+(*     RDiff l r    l != r                                                    *)
+(*   rcond      == rc bound                                                   *)
+(*   all_rconds F rt env rs == the meaning of the refined conditions rs       *)
+(*   poly       == sparse polynomials over atoms over Q (pnorm e)             *)
+(*   refine cs  == the refined conditions                                     *)
+(*   refine_sound : all_rconds .. (refine cs) -> all_conds_gen rt env cs      *)
+(*   radcan_eq_refined, radcan_eq_refined0 == decision theorems for radcan    *)
+(* refine_raw guesses by unverified heuristics: a condition is read as a      *)
+(* fact 0 <= P or P != 0 (a product P gives one fact per factor); facts true  *)
+(* on constants are dropped, the others divided by their content; affine      *)
+(* facts in one variable become the strongest bounds; the others are grouped  *)
+(* by non-constant part, P != 0 is merged into 0 <= P (0 < P) or dropped,     *)
+(* and printed with negative terms and constant on the other side.  A proved  *)
+(* checker then verifies that every raw condition follows from one refined    *)
+(* condition (P = a * Q + b with the right signs); if not, the raw            *)
+(* conditions are kept.  The reasoning holds in any numFieldType.             *)
+(******************************************************************************)
 
-From Stdlib Require Import BinNums BinPos BinInt ZArith Lia QArith_base Qreduction.
+From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
+From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot Syntax Radcan.
 Import Order.TTheory GRing.Theory Num.Theory.
@@ -48,9 +37,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(* ------------------------------------------------------------------------ *)
-(* Refined conditions                                                        *)
-(* ------------------------------------------------------------------------ *)
+(* Refined conditions *)
 
 Definition bound := (bool * nat * nat)%type.
 Definition amono := seq (rexpr * nat).
@@ -73,9 +60,7 @@ Arguments RDiff {B} l r.
 
 Definition rcond := rc bound.
 
-(* ------------------------------------------------------------------------ *)
-(* Polynomials over atoms                                                    *)
-(* ------------------------------------------------------------------------ *)
+(* Polynomials over atoms *)
 
 Local Open Scope Q_scope.
 
@@ -126,7 +111,8 @@ Fixpoint padd (p1 p2 : poly) {struct p1} : poly :=
       end in aux p2
   end.
 
-Definition psingle (c : Q) (m : amono) : poly := if qz c then [::] else [:: (c, m)].
+Definition psingle (c : Q) (m : amono) : poly :=
+  if qz c then [::] else [:: (c, m)].
 Definition pconst (c : Q) : poly := psingle c [::].
 Definition patom (a : rexpr) : poly := [:: (1, [:: (a, 1%N)])].
 
@@ -134,7 +120,8 @@ Definition pscale (a : Q) (p : poly) : poly :=
   if qz a then [::] else map (fun t => (Qred (a * t.1), t.2)) p.
 
 Definition pmul_t (t : Q * amono) (q : poly) : poly :=
-  foldr (fun u acc => padd (psingle (Qred (t.1 * u.1)) (amono_mul t.2 u.2)) acc) [::] q.
+  foldr (fun u acc => padd (psingle (Qred (t.1 * u.1)) (amono_mul t.2 u.2)) acc)
+        [::] q.
 
 Definition pmul (p q : poly) : poly :=
   foldr (fun t acc => padd (pmul_t t q) acc) [::] p.
@@ -180,9 +167,7 @@ Definition lrel (P R : poly) : option (Q * Q) :=
   | _, _ => None
   end.
 
-(* ------------------------------------------------------------------------ *)
-(* Facts and the checker                                                     *)
-(* ------------------------------------------------------------------------ *)
+(* Facts and the checker *)
 
 (* KGe: 0 <= P, KGt: 0 < P, KNe: P != 0 *)
 Inductive fkind := KGe | KGt | KNe.
@@ -226,18 +211,22 @@ Definition pvar (i : nat) : poly := patom (RVar i).
 Definition mpoly (m : amono) : poly :=
   foldr (fun ak acc => pmul (ppow (patom ak.1) ak.2) acc) (pconst 1) m.
 
-Definition pterm (t : bound * amono) : poly := pmul (pconst (b2q t.1)) (mpoly t.2).
+Definition pterm (t : bound * amono) : poly :=
+  pmul (pconst (b2q t.1)) (mpoly t.2).
 
-Definition spoly (s : side) : poly := foldr (fun t acc => padd (pterm t) acc) [::] s.
+Definition spoly (s : side) : poly :=
+  foldr (fun t acc => padd (pterm t) acc) [::] s.
 
 Definition rpoly (r : rcond) : fact :=
   match r with
   | RRaw (CGe0 e) => (KGe, pnorm e)
   | RRaw (CNeq0 e) => (KNe, pnorm e)
   | RLow s b i => (if s then KGt else KGe, padd (pvar i) (pconst (- b2q b)))
-  | RUpp s b i => (if s then KGt else KGe, padd (pconst (b2q b)) (pscale (-1) (pvar i)))
+  | RUpp s b i =>
+    (if s then KGt else KGe, padd (pconst (b2q b)) (pscale (-1) (pvar i)))
   | RNeq i b => (KNe, padd (pvar i) (pconst (- b2q b)))
-  | RCmp s l r => (if s then KGt else KGe, padd (spoly r) (pscale (-1) (spoly l)))
+  | RCmp s l r =>
+    (if s then KGt else KGe, padd (spoly r) (pscale (-1) (spoly l)))
   | RDiff l r => (KNe, padd (spoly l) (pscale (-1) (spoly r)))
   end.
 
@@ -262,9 +251,7 @@ Definition implied (rs : seq rcond) (c : cond) : bool :=
   | CNeq0 e => fimp rs (KNe, pnorm e) || all (fun p => fimp rs (KNe, p)) (nzf e)
   end.
 
-(* ------------------------------------------------------------------------ *)
-(* The heuristics (unverified)                                               *)
-(* ------------------------------------------------------------------------ *)
+(* The heuristics (unverified) *)
 
 Definition facts_of (c : cond) : seq fact :=
   match c with
@@ -332,7 +319,8 @@ Fixpoint qundup (l : seq Q) : seq Q :=
   end.
 
 (* absorb x != v into the bounds when possible *)
-Definition absorb (st : option (bool * Q) * option (bool * Q) * seq Q) (v : Q) :=
+Definition absorb (st : option (bool * Q) * option (bool * Q) * seq Q)
+    (v : Q) :=
   let: (lo, up, ks) := st in
   match lo with
   | Some (s, c) =>
@@ -358,7 +346,8 @@ Definition absorb (st : option (bool * Q) * option (bool * Q) * seq Q) (v : Q) :
 Definition atom_rconds (fs : seq (rc Q)) (i : nat) : seq rcond :=
   let lo := foldl (best false) None (pmap (low_of i) fs) in
   let up := foldl (best true) None (pmap (upp_of i) fs) in
-  let: (lo, up, ks) := foldl absorb (lo, up, [::]) (qundup (pmap (neq_of i) fs)) in
+  let: (lo, up, ks) :=
+    foldl absorb (lo, up, [::]) (qundup (pmap (neq_of i) fs)) in
   (if lo is Some (s, c) then [:: RLow s (q2b c) i] else [::]) ++
   (if up is Some (s, c) then [:: RUpp s (q2b c) i] else [::]) ++
   map (fun v => RNeq i (q2b v)) ks.
@@ -399,14 +388,17 @@ Definition fact_rc (strict : bool) (k : fkind) (P : poly) : rcond :=
   match k with
   | KNe => RDiff (to_side pos) (to_side (neg ++ mc))
   | _ =>
-    if pos is [::] then RCmp strict (to_side neg) (to_side (if qz c then [::] else [:: (c, [::])]))
+    if pos is [::] then
+      RCmp strict (to_side neg)
+        (to_side (if qz c then [::] else [:: (c, [::])]))
     else RCmp strict (to_side (neg ++ mc)) (to_side pos)
   end.
 
 Definition is_ge (f : fact) : bool := if f.1 is KNe then false else true.
 
 Definition refine_raw (cs : seq cond) : seq rcond :=
-  let fs := map normf (filter (fun f => ~~ ptriv f) (flatten (map facts_of cs))) in
+  let fs :=
+    map normf (filter (fun f => ~~ ptriv f) (flatten (map facts_of cs))) in
   let olds := pmap old_of fs in
   let gens := filter (fun f => if old_of f is None then true else false) fs in
   let ges := foldl ge_add [::] (map snd (filter is_ge gens)) in
@@ -423,9 +415,7 @@ Definition refine (cs : seq cond) : seq rcond :=
 Local Close Scope Q_scope.
 Local Open Scope ring_scope.
 
-(* ------------------------------------------------------------------------ *)
-(* Meaning of the refined conditions                                         *)
-(* ------------------------------------------------------------------------ *)
+(* Meaning of the refined conditions *)
 
 Definition nat2F (F : numFieldType) (n : nat) : F :=
   match n with 0%N => 0 | 1%N => 1 | _ => n%:R end.
@@ -571,7 +561,8 @@ Proof. by case: n => [|[]]. Qed.
 Lemma bound_interpE b : bound_interp F b = Q2F (b2q b).
 Proof.
 case: b => [[neg n] [|d]].
-  by rewrite /bound_interp /= !nat2FE invr0 mulr0; case: neg; rewrite /Q2F /= ?oppr0 mul0r.
+  rewrite /bound_interp /= !nat2FE invr0 mulr0.
+  by case: neg; rewrite /Q2F /= ?oppr0 mul0r.
 rewrite /bound_interp /b2q /Q2F /= !nat2FE.
 have -> : pos2F F (Pos.of_nat d.+1) = d.+1%:R by rewrite /pos2F Nat2Pos.id.
 case: d => [|d].
@@ -579,15 +570,13 @@ case: d => [|d].
 by case: neg => /=; rewrite ?Z2F_opp Z2F_nat ?mulNr.
 Qed.
 
-Lemma bound_interp_abs b :
-  bound_interp F b = if b.1.1 then - bound_interp F (babs b) else bound_interp F (babs b).
-Proof. by case: b => [[[] n] d]. Qed.
-
 Variables (rt : nat -> F -> F) (env : seq F).
 Local Notation ri := (rinterp_gen rt env).
 
-Definition aeval (m : amono) : F := foldr (fun ak acc => ri ak.1 ^+ ak.2 * acc) 1 m.
-Definition peval (p : poly) : F := foldr (fun t acc => Q2F t.1 * aeval t.2 + acc) 0 p.
+Definition aeval (m : amono) : F :=
+  foldr (fun ak acc => ri ak.1 ^+ ak.2 * acc) 1 m.
+Definition peval (p : poly) : F :=
+  foldr (fun t acc => Q2F t.1 * aeval t.2 + acc) 0 p.
 
 Lemma amono_cmp_eq m1 m2 : amono_cmp m1 m2 = Eq -> m1 = m2.
 Proof.
@@ -651,13 +640,15 @@ Qed.
 
 Lemma ppow_sound p k : peval (ppow p k) = peval p ^+ k.
 Proof.
-elim: k => [|k IH]; first by rewrite expr0 -[ppow p 0]/(pconst 1) pconst_sound Q2F1.
+elim: k => [|k IH].
+  by rewrite expr0 -[ppow p 0]/(pconst 1) pconst_sound Q2F1.
 by rewrite /ppow iterS -/(ppow p k) pmul_sound IH exprS.
 Qed.
 
 Lemma pnorm_sound e : peval (pnorm e) = ri e.
 Proof.
-elim: e => [z|i|n p|n e1 IH1|e1 IH1 e2 IH2|e1 IH1|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 k|e1 IH1] /=.
+elim: e => [z|i|n p|n e1 IH1|e1 IH1 e2 IH2|e1 IH1|e1 IH1 e2 IH2|e1 IH1 e2 IH2|
+            e1 IH1 k|e1 IH1] /=.
 - by rewrite pconst_sound Q2F_Z.
 - by rewrite Q2F1 mul1r expr1 mulr1 addr0.
 - by rewrite Q2F1 mul1r expr1 mulr1 addr0.
@@ -667,7 +658,8 @@ elim: e => [z|i|n p|n e1 IH1|e1 IH1 e2 IH2|e1 IH1|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1
 - by rewrite padd_sound pscale_sound IH1 IH2 Q2Fm1 mulN1r.
 - by rewrite pmul_sound IH1 IH2.
 - by rewrite ppow_sound IH1.
-move: IH1; case: (pnorm e1) => [|[c [|a m]] [|t p]] /= <-; rewrite ?Q2F1 ?mul1r ?expr1 ?mulr1 ?addr0 //.
+move: IH1; case: (pnorm e1) => [|[c [|a m]] [|t p]] /= <-;
+  rewrite ?Q2F1 ?mul1r ?expr1 ?mulr1 ?addr0 //.
 - by rewrite invr0.
 by rewrite pconst_sound Q2F_red Q2F_Qinv.
 Qed.
@@ -710,7 +702,8 @@ case: r f => kr R [kp P] /=.
 case E : (lrel P R) => [[a b]|] //; rewrite (lrel_sound E).
 case: kp; case: kr => //=.
 - by case/andP => /Q2F_ge0b A /Q2F_ge0b B q; rewrite addr_ge0 // mulr_ge0.
-- by case/andP => /Q2F_ge0b A /Q2F_ge0b B q; rewrite addr_ge0 // mulr_ge0 // ltW.
+- case/andP => /Q2F_ge0b A /Q2F_ge0b B q.
+  by rewrite addr_ge0 // mulr_ge0 // ltW.
 - by case/andP => /Q2F_gt0b A /Q2F_gt0b B q; rewrite comb_gt0'.
 - by case/andP => /Q2F_gt0b A /Q2F_ge0b B q; rewrite comb_gt0.
 - case/orP => /andP [].
@@ -726,7 +719,8 @@ Qed.
 
 Lemma ptriv_sound f : ptriv f -> kI f.1 (peval f.2).
 Proof.
-case: f => k P /=; rewrite (pconst_ofE P) /ptriv; case: (pnc P) => //=; rewrite addr0.
+case: f => k P /=; rewrite (pconst_ofE P) /ptriv.
+case: (pnc P) => //=; rewrite addr0.
 by case: k => /=; [exact: Q2F_ge0b|exact: Q2F_gt0b|exact: Q2F_neq0].
 Qed.
 
@@ -742,7 +736,9 @@ elim: m (ri ak.1 ^+ ak.2) => [|ak' m IH] x /=; first by rewrite mulr1.
 by rewrite IH apowE mulrA.
 Qed.
 
-Lemma tIE t : (if t.1.1.1 then - tI rt env t else tI rt env t) = bound_interp F t.1 * aeval t.2.
+Lemma tIE t :
+  (if t.1.1.1 then - tI rt env t else tI rt env t) =
+  bound_interp F t.1 * aeval t.2.
 Proof.
 case: t => [[[neg n] d] m]; rewrite [_.1.1.1]/= [_.1]/= [_.2]/=.
 have -> : tI rt env ((neg, n, d), m) = bound_interp F (false, n, d) * aeval m.
@@ -754,12 +750,16 @@ Qed.
 
 Lemma mpoly_sound m : peval (mpoly m) = aeval m.
 Proof.
-elim: m => [|[a k] m IH]; first by rewrite -[mpoly _]/(pconst 1) pconst_sound Q2F1.
-by rewrite -[mpoly _]/(pmul (ppow (patom a) k) (mpoly m)) pmul_sound ppow_sound patom_sound IH.
+elim: m => [|[a k] m IH].
+  by rewrite -[mpoly _]/(pconst 1) pconst_sound Q2F1.
+rewrite -[mpoly _]/(pmul (ppow (patom a) k) (mpoly m)).
+by rewrite pmul_sound ppow_sound patom_sound IH.
 Qed.
 
 Lemma pterm_sound t : peval (pterm t) = bound_interp F t.1 * aeval t.2.
-Proof. by rewrite /pterm pmul_sound pconst_sound -bound_interpE mpoly_sound. Qed.
+Proof.
+by rewrite /pterm pmul_sound pconst_sound -bound_interpE mpoly_sound.
+Qed.
 
 Lemma sideIE s : sideI rt env s = peval (spoly s).
 Proof.
@@ -804,7 +804,8 @@ Lemma msplit_sound (P : pred poly) p :
 Proof.
 move=> H; case: p => [|[c m] [|t p]] /=; rewrite ?andbT; try exact: H.
 case/andP => /H; rewrite pconst_sound addr0 => c0 Hm.
-rewrite mulf_neq0 //; elim: m Hm => [|[a k] m IH] /=; first by rewrite oner_neq0.
+rewrite mulf_neq0 //; elim: m Hm => [|[a k] m IH] /=.
+  by rewrite oner_neq0.
 case/andP => /H; rewrite patom_sound => a0 /IH m0.
 by rewrite mulf_neq0 // expf_neq0.
 Qed.
@@ -815,8 +816,8 @@ Proof.
 move=> H.
 have D e' : all P (msplit (pnorm e')) -> ri e' != 0.
   by move/(msplit_sound H); rewrite pnorm_sound.
-elim: e => [z|i|n p|n e1 IH1|e1 IH1 e2 IH2|e1 IH1|e1 IH1 e2 IH2|e1 IH1 e2 IH2|e1 IH1 k|e1 IH1];
-  try exact: D.
+elim: e => [z|i|n p|n e1 IH1|e1 IH1 e2 IH2|e1 IH1|e1 IH1 e2 IH2|e1 IH1 e2 IH2|
+            e1 IH1 k|e1 IH1]; try exact: D.
 - by move/IH1; rewrite /= oppr_eq0.
 - by rewrite /= all_cat => /andP [/IH1 h1 /IH2 h2]; rewrite mulf_neq0.
 - by move/IH1 => h; rewrite /= expf_neq0.
@@ -832,7 +833,8 @@ case/orP; first by move/(fimp_sound H) => /=; rewrite pnorm_sound.
 by apply: nzf_sound => q /(fimp_sound H).
 Qed.
 
-Lemma all_rcP rs : all_rc (@bound_interp F) rt env rs -> forall r, List.In r rs -> rI r.
+Lemma all_rcP rs :
+  all_rc (@bound_interp F) rt env rs -> forall r, List.In r rs -> rI r.
 Proof.
 elim: rs => [|r rs IH] //=; case: rs IH => [|r' rs] IH.
   by move=> h r0 [<-|].
@@ -840,7 +842,8 @@ by case=> h1 /IH h2 r0 [<-|/h2].
 Qed.
 
 Lemma all_conds_genI cs :
-  (forall c, List.In c cs -> cond_interp_gen rt env c) -> all_conds_gen rt env cs.
+  (forall c, List.In c cs -> cond_interp_gen rt env c) ->
+  all_conds_gen rt env cs.
 Proof.
 elim: cs => [|c cs IH] //= H; case: cs IH H => [|c' cs] IH H.
   by apply: H; left.
@@ -854,9 +857,7 @@ Proof. by elim: cs => [|c [|c' cs] IH] //= [h1 /IH]. Qed.
 
 End Proofs.
 
-(* ------------------------------------------------------------------------ *)
-(* Main theorem and the decision lemmas for the tactic                       *)
-(* ------------------------------------------------------------------------ *)
+(* Main theorem and the decision theorems for the tactic *)
 
 Theorem refine_sound (F : numFieldType) (rt : nat -> F -> F) env cs :
   all_rconds F rt env (refine cs) -> all_conds_gen rt env cs.
@@ -889,9 +890,7 @@ move=> n1 n2 H Hr Hc; apply: (radcan_eq_cond0 n1 n2 H).
 by apply: refine_sound; rewrite Hr.
 Qed.
 
-(* ------------------------------------------------------------------------ *)
-(* Examples                                                                   *)
-(* ------------------------------------------------------------------------ *)
+(* Examples *)
 
 Definition X := RVar 0.
 Definition Y := RVar 1.
@@ -935,15 +934,20 @@ Example refine_ex7 : refine [:: CGe0 (RCst 3)] =
 Proof. by vm_compute. Qed.
 
 (* 0 <= 1-2x, 3x != 0, 2x-1 != 0  ~>  x < 1/2, x != 0 *)
-Example refine_ex8 : refine [:: CGe0 (RSub (RCst 1) (RMul (RCst 2) X)); CNeq0 (RMul (RCst 3) X); CNeq0 (RAdd (RMul (RCst 2) X) (RCst (-1)))] =
+Example refine_ex8 :
+  refine [:: CGe0 (RSub (RCst 1) (RMul (RCst 2) X)); CNeq0 (RMul (RCst 3) X);
+             CNeq0 (RAdd (RMul (RCst 2) X) (RCst (-1)))] =
   [:: RUpp true (false, 1%N, 2%N) 0%N; RNeq 0 (false, 0%N, 1%N)].
 Proof. by vm_compute. Qed.
 
 (* 0 <= 3x+2, 0 <= x+2/3 (duplicate bound)  ~>  -2/3 <= x *)
-Example refine_ex9 : refine [:: CGe0 (RAdd (RMul (RCst 3) X) (RCst 2)); CGe0 (RAdd X (RMul (RCst 2) (RInv (RCst 3))))] =
+Example refine_ex9 :
+  refine [:: CGe0 (RAdd (RMul (RCst 3) X) (RCst 2));
+             CGe0 (RAdd X (RMul (RCst 2) (RInv (RCst 3))))] =
   [:: RLow false (true, 2%N, 3%N) 0%N].
 Proof. by vm_compute. Qed.
-(* several variables (M8) *)
+
+(* several variables *)
 Definition vx : amono := [:: (RVar 0, 1%N)].
 Definition vy : amono := [:: (RVar 1, 1%N)].
 Definition one : bound := (false, 1%N, 1%N).
@@ -959,7 +963,8 @@ Example refine_ex11 : refine [:: CNeq0 (RSub X Y)] =
 Proof. by vm_compute. Qed.
 
 (* 0 <= 2x - 2y  ~>  y <= x;  0 <= 2x - 2y + 1  ~>  2y - 1 <= 2x *)
-Example refine_ex12 : refine [:: CGe0 (RSub (RMul (RCst 2) X) (RMul (RCst 2) Y))] =
+Example refine_ex12 :
+  refine [:: CGe0 (RSub (RMul (RCst 2) X) (RMul (RCst 2) Y))] =
   [:: RCmp false [:: (one, vy)] [:: (one, vx)]].
 Proof. by vm_compute. Qed.
 
@@ -982,14 +987,17 @@ Proof. by vm_compute. Qed.
 
 (* 0 <= x^2 - 1, x^2 - 4 != 0  ~>  1 <= x^2, x^2 != 4 *)
 Example refine_ex15 :
-  refine [:: CGe0 (RSub (RPow X 2) (RCst 1)); CNeq0 (RSub (RPow X 2) (RCst 4))] =
+  refine [:: CGe0 (RSub (RPow X 2) (RCst 1));
+             CNeq0 (RSub (RPow X 2) (RCst 4))] =
   [:: RCmp false [:: (one, [::])] [:: (one, [:: (RVar 0, 2%N)])];
       RDiff [:: (one, [:: (RVar 0, 2%N)])] [:: ((false, 4%N, 1%N), [::])]].
 Proof. by vm_compute. Qed.
 
-(* implied duplicate: 0 <= x - y, 0 <= 2x - 2y + 1, 0 <= x + y  ~>  y <= x, 0 <= x + y *)
+(* implied duplicate: 0 <= x - y, 0 <= 2x - 2y + 1, 0 <= x + y
+   ~>  y <= x, 0 <= x + y *)
 Example refine_ex16 :
-  refine [:: CGe0 (RSub X Y); CGe0 (RAdd (RSub (RMul (RCst 2) X) (RMul (RCst 2) Y)) (RCst 1));
+  refine [:: CGe0 (RSub X Y);
+             CGe0 (RAdd (RSub (RMul (RCst 2) X) (RMul (RCst 2) Y)) (RCst 1));
              CGe0 (RAdd X Y)] =
   [:: RCmp false [:: (one, vy)] [:: (one, vx)];
       RCmp false [::] [:: (one, vx); (one, vy)]].
@@ -997,7 +1005,8 @@ Proof. by vm_compute. Qed.
 
 (* merge: 0 <= 3 - (x+y), x + y - 3 != 0  ~>  x + y < 3 *)
 Example refine_ex17 :
-  refine [:: CGe0 (RSub (RCst 3) (RAdd X Y)); CNeq0 (RSub (RAdd X Y) (RCst 3))] =
+  refine [:: CGe0 (RSub (RCst 3) (RAdd X Y));
+             CNeq0 (RSub (RAdd X Y) (RCst 3))] =
   [:: RCmp true [:: (one, vx); (one, vy)] [:: ((false, 3%N, 1%N), [::])]].
 Proof. by vm_compute. Qed.
 
@@ -1006,8 +1015,7 @@ Example refine_ex18 : refine [:: CGe0 (RRootE 2 X); CNeq0 (RRootE 2 X)] =
   [:: RCmp true [::] [:: (one, [:: (RRootE 2 (RVar 0), 1%N)])]].
 Proof. by vm_compute. Qed.
 
-(* the m1 goal of Tut10: raw 0 <= y + x, 0 <= -1*y + x, -1*y + x != 0
-   refined 0 <= x + y, y < x *)
+(* 0 <= y + x, 0 <= -1*y + x, -1*y + x != 0  ~>  0 <= x + y, y < x *)
 Example refine_ex19 :
   refine [:: CGe0 (RAdd Y X); CGe0 (RAdd (RMul (RCst (-1)) Y) X);
              CNeq0 (RAdd (RMul (RCst (-1)) Y) X)] =
@@ -1015,21 +1023,25 @@ Example refine_ex19 :
       RCmp true [:: (one, vy)] [:: (one, vx)]].
 Proof. by vm_compute. Qed.
 
-(* the user's goal sqrt(x^2-1) / sqrt(x-1) = sqrt(x+1) *)
+(* sqrt(x^2-1) / sqrt(x-1) = sqrt(x+1) *)
 Example radcan_check_ex :
-  radcan_check (RMul (RRootE 2 (RSub (RPow X 2) (RCst 1))) (RInv (RRootE 2 (RSub X (RCst 1)))))
-               (RRootE 2 (RAdd X (RCst 1))) = Some [:: CGe0 xp1; CGe0 xm1; CNeq0 xm1].
+  radcan_check (RMul (RRootE 2 (RSub (RPow X 2) (RCst 1)))
+                     (RInv (RRootE 2 (RSub X (RCst 1)))))
+               (RRootE 2 (RAdd X (RCst 1))) =
+  Some [:: CGe0 xp1; CGe0 xm1; CNeq0 xm1].
 Proof. by vm_compute. Qed.
 
 Lemma refine_example (F : numFieldType) (r : posroot F) (x : F) : 1 < x ->
   rinterp r [:: x]
-    (RMul (RRootE 2 (RSub (RPow X 2) (RCst 1))) (RInv (RRootE 2 (RSub X (RCst 1))))) =
+    (RMul (RRootE 2 (RSub (RPow X 2) (RCst 1)))
+          (RInv (RRootE 2 (RSub X (RCst 1))))) =
   rinterp r [:: x] (RRootE 2 (RAdd X (RCst 1))).
 Proof.
 move=> x_gt1.
-apply: (@radcan_eq_refined F r [:: x] _ _ _ [:: RLow true (false, 1%N, 1%N) 0%N]).
+apply: (@radcan_eq_refined F r [:: x] _ _ _
+          [:: RLow true (false, 1%N, 1%N) 0%N]).
 - by vm_compute.
 - by vm_compute.
-rewrite /=. (* the goal is now  1 < x *)
+rewrite /=. (* 1 < x *)
 exact: x_gt1.
 Qed.

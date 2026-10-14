@@ -1,13 +1,14 @@
-(* RADCAN on the real numbers of Stdlib (Reals).                              *)
-(* Rstruct.v (borrowed from mathcomp-analysis) makes Stdlib's R an rcfType,  *)
-(* so rootR_posroot R applies. This file translates Stdlib notation into the *)
-(* mathcomp one that the reification understands:                            *)
-(*   Rplus Rmult Ropp Rminus pow  ->  + * - - ^+                             *)
-(*   Rinv Rdiv                    ->  ^-1 /                                  *)
-(*   IZR numerals                 ->  k%:R                                    *)
-(*   sqrt a                       ->  rootR 2 a  (both are 0 when a < 0)     *)
-(*   radcan_Rstd  == the rewriting step (no side condition)                  *)
-(*   radcan_Rstd_back == translates a side condition back to Stdlib, for lra *)
+(******************************************************************************)
+(* RootRstd: RADCAN on the real numbers of Stdlib (Reals), through Rstruct.v  *)
+(* and rootR_posroot R.  Translation of Stdlib notation into the mathcomp one *)
+(* understood by the reification:                                             *)
+(*   Rplus Rmult Ropp Rminus pow  ->  + * - - ^+                              *)
+(*   Rinv Rdiv                    ->  ^-1 /                                   *)
+(*   IZR numerals                 ->  pos2F R p (interpretation of RCst)      *)
+(*   sqrt a                       ->  rootR 2 a  (both are 0 when a < 0)      *)
+(*   radcan_Rstd      == the rewriting tactic (no side condition)             *)
+(*   radcan_Rstd_back == back to Stdlib notation, to close conditions by lra  *)
+(******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt Reals.
 From mathcomp Require Import all_boot all_order all_algebra.
@@ -35,8 +36,8 @@ Qed.
 
 Lemma IZR0E : IZR Z0 = 0. Proof. by []. Qed.
 
-(* numerals become pos2F p, exactly the interpretation of RCst (Zpos p): *)
-(* the reification check is then syntactic, p is never expanded in unary *)
+(* pos2F p is the interpretation of RCst (Zpos p): reification stays
+   syntactic and p is never expanded in unary *)
 Lemma IZR_posE p : IZR (Zpos p) = pos2F R p.
 Proof. by rewrite /pos2F -INRE INR_IPR. Qed.
 
@@ -58,8 +59,6 @@ Ltac radcan_Rstd :=
   rewrite ?RplusE ?RmultE ?RminusE ?RoppE ?RdivE ?RinvE ?RpowE ?sqrtE;
   rewrite ?IZR0E ?IZR_posE ?IZR_negE.
 
-(* back to Stdlib notation, so that the side conditions left by radcan can  *)
-(* be closed by lra / nra                                                   *)
 Lemma natRE n : (n%:R : R) = INR n. Proof. by rewrite INRE. Qed.
 
 Ltac radcan_Rstd_back :=

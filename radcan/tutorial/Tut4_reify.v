@@ -1,3 +1,7 @@
+(******************************************************************************)
+(* Tutorial 4: reification of a goal by radcan_reify (Show displays it).      *)
+(******************************************************************************)
+
 From Stdlib Require Import BinNums BinPos BinInt.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot RootC RootR Syntax Tactic.

@@ -1,6 +1,11 @@
+(******************************************************************************)
+(* Tutorial 11: the same base under several root indices.                     *)
+(******************************************************************************)
+
 From Stdlib Require Import Reals Lra.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine Tactic RootRstd.
+From Radcan Require Import Rstruct PosRoot RootC RootR Syntax Radcan Refine.
+From Radcan Require Import Tactic RootRstd.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -34,11 +39,11 @@ Proof. move=> x_ge0 y_ge0. radcan. Show. all: by []. Qed.
 End Generic.
 
 Local Open Scope R_scope.
-(* Stdlib has only sqrt: a nested root sqrt (sqrt x) is the root of the atom sqrt x *)
+(* Stdlib has only sqrt: sqrt (sqrt x) is the root of the atom sqrt x *)
 Lemma si1 (x : R) : 0 <= x -> sqrt x * sqrt (sqrt x) = sqrt (sqrt (x ^ 3)).
 Proof.
 move=> x_ge0. radcan_Rstd. radcan. Show.
-(* radcan leaves:  0 <= x   and   0 <= sqrt x  (printed rootR 2 x) *)
+(* 0 <= x and 0 <= sqrt x (printed rootR 2 x) *)
 - by radcan_Rstd_back; lra.
 - by rewrite -sqrtE; apply/RleP/sqrt_pos.
 Qed.
