@@ -2521,7 +2521,8 @@ catalogue):
 | §2 form 2: `√(x⁴+9x³+29x²+39x+18) = (x+3)√(x²+3x+2)` | proved, conditions `-3 <= x`, `-2 <= 3x + x²` |
 | §2: the same plus `∛(x+2)`, over index 6 | proved, condition `-1 <= x` |
 | (1) as an identity `x − y = (√x−√y)(√x+√y)` | proved, conditions `0 <= x`, `0 <= y` |
-| (8): `(x+√2+∛9)·N = (x+√2)³+9` | proved |
+| (8) as a product: `(x+√2+∛9)·N = (x+√2)³+9` | proved |
+| (8) as printed, `1/(x+√2+∛9) = −((x+√2)/D)·∛9 + (3/D)·∛3 + (x²+2√2x+2)/D` | proved under `D != 0`, from the product (radcan alone asks for `E != 0`) |
 | end of §2: `D · conj(D) = E` | proved with `108 x`; the printed `54 x` is **refused** |
 | (3) as printed | **refused: it is false** (check at `x = 5/2`) |
 | (1) as a quotient `(x−y)/(√x+√y) = √x−√y` | proved (M11), conditions `0 <= x`, `0 <= y`, `x != y` |
