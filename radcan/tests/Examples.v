@@ -813,3 +813,147 @@ Time Eval vm_compute in
   radcan_check (RInv rd2) (RMul (RSub one (sq X)) (RInv omx)).
 Time Eval vm_compute in
   radcan_check (RInv rd3) (RMul (RSub X r2) (RInv (RSub (RPow X 2) two))).
+
+(* M13: nested radicands, absolute values, odd roots of any sign *)
+
+Definition nest1 := RRootE 2 (RAdd (RAdd (RAdd (RPow X 2) (RMul (RCst 3) X))
+                                         (RCst 3))
+                                   (RMul (sq (RAdd X one)) (sq (RAdd X one)))).
+
+Example ex_nest1 : radcan_check nest1 (RAdd X (RCst 2)) =
+  Some [:: CGe0 (RAdd X (RCst 1)); CGe0 (RAdd X (RCst 2))].
+Proof. by vm_compute. Qed.
+
+(* |B| is proot 2 (B ^+ 2) *)
+Definition rabs (e : rexpr) := sq (RPow e 2).
+
+Example ex_abs1 :
+  radcan_check_real (sq (RAdd (RSub (RPow X 2) (RMul (RCst 4) X)) (RCst 4)))
+                    (rabs (RSub X (RCst 2))) = Some [::].
+Proof. by vm_compute. Qed.
+
+Example ex_abs2 :
+  radcan_check_real (sq (RMul (RPow X 2) (RPow Y 2))) (RMul (rabs X) (rabs Y))
+  = Some [::].
+Proof. by vm_compute. Qed.
+
+Example ex_abs3 : radcan_check_real (RPow (rabs X) 2) (RPow X 2) = Some [::].
+Proof. by vm_compute. Qed.
+
+(* sqrt (x^2) = x: |x| first, then x with 0 <= x *)
+Example ex_abs4 : radcan_check_real (sq (RPow X 2)) X = Some [:: CGe0 X].
+Proof. by vm_compute. Qed.
+
+Example ex_odd1 :
+  radcan_check_real (RRootE 3 (RMul (RCst (-8)) (RPow X 3)))
+                    (RMul (RCst (-2)) X) = Some [::].
+Proof. by vm_compute. Qed.
+
+Example ex_odd2 :
+  radcan_check_real (RRootE 3 (RMul X Y)) (RMul (RRootE 3 X) (RRootE 3 Y)) =
+  Some [::].
+Proof. by vm_compute. Qed.
+
+(* the odd mode still asks 0 <= x *)
+Example ex_odd3 :
+  radcan_check_odd (RRootE 3 (RPow X 3)) X = Some [:: CGe0 X].
+Proof. by vm_compute. Qed.
+
+(* timings: 0.01 s or less each *)
+Time Eval vm_compute in radcan_check nest1 (RAdd X (RCst 2)).
+Time Eval vm_compute in
+  radcan_check_real (sq (RAdd (RSub (RPow X 2) (RMul (RCst 4) X)) (RCst 4)))
+                    (rabs (RSub X (RCst 2))).
+Time Eval vm_compute in radcan_check_real (sq (RPow X 2)) X.
+
+(* M16: irreducible factors of the radicands (form 1 of the paper).       *)
+(* The coprime square-free basis (form 2) is already canonical: these     *)
+(* goals are found by the first pass, with the conditions of form 2.  The *)
+(* irreducible basis is tried only when every other attempt fails.        *)
+
+Definition pw (e : rexpr) (k : nat) := RPow e k.
+Definition cst (z : Z) := RCst z.
+Definition x2m1' := RSub (pw X 2) one.
+
+Example ex_irr1 : radcan_check (sq x2m1') (RMul (sq xm1') (sq xp1)) =
+  Some [:: CGe0 (RAdd X one); CGe0 (RAdd X (cst (-1)))].
+Proof. by vm_compute. Qed.
+
+Example ex_irr2 :
+  radcan_check (RMul (sq (RSub (pw X 4) one)) (RInv (sq (RAdd (pw X 2) one))))
+               (sq x2m1') =
+  Some [:: CGe0 (RAdd (pw X 2) (cst (-1))); CGe0 (RAdd (pw X 2) one);
+           CNeq0 (RAdd (pw X 2) one)].
+Proof. by vm_compute. Qed.
+
+Example ex_irr3 :
+  radcan_check (sq (RSub (pw X 2) (pw Y 2))) (RMul (sq (RSub X Y)) (sq yx)) =
+  Some [:: CGe0 (RAdd Y X); CGe0 (RAdd (RMul (cst (-1)) Y) X)].
+Proof. by vm_compute. Qed.
+
+Definition x2xyy2 := RAdd (RAdd (pw X 2) (RMul X Y)) (pw Y 2).
+
+Example ex_irr4 :
+  radcan_check (RMul (sq (RSub (pw X 3) (pw Y 3))) (RInv (sq (RSub X Y))))
+               (sq x2xyy2) =
+  Some [:: CGe0 (RAdd (pw Y 2) (RAdd (pw X 2) (RMul X Y)));
+           CGe0 (RAdd (RMul (cst (-1)) Y) X);
+           CNeq0 (RAdd (RMul (cst (-1)) Y) X)].
+Proof. by vm_compute. Qed.
+
+Example ex_irr5 :
+  radcan_check (sq (RAdd (RAdd (RMul X Y) X) (RAdd Y one)))
+               (RMul (sq xp1) (sq (RAdd Y one))) =
+  Some [:: CGe0 (RAdd Y one); CGe0 (RAdd X one)].
+Proof. by vm_compute. Qed.
+
+(* the paper's form 1 example: x^4 + 9x^3 + 29x^2 + 39x + 18 *)
+Definition P1 := RAdd (RAdd (RAdd (RAdd (pw X 4) (RMul (cst 9) (pw X 3)))
+                                  (RMul (cst 29) (pw X 2)))
+                            (RMul (cst 39) X)) (cst 18).
+
+Example ex_irr6 :
+  radcan_check (sq P1) (RMul (RMul (RAdd X three) (sq xp1))
+                             (sq (RAdd X two))) =
+  Some [:: CGe0 (RAdd X two); CGe0 (RAdd X one); CGe0 (RAdd X three)].
+Proof. by vm_compute. Qed.
+
+(* (210 x^2 + y^3 + 1)(x^2 + 2 y^2 + 11) expanded: no factor of degree 1   *)
+(* in any variable (MFactorEEZ); the gcd basis splits it as well          *)
+Definition g1 := RAdd (RAdd (RMul (cst 210) (pw X 2)) (pw Y 3)) one.
+Definition g2 := RAdd (RAdd (pw X 2) (RMul two (pw Y 2))) (cst 11).
+Definition g12 := nf_to_rexpr (pnorm (RMul g1 g2)).
+
+Example ex_irr7 :
+  radcan_check (sq g12) (RMul (sq g1) (sq g2)) =
+  Some [:: CGe0 (RAdd (RMul two (pw Y 2)) (RAdd (pw X 2) (cst 11)));
+           CGe0 (RAdd (pw Y 3) (RAdd (RMul (cst 210) (pw X 2)) one))].
+Proof. by vm_compute. Qed.
+
+(* timings *)
+Time Eval vm_compute in radcan_check (sq x2m1') (RMul (sq xm1') (sq xp1)).
+Time Eval vm_compute in
+  radcan_check (RMul (sq (RSub (pw X 4) one)) (RInv (sq (RAdd (pw X 2) one))))
+               (sq x2m1').
+Time Eval vm_compute in
+  radcan_check (sq (RSub (pw X 2) (pw Y 2))) (RMul (sq (RSub X Y)) (sq yx)).
+Time Eval vm_compute in
+  radcan_check (RMul (sq (RSub (pw X 3) (pw Y 3))) (RInv (sq (RSub X Y))))
+               (sq x2xyy2).
+Time Eval vm_compute in
+  radcan_check (sq (RAdd (RAdd (RMul X Y) X) (RAdd Y one)))
+               (RMul (sq xp1) (sq (RAdd Y one))).
+Time Eval vm_compute in
+  radcan_check (sq P1) (RMul (RMul (RAdd X three) (sq xp1)) (sq (RAdd X two))).
+Time Eval vm_compute in radcan_check (sq g12) (RMul (sq g1) (sq g2)).
+
+(* the irreducible basis itself: sqrt P1 in form 1 and in form 2 *)
+Definition form1 (e : rexpr) :=
+  let hs := neg_hints [:: e] in
+  let bs := irr_basis (mk_basis_n false MStd hs [:: e]) in
+  (radcan_nfb false MStd hs bs e e).1.1.
+Definition form2 (e : rexpr) := (radcan_nf MStd e e).1.1.
+
+Time Eval vm_compute in nf_to_rexpr (form1 (sq P1)).
+Time Eval vm_compute in nf_to_rexpr (form2 (sq P1)).
+Time Eval vm_compute in nf_to_rexpr (form1 (sq g12)).

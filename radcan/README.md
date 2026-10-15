@@ -11,8 +11,8 @@ Lemma ex1 : sqrt 12 - sqrt 3 = sqrt 3.
 Proof. radcan_Rstd. radcan. Qed.
 
 Lemma ex2 (x : R) : 1 < x -> sqrt (x ^ 2 - 1) / sqrt (x - 1) = sqrt (x + 1).
-Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
-(* radcan leaves the side condition 1 < x *)
+Proof. move=> h. radcan_lra. Qed.
+(* radcan leaves the side condition 1 < x, closed by lra *)
 ```
 
 ## What it does
@@ -29,8 +29,15 @@ Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
   are recorded and left as goals, refined into a readable form: for example
   `√(x²) = x` needs `0 ≤ x`, and `x / x = 1` needs `x ≠ 0`. `radcan_raw`
   leaves the raw conditions instead.
+- **Simplification.** `radcan_simplify` rewrites both sides into their normal
+  form, e.g. `1/(1+√2)` into `√2 − 1`, leaving the side conditions.
 - **Rationalisation.** Denominators are rationalised, including ones that mix
   variables and roots: `(x − y)/(√x + √y) = √x − √y`.
+- **Absolute values and real fields.** On real closed fields (and Stdlib
+  reals) `√((x−2)²) = |x−2|` and `∛(−8x³) = −2x` need no condition.
+- **Factoring.** Radicands are factored over ℤ, in one or several variables,
+  so `√(x²−y²) = √(x−y)·√(x+y)` is found even when no factor appears in the
+  goal.
 - **Negative numbers under roots.** On ℝ, odd roots of negative numbers are
   handled (`∛(−8) = −2`); on ℂ they go through roots of unity
   (`√(−4) = 2·√(−1)`).
@@ -65,12 +72,21 @@ make -j4
 | File | Content |
 |---|---|
 | `PosRoot.v`, `PosRootFacts.v` | root interfaces `posroot`, `oddroot`, `negroot` and their lemmas |
-| `RootC.v`, `RootR.v` | instances for ℂ and real closed fields |
-| `Rstruct.v`, `RootRstd.v` | Stdlib reals as a real closed field; rewriting between Stdlib and mathcomp notation |
-| `Syntax.v` | reified expressions, interpretation, side conditions |
-| `Backend.v`, `BigBackend.v` | number interface; Z/Q and BigZ/BigQ instances |
-| `Mono.v`, `NF.v`, `Factor.v`, `Poly.v`, `Inverse.v`, `Ratio.v`, `Cond.v` | the normaliser and its soundness |
+| `RootC.v`, `RootR.v` | instances for ℂ (`n.-root`) and real closed fields (`rootR`) |
+| `RealRoot.v` | `realroot`: real fields with odd roots (absolute values, odd roots of any sign) |
+| `Rstruct.v`, `RootRstd.v` | Stdlib `R` as a real closed field (borrowed from mathcomp-analysis); Stdlib ↔ mathcomp rewriting, `radcan_lra` |
+| `Syntax.v` | `rexpr`, its interpretation, the conditions `cond` |
+| `Backend.v`, `BigBackend.v` | the number interface `NUM`, Z/Q and BigZ/BigQ instances |
+| `Mono.v`, `NF.v` | atoms, monomials, normal-form arithmetic |
+| `Factor.v` | integer factoring |
+| `IrrFactor.v`, `MFactor.v`, `MFactorEEZ.v` | polynomial factoring over ℤ: one variable (Berlekamp–Hensel–Zassenhaus), several variables (homogeneous, linear factors, Wang's EEZ) |
+| `Poly.v` | polynomial exact division, gcd, square-free factoring, radicand basis |
+| `Ratio.v` | rationalisation of denominators with variables and roots |
+| `Inverse.v` | inverse by linear algebra, checked |
+| `Cond.v` | radicands, cancellation, conditions, modes, `radcan_check` and soundness |
 | `Radcan.v`, `RadcanBig.v` | the two instances of the normaliser |
-| `Refine.v`, `OddRoot.v`, `NegRootC.v` | condition refinement, odd roots (ℝ), roots of unity (ℂ) |
+| `RefPoly.v`, `RefCheck.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, unverified heuristics, `refine` and its soundness |
+| `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
-| `Examples.v` | normaliser examples with timings |
+| `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
+| `Examples.v`, `RefineEx.v` | examples with timings |

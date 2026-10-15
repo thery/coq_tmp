@@ -8,6 +8,11 @@
 (*                      coefficient (nf_prim, checked), so that 2 x + 2 and   *)
 (*                      x + 1 give the same atom                              *)
 (*   nf_atom_inv_m   == a root monomial common to all terms is inverted apart *)
+(*   nf_vsplit ok d  == Some (g, d'), g the variable monomial common to all   *)
+(*                      the terms of d (atoms satisfying ok), d = g * d'      *)
+(*   nf_inv_v e d    == d^-1 = g^-1 * d'^-1 when d = g * d' (checked), g made *)
+(*                      of variables: 1/(x^2 + x) = 1/x * 1/(x + 1)           *)
+(*   nf_inv_v0 d     == root-free variant, g made of any atoms                *)
 (*   nf_inv e d      == the inverse of d, the normal form of e, with the      *)
 (*                      side conditions it needs                              *)
 (*   nf_inv0 d       == root-free variant                                     *)
@@ -203,6 +208,47 @@ Definition nf_atom_inv_m (e0 : rexpr) (d : nf) : nf :=
     else nf_atom_inv e0 d
   else nf_atom_inv e0 d.
 
+(* d = g * d' with g the variable monomial common to all the terms of d
+   (to be checked); only the atoms satisfying ok are taken out; d' is
+   re-sorted so that its inverse atom is the canonical one *)
+Definition vexpa (a : atom) (v : vmono) : nat :=
+  foldr (fun ak n => if cmp_eqb (atom_cmp ak.1 a) then ak.2 else n) 0%N v.
+
+Definition vgcd (v1 v2 : vmono) : vmono :=
+  foldr (fun ak acc => let k := minn ak.2 (vexpa ak.1 v2) in
+                       if k is O then acc else (ak.1, k) :: acc) [::] v1.
+
+Definition vdivm (v g : vmono) : vmono :=
+  foldr (fun ak acc => let k := (ak.2 - vexpa ak.1 g)%N in
+                       if k is O then acc else (ak.1, k) :: acc) [::] v.
+
+Definition nf_vsplit (ok : atom -> bool) (d : nf) : option (vmono * nf) :=
+  if d is t :: d' then
+    let g := foldr (fun t acc => vgcd acc t.2.1)
+                   (filter (fun ak => ok ak.1) t.2.1) d' in
+    if nilp g then None
+    else
+      let dv := fun t => (t.1, (vdivm t.2.1 g, t.2.2)) in
+      Some (g, foldr (fun t acc => nf_add [:: dv t] acc) [::] d)
+  else None.
+
+Definition is_var (a : atom) : bool := if a is AVar _ then true else false.
+
+(* inverse of d with at least two terms *)
+Definition nf_inv_multi (e0 : rexpr) (d : nf) : nf :=
+  if novar d then
+    if nf_inv_num d is Some u then u else nf_atom_inv e0 d
+  else nf_atom_inv_m e0 d.
+
+(* d = g * d' (checked): d^-1 = g^-1 * d'^-1 *)
+Definition nf_inv_v (e0 : rexpr) (d : nf) : nf * seq cond :=
+  if nf_vsplit is_var d is Some (g, d') then
+    if nf_eqb d (nf_mul [:: (c_one, (g, [::]))] d') && nf_wf d' then
+      let: (w, cs) := vinv g in
+      (nf_mul w (nf_inv_multi (nf_to_rexpr d') d'), cs)
+    else (nf_inv_multi e0 d, [::])
+  else (nf_inv_multi e0 d, [::]).
+
 (* inverse of d, the normal form of e0 *)
 Definition nf_inv (e0 : rexpr) (d : nf) : nf * seq cond :=
   match d with
@@ -211,10 +257,7 @@ Definition nf_inv (e0 : rexpr) (d : nf) : nf * seq cond :=
     if nf_inv_num [:: (c, ([::], m))] is Some u then
       let: (w, cs) := vinv v in (nf_mul u w, cs)
     else (nf_atom_inv e0 d, [::])
-  | _ =>
-    if novar d then
-      if nf_inv_num d is Some u then (u, [::]) else (nf_atom_inv e0 d, [::])
-    else (nf_atom_inv_m e0 d, [::])
+  | _ => nf_inv_v e0 d
   end.
 
 Definition atom_inv_nf0 (a : atom) : nf :=
@@ -232,12 +275,20 @@ Definition nf_atom_inv0 (d : nf) : nf :=
   if prim_ok d c d' then nf_scale (c_inv c) (atom_nf (AInv (nf_to_rexpr0 d')))
   else atom_nf (AInv (nf_to_rexpr0 d)).
 
+(* d = g * d' (checked), any common atom: d^-1 = g^-1 * d'^-1 *)
+Definition nf_inv_v0 (d : nf) : nf :=
+  if nf_vsplit (fun _ => true) d is Some (g, d') then
+    if nf_eqb d (nf_mul0 [:: (c_one, (g, [::]))] d') then
+      nf_mul0 (vinv0 g) (nf_atom_inv0 d')
+    else nf_atom_inv0 d
+  else nf_atom_inv0 d.
+
 Definition nf_inv0 (d : nf) : nf :=
   match d with
   | [::] => [::]
   | [:: (c, (v, _))] =>
     if c_is0 c then [::] else nf_mul0 [:: (c_inv c, ([::], [::]))] (vinv0 v)
-  | _ => nf_atom_inv0 d
+  | _ => nf_inv_v0 d
   end.
 
 Local Open Scope ring_scope.
@@ -333,6 +384,36 @@ rewrite nf_atom_inv_sound ?nf_to_rexpr_sound //.
 by rewrite Hd nf_mul_sound [RHS]invfM.
 Qed.
 
+Lemma nf_inv_multi_sound e0 d : rinterp r env e0 = nf_interp d ->
+  nf_interp (nf_inv_multi e0 d) = (nf_interp d)^-1.
+Proof.
+move=> He; rewrite /nf_inv_multi.
+case: ifP => _; last exact: nf_atom_inv_m_sound.
+case E : (nf_inv_num _) => [u|]; last exact: nf_atom_inv_sound.
+exact: nf_inv_num_sound E.
+Qed.
+
+Lemma nf_vmono_sound g : nf_interp [:: (c_one, (g, [::]))] = vmono_interp g.
+Proof.
+by rewrite nf_interp_cons nf_interp_nil addr0 C2F_c_one mul1r /key_interp
+  mono_interp_nil mulr1.
+Qed.
+
+Lemma nf_inv_v_sound e0 d :
+  rinterp r env e0 = nf_interp d -> holds (nf_inv_v e0 d).2 ->
+  nf_interp (nf_inv_v e0 d).1 = (nf_interp d)^-1.
+Proof.
+move=> He; rewrite /nf_inv_v.
+case: nf_vsplit => [[g d']|]; last by move=> _; exact: nf_inv_multi_sound.
+case: ifP => [/andP[/nf_eqb_eq Hd Hw]|_]; last first.
+  by move=> _; exact: nf_inv_multi_sound.
+have := @vinv_sound g; case: (vinv g) => w cs /= Hg /Hg {}Hg.
+rewrite nf_mul_sound Hg nf_inv_multi_sound ?nf_to_rexpr_sound //.
+by rewrite Hd nf_mul_sound nf_vmono_sound [RHS]invfM.
+Qed.
+
+Local Arguments nf_inv_v : simpl never.
+
 Lemma nf_inv_sound e0 d :
   rinterp r env e0 = nf_interp d -> holds (nf_inv e0 d).2 ->
   nf_interp (nf_inv e0 d).1 = (nf_interp d)^-1.
@@ -345,9 +426,7 @@ move=> He; case: d He => [|[c [v m]] [|t2 d]] He /=.
   rewrite !nf_interp_cons !nf_interp_nil !addr0.
   rewrite /key_interp /= vmono_interp_nil mul1r -invfM; congr (_^-1).
   by rewrite -mulrA (mulrC (mono_interp m)).
-case: ifP => _ /=; last by move=> _; rewrite nf_atom_inv_m_sound.
-case E : (nf_inv_num _) => [u|] /= _; last by rewrite nf_atom_inv_sound.
-exact: nf_inv_num_sound E.
+exact: nf_inv_v_sound.
 Qed.
 
 End InverseSound.
@@ -399,7 +478,18 @@ by rewrite nf_scale_sound0 atom_nf_sound0 /= nf_to_rexpr0_sound C2F_c_inv
   (prim_ok_sound0 Hok) [RHS]invfM.
 Qed.
 
+Lemma nf_inv_v0_sound d : nf_interp0 (nf_inv_v0 d) = (nf_interp0 d)^-1.
+Proof.
+rewrite /nf_inv_v0.
+case: nf_vsplit => [[g d']|]; last exact: nf_atom_inv0_sound.
+case: ifP => [/nf_eqb_eq0 Hd|_]; last exact: nf_atom_inv0_sound.
+rewrite nf_mul0_sound vinv0_sound nf_atom_inv0_sound Hd nf_mul0_sound.
+rewrite nf_interp0_cons nf_interp0_nil addr0 C2F_c_one mul1r /=.
+by rewrite [RHS]invfM.
+Qed.
+
 Local Arguments nf_atom_inv0 : simpl never.
+Local Arguments nf_inv_v0 : simpl never.
 
 Lemma nf_inv0_sound d : nf_interp0 (nf_inv0 d) = (nf_interp0 d)^-1.
 Proof.
@@ -410,7 +500,7 @@ case: d => [|[c [v m]] [|t2 d]] /=.
     by rewrite nf_interp0_nil mul0r invr0.
   rewrite nf_mul0_sound vinv0_sound nf_interp0_cons nf_interp0_nil addr0 /=.
   by rewrite vmono_interp0_nil C2F_c_inv mulr1 [RHS]invfM.
-exact: nf_atom_inv0_sound.
+exact: nf_inv_v0_sound.
 Qed.
 
 End InverseSound0.

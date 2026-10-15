@@ -16,7 +16,7 @@
 From Stdlib Require Import BinNums BinPos BinInt.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot RootC RootR Syntax Radcan Refine OddRoot.
-From Radcan Require Import NegRootC.
+From Radcan Require Import NegRootC RealRoot AbsRoot Frac.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -213,12 +213,14 @@ Ltac radcan_with_gen refined r o :=
                   | _ => lazymatch type of o with
                          | oddroot _ => constr:(1%N)
                          | negroot _ => constr:(2%N)
+                         | realroot _ => constr:(3%N)
                          end
                   end in
       let c := lazymatch mode with
                | 0%N => eval vm_compute in (radcan_check e1 e2)
                | 1%N => eval vm_compute in (radcan_check_odd e1 e2)
                | 2%N => eval vm_compute in (radcan_check_neg e1 e2)
+               | 3%N => eval vm_compute in (radcan_check_real e1 e2)
                end in
       lazymatch c with
       | Some ?cs =>
@@ -238,6 +240,10 @@ Ltac radcan_with_gen refined r o :=
                   apply: (@radcan_eq_refined_neg _ r o env e1 e2 cs rcs);
                     [vm_compute; reflexivity | vm_compute; reflexivity
                     | radcan_split_rconds]
+              | 3%N =>
+                  apply: (@radcan_eq_refined_real _ r o env e1 e2 cs rcs);
+                    [vm_compute; reflexivity | vm_compute; reflexivity
+                    | radcan_split_rconds]
               end
           | false =>
               lazymatch mode with
@@ -249,6 +255,9 @@ Ltac radcan_with_gen refined r o :=
                     [vm_compute; reflexivity | radcan_split_conds]
               | 2%N =>
                   apply: (@radcan_eq_cond_neg _ r o env e1 e2 cs);
+                    [vm_compute; reflexivity | radcan_split_conds]
+              | 3%N =>
+                  apply: (@radcan_eq_cond_real _ r o env e1 e2 cs);
                     [vm_compute; reflexivity | radcan_split_conds]
               end
           end
@@ -284,10 +293,13 @@ Ltac radcan0_gen refined :=
       end
   end.
 
-Ltac radcan_gen refined :=
+Ltac radcan_plain_gen refined :=
+  rewrite ?normr_rootR;
   lazymatch goal with
   | |- context [proot ?r _ _] =>
       lazymatch goal with
+      | rl : realroot r |- _ =>
+          rewrite ?(normr_proot rl); radcan_with_gen refined r rl
       | o : oddroot r |- _ => radcan_with_gen refined r o
       | w : negroot r |- _ => radcan_with_gen refined r w
       | _ => radcan_with_gen refined r tt
@@ -295,9 +307,92 @@ Ltac radcan_gen refined :=
   | |- context [@nthroot ?C _ _] =>
       radcan_with_gen refined (rootC_posroot C) (rootC_negroot C)
   | |- context [@rootR ?R _ _] =>
-      radcan_with_gen refined (rootR_posroot R) (rootR_oddroot R)
+      radcan_with_gen refined (rootR_posroot R) (rootR_realroot R)
   | _ => radcan0_gen refined
   end.
+
+(* fallback (M20): roots of fractions split by frac_split, then checked *)
+Ltac radcan_frac_with_gen refined r o :=
+  radcan_reify r;
+  lazymatch goal with
+  | |- rinterp _ ?env ?e1 = rinterp _ _ ?e2 =>
+      let mode := lazymatch o with
+                  | tt => constr:(0%N)
+                  | _ => lazymatch type of o with
+                         | oddroot _ => constr:(1%N)
+                         | negroot _ => constr:(2%N)
+                         | realroot _ => constr:(3%N)
+                         end
+                  end in
+      let b := lazymatch mode with 3%N => constr:(true) | _ => constr:(false)
+               end in
+      let p1 := eval vm_compute in (frac_split b e1) in
+      let p2 := eval vm_compute in (frac_split b e2) in
+      lazymatch p1 with (?f1, ?cs1) =>
+      lazymatch p2 with (?f2, ?cs2) =>
+      let c := lazymatch mode with
+               | 0%N => eval vm_compute in (radcan_check f1 f2)
+               | 1%N => eval vm_compute in (radcan_check_odd f1 f2)
+               | 2%N => eval vm_compute in (radcan_check_neg f1 f2)
+               | 3%N => eval vm_compute in (radcan_check_real f1 f2)
+               end in
+      lazymatch c with
+      | Some ?cs =>
+          lazymatch refined with
+          | true =>
+              let rcs := eval vm_compute in (refine (cs1 ++ cs2 ++ cs)) in
+              lazymatch mode with
+              | 0%N => apply: (@radcan_eq_frac_refined _ r env
+                         e1 e2 f1 f2 cs1 cs2 cs rcs)
+              | 1%N => apply: (@radcan_eq_frac_refined_odd _ r env o
+                         e1 e2 f1 f2 cs1 cs2 cs rcs)
+              | 2%N => apply: (@radcan_eq_frac_refined_neg _ r env o
+                         e1 e2 f1 f2 cs1 cs2 cs rcs)
+              | 3%N => apply: (@radcan_eq_frac_refined_real _ r env o
+                         e1 e2 f1 f2 cs1 cs2 cs rcs)
+              end;
+              [vm_compute; reflexivity | vm_compute; reflexivity
+              | vm_compute; reflexivity | vm_compute; reflexivity
+              | radcan_split_rconds]
+          | false =>
+              lazymatch mode with
+              | 0%N => apply: (@radcan_eq_frac _ r env
+                         e1 e2 f1 f2 cs1 cs2 cs)
+              | 1%N => apply: (@radcan_eq_frac_odd _ r env o
+                         e1 e2 f1 f2 cs1 cs2 cs)
+              | 2%N => apply: (@radcan_eq_frac_neg _ r env o
+                         e1 e2 f1 f2 cs1 cs2 cs)
+              | 3%N => apply: (@radcan_eq_frac_real _ r env o
+                         e1 e2 f1 f2 cs1 cs2 cs)
+              end;
+              [vm_compute; reflexivity | vm_compute; reflexivity
+              | vm_compute; reflexivity | radcan_split_conds]
+          end
+      | None => fail "radcan_frac: the normal forms differ"
+      end end end
+  end.
+
+(* the dispatch of radcan_gen *)
+Ltac radcan_frac_only refined :=
+  rewrite ?normr_rootR;
+  lazymatch goal with
+  | |- context [proot ?r _ _] =>
+      lazymatch goal with
+      | rl : realroot r |- _ =>
+          rewrite ?(normr_proot rl); radcan_frac_with_gen refined r rl
+      | o : oddroot r |- _ => radcan_frac_with_gen refined r o
+      | w : negroot r |- _ => radcan_frac_with_gen refined r w
+      | _ => radcan_frac_with_gen refined r tt
+      end
+  | |- context [@nthroot ?C _ _] =>
+      radcan_frac_with_gen refined (rootC_posroot C) (rootC_negroot C)
+  | |- context [@rootR ?R _ _] =>
+      radcan_frac_with_gen refined (rootR_posroot R) (rootR_realroot R)
+  end.
+
+(* plain check first, so that the goals it proves keep their conditions *)
+Ltac radcan_gen refined :=
+  first [radcan_plain_gen refined | radcan_frac_only refined].
 
 Ltac radcan_with r := radcan_with_gen true r tt.
 Ltac radcan := radcan_gen true.

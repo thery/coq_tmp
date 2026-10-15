@@ -1,11 +1,13 @@
 (******************************************************************************)
 (* Paper: the examples of Caviness & Fateman, Simplification of Radical       *)
 (* Expressions (radcan.md).                                                   *)
-(* Proved: section 2 phase 3 and form 2, (1) as an identity and as a        *)
-(* quotient, (8), (3) with the corrected E, and the rationalisation of D.     *)
+(* Proved: section 2 (phase 3, form 1, form 2, the nested example), (1) as   *)
+(* an identity and as a quotient, (8), (3) with the corrected E, the          *)
+(* rationalisation of D, and (4) = (6) on C with omega = 3.-root (-1).        *)
 (* Refused because false: (3) as printed, E with the printed 54 x (the right  *)
 (* coefficient is 108 x).                                                     *)
-(* Out of scope: (2) and (4) = (6) on C, the nested example.                  *)
+(* Not proved: (2) on C (false for principal roots; needs a cyclotomic        *)
+(* relation in the paper's reading).                                          *)
 (******************************************************************************)
 
 From mathcomp Require Import all_boot all_order all_algebra.
@@ -45,9 +47,11 @@ Lemma form1 : -1 <= x ->
     proot r 6 ((x + 2) ^+ 2).
 Proof. move=> h. radcan. exact: h. Qed.
 
-(* the nested example of §2 is out of scope *)
-Goal \sqrt (x ^+ 2 + 3 * x + 3 + \sqrt (x + 1) * \sqrt (x + 1)) = x + 2.
-Proof. Fail radcan. Abort.
+(* the nested example of §2 (M13): the inner radicand is normalised first;
+   raw: 0 <= x + 1, 0 <= x + 2   refined: -1 <= x *)
+Lemma nested : -1 <= x ->
+  \sqrt (x ^+ 2 + 3 * x + 3 + \sqrt (x + 1) * \sqrt (x + 1)) = x + 2.
+Proof. move=> h. radcan. exact: h. Qed.
 
 (* (3) as printed is FALSE (check at x = 5/2): radcan refuses it *)
 Goal (x + \sqrt 2 + proot r 3 9) *
@@ -98,4 +102,12 @@ Proof. Fail radcan. Abort.
 Goal 4.-root (x - 1) / 4.-root (1 - x)
      - 4.-root (x - 1) ^+ 3 / 4.-root (1 - x) ^+ 3 - 2.-root 2 = 0.
 Proof. Fail radcan. Abort.
+(* (4) = (6), with omega = 3.-root (-1) (= omega_6 ^+ 2 in the paper's
+   convention omega_m = e^(i pi / m); the printed omega_6 makes it false);
+   raw: 0 <= x ^+ 2 + 1   refined: -1 <= x ^+ 2 *)
+Lemma eq46 : -1 <= x ^+ 2 ->
+  (4.-root 2 + 2.-root 3 * 3.-root (- (x ^+ 2 + 1))) / 2.-root (x ^+ 2 + 1) =
+  1 / (x ^+ 2 + 1) * 4.-root 2 * 6.-root (x ^+ 2 + 1) ^+ 3 +
+  1 / (x ^+ 2 + 1) * 3.-root (-1) * 2.-root 3 * 6.-root (x ^+ 2 + 1) ^+ 5.
+Proof. move=> h. radcan. exact: h. Qed.
 End PaperC.

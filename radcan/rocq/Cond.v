@@ -2,6 +2,10 @@
 (* Cond: the normaliser with side conditions, and its soundness.              *)
 (*   rmode            == MStd (any posroot), MOdd (needs an oddroot: real odd *)
 (*                       roots), MNeg (needs a negroot: roots of -1, as on C) *)
+(*                       MNegW (MNeg preferring omega_n to a flipped base),   *)
+(*                       MReal (needs a realroot: odd roots without sign      *)
+(*                       conditions), MRealA (MReal, and |B| = proot 2 (B^2)  *)
+(*                       for even roots of even powers, no condition)         *)
 (*   nf_simp m p      == reduce proot n B ^+ k (n <= k); merge proot n B,     *)
 (*                       proot m B over lcm n m and reduce the index by       *)
 (*                       gcd k n (0 <= B); cancel P * D^-1 by exact division  *)
@@ -14,11 +18,17 @@
 (*                       roots rationalised (M11, Ratio.v); radcan_check_raw  *)
 (*                       uses it only when the plain normal forms differ      *)
 (*   normc0 e         == root-free normaliser (sound for any root function)   *)
+(*   mk_basis_n       == basis of the radicands, plus the square-free factors *)
+(*                       of nested radicands whose normal form is root-free   *)
 (*   radcan_check e1 e2 == Some cs when both sides have the same normal form  *)
 (*                       under the conditions cs; radcan_check_odd,           *)
-(*                       radcan_check_neg: the same in modes MOdd, MNeg       *)
+(*                       radcan_check_neg: the same in modes MOdd, MNeg (then *)
+(*                       MNegW); radcan_check_real: MRealA, then MReal        *)
+(*   radcan_check_irr == the basis refined by irreducible factors (M16, form  *)
+(*                       1, Poly.irr_basis): stronger conditions, so the      *)
+(*                       checkers try it last (radcan_check_rootf true)       *)
 (*   radcan_eq_cond, radcan_eq_cond0, radcan_eq_cond_odd,                     *)
-(*   radcan_eq_cond_neg == the decision theorems used by the tactics          *)
+(*   radcan_eq_cond_neg, radcan_eq_cond_real == the decision theorems         *)
 (* omega_n = proot n (-1), omega_n ^+ n = -1; omega atoms of different        *)
 (* indices are never merged.                                                  *)
 (******************************************************************************)
@@ -27,17 +37,27 @@ From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
 From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono Factor NF.
-From Radcan Require Import Inverse Poly Ratio.
+From Radcan Require Import Inverse Poly Ratio RealRoot.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Inductive rmode := MStd | MOdd | MNeg.
+(* MNegW: MNeg preferring omega_n to a flipped base (fallback of MNeg)
+   MReal: real field (realroot), odd roots of any sign split and reduced
+   without condition; MRealA: the same, and even roots of even powers give
+   absolute values |B| = proot 2 (B ^+ 2) (no condition) *)
+Inductive rmode := MStd | MOdd | MNeg | MNegW | MReal | MRealA.
 
-Definition odd_mode (m : rmode) : bool := if m is MOdd then true else false.
-Definition neg_mode (m : rmode) : bool := if m is MNeg then true else false.
+Definition odd_mode (m : rmode) : bool :=
+  match m with MOdd | MReal | MRealA => true | _ => false end.
+Definition neg_mode (m : rmode) : bool :=
+  match m with MNeg | MNegW => true | _ => false end.
+Definition real_mode (m : rmode) : bool :=
+  match m with MReal | MRealA => true | _ => false end.
+Definition abs_mode (m : rmode) : bool := if m is MRealA then true else false.
+Definition negw_mode (m : rmode) : bool := if m is MNegW then true else false.
 
 (* the radicand -1: ARoot n omega_c is omega_n = proot n (-1) *)
 Definition omega_c : rexpr := RCst (Zneg xH).
@@ -110,13 +130,27 @@ Definition reducible (m : rmode) (v : vmono) : bool :=
 Definition ge0_cond (m : rmode) (e : rexpr) : seq cond :=
   if neg_mode m && is_omega e then [::] else [:: CGe0 e].
 
+(* mode MReal: odd roots need no sign condition *)
+Definition ge0_condn (m : rmode) (n : positive) (e : rexpr) : seq cond :=
+  if real_mode m && odd (Pos.to_nat n) then [::] else ge0_cond m e.
+
+(* every root of e in v has an odd index *)
+Definition vodd_root (e : rexpr) (v : vmono) : bool :=
+  all (fun ak => if ak.1 is ARoot n e' then
+                   cmp_eqb (rexpr_cmp e e') ==> odd (Pos.to_nat n)
+                 else true) v.
+
+Definition merge_cond (m : rmode) (e : rexpr) (v : vmono) : seq cond :=
+  if real_mode m && vodd_root e v then [::] else [:: CGe0 e].
+
 Definition reduce_term (m : rmode) (t : coef * key) : nf * seq cond :=
   if vextract t.2.1 is Some (n, e, k, w) then
     let N := Pos.to_nat n in
     (nf_mul [:: (t.1, (vmono_mul (vsingle (ARoot n e) (k %% N)) w, t.2.2))]
-            (nf_pow (pnorm e) (k %/ N)), ge0_cond m e)
+            (nf_pow (pnorm e) (k %/ N)), ge0_condn m n e)
   else if vmerge m t.2.1 is Some (n, e, k, w) then
-    ([:: (t.1, (vmono_mul (vsingle (ARoot n e) k) w, t.2.2))], [:: CGe0 e])
+    ([:: (t.1, (vmono_mul (vsingle (ARoot n e) k) w, t.2.2))],
+     merge_cond m e t.2.1)
   else ([:: t], [::]).
 
 Definition nf_reduce1 (m : rmode) (p : nf) : nf * seq cond :=
@@ -238,6 +272,33 @@ Definition root_split (n : positive) (c : coef) (l : seq (nf * nat))
     else root_prod n c l
   else root_prod n c l.
 
+(* mode MReal, odd n: proot n (c * prod B ^+ k) split without condition *)
+Definition root_prod_m (m : rmode) (n : positive) (c : coef)
+  (l : seq (nf * nat)) : option (nf * seq cond) :=
+  if real_mode m && odd (Pos.to_nat n) then
+    if num_root n c is Some (q, cs) then
+      Some (nf_mul q (nf_prod (map (fun bk => (root_atom n (nf_to_rexpr bk.1),
+                                              bk.2)) l)), cs)
+    else None
+  else root_prod n c l.
+
+Definition root_split_m (m : rmode) (n : positive) (c : coef)
+  (l : seq (nf * nat)) : option (nf * seq cond) :=
+  if l is [:: (b, 1%N)] then
+    if c_eqb c c_one then Some (root_atom n (nf_to_rexpr b), [::])
+    else root_prod_m m n c l
+  else root_prod_m m n c l.
+
+(* mode MRealA: |B| is the atom proot 2 (B ^+ 2); under an even root a     *)
+(* factor B ^+ k with k even is read as |B| ^+ k (no condition)             *)
+Definition abs_nf (b : nf) : nf := root_atom 2 (RPow (nf_to_rexpr b) 2).
+
+Definition absify (m : rmode) (n : positive) (l : seq (nf * nat)) :
+  seq (nf * nat) :=
+  if abs_mode m && ~~ odd (Pos.to_nat n) then
+    map (fun bk => if odd bk.2 then bk else (abs_nf bk.1, bk.2)) l
+  else l.
+
 (* c * prod B^k with c < 0 becomes (-c) * (-B1)^k1 * prod B^k, B1 the first
    factor with an odd exponent such that P B1 *)
 Fixpoint flip_odd_gen (P : nf -> bool) (l : seq (nf * nat)) :
@@ -279,16 +340,18 @@ Definition nf_rootE (m : rmode) (hs : seq nf) (bs : seq nf) (n : positive)
     if nf_eqb p (nf_mul rem (nf_prod l)) && all (fun bk => nf_wf bk.1) l then
       if c_neg c then
         if oddn then
-          (if root_split n (c_opp c) l is Some (q, cs) then (nf_opp q, cs)
+          (if root_split_m m n (c_opp c) l is Some (q, cs) then (nf_opp q, cs)
            else giveup)
-        else if flip_odd hs l is Some l' then
-          (if root_split n (c_opp c) l' is Some res then res else giveup)
+        else if (if negw_mode m then None else flip_odd hs l) is Some l' then
+          (if root_split_m m n (c_opp c) (absify m n l') is Some res then res
+           else giveup)
         else if neg_mode m then
           (if root_prod n (c_opp c) l is Some (q, cs)
            then (nf_mul q (omega_nf n), cs) else giveup)
         else giveup
       else if trivial_dec rem l then giveup
-      else if root_prod n c l is Some res then res else giveup
+      else if root_prod_m m n c (absify m n l) is Some res then res
+      else giveup
     else giveup
   else giveup.
 
@@ -375,25 +438,89 @@ Fixpoint normcr (rt : bool) (m : rmode) (hs : seq nf) (bs : seq nf)
 Definition normc := normcr false.
 
 (* normal forms of both sides, with the side conditions used *)
+(* nested radicands: a radicand containing roots whose normal form is a
+   polynomial without root atom adds its square-free factors to the basis *)
+Definition root_free (p : nf) : bool :=
+  ispoly p &&
+  all (fun t => all (fun ak => if ak.1 is ARoot _ _ then false else true)
+                    t.2.1) p.
+
+Definition nested_polys (rt : bool) (m : rmode) (hs bs : seq nf)
+  (es : seq rexpr) : seq nf :=
+  foldr (fun a acc => if no_root a then acc else
+                      let p := (normcr rt m hs bs a).1 in
+                      if root_free p then p :: acc else acc)
+        [::] (flatten (map radicands es)).
+
+Definition mk_basis_n (rt : bool) (m : rmode) (hs : seq nf)
+  (es : seq rexpr) : seq nf :=
+  let bs := mk_basis es in
+  let ps := nested_polys rt m hs bs es in
+  foldl (fun bs p =>
+           foldl (fun bs a => pb_insert 64 (pnormal a) bs) bs (sqf 16 p))
+        bs ps.
+
+(* mode MReal: conditions 0 <= e with e syntactically nonnegative on a real
+   field (even powers, roots of such, positive constants) are dropped *)
+Fixpoint nonneg_syn (e : rexpr) : bool :=
+  match e with
+  | RCst z => Z.leb 0 z
+  | RRoot _ _ => true
+  | RRootE _ a | RInv a => nonneg_syn a
+  | RPow a k => ~~ odd k || nonneg_syn a
+  | RAdd a b | RMul a b => nonneg_syn a && nonneg_syn b
+  | _ => false
+  end.
+
+Definition cfilter (m : rmode) (cs : seq cond) : seq cond :=
+  if real_mode m then
+    filter (fun c => if c is CGe0 e then ~~ nonneg_syn e else true) cs
+  else cs.
+
+Definition radcan_nfb (rt : bool) (m : rmode) (hs bs : seq nf)
+  (e1 e2 : rexpr) : nf * nf * seq cond :=
+  let: (p1, c1) := normcr rt m hs bs e1 in
+  let: (p2, c2) := normcr rt m hs bs e2 in
+  (p1, p2, cfilter m (cdedup (c1 ++ c2))).
+
 Definition radcan_nfr (rt : bool) (m : rmode) (e1 e2 : rexpr) :
   nf * nf * seq cond :=
-  let bs := mk_basis [:: e1; e2] in
   let hs := neg_hints [:: e1; e2] in
-  let: (p1, c1) := normcr rt m hs bs e1 in
-  let: (p2, c2) := normcr rt m hs bs e2 in (p1, p2, cdedup (c1 ++ c2)).
+  radcan_nfb rt m hs (mk_basis_n rt m hs [:: e1; e2]) e1 e2.
 
 Definition radcan_nf := radcan_nfr false.
 
-Definition radcan_check_rt (rt : bool) (m : rmode) (e1 e2 : rexpr) :
-  option (seq cond) :=
-  let: (p1, p2, cs) := radcan_nfr rt m e1 e2 in
+Definition radcan_check_bs (rt : bool) (m : rmode) (hs bs : seq nf)
+  (e1 e2 : rexpr) : option (seq cond) :=
+  let: (p1, p2, cs) := radcan_nfb rt m hs bs e1 e2 in
   if nf_eqb p1 p2 then Some cs else None.
 
+Definition radcan_check_rt (rt : bool) (m : rmode) (e1 e2 : rexpr) :
+  option (seq cond) :=
+  let hs := neg_hints [:: e1; e2] in
+  radcan_check_bs rt m hs (mk_basis_n rt m hs [:: e1; e2]) e1 e2.
+
+(* M16: the basis refined by irreducible factors (form 1); None when no   *)
+(* element splits.  Splitting strengthens the conditions (0 <= x - 1,     *)
+(* 0 <= x + 1 instead of 0 <= x ^ 2 - 1): used only as a fallback         *)
+Definition radcan_check_irr (rt : bool) (m : rmode) (e1 e2 : rexpr) :
+  option (seq cond) :=
+  let hs := neg_hints [:: e1; e2] in
+  let bs := mk_basis_n rt m hs [:: e1; e2] in
+  let bs' := irr_basis bs in
+  if size bs' == size bs then None else radcan_check_bs rt m hs bs' e1 e2.
+
 (* M11: mixed denominators are rationalised only when the plain normal      *)
-(* forms differ                                                              *)
-Definition radcan_check_raw (m : rmode) (e1 e2 : rexpr) : option (seq cond) :=
-  if radcan_check_rt false m e1 e2 is Some cs then Some cs
+(* forms differ; fa: irreducible basis (M16)                                 *)
+Definition radcan_check_rawf (fa : bool) (m : rmode) (e1 e2 : rexpr) :
+  option (seq cond) :=
+  if fa then
+    if radcan_check_irr false m e1 e2 is Some cs then Some cs
+    else radcan_check_irr true m e1 e2
+  else if radcan_check_rt false m e1 e2 is Some cs then Some cs
   else radcan_check_rt true m e1 e2.
+
+Definition radcan_check_raw := radcan_check_rawf false.
 
 (* Constant radicands over a common coprime basis: every RRoot n p of the
    goal becomes prod_i RRoot n b_i ^ k_i (product checked), b_i small primes
@@ -417,11 +544,8 @@ Definition const_neg (a : rexpr) : option positive :=
 
 (* the radicand of RRootE n a read as - p (mode MOdd with n odd, MNeg) *)
 Definition odd_neg (m : rmode) (n : positive) (a : rexpr) : option positive :=
-  match m with
-  | MStd => None
-  | MOdd => if odd (Pos.to_nat n) then const_neg a else None
-  | MNeg => const_neg a
-  end.
+  if odd_mode m then (if odd (Pos.to_nat n) then const_neg a else None)
+  else if neg_mode m then const_neg a else None.
 
 Fixpoint rconsts (m : rmode) (e : rexpr) : seq positive :=
   match e with
@@ -460,10 +584,12 @@ Fixpoint cb_rw (m : rmode) (cb : seq int) (e : rexpr) : rexpr :=
   | RCst _ | RVar _ => e
   end.
 
-Definition radcan_check_root (m : rmode) (e1 e2 : rexpr) :
+Definition radcan_check_rootf (fa : bool) (m : rmode) (e1 e2 : rexpr) :
   option (seq cond) :=
   let cb := const_basis (rconsts m e1 ++ rconsts m e2) in
-  radcan_check_raw m (cb_rw m cb e1) (cb_rw m cb e2).
+  radcan_check_rawf fa m (cb_rw m cb e1) (cb_rw m cb e2).
+
+Definition radcan_check_root := radcan_check_rootf false.
 
 (* Root-free normaliser: sound for any root function *)
 
@@ -514,18 +640,38 @@ Definition radcan_check0 (e1 e2 : rexpr) : option (seq cond) :=
   let: (p2, c2) := normc0 e2 in
   if nf_eqb p1 p2 then Some (cdedup (c1 ++ c2)) else None.
 
-(* the checkers: any posroot, with an oddroot, with a negroot *)
+(* the checkers: any posroot, with an oddroot, with a negroot; the    *)
+(* irreducible basis (M16) is tried last                                *)
 Definition radcan_check (e1 e2 : rexpr) : option (seq cond) :=
   if no_root e1 && no_root e2 then radcan_check0 e1 e2
-  else radcan_check_root MStd e1 e2.
+  else if radcan_check_root MStd e1 e2 is Some cs then Some cs
+  else radcan_check_rootf true MStd e1 e2.
 
 Definition radcan_check_odd (e1 e2 : rexpr) : option (seq cond) :=
   if no_root e1 && no_root e2 then radcan_check0 e1 e2
-  else radcan_check_root MOdd e1 e2.
+  else if radcan_check_root MOdd e1 e2 is Some cs then Some cs
+  else radcan_check_rootf true MOdd e1 e2.
 
+(* MNegW (omega_n preferred to a flipped base) only when MNeg fails *)
 Definition radcan_check_neg (e1 e2 : rexpr) : option (seq cond) :=
   if no_root e1 && no_root e2 then radcan_check0 e1 e2
-  else radcan_check_root MNeg e1 e2.
+  else if radcan_check_root MNeg e1 e2 is Some cs then Some cs
+  else if radcan_check_root MNegW e1 e2 is Some cs then Some cs
+  else if radcan_check_rootf true MNeg e1 e2 is Some cs then Some cs
+  else radcan_check_rootf true MNegW e1 e2.
+
+(* real fields: absolute values first (MRealA), then MReal *)
+Definition radcan_check_real (e1 e2 : rexpr) : option (seq cond) :=
+  if no_root e1 && no_root e2 then radcan_check0 e1 e2
+  else if radcan_check_root MRealA e1 e2 is Some cs then Some cs
+  else if radcan_check_root MReal e1 e2 is Some cs then Some cs
+  else if radcan_check_rootf true MRealA e1 e2 is Some cs then Some cs
+  else radcan_check_rootf true MReal e1 e2.
+
+Lemma ocase_some (T : Type) (a b : option T) x :
+  (if a is Some y then Some y else b) = Some x -> a = Some x \/ b = Some x.
+Proof. by case: a => [y [->]|]; [left | right]. Qed.
+Arguments ocase_some {T a b x}.
 
 Local Open Scope ring_scope.
 
@@ -536,8 +682,9 @@ Variable r : posroot F.
 Variable env : seq F.
 (* odd mode: only used with an oddroot, neg mode: only with a negroot *)
 Variable mo : rmode.
-Hypothesis Ho : mo = MOdd -> oddroot r.
-Hypothesis Hng : mo = MNeg -> negroot r.
+Hypothesis Ho : odd_mode mo -> oddroot r.
+Hypothesis Hng : neg_mode mo -> negroot r.
+Hypothesis Hrl : real_mode mo -> realroot r.
 
 Local Notation fct_interp := (fct_interp r).
 Local Notation mono_interp := (mono_interp r).
@@ -642,6 +789,96 @@ case: ifP => [/andP[Hn /is_omegaP ->] _|_ /holds_cons [He _]].
 exact: prootK.
 Qed.
 
+(* mode MReal: odd roots of any sign *)
+
+Lemma ge0_condnK n e : holds (ge0_condn mo n e) ->
+  proot r (Pos.to_nat n) (rinterp r env e) ^+ Pos.to_nat n = rinterp r env e.
+Proof.
+rewrite /ge0_condn; case: ifP => [/andP[Hm On] _|_]; last exact: ge0_condK.
+exact: (proot_oddK (Hrl Hm)).
+Qed.
+
+Lemma vfind_root_odd e v m k w : vfind_root e v = Some (m, k, w) ->
+  vodd_root e v -> odd (Pos.to_nat m).
+Proof.
+elim: v m k w => [|[a k'] v IH] m k w //=.
+move=> H /andP[Ha Hv]; move: H.
+have Hrest : (if vfind_root e v is Some (m', k'', w') then
+                Some (m', k'', (a, k') :: w') else None) = Some (m, k, w) ->
+             odd (Pos.to_nat m).
+  by case E : (vfind_root e v) => [[[m1 k1] w1]|] // [<- _ _]; apply: IH E Hv.
+case: a Hrest Ha => [i|e'|m' e'] Hrest //= Ha.
+by case: ifP Ha => [_ /= Om [<- _ _] //|_ _ /Hrest].
+Qed.
+
+Lemma proot_expr_lift_odd (rl : realroot r) n l e a :
+  (0 < n)%N -> (n %| l)%N -> odd l ->
+  proot r n a ^+ e = proot r l a ^+ (e * (l %/ n)).
+Proof.
+move=> n0 nl Ol.
+have El : (n * (l %/ n))%N = l by rewrite mulnC divnK.
+by rewrite mulnC exprM -{1}El proot_odd_exprMn // El.
+Qed.
+
+Lemma proot_expr_div_odd (rl : realroot r) n g k a :
+  (0 < g)%N -> (g %| n)%N -> (g %| k)%N -> odd n ->
+  proot r n a ^+ k = proot r (n %/ g) a ^+ (k %/ g).
+Proof.
+move=> g0 gn gk On.
+have En : (n %/ g * g)%N = n by rewrite divnK.
+by rewrite -{1}(divnK gk) mulnC exprM -{1}En proot_odd_exprMn ?En.
+Qed.
+
+Lemma rexpr_cmp_refl e : rexpr_cmp e e = Eq.
+Proof.
+elim: e => [z|i|n p|n a IHa|a IHa b IHb|a IHa|a IHa b IHb|a IHa b IHb|
+            a IHa k|a IHa] //=;
+  by rewrite ?IHa ?IHb ?Z.compare_refl ?Nat.compare_refl ?Pos.compare_refl.
+Qed.
+
+Lemma odd_lcmn a b : odd a -> odd b -> odd (lcmn a b).
+Proof.
+move=> Oa Ob; apply: (@dvdn_odd _ (a * b)); last by rewrite oddM Oa.
+by rewrite dvdn_lcm dvdn_mulr // dvdn_mull.
+Qed.
+
+Lemma vmerge_sound_odd (rl : realroot r) v n e k w :
+  vmerge mo v = Some (n, e, k, w) -> vodd_root e v ->
+  vmono_interp v = atom_interp (ARoot n e) ^+ k * vmono_interp w.
+Proof.
+elim: v n e k w => [|[a k'] v IH] n e k w //=.
+have Hrest : (if vmerge mo v is Some (n', e', k'', w') then
+                Some (n', e', k'', (a, k') :: w') else None) =
+             Some (n, e, k, w) -> vodd_root e v ->
+             vmono_interp ((a, k') :: v) =
+             atom_interp (ARoot n e) ^+ k * vmono_interp w.
+  case E : (vmerge mo v) => [[[[n1 e1] k1] w1]|] // [<- <- <- <-] He.
+  by rewrite !vmono_interp_cons (IH _ _ _ _ E He) mulrCA.
+case: a Hrest => [i|e'|n' e'] Hrest.
+- by move=> H /andP[_ Hv]; apply: Hrest H Hv.
+- by move=> H /andP[_ Hv]; apply: Hrest H Hv.
+case: ifP => [_ H /andP[_ Hv]|_]; first exact: Hrest H Hv.
+have N0 : (0 < Pos.to_nat n')%N by apply/ssrnat.ltP; exact: Pos2Nat.is_pos.
+case Ef : (vfind_root e' v) => [[[m k2] w2]|].
+  have M0 : (0 < Pos.to_nat m)%N by apply/ssrnat.ltP; exact: Pos2Nat.is_pos.
+  move=> [<- <- <- <-] /andP[/= Hn Hv].
+  move: Hn; rewrite rexpr_cmp_refl /= => On.
+  have Om := vfind_root_odd Ef Hv.
+  have L0 : (0 < lcmn (Pos.to_nat n') (Pos.to_nat m))%N by rewrite lcmn_gt0 N0.
+  rewrite vmono_interp_cons (vfind_root_sound Ef) mulrA /=.
+  rewrite Nat2Pos.id; last first.
+    by apply/eqP; rewrite -lt0n.
+  rewrite exprD -!(proot_expr_lift_odd rl) ?dvdn_lcml ?dvdn_lcmr //.
+  1,2: exact: odd_lcmn.
+case: ifP => [g1 [<- <- <- <-] /andP[/= Hn _]|_ H /andP[_ Hv]]; last first.
+  exact: Hrest H Hv.
+move: Hn; rewrite rexpr_cmp_refl /= => On.
+have g0 : (0 < gcdn k' (Pos.to_nat n'))%N by rewrite gcdn_gt0 N0 orbT.
+rewrite vmono_interp_cons /= Nat2Pos.id; last first.
+  by apply/eqP; rewrite -lt0n divn_gt0 // dvdn_leq // dvdn_gcdr.
+by rewrite -(proot_expr_div_odd rl) ?dvdn_gcdr ?dvdn_gcdl.
+Qed.
+
 Lemma reduce_term_sound t : holds (reduce_term mo t).2 ->
   nf_interp (reduce_term mo t).1 = C2F t.1 * key_interp t.2.
 Proof.
@@ -649,10 +886,15 @@ case: t => c [v m]; rewrite /reduce_term /=.
 case E : (vextract v) => [[[[n e] k] w]|] /=; last first.
   case Em : (vmerge mo v) => [[[[n e] k] w]|] /=; last first.
     by rewrite nf_interp_cons nf_interp_nil addr0.
-  case/holds_cons => /= He _.
+  have Hv : holds (merge_cond mo e v) ->
+     vmono_interp v = atom_interp (ARoot n e) ^+ k * vmono_interp w.
+    rewrite /merge_cond; case: ifP => [/andP[Hm Hod] _|_].
+      exact: (vmerge_sound_odd (Hrl Hm) Em).
+    by case/holds_cons => /= He _; apply: vmerge_sound Em He.
+  move/Hv => {}Hv.
   rewrite nf_interp_cons nf_interp_nil addr0 /key_interp /=.
-  by rewrite vmono_mul_sound vsingle_sound (vmerge_sound Em He) mulrA.
-move=> /(ge0_condK n) He.
+  by rewrite vmono_mul_sound vsingle_sound Hv mulrA.
+move=> /ge0_condnK He.
 rewrite nf_mul_sound nf_pow_sound -pnorm_sound.
 rewrite nf_interp_cons nf_interp_nil addr0.
 rewrite /key_interp /= vmono_mul_sound vsingle_sound (vextract_sound E) /=.
@@ -888,6 +1130,59 @@ have := Hl (CGe0 (nf_to_rexpr bk.1)); rewrite /= nf_to_rexpr_sound //.
 by apply; left.
 Qed.
 
+Lemma proot_prod_odd (rl : realroot r) N (l : seq (nf * nat)) : odd N ->
+  proot r N (\prod_(bk <- l) nf_interp bk.1 ^+ bk.2) =
+  \prod_(bk <- l) proot r N (nf_interp bk.1) ^+ bk.2.
+Proof.
+move=> ON; have N0 : (0 < N)%N by case: N ON.
+elim: l => [|bk l IH]; first by rewrite !big_nil proot_1.
+by rewrite !big_cons (proot_oddM rl) // (proot_oddX rl) // IH.
+Qed.
+
+Lemma root_prod_m_sound n c l res : root_prod_m mo n c l = Some res ->
+  holds res.2 -> all (fun bk => nf_wf bk.1) l ->
+  nf_interp res.1 =
+  proot r (Pos.to_nat n) (C2F c * \prod_(bk <- l) nf_interp bk.1 ^+ bk.2).
+Proof.
+rewrite /root_prod_m; case: ifP => [/andP[Hm On]|_]; last first.
+  exact: root_prod_sound.
+case En : (num_root n c) => [[q cs]|] // [<-] /= /(num_root_sound En) [c0 Hq].
+move=> Hwf.
+have Hw : forall bk, List.In bk l -> nf_wf bk.1 by move=> bk; apply: all_In Hwf.
+rewrite nf_mul_sound Hq nf_prod_sound big_map root_atoms_prod //.
+by rewrite (proot_oddM (Hrl Hm)) // (proot_prod_odd (Hrl Hm)).
+Qed.
+
+Lemma root_split_m_sound n c l res : root_split_m mo n c l = Some res ->
+  holds res.2 -> all (fun bk => nf_wf bk.1) l ->
+  nf_interp res.1 =
+  proot r (Pos.to_nat n) (C2F c * \prod_(bk <- l) nf_interp bk.1 ^+ bk.2).
+Proof.
+rewrite /root_split_m.
+case: l => [|[b [|[|k]]] [|bk l]]; try exact: root_prod_m_sound.
+case: ifP => [/(@c_eqbP F _ _) Hc [<-] _ /andP[wb _]|_]; last first.
+  exact: root_prod_m_sound.
+rewrite /root_atom nf_atom1 /= nf_to_rexpr_sound // Hc C2F_c_one mul1r.
+by rewrite big_seq1 expr1.
+Qed.
+
+Lemma absify_sound n l : all (fun bk => nf_wf bk.1) l ->
+  \prod_(bk <- absify mo n l) nf_interp bk.1 ^+ bk.2 =
+    \prod_(bk <- l) nf_interp bk.1 ^+ bk.2 /\
+  all (fun bk => nf_wf bk.1) (absify mo n l).
+Proof.
+rewrite /absify; case: ifP => [/andP[Hm _]|_] Hwf //; split; last first.
+  elim: (l) Hwf => //= -[b k] l' IH /andP[wb /IH ->].
+  by case: ifP; rewrite /= ?wb.
+have Hr : real_mode mo by case: (mo) Hm.
+elim: l Hwf => [|[b k] l IH] /=; first by rewrite !big_nil.
+case/andP => /= wb /IH {}IH; rewrite !big_cons IH; congr (_ * _).
+case: ifP => //= Ek.
+rewrite /abs_nf /root_atom nf_atom1 /= nf_to_rexpr_sound //.
+rewrite (proot_sqr (Hrl Hr)) -(odd_double_half k) Ek add0n.
+by rewrite -mul2n !exprM real_normK // (realroot_real (Hrl Hr)).
+Qed.
+
 Lemma nf_rootE_sound hs bs n e0 p : rinterp r env e0 = nf_interp p ->
   holds (nf_rootE mo hs bs n e0 p).2 ->
   nf_interp (nf_rootE mo hs bs n e0 p).1 = proot r (Pos.to_nat n) (nf_interp p).
@@ -900,12 +1195,11 @@ have Hg : nf_interp (root_atom n (if nf_wf p then nf_to_rexpr p else e0)) =
   by case: ifP => [/nf_to_rexpr_sound -> | _]; rewrite ?He.
 have HN : odd_mode mo && odd (Pos.to_nat n) -> forall a,
     proot r (Pos.to_nat n) a = - proot r (Pos.to_nat n) (- a).
-  case/andP => Hm On a; have Hor : oddroot r by apply: Ho; case: (mo) Hm.
-  by rewrite (prootN Hor) // opprK.
+  by case/andP => /Ho Hor On a; rewrite (prootN Hor) // opprK.
 have HW : neg_mode mo -> forall a, 0 <= a ->
     proot r (Pos.to_nat n) (- a) =
     proot r (Pos.to_nat n) a * nf_interp (omega_nf n).
-  move=> Hm a a0; have w : negroot r by apply: Hng; case: (mo) Hm.
+  move=> /Hng w a a0.
   by rewrite /omega_nf /root_atom nf_atom1 /= pos2F1 (prootN1 w N0 a0).
 rewrite /nf_rootE; case: p He Hg => [|t p'] He Hg.
   by rewrite /= nf_interp_nil proot_0.
@@ -929,22 +1223,25 @@ have Hpc : nf_interp p = C2F c * \prod_(bk <- l) nf_interp bk.1 ^+ bk.2.
   by rewrite Hp nf_mul_sound (const_of_sound Er) nf_prod_sound.
 case: ifP => _.
   case: ifP => [On|_].
-    case Es : (root_split n (c_opp c) l) => [[q cs]|] //= Hh.
-    rewrite nf_opp_sound (root_split_sound Es Hh Hwf) Hpc [RHS](HN On).
-    rewrite C2F_c_opp.
-    by rewrite mulNr.
-  case Ef : (flip_odd hs l) => [l'|].
-    have [Hl' Hw'] := flip_odd_sound Ef.
-    case Es : (root_split n (c_opp c) l') => [res|] // Hh.
-    by rewrite (root_split_sound Es Hh (Hw' Hwf)) Hpc Hl' C2F_c_opp mulrNN.
+    case Es : (root_split_m mo n (c_opp c) l) => [[q cs]|] //= Hh.
+    rewrite nf_opp_sound (root_split_m_sound Es Hh Hwf) Hpc [RHS](HN On).
+    by rewrite C2F_c_opp mulNr.
+  case Ef : (if negw_mode mo then None else flip_odd hs l) => [l'|].
+    have Ef' : flip_odd hs l = Some l' by move: Ef; case: ifP.
+    have [Hl' Hw'] := flip_odd_sound Ef'.
+    have [Ha Hwa] := absify_sound n (Hw' Hwf).
+    case Es : (root_split_m mo n (c_opp c) (absify mo n l')) => [res|] // Hh.
+    rewrite (root_split_m_sound Es Hh Hwa) Ha Hpc Hl' C2F_c_opp.
+    by rewrite mulrNN.
   case: ifP => [Hm|_ //].
   case Es : (root_prod n (c_opp c) l) => [[q cs]|] //= Hh.
   rewrite nf_mul_sound (root_prod_sound Es Hh Hwf).
   rewrite -HW ?(root_prod_ge0 Es Hh Hwf) //.
   by rewrite Hpc C2F_c_opp mulNr opprK.
 case: ifP => _ //.
-case Es : (root_prod n c l) => [res|] // Hh.
-by rewrite (root_prod_sound Es Hh Hwf) Hpc.
+have [Ha Hwa] := absify_sound n Hwf.
+case Es : (root_prod_m mo n c (absify mo n l)) => [res|] // Hh.
+by rewrite (root_prod_m_sound Es Hh Hwa) Ha Hpc.
 Qed.
 
 (* inverses of omega atoms (mode MNeg) *)
@@ -1061,28 +1358,73 @@ Proof. exact: normcr_sound. Qed.
 
 (* soundness of the checkers in mode mo *)
 
+(* mode MReal: the dropped conditions hold *)
+
+Lemma nonneg_syn_sound (rl : realroot r) e :
+  nonneg_syn e -> 0 <= rinterp r env e.
+Proof.
+elim: e => [[|z|z]|i|n p|n a IHa|a IHa b IHb|a IHa|a IHa b IHb|a IHa b IHb|
+            a IHa k|a IHa] //=.
+- by rewrite proot_ge0 ?pos2F_ge0 //; apply/ssrnat.ltP; exact: Pos2Nat.is_pos.
+- move/IHa => a0; rewrite proot_ge0 //.
+  by apply/ssrnat.ltP; exact: Pos2Nat.is_pos.
+- by case/andP => /IHa a0 /IHb b0; rewrite addr_ge0.
+- by case/andP => /IHa a0 /IHb b0; rewrite mulr_ge0.
+- case/orP => [Ek|/IHa a0]; last by rewrite exprn_ge0.
+  exact: real_exprn_even_ge0 (realroot_real rl _) Ek.
+by move/IHa; rewrite invr_ge0.
+Qed.
+
+Lemma cfilter_sound cs : holds (cfilter mo cs) -> holds cs.
+Proof.
+rewrite /cfilter; case: ifP => // Hm.
+elim: cs => [|c cs IH] //= H c' [<-|Hc']; last first.
+  by apply: IH Hc' => c'' Hc''; apply: H; case: ifP => _ //; right.
+case: c H => [e|e] H.
+  case: ifP H => /= [Hn H|Hn _]; first exact: (H _ (or_introl erefl)).
+  by apply: (nonneg_syn_sound (Hrl Hm)); rewrite -[nonneg_syn e]negbK Hn.
+exact: (H _ (or_introl erefl)).
+Qed.
+
+(* any basis: it only guides decompose, whose results are checked *)
+Lemma radcan_check_bs_sound rt hs bs e1 e2 cs :
+  radcan_check_bs rt mo hs bs e1 e2 = Some cs ->
+  all_conds cs -> rinterp r env e1 = rinterp r env e2.
+Proof.
+rewrite /radcan_check_bs /radcan_nfb.
+have := @normcr_sound rt hs bs e1; case: (normcr _ _ _ _ e1) => p1 c1 /= H1.
+have := @normcr_sound rt hs bs e2; case: (normcr _ _ _ _ e2) => p2 c2 /= H2.
+case: ifP => // /nf_eqb_eq Hp [<-].
+move=> /all_condsP /cfilter_sound /holds_dedup /holds_cat [/H1 -> /H2 ->].
+by rewrite Hp.
+Qed.
+
 Lemma radcan_check_rt_sound rt e1 e2 cs :
   radcan_check_rt rt mo e1 e2 = Some cs ->
   all_conds cs -> rinterp r env e1 = rinterp r env e2.
+Proof. exact: radcan_check_bs_sound. Qed.
+
+Lemma radcan_check_irr_sound rt e1 e2 cs :
+  radcan_check_irr rt mo e1 e2 = Some cs ->
+  all_conds cs -> rinterp r env e1 = rinterp r env e2.
 Proof.
-rewrite /radcan_check_rt /radcan_nfr.
-have := @normcr_sound rt (neg_hints [:: e1; e2]) (mk_basis [:: e1; e2]) e1.
-case: (normcr _ _ _ _ e1) => p1 c1 /= H1.
-have := @normcr_sound rt (neg_hints [:: e1; e2]) (mk_basis [:: e1; e2]) e2.
-case: (normcr _ _ _ _ e2) => p2 c2 /= H2.
-case: ifP => // /nf_eqb_eq Hp [<-].
-move=> /all_condsP /holds_dedup /holds_cat [/H1 -> /H2 ->].
-by rewrite Hp.
+by rewrite /radcan_check_irr; case: ifP => // _; exact: radcan_check_bs_sound.
+Qed.
+
+Theorem radcan_eq_cond_rawf fa e1 e2 cs :
+  radcan_check_rawf fa mo e1 e2 = Some cs ->
+  all_conds cs -> rinterp r env e1 = rinterp r env e2.
+Proof.
+rewrite /radcan_check_rawf; case: fa => /= /ocase_some [] H.
+- exact: radcan_check_irr_sound H.
+- exact: radcan_check_irr_sound H.
+- exact: radcan_check_rt_sound H.
+- exact: radcan_check_rt_sound H.
 Qed.
 
 Theorem radcan_eq_cond_raw e1 e2 cs : radcan_check_raw mo e1 e2 = Some cs ->
   all_conds cs -> rinterp r env e1 = rinterp r env e2.
-Proof.
-rewrite /radcan_check_raw.
-case E : (radcan_check_rt false _ _ _) => [cs'|]; last first.
-  exact: radcan_check_rt_sound.
-by case=> <-; exact: radcan_check_rt_sound E.
-Qed.
+Proof. exact: radcan_eq_cond_rawf. Qed.
 
 Lemma proot_prod_pos N l : (0 < N)%N ->
   proot r N (\prod_(bk <- l) pos2F F bk.1 ^+ bk.2) =
@@ -1138,11 +1480,12 @@ Lemma neg_root_sound cb n a p : odd_neg mo n a = Some p ->
   rinterp r env (neg_root mo cb n p) = proot r (Pos.to_nat n) (rinterp r env a).
 Proof.
 have N0 : (0 < Pos.to_nat n)%N by apply/ssrnat.ltP; exact: Pos2Nat.is_pos.
-rewrite /odd_neg /neg_root; case: (mo) Ho Hng => // Ho' Hng'.
+rewrite /odd_neg /neg_root; case: ifP => [Hm|_].
+  have -> : neg_mode mo = false by case: (mo) Hm.
   case: ifP => // On /const_neg_sound ->.
-  by rewrite /= rw_root_sound (prootN (Ho' erefl)) // opprK.
-move=> /const_neg_sound ->.
-by rewrite /= rw_root_sound pos2F1 (prootN1 (Hng' erefl) N0 (pos2F_ge0 _)).
+  by rewrite /= rw_root_sound (prootN (Ho Hm)) // opprK.
+case: ifP => // Hm /const_neg_sound ->.
+by rewrite /= rw_root_sound pos2F1 (prootN1 (Hng Hm) N0 (pos2F_ge0 _)).
 Qed.
 
 Lemma cb_rw_sound cb e : rinterp r env (cb_rw mo cb e) = rinterp r env e.
@@ -1156,12 +1499,17 @@ case E' : (odd_neg mo n e1) => [p|] /=; last by rewrite IH1.
 exact: neg_root_sound.
 Qed.
 
-Theorem radcan_eq_cond_root e1 e2 cs : radcan_check_root mo e1 e2 = Some cs ->
+Theorem radcan_eq_cond_rootf fa e1 e2 cs :
+  radcan_check_rootf fa mo e1 e2 = Some cs ->
   all_conds cs -> rinterp r env e1 = rinterp r env e2.
 Proof.
-rewrite /radcan_check_root => /radcan_eq_cond_raw H /H.
+rewrite /radcan_check_rootf => /radcan_eq_cond_rawf H /H.
 by rewrite !cb_rw_sound.
 Qed.
+
+Theorem radcan_eq_cond_root e1 e2 cs : radcan_check_root mo e1 e2 = Some cs ->
+  all_conds cs -> rinterp r env e1 = rinterp r env e2.
+Proof. exact: radcan_eq_cond_rootf. Qed.
 
 End CondSound.
 
@@ -1303,7 +1651,8 @@ Theorem radcan_eq_cond (F : numFieldType) (r : posroot F) (env : seq F)
 Proof.
 rewrite /radcan_check; case: ifP => _ H Hc.
   exact: (radcan_check0_sound H (all_conds_bridge Hc)).
-by apply: radcan_eq_cond_root H Hc.
+case/ocase_some: H => H; first exact: radcan_eq_cond_root H Hc.
+exact: radcan_eq_cond_rootf H Hc.
 Qed.
 
 Theorem radcan_eq_cond_odd (F : numFieldType) (r : posroot F) (o : oddroot r)
@@ -1313,7 +1662,8 @@ Theorem radcan_eq_cond_odd (F : numFieldType) (r : posroot F) (o : oddroot r)
 Proof.
 rewrite /radcan_check_odd; case: ifP => _ H Hc.
   exact: (radcan_check0_sound H (all_conds_bridge Hc)).
-by apply: radcan_eq_cond_root H Hc.
+case/ocase_some: H => H; first exact: radcan_eq_cond_root H Hc.
+exact: radcan_eq_cond_rootf H Hc.
 Qed.
 
 Theorem radcan_eq_odd (F : numFieldType) (r : posroot F) (o : oddroot r)
@@ -1328,13 +1678,33 @@ Theorem radcan_eq_cond_neg (F : numFieldType) (r : posroot F) (w : negroot r)
 Proof.
 rewrite /radcan_check_neg; case: ifP => _ H Hc.
   exact: (radcan_check0_sound H (all_conds_bridge Hc)).
-by apply: radcan_eq_cond_root H Hc.
+case/ocase_some: H => H; first exact: radcan_eq_cond_root H Hc.
+case/ocase_some: H => H; first exact: radcan_eq_cond_root H Hc.
+by case/ocase_some: H => H; exact: radcan_eq_cond_rootf H Hc.
 Qed.
 
 Theorem radcan_eq_neg (F : numFieldType) (r : posroot F) (w : negroot r)
     (env : seq F) e1 e2 :
   radcan_check_neg e1 e2 = Some [::] -> rinterp r env e1 = rinterp r env e2.
 Proof. by move/(radcan_eq_cond_neg w); apply. Qed.
+
+Theorem radcan_eq_cond_real (F : numFieldType) (r : posroot F)
+    (rl : realroot r) (env : seq F) e1 e2 cs :
+  radcan_check_real e1 e2 = Some cs -> all_conds r env cs ->
+  rinterp r env e1 = rinterp r env e2.
+Proof.
+have o := realroot_odd rl.
+rewrite /radcan_check_real; case: ifP => _ H Hc.
+  exact: (radcan_check0_sound H (all_conds_bridge Hc)).
+case/ocase_some: H => H; first exact: radcan_eq_cond_root H Hc.
+case/ocase_some: H => H; first exact: radcan_eq_cond_root H Hc.
+by case/ocase_some: H => H; exact: radcan_eq_cond_rootf H Hc.
+Qed.
+
+Theorem radcan_eq_real (F : numFieldType) (r : posroot F) (rl : realroot r)
+    (env : seq F) e1 e2 :
+  radcan_check_real e1 e2 = Some [::] -> rinterp r env e1 = rinterp r env e2.
+Proof. by move/(radcan_eq_cond_real rl); apply. Qed.
 
 Theorem radcan_eq (F : numFieldType) (r : posroot F) (env : seq F) e1 e2 :
   radcan_check e1 e2 = Some [::] -> rinterp r env e1 = rinterp r env e2.
