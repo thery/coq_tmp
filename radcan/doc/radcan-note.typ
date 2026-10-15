@@ -550,7 +550,7 @@ each line takes one call, and less than a second unless said otherwise.
 )
 
 The full list is in the tutorial (Part 38). The tactic also has limits. It
-does not take the square root of an expression, so
+only translates square roots of numbers. So
 $cos(pi \/ 8) = sqrt(2 + sqrt(2)) \/ 2$ fails, but its square
 $cos^2(pi \/ 8) = (2 + sqrt(2)) \/ 4$ is proved. It does not use
 hypotheses that are equations, and it proves equalities only, not

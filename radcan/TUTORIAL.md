@@ -2445,8 +2445,10 @@ refused. Without hypotheses, `tan 2x` is proved and the conditions
 What it does not do (each case is in the comment at the end of the
 catalogue):
 
-- `cos(π/8) = √(2 + √2)/2`: a square root of an expression that is not a
-  number; its square, `cos²(π/8) = (2 + √2)/4`, is proved.
+- `cos(π/8) = √(2 + √2)/2`: `radcan_trig` only translates square roots of
+  numbers, and `radcan` would also have to see that `2 + √2` is a square
+  written with roots of unity, `(ω₁₆ + ω₁₆⁻¹)²`, which its denesting does
+  not do. Its square, `cos²(π/8) = (2 + √2)/4`, is proved.
 - `cos x = 2 cos²(x/2) − 1`: `x/2` is not an integer multiple of a
   variable; write it with `x = 2y`.
 - `sin x = 1 → cos x = 0`: hypotheses that are equations are not used.
