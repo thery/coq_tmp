@@ -380,13 +380,15 @@ We have run the tactic on all the examples of the paper. They are in
   ([equations (4) and (6)], [proved, with $-1 <= x^2$]),
   ([equation (3) as printed], [*refused*: it is false]),
   ([the polynomial $E$ as printed], [*refused*: $54 x$ should be $108 x$]),
-  ([equation (3), corrected], [proved, with $E != 0$]),
+  ([equation (3), in factored form], [proved, with $E != 0$]),
+  ([equation (3) with $x^6$ for $x^5$], [proved, with $E != 0$]),
   ([equation (2)], [see below]),
 )
 
 So the tactic found two misprints in the paper. Equation (3) gives
 $1 \/ (x + sqrt(2) + 3^(2\/3))$ as a fraction. A quick numerical test at
-$x = 5\/2$ shows that the printed formula is wrong. The same happens for
+$x = 5\/2$ shows that the printed formula is wrong. Its numerator is right,
+but its denominator starts with $x^5$ instead of $x^6$. The same happens for
 the polynomial $E$ at the end of section 2: the coefficient of $x$ is $108$,
 not $54$. Once corrected, both are proved.
 

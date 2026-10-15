@@ -2526,12 +2526,13 @@ catalogue):
 | (3) as printed | **refused: it is false** (check at `x = 5/2`) |
 | (1) as a quotient `(x−y)/(√x+√y) = √x−√y` | proved (M11), conditions `0 <= x`, `0 <= y`, `x != y` |
 | (3) as a quotient, with the corrected `E` | proved (M11), condition `E != 0` |
+| (3) as printed, with `x⁶` in place of `x⁵` in the denominator (`eq3p`) | proved, condition `E != 0`: the printed numerator is right |
 | (2) | first reading (`n.-root` of powers): false on ℂ, the left side is `−√2` (proved); second reading (powers of roots): proved under `1 < x` with the values of `ω₄` (Part 28); the paper's own symbolic reading (roots given by hypotheses): proved by `radcan_sym` under `x != 1` (Part 30) |
 | (4) = (6) on ℂ, with `ω = 3.-root(−1)` | proved (M13), condition `-1 <= x²`; with a 6th root of `−1` it is false and refused |
 | §2 nested example `√(x²+3x+3+√(x+1)√(x+1)) = x+2` | proved (M13), condition `-1 <= x` |
 
-So `radcan` found two misprints in the paper: in (3) and in the coefficient
-of `x` in `E`.
+So `radcan` found two misprints in the paper: in (3), where the denominator
+starts with `x⁵` instead of `x⁶`, and in the coefficient of `x` in `E`.
 
 ## The files
 
