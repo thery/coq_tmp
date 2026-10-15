@@ -62,9 +62,13 @@ Proof. move=> h. radcan_lra. Qed.
 - **Exponentials and logarithms.** Unlike the MACSYMA program, `radcan` does
   not handle `exp` and `ln`: they are unknown letters. The paper describes
   only the radical part, which is the part implemented here. A separate
-  front-end following the Structure Theorem of Epstein and Caviness
-  ([`TR223.md`](TR223.md), Theorem 5.7) is in progress in `explog/`
-  (plan: [`plans/EXPLOG_PLAN.md`](plans/EXPLOG_PLAN.md)).
+  front-end, `explog` (directory `explog/`), follows the Structure Theorem
+  of Epstein and Caviness ([`TR223.md`](TR223.md), Theorem 5.7): on the
+  Stdlib reals it proves equalities with `exp`, `ln`, `cosh`, `sinh`,
+  `tanh`, `Rpower`, `Rlog`, also mixed with `cos`/`sin`, e.g.
+  `exp (x/2) · exp (x/3) · exp (x/6) = exp x` or
+  `ln (x² − 1) − ln (x − 1) − ln (x + 1) = 0` (condition `1 < x`). Plan:
+  [`plans/EXPLOG_PLAN.md`](plans/EXPLOG_PLAN.md); TUTORIAL Part 39.
 
 ## Building
 
@@ -73,6 +77,8 @@ mathcomp-zify (`coq-mathcomp-zify`, used by `GaussSum.v`).
 The directory `trig/` (and `tutorial/Tut35`, `Tut38`) also needs
 `rocq-mathcomp-real-closed`; build it after `rocq/` with
 `cd trig && rocq makefile -f _CoqProject -o Makefile && make`.
+The directory `explog/` (and `tutorial/Tut39`) is built the same way, after
+`trig/`.
 
 ```sh
 cd rocq
@@ -129,3 +135,4 @@ make -j4
 | `Examples.v`, `RefineEx.v` | examples with timings |
 | `trig/TrigBridge.v` | `E x = cos x + i sin x`, `E (π/n) = n.-root (−1)`, transfer back to ℝ |
 | `trig/TrigTac.v`, `TrigTests.v`, `TrigCatalogue.v` | `radcan_trig`, its tests, the catalogue of standard identities |
+| `explog/ExpLogTac.v`, `ExpLogTacTests.v` | `explog`: exp and ln after Theorem 5.7 of [`TR223.md`](TR223.md) (Gaussian elimination over ℚ, factoring, heuristic layer H1–H5), and its tests |

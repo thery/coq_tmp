@@ -600,7 +600,16 @@ This was not our goal, the paper treats this question in its section 4. We
 have also left out the parts that the paper itself leaves out, such as the
 general denesting of roots. The MACSYMA program also handled exponentials
 and logarithms, but the paper does not describe how; `radcan` treats `exp`
-and `ln` as unknown letters.
+and `ln` as unknown letters. A separate tactic, `explog` (directory
+`explog/`), handles them on the standard reals by following the Structure
+Theorem of Epstein and Caviness (Technical Report 223, Wisconsin 1974,
+Theorem 5.7): an exact Gaussian elimination over $QQ$ finds the linear
+relations between the arguments of the `exp` terms, factoring finds the
+multiplicative relations between the arguments of the `ln` terms, every
+relation is checked by `field`, and `radcan` then works on the remaining
+terms as letters. For instance it proves
+$exp(x\/2) exp(x\/3) exp(x\/6) = exp(x)$ and, under $1 < x$,
+$ln(x^2 - 1) - ln(x - 1) - ln(x + 1) = 0$.
 
 This development was written with the help of Claude, Anthropic's coding
 assistant. The sources are at
