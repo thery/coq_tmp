@@ -101,11 +101,9 @@ Lemma c4 : (7.-root (-1 : C) + 11.-root (-1)) ^+ 2 =
   7.-root (-1) ^+ 2 + 2 * 77.-root (-1) ^+ 18 + 11.-root (-1) ^+ 2.
 Proof. radcan_cyc. Qed.
 
-(* Limitations: an omega inside an inverse of a sum, 1 / (1 + omega_5), or  *)
-(* inside a radicand is an atom, not reduced (for omega_3 the explicit      *)
-(* value of Tutorial 28 is used instead); sqrt 5 = 2 omega_5 -              *)
-(* 2 omega_5 ^+ 4 - 1 is not used (Omega6)                                   *)
-Goal (1 + 5.-root (-1 : C))^-1 =
+(* an omega inside an inverse of a sum is inverted modulo Phi (Tutorial   *)
+(* 36); an omega inside a radicand is still an atom, not reduced           *)
+Lemma c5 : (1 + 5.-root (-1 : C))^-1 =
   (4 - 3 * 5.-root (-1) + 2 * 5.-root (-1) ^+ 2 - 5.-root (-1) ^+ 3) / 5.
-Proof. Fail radcan_cyc. Abort.
+Proof. radcan_cyc. Qed.
 End Complex.

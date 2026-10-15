@@ -2327,6 +2327,26 @@ Proof. rewrite !Ezk !Enk //= z_root. radcan. Qed.
 ``` The theorem uses the axioms of the
 standard reals and `epsilon_statement` (from `Rstruct.v`).
 
+## Part 36 — roots of unity inside inverses
+
+Script: [`tutorial/Tut36_cyclo_inv.v`](tutorial/Tut36_cyclo_inv.v).
+
+After Part 34, an `ω` inside the inverse of a sum was still an opaque atom.
+Now the inverse is computed without proof, by linear algebra modulo `Φ`,
+and then checked: if `u * v` reduces to `1`, then `u⁻¹ = v`, and `u ≠ 0`
+needs no condition.
+
+```coq
+Goal (1 + 5.-root (-1 : C))^-1 =
+  (4 - 3 * 5.-root (-1) + 2 * 5.-root (-1) ^+ 2 - 5.-root (-1) ^+ 3) / 5.
+Proof. radcan. Qed.
+```
+
+With a variable, the inverse goes through the norm (the product of the
+conjugates), and the condition is that the norm is not zero: for
+`1 / (x + ω₃) = (x + 1 − ω₃) / (x² + x + 1)` the condition is
+`x + x² ≠ −1`. An `ω` inside a radicand is still an atom.
+
 ## The paper's examples (`paper/Paper.v`)
 
 `paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.
@@ -2372,8 +2392,11 @@ of `x` in `E`.
 | `RefPoly.v`, `RefCheck.v`, `SignCert.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, sign certificates of constants in roots, unverified heuristics, `refine` and its soundness |
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `UnitArc.v`, `RootComp.v` | principal roots of `−1` on ℂ: index law, primitivity, largest real part; `(nk).-root x = n.-root (k.-root x)` |
+| `GaussSum.v` | Gauss's theorem on ℂ: for odd `n`, `Σ_{a<n} ζ^(a²) = √n` (`n ≡ 1 mod 4`) or `i√n` (`n ≡ 3 mod 4`), `ζ = e^{2iπ/n}`; Gaussian binomials, product formula, sign by the position of the roots on the circle |
 | `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | records `cycroot` (index law) and `sqrtroot` (√2, √3, √5 table), their theorems and ℂ instances |
 | `Cyclo.v`, `CycloC.v`, `CycloTac.v` | cyclotomic reduction: certified `Φ`, record `cycprim`, ℂ instance, `radcan_cyc` |
+| `CycloInv.v` | inverses of sums of roots of unity modulo `Φ`, checked by multiplication |
+| `Dispatch.v` | one checker `radcan_check_shape` and one soundness theorem (raw, refined, with pre-pass) over a record of root facts found by typeclass resolution; adding a mode only touches this file (recipe in its header) |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
 | `Sym.v`, `SymTac.v` | roots given by hypotheses (y ^+ n = B), `radcan_sym` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
@@ -2401,6 +2424,6 @@ of `x` in `E`.
   `numFieldType`, `√((x−2)²) = x − 2` needs `2 <= x`.
 - `√(1−x)·√(x−1) = 0` is not proved (it needs `x = 1`).
 - Even roots of negatives (`√(−4)`) stay opaque on ℝ. On ℂ they use `ω_n`, merged across
-  indices and reduced modulo cyclotomic polynomials, but an `ω` inside the inverse of a
-  sum or inside a radicand stays an opaque atom.
+  indices, reduced modulo cyclotomic polynomials, and inverted modulo `Φ` (Part 36); an
+  `ω` inside a radicand stays an opaque atom.
 - Square roots are written with roots of unity only for 2, 3 and 5 (Part 33).

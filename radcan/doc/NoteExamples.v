@@ -3,6 +3,7 @@ From Stdlib Require Import Reals Lra.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import Rstruct PosRoot PosRootFacts RootC RootR RealRoot.
 From Radcan Require Import Syntax Radcan Refine Tactic RootRstd Sym SymTac.
+From Radcan Require Import UnitArc RootComp GaussSum Cyclo.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -48,6 +49,19 @@ Proof. radcan. Qed.
 
 Lemma u2 (C : numClosedFieldType) : 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
 Proof. by radcan. Qed.
+
+Lemma u10 (C : numClosedFieldType) : 5.-root (-1 : C) ^+ 4 - 5.-root (-1) ^+ 3
+          + 5.-root (-1) ^+ 2 - 5.-root (-1) + 1 = 0.
+Proof. by radcan. Qed.
+
+(* the theorems of the section "Some theorems proved on the way" *)
+Check rootC_N1_prim : forall (C : numClosedFieldType) n, (0 < n)%N ->
+  (2 * n).-primitive_root (n.-root (-1 : C)).
+Check rootC_N1_index : forall (C : numClosedFieldType) n k,
+  (0 < n)%N -> (0 < k)%N -> (n * k).-root (-1 : C) ^+ k = n.-root (-1).
+Check @rootC_mul.
+Check @gauss_sumC.
+Check @prim_root_cert.
 
 Section Real.
 Variables (R : rcfType) (x : R).
