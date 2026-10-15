@@ -15,6 +15,13 @@
 (*                     their factors and their atoms                          *)
 (*   neg_hints es   == radicands with a negative leading coefficient:         *)
 (*                     preferred signs of the bases                           *)
+(*   to_mpoly ats p, of_mpoly ats f == p as an integer polynomial over the    *)
+(*                     indeterminates ats (MFactor.mpoly, p scaled by the     *)
+(*                     lcm of its denominators), and back                     *)
+(*   irr_factors p  == irreducible factors of the square-free p over Z        *)
+(*                     (MFactorEEZ.mfactor_full), [:: p] if their product is  *)
+(*                     not p                                                  *)
+(*   irr_basis bs   == the coprime basis bs refined by irreducible factors    *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
@@ -22,6 +29,7 @@ From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono Factor NF.
 From Radcan Require Import Inverse.
+From Radcan Require IrrFactor MFactor MFactorEEZ.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
@@ -281,5 +289,40 @@ Definition neg_hints (es : seq rexpr) : seq nf :=
   let ps :=
     map (fun e => primitive (pnorm e)) (rs ++ flatten (map mfactors rs)) in
   filter (fun p => if lead p is Some (c, _) then c_neg c else false) ps.
+
+(* Irreducible factors (M16, form 1 of the paper): the atoms are the
+   indeterminates, variable i of the mpoly is the atom nth i ats *)
+Definition atom_index (ats : seq atom) (a : atom) : nat :=
+  find (atom_eqb a) ats.
+
+Definition to_mpoly (ats : seq atom) (p : nf) : MFactor.mpoly :=
+  let l := foldr (fun t a => Z.lcm (Zpos (Qden (c_to_Q t.1))) a) Z1 p in
+  MFactor.mnorm
+    (map (fun t => let q := c_to_Q t.1 in
+                   (Z.div (Z.mul (Qnum q) l) (Zpos (Qden q)),
+                    foldr (fun ak e =>
+                             MFactor.eset e (atom_index ats ak.1) ak.2)
+                          [::] t.2.1)) p).
+
+Definition vmono_of (ats : seq atom) (e : MFactor.mono) : vmono :=
+  foldr (fun ik acc => vmono_mul (vsingle (nth (AVar 0) ats ik.1) ik.2) acc)
+        [::] (zip (iota 0 (size e)) e).
+
+Definition of_mpoly (ats : seq atom) (f : MFactor.mpoly) : nf :=
+  foldr (fun t acc => nf_add (nf_single (c_of_Z t.1) (vmono_of ats t.2, [::]))
+                             acc) [::] f.
+
+Definition irr_factors (p : nf) : seq nf :=
+  if ispoly p && ~~ isconst p then
+    let ats := patoms p in
+    let qs := map (fun f => pnormal (of_mpoly ats f))
+                  (MFactorEEZ.mfactor_full (to_mpoly ats p)) in
+    if nf_eqb (pnormal (foldr nf_mul nf_one qs)) (pnormal p) then qs
+    else [:: p]
+  else [:: p].
+
+Definition irr_basis (bs : seq nf) : seq nf :=
+  foldl (fun acc b => foldl (fun acc f => pb_insert 64 f acc) acc
+                            (irr_factors b)) [::] bs.
 
 End PolyF.

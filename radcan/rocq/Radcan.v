@@ -10,8 +10,9 @@
 (*   radcan_eq_cond  : radcan_check e1 e2 = Some cs -> all_conds r env cs ->  *)
 (*                     rinterp r env e1 = rinterp r env e2                    *)
 (*   radcan_eq_cond0 : the same for root-free e1 e2 with rinterp0, all_conds0 *)
-(*   radcan_eq_cond_odd (o : oddroot r), radcan_eq_cond_neg (w : negroot r):  *)
-(*                     the same with radcan_check_odd, radcan_check_neg       *)
+(*   radcan_eq_cond_odd (o : oddroot r), radcan_eq_cond_neg (w : negroot r),  *)
+(*   radcan_eq_cond_real (rl : realroot r): the same with radcan_check_odd,   *)
+(*                     radcan_check_neg, radcan_check_real                    *)
 (******************************************************************************)
 
 From Radcan Require Export Backend Mono Factor NF Inverse Poly Cond.

@@ -104,15 +104,69 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
   (corrected), 1/(1+√x), 1/(x+√2), (√x+√y)/(√x−√y). Split: one agent (Inverse.v, Cond.v,
   Examples.v); main session: tactic tests (F, C, Stdlib R), Paper.v, tutorial part 18.
 
-- M12 (next, user go): combine bounds in the refinement (Refine.v only): 0 <= x-1 and
+- M12 (done): combine bounds in the refinement (Refine.v only): 0 <= x-1 and
   0 <= 3-x -> 1 <= x <= 3; drop conditions implied by several refined ones (small
   Fourier-Motzkin on affine conditions, checked).
-- M13 (next, user go, parallel with M12): absolute values on real fields: sqrt((x-2)^2) =
+- M13 (done): absolute values on real fields: sqrt((x-2)^2) =
   |x-2| without condition (even roots of even powers give |B|), in the normaliser.
   Same agent: radicands containing roots are first normalised; if no root is left the
   radicand is treated as usual (paper §2 nested example sqrt(x^2+3x+3+sqrt(x+1)sqrt(x+1))
   = x+2). True denesting (sqrt(3+2sqrt 2) = 1+sqrt 2) stays out of scope (paper excludes it).
   Also: diagnose paper (4)=(6) on C (false for principal roots, or a real gap?).
+
+- After M12/M13 (user go, 2026-10-15):
+  - M14 (done) radcan_lra on Stdlib R: radcan_Rstd; radcan; radcan_Rstd_back; try lra on each
+    condition, leave only those lra cannot prove (Tactic.v / RootRstd.v, main session).
+  - M15 roots given by hypotheses (paper's symbolic reading): symbols y with y ^+ n = B in
+    the context are algebraic atoms reduced by the relation; results hold for every choice
+    of roots; paper (2) provable in its own sense (with the omega/sqrt 2 relation given).
+  - M16 irreducible factorisation of radicands (paper form 1): univariate factoring over Z
+    (Zassenhaus/Berlekamp-Hensel or small-degree methods), checked by multiplication;
+    sqrt(x^2-1) = sqrt(x-1) sqrt(x+1) even when no factor appears in the goal; multivariate
+    later if feasible. Phase 1 DONE: rocq/IrrFactor.v (standalone, Berlekamp mod small p +
+    Hensel + Zassenhaus, `ufactor : seq Z -> seq (seq Z)`, not yet in _CoqProject).
+    Phase 2 (after M13): plug irr_split into mk_basis in Poly.v as a FALLBACK only (like
+    M11), because splitting strengthens conditions (0 <= x-1, 0 <= x+1 instead of
+    0 <= x^2-1, which excludes x <= -1).
+    Multivariate stages 1-2 DONE: rocq/MFactor.v (standalone, imports IrrFactor; homogeneous
+    via dehomogenisation, factors linear in some variable; `mfactor : mpoly -> seq mpoly`).
+    Phase 2 plugs both ufactor and mfactor into Poly.v's basis (after sqf, fallback only).
+    Stage 3 DONE: MFactorEEZ.v, mfactor_full (Wang-style EEZ, multivariate Hensel lifting).
+
+- M17 (done): radcan_simplify, analogue of ring_simplify: rewrite a term into
+  its printed normal form (nf_to_rexpr), conditions as goals; new files Simplify.v,
+  SimplifyTac.v, tutorial Tut21 (no edits of existing files while M12/M13 run).
+
+- Splits (user request): Refine.v -> RefPoly/RefCheck/RefHeur/Refine/RefineEx (done);
+  Cond.v -> CondSimp/CondRoot/CondNorm/Cond right after M13 and BEFORE M15/M16 phase 2.
+
+- M18 (done): monomial content taken out of denominators (1/(x^2+x) = 1/x * 1/(x+1)),
+  in Inverse.v, checked.
+- M19 (phase 1 done: Denest.v, radcan_eq_denest; phase 2 = outer pre-pass in Tactic.v fallback after frac, no Cond.v change needed): depth-two square-root denesting (sqrt(3+2 sqrt 2) = 1 + sqrt 2):
+  candidate formula (unverified) + verified sign certificate (rational bounds on roots) +
+  proot_eq; new file Denest.v; phase 2 = pre-pass in Cond.v after M16 phase 2.
+
+- M20 (done, tactic integration pending: Frac.v into _CoqProject before Tactic.v; radcan falls back to frac_split, see Tut26 radcan_frac_with_gen): roots of fractions, paper rule (i) and eq. (9): sqrt(P/Q) = sqrt P / sqrt Q
+  with 0 <= P, 0 <= Q; confirmed missing (fails on cca7649); pre-pass frac_split in new file
+  Frac.v + combined theorems; tactic integration (fallback) by the main session.
+- Omega: STOP after Ω2 (user decision 2026-10-15); Ω3-Ω7 dropped from the queue. Ω0-Ω1 DONE (OmegaRoot.v smallroot, OmegaC.v rootC_smallroot + rootC_double), Ω2 running (OmegaPass.v pre-pass). Omega plan DONE (plans/OMEGA_PLAN.md): Ω0 root characterisation, Ω1 explicit ω_3/ω_4/ω_6/ω_12, Ω2 normaliser mode (paper (2), Part 16 Fails), Ω3 index law + primitivity (hard, 400-600 lines, UnitArc.v), Ω4 merge, Ω5 certified cyclotomic reduction, Ω6 sqrt2/3/5 table. Recommended Ω0->Ω2 first.
+
+- M19 phase 3 (queued, user go): denesting with variables, sqrt(a + b sqrt c) with a, b, c
+  polynomials: a^2 - b^2 c a perfect square in Q[x] (via sqf), candidate sqrt((a+d)/2) +-
+  sqrt((a-d)/2), conditions 0 <= (a+-d)/2, sign as condition CGe0 candidate (refinement
+  must drop 0 <= 1 + sqrt(x-1): roots are nonnegative). Example sqrt(x + 2 sqrt(x-1)) =
+  1 + sqrt(x-1) for 1 <= x.
+- M19 phase 4 (queued, user go): several square roots, sqrt(10+2 sqrt 6+2 sqrt 10+2 sqrt 15)
+  = sqrt 2 + sqrt 3 + sqrt 5: heuristic search of sqrt p + sqrt q + sqrt r over divisors,
+  checked by squaring + sign certificate.
+- Integration design (user question 2026-10-15): the pre-passes are COMPOSED, not separate
+  fallbacks: prepass = omega_rw o denest_rw o frac_split (order: fractions, denesting, omega),
+  iterated to a fixpoint with fuel, soundness = chained lemmas, conditions concatenated;
+  radcan = plain check, else prepass + check. New small file Prepass.v + Tactic.v change.
+  Test goals needing two passes, e.g. sqrt((3+2 sqrt 2)/x).
+
+- Queue order (2026-10-15): integration batch after M16 phase 2 -> Cond.v split -> M15;
+  M19 phase 4 after phase 3 (same file Denest.v).
 
 ## Work split for M0+M1
 

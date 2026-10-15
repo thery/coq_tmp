@@ -1105,6 +1105,334 @@ Lemma sq2 (x : R) : x ^ 2 <> 2 -> 1 / (x + sqrt 2) = (x - sqrt 2) / (x ^ 2 - 2).
 Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
 ```
 
+## Part 19 — intervals and combined bounds (milestone M12)
+
+The refinement now:
+
+- shows a lower and an upper bound on the same variable as one interval,
+  `1 <= x <= 3` (or `1 <= x < 3`);
+- drops a raw condition that follows from **several** refined ones. The
+  multipliers are found by a small Fourier–Motzkin elimination (unproved),
+  then checked by a proved checker: the raw polynomial must equal a
+  nonnegative combination of refined conditions plus a nonnegative constant.
+  For example `0 < x + y − 2` follows from `1 <= x` and `2 <= y`, since
+  `x + y − 2 = (x − 1) + (y − 2) + 1`;
+- keeps contradictory bounds such as `3 <= x <= 1` as they are, so you see
+  an unprovable goal rather than a crash.
+
+On Stdlib reals, `radcan_Rstd_back` splits an interval into two goals for
+`lra`.
+
+```coq
+Section Bounds.
+Variables (F : numFieldType) (r : posroot F) (x y : F).
+
+(* raw: 0 <= x - 1, 0 <= -1 * x + 3   refined: 1 <= x <= 3 *)
+Lemma h1 : 1 <= x <= 3 ->
+  proot r 2 (x - 1) * proot r 2 (3 - x) = proot r 2 (- x ^+ 2 + 4 * x - 3).
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* a strict side: raw 0 <= x - 1, 0 <= -1 * x + 3, x - 3 != 0
+   refined: 1 <= x < 3 *)
+Lemma h2 : 1 <= x < 3 ->
+  proot r 2 (x - 1) ^+ 2 * proot r 2 (3 - x) ^+ 2 / (3 - x) = x - 1.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* 0 <= 4 - x follows from x <= 3: raw 0 <= x - 1, 0 <= 3 - x, 0 <= 4 - x
+   refined: 1 <= x <= 3 *)
+Lemma h3 : 1 <= x <= 3 ->
+  proot r 2 (x - 1) ^+ 2 + proot r 2 (3 - x) ^+ 2 + proot r 2 (4 - x) ^+ 2
+  = 6 - x.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* combinations: x + y - 2 = (x - 1) + (y - 2) + 1, so 0 < x + y - 2
+   follows from 1 <= x and 2 <= y
+   raw: 0 <= y + (x - 2), y + (x - 2) != 0, 0 <= x - 1, 0 <= y - 2
+   refined: 1 <= x, 2 <= y *)
+Lemma h4 : 1 <= x -> 2 <= y ->
+  proot r 2 (x + y - 2) / proot r 2 (x + y - 2) * proot r 2 (x - 1)
+  * proot r 2 (y - 2) = proot r 2 ((x - 1) * (y - 2)).
+Proof. move=> hx hy. radcan. all: by []. Qed.
+
+(* only true combinations: 1 <= x and 2 <= y do not give 3 < x + y *)
+(* refined: 1 <= x, 2 <= y, 3 < x + y *)
+Lemma h5 : 1 <= x -> 2 <= y -> 3 < x + y ->
+  proot r 2 (x + y - 3) / proot r 2 (x + y - 3) * proot r 2 (x - 1)
+  * proot r 2 (y - 2) = proot r 2 ((x - 1) * (y - 2)).
+Proof. move=> hx hy hxy. radcan. all: by []. Qed.
+
+(* contradictory bounds are kept as they are: the goal 3 <= x <= 1 *)
+(* cannot be proved                                                   *)
+Goal proot r 2 (x - 3) * proot r 2 (1 - x) = proot r 2 (- x ^+ 2 + 4 * x - 3).
+Proof. radcan. Abort.
+End Bounds.
+
+(* on Stdlib reals the interval is split, each side closed by lra *)
+Local Open Scope R_scope.
+Lemma sh1 (x : R) : 1 <= x <= 3 ->
+  sqrt (x - 1) * sqrt (3 - x) = sqrt (- x ^ 2 + 4 * x - 3).
+Proof.
+move=> h. radcan_Rstd. radcan.
+all: radcan_Rstd_back; lra.
+Qed.
+```
+
+## Part 20 — nested radicands, absolute values, odd roots on real fields (milestone M13)
+
+- **Nested radicands.** A radicand containing roots is normalised first. If
+  the result has no root left, it is treated as a polynomial radicand: this
+  is the paper's §2 example `√(x²+3x+3+√(x+1)√(x+1)) = x + 2`.
+- **Real fields.** A record `realroot r` (`RealRoot.v`) says that every
+  element is real and odd roots exist; `rootR_realroot R` is the instance
+  for real closed fields. Then:
+  - even roots of even powers are absolute values, with **no** condition:
+    `√((x−2)²) = |x−2|`, and `|x|` is read as `√(x²)`;
+  - odd roots split and reduce with no sign condition: `∛(−8x³) = −2x`,
+    `∛(xy) = ∛x·∛y`.
+- `radcan` uses this real mode by itself on `rootR` goals, and on `proot r`
+  goals when a `realroot r` is in the context. On Stdlib reals, `Rabs` is
+  translated by `radcan_Rstd`.
+- **The paper's (4) = (6)** was a real gap on ℂ: with `ω = 3.-root(−1)` it is
+  true for principal roots and now proved; read with a 6th root of `−1` it
+  is false and refused.
+
+```coq
+Section Nested.
+Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+
+(* the paper's nested example (section 2):                                  *)
+(* raw: 0 <= x + 1, 0 <= x + 2   refined: -1 <= x                           *)
+Lemma nest1 : -1 <= x ->
+  \sqrt (x ^+ 2 + 3 * x + 3 + \sqrt (x + 1) * \sqrt (x + 1)) = x + 2.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* the inner radicand is a square too *)
+Lemma nest2 : 0 <= x ->
+  \sqrt (\sqrt (x ^+ 2) * \sqrt (x ^+ 2)) = x.
+Proof. move=> h. radcan. exact: h. Qed.
+End Nested.
+
+Section Real.
+Variables (R : rcfType) (x y : R).
+
+(* no condition: even roots of even powers are absolute values *)
+Lemma a1 : rootR 2 ((x - 2) ^+ 2) = `|x - 2|.
+Proof. by radcan. Qed.
+
+Lemma a2 : rootR 2 (x ^+ 2) = `|x|.
+Proof. by radcan. Qed.
+
+Lemma a3 : rootR 2 (x ^+ 2 * y ^+ 2) = `|x| * `|y|.
+Proof. by radcan. Qed.
+
+Lemma a4 : rootR 2 (x ^+ 2) ^+ 2 = x ^+ 2.
+Proof. by radcan. Qed.
+
+(* the radicand x^2 - 4x + 4 is seen as (x - 2)^2 *)
+Lemma a5 : rootR 2 (x ^+ 2 - 4 * x + 4) = `|x - 2|.
+Proof. by radcan. Qed.
+
+Lemma a6 : rootR 2 (4 * x ^+ 2) = 2 * `|x|.
+Proof. by radcan. Qed.
+
+Lemma a7 : `|x| ^+ 2 = x ^+ 2.
+Proof. by radcan. Qed.
+
+Lemma a8 : rootR 4 (x ^+ 4) = `|x|.
+Proof. by radcan. Qed.
+
+(* |B| is not B: with |x|, sqrt (x^2) = x is refused, then retried with  *)
+(* x and the condition 0 <= x (refined: 0 <= x)                          *)
+Lemma a9 : 0 <= x -> rootR 2 (x ^+ 2) = x.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* odd roots of any sign: no condition *)
+Lemma o1 : rootR 3 (x ^+ 3) = x.
+Proof. by radcan. Qed.
+
+Lemma o2 : rootR 3 (- 8 * x ^+ 3) = - 2 * x.
+Proof. by radcan. Qed.
+
+Lemma o3 : rootR 3 (x * y) = rootR 3 x * rootR 3 y.
+Proof. by radcan. Qed.
+
+Lemma o4 : rootR 3 (x ^+ 2) * rootR 3 x = x.
+Proof. by radcan. Qed.
+
+Lemma o5 : rootR 3 x * rootR 5 x = rootR 15 (x ^+ 8).
+Proof. by radcan. Qed.
+
+(* the odd mode (oddroot only) still asks 0 <= x *)
+Lemma o6 : 0 <= x -> rootR 3 (x ^+ 3) = x.
+Proof.
+move=> h. radcan_with_gen true (rootR_posroot R) (rootR_oddroot R). exact: h.
+Qed.
+End Real.
+
+(* any posroot on a realFieldType with an oddroot gives a realroot *)
+Section RealField.
+Variables (F : realFieldType) (r : posroot F) (o : oddroot r) (x : F).
+Let rl := realroot_of o.
+
+Lemma f1 : proot r 2 ((x + 1) ^+ 2) = `|x + 1|.
+Proof. by radcan. Qed.
+
+Lemma f2 : proot r 3 (- x ^+ 3) = - x.
+Proof. by radcan. Qed.
+End RealField.
+
+(* the paper's (4) = (6) on C, with omega = 3.-root (-1) (the paper prints *)
+(* omega_6 for (-1)^(1/3) = omega_6 ^+ 2 in its convention); raw and      *)
+(* conditions: raw 0 <= x ^+ 2 + 1, refined -1 <= x ^+ 2                   *)
+Section Paper46.
+Variables (C : numClosedFieldType) (x : C).
+
+Lemma eq46 : -1 <= x ^+ 2 ->
+  (4.-root 2 + 2.-root 3 * 3.-root (- (x ^+ 2 + 1))) / 2.-root (x ^+ 2 + 1) =
+  1 / (x ^+ 2 + 1) * 4.-root 2 * 6.-root (x ^+ 2 + 1) ^+ 3 +
+  1 / (x ^+ 2 + 1) * 3.-root (-1) * 2.-root 3 * 6.-root (x ^+ 2 + 1) ^+ 5.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* with a 6th root of -1 it is false (at x = 0 it says                     *)
+(* 3.-root (-1) = 6.-root (-1), but their 6th powers are 1 and -1)         *)
+Goal (4.-root 2 + 2.-root 3 * 3.-root (- (x ^+ 2 + 1))) / 2.-root (x ^+ 2 + 1) =
+  1 / (x ^+ 2 + 1) * 4.-root 2 * 6.-root (x ^+ 2 + 1) ^+ 3 +
+  1 / (x ^+ 2 + 1) * 6.-root (-1) * 2.-root 3 * 6.-root (x ^+ 2 + 1) ^+ 5.
+Proof. Fail radcan. Abort.
+End Paper46.
+```
+
+## Part 21 — `radcan_simplify` (milestone M17)
+
+`radcan_simplify` is the analogue of `ring_simplify`: it replaces each side of
+the goal (or of a hypothesis) by its normal form, printed back as a readable
+mathcomp expression, and leaves the side conditions as goals after the main
+one.
+
+- The printer needs no proof. The tactic proves `e = e'` with the usual
+  checker, which normalises the printed `e'` again; that also checks that
+  printing is stable.
+- Printing rules:
+  - higher powers come first and constants last;
+  - negative terms are written as subtractions, and the coefficient 1 is
+    omitted;
+  - terms sharing an inverse go over one common denominator;
+  - `proot n a ^+ k` is shown as `proot n (a ^+ k)` only when this adds no
+    condition.
+- The display is cleaned: numerals are shown as numerals, and `n.-root` or
+  `rootR` are used according to the goal. The atoms are renumbered so that
+  running it twice changes nothing.
+- Forms: `radcan_simplify`, `radcan_simplify in H`, and
+  `radcan_simplify_term t` (only the subterm `t`), with `_raw` versions that
+  keep the raw conditions. Supported goals are `a = b`, `a <> b`, `a != b`
+  and `a <= b`, `a < b`, `a == b`.
+
+| Input | Result | Side conditions |
+|---|---|---|
+| `√12 − √3` | `√3` | |
+| `1/(1+√2)` | `√2 − 1` | |
+| `(1+√2)²` | `2√2 + 3` | |
+| `√(x²+2x+1)` | `x + 1` | `-1 <= x` |
+| `(x−y)/(√x+√y)` | `√x − √y` | `0 <= x`, `0 <= y`, `x != y` |
+| `(√x+√y)/(√x−√y)` | `(x + y + 2√x√y)/(x − y)` | `0 <= x`, `0 <= y`, `x != y` |
+| `√x · ∛x` | `⁶√(x⁵)` | `0 <= x` |
+| `H : y = √8 · √2` (`in H`) | `H : y = 4` | |
+| `√12 + x <= √27` | `x + 2√3 <= 3√3` | |
+| ℂ: `√(−4) + ∛16 − ∛2` | `2·√(−1) + ∛2` | |
+
+See `tutorial/Tut21_simplify.v`, where each example also checks stability.
+
+## Part 22 — `radcan_lra` on Stdlib reals (milestone M14)
+
+`radcan_lra` chains `radcan_Rstd`, `radcan`, and, on each side condition,
+`radcan_Rstd_back; lra`. The conditions `lra` proves from the hypotheses
+disappear, and the others are left as goals.
+
+```coq
+Lemma l1 (x : R) : 1 < x -> sqrt (x ^ 2 - 1) / sqrt (x - 1) = sqrt (x + 1).
+Proof. move=> h. radcan_lra. Qed.
+
+Lemma l2 (x : R) : 1 <= x <= 3 ->
+  sqrt (x - 1) * sqrt (3 - x) = sqrt (- x ^ 2 + 4 * x - 3).
+Proof. move=> h. radcan_lra. Qed.
+
+Lemma l3 : sqrt 12 - sqrt 3 = sqrt 3.
+Proof. radcan_lra. Qed.
+
+(* the condition x ^+ 2 != 2 is closed by lra from the hypothesis *)
+Lemma l4 (x : R) : x ^ 2 <> 2 -> 1 / (x + sqrt 2) = (x - sqrt 2) / (x ^ 2 - 2).
+Proof. move=> h. radcan_lra. Qed.
+
+(* two conditions, both closed by lra from the hypotheses *)
+Lemma l5 (x : R) : 0 <= x -> x <> 1 ->
+  1 / (1 + sqrt x) = (1 - sqrt x) / (1 - x).
+Proof. move=> h1 h2. radcan_lra. Qed.
+
+(* without a hypothesis the condition 0 <= x is left as a goal *)
+Goal forall x : R, sqrt (x ^ 2) = x.
+Proof. move=> x. radcan_lra. Abort.
+```
+
+## Part 24 — a variable out of a denominator (milestone M18)
+
+When every term of a denominator contains the same variables (a common
+monomial `g`), the denominator `d = g·d'` is inverted in two pieces,
+`d⁻¹ = g⁻¹ · d'⁻¹`, after checking `d = g·d'` by multiplication. So
+`1/(x²+x)` becomes `1/x · 1/(x+1)`, and cancellations then work on each
+piece separately. Only plain variables are taken out when the denominator
+contains roots.
+
+```coq
+Section Denom.
+Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+
+(* the inverse of a product is the product of the inverses: no condition *)
+Lemma t1 : 1 / (x ^+ 2 + x) = 1 / x * (1 / (x + 1)).
+Proof. radcan. Qed.
+
+Lemma t2 : 1 / (x * y + x) = 1 / x * (1 / (y + 1)).
+Proof. radcan. Qed.
+
+(* exponents: x ^+ 2 is taken out *)
+Lemma t3 : 1 / (x ^+ 3 + 2 * x ^+ 2) = 1 / x ^+ 2 * (1 / (x + 2)).
+Proof. radcan. Qed.
+
+(* cancellation of x + 1 only *)
+(* raw: x + 1 != 0   refined: x != -1 *)
+Lemma t4 : x != -1 -> (x + 1) / (x ^+ 2 + x) = 1 / x.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* raw: x != 0, y != 0 *)
+Lemma t5 : x != 0 -> y != 0 ->
+  (x ^+ 2 * y) / (x ^+ 3 * y + x ^+ 2 * y) = 1 / (x + 1).
+Proof. move=> hx hy. radcan. all: by []. Qed.
+
+(* with roots: the monomial x, then the root monomial sqrt 2 *)
+Lemma t6 : \sqrt 2 / (x ^+ 2 * \sqrt 2 + x) =
+  \sqrt 2 / x * (1 / (\sqrt 2 * x + 1)).
+Proof. radcan. Qed.
+
+Lemma t7 : \sqrt 2 / (x ^+ 2 * \sqrt 2 + x * \sqrt 2) = 1 / x * (1 / (x + 1)).
+Proof. radcan. Qed.
+
+(* a common inverse atom (root-free path) *)
+Lemma t8 : 1 / (x / (y + 1) + 1 / (y + 1)) = (y + 1) / (x + 1).
+Proof. radcan. Qed.
+End Denom.
+
+(* on Stdlib reals *)
+Local Open Scope R_scope.
+Lemma st1 (x : R) : x <> -1 -> (x + 1) / (x ^ 2 + x) = 1 / x.
+Proof. move=> h. radcan_lra. Qed.
+
+Lemma st2 (x y : R) : 1 / (x * y + x) = 1 / x * (1 / (y + 1)).
+Proof. radcan_lra. Qed.
+
+Print Assumptions t6.  (* Closed under the global context *)
+```
+
 ## The paper's examples (`paper/Paper.v`)
 
 `paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.
@@ -1121,8 +1449,8 @@ Proof. move=> h. radcan_Rstd. radcan. radcan_Rstd_back. lra. Qed.
 | (1) as a quotient `(x−y)/(√x+√y) = √x−√y` | proved (M11), conditions `0 <= x`, `0 <= y`, `x != y` |
 | (3) as a quotient, with the corrected `E` | proved (M11), condition `E != 0` |
 | (2) on ℂ | not proved: with principal roots it is false (`−√2`); the paper's convention needs the cyclotomic relation of `ω₈` |
-| (4) = (6) on ℂ | not proved |
-| §2 nested example `√(x²+3x+3+√(x+1)√(x+1)) = x+2` | not proved (nested roots) |
+| (4) = (6) on ℂ, with `ω = 3.-root(−1)` | proved (M13), condition `-1 <= x²`; with a 6th root of `−1` it is false and refused |
+| §2 nested example `√(x²+3x+3+√(x+1)√(x+1)) = x+2` | proved (M13), condition `-1 <= x` |
 
 So `radcan` found two misprints in the paper: in (3) and in the coefficient
 of `x` in `E`.
@@ -1131,33 +1459,42 @@ of `x` in `E`.
 
 | File | Content |
 |---|---|
-| `PosRoot.v`, `PosRootFacts.v` | the root interface `posroot` (+ `oddroot`, `negroot`) and derived lemmas |
+| `PosRoot.v`, `PosRootFacts.v` | root interfaces `posroot`, `oddroot`, `negroot` and their lemmas |
 | `RootC.v`, `RootR.v` | instances for ℂ (`n.-root`) and real closed fields (`rootR`) |
-| `Rstruct.v`, `RootRstd.v` | Stdlib `R` as a real closed field (borrowed from mathcomp-analysis), Stdlib ↔ mathcomp rewriting |
+| `RealRoot.v` | `realroot`: real fields with odd roots (absolute values, odd roots of any sign) |
+| `Rstruct.v`, `RootRstd.v` | Stdlib `R` as a real closed field (borrowed from mathcomp-analysis); Stdlib ↔ mathcomp rewriting, `radcan_lra` |
 | `Syntax.v` | `rexpr`, its interpretation, the conditions `cond` |
 | `Backend.v`, `BigBackend.v` | the number interface `NUM`, Z/Q and BigZ/BigQ instances |
 | `Mono.v`, `NF.v` | atoms, monomials, normal-form arithmetic |
+| `Factor.v` | integer factoring |
+| `IrrFactor.v`, `MFactor.v`, `MFactorEEZ.v` | polynomial factoring over ℤ: one variable (Berlekamp–Hensel–Zassenhaus), several variables (homogeneous, linear factors, Wang's EEZ) |
+| `Poly.v` | polynomial exact division, gcd, square-free factoring, radicand basis |
 | `Ratio.v` | rationalisation of denominators with variables and roots |
-| `Factor.v`, `Poly.v` | integer factoring; polynomial exact division, gcd, square-free factoring, basis |
 | `Inverse.v` | inverse by linear algebra, checked |
-| `Cond.v` | radicands, cancellation, conditions, `radcan_check` and soundness |
+| `Cond.v` | radicands, cancellation, conditions, modes, `radcan_check` and soundness |
 | `Radcan.v`, `RadcanBig.v` | the two instances of the normaliser |
-| `Refine.v`, `OddRoot.v`, `NegRootC.v` | refined conditions, odd-root theorems (ℝ), roots of unity (ℂ) |
+| `RefPoly.v`, `RefCheck.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, unverified heuristics, `refine` and its soundness |
+| `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
-| `Examples.v` | normaliser examples with timings |
+| `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
+| `Examples.v`, `RefineEx.v` | examples with timings |
 
 ## What does not work yet
+
+- `radcan_simplify` shows whatever normal form the normaliser chose: constant
+  radicands stay split over the basis, rational constants are not put over a
+  common denominator, numerals above 100000 show as `(Pos.to_nat p)%:R`; on
+  Stdlib reals the result is in mathcomp notation (`rootR 2`, not `sqrt`).
 
 - Rationalisation (Part 18) is all-or-nothing on a goal and adds the condition `E ≠ 0`,
   which can be a large polynomial.
 
-- Refinement checks each raw condition against one refined condition; it does not combine
-  several bounds (no Fourier–Motzkin).
-- A variable common to all terms of a denominator is not taken out: `1/(x²+x)` is not
-  split into `1/x · 1/(x+1)`.
+- Refinement combines conditions only when they are linear in their monomials (`x*y`,
+  `x^2` are independent unknowns).
 - There is no factorisation into irreducibles: `x² − 1` is split into `(x−1)(x+1)` only if
   one of the factors appears in the goal.
-- Absolute values are not used: `√((x−2)²) = x − 2` needs `2 <= x`.
+- Absolute values only on real fields with roots (`rootR`, or a `realroot`): on a general
+  `numFieldType`, `√((x−2)²) = x − 2` needs `2 <= x`.
 - `√(1−x)·√(x−1) = 0` is not proved (it needs `x = 1`).
 - Even roots of negatives (`√(−4)`) stay opaque on ℝ; on ℂ they use `ω_n`, without cyclotomic
   relations and without merging `ω_n` of different indices.

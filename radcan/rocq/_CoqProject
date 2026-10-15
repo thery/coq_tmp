@@ -1,26 +1,40 @@
 -R . Radcan
 -arg -w -arg -notation-overridden,-ambiguous-paths,-deprecated
+-arg -native-compiler -arg no
 
 PosRoot.v
 PosRootFacts.v
 RootC.v
+OmegaRoot.v
+OmegaC.v
 RootR.v
 Rstruct.v
 RootRstd.v
+RealRoot.v
 Syntax.v
 Backend.v
 Mono.v
 Factor.v
 NF.v
 Inverse.v
+IrrFactor.v
+MFactor.v
+MFactorEEZ.v
 Poly.v
 Ratio.v
 Cond.v
 Radcan.v
-Examples.v
+RefPoly.v
+RefCheck.v
+RefHeur.v
 Refine.v
 OddRoot.v
 NegRootC.v
+AbsRoot.v
+Frac.v
 Tactic.v
+RealTactic.v
+Simplify.v
+SimplifyTac.v
 BigBackend.v
 RadcanBig.v
