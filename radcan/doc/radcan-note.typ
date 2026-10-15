@@ -475,6 +475,23 @@ Lemma prim_root_cert (R : idomainType) m (z : R) (p h g : {poly R}) D :
   p * h = 'X^m - 1 -> h * g = \prod_(d <- D) ('X^d - 1) -> root p z.
 ```
 
+*From angles to roots.* The real numbers of the Rocq standard library
+have $cos$ and $sin$, but the complex roots of Mathematical Components know
+nothing about angles. One lemma makes the link
+(file #src("trig/TrigBridge.v")). With
+$E(x) = cos x + i sin x$, for every $n > 0$:
+
+$ cos(pi / n) + i sin(pi / n) = root(n, -1). $
+
+```coq
+Lemma E_root n : (0 < n)%N -> E (PI / INR n) = n.-root (-1 : R[i]).
+```
+
+The idea of the proof is simple. Since $E(pi \/ n)^n = E(pi) = -1$, it is
+an $n$-th root of $-1$. Among all the $n$-th roots of $-1$, the principal
+root is the one above the real axis with the largest real part. Here $sin$ gives the side of the axis, and $cos$
+decreases on $[0, pi]$, so $E(pi \/ n)$ is that one.
+
 *An olympiad problem.* Problem 5 of the 1963 International Mathematical
 Olympiad asks to show
 
@@ -484,8 +501,8 @@ We prove it on the real numbers of the Rocq standard library
 (#src("tutorial/Tut35_imo1963.v")). The tactic knows nothing about $cos$,
 so we go to the complex numbers. The number
 $z = cos(pi \/ 7) + i sin(pi \/ 7)$ satisfies $z^7 = -1$. The cosines are
-$(z^k + z^(-k)) \/ 2$, so the identity becomes algebra. We even show that
-$z$ is exactly $root(7, -1)$. Then the last step is just `radcan`:
+$(z^k + z^(-k)) \/ 2$, so the identity becomes algebra. By the lemma
+above, $z$ is exactly $root(7, -1)$. Then the last step is just `radcan`:
 
 ```coq
 Theorem imo1963 : cos (PI / 7) - cos (2 * PI / 7) + cos (3 * PI / 7) = 1 / 2.

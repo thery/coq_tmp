@@ -2212,7 +2212,7 @@ Qed.
 End Stress.
 ```
 
-## Part 33 — roots of unity of different indices, and three square roots
+## Part 33 — roots of unity of different indices, and square roots
 
 Script: [`tutorial/Tut33_omega_merge.v`](tutorial/Tut33_omega_merge.v).
 
@@ -2239,22 +2239,18 @@ Goal 8.-root (-1 : C) ^+ 2 * 5.-root (-1) = 20.-root (-1) ^+ 9.
 Proof. radcan. Qed.
 ```
 
-The same file has a deliberately small table (record `sqrtroot w`): when the
-goal contains `ω_4`, `ω_6` or `ω_5`, the constant square roots of 2, 3 and 5
-are written with roots of unity,
-
-  `√2 = ω₄ − ω₄³`, `√3 = ω₆ − ω₆⁵`, `√5 = 2ω₅ − 2ω₅⁴ − 1`,
-
-so that, for example, the golden ratio is recognised:
+Square roots are written with roots of unity too: `√2 = ω₄ − ω₄³`, and
+every `√n` is a quadratic Gauss sum of roots of `−1` (record `gaussroot w`,
+Part 37). `radcan` tries this substitution when the cyclotomic reduction of
+Part 34 fails, so that, for example, the golden ratio is recognised:
 
 ```coq
 Goal 10.-root (-1 : C) ^+ 2 + (5.-root (-1))^-1 = (2.-root 5 + 1) / 2.
 Proof. radcan. Qed.
 ```
 
-This table is a recipe, not a general method. In general `√p` is a Gauss
-sum of `p`-th roots of unity, but with principal roots its sign is Gauss's
-sign theorem, which we do not prove. Only 2, 3, 5 are covered.
+An earlier version had a small table for `√2`, `√3`, `√5` only (record
+`sqrtroot w`, Omega6); the Gauss sums subsume it and it has been removed.
 
 ## Part 34 — cyclotomic reduction
 
@@ -2347,6 +2343,33 @@ conjugates), and the condition is that the norm is not zero: for
 `1 / (x + ω₃) = (x + 1 − ω₃) / (x² + x + 1)` the condition is
 `x + x² ≠ −1`. An `ω` inside a radicand is still an atom.
 
+## Part 37 — every square root with roots of unity (Gauss sums)
+
+Script: [`tutorial/Tut37_gauss.v`](tutorial/Tut37_gauss.v).
+
+Gauss's theorem (`GaussSum.v`, proved for every odd `n`) writes every
+square root of an integer with roots of unity, `ω_n = n.-root (-1)`:
+
+  `√2 = ω₄ − ω₄³`,
+  `√n = Σ_{a<n} ω_n^(2a² mod 2n)` when `n = 1 (mod 4)`,
+  `√n = Σ_{a<n} ω_{2n}^((3n + 4a²) mod 4n)` when `n = 3 (mod 4)`.
+
+When the goal contains roots of unity and the plain normal forms differ,
+`radcan` replaces the constant square roots by these sums and compares both
+sides after the cyclotomic reduction of Part 34. It only uses a sum whose
+roots of unity already divide those of the goal, so no new root of unity
+appears and a goal without them is never rewritten.
+
+```coq
+(* 2 cos(2π/5) = (√5 − 1)/2 *)
+Goal 5.-root (-1 : C) ^+ 2 + (5.-root (-1)) ^- 2 = (2.-root 5 - 1) / 2.
+Proof. radcan. Qed.
+```
+
+It also finds `√3·√7 = √21` written with `ω₂₁`, or `√14` with `ω₂₈`. The
+cost grows with the number of terms: about 0.05 s for `√13`, 0.17 s for
+`√29`, 2.6 s for `√101`.
+
 ## The paper's examples (`paper/Paper.v`)
 
 `paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.
@@ -2393,7 +2416,8 @@ of `x` in `E`.
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `UnitArc.v`, `RootComp.v` | principal roots of `−1` on ℂ: index law, primitivity, largest real part; `(nk).-root x = n.-root (k.-root x)` |
 | `GaussSum.v` | Gauss's theorem on ℂ: for odd `n`, `Σ_{a<n} ζ^(a²) = √n` (`n ≡ 1 mod 4`) or `i√n` (`n ≡ 3 mod 4`), `ζ = e^{2iπ/n}`; Gaussian binomials, product formula, sign by the position of the roots on the circle |
-| `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | records `cycroot` (index law) and `sqrtroot` (√2, √3, √5 table), their theorems and ℂ instances |
+| `GaussMode.v`, `GaussC.v` | record `gaussroot` (every `√n` as a sum of roots of unity), the checker that substitutes it, ℂ instance |
+| `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | record `cycroot` (index law), its theorems and ℂ instance |
 | `Cyclo.v`, `CycloC.v`, `CycloTac.v` | cyclotomic reduction: certified `Φ`, record `cycprim`, ℂ instance, `radcan_cyc` |
 | `CycloInv.v` | inverses of sums of roots of unity modulo `Φ`, checked by multiplication |
 | `Dispatch.v` | one checker `radcan_check_shape` and one soundness theorem (raw, refined, with pre-pass) over a record of root facts found by typeclass resolution; adding a mode only touches this file (recipe in its header) |

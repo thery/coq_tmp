@@ -4,9 +4,7 @@
 (*                      roots), MNeg (needs a negroot: roots of -1, as on C)  *)
 (*                      MNegW (MNeg preferring omega_n to a flipped base),    *)
 (*                      MNegC, MNegCW (MNeg, MNegW merging omega atoms: needs *)
-(*                      the index law windex, OmegaRoot2.v), MNegS (MNegC,    *)
-(*                      and sqrt 2, 3, 5 rewritten into roots of -1 when the  *)
-(*                      normal forms differ: needs wsqrt, CondNorm.v)         *)
+(*                      the index law windex, OmegaRoot2.v)                   *)
 (*                      MReal (needs a realroot: odd roots without sign       *)
 (*                      conditions), MRealA (MReal, and |B| = proot 2 (B^2)   *)
 (*                      for even roots of even powers, no condition)          *)
@@ -17,7 +15,7 @@
 (*   nf_simp_sound    == soundness of nf_simp under its conditions            *)
 (* omega_n = proot n (-1), omega_n ^+ n = -1; omega atoms of different        *)
 (* indices are merged (lcm, gcd rules, no sign condition) only in the modes   *)
-(* MNegC, MNegCW, MNegS (cyc_mode), whose soundness uses windex r.            *)
+(* MNegC, MNegCW (cyc_mode), whose soundness uses windex r.                   *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
@@ -35,23 +33,21 @@ Unset Printing Implicit Defensive.
    MReal: real field (realroot), odd roots of any sign split and reduced
    without condition; MRealA: the same, and even roots of even powers give
    absolute values |B| = proot 2 (B ^+ 2) (no condition)
-   MNegC, MNegCW: MNeg, MNegW where omega atoms are merged across indices
-   MNegS: MNegC, then sqrt 2, 3, 5 written with omega atoms (CondNorm.v) *)
+   MNegC, MNegCW: MNeg, MNegW where omega atoms are merged across indices *)
 Inductive rmode :=
-  MStd | MOdd | MNeg | MNegW | MReal | MRealA | MNegC | MNegCW | MNegS.
+  MStd | MOdd | MNeg | MNegW | MReal | MRealA | MNegC | MNegCW.
 
 Definition odd_mode (m : rmode) : bool :=
   match m with MOdd | MReal | MRealA => true | _ => false end.
 Definition neg_mode (m : rmode) : bool :=
-  match m with MNeg | MNegW | MNegC | MNegCW | MNegS => true | _ => false end.
+  match m with MNeg | MNegW | MNegC | MNegCW => true | _ => false end.
 Definition real_mode (m : rmode) : bool :=
   match m with MReal | MRealA => true | _ => false end.
 Definition abs_mode (m : rmode) : bool := if m is MRealA then true else false.
 Definition negw_mode (m : rmode) : bool :=
   match m with MNegW | MNegCW => true | _ => false end.
 Definition cyc_mode (m : rmode) : bool :=
-  match m with MNegC | MNegCW | MNegS => true | _ => false end.
-Definition sq_mode (m : rmode) : bool := if m is MNegS then true else false.
+  match m with MNegC | MNegCW => true | _ => false end.
 
 (* the radicand -1: ARoot n omega_c is omega_n = proot n (-1) *)
 Definition omega_c : rexpr := RCst (Zneg xH).

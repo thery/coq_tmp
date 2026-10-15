@@ -46,7 +46,7 @@ Proof. move=> h. radcan_lra. Qed.
   indices are merged (`ω₁₀² = ω₅`) and reduced modulo cyclotomic polynomials
   (`ω₅⁴ − ω₅³ + ω₅² − ω₅ + 1 = 0`), using two facts proved on ℂ without
   trigonometry (`UnitArc.v`): the index law and the primitivity of `ω_n`.
-  A small table writes `√2`, `√3`, `√5` with roots of unity.
+  Every `√n` is written with roots of unity (Gauss sums) when the goal calls for it.
 - **Trigonometry through ℂ.** `cos(π/7) − cos(2π/7) + cos(3π/7) = 1/2`
   (IMO 1963) is proved on the Stdlib reals by going to ℂ and using `radcan`
   (`tutorial/Tut35_imo1963.v`).
@@ -106,7 +106,8 @@ make -j4
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `UnitArc.v`, `RootComp.v` | principal roots of `−1` on ℂ: index law, primitivity, largest real part; `(nk).-root x = n.-root (k.-root x)` |
 | `GaussSum.v` | Gauss's theorem on the sign of the quadratic Gauss sum, for every odd `n` |
-| `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | records `cycroot` (index law) and `sqrtroot` (√2, √3, √5 table), theorems, ℂ instances |
+| `GaussMode.v`, `GaussC.v` | every `√n` written with roots of unity when the goal calls for it |
+| `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | record `cycroot` (index law), theorems, ℂ instance |
 | `Cyclo.v`, `CycloC.v`, `CycloTac.v` | cyclotomic reduction: certified `Φ`, record `cycprim`, ℂ instance |
 | `CycloInv.v` | inverses of sums of roots of unity modulo `Φ`, checked |
 | `OmegaRoot.v`, `OmegaC.v` | explicit values of small roots of unity |

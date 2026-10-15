@@ -4,9 +4,7 @@
 (* negroot w satisfying the index law cycroot w (OmegaRoot2.v).               *)
 (*   radcan_eq_refined_negc cy : radcan_check_negc e1 e2 = Some cs ->         *)
 (*      refine cs = rcs -> all_rconds .. rcs -> rinterp r env e1 = .. e2      *)
-(*   radcan_eq_refined_negs cy sq : the same for radcan_check_negs (Omega6:   *)
-(*      sqrt 2, 3, 5 as sums of roots of -1), given also sqrtroot w           *)
-(* (radcan_eq_cond_negc/negs are in Cond.v; the instances on C in CycC.v.)    *)
+(* (radcan_eq_cond_negc is in Cond.v; the instances on C in CycC.v.)         *)
 (******************************************************************************)
 
 From mathcomp Require Import all_boot all_order all_algebra.
@@ -26,14 +24,4 @@ Theorem radcan_eq_refined_negc (F : numFieldType) (r : posroot F)
 Proof.
 move=> H Hr Hc; apply: (radcan_eq_cond_negc cy H); apply: all_conds_bridge_back.
 by apply: refine_sound; rewrite Hr.
-Qed.
-
-Theorem radcan_eq_refined_negs (F : numFieldType) (r : posroot F)
-    (w : negroot r) (cy : cycroot w) (sq : sqrtroot w) (env : seq F)
-    e1 e2 cs rcs :
-  radcan_check_negs e1 e2 = Some cs -> refine cs = rcs ->
-  all_rconds F (proot r) env rcs -> rinterp r env e1 = rinterp r env e2.
-Proof.
-move=> H Hr Hc; apply: (radcan_eq_cond_negs cy sq H).
-by apply: all_conds_bridge_back; apply: refine_sound; rewrite Hr.
 Qed.

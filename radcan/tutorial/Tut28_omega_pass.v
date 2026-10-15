@@ -154,13 +154,15 @@ Proof. radcan_plain_gen true. Qed.
 Lemma c4 : 12.-root (-1 : C) ^+ 3 = 4.-root (-1).
 Proof. radcan_plain_gen true. Qed.
 
-(* the principal cube root of -8 *)
+(* the principal cube root of -8 (the plain check now also proves it: *)
+(* sqrt 3 = omega_6 sums, Gauss-sum mode, Tutorial 37)                  *)
 Lemma c5 : 3.-root (-8 : C) = 1 + 2.-root 3 * 2.-root (-1).
-Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
+Proof. Time radcan_omega. Qed.
 
-(* paper (2), second reading; refined: 1 < x *)
+(* paper (2), second reading; refined: 1 < x (the plain check now also   *)
+(* proves it, by the Gauss-sum mode, Tutorial 37)                         *)
 Lemma c6 : 1 < x ->
   4.-root (x - 1) / 4.-root (1 - x)
   - 4.-root (x - 1) ^+ 3 / 4.-root (1 - x) ^+ 3 - 2.-root 2 = 0.
-Proof. move=> h. Fail radcan_plain_gen true. Time radcan_omega. exact: h. Qed.
+Proof. move=> h. Time radcan_omega. exact: h. Qed.
 End Complex.

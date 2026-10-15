@@ -133,71 +133,10 @@ Definition radcan_nfr (rt : bool) (m : rmode) (e1 e2 : rexpr) :
 
 Definition radcan_nf := radcan_nfr false.
 
-(* Omega6 (mode MNegS): when the normal forms differ, the square roots
-   sqrt 2 = w4 - w4 ^+ 3, sqrt 3 = w6 - w6 ^+ 5, sqrt 5 = 2 w5 - 2 w5 ^+ 4 - 1
-   (wn = omega_n) are substituted, sqrt D only when the lcm N of the omega
-   indices of both normal forms is a multiple of 4, 6, 5 resp.; only the
-   constant square roots of the root monomials (fct (b, 2, e), D | b) *)
-Definition om_lcm (p : nf) : nat :=
-  foldr (fun t acc =>
-           foldr (fun ak acc =>
-                    if ak.1 is ARoot n e then
-                      if is_omega e then lcmn (Pos.to_nat n) acc else acc
-                    else acc) acc t.2.1) 1%N p.
-
-Definition om_pow (n : positive) (k : nat) : nf := nf_pow (omega_nf n) k.
-
-Definition sq_G2 : nf := nf_add (om_pow 4 1) (nf_opp (om_pow 4 3)).
-Definition sq_G3 : nf := nf_add (om_pow 6 1) (nf_opp (om_pow 6 5)).
-Definition sq_G5 : nf :=
-  nf_add (nf_add (om_pow 5 1) (om_pow 5 1))
-         (nf_opp (nf_add (nf_add (om_pow 5 4) (om_pow 5 4)) nf_one)).
-
-(* b = q * D *)
-Definition sq_div (D b : positive) : option positive :=
-  if Z.div (Zpos b) (Zpos D) is Zpos q then
-    if Pos.eqb (Pos.mul q D) b then Some q else None
-  else None.
-
-(* m = (q * D, 2, e) :: w up to order *)
-Fixpoint mfind (D : positive) (m : mono) : option (positive * nat * mono) :=
-  match m with
-  | [::] => None
-  | (b, n, e) :: m' =>
-    let rest := if mfind D m' is Some (q, e', w) then
-                  Some (q, e', (b, n, e) :: w) else None in
-    if n == 2%N then
-      (if sq_div D b is Some q then Some (q, e, m') else rest)
-    else rest
-  end.
-
-Definition sq_term (D : positive) (G : nf) (t : coef * key) : nf :=
-  if mfind D t.2.2 is Some (q, e, w) then
-    nf_mul [:: (t.1, (t.2.1, w))]
-      (nf_mul (if Pos.eqb q 1 then nf_one
-               else [:: (c_one, ([::], [:: (q, 2%N, e)]))])
-              (nf_pow G e))
-  else [:: t].
-
-Definition sq_step (N k : nat) (D : positive) (G : nf) (p : nf) : nf :=
-  if (k %| N)%N then foldr (fun t acc => nf_add (sq_term D G t) acc) [::] p
-  else p.
-
-Definition sq_subst (N : nat) (p : nf) : nf :=
-  sq_step N 5 5 sq_G5 (sq_step N 6 3 sq_G3 (sq_step N 4 2 sq_G2 p)).
-
-Definition sq_check (m : rmode) (p1 p2 : nf) (cs : seq cond) :
-  option (seq cond) :=
-  let N := lcmn (om_lcm p1) (om_lcm p2) in
-  let: (s1, c1) := nf_simp m (sq_subst N p1) in
-  let: (s2, c2) := nf_simp m (sq_subst N p2) in
-  if nf_eqb s1 s2 then Some (cs ++ c1 ++ c2) else None.
-
 Definition radcan_check_bs (rt : bool) (m : rmode) (hs bs : seq nf)
   (e1 e2 : rexpr) : option (seq cond) :=
   let: (p1, p2, cs) := radcan_nfb rt m hs bs e1 e2 in
-  if nf_eqb p1 p2 then Some cs else
-  if sq_mode m then sq_check m p1 p2 cs else None.
+  if nf_eqb p1 p2 then Some cs else None.
 
 Definition radcan_check_rt (rt : bool) (m : rmode) (e1 e2 : rexpr) :
   option (seq cond) :=
@@ -362,7 +301,6 @@ Hypothesis Ho : odd_mode mo -> oddroot r.
 Hypothesis Hng : neg_mode mo -> negroot r.
 Hypothesis Hrl : real_mode mo -> realroot r.
 Hypothesis Hcy : cyc_mode mo -> windex r.
-Hypothesis Hsq : sq_mode mo -> wsqrt r.
 
 Local Notation fct_interp := (fct_interp r).
 Local Notation mono_interp := (mono_interp r).
@@ -471,85 +409,6 @@ case: c H => [e|e] H.
 exact: (H _ (or_introl erefl)).
 Qed.
 
-(* Omega6: the substitution of the square roots *)
-
-Lemma sq_div_sound D b q : sq_div D b = Some q ->
-  pos2F F b = pos2F F q * pos2F F D.
-Proof.
-rewrite /sq_div; case: Z.div => // q'.
-by case: ifP => // /Pos.eqb_eq <- [<-]; exact: pos2F_mul.
-Qed.
-
-Lemma mfind_sound D m q e w : mfind D m = Some (q, e, w) ->
-  mono_interp m =
-  (proot r 2 (pos2F F q) * proot r 2 (pos2F F D)) ^+ e * mono_interp w.
-Proof.
-elim: m q e w => [|[[b n] e'] m IH] q e w //=.
-have Hrest : (if mfind D m is Some (q', e'', w') then
-                Some (q', e'', (b, n, e') :: w') else None) =
-             Some (q, e, w) ->
-             mono_interp ((b, n, e') :: m) =
-  (proot r 2 (pos2F F q) * proot r 2 (pos2F F D)) ^+ e * mono_interp w.
-  case E : (mfind D m) => [[[q1 e1] w1]|] // [<- <- <-].
-  by rewrite !mono_interp_cons (IH _ _ _ E) mulrCA.
-case: eqP => [n2|_ /Hrest //].
-case E : (sq_div D b) => [q'|]; last exact: Hrest.
-move=> [<- <- <-]; rewrite mono_interp_cons /= n2 (sq_div_sound E).
-by rewrite prootM ?pos2F_ge0.
-Qed.
-
-Lemma sq_term_sound D G t : nf_interp G = proot r 2 (pos2F F D) ->
-  nf_interp (sq_term D G t) = C2F t.1 * key_interp t.2.
-Proof.
-move=> HG; case: t => c [v m]; rewrite /sq_term /=.
-case E : (mfind D m) => [[[q e] w]|]; last first.
-  by rewrite nf_interp_cons nf_interp_nil addr0.
-rewrite !nf_mul_sound nf_pow_sound HG nf_interp_cons nf_interp_nil addr0.
-have -> : nf_interp (if Pos.eqb q 1 then nf_one
-                     else [:: (c_one, ([::], [:: (q, 2%N, e)]))]) =
-          proot r 2 (pos2F F q) ^+ e.
-  case: ifP => [/Pos.eqb_eq ->|_].
-    by rewrite nf_one_sound pos2F1 proot_1 // expr1n.
-  rewrite nf_interp_cons nf_interp_nil addr0 C2F_c_one mul1r /key_interp /=.
-  by rewrite vmono_interp_nil mul1r mono_interp_cons mono_interp_nil mulr1.
-rewrite /key_interp /= (mfind_sound E) exprMn.
-move: (C2F c) (vmono_interp v) (mono_interp w) (proot _ _ _ ^+ e)
-  (proot _ _ (pos2F F D) ^+ e) => a b x y z.
-by rewrite -!mulrA [x * _]mulrC -mulrA.
-Qed.
-
-Lemma sq_step_sound N k D G p : nf_interp G = proot r 2 (pos2F F D) ->
-  nf_interp (sq_step N k D G p) = nf_interp p.
-Proof.
-move=> HG; rewrite /sq_step; case: ifP => // _.
-elim: p => [|t p IH] //=.
-by rewrite nf_add_sound IH sq_term_sound // nf_interp_cons.
-Qed.
-
-Lemma om_pow_sound n k :
-  nf_interp (om_pow n k) = proot r (Pos.to_nat n) (-1) ^+ k.
-Proof.
-rewrite /om_pow nf_pow_sound /omega_nf /root_atom nf_interp_cons nf_interp_nil.
-rewrite addr0 C2F_c_one mul1r /key_interp mono_interp_nil mulr1 /=.
-by rewrite vmono_interp_cons vmono_interp_nil mulr1 expr1 /= pos2F1.
-Qed.
-
-Lemma sq_subst_sound N p : wsqrt r -> nf_interp (sq_subst N p) = nf_interp p.
-Proof.
-case=> h2 h3 h5; rewrite /sq_subst !sq_step_sound //.
-- rewrite /sq_G2; move: (om_pow_sound 4 1) (om_pow_sound 4 3).
-  move: (om_pow 4 1) (om_pow 4 3) => a b Ha Hb.
-  by rewrite nf_add_sound nf_opp_sound Ha Hb expr1 h2.
-- rewrite /sq_G3; move: (om_pow_sound 6 1) (om_pow_sound 6 5).
-  move: (om_pow 6 1) (om_pow 6 5) => a b Ha Hb.
-  by rewrite nf_add_sound nf_opp_sound Ha Hb expr1 h3.
-have Hc : nf_interp nf_one = 1 := nf_one_sound _ _.
-rewrite /sq_G5; move: (om_pow_sound 5 1) (om_pow_sound 5 4) Hc.
-move: (om_pow 5 1) (om_pow 5 4) nf_one => a b c Ha Hb Hc.
-rewrite !nf_add_sound nf_opp_sound !nf_add_sound Ha Hb Hc expr1 h5.
-by rewrite mulr_natl (mulr_natl (_ ^+ 4)) !mulr2n opprD addrA.
-Qed.
-
 (* any basis: it only guides decompose, whose results are checked *)
 Lemma radcan_check_bs_sound rt hs bs e1 e2 cs :
   radcan_check_bs rt mo hs bs e1 e2 = Some cs ->
@@ -558,17 +417,9 @@ Proof.
 rewrite /radcan_check_bs /radcan_nfb.
 have := @normcr_sound rt hs bs e1; case: (normcr _ _ _ _ e1) => p1 c1 /= H1.
 have := @normcr_sound rt hs bs e2; case: (normcr _ _ _ _ e2) => p2 c2 /= H2.
-case: ifP => [/nf_eqb_eq Hp [<-]|_].
-  move=> /all_condsP /cfilter_sound /holds_dedup /holds_cat [/H1 -> /H2 ->].
-  by rewrite Hp.
-case: ifP => // Hm; rewrite /sq_check.
-set N := lcmn _ _; have hs2 := Hsq Hm.
-have := @nf_simp_sound (sq_subst N p1); case: nf_simp => s1 d1 /= E1.
-have := @nf_simp_sound (sq_subst N p2); case: nf_simp => s2 d2 /= E2.
-case: ifP => // /nf_eqb_eq Hs [<-] /all_condsP /holds_cat [].
-move=> /cfilter_sound /holds_dedup /holds_cat [/H1 -> /H2 ->].
-move=> /holds_cat [/E1 F1 /E2 F2].
-by rewrite -(sq_subst_sound N p1 hs2) -F1 Hs F2 sq_subst_sound.
+case: ifP => // /nf_eqb_eq Hp [<-].
+move=> /all_condsP /cfilter_sound /holds_dedup /holds_cat [/H1 -> /H2 ->].
+by rewrite Hp.
 Qed.
 
 Lemma radcan_check_rt_sound rt e1 e2 cs :
