@@ -42,8 +42,14 @@ Proof. move=> h. radcan_lra. Qed.
   goal.
 - **Negative numbers under roots.** On ℝ, odd roots of negative numbers are
   handled (`∛(−8) = −2`); on ℂ they go through roots of unity
-  (`√(−4) = 2·√(−1)`), with explicit values of small roots of unity
-  (`ω₃² − ω₃ + 1 = 0`).
+  `ω_n = n.-root (−1)` (`√(−4) = 2·√(−1)`). Roots of unity of different
+  indices are merged (`ω₁₀² = ω₅`) and reduced modulo cyclotomic polynomials
+  (`ω₅⁴ − ω₅³ + ω₅² − ω₅ + 1 = 0`), using two facts proved on ℂ without
+  trigonometry (`UnitArc.v`): the index law and the primitivity of `ω_n`.
+  A small table writes `√2`, `√3`, `√5` with roots of unity.
+- **Trigonometry through ℂ.** `cos(π/7) − cos(2π/7) + cos(3π/7) = 1/2`
+  (IMO 1963) is proved on the Stdlib reals by going to ℂ and using `radcan`
+  (`tutorial/Tut35_imo1963.v`).
 - **Number backends.** Coefficients use Stdlib `Z`/`Q` by default
   (axiom-free proofs). `radcan_big` uses Bignums `BigZ`/`BigQ`, which is
   faster on large numbers.
@@ -53,6 +59,8 @@ Proof. move=> h. radcan_lra. Qed.
 ## Building
 
 Requires Rocq 9.1, mathcomp 2.5 (boot, order, algebra, field) and Bignums.
+`tutorial/Tut35_imo1963.v` (cos(π/7) − cos(2π/7) + cos(3π/7) = 1/2 through ℂ)
+also needs `rocq-mathcomp-real-closed`.
 
 ```sh
 cd rocq
@@ -68,6 +76,11 @@ make -j4
   `tutorial/check.sh`.
 - [`PLAN.md`](PLAN.md) records the design decisions, the milestones and the
   roadmap.
+- [`doc/radcan-note.typ`](doc/radcan-note.typ): a short note (Typst) presenting
+  the development; its examples are in `doc/NoteExamples.v`.
+- [`plans/mathcomp/nthroot_unity.v`](plans/mathcomp/nthroot_unity.v): the facts
+  on `n.-root (−1)` as a standalone mathcomp file, with a draft PR description
+  in [`plans/MATHCOMP_PR.md`](plans/MATHCOMP_PR.md).
 - `rocq/Examples.v` contains normaliser examples with timings.
 
 ## Files
@@ -91,6 +104,10 @@ make -j4
 | `Radcan.v`, `RadcanBig.v` | the two instances of the normaliser |
 | `RefPoly.v`, `RefCheck.v`, `SignCert.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, sign certificates of constants in roots, unverified heuristics, `refine` and its soundness |
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
+| `UnitArc.v`, `RootComp.v` | principal roots of `−1` on ℂ: index law, primitivity, largest real part; `(nk).-root x = n.-root (k.-root x)` |
+| `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | records `cycroot` (index law) and `sqrtroot` (√2, √3, √5 table), theorems, ℂ instances |
+| `Cyclo.v`, `CycloC.v`, `CycloTac.v` | cyclotomic reduction: certified `Φ`, record `cycprim`, ℂ instance |
+| `OmegaRoot.v`, `OmegaC.v` | explicit values of small roots of unity |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
 | `Examples.v`, `RefineEx.v` | examples with timings |

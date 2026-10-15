@@ -21,6 +21,7 @@ From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot RootC RootR Syntax Radcan Refine OddRoot.
 From Radcan Require Import NegRootC RealRoot AbsRoot OmegaRoot OmegaC.
 From Radcan Require Import Frac Denest OmegaPass Prepass.
+From Radcan Require Import OmegaRoot2 NegCyc CycC Cyclo CycloC.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -212,7 +213,9 @@ Ltac radcan_vm_refl :=
   lazymatch goal with |- _ = ?v => vm_cast_no_check (@erefl _ v) end.
 
 (* refined: refined (Refine.v) or raw conditions; o: tt (generic checker),
-   o : oddroot r (odd mode) or o : negroot r (neg mode) *)
+   o : oddroot r (odd mode), o : negroot r (neg mode), o : realroot r
+   (real mode), o : cycroot w (neg mode, omegas merged across indices) or
+   o : (cycroot w * cycprim w) (cyclotomic reduction, Cyclo.v) *)
 Ltac radcan_with_gen refined r o :=
   radcan_reify r;
   lazymatch goal with
@@ -223,6 +226,9 @@ Ltac radcan_with_gen refined r o :=
                          | oddroot _ => constr:(1%N)
                          | negroot _ => constr:(2%N)
                          | realroot _ => constr:(3%N)
+                         | cycroot _ => constr:(4%N)
+                         | prod (cycroot _) (cycprim _) => constr:(5%N)
+                         | prod (cycroot _) (sqrtroot _) => constr:(6%N)
                          end
                   end in
       let c := lazymatch mode with
@@ -230,6 +236,9 @@ Ltac radcan_with_gen refined r o :=
                | 1%N => eval vm_compute in (radcan_check_odd e1 e2)
                | 2%N => eval vm_compute in (radcan_check_neg e1 e2)
                | 3%N => eval vm_compute in (radcan_check_real e1 e2)
+               | 4%N => eval vm_compute in (radcan_check_negc e1 e2)
+               | 5%N => eval vm_compute in (radcan_check_cyc e1 e2)
+               | 6%N => eval vm_compute in (radcan_check_negs e1 e2)
                end in
       lazymatch c with
       | Some ?cs =>
@@ -253,6 +262,26 @@ Ltac radcan_with_gen refined r o :=
                   apply: (@radcan_eq_refined_real _ r o env e1 e2 cs rcs);
                     [radcan_vm_refl | radcan_vm_refl
                     | radcan_split_rconds]
+              | 4%N =>
+                  lazymatch type of o with @cycroot _ _ ?w =>
+                  apply: (@radcan_eq_refined_negc _ r w o env e1 e2 cs rcs);
+                    [radcan_vm_refl | radcan_vm_refl
+                    | radcan_split_rconds]
+                  end
+              | 5%N =>
+                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
+                  apply: (@radcan_eq_refined_cyc _ r w o.1 o.2 env e1 e2 cs
+                            rcs);
+                    [radcan_vm_refl | radcan_vm_refl
+                    | radcan_split_rconds]
+                  end
+              | 6%N =>
+                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
+                  apply: (@radcan_eq_refined_negs _ r w o.1 o.2 env e1 e2 cs
+                            rcs);
+                    [radcan_vm_refl | radcan_vm_refl
+                    | radcan_split_rconds]
+                  end
               end
           | false =>
               lazymatch mode with
@@ -268,6 +297,21 @@ Ltac radcan_with_gen refined r o :=
               | 3%N =>
                   apply: (@radcan_eq_cond_real _ r o env e1 e2 cs);
                     [radcan_vm_refl | radcan_split_conds]
+              | 4%N =>
+                  lazymatch type of o with @cycroot _ _ ?w =>
+                  apply: (@radcan_eq_cond_negc _ r w o env e1 e2 cs);
+                    [radcan_vm_refl | radcan_split_conds]
+                  end
+              | 5%N =>
+                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
+                  apply: (@radcan_eq_cond_cyc _ r w o.1 o.2 env e1 e2 cs);
+                    [radcan_vm_refl | radcan_split_conds]
+                  end
+              | 6%N =>
+                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
+                  apply: (@radcan_eq_cond_negs _ r w o.1 o.2 env e1 e2 cs);
+                    [radcan_vm_refl | radcan_split_conds]
+                  end
               end
           end
       | None => fail "radcan: the normal forms differ"
@@ -310,11 +354,24 @@ Ltac radcan_plain_gen refined :=
       | rl : realroot r |- _ =>
           rewrite ?(normr_proot rl); radcan_with_gen refined r rl
       | o : oddroot r |- _ => radcan_with_gen refined r o
+      | w : negroot r, cy : @cycroot _ r ?w, cp : @cycprim _ r ?w,
+        sq : @sqrtroot _ r ?w |- _ =>
+          first [ radcan_with_gen refined r (cy, sq)
+                | radcan_with_gen refined r (cy, cp) ]
+      | w : negroot r, cy : @cycroot _ r ?w, cp : @cycprim _ r ?w |- _ =>
+          radcan_with_gen refined r (cy, cp)
+      | w : negroot r, cy : @cycroot _ r ?w, sq : @sqrtroot _ r ?w |- _ =>
+          radcan_with_gen refined r (cy, sq)
+      | w : negroot r, cy : @cycroot _ r ?w |- _ =>
+          radcan_with_gen refined r cy
       | w : negroot r |- _ => radcan_with_gen refined r w
       | _ => radcan_with_gen refined r tt
       end
   | |- context [@nthroot ?C _ _] =>
-      radcan_with_gen refined (rootC_posroot C) (rootC_negroot C)
+      first [ radcan_with_gen refined (rootC_posroot C)
+                (rootC_cycroot C, rootC_sqrtroot C)
+            | radcan_with_gen refined (rootC_posroot C)
+                (rootC_cycroot C, rootC_cycprim C) ]
   | |- context [@rootR ?R _ _] =>
       radcan_with_gen refined (rootR_posroot R) (rootR_realroot R)
   | _ => radcan0_gen refined
