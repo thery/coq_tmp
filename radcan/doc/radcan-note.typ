@@ -508,6 +508,54 @@ above, $z$ is exactly $root(7, -1)$. Then the last step is just `radcan`:
 Theorem imo1963 : cos (PI / 7) - cos (2 * PI / 7) + cos (3 * PI / 7) = 1 / 2.
 ```
 
+= Trigonometric identities
+
+Once the tactic knows the roots of unity, trigonometry is close. A second
+tactic, `radcan_trig`, proves identities on the real numbers of the Rocq
+standard library (file #src("trig/TrigTac.v")). It follows the route of the
+olympiad problem. Each $cos x$ and $sin x$ is written with $E(x)$, angles
+are turned into products and powers, and $E(pi \/ n)$ becomes $root(n, -1)$.
+Then `radcan` does the algebra, and we come back to the real numbers.
+
+```coq
+Lemma cos3 x : cos (3 * x) = 4 * cos x ^ 3 - 3 * cos x.
+Proof. radcan_trig. Qed.
+
+Lemma cos_PI5 : cos (PI / 5) = (1 + sqrt 5) / 4.
+Proof. radcan_trig. Qed.
+```
+
+For $tan$ there are divisions, so there are conditions. The tactic gives
+them back as real statements, or closes them with the hypotheses:
+
+```coq
+Lemma tanD x y : cos x <> 0 -> cos y <> 0 -> cos (x + y) <> 0 ->
+  tan (x + y) = (tan x + tan y) / (1 - tan x * tan y).
+Proof. move=> hx hy hxy. radcan_trig. Qed.
+```
+
+We have tried it on the usual list of identities. Here is a part of it;
+each line takes one call, and less than a second unless said otherwise.
+
+#ltbl(([identity], [remark]),
+  ([$sin^2 x + cos^2 x = 1$], []),
+  ([$cos(x + y)$, $sin(x + y)$, $tan(x + y)$], [conditions for $tan$]),
+  ([$cos 3 x = 4 cos^3 x - 3 cos x$], []),
+  ([$cos 10 x$ as a polynomial in $cos x$], [3.6 s]),
+  ([$cos(x + y) cos(x - y) = cos^2 x - sin^2 y$], []),
+  ([$cos(pi \/ 5) = (1 + sqrt(5)) \/ 4$], [uses a Gauss sum]),
+  ([$tan(pi \/ 12) = 2 - sqrt(3)$], []),
+  ([$cos(pi \/ 7) cos((2 pi) \/ 7) cos((3 pi) \/ 7) = 1 \/ 8$], []),
+  ([$sin((2 pi) \/ 7) + sin((4 pi) \/ 7) - sin((6 pi) \/ 7) = sqrt(7) \/ 2$], [uses a Gauss sum]),
+)
+
+The full list is in the tutorial (Part 38). The tactic also has limits. It
+does not take the square root of an expression, so
+$cos(pi \/ 8) = sqrt(2 + sqrt(2)) \/ 2$ fails, but its square
+$cos^2(pi \/ 8) = (2 + sqrt(2)) \/ 4$ is proved. It does not use
+hypotheses that are equations, and it proves equalities only, not
+inequalities.
+
 = Conclusion
 
 We hope we have shown that a classic algorithm of computer algebra fits well
@@ -517,24 +565,27 @@ risk. The new part is the treatment of the conditions. The paper fixes them
 once and for all by rules. In Rocq they must be explicit, so the tactic
 gives them back to the user, in a readable form.
 
-The development is 45 Rocq files and 12 600 lines.
+The development is 62 Rocq files and 16 500 lines.
 
 #tbl(([], [files], [lines]),
   ([roots: interface, instances, standard reals], [9], [1 300]),
-  ([normal forms and the checker], [16], [5 200]),
-  ([factoring polynomials], [3], [1 000]),
-  ([refinement of conditions], [5], [1 600]),
-  ([odd roots, roots of $-1$, real fields], [3], [100]),
-  ([fractions, denesting, roots of $-1$], [4], [1 800]),
-  ([tactics, simplification, symbols], [5], [1 600]),
-  ([*in all*], [*45*], [*12 600*]),
+  ([normal forms and the checker], [15], [5 100]),
+  ([factoring polynomials], [4], [1 150]),
+  ([refinement of conditions], [5], [1 650]),
+  ([odd roots, roots of $-1$, real fields], [3], [150]),
+  ([fractions, denesting, values of roots of $-1$], [4], [1 800]),
+  ([roots of unity: index law, Gauss sums, cyclotomic reduction], [11], [2 700]),
+  ([tactics, dispatch, simplification, symbols], [7], [1 800]),
+  ([trigonometry (separate directory)], [4], [900]),
+  ([*in all*], [*62*], [*16 500*]),
 )
 
-The tactics themselves are about 700 lines of Ltac. They only build the
-trees, run the computation and apply the theorems. All the theorems are
-proved without axioms (the standard reals bring their own axioms). On top of
-this come 31 tutorial files (2 400 lines), and the tests and the examples of
-the paper (1 900 lines).
+The tactics themselves are about 800 lines of Ltac. They only build the
+trees, run the computation and apply the theorems. The theorems of the core
+are proved without axioms. The standard reals, and their link with
+Mathematical Components, bring their own axioms. On top of this come 37
+tutorial files (3 200 lines), and the tests and the examples of the paper
+(2 000 lines).
 
 The tactic is not complete: when it fails, the equality may still be true.
 This was not our goal, the paper treats this question in its section 4. We

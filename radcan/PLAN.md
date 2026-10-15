@@ -221,8 +221,9 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
   Stdlib reals with cos, sin, tan of (integer combinations of variables + rational
   multiples of PI), through C with radcan at the core, conditions given back (cos x <> 0).
   OUT = inequalities, arcsin/arctan, exp/ln, other angles (cos (x^2), cos (a x)), solving
-  equations. Separate directory trig/ (needs rocq-mathcomp-real-closed). RUNNING (agents:
-  TrigBridge.v incl. E (PI/n) = n.-root (-1) for all n; TrigTac.v radcan_trig, Tut37).
+  equations. Separate directory trig/ (needs rocq-mathcomp-real-closed). DONE: TrigBridge.v
+  (E (PI/n) = n.-root (-1) for all n), TrigTac.v radcan_trig, TrigCatalogue.v (81 of 88
+  standard identities), Tut38.
 - (old) Next: one checker + one theorem over a record of root facts (Dispatch.v, agent),
   table-driven `Tactic.v`, then a clean `-time` build: fix every step > 6 s outside
   `Require` and the example files.

@@ -4,3 +4,6 @@
 -arg -native-compiler -arg no
 
 TrigBridge.v
+TrigTac.v
+TrigTests.v
+TrigCatalogue.v

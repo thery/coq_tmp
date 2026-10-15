@@ -47,9 +47,13 @@ Proof. move=> h. radcan_lra. Qed.
   (`ω₅⁴ − ω₅³ + ω₅² − ω₅ + 1 = 0`), using two facts proved on ℂ without
   trigonometry (`UnitArc.v`): the index law and the primitivity of `ω_n`.
   Every `√n` is written with roots of unity (Gauss sums) when the goal calls for it.
-- **Trigonometry through ℂ.** `cos(π/7) − cos(2π/7) + cos(3π/7) = 1/2`
-  (IMO 1963) is proved on the Stdlib reals by going to ℂ and using `radcan`
-  (`tutorial/Tut35_imo1963.v`).
+- **Trigonometry.** `radcan_trig` (directory `trig/`) proves identities on
+  the Stdlib reals with `cos`, `sin`, `tan` of integer combinations of
+  variables plus rational multiples of `π`, by going to ℂ and using
+  `radcan`: addition and multiple-angle formulas, `tan(x+y)` with its
+  conditions, `cos(π/5) = (1 + √5)/4`, IMO 1963
+  (`cos(π/7) − cos(2π/7) + cos(3π/7) = 1/2`). A catalogue of standard
+  identities is in TUTORIAL Part 38.
 - **Number backends.** Coefficients use Stdlib `Z`/`Q` by default
   (axiom-free proofs). `radcan_big` uses Bignums `BigZ`/`BigQ`, which is
   faster on large numbers.
@@ -58,9 +62,11 @@ Proof. move=> h. radcan_lra. Qed.
 
 ## Building
 
-Requires Rocq 9.1, mathcomp 2.5 (boot, order, algebra, field) and Bignums.
-`tutorial/Tut35_imo1963.v` (cos(π/7) − cos(2π/7) + cos(3π/7) = 1/2 through ℂ)
-also needs `rocq-mathcomp-real-closed`.
+Requires Rocq 9.1, mathcomp 2.5 (boot, order, algebra, field), Bignums and
+mathcomp-zify (`coq-mathcomp-zify`, used by `GaussSum.v`).
+The directory `trig/` (and `tutorial/Tut35`, `Tut38`) also needs
+`rocq-mathcomp-real-closed`; build it after `rocq/` with
+`cd trig && rocq makefile -f _CoqProject -o Makefile && make`.
 
 ```sh
 cd rocq
@@ -115,3 +121,5 @@ make -j4
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
 | `Examples.v`, `RefineEx.v` | examples with timings |
+| `trig/TrigBridge.v` | `E x = cos x + i sin x`, `E (π/n) = n.-root (−1)`, transfer back to ℝ |
+| `trig/TrigTac.v`, `TrigTests.v`, `TrigCatalogue.v` | `radcan_trig`, its tests, the catalogue of standard identities |
