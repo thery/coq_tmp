@@ -2511,6 +2511,59 @@ catalogue):
 - `sin x = 1 → cos x = 0`: hypotheses that are equations are not used.
 - `√(1 − sin²x) = |cos x|`, inequalities, `arcsin`, `arctan`, `exp`, `ln`.
 
+## Part 39 — exponentials and logarithms: `explog`
+
+Script: [`tutorial/Tut39_explog.v`](tutorial/Tut39_explog.v); tactic in
+[`explog/ExpLogTac.v`](explog/ExpLogTac.v), tests in
+[`explog/ExpLogTacTests.v`](explog/ExpLogTacTests.v), plan in
+[`plans/EXPLOG_PLAN.md`](plans/EXPLOG_PLAN.md). Build `explog/` after
+`rocq/` and `trig/`.
+
+The paper says that the MACSYMA program also handles exponentials and
+logarithms but describes only radicals. `explog` follows the Structure
+Theorem of Epstein and Caviness ([`TR223.md`](TR223.md), Theorem 5.7): the
+only algebraic relations between `exp` and `log` terms are the obvious ones,
+and the theorem says exactly when a new term is related to the previous ones.
+`explog` proves equalities on the reals of the standard library with `exp`,
+`ln` (and `cosh`, `sinh`, `tanh`, `Rpower`, `Rlog`, which are unfolded):
+
+1. **exp pass** (Theorem 5.7(b)), innermost level first: the arguments of
+   the `exp` terms are read as rational functions; an exact Gaussian
+   elimination over ℚ finds every argument that is, up to a constant, a
+   rational combination of the others and of the `ln` letters; the letters
+   are `exp (A / d)`; each relation is checked by `field`.
+2. **ln pass** (Theorem 5.7(a)): `ln A = ln |A|` under `0 < A`; `A` is
+   factored into irreducibles; `ln |A| = Σ e ln |p|` needs only `p ≠ 0`.
+3. the remaining `exp`/`ln` terms are letters for `radcan` (or
+   `radcan_trig` when `cos`, `sin`, `tan` occur).
+
+The searches (factoring, elimination) are computed and not proved; every
+rewrite is a proved equality. Conditions are closed when easy and otherwise
+given back. A separate heuristic layer helps the core: H1 retries the zero
+test after clearing denominators, H2 drops conditions implied by others, H3
+expands trigonometric arguments of `exp`/`ln`, H4 writes `ln |p|` as
+`ln p` when `0 ≤ p` is easy, H5 relates `ln |√a|` to `ln |a|`.
+
+```coq
+Lemma e1 x : exp (x / 2) * exp (x / 3) * exp (x / 6) = exp x.
+Proof. explog. Qed.
+
+Lemma e2 x : x + 1 <> 0 -> exp (x / (x + 1)) * exp (1 / (x + 1)) = exp 1.
+Proof. move=> h. explog. Qed.
+
+Lemma l1 x : 1 < x -> ln (x ^ 2 - 1) - ln (x - 1) - ln (x + 1) = 0.
+Proof. move=> h. explog. Qed.
+
+Lemma t1 x : exp x * sin (2 * x) = 2 * exp x * sin x * cos x.
+Proof. explog. Qed.
+```
+
+Limits, in plain words: relations between constants (`ln 2`, `ln 3`,
+`exp 1`, …) beyond integer factoring are not found; roots inside the
+arguments are letters, except square roots under `ln` (H5); the final step
+inherits the gaps of `radcan`; nothing is proved about two expressions being
+different (that part of the theorem is not formalised).
+
 ## The paper's examples (`paper/Paper.v`)
 
 `paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.

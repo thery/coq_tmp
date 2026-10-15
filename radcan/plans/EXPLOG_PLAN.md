@@ -1,6 +1,8 @@
 # Exponentials and logarithms: a generic procedure (plan)
 
-Status: plan, revised 2026-10-15 after reading Epstein–Caviness, *Elementary
+Status: IMPLEMENTED 2026-10-15 in `explog/ExpLogTac.v` (tests
+`explog/ExpLogTacTests.v`, TUTORIAL Part 39), with a heuristic layer H1–H5
+on top of the generic core (see the file header). Plan, revised 2026-10-15 after reading Epstein–Caviness, *Elementary
 Proofs of Algebraic Relationships for the Exponential and Logarithm
 Functions*, TR223, Wisconsin 1974 (transcribed in `TR223.md`). The user asked
 for the generic algorithm given by the theory, not code tuned to examples

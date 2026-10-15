@@ -1,0 +1,8 @@
+-R ../rocq Radcan
+-R ../trig RadcanTrig
+-R . RadcanExpLog
+-arg -w -arg -notation-overridden,-ambiguous-paths,-deprecated
+-arg -native-compiler -arg no
+
+ExpLogTac.v
+ExpLogTacTests.v
