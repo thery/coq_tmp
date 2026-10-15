@@ -45,6 +45,8 @@ $$
 \tag{3}
 $$
 
+*[Note: "$x^5$" in the denominator is as printed; it should read $x^6$, the denominator being $E$ of §2 (checked in `paper/Paper.v`, lemma `eq3p`).]*
+
 We will primarily consider only expressions in which the rational exponentiation is unnested,
 that is, like those expressions in (1), (2) and (3) above as opposed to expressions like
 $[(x+1)^{1/2}+(x-1)^{1/2}]^{1/2}$ in which the square root is nested.

@@ -5,7 +5,8 @@
 (* an identity and as a quotient, (8), (3) with the corrected E, the          *)
 (* rationalisation of D, and (4) = (6) on C with omega = 3.-root (-1).        *)
 (* Refused because false: (3) as printed, E with the printed 54 x (the right  *)
-(* coefficient is 108 x).                                                     *)
+(* coefficient is 108 x).  The misprint in (3) is x^5 for x^6 in the          *)
+(* denominator: with x^6, (3) is proved with its printed numerator (eq3p).    *)
 (* (2): false for mathcomp's principal roots in its first reading; proved in *)
 (* its second reading (values of omega_4) and in the paper's own symbolic    *)
 (* reading (roots given by hypotheses, radcan_sym, under x != 1).            *)
@@ -55,7 +56,8 @@ Lemma nested : -1 <= x ->
   \sqrt (x ^+ 2 + 3 * x + 3 + \sqrt (x + 1) * \sqrt (x + 1)) = x + 2.
 Proof. move=> h. radcan. exact: h. Qed.
 
-(* (3) as printed is FALSE (check at x = 5/2): radcan refuses it *)
+(* (3) as printed is FALSE (check at x = 5/2): radcan refuses it; the
+   denominator should start with x ^+ 6, not x ^+ 5 (see eq3p) *)
 Goal (x + \sqrt 2 + 3.-proot 9) *
   ((((2 * x ^+ 3 - 4 * x - 9) * \sqrt 2 - x ^+ 4 - 9 * x + 4) * 3.-proot 9)
   + (((-9) * x ^+ 2 - 6) * \sqrt 2 + 3 * x ^+ 3 + 18 * x + 27) * 3.-proot 3
@@ -84,6 +86,21 @@ Lemma eq3 :
   (- (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3
      + (x ^+ 2 + 2 * \sqrt 2 * x + 2))
   * (x ^+ 3 + 6 * x + 9 - (3 * x ^+ 2 + 2) * \sqrt 2)
+  / (x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73).
+Proof.
+move=> hE. radcan_raw.
+by apply: contra_neq hE => h; rewrite -h; radcan.
+Qed.
+
+(* (3) as printed, with x ^+ 6 in place of the misprinted x ^+ 5: the
+   printed numerator is right *)
+Lemma eq3p :
+  x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73 != 0 ->
+  1 / (x + \sqrt 2 + 3.-proot 9) =
+  ((((2 * x ^+ 3 - 4 * x - 9) * \sqrt 2 - x ^+ 4 - 9 * x + 4) * 3.-proot 9)
+  + (((-9) * x ^+ 2 - 6) * \sqrt 2 + 3 * x ^+ 3 + 18 * x + 27) * 3.-proot 3
+  + ((- x ^+ 4 + 4 * x ^+ 2 + 18 * x - 4) * \sqrt 2 + x ^+ 5 - 4 * x ^+ 3
+     + 9 * x ^+ 2 + 4 * x + 18))
   / (x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73).
 Proof.
 move=> hE. radcan_raw.
