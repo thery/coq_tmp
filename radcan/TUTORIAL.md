@@ -2370,6 +2370,88 @@ It also finds `√3·√7 = √21` written with `ω₂₁`, or `√14` with `ω�
 cost grows with the number of terms: about 0.05 s for `√13`, 0.17 s for
 `√29`, 2.6 s for `√101`.
 
+## Part 38 — trigonometric identities: `radcan_trig`
+
+Script: [`tutorial/Tut38_trig.v`](tutorial/Tut38_trig.v); tactic in
+[`trig/TrigTac.v`](trig/TrigTac.v), catalogue in
+[`trig/TrigCatalogue.v`](trig/TrigCatalogue.v). The directory `trig/` needs
+`rocq-mathcomp-real-closed`; the core library does not.
+
+`radcan_trig` proves equalities on the reals of the standard library between
+expressions built from numbers, variables, `+ − × /`, powers, square roots of
+numbers, and `cos`, `sin`, `tan` of angles of the form "integer combination
+of variables plus a rational multiple of `π`". It automates the route of
+Part 35:
+
+1. `tan` is unfolded and the denominators are cleared on ℝ; their
+   conditions, such as `cos x ≠ 0`, are kept as real statements;
+2. the goal goes to ℂ: `cos x = (E x + (E x)⁻¹)/2`, `E (x + y) = E x · E y`,
+   `E (π/n) = n.-root (−1)` (`trig/TrigBridge.v`);
+3. each `E x` becomes a variable `u ≠ 0`, and both sides are multiplied by
+   a power of `u` so that no negative power is left;
+4. `radcan` proves the algebra (roots of unity, Gauss sums, cyclotomic
+   reduction);
+5. the conditions `u ≠ 0` are closed automatically; the real conditions are
+   closed from the hypotheses when possible, otherwise given back.
+
+```coq
+Lemma cos3 x : cos (3 * x) = 4 * cos x ^ 3 - 3 * cos x.
+Proof. radcan_trig. Qed.
+
+Lemma cos_PI5 : cos (PI / 5) = (1 + sqrt 5) / 4.
+Proof. radcan_trig. Qed.
+
+Lemma tanD x y : cos x <> 0 -> cos y <> 0 -> cos (x + y) <> 0 ->
+  tan (x + y) = (tan x + tan y) / (1 - tan x * tan y).
+Proof. move=> hx hy hxy. radcan_trig. Qed.
+```
+
+### The catalogue
+
+Every line below is proved by one call of `radcan_trig` in
+`trig/TrigCatalogue.v` (conditions closed from the hypotheses). Times are
+those of the call.
+
+| identity | conditions | time (s) |
+|---|---|---|
+| `sin²x + cos²x = 1` | – | 0.09 |
+| `1 + tan²x = 1/cos²x` | `cos x ≠ 0` | 0.12 |
+| `cos(−x) = cos x`, `sin(−x) = −sin x`, `tan(−x) = −tan x` | `cos x ≠ 0` for `tan` | 0.04–0.14 |
+| shifts by `π/2`, `π`, `2π` (e.g. `cos(x + π/2) = −sin x`, `tan(x + π) = tan x`) | `cos x ≠ 0` for `tan` | 0.04–0.16 |
+| `cos(x ± y)`, `sin(x ± y)` | – | 0.10–0.13 |
+| `tan(x ± y)` | `cos x`, `cos y`, `cos(x ± y) ≠ 0` | 0.5 |
+| `sin 2x`, the three forms of `cos 2x`, `tan 2x` | `cos x`, `cos 2x ≠ 0` for `tan` | 0.06–0.29 |
+| `sin 3x`, `cos 3x`, `tan 3x` | `cos x`, `cos 3x ≠ 0` for `tan` | 0.09–1.9 |
+| power reduction (`cos²`, `sin²`, `sin³`, `cos³`, `cos⁴`) | – | 0.06–0.13 |
+| product-to-sum and sum-to-product | – | 0.10–0.12 |
+| `cos(x+y)·cos(x−y) = cos²x − sin²y` | – | 0.16 |
+| `cos 4x`, `cos 5x`, `sin 5x`, `cos 7x`, `cos 10x` | – | 0.16–3.6 |
+| `cos x · cos 2x · cos 4x = sin 8x / (8 sin x)` | `sin x ≠ 0` | 0.15 |
+| `sin(x + y + z)`, `tan(x + y + z)` | four `cos ≠ 0` for `tan` | 0.36 / 2.9 |
+| `sin`, `cos`, `tan` of `π/6`, `π/4`, `π/3`, `π/2`, `π`, `2π/3`, `π/12` | – | 0.02–0.12 |
+| `cos(π/5) = (1 + √5)/4`, `cos(2π/5) = (√5 − 1)/4`, `sin²(π/5) = (5 − √5)/8` | – | 0.04–0.08 |
+| `cos²(π/8) = (2 + √2)/4` | – | 0.07 |
+| `cos(π/7) − cos(2π/7) + cos(3π/7) = 1/2` (IMO 1963) | – | 0.10 |
+| `cos(2π/5) + cos(4π/5) = −1/2` | – | 0.08 |
+| `cos(π/7)·cos(2π/7)·cos(3π/7) = 1/8`, `cos(π/9)·cos(2π/9)·cos(4π/9) = 1/8` | – | 0.11–0.12 |
+| `8 sin³(π/18) − 6 sin(π/18) + 1 = 0` | – | 0.12 |
+| `sin(π/15)·sin(2π/15)·sin(4π/15)·sin(7π/15) = 1/16` | – | 0.23 |
+| `sin(2π/7) + sin(4π/7) − sin(6π/7) = √7/2` | – | 0.17 |
+
+False identities such as `cos 2x = 2 cos x − 1` or `cos(π/5) = 1/2` are
+refused. Without hypotheses, `tan 2x` is proved and the conditions
+`cos x ≠ 0`, `cos²x − sin²x ≠ 0`, `cos 2x ≠ 0` are given back.
+
+What it does not do (each case is in the comment at the end of the
+catalogue):
+
+- `cos(π/8) = √(2 + √2)/2`: a square root of an expression that is not a
+  number; its square, `cos²(π/8) = (2 + √2)/4`, is proved.
+- `cos x = 2 cos²(x/2) − 1`: `x/2` is not an integer multiple of a
+  variable; write it with `x = 2y`.
+- `sin x = 1 → cos x = 0`: hypotheses that are equations are not used.
+- `√(1 − sin²x) = |cos x|`, inequalities, `arcsin`, `arctan`, `exp`, `ln`.
+
 ## The paper's examples (`paper/Paper.v`)
 
 `paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.
@@ -2425,6 +2507,8 @@ of `x` in `E`.
 | `Sym.v`, `SymTac.v` | roots given by hypotheses (y ^+ n = B), `radcan_sym` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
 | `Examples.v`, `RefineEx.v` | examples with timings |
+| `trig/TrigBridge.v` | `E x = cos x + i sin x`, its laws, `E (π/n) = n.-root (−1)` for every `n`, transfer back to ℝ |
+| `trig/TrigTac.v`, `trig/TrigTests.v`, `trig/TrigCatalogue.v` | `radcan_trig`, its tests, the catalogue of standard identities |
 
 ## What does not work yet
 
