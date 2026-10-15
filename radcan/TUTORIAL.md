@@ -484,7 +484,13 @@ Every normal form in this part is computed in about 0.01 s.
 
 `Refine.v` turns the raw list into a shorter one:
 
-- duplicates and conditions that are true on constants (`0 <= 3`) disappear;
+- duplicates and conditions that are true on constants (`0 <= 3`) disappear,
+  also with roots of constants: `0 <= 3 - 2 * sqrt 2` is proved by rational
+  bounds on `sqrt 2` (`SignCert.v`);
+- `0 <= x^-1` is read as `0 <= x`; `0 <= sqrt x`, `0 <= x * y` and
+  `1 <= x ^+ 2` are dropped when they follow from `0 <= x`, `0 <= y`,
+  `1 <= x` (the checker knows that roots and inverses of nonnegative
+  expressions are nonnegative, and multiplies two hypotheses);
 - a condition affine in one variable becomes a bound: `0 <= x - 1` becomes
   `1 <= x`, and `x + 1 != 0` becomes `x != -1`;
 - for each variable only the strongest bounds are kept, and `1 <= x` together
@@ -575,9 +581,8 @@ Local Open Scope R_scope.
 Lemma si1 (x : R) : 0 <= x -> sqrt x * sqrt (sqrt x) = sqrt (sqrt (x ^ 3)).
 Proof.
 move=> x_ge0. radcan_Rstd. radcan.
-(* radcan leaves:  0 <= x   and   0 <= sqrt x  (printed rootR 2 x) *)
-- by radcan_Rstd_back; lra.
-- by rewrite -sqrtE; apply/RleP/sqrt_pos.
+(* radcan leaves 0 <= x (0 <= sqrt x follows from it and is dropped) *)
+by radcan_Rstd_back; lra.
 Qed.
 ```
 
@@ -1374,6 +1379,88 @@ Goal forall x : R, sqrt (x ^ 2) = x.
 Proof. move=> x. radcan_lra. Abort.
 ```
 
+## Part 23 — irreducible factors of radicands (milestone M16)
+
+`IrrFactor.v` factors one-variable polynomials over ℤ (Berlekamp modulo a
+small prime, Hensel lifting, Zassenhaus recombination). `MFactor.v` and
+`MFactorEEZ.v` factor polynomials in several variables (homogeneous
+polynomials, factors linear in some variable, and Wang's EEZ algorithm). All
+of this is unproved computation; every factorisation is checked by
+multiplication.
+
+The factors are used in the radicand basis only as a fallback, because
+splitting a radicand strengthens the conditions (`0 <= x−1`, `0 <= x+1`
+instead of `0 <= x²−1`). In practice the square-free coprime basis of Part 14
+already proves these goals; the irreducible factors mostly change the
+*displayed* normal form (the paper's "form 1").
+
+```coq
+Section Generic.
+Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+
+(* raw: 0 <= x + 1, 0 <= x - 1   refined: 1 <= x *)
+Lemma f1 : 1 <= x -> \sqrt (x ^+ 2 - 1) = \sqrt (x - 1) * \sqrt (x + 1).
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* x^4 - 1 = (x^2 - 1)(x^2 + 1): refined 1 <= x ^+ 2 *)
+Lemma f2 : 1 <= x ^+ 2 ->
+  \sqrt (x ^+ 4 - 1) / \sqrt (x ^+ 2 + 1) = \sqrt (x ^+ 2 - 1).
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* two variables: x^2 - y^2 = (x - y)(x + y) *)
+Lemma f3 : y <= x -> 0 <= x + y ->
+  \sqrt (x ^+ 2 - y ^+ 2) = \sqrt (x - y) * \sqrt (x + y).
+Proof. move=> h1 h2. radcan. all: by []. Qed.
+
+(* x^3 - y^3 = (x - y)(x^2 + x y + y^2) *)
+Lemma f4 : y < x -> 0 <= x * y + x ^+ 2 + y ^+ 2 ->
+  \sqrt (x ^+ 3 - y ^+ 3) / \sqrt (x - y) = \sqrt (x ^+ 2 + x * y + y ^+ 2).
+Proof. move=> h1 h2. radcan. all: by []. Qed.
+
+(* x y + x + y + 1 = (x + 1)(y + 1) *)
+Lemma f5 : -1 <= x -> -1 <= y ->
+  \sqrt (x * y + x + y + 1) = \sqrt (x + 1) * \sqrt (y + 1).
+Proof. move=> h1 h2. radcan. all: by []. Qed.
+
+(* the paper's form 1: (x + 3)^2 (x + 1)(x + 2), refined -1 <= x *)
+Lemma f6 : -1 <= x ->
+  \sqrt (x ^+ 4 + 9 * x ^+ 3 + 29 * x ^+ 2 + 39 * x + 18) =
+  (x + 3) * \sqrt (x + 1) * \sqrt (x + 2).
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* no factor of degree 1 in any variable (Wang's EEZ in MFactorEEZ) *)
+(* refined: -1 <= 210 * x ^+ 2 + y ^+ 3, -11 <= x ^+ 2 + 2 * y ^+ 2 *)
+Lemma f7 : -1 <= 210 * x ^+ 2 + y ^+ 3 -> -11 <= x ^+ 2 + 2 * y ^+ 2 ->
+  \sqrt (210 * x ^+ 4 + 420 * x ^+ 2 * y ^+ 2 + 2311 * x ^+ 2 +
+         x ^+ 2 * y ^+ 3 + 2 * y ^+ 5 + 11 * y ^+ 3 + 2 * y ^+ 2 + 11) =
+  \sqrt (210 * x ^+ 2 + y ^+ 3 + 1) * \sqrt (x ^+ 2 + 2 * y ^+ 2 + 11).
+Proof. move=> h1 h2. radcan. all: by []. Qed.
+End Generic.
+
+(* the normal form itself: form 2 keeps sqrt (x^2 + 3x + 2), the           *)
+(* irreducible basis (form 1) gives sqrt (x + 1) * sqrt (x + 2)              *)
+Definition P1 : rexpr :=
+  RAdd (RAdd (RAdd (RAdd (RPow (RVar 0) 4) (RMul (RCst 9) (RPow (RVar 0) 3)))
+                   (RMul (RCst 29) (RPow (RVar 0) 2)))
+             (RMul (RCst 39) (RVar 0))) (RCst 18).
+Definition sqP1 := RRootE 2 P1.
+Compute nf_to_rexpr (radcan_nf MStd sqP1 sqP1).1.1.
+Compute
+  let hs := neg_hints [:: sqP1] in
+  let bs := irr_basis (mk_basis_n false MStd hs [:: sqP1]) in
+  nf_to_rexpr (radcan_nfb false MStd hs bs sqP1 sqP1).1.1.
+
+(* on Stdlib reals the refined conditions are closed by lra *)
+Local Open Scope R_scope.
+Lemma sf1 (x : R) : 1 <= x -> sqrt (x ^ 2 - 1) = sqrt (x - 1) * sqrt (x + 1).
+Proof. move=> h. radcan_Rstd. radcan. all: radcan_Rstd_back; lra. Qed.
+
+Lemma sf2 (x y : R) : y <= x -> 0 <= x + y ->
+  sqrt (x ^ 2 - y ^ 2) = sqrt (x - y) * sqrt (x + y).
+Proof. move=> h1 h2. radcan_Rstd. radcan. all: radcan_Rstd_back; lra. Qed.
+```
+
 ## Part 24 — a variable out of a denominator (milestone M18)
 
 When every term of a denominator contains the same variables (a common
@@ -1433,6 +1520,616 @@ Proof. radcan_lra. Qed.
 Print Assumptions t6.  (* Closed under the global context *)
 ```
 
+## Part 25 — denesting square roots (milestone M19)
+
+`√(3 + 2√2) = 1 + √2`: a radicand `a + b√c` (rational `a`, `b`) denests
+when `a² − b²c = d²` is a rational square; the candidate is
+`√((a+d)/2) ± √((a−d)/2)`. The candidate is found without proof, then
+checked: its square must normalise to the radicand, and it must be
+nonnegative, which is proved by a small certificate (rational bounds on each
+square root, checked by integer arithmetic). Then `proot_eq` gives the
+equality.
+
+Later phases extend the same check-a-candidate scheme:
+
+- with variables (`√(x + 2√(x−1)) = 1 + √(x−1)`, leaving `1 <= x`): the
+  candidate comes from `a² − b²c = d²` as polynomials, and its sign becomes a
+  condition, usually implied by conditions already present;
+- several inner roots (`√(10+2√6+2√10+2√15) = √2+√3+√5`): the candidate
+  `√p + √q + √r` is found by matching the cross terms `2√(pq)`, …;
+- several inner roots with variables
+  (`√(x+y+z+2√(xy)+2√(xz)+2√(yz)) = √x+√y+√z`).
+
+All of them run inside `radcan` through the composed pre-pass (Part 29).
+
+```coq
+(* one nested root: reify its radicand t, find the candidate c, check
+   denest_ok e c by vm_compute (the square by radcan_check, the sign by
+   sq_nonneg), then rewrite with denest_sound: proot r 2 t = candidate *)
+Ltac denest_at r :=
+  match goal with
+  | |- context [proot r 2 ?t] =>
+    let T := type of t in
+    let p := radcan_reify_term r t (@nil T) in
+    lazymatch p with (?e, ?env) =>
+      let c := eval vm_compute in (denest_find e) in
+      lazymatch c with
+      | Some ?c =>
+        let H := fresh "H" in let h := fresh "h" in
+        (have H : denest_ok e c by vm_compute);
+        have h : proot r 2 t = rinterp r env (dc_rexpr c) :=
+          denest_sound r env H;
+        rewrite h {h H} /dc_rexpr /=
+      end
+    end
+  end.
+
+(* the whole goal at once: radcan_check on the denested sides *)
+Ltac radcan_denest r :=
+  radcan_reify r;
+  lazymatch goal with
+  | |- rinterp _ ?env ?e1 = rinterp _ _ ?e2 =>
+    let c := eval vm_compute in (radcan_check_denest e1 e2) in
+    lazymatch c with
+    | Some ?cs =>
+      apply: (@radcan_eq_denest _ r env e1 e2 cs);
+        [vm_compute; reflexivity | radcan_split_conds]
+    | None => fail "radcan_denest: the normal forms differ"
+    end
+  end.
+
+Section Denest.
+Variables (F : numFieldType) (r : posroot F).
+
+(* plain radcan cannot do it: proot r 2 (3 + 2 sqrt 2) stays an atom *)
+Goal proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+Proof. Fail radcan. Abort.
+
+Lemma d1 : proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+Proof. denest_at r. radcan. Qed.
+
+Lemma d2 : proot r 2 (5 + 2 * proot r 2 6) = proot r 2 2 + proot r 2 3.
+Proof. denest_at r. radcan. Qed.
+
+(* sign certificate: sqrt 3 - 1 >= 0 needs sqrt 3 >= 1 *)
+Lemma d3 : proot r 2 (4 - 2 * proot r 2 3) = proot r 2 3 - 1.
+Proof. denest_at r. radcan. Qed.
+
+Lemma d4 : proot r 2 (7 - 4 * proot r 2 3) = 2 - proot r 2 3.
+Proof. denest_at r. radcan. Qed.
+
+(* rational coefficients: sqrt (3/2 + sqrt 2) = 1 + sqrt 2 / 2 *)
+Lemma d5 : proot r 2 (3 / 2 + proot r 2 2) = 1 + proot r 2 2 / 2.
+Proof. denest_at r. radcan. Qed.
+
+(* the whole-goal version, several nested roots *)
+Lemma d6 : proot r 2 (3 + 2 * proot r 2 2) - proot r 2 (3 - 2 * proot r 2 2)
+  = 2.
+Proof. radcan_denest r. Qed.
+
+Lemma d7 : proot r 2 (12 + 6 * proot r 2 3) * proot r 2 (4 - 2 * proot r 2 3)
+  = 2 * proot r 2 3.
+Proof. radcan_denest r. Qed.
+
+(* sqrt (1 + sqrt 2) does not denest: 1 - 2 = -1 is not a square *)
+Goal proot r 2 (1 + proot r 2 2) = 0.
+Proof. Fail denest_at r. Abort.
+
+(* it stays as it is, and radcan_denest still proves what radcan proves *)
+(* (the condition 0 <= sqrt 2 + 1 of the square of a root is left) *)
+Lemma d8 : proot r 2 (1 + proot r 2 2) ^+ 2 = 1 + proot r 2 2.
+Proof. radcan_denest r. by rewrite addr_ge0 ?proot_ge0. Qed.
+
+(* a wrong candidate is refused: sqrt (4 - 2 sqrt 3) is not 1 - sqrt 3 *)
+Goal proot r 2 (4 - 2 * proot r 2 3) = 1 - proot r 2 3.
+Proof. Fail radcan_denest r. Abort.
+
+End Denest.
+
+(* on a real closed field, with rootR *)
+Lemma rc_denest (R : rcfType) :
+  rootR 2 (5 - 2 * rootR 2 6) = rootR 2 3 - rootR 2 (2 : R).
+Proof. radcan_denest (rootR_posroot R). Qed.
+```
+
+## Part 26 — roots of fractions (milestone M20)
+
+The paper's rule (i): `√(P/Q) = √P / √Q` when `0 <= P` and `0 <= Q`.
+`frac_split` rewrites every root of a fraction containing a variable into
+the quotient of the roots and records these two conditions (none for an odd
+root on a real field). `radcan` uses it as a fallback when the plain check
+fails, so goals it proved before keep their conditions.
+
+```coq
+(* radcan_with_gen of Tactic.v, with frac_split before the checker *)
+(* radcan falls back to frac_split when the plain check fails *)
+
+Section Generic.
+Variables (F : numFieldType) (r : posroot F) (x y z : F).
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+
+(* plain radcan fails: the radicand (x - 1) / (x + 2) is one opaque atom   *)
+(* raw: 0 <= x - 1, 0 <= x + 2 (twice)   refined: 1 <= x                    *)
+Lemma f1 : 1 <= x -> \sqrt ((x - 1) / (x + 2)) = \sqrt (x - 1) / \sqrt (x + 2).
+Proof. move=> h. radcan. exact: h. Qed.
+
+Lemma f1r : 0 <= x - 1 -> 0 <= x + 2 ->
+  \sqrt ((x - 1) / (x + 2)) = \sqrt (x - 1) / \sqrt (x + 2).
+Proof. move=> h1 h2. radcan_raw. all: by []. Qed.
+
+(* refined: 0 <= x, 0 < y *)
+Lemma f2 : 0 <= x -> 0 < y -> \sqrt (x / y) * \sqrt y = \sqrt x.
+Proof. move=> hx hy. radcan. all: by []. Qed.
+
+(* a lone inverse: 1 / x is 1 * x^-1; refined: 0 <= x *)
+Lemma f3 : 0 <= x -> \sqrt (1 / x) = 1 / \sqrt x.
+Proof. move=> h. radcan. exact: h. Qed.
+
+Lemma f3b : 0 <= x -> \sqrt (x^-1) = (\sqrt x)^-1.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* the paper's (9): ((x^2 - 1) / (x + 2))^(1/2) / (x^2 + 3x + 2)^(1/3)     *)
+(* refined: 1 <= x (1 <= x ^+ 2 follows from it and is dropped)            *)
+Lemma f4 : 1 <= x ->
+  \sqrt ((x ^+ 2 - 1) / (x + 2)) / proot r 3 (x ^+ 2 + 3 * x + 2) =
+  \sqrt (x - 1) * \sqrt (x + 1) / \sqrt (x + 2) /
+  (proot r 3 (x + 1) * proot r 3 (x + 2)).
+Proof.
+move=> h. radcan; exact: h.
+Qed.
+
+(* products and powers in the fraction, roots in the radicand *)
+Lemma f5 : 0 <= x -> 0 <= y -> 0 <= z ->
+  \sqrt (x * y / (z * x ^+ 2)) = \sqrt y / (\sqrt z * \sqrt x).
+Proof.
+move=> hx hy hz. radcan.
+all: by rewrite ?mulr_ge0 ?exprn_ge0.
+Qed.
+
+Lemma f6 : 0 <= x -> 0 <= y ->
+  \sqrt ((x / y) ^+ 3) = \sqrt x * x / (\sqrt y * y).
+Proof. move=> hx hy. radcan. all: by rewrite ?exprn_ge0. Qed.
+
+Lemma f7 : 0 <= x -> 0 <= y ->
+  \sqrt (\sqrt (x / y)) = \sqrt (\sqrt x) / \sqrt (\sqrt y).
+Proof. move=> hx hy. radcan. all: by rewrite ?proot_ge0. Qed.
+
+(* constant fractions are left to plain radcan, unchanged *)
+Lemma f8 : \sqrt (2 / 3) = \sqrt 6 / 3.
+Proof. by radcan. Qed.
+End Generic.
+
+Section Real.
+Variables (R : rcfType) (x y : R).
+
+(* real mode: odd roots split with no condition from frac_split *)
+Lemma g1 : rootR 3 (x / 8) = rootR 3 x / 2.
+Proof. by radcan. Qed.
+
+(* 0 <= y comes from the checker (the inverse of rootR 3 y), not from     *)
+(* frac_split                                                              *)
+Lemma g2 : 0 <= y -> rootR 3 (x / y) = rootR 3 x / rootR 3 y.
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* refined: 1 <= x *)
+Lemma g3 : 1 <= x ->
+  rootR 2 ((x - 1) / (x + 2)) = rootR 2 (x - 1) / rootR 2 (x + 2).
+Proof. move=> h. radcan. exact: h. Qed.
+End Real.
+
+Section Complex.
+Variables (C : numClosedFieldType) (x : C).
+
+(* refined: -1 <= x *)
+Lemma h1 : -1 <= x -> 2.-root ((x + 1) / 4) = 2.-root (x + 1) / 2.
+Proof. move=> h. radcan. exact: h. Qed.
+End Complex.
+```
+
+## Part 27 — explicit values of small roots of unity (milestone Ω1)
+
+mathcomp's `n.-root (−1)` is the root of `Xⁿ + 1` in the upper half-plane
+with the largest real part, i.e. `ω_n = e^{iπ/n}`. `OmegaC.v` proves this
+characterisation (`rootC_char`, `sqrtC_char`), the index law for `k = 2`
+(`rootC_double : (2n).-root x = sqrtC (n.-root x)`) and the values
+
+- `ω₃ = (1 + √3·i)/2`, `ω₄ = (√2/2)(1 + i)`, `ω₆ = (√3 + i)/2`,
+- `ω₁₂ = ((√6+√2) + (√6−√2)·i)/4`,
+
+packaged as the record `smallroot` (`OmegaRoot.v`) with the instance
+`rootC_smallroot C`.
+
+```coq
+Section Omega.
+Variable C : numClosedFieldType.
+
+(* the explicit values, in Q(i, sqrt 2, sqrt 3) *)
+Check omega1C C : 1.-root (-1 : C) = -1.
+Check omega2C C : 2.-root (-1 : C) = 'i.
+Check omega3C C : 3.-root (-1 : C) = (1 + sqrtC 3 * 'i) / 2.
+Check omega4C C : 4.-root (-1 : C) = sqrtC 2 / 2 * (1 + 'i).
+Check omega6C C : 6.-root (-1 : C) = (sqrtC 3 + 'i) / 2.
+Check omega12C C : 12.-root (-1 : C) =
+  ((sqrtC 6 + sqrtC 2) + (sqrtC 6 - sqrtC 2) * 'i) / 4.
+
+(* the characterisation used to prove them *)
+Check @rootC_char C.
+Check @rootC_double C.
+
+(* cyclotomic and index relations, proved in OmegaC.v *)
+Check omega3_cycloC C : 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
+Check omega4_sqrC C : 4.-root (-1 : C) ^+ 2 = 2.-root (-1).
+Check omega4_sqrt2C C : 4.-root (-1 : C) - 4.-root (-1) ^+ 3 = sqrtC 2.
+Check omega4_invC C : 4.-root (-1 : C) + (4.-root (-1))^-1 = sqrtC 2.
+Check omega6_sqrC C : 6.-root (-1 : C) ^+ 2 = 3.-root (-1).
+Check omega6_cubeC C : 6.-root (-1 : C) ^+ 3 = 'i.
+Check omega12_sqrC C : 12.-root (-1 : C) ^+ 2 = 6.-root (-1).
+Check omega12_cubeC C : 12.-root (-1 : C) ^+ 3 = 4.-root (-1).
+
+(* radcan alone does not see these relations (Tutorial 16); after
+   unfolding the explicit values (and 'i back into 2.-root (-1)) it does *)
+Lemma o1 : 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
+Proof. by rewrite omega3C -omega2C; radcan. Qed.
+
+Lemma o2 : 4.-root (-1 : C) ^+ 2 = 2.-root (-1).
+Proof. by rewrite omega4C -omega2C; radcan. Qed.
+
+Lemma o3 : 12.-root (-1 : C) ^+ 3 = 4.-root (-1).
+Proof. by rewrite omega12C omega4C -omega2C; radcan. Qed.
+
+(* paper eq. (2), second reading *)
+Lemma o4 : (4.-root (-1 : C))^-1 - (4.-root (-1))^-1 ^+ 3 - sqrtC 2 = 0.
+Proof. by rewrite omega4C -omega2C; radcan. Qed.
+
+End Omega.
+
+(* the record, with its instance on C *)
+Check @smallroot.
+Check fun C : numClosedFieldType => rootC_smallroot C.
+```
+
+## Part 28 — using the values of ω (milestone Ω2)
+
+`omega_rw` (`OmegaPass.v`) replaces `3.-root(−1)`, `4.-root(−1)`,
+`6.-root(−1)` and `12.-root(−1)` by their values, and a root of a negative
+constant `n.-root(−c)` by `n.-root c · ω_n`. The neg checker then works with
+`ω₂ = √(−1)` only, reduced by `ω₂² = −1`. This proves the two goals that
+Part 16 had to leave out (`ω₃² − ω₃ + 1 = 0`, `ω₄² = ω₂`) and the paper's
+(2) in its second reading.
+
+```coq
+(* radcan_with_gen of Tactic.v in neg mode, with omega_rw before the checker *)
+Ltac radcan_omega_with_gen refined r w ov :=
+  radcan_reify r;
+  lazymatch goal with
+  | |- rinterp _ ?env ?e1 = rinterp _ _ ?e2 =>
+      let p1 := eval vm_compute in (omega_rw e1) in
+      let p2 := eval vm_compute in (omega_rw e2) in
+      lazymatch p1 with (?f1, ?cs1) =>
+      lazymatch p2 with (?f2, ?cs2) =>
+      let c := eval vm_compute in (radcan_check_neg f1 f2) in
+      lazymatch c with
+      | Some ?cs =>
+          lazymatch refined with
+          | true =>
+              let rcs := eval vm_compute in (refine (cs1 ++ cs2 ++ cs)) in
+              apply: (@radcan_eq_omega_refined _ r w env ov
+                        e1 e2 f1 f2 cs1 cs2 cs rcs);
+              [vm_compute; reflexivity | vm_compute; reflexivity
+              | vm_compute; reflexivity | vm_compute; reflexivity
+              | radcan_split_rconds]
+          | false =>
+              apply: (@radcan_eq_omega _ r w env ov
+                        e1 e2 f1 f2 cs1 cs2 cs);
+              [vm_compute; reflexivity | vm_compute; reflexivity
+              | vm_compute; reflexivity | radcan_split_conds]
+          end
+      | None => fail "radcan_omega: the normal forms differ"
+      end end end
+  end.
+
+(* the dispatch: a proot r goal with ov : smallroot w (w : negroot r), or  *)
+(* an n.-root goal on C (rootC_negroot C, rootC_smallroot C of OmegaC.v)    *)
+Ltac radcan_omega_only refined :=
+  lazymatch goal with
+  | |- context [proot ?r _ _] =>
+      lazymatch goal with
+      | ov : @smallroot _ r ?w |- _ => radcan_omega_with_gen refined r w ov
+      end
+  | |- context [@nthroot ?C _ _] =>
+      radcan_omega_with_gen refined (rootC_posroot C) (rootC_negroot C)
+        (rootC_smallroot C)
+  end.
+
+(* plain radcan first, so that the goals it proves keep their conditions *)
+Ltac radcan_omega_gen refined :=
+  first [radcan_gen refined | radcan_omega_only refined].
+
+Ltac radcan_omega := radcan_omega_gen true.
+Ltac radcan_omega_raw := radcan_omega_gen false.
+
+Section Generic.
+Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Hypothesis ov : smallroot w.
+Variable x : F.
+Local Notation "\w_ n" := (proot r n (-1)) (at level 3, n at level 2).
+
+Lemma o1 : \w_3 ^+ 2 - \w_3 + 1 = 0.
+Proof. Fail radcan. radcan_omega. Qed.
+
+(* the index law, through the explicit values *)
+Lemma o2 : \w_4 ^+ 2 = \w_2.
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma o3 : \w_6 ^+ 2 = \w_3.
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma o4 : \w_12 ^+ 3 = \w_4.
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma o5 : \w_6 ^+ 3 = \w_2.
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma o6 : \w_12 ^+ 2 = \w_6.
+Proof. radcan_omega. Qed.
+
+(* omega_4 + omega_4 ^-1 = sqrt 2 *)
+Lemma o7 : \w_4 + (\w_4)^-1 = proot r 2 2.
+Proof. Fail radcan. radcan_omega. Qed.
+
+(* negative constant radicands: n.-root (- p / d) = n.-root (p / d) omega_n *)
+Lemma o8 : proot r 3 (-8) = 1 + proot r 2 3 * \w_2.
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma o9 : proot r 4 (- (1 / 4)) = (1 + \w_2) / 2.
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma o10 : proot r 12 (-1) ^+ 4 = proot r 3 (-1).
+Proof. radcan_omega. Qed.
+
+(* the paper's (2), second reading ((1 - x)^(3/4) = ((1 - x)^(1/4))^3):     *)
+(* 4.-root (1 - x) = 4.-root (x - 1) * omega_4 under 0 <= x - 1, so the     *)
+(* left side is omega_4^-1 - omega_4^-3 - sqrt 2 = 0                        *)
+(* raw: 0 <= - (1 - x) (omega_rw, twice), 0 <= x - 1, x - 1 != 0           *)
+(* refined: 1 < x                                                           *)
+Lemma paper2 : 1 < x ->
+  proot r 4 (x - 1) / proot r 4 (1 - x)
+  - proot r 4 (x - 1) ^+ 3 / proot r 4 (1 - x) ^+ 3 - proot r 2 2 = 0.
+Proof. move=> h. Fail radcan. radcan_omega. exact: h. Qed.
+
+(* first reading ((1 - x)^(3/4) = 4.-root ((1 - x)^3)): the principal roots *)
+(* make the first two terms cancel, so the left side of (2) is - sqrt 2;   *)
+(* plain radcan already proves it (the omega_4 atoms cancel)               *)
+Lemma paper2' : 1 < x ->
+  proot r 4 (x - 1) / proot r 4 (1 - x)
+  - proot r 4 ((x - 1) ^+ 3) / proot r 4 ((1 - x) ^+ 3) = 0.
+Proof. move=> h. radcan. exact: h. Qed.
+End Generic.
+
+(* On C: n.-root goals, with rootC_negroot C and rootC_smallroot C (OmegaC.v) *)
+Section Complex.
+Variables (C : numClosedFieldType) (x : C).
+
+(* the two Fail goals of TUTORIAL Part 16 *)
+Lemma c1 : 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma c2 : 4.-root (-1 : C) ^+ 2 = 2.-root (-1).
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma c3 : 6.-root (-1 : C) ^+ 2 = 3.-root (-1).
+Proof. Fail radcan. radcan_omega. Qed.
+
+Lemma c4 : 12.-root (-1 : C) ^+ 3 = 4.-root (-1).
+Proof. Fail radcan. radcan_omega. Qed.
+
+(* the principal cube root of -8 *)
+Lemma c5 : 3.-root (-8 : C) = 1 + 2.-root 3 * 2.-root (-1).
+Proof. Fail radcan. radcan_omega. Qed.
+
+(* paper (2), second reading; refined: 1 < x *)
+Lemma c6 : 1 < x ->
+  4.-root (x - 1) / 4.-root (1 - x)
+  - 4.-root (x - 1) ^+ 3 / 4.-root (1 - x) ^+ 3 - 2.-root 2 = 0.
+Proof. move=> h. Fail radcan. radcan_omega. exact: h. Qed.
+End Complex.
+```
+
+## Part 29 — the composed pre-pass (`Prepass.v`)
+
+When the plain check fails, `radcan` rewrites both sides with a composed
+pre-pass and checks again. Each round applies
+
+1. `omega_rw` (only on ℂ, or with a `smallroot` in the context): values of
+   small roots of unity, `n.-root(−c) = n.-root c · ω_n`;
+2. `frac_split`: roots of fractions;
+3. `denest_rwc`: denesting (constants, variables, several roots);
+
+and rounds are repeated until nothing changes (at most `radcan_fuel = 4`).
+Every pass comes with a soundness lemma and the conditions it needs; the
+decision theorems `radcan_eq_pre*` chain them with the usual checker. Goals
+the plain check proves are not affected.
+
+```coq
+Section Generic.
+Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+
+(* fractions, then denesting of sqrt (3 + 2 sqrt 2)                         *)
+(* refined: 0 <= x (the checker, 1 / sqrt x); 0 <= 3 + 2 sqrt 2 from       *)
+(* frac_split is dropped (sign certificate, SignCert.v)                    *)
+Lemma p1 : 0 <= x -> \sqrt ((3 + 2 * \sqrt 2) / x) = (1 + \sqrt 2) / \sqrt x.
+Proof.
+move=> h. Fail radcan_plain_gen true. radcan; exact: h.
+Qed.
+
+(* fractions, then denesting with a variable                               *)
+(* refined: 1 <= x; 0 <= x + 2 sqrt (x - 1) (frac_split) follows from it    *)
+Lemma p2 : 1 <= x ->
+  \sqrt ((x + 2 * \sqrt (x - 1)) / 4) = (1 + \sqrt (x - 1)) / 2.
+Proof.
+move=> h. radcan; exact: h.
+Qed.
+
+(* denesting creates fractions: sqrt (x + sqrt (x^2 - 4)) is              *)
+(* sqrt ((x + 2) / 2) + sqrt ((x - 2) / 2), split at the second round      *)
+Lemma p3 : 2 <= x ->
+  \sqrt (x + \sqrt (x ^+ 2 - 4)) * \sqrt 2 = \sqrt (x + 2) + \sqrt (x - 2).
+Proof. move=> h. radcan. exact: h. Qed.
+
+(* a constant fraction: sqrt (3 / 2 + sqrt 2) = 1 + sqrt 2 / 2 *)
+Lemma p4 : \sqrt (3 / 2 + \sqrt 2) * \sqrt 2 = \sqrt 2 + 1.
+Proof. Fail radcan_plain_gen true. by radcan. Qed.
+
+(* the pre-pass alone: (sqrt (3 + 2 sqrt 2) * sqrt x ^-1) denested *)
+Eval vm_compute in
+  prepass false false 4
+    (RRootE 2 (RMul (RAdd (RCst 3) (RMul (RCst 2) (RRoot 2 2)))
+                    (RInv (RVar 0)))).
+End Generic.
+
+(* omega_rw runs first (with a smallroot): n.-root (-8 / x) becomes        *)
+(* n.-root (8 / x) * omega_n, then frac_split splits 8 / x                   *)
+Section Omega.
+Variables (F : numFieldType) (r : posroot F) (w : negroot r) (x : F).
+Hypothesis ov : smallroot w.
+
+(* refined: 0 <= x (0 <= x^-1 is read as 0 <= x) *)
+Lemma o1 : 0 < x ->
+  proot r 3 (-8 / x) = (1 + proot r 2 3 * proot r 2 (-1)) / proot r 3 x.
+Proof. move=> h. radcan. all: by rewrite ?invr_ge0 ltW. Qed.
+End Omega.
+
+Section Complex.
+Variables (C : numClosedFieldType) (x : C).
+
+Lemma c1 : 0 < x ->
+  3.-root (-8 / x) = (1 + 2.-root 3 * 2.-root (-1)) / 3.-root x.
+Proof. move=> h. radcan. all: by rewrite ?invr_ge0 ltW. Qed.
+End Complex.
+
+(* Limitation: omega_rw does not see the sign of a fraction radicand with  *)
+(* a variable, so 4.-root ((1 - x) / y) is first split by frac_split under *)
+(* 0 <= 1 - x, then 4.-root (1 - x) rewritten under 0 <= x - 1: the goal  *)
+(* is proved only for x = 1                                                *)
+```
+
+## Part 30 — roots given by hypotheses (`Sym.v`, `SymTac.v`, milestone M15)
+
+Script: [`tutorial/Tut30_sym.v`](tutorial/Tut30_sym.v).
+
+The paper (§3) reads a radical as a formal generator of a field extension:
+(x−1)^(1/2) is *some* y with y² = x − 1, not a branch of a root function.
+`radcan_sym` works in that reading. The user introduces his own symbols with
+defining equations, `hy : y ^+ n = B` or `hz : z = B` (y an atom, n a
+literal > 0, B any expression), and the goal is proved for **every** choice
+of the symbols:
+
+```coq
+Hypotheses (hy : y ^+ 2 = x - 1) (hz : z ^+ 4 = 1 - x) (hw : w ^+ 4 = -1).
+Lemma sym1 : y ^+ 3 = (x - 1) * y.           Proof. radcan_sym. Qed.
+Lemma sym3 : z ^+ 4 + y ^+ 2 = 0.            Proof. radcan_sym. Qed.
+Lemma sym4 : y^-1 = y / (x - 1).             Proof. radcan_sym. Qed.
+Lemma sym6 : (w - w ^+ 3) ^+ 2 = 2.          Proof. radcan_sym. Qed.
+```
+
+In the normaliser (`Sym.v`) a symbol is a variable, reduced only by
+y^k → B^(k / n) y^(k mod n) and y⁻¹ → y^(n−1) B⁻¹ (true in any field, even
+for y = 0). There is no multiplicativity, merging, sign law or branch, so no
+side condition except the cancellations B ≠ 0 of a division. Two symbols with
+the same relation stay different (`v = y` is refused, `(v - y) (v + y) = 0`
+is proved). The theorem is
+
+```coq
+radcan_eq_cond_sym : radcan_check_sym rels e1 e2 = Some cs ->
+  rels_hold rt env rels -> all_conds_gen rt env cs ->
+  rinterp_gen rt env e1 = rinterp_gen rt env e2      (* any rt *)
+```
+
+`rels_hold` asks only for the relations, `nth 0 env i ^+ n = B`. The tactic
+proves it from the hypotheses.
+
+**The paper's (2), in its own reading.** u = (x−1)^(1/4), w = (−1)^(1/4),
+(1−x)^(1/4) = w u, and √2 is the element w − w³ of the extension:
+
+```coq
+Hypotheses (hu : u ^+ 4 = x - 1) (hw : w ^+ 4 = -1) (hz : z = w * u).
+Lemma paper2 : x != 1 -> u / z - u ^+ 3 / z ^+ 3 - (w - w ^+ 3) = 0.
+Proof. move=> h. radcan_sym. by rewrite subr_eq0. Qed.
+```
+
+The cancellation u / u leaves the condition `x - 1 != 0`. The paper leaves
+it implicit, but at x = 1 the left side is −√2. Without `z = w * u` (z any
+fourth root of 1 − x), the goal is refused.
+
+Limitations: no rationalisation of 1 / (1 + y) (the inverse stays an atom,
+with the condition `y + 1 != 0` when it cancels); the reduction is not a
+Gröbner basis, so relations whose right sides contain other symbols can miss
+identities; every equation `a = B` with an atom `a` in the context is used as
+a rule.
+
+## Part 31 — roots of unity under fractions
+
+`omega_rw` now looks inside a fraction `P/Q` and tests the signs of `P` and
+`Q` separately: `n.-root(−P/Q) = n.-root(P/Q) · ω_n` (and the same for a
+negative denominator), with the same conditions as `frac_split` produces
+afterwards, so the two passes agree. `4.-root((1−x)/y)` gives `1 <= x`,
+`0 <= y` instead of the contradictory `1 <= x`, `x <= 1`.
+
+```coq
+Section Complex.
+Variables (C : numClosedFieldType) (x y : C).
+
+(* numerator negative; refined: 1 <= x, 0 <= y *)
+Lemma c1 : 1 <= x -> 0 < y ->
+  4.-root ((1 - x) / y) = 4.-root (x - 1) / 4.-root y * 4.-root (-1).
+Proof. move=> hx hy. radcan; [exact: hx | exact: ltW]. Qed.
+
+(* a negative constant numerator, n = 2; refined: 0 <= x *)
+Lemma c2 : 0 < x -> 2.-root (-4 / x) = 2 * 2.-root (-1) / 2.-root x.
+Proof. move=> h. radcan. exact: ltW. Qed.
+
+(* the cube root of Tutorial 29 (omega_3 explicit); refined: 0 <= x *)
+Lemma c3 : 0 < x ->
+  3.-root (-8 / x) = (1 + 2.-root 3 * 2.-root (-1)) / 3.-root x.
+Proof. move=> h. radcan. exact: ltW. Qed.
+
+(* denominator negative; refined: 0 <= x, 1 <= y *)
+Lemma c4 : 0 <= x -> 1 <= y ->
+  4.-root (x / (1 - y)) = 4.-root x / 4.-root (y - 1) * 4.-root (-1).
+Proof. move=> hx hy. radcan; [exact: hx | exact: hy]. Qed.
+
+(* both negative: no omega_n; refined: 0 <= x, 1 <= y *)
+Lemma c5 : 0 <= x -> 1 < y ->
+  2.-root (- x / (1 - y)) = 2.-root x / 2.-root (y - 1).
+Proof. move=> hx hy. radcan; [exact: hx | exact: ltW]. Qed.
+
+(* a constant denominator; refined: 1 <= x *)
+Lemma c6 : 1 <= x ->
+  3.-root ((1 - x) / 8) = 3.-root (x - 1) / 2 * 3.-root (-1).
+Proof. move=> h. radcan. exact: h. Qed.
+End Complex.
+
+Section Generic.
+Variables (F : numFieldType) (r : posroot F) (w : negroot r) (x y : F).
+Hypothesis ov : smallroot w.
+
+(* refined: 1 <= x, 0 <= y *)
+Lemma g1 : 1 <= x -> 0 < y ->
+  proot r 4 ((1 - x) / y) = proot r 4 (x - 1) / proot r 4 y * proot r 4 (-1).
+Proof. move=> hx hy. radcan; [exact: hx | exact: ltW]. Qed.
+
+(* refined: 0 <= x *)
+Lemma g2 : 0 < x -> proot r 2 (-4 / x) = 2 * proot r 2 (-1) / proot r 2 x.
+Proof. move=> h. radcan. exact: ltW. Qed.
+
+(* the radicand is -1 for x <> 1: the denominator is flipped, then         *)
+(* 4.-root (x - 1) / 4.-root (x - 1) cancels; refined: x != 1 (1 <= x)    *)
+Lemma g3 : 1 < x -> proot r 4 ((x - 1) / (1 - x)) = proot r 4 (-1).
+Proof. by move=> h; radcan; rewrite gt_eqF. Qed.
+End Generic.
+```
+
 ## The paper's examples (`paper/Paper.v`)
 
 `paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.
@@ -1448,7 +2145,7 @@ Print Assumptions t6.  (* Closed under the global context *)
 | (3) as printed | **refused: it is false** (check at `x = 5/2`) |
 | (1) as a quotient `(x−y)/(√x+√y) = √x−√y` | proved (M11), conditions `0 <= x`, `0 <= y`, `x != y` |
 | (3) as a quotient, with the corrected `E` | proved (M11), condition `E != 0` |
-| (2) on ℂ | not proved: with principal roots it is false (`−√2`); the paper's convention needs the cyclotomic relation of `ω₈` |
+| (2) | first reading (`n.-root` of powers): false on ℂ, the left side is `−√2` (proved); second reading (powers of roots): proved under `1 < x` with the values of `ω₄` (Part 28); the paper's own symbolic reading (roots given by hypotheses): proved by `radcan_sym` under `x != 1` (Part 30) |
 | (4) = (6) on ℂ, with `ω = 3.-root(−1)` | proved (M13), condition `-1 <= x²`; with a 6th root of `−1` it is false and refused |
 | §2 nested example `√(x²+3x+3+√(x+1)√(x+1)) = x+2` | proved (M13), condition `-1 <= x` |
 
@@ -1461,25 +2158,34 @@ of `x` in `E`.
 |---|---|
 | `PosRoot.v`, `PosRootFacts.v` | root interfaces `posroot`, `oddroot`, `negroot` and their lemmas |
 | `RootC.v`, `RootR.v` | instances for ℂ (`n.-root`) and real closed fields (`rootR`) |
+| `OmegaRoot.v`, `OmegaC.v` | explicit small roots of unity (`smallroot`, `rootC_smallroot`) |
 | `RealRoot.v` | `realroot`: real fields with odd roots (absolute values, odd roots of any sign) |
 | `Rstruct.v`, `RootRstd.v` | Stdlib `R` as a real closed field (borrowed from mathcomp-analysis); Stdlib ↔ mathcomp rewriting, `radcan_lra` |
 | `Syntax.v` | `rexpr`, its interpretation, the conditions `cond` |
 | `Backend.v`, `BigBackend.v` | the number interface `NUM`, Z/Q and BigZ/BigQ instances |
 | `Mono.v`, `NF.v` | atoms, monomials, normal-form arithmetic |
 | `Factor.v` | integer factoring |
+| `Frac.v`, `Denest.v`, `OmegaPass.v`, `Prepass.v` | pre-passes (roots of fractions, denesting, values of ω) and their composition |
 | `IrrFactor.v`, `MFactor.v`, `MFactorEEZ.v` | polynomial factoring over ℤ: one variable (Berlekamp–Hensel–Zassenhaus), several variables (homogeneous, linear factors, Wang's EEZ) |
 | `Poly.v` | polynomial exact division, gcd, square-free factoring, radicand basis |
 | `Ratio.v` | rationalisation of denominators with variables and roots |
 | `Inverse.v` | inverse by linear algebra, checked |
 | `Cond.v` | radicands, cancellation, conditions, modes, `radcan_check` and soundness |
 | `Radcan.v`, `RadcanBig.v` | the two instances of the normaliser |
-| `RefPoly.v`, `RefCheck.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, unverified heuristics, `refine` and its soundness |
+| `RefPoly.v`, `RefCheck.v`, `SignCert.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, sign certificates of constants in roots, unverified heuristics, `refine` and its soundness |
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
+| `Sym.v`, `SymTac.v` | roots given by hypotheses (y ^+ n = B), `radcan_sym` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
 | `Examples.v`, `RefineEx.v` | examples with timings |
 
 ## What does not work yet
+
+- The composed pre-pass is slow on denesting with variables (about 4 s per goal).
+- Conditions on constants are dropped only when they hold whether the roots
+  are read as their true value or as 0 (the root-free theorem
+  `radcan_eq_refined0` shares `refine`): `0 <= 3 - 2 * sqrt 2` and
+  `1 + sqrt 2 != 0` disappear, `sqrt 2 != 0` and `0 <= sqrt 2 - 1` stay.
 
 - `radcan_simplify` shows whatever normal form the normaliser chose: constant
   radicands stay split over the basis, rational constants are not put over a

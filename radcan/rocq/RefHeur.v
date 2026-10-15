@@ -3,11 +3,16 @@
 (*   fm_cert fs s P == certificate (ls, c0) for comb_check found by           *)
 (*                     Fourier-Motzkin elimination (monomials read as         *)
 (*                     independent unknowns)                                  *)
-(*   fimp rs f  == the fact f follows from rs (ptriv, rimp1 or comb_check)    *)
+(*   fimp rs f  == the fact f follows from rs: ptriv, the sign certificate   *)
+(*                 scert (SignCert), rimp1 or comb_check, the facts of rs     *)
+(*                 being extended with 0 <= a for the atoms a of f that are   *)
+(*                 roots or inverses of nonnegative expressions (fimpk), and  *)
+(*                 then with the products of two of them (fprods)             *)
 (*   implied rs c == the raw condition c follows from rs                      *)
 (*   refine_raw cs == the guessed refined conditions: a condition is read as  *)
-(* a fact 0 <= P or P != 0 (a product P gives one fact per factor); facts     *)
-(* true on constants are dropped, the others divided by their content;        *)
+(* a fact 0 <= P or P != 0 (a product P gives one fact per factor, 0 <= e^-1  *)
+(* is read as 0 <= e); facts that hold alone (fimpk on no fact: constants,    *)
+(* roots of constants) are dropped, the others divided by their content;      *)
 (* affine facts in one variable become the strongest bounds (an interval      *)
 (* when both exist and differ, even a contradictory one); the others are      *)
 (* grouped by non-constant part, P != 0 is merged into 0 <= P (0 < P) or      *)
@@ -18,7 +23,7 @@
 From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
 From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import PosRoot Syntax Radcan RefPoly RefCheck.
+From Radcan Require Import PosRoot Syntax Radcan RefPoly RefCheck SignCert.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
@@ -97,9 +102,38 @@ Definition fcomb (fs : seq fact) (f : fact) : bool :=
   | KNe => comb1 fs true P || comb1 fs true (pscale (-1) P)
   end.
 
+(* products of two facts 0 <= P (0 < P), the first ones only *)
+Definition fmul (f g : fact) : fact :=
+  (if f.1 is KGt then (if g.1 is KGt then KGt else KGe) else KGe,
+   pmul f.2 g.2).
+
+Fixpoint fpairs (gs : seq fact) : seq fact :=
+  if gs is g :: gs' then map (fmul g) gs ++ fpairs gs' else [::].
+
+Definition fprods (fs : seq fact) : seq fact :=
+  fpairs (take 6 (filter is_ge fs)).
+
+Definition fimp_fs (fs : seq fact) (f : fact) : bool :=
+  [|| ptriv f, scert f.1 f.2, has (fun r => rimp1 r f) fs, fcomb fs f
+    | fcomb (fs ++ fprods fs) f].
+
+Definition patoms (P : poly) : seq rexpr :=
+  flatten (map (fun t => map fst t.2) P).
+
+(* the facts 0 <= a for the atoms a of f: roots, inverses of nonnegative *)
+(* expressions                                                           *)
+Fixpoint fimpk (k : nat) (fs : seq fact) (f : fact) : bool :=
+  let ok a := if k is k'.+1 then
+                match a with
+                | RRoot _ _ => true
+                | RRootE _ e | RInv e => fimpk k' fs (KGe, pnorm e)
+                | _ => false
+                end
+              else false in
+  fimp_fs (fs ++ map (fun a => (KGe, patom a)) (filter ok (patoms f.2))) f.
+
 Definition fimp (rs : seq rcond) (f : fact) : bool :=
-  let fs := flatten (map rfacts rs) in
-  [|| ptriv f, has (fun r => rimp1 r f) fs | fcomb fs f].
+  fimpk 3 (flatten (map rfacts rs)) f.
 
 Definition implied (rs : seq rcond) (c : cond) : bool :=
   match c with
@@ -109,9 +143,12 @@ Definition implied (rs : seq rcond) (c : cond) : bool :=
 
 (* The heuristics (unverified) *)
 
+(* 0 <= e^-1 is read as 0 <= e *)
+Fixpoint uninv (e : rexpr) : rexpr := if e is RInv a then uninv a else e.
+
 Definition facts_of (c : cond) : seq fact :=
   match c with
-  | CGe0 e => [:: (KGe, pnorm e)]
+  | CGe0 e => [:: (KGe, pnorm (uninv e))]
   | CNeq0 e => map (fun p => (KNe, p)) (nzf e)
   end.
 
@@ -269,7 +306,8 @@ Fixpoint prune (done todo : seq rcond) : seq rcond :=
 
 Definition refine_raw (cs : seq cond) : seq rcond :=
   let fs :=
-    map normf (filter (fun f => ~~ ptriv f) (flatten (map facts_of cs))) in
+    map normf (filter (fun f => ~~ fimpk 3 [::] f)
+                      (flatten (map facts_of cs))) in
   let olds := pmap old_of fs in
   let gens := filter (fun f => if old_of f is None then true else false) fs in
   let ges := foldl ge_add [::] (map snd (filter is_ge gens)) in

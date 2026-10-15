@@ -43,7 +43,6 @@ Local Open Scope R_scope.
 Lemma si1 (x : R) : 0 <= x -> sqrt x * sqrt (sqrt x) = sqrt (sqrt (x ^ 3)).
 Proof.
 move=> x_ge0. radcan_Rstd. radcan. Show.
-(* 0 <= x and 0 <= sqrt x (printed rootR 2 x) *)
-- by radcan_Rstd_back; lra.
-- by rewrite -sqrtE; apply/RleP/sqrt_pos.
+(* 0 <= x (0 <= sqrt x follows from it and is dropped) *)
+by radcan_Rstd_back; lra.
 Qed.

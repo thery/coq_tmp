@@ -44,14 +44,13 @@ Lemma f3b : 0 <= x -> \sqrt (x^-1) = (\sqrt x)^-1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* the paper's (9): ((x^2 - 1) / (x + 2))^(1/2) / (x^2 + 3x + 2)^(1/3)     *)
-(* refined: 1 <= x, 1 <= x ^+ 2                                             *)
+(* refined: 1 <= x (1 <= x ^+ 2 follows from it and is dropped)            *)
 Lemma f4 : 1 <= x ->
   \sqrt ((x ^+ 2 - 1) / (x + 2)) / proot r 3 (x ^+ 2 + 3 * x + 2) =
   \sqrt (x - 1) * \sqrt (x + 1) / \sqrt (x + 2) /
   (proot r 3 (x + 1) * proot r 3 (x + 2)).
 Proof.
-move=> h. Time radcan; first exact: h.
-exact: exprn_ege1.
+move=> h. Time radcan; exact: h.
 Qed.
 
 (* products and powers in the fraction, roots in the radicand *)

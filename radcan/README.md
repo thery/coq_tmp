@@ -31,6 +31,8 @@ Proof. move=> h. radcan_lra. Qed.
   leaves the raw conditions instead.
 - **Simplification.** `radcan_simplify` rewrites both sides into their normal
   form, e.g. `1/(1+√2)` into `√2 − 1`, leaving the side conditions.
+- **Denesting.** `√(3+2√2) = 1+√2`, `√(x + 2√(x−1)) = 1 + √(x−1)`,
+  `√(10+2√6+2√10+2√15) = √2+√3+√5`; roots of fractions `√(P/Q) = √P/√Q`.
 - **Rationalisation.** Denominators are rationalised, including ones that mix
   variables and roots: `(x − y)/(√x + √y) = √x − √y`.
 - **Absolute values and real fields.** On real closed fields (and Stdlib
@@ -40,7 +42,8 @@ Proof. move=> h. radcan_lra. Qed.
   goal.
 - **Negative numbers under roots.** On ℝ, odd roots of negative numbers are
   handled (`∛(−8) = −2`); on ℂ they go through roots of unity
-  (`√(−4) = 2·√(−1)`).
+  (`√(−4) = 2·√(−1)`), with explicit values of small roots of unity
+  (`ω₃² − ω₃ + 1 = 0`).
 - **Number backends.** Coefficients use Stdlib `Z`/`Q` by default
   (axiom-free proofs). `radcan_big` uses Bignums `BigZ`/`BigQ`, which is
   faster on large numbers.
@@ -79,13 +82,14 @@ make -j4
 | `Backend.v`, `BigBackend.v` | the number interface `NUM`, Z/Q and BigZ/BigQ instances |
 | `Mono.v`, `NF.v` | atoms, monomials, normal-form arithmetic |
 | `Factor.v` | integer factoring |
+| `Frac.v`, `Denest.v`, `OmegaPass.v`, `Prepass.v` | pre-passes (roots of fractions, denesting, values of ω) and their composition |
 | `IrrFactor.v`, `MFactor.v`, `MFactorEEZ.v` | polynomial factoring over ℤ: one variable (Berlekamp–Hensel–Zassenhaus), several variables (homogeneous, linear factors, Wang's EEZ) |
 | `Poly.v` | polynomial exact division, gcd, square-free factoring, radicand basis |
 | `Ratio.v` | rationalisation of denominators with variables and roots |
 | `Inverse.v` | inverse by linear algebra, checked |
 | `Cond.v` | radicands, cancellation, conditions, modes, `radcan_check` and soundness |
 | `Radcan.v`, `RadcanBig.v` | the two instances of the normaliser |
-| `RefPoly.v`, `RefCheck.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, unverified heuristics, `refine` and its soundness |
+| `RefPoly.v`, `RefCheck.v`, `SignCert.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, sign certificates of constants in roots, unverified heuristics, `refine` and its soundness |
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
