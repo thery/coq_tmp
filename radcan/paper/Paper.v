@@ -66,12 +66,13 @@ Goal (x + \sqrt 2 + 3.-proot 9) *
   = x ^+ 5 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73.
 Proof. Fail radcan. Abort.
 
-(* (8): 1 / (x + sqrt 2 + 3^(2/3)) = N / D with D = (x + sqrt 2)^3 + 9 *)
-Lemma eq8 : (x + \sqrt 2 + 3.-proot 9) *
-  (- (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3
-   + (x ^+ 2 + 2 * \sqrt 2 * x + 2))
-  = (x + \sqrt 2) ^+ 3 + 9.
-Proof. radcan. Qed.
+(* (8): 1 / (x + sqrt 2 + 3^(2/3)) = N / D, stated as (x + sqrt 2 + 3^(2/3)) N = D *)
+Lemma eq8 :
+  let N := - (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3
+           + (x ^+ 2 + 2 * \sqrt 2 * x + 2) in
+  let D := (x + \sqrt 2) ^+ 3 + 9 in
+  (x + \sqrt 2 + 3.-proot 9) * N = D.
+Proof. move=> N D; rewrite /N /D. radcan. Qed.
 
 (* end of §2: D times its conjugate is E; the paper prints 54 x, which is
    refused, the right coefficient is 108 x *)
