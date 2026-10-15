@@ -117,7 +117,7 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
 - After M12/M13 (user go, 2026-10-15):
   - M14 (done) radcan_lra on Stdlib R: radcan_Rstd; radcan; radcan_Rstd_back; try lra on each
     condition, leave only those lra cannot prove (Tactic.v / RootRstd.v, main session).
-  - M15 roots given by hypotheses (paper's symbolic reading): symbols y with y ^+ n = B in
+  - M15 (DONE: Sym.v, SymTac.v radcan_sym, Tut30) roots given by hypotheses (paper's symbolic reading): symbols y with y ^+ n = B in
     the context are algebraic atoms reduced by the relation; results hold for every choice
     of roots; paper (2) provable in its own sense (with the omega/sqrt 2 relation given).
   - M16 irreducible factorisation of radicands (paper form 1): univariate factoring over Z
@@ -138,7 +138,7 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
   SimplifyTac.v, tutorial Tut21 (no edits of existing files while M12/M13 run).
 
 - Splits (user request): Refine.v -> RefPoly/RefCheck/RefHeur/Refine/RefineEx (done);
-  Cond.v -> CondSimp/CondRoot/CondNorm/Cond right after M13 and BEFORE M15/M16 phase 2.
+  Cond.v -> CondSimp/CondRoot/CondNorm/Cond DONE; M15 RUNNING (owns Cond pieces, SymTac.v, Tut30).
 
 - M18 (done): monomial content taken out of denominators (1/(x^2+x) = 1/x * 1/(x+1)),
   in Inverse.v, checked.
@@ -149,17 +149,18 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
 - M20 (done, tactic integration pending: Frac.v into _CoqProject before Tactic.v; radcan falls back to frac_split, see Tut26 radcan_frac_with_gen): roots of fractions, paper rule (i) and eq. (9): sqrt(P/Q) = sqrt P / sqrt Q
   with 0 <= P, 0 <= Q; confirmed missing (fails on cca7649); pre-pass frac_split in new file
   Frac.v + combined theorems; tactic integration (fallback) by the main session.
-- Omega: STOP after Ω2 (user decision 2026-10-15); Ω3-Ω7 dropped from the queue. Ω0-Ω1 DONE (OmegaRoot.v smallroot, OmegaC.v rootC_smallroot + rootC_double), Ω2 running (OmegaPass.v pre-pass). Omega plan DONE (plans/OMEGA_PLAN.md): Ω0 root characterisation, Ω1 explicit ω_3/ω_4/ω_6/ω_12, Ω2 normaliser mode (paper (2), Part 16 Fails), Ω3 index law + primitivity (hard, 400-600 lines, UnitArc.v), Ω4 merge, Ω5 certified cyclotomic reduction, Ω6 sqrt2/3/5 table. Recommended Ω0->Ω2 first.
+- Omega: STOP after Ω2 (user decision 2026-10-15); Ω3-Ω7 dropped from the queue. Ω0-Ω1 DONE (OmegaRoot.v smallroot, OmegaC.v rootC_smallroot + rootC_double), Ω2 DONE (OmegaPass.v in the build, Tut28). Omega plan DONE (plans/OMEGA_PLAN.md): Ω0 root characterisation, Ω1 explicit ω_3/ω_4/ω_6/ω_12, Ω2 normaliser mode (paper (2), Part 16 Fails), Ω3 index law + primitivity (hard, 400-600 lines, UnitArc.v), Ω4 merge, Ω5 certified cyclotomic reduction, Ω6 sqrt2/3/5 table. Recommended Ω0->Ω2 first.
 
-- M19 phase 3 (queued, user go): denesting with variables, sqrt(a + b sqrt c) with a, b, c
+- M19 phase 3 (DONE: denest_rwc with conditions, Tut25 DenestVar): denesting with variables, sqrt(a + b sqrt c) with a, b, c
   polynomials: a^2 - b^2 c a perfect square in Q[x] (via sqf), candidate sqrt((a+d)/2) +-
   sqrt((a-d)/2), conditions 0 <= (a+-d)/2, sign as condition CGe0 candidate (refinement
   must drop 0 <= 1 + sqrt(x-1): roots are nonnegative). Example sqrt(x + 2 sqrt(x-1)) =
   1 + sqrt(x-1) for 1 <= x.
-- M19 phase 4 (queued, user go): several square roots, sqrt(10+2 sqrt 6+2 sqrt 10+2 sqrt 15)
+- M19 phase 4 (DONE: denest_findm, k=3..5 terms, Tut25 multi section): several square roots, sqrt(10+2 sqrt 6+2 sqrt 10+2 sqrt 15)
   = sqrt 2 + sqrt 3 + sqrt 5: heuristic search of sqrt p + sqrt q + sqrt r over divisors,
   checked by squaring + sign certificate.
-- Integration design (user question 2026-10-15): the pre-passes are COMPOSED, not separate
+- M19 phase 5 (DONE: denest_findvm, Tut25 DenestMultiVar): several inner roots WITH variables, sqrt(x+y+z+2 sqrt(xy)+2 sqrt(xz)+2 sqrt(yz)) = sqrt x+sqrt y+sqrt z.
+- Integration design (DONE: Prepass.v, radcan_eq_pre*, Tactic fallback, Tut29; order omega -> frac -> denest per round): the pre-passes are COMPOSED, not separate
   fallbacks: prepass = omega_rw o denest_rw o frac_split (order: fractions, denesting, omega),
   iterated to a fixpoint with fuel, soundness = chained lemmas, conditions concatenated;
   radcan = plain check, else prepass + check. New small file Prepass.v + Tactic.v change.
@@ -167,6 +168,25 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
 
 - Queue order (2026-10-15): integration batch after M16 phase 2 -> Cond.v split -> M15;
   M19 phase 4 after phase 3 (same file Denest.v).
+
+- Fast multivariate gcd (running): pgcd blows up on some 3-variable inputs (> 200 s);
+  replace by a modular / heuristic / EZ gcd (unverified, checked by division), new file
+  MGcd.v before Poly.v; tests in tests/GcdTests.v.
+
+- Pre-pass speed (RUNNING, Prepass.v + Tactic.v): measure, incremental rounds, early fixpoint,
+  avoid duplicated work at Qed; later in Denest.v: cheaper verification of candidates.
+
+- Constant/inverse conditions (RUNNING): new SignCert.v (sign certificate for constant
+  sums of roots) used by the refinement; 0 <= e^-1 -> 0 <= e; 0 <= proot e dropped given
+  0 <= e; products/powers implied. Owns Ref*.v, SignCert.v.
+- Omega under fractions (DONE, Tut31): omega_rw looks through P/Q (4.-root((1-x)/y)). Owns
+  OmegaPass.v, Tut28, Tut31.
+
+- Scope decision (user, 2026-10-15): the paper is the reference. Beyond-paper items (all
+  denesting beyond nested-by-simplification, factoring over extensions, cyclotomic/canonical
+  forms, performance) stay documented, not pursued. Last paper-scope gap: M21.
+- M21 (RUNNING): rationalisation of inverses in radcan_sym (Q(x)[y] with y^n = B), e.g.
+  1/(1+y) = (y-1)/(x-2) for y^2 = x-1; checked d*u = E, condition E != 0; fallback.
 
 ## Work split for M0+M1
 

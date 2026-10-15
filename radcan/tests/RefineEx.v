@@ -219,3 +219,49 @@ Example implied_ex :
   implied [:: RInt false one 0 false (false, 3%N, 1%N)]
           (CGe0 (RSub (RCst 4) X)).
 Proof. by vm_compute. Qed.
+
+(* Constants, inverses, roots and products (SignCert, fimpk, fprods) *)
+
+Definition s2 := RRoot 2 2.
+
+(* 0 <= 3 + 2 sqrt 2 and 0 <= 3 - 2 sqrt 2 are dropped (scert) *)
+Example refine_ex26 :
+  refine [:: CGe0 (RAdd (RCst 3) (RMul (RCst 2) s2));
+             CGe0 (RSub (RCst 3) (RMul (RCst 2) s2))] = [::].
+Proof. by vm_compute. Qed.
+
+(* 1 + (cbrt 5)^-1 != 0 is dropped; 0 <= 1 - sqrt 2 (false) stays *)
+Example refine_ex27 :
+  refine [:: CNeq0 (RAdd (RCst 1) (RInv (RRoot 3 5)));
+             CGe0 (RSub (RCst 1) s2)] =
+  [:: RCmp false [:: (one, [:: (s2, 1%N)])] [:: (one, [::])]].
+Proof. by vm_compute. Qed.
+
+(* sqrt 2 != 0 stays: the certificate also covers roots read as 0 *)
+Example refine_ex28 : refine [:: CNeq0 s2] =
+  [:: RDiff [:: (one, [:: (s2, 1%N)])] [::]].
+Proof. by vm_compute. Qed.
+
+(* 0 <= x, 0 <= x^-1, 0 <= sqrt x  ~>  0 <= x *)
+Example refine_ex29 :
+  refine [:: CGe0 X; CGe0 (RInv X); CGe0 (RRootE 2 X)] =
+  [:: RLow false (false, 0%N, 1%N) 0%N].
+Proof. by vm_compute. Qed.
+
+(* 0 <= x, 0 <= y, 0 <= x * y  ~>  0 <= x, 0 <= y *)
+Example refine_ex30 :
+  refine [:: CGe0 X; CGe0 Y; CGe0 (RMul X Y)] =
+  [:: RLow false (false, 0%N, 1%N) 0%N; RLow false (false, 0%N, 1%N) 1%N].
+Proof. by vm_compute. Qed.
+
+(* 0 <= x - 1, 0 <= x^2 - 1, 0 <= x + 2 sqrt (x - 1)  ~>  1 <= x *)
+Example refine_ex31 :
+  refine [:: CGe0 xm1; CGe0 (RSub (RPow X 2) (RCst 1));
+             CGe0 (RAdd X (RMul (RCst 2) (RRootE 2 xm1)))] =
+  [:: RLow false one 0%N].
+Proof. by vm_compute. Qed.
+
+(* 0 <= x^-1 alone  ~>  0 <= x *)
+Example refine_ex32 : refine [:: CGe0 (RInv X)] =
+  [:: RLow false (false, 0%N, 1%N) 0%N].
+Proof. by vm_compute. Qed.

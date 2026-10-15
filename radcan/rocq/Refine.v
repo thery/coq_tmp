@@ -6,16 +6,19 @@
 (*                 condition follows from the refined ones (implied), the     *)
 (*                 raw conditions otherwise                                   *)
 (*   all_rconds F rt env rs == the meaning of the refined conditions rs       *)
-(*   refine_sound : all_rconds .. (refine cs) -> all_conds_gen rt env cs      *)
+(*   refine_sound_gen : rt_ok rt -> all_rconds F rt env (refine cs) ->        *)
+(*                 all_conds_gen rt env cs (rt_ok: SignCert)                  *)
+(*   refine_sound : the same for rt = proot r, r : posroot F                  *)
 (*   radcan_eq_refined, radcan_eq_refined0 == decision theorems for radcan    *)
-(* The reasoning holds in any numFieldType.                                   *)
+(* The reasoning holds in any numFieldType; roots are only used through       *)
+(* rt_ok, which also holds for the root-free reading fun _ _ => 0.            *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
 From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot Syntax Radcan.
-From Radcan Require Export RefPoly RefCheck RefHeur.
+From Radcan Require Export RefPoly RefCheck SignCert RefHeur.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
@@ -178,17 +181,91 @@ case/orP => /(comb1_sound H) /=; first exact: lt0r_neq0.
 by rewrite pscale_sound Q2Fm1 mulN1r oppr_gt0 => /ltr0_neq0.
 Qed.
 
+Lemma In_take (T : Type) n (x : T) s : List.In x (take n s) -> List.In x s.
+Proof.
+elim: s n => [|y s IH] [|n] //= [->|h]; [by left|by right; exact: IH h].
+Qed.
+
+Lemma In_mapP (T U : Type) (f : T -> U) s y :
+  List.In y (map f s) <-> exists x, f x = y /\ List.In x s.
+Proof. by rewrite -List.in_map_iff. Qed.
+
+Lemma In_filter (T : Type) (p : pred T) x s :
+  List.In x (filter p s) -> List.In x s /\ p x.
+Proof.
+elim: s => [|y s IH] //=; case: ifP => py /=.
+  case=> [<-|/IH [h1 h2]]; first by split=> //; left.
+  by split=> //; right.
+by move/IH => [h1 h2]; split=> //; right.
+Qed.
+
+Lemma fmul_sound f g : is_ge f -> is_ge g -> kI f.1 (peval f.2) ->
+  kI g.1 (peval g.2) -> kI (fmul f g).1 (peval (fmul f g).2).
+Proof.
+case: f g => [[] P] [[] R] //= _ _ hP hR; rewrite pmul_sound //.
+- by rewrite mulr_ge0.
+- by rewrite mulr_ge0 // ltW.
+- by rewrite mulr_ge0 // ltW.
+by rewrite mulr_gt0.
+Qed.
+
+Lemma fprods_sound fs : fsI fs -> fsI (fprods fs).
+Proof.
+move=> H; have : forall f, List.In f (take 6 (filter is_ge fs)) ->
+    is_ge f /\ kI f.1 (peval f.2).
+  move=> f hf; have [h1 h2] := In_filter (In_take hf).
+  by split=> //; exact: H.
+rewrite /fprods; elim: (take _ _) => [|g gs IH] Hg; first by move=> ? [].
+rewrite -[fpairs _]/(map (fmul g) (g :: gs) ++ fpairs gs).
+apply: fsI_cat; last by apply: IH => f h; apply: Hg; right.
+have [g1 g2] : is_ge g /\ kI g.1 (peval g.2) by apply: Hg; left.
+move=> f hf; case: (proj1 (In_mapP _ _ _) hf) => h [<- Hh].
+have [h1 h2] : is_ge h /\ kI h.1 (peval h.2).
+  by case: Hh => [<-|Hh]; [split|apply: Hg; right].
+exact: fmul_sound.
+Qed.
+
+Variable Hrt : rt_ok rt.
+
+Lemma fimp_fs_sound fs f : fsI fs -> fimp_fs fs f -> kI f.1 (peval f.2).
+Proof.
+move=> Hf; case/or4P => [/ptriv_sound //|/(scert_sound env Hrt) //|
+  |/orP [/(fcomb_sound Hf) //|]].
+  elim: fs Hf => [|g gs IH] //= Hf /orP [Hg|Hgs].
+    by apply: rimp1_sound Hg _; apply: Hf; left.
+  by apply: IH Hgs => g0 h; apply: Hf; right.
+by apply: fcomb_sound; apply: fsI_cat => //; exact: fprods_sound.
+Qed.
+
+Lemma ri_root_ge0 n e : 0 <= ri e -> 0 <= ri (RRootE n e).
+Proof.
+move=> e0; have n0 : (0 < Pos.to_nat n)%N.
+  by apply/ssrnat.ltP; exact: Pos2Nat.is_pos.
+by have [] := Hrt n0 e0.
+Qed.
+
+Lemma fimpk_sound k fs f : fsI fs -> fimpk k fs f -> kI f.1 (peval f.2).
+Proof.
+elim: k fs f => [|k IH] fs f Hf /=; apply: fimp_fs_sound; apply: fsI_cat => //.
+  move=> g hg; case: (proj1 (In_mapP _ _ _) hg) => a [<- ha].
+  by case: (In_filter ha).
+move=> g hg; case: (proj1 (In_mapP _ _ _) hg) => a [<- ha].
+case: (In_filter ha) => _ {}ha.
+change (0 <= peval (patom a)); rewrite patom_sound; case: a ha => //=.
+- move=> n p _; have n0 : (0 < Pos.to_nat n)%N.
+    by apply/ssrnat.ltP; exact: Pos2Nat.is_pos.
+  by have [] := Hrt n0 (@pos2F_ge0 F p).
+- by move=> n e /(IH _ _ Hf) /=; rewrite pnorm_sound; exact: ri_root_ge0.
+by move=> e /(IH _ _ Hf) /=; rewrite pnorm_sound invr_ge0.
+Qed.
+
 Lemma fimp_sound rs f :
   (forall r, List.In r rs -> rI r) -> fimp rs f -> kI f.1 (peval f.2).
 Proof.
-move=> H; have Hf : fsI (flatten (map rfacts rs)).
-  elim: rs H => [|r rs IH] H /=; first by move=> ? [].
-  apply: fsI_cat; first by apply: rfacts_sound; apply: H; left.
-  by apply: IH => r0 h; apply: H; right.
-case/or3P => [/ptriv_sound //||]; last exact: fcomb_sound.
-elim: (flatten _) Hf => [|g gs IH] //= Hf /orP [Hg|Hgs].
-  by apply: rimp1_sound Hg _; apply: Hf; left.
-by apply: IH Hgs => g0 h; apply: Hf; right.
+move=> H; apply: fimpk_sound.
+elim: rs H => [|r rs IH] H /=; first by move=> ? [].
+apply: fsI_cat; first by apply: rfacts_sound; apply: H; left.
+by apply: IH => r0 h; apply: H; right.
 Qed.
 
 Lemma implied_sound rs c :
@@ -226,15 +303,20 @@ End Proofs.
 
 (* Main theorem and the decision theorems for the tactic *)
 
-Theorem refine_sound (F : numFieldType) (rt : nat -> F -> F) env cs :
-  all_rconds F rt env (refine cs) -> all_conds_gen rt env cs.
+Theorem refine_sound_gen (F : numFieldType) (rt : nat -> F -> F) env cs :
+  rt_ok rt -> all_rconds F rt env (refine cs) -> all_conds_gen rt env cs.
 Proof.
-rewrite /refine; case: ifP => [Ha /all_rcP H|_]; last exact: all_rc_raw.
-apply: all_conds_genI.
-move: (refine_raw cs) H Ha => rs H.
-elim: cs => [|c cs IH] //= /andP[Hc /IH Hcs] c0 [<-|/Hcs] //.
-exact: implied_sound H Hc.
+move=> Hrt; rewrite /refine; case: ifP => [Ha /all_rcP H|_].
+  apply: all_conds_genI.
+  move: (refine_raw cs) H Ha => rs H.
+  elim: cs => [|c cs IH] //= /andP[Hc /IH Hcs] c0 [<-|/Hcs] //.
+  exact: implied_sound H Hc.
+exact: all_rc_raw.
 Qed.
+
+Theorem refine_sound (F : numFieldType) (r : posroot F) env cs :
+  all_rconds F (proot r) env (refine cs) -> all_conds_gen (proot r) env cs.
+Proof. exact/refine_sound_gen/posroot_ok. Qed.
 
 Lemma all_conds_bridge_back (F : numFieldType) (r : posroot F) env cs :
   all_conds_gen (proot r) env cs -> all_conds r env cs.
@@ -254,5 +336,5 @@ Theorem radcan_eq_refined0 (F : numFieldType) (env : seq F) e1 e2 cs rcs :
   all_rconds F (fun _ _ => 0) env rcs -> rinterp0 env e1 = rinterp0 env e2.
 Proof.
 move=> n1 n2 H Hr Hc; apply: (radcan_eq_cond0 n1 n2 H).
-by apply: refine_sound; rewrite Hr.
+by apply: refine_sound_gen; [exact: zero_ok|rewrite Hr].
 Qed.

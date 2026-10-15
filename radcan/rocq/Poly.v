@@ -4,9 +4,12 @@
 (* is verified: callers check every result by multiplication.                 *)
 (*   pdiv p b       == exact division                                         *)
 (*   decompose bs p == p as rem * prod b ^ k over the basis bs                *)
-(*   pgcd f p q     == gcd over Q (main atom, content, primitive              *)
-(*                     pseudo-remainder sequence), primitive with a           *)
-(*                     positive leading coefficient                           *)
+(*   pgcd f p q     == gcd over Q, primitive with a positive leading         *)
+(*                     coefficient: MGcd.mgcd on the integer polynomials      *)
+(*                     (GCDHEU, checked by exact division), else pgcd_prs     *)
+(*                     (at most two atoms) or 1                               *)
+(*   pgcd_prs f p q == main atom, content, primitive pseudo-remainder         *)
+(*                     sequence (slow on several variables)                   *)
 (*   sqf f p        == square-free factors (Yun, recursively on content)      *)
 (*   pb_insert      == insertion in a coprime basis (Collins: A, B become     *)
 (*                     gcd, A / gcd, B / gcd)                                 *)
@@ -29,7 +32,7 @@ From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono Factor NF.
 From Radcan Require Import Inverse.
-From Radcan Require IrrFactor MFactor MFactorEEZ.
+From Radcan Require IrrFactor MFactor MFactorEEZ MGcd.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
@@ -166,7 +169,7 @@ Definition prem (a : atom) (A B : nf) : nf :=
     end in
   loop (pdeg a A).+1 A.
 
-Fixpoint pgcd (fuel : nat) (p q : nf) : nf :=
+Fixpoint pgcd_prs (fuel : nat) (p q : nf) : nf :=
   match fuel with
   | O => nf_one
   | S f =>
@@ -174,8 +177,9 @@ Fixpoint pgcd (fuel : nat) (p q : nf) : nf :=
     if q is [::] then pnormal p else
     if isconst p || isconst q then nf_one else
     if patoms (p ++ q) is a :: _ then
-      let content := fun s => foldr (fun k acc => pgcd f (pcoef a k s) acc) [::]
-                                    (iota 0 (pdeg a s).+1) in
+      let content := fun s =>
+        foldr (fun k acc => pgcd_prs f (pcoef a k s) acc) [::]
+              (iota 0 (pdeg a s).+1) in
       let ppart := fun s => pnormal (pexdiv s (content s)) in
       let fix prs (n : nat) (A B : nf) : nf :=
         match n with
@@ -191,9 +195,49 @@ Fixpoint pgcd (fuel : nat) (p q : nf) : nf :=
       let qq := pexdiv q cq in
       let g := if (pdeg a pp < pdeg a qq)%N then prs (pdeg a qq).+2 qq pp
                else prs (pdeg a pp).+2 pp qq in
-      pnormal (nf_mul (pgcd f cp cq) g)
+      pnormal (nf_mul (pgcd_prs f cp cq) g)
     else nf_one
   end.
+
+(* Integer polynomials (MFactor.mpoly): the atoms are the indeterminates,
+   variable i of the mpoly is the atom nth i ats *)
+Definition atom_index (ats : seq atom) (a : atom) : nat :=
+  find (atom_eqb a) ats.
+
+Definition to_mpoly (ats : seq atom) (p : nf) : MFactor.mpoly :=
+  let l := foldr (fun t a => Z.lcm (Zpos (Qden (c_to_Q t.1))) a) Z1 p in
+  MFactor.mnorm
+    (map (fun t => let q := c_to_Q t.1 in
+                   (Z.div (Z.mul (Qnum q) l) (Zpos (Qden q)),
+                    foldr (fun ak e =>
+                             MFactor.eset e (atom_index ats ak.1) ak.2)
+                          [::] t.2.1)) p).
+
+Definition vmono_of (ats : seq atom) (e : MFactor.mono) : vmono :=
+  foldr (fun ik acc => vmono_mul (vsingle (nth (AVar 0) ats ik.1) ik.2) acc)
+        [::] (zip (iota 0 (size e)) e).
+
+Definition of_mpoly (ats : seq atom) (f : MFactor.mpoly) : nf :=
+  foldr (fun t acc => nf_add (nf_single (c_of_Z t.1) (vmono_of ats t.2, [::]))
+                             acc) [::] f.
+
+(* Fast gcd (MGcd.mgcd: coprimality pre-test, then GCDHEU), exact
+   divisibility checked on Z.  When it gives up, pgcd_prs for at most two
+   atoms, else 1 (no simplification rather than a blow-up) *)
+Definition pgcd_fast (p q : nf) : option nf :=
+  if ispoly p && ispoly q then
+    let ats := patoms (p ++ q) in
+    if MGcd.mgcd (to_mpoly ats p) (to_mpoly ats q) is Some g then
+      Some (pnormal (of_mpoly ats g))
+    else None
+  else None.
+
+Definition pgcd (fuel : nat) (p q : nf) : nf :=
+  if p is [::] then pnormal q else
+  if q is [::] then pnormal p else
+  if isconst p || isconst q then nf_one else
+  if pgcd_fast p q is Some g then g else
+  if (size (patoms (p ++ q)) <= 2)%N then pgcd_prs fuel p q else nf_one.
 
 Definition gcd_fuel := 32%N.
 
@@ -290,27 +334,7 @@ Definition neg_hints (es : seq rexpr) : seq nf :=
     map (fun e => primitive (pnorm e)) (rs ++ flatten (map mfactors rs)) in
   filter (fun p => if lead p is Some (c, _) then c_neg c else false) ps.
 
-(* Irreducible factors (M16, form 1 of the paper): the atoms are the
-   indeterminates, variable i of the mpoly is the atom nth i ats *)
-Definition atom_index (ats : seq atom) (a : atom) : nat :=
-  find (atom_eqb a) ats.
-
-Definition to_mpoly (ats : seq atom) (p : nf) : MFactor.mpoly :=
-  let l := foldr (fun t a => Z.lcm (Zpos (Qden (c_to_Q t.1))) a) Z1 p in
-  MFactor.mnorm
-    (map (fun t => let q := c_to_Q t.1 in
-                   (Z.div (Z.mul (Qnum q) l) (Zpos (Qden q)),
-                    foldr (fun ak e =>
-                             MFactor.eset e (atom_index ats ak.1) ak.2)
-                          [::] t.2.1)) p).
-
-Definition vmono_of (ats : seq atom) (e : MFactor.mono) : vmono :=
-  foldr (fun ik acc => vmono_mul (vsingle (nth (AVar 0) ats ik.1) ik.2) acc)
-        [::] (zip (iota 0 (size e)) e).
-
-Definition of_mpoly (ats : seq atom) (f : MFactor.mpoly) : nf :=
-  foldr (fun t acc => nf_add (nf_single (c_of_Z t.1) (vmono_of ats t.2, [::]))
-                             acc) [::] f.
+(* Irreducible factors (M16, form 1 of the paper) *)
 
 Definition irr_factors (p : nf) : seq nf :=
   if ispoly p && ~~ isconst p then
