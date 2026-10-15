@@ -2,8 +2,9 @@
 (* Paper: the examples of Caviness & Fateman, Simplification of Radical       *)
 (* Expressions (radcan.md).                                                   *)
 (* Proved: section 2 (phase 3, form 1, form 2, the nested example), (1) as   *)
-(* an identity and as a quotient, (8), (3) with the corrected E, the          *)
-(* rationalisation of D, and (4) = (6) on C with omega = 3.-root (-1).        *)
+(* an identity and as a quotient, (8) as printed (under D != 0) and as a     *)
+(* product, (3) with the corrected E, the rationalisation of D, and          *)
+(* (4) = (6) on C with omega = 3.-root (-1).                                  *)
 (* Refused because false: (3) as printed, E with the printed 54 x (the right  *)
 (* coefficient is 108 x).  The misprint in (3) is x^5 for x^6 in the          *)
 (* denominator: with x^6, (3) is proved with its printed numerator (eq3p).    *)
@@ -66,13 +67,36 @@ Goal (x + \sqrt 2 + 3.-proot 9) *
   = x ^+ 5 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73.
 Proof. Fail radcan. Abort.
 
-(* (8): 1 / (x + sqrt 2 + 3^(2/3)) = N / D, stated as (x + sqrt 2 + 3^(2/3)) N = D *)
-Lemma eq8 :
+(* (8) as a product: (x + sqrt 2 + 3^(2/3)) N = D, true for every x *)
+Lemma eq8_prod :
   let N := - (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3
            + (x ^+ 2 + 2 * \sqrt 2 * x + 2) in
   let D := (x + \sqrt 2) ^+ 3 + 9 in
   (x + \sqrt 2 + 3.-proot 9) * N = D.
 Proof. move=> N D; rewrite /N /D. radcan. Qed.
+
+(* (8) as printed, under D != 0 (x is a number here, not a symbol).
+   radcan alone asks for E != 0 (it also rationalises D), so the
+   quotient is derived from eq8_prod *)
+Lemma eq8 :
+  let D := (x + \sqrt 2) ^+ 3 + 9 in
+  D != 0 ->
+  1 / (x + \sqrt 2 + 3.-proot 9) =
+  - ((x + \sqrt 2) / D) * 3.-proot 9 + (3 / D) * 3.-proot 3
+  + (x ^+ 2 + 2 * \sqrt 2 * x + 2) / D.
+Proof.
+move=> D hD.
+have hN := eq8_prod; rewrite -/D in hN.
+set d := x + \sqrt 2 + 3.-proot 9 in hN *.
+set N := - (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3
+         + (x ^+ 2 + 2 * \sqrt 2 * x + 2) in hN.
+have -> : - ((x + \sqrt 2) / D) * 3.-proot 9 + (3 / D) * 3.-proot 3
+  + (x ^+ 2 + 2 * \sqrt 2 * x + 2) / D = N / D.
+  clearbody D; rewrite /N. radcan.
+have hd : d != 0 by apply: contra_neq hD => d0; rewrite -hN d0 mul0r.
+have hN0 : N != 0 by apply: contra_neq hD => n0; rewrite -hN n0 mulr0.
+by rewrite -hN invfM mulrA mulrAC mulfV // mul1r div1r.
+Qed.
 
 (* end of §2: D times its conjugate is E; the paper prints 54 x, which is
    refused, the right coefficient is 108 x *)

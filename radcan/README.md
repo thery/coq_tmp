@@ -59,6 +59,12 @@ Proof. move=> h. radcan_lra. Qed.
   faster on large numbers.
 - **Completeness.** It is not a goal: when `radcan` fails, the equality may
   still be true.
+- **Exponentials and logarithms.** Unlike the MACSYMA program, `radcan` does
+  not handle `exp` and `ln`: they are unknown letters. The paper describes
+  only the radical part, which is the part implemented here. A separate
+  front-end following the Structure Theorem of Epstein and Caviness
+  ([`TR223.md`](TR223.md), Theorem 5.7) is in progress in `explog/`
+  (plan: [`plans/EXPLOG_PLAN.md`](plans/EXPLOG_PLAN.md)).
 
 ## Building
 

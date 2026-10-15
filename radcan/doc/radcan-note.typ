@@ -374,7 +374,7 @@ We have run the tactic on all the examples of the paper. They are in
 
 #ltbl(([example], [result]),
   ([equation (1)], [proved, with $0 <= x$, $0 <= y$, $x != y$]),
-  ([equation (8)], [proved]),
+  ([equation (8)], [proved, with $D != 0$]),
   ([section 2, the factors of radicands], [proved]),
   ([section 2, the root of roots], [proved, with $-1 <= x$]),
   ([equations (4) and (6)], [proved, with $-1 <= x^2$]),
@@ -598,7 +598,9 @@ tutorial files (3 200 lines), and the tests and the examples of the paper
 The tactic is not complete: when it fails, the equality may still be true.
 This was not our goal, the paper treats this question in its section 4. We
 have also left out the parts that the paper itself leaves out, such as the
-general denesting of roots.
+general denesting of roots. The MACSYMA program also handled exponentials
+and logarithms, but the paper does not describe how; `radcan` treats `exp`
+and `ln` as unknown letters.
 
 This development was written with the help of Claude, Anthropic's coding
 assistant. The sources are at
