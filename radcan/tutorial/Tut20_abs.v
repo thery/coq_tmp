@@ -19,6 +19,7 @@ Local Open Scope ring_scope.
 
 Section Nested.
 Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* the paper's nested example (section 2):                                  *)
@@ -93,12 +94,14 @@ End Real.
 (* any posroot on a realFieldType with an oddroot gives a realroot *)
 Section RealField.
 Variables (F : realFieldType) (r : posroot F) (o : oddroot r) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Let rl := realroot_of o.
 
-Lemma f1 : proot r 2 ((x + 1) ^+ 2) = `|x + 1|.
+Lemma f1 : \sqrt ((x + 1) ^+ 2) = `|x + 1|.
 Proof. by radcan. Qed.
 
-Lemma f2 : proot r 3 (- x ^+ 3) = - x.
+Lemma f2 : 3.-proot (- x ^+ 3) = - x.
 Proof. by radcan. Qed.
 End RealField.
 

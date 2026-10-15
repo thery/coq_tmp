@@ -12,47 +12,51 @@ Local Open Scope ring_scope.
 
 Section Odd.
 Variables (F : numFieldType) (r : posroot F) (o : oddroot r) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma n1 : proot r 3 (- 8) = - 2.
+Lemma n1 : 3.-proot (- 8) = - 2.
 Proof. by radcan. Qed.
 
-Lemma n2 : proot r 3 (- 2) * proot r 3 (- 4) = 2.
+Lemma n2 : 3.-proot (- 2) * 3.-proot (- 4) = 2.
 Proof. by radcan. Qed.
 
-Lemma n3 : proot r 3 (- 3) ^+ 3 = - 3.
+Lemma n3 : 3.-proot (- 3) ^+ 3 = - 3.
 Proof. by radcan. Qed.
 
-Lemma n4 : proot r 5 (- 32) + 2 = 0.
+Lemma n4 : 5.-proot (- 32) + 2 = 0.
 Proof. by radcan. Qed.
 
 (* the cube root of 1 - x is minus the cube root of x - 1, no condition *)
-Lemma n5 : proot r 3 (1 - x) = - proot r 3 (x - 1).
+Lemma n5 : 3.-proot (1 - x) = - 3.-proot (x - 1).
 Proof. by radcan. Qed.
 
 (* raw: 0 <= x - 1   refined: 1 <= x *)
-Lemma n6 : 1 <= x -> proot r 3 (1 - x) * proot r 3 (x - 1) ^+ 2 = 1 - x.
+Lemma n6 : 1 <= x -> 3.-proot (1 - x) * 3.-proot (x - 1) ^+ 2 = 1 - x.
 Proof. move=> x_ge1. radcan. Show. exact: x_ge1. Qed.
 End Odd.
 
 Section Even.
 Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* without an oddroot the cube root of -8 is not simplified *)
-Goal proot r 3 (- 8) = - 2.
+Goal 3.-proot (- 8) = - 2.
 Proof. Fail radcan. Abort.
 
 (* even roots: the base keeps the sign of the radicand;
    raw: 0 <= 1 - x (printed -1 * x + 1), refined: x <= 1 *)
-Lemma e1 : x <= 1 -> proot r 2 (1 - x) ^+ 2 = 1 - x.
+Lemma e1 : x <= 1 -> \sqrt (1 - x) ^+ 2 = 1 - x.
 Proof. move=> x_le1. radcan. Show. exact: x_le1. Qed.
 
 (* x - 1 is in the basis: sqrt (1 - x) still has base 1 - x;
    raw: 0 <= x - 1, 0 <= 1 - x, refined: 1 <= x, x <= 1 *)
-Lemma e2 : x = 1 -> proot r 2 (x - 1) ^+ 2 + proot r 2 (1 - x) ^+ 2 = 0.
+Lemma e2 : x = 1 -> \sqrt (x - 1) ^+ 2 + \sqrt (1 - x) ^+ 2 = 0.
 Proof. move=> x1. radcan. Show. all: by rewrite x1. Qed.
 
 (* sqrt (1 - x) * sqrt (x - 1) = 0 needs x = 1: not found *)
-Goal proot r 2 (1 - x) * proot r 2 (x - 1) = 0.
+Goal \sqrt (1 - x) * \sqrt (x - 1) = 0.
 Proof. Fail radcan. Abort.
 End Even.
 

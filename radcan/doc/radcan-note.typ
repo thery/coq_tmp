@@ -133,11 +133,19 @@ There are three instances of this interface:
   borrow from MathComp-Analysis @analysis the file that makes them a real
   closed field (#src("rocq/Rstruct.v")).
 
+In the examples, `r` is a fixed root structure and we use two local
+notations: `\sqrt a` for `proot r 2 a` and `n.-proot a` for `proot r n a`.
+
+```coq
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+```
+
 With the interface alone, small facts already need some work. Here is
 $sqrt(2) dot sqrt(3) = sqrt(6)$ proved by hand:
 
 ```coq
-Lemma sqrt2_sqrt3 : proot r 2 2 * proot r 2 3 = proot r 2 6.
+Lemma sqrt2_sqrt3 : \sqrt 2 * \sqrt 3 = \sqrt 6.
 Proof. by rewrite -prootM // -natrM. Qed.
 ```
 
@@ -167,7 +175,7 @@ Inductive rexpr : Type :=
 
 A function `rinterp r env e` gives the value of the tree `e` in the field,
 where `env` lists the values of the variables. For example the tree
-`RMul (RRoot 2 2) (RRoot 2 3)` has the value `proot r 2 2 * proot r 2 3`.
+`RMul (RRoot 2 2) (RRoot 2 3)` has the value `\sqrt 2 * \sqrt 3`.
 
 *Computation.* A function `radcan_check e1 e2` computes the normal forms of
 the two trees and compares them. It returns the list of conditions it used,
@@ -202,11 +210,11 @@ the $p_i$ are prime and the exponents are small (see the paper,
 section 2). This already covers our first examples (#src("tutorial/Tut6_radcan.v")):
 
 ```coq
-Lemma g1 : proot r 2 2 * proot r 2 3 = proot r 2 6. Proof. radcan. Qed.
-Lemma g2 : (1 + proot r 2 2) ^+ 2 = 3 + 2 * proot r 2 2. Proof. radcan. Qed.
-Lemma g3 : proot r 2 8 = 2 * proot r 2 2. Proof. radcan. Qed.
-Lemma g4 : proot r 3 2 * proot r 2 2 = proot r 6 32. Proof. radcan. Qed.
-Lemma g5 : proot r 2 12 - proot r 2 3 = proot r 2 3. Proof. radcan. Qed.
+Lemma g1 : \sqrt 2 * \sqrt 3 = \sqrt 6. Proof. radcan. Qed.
+Lemma g2 : (1 + \sqrt 2) ^+ 2 = 3 + 2 * \sqrt 2. Proof. radcan. Qed.
+Lemma g3 : \sqrt 8 = 2 * \sqrt 2. Proof. radcan. Qed.
+Lemma g4 : 3.-proot 2 * \sqrt 2 = 6.-proot 32. Proof. radcan. Qed.
+Lemma g5 : \sqrt 12 - \sqrt 3 = \sqrt 3. Proof. radcan. Qed.
 ```
 
 The same tactic works with the roots of the complex numbers and of the
@@ -225,9 +233,8 @@ The program finds the multiplier by linear algebra. The check is again a
 multiplication (#src("tutorial/Tut8_div.v")):
 
 ```coq
-Lemma d2 : 1 / (1 + proot r 2 2) = proot r 2 2 - 1. Proof. radcan. Qed.
-Lemma d5 : 1 / (1 + proot r 2 2 + proot r 2 3) =
-           (2 + proot r 2 2 - proot r 2 6) / 4.
+Lemma d2 : 1 / (1 + \sqrt 2) = \sqrt 2 - 1. Proof. radcan. Qed.
+Lemma d5 : 1 / (1 + \sqrt 2 + \sqrt 3) = (2 + \sqrt 2 - \sqrt 6) / 4.
 Proof. radcan. Qed.
 ```
 
@@ -244,7 +251,7 @@ Proof. radcan_Rstd. radcan. Qed.
 Now the variables. A variable outside a root behaves like in a polynomial:
 
 ```coq
-Lemma v4 : (x - y * proot r 2 3) * (x + y * proot r 2 3) = x ^+ 2 - 3 * y ^+ 2.
+Lemma v4 : (x - y * \sqrt 3) * (x + y * \sqrt 3) = x ^+ 2 - 3 * y ^+ 2.
 Proof. radcan. Qed.
 ```
 
@@ -256,7 +263,7 @@ under a condition, it records the condition. The tactic gives the conditions
 back to the user as new goals:
 
 ```coq
-Lemma c1 : 0 <= x -> proot r 2 (x ^+ 2) = x.
+Lemma c1 : 0 <= x -> \sqrt (x ^+ 2) = x.
 Proof. move=> x_ge0. radcan. exact: x_ge0. Qed.
 ```
 
@@ -269,7 +276,7 @@ program _refines_ them. Here they become a single condition:
 
 ```coq
 Lemma f1 : 1 < x ->
-  proot r 2 (x ^+ 2 - 1) / proot r 2 (x - 1) = proot r 2 (x + 1).
+  \sqrt (x ^+ 2 - 1) / \sqrt (x - 1) = \sqrt (x + 1).
 Proof. move=> h. radcan. exact: h. Qed.
 ```
 
@@ -352,12 +359,11 @@ proving an equality, like `ring_simplify`. It can also work with symbols
 given by hypotheses (see the next section):
 
 ```coq
-Lemma d1 : proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+Lemma d1 : \sqrt (3 + 2 * \sqrt 2) = 1 + \sqrt 2.
 Proof. radcan. Qed.
 
-Lemma m1 : proot r 2 (10 + 2 * proot r 2 6 + 2 * proot r 2 10
-                         + 2 * proot r 2 15)
-         = proot r 2 2 + proot r 2 3 + proot r 2 5.
+Lemma m1 : \sqrt (10 + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 15)
+         = \sqrt 2 + \sqrt 3 + \sqrt 5.
 Proof. radcan. Qed.
 ```
 

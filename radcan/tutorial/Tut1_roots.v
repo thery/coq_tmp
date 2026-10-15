@@ -10,20 +10,22 @@ Local Open Scope ring_scope.
 
 Section Tutorial1.
 Variables (F : numFieldType) (r : posroot F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma sqrt2_sq : proot r 2 2 ^+ 2 = 2.
+Lemma sqrt2_sq : \sqrt 2 ^+ 2 = 2.
 Proof. by rewrite prootK. Qed.
 
-Lemma sqrt2_ge0 : 0 <= proot r 2 2.
+Lemma sqrt2_ge0 : 0 <= \sqrt 2.
 Proof. by apply: proot_ge0. Qed.
 
-Lemma sqrt2_sqrt3 : proot r 2 2 * proot r 2 3 = proot r 2 6.
+Lemma sqrt2_sqrt3 : \sqrt 2 * \sqrt 3 = \sqrt 6.
 Proof. by rewrite -prootM // -natrM. Qed.
 
-Lemma sqrt4 : proot r 2 4 = 2.
+Lemma sqrt4 : \sqrt 4 = 2.
 Proof. by apply: proot_eq => //; rewrite expr2 -natrM. Qed.
 
-Lemma cbrt_sqrt : proot r 3 2 = proot r 6 4.
+Lemma cbrt_sqrt : 3.-proot 2 = 6.-proot 4.
 Proof. by rewrite (proot_mulr r (k := 2)) // expr2 -natrM. Qed.
 End Tutorial1.
 

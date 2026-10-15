@@ -19,6 +19,7 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= x + 1, 0 <= x - 1   refined: 1 <= x *)

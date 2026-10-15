@@ -11,6 +11,7 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Rational.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* the paper's (1) as a quotient *)
@@ -29,8 +30,8 @@ Proof. move=> h. radcan. exact: h. Qed.
 
 (* the paper's (3), with the right E (108 x, not 54 x) *)
 Lemma q4 : 108 * x + 12 * x ^+ 2 + 18 * x ^+ 3 + x ^+ 6 != 6 * x ^+ 4 - 73 ->
-  1 / (x + \sqrt 2 + proot r 3 9) =
-  (- (x + \sqrt 2) * proot r 3 9 + 3 * proot r 3 3 +
+  1 / (x + \sqrt 2 + 3.-proot 9) =
+  (- (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3 +
      (x ^+ 2 + 2 * \sqrt 2 * x + 2)) *
   (x ^+ 3 + 6 * x + 9 - (3 * x ^+ 2 + 2) * \sqrt 2) /
   (x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73).

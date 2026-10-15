@@ -58,19 +58,21 @@ End Complex.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypothesis ov : smallroot w.
 
 (* refined: 1 <= x, 0 <= y *)
 Lemma g1 : 1 <= x -> 0 < y ->
-  proot r 4 ((1 - x) / y) = proot r 4 (x - 1) / proot r 4 y * proot r 4 (-1).
+  4.-proot ((1 - x) / y) = 4.-proot (x - 1) / 4.-proot y * 4.-proot (-1).
 Proof. move=> hx hy. radcan; [exact: hx | exact: ltW]. Qed.
 
 (* refined: 0 <= x *)
-Lemma g2 : 0 < x -> proot r 2 (-4 / x) = 2 * proot r 2 (-1) / proot r 2 x.
+Lemma g2 : 0 < x -> \sqrt (-4 / x) = 2 * \sqrt (-1) / \sqrt x.
 Proof. move=> h. radcan. exact: ltW. Qed.
 
 (* the radicand is -1 for x <> 1: the denominator is flipped, then         *)
 (* 4.-root (x - 1) / 4.-root (x - 1) cancels; refined: x != 1 (1 <= x)    *)
-Lemma g3 : 1 < x -> proot r 4 ((x - 1) / (1 - x)) = proot r 4 (-1).
+Lemma g3 : 1 < x -> 4.-proot ((x - 1) / (1 - x)) = 4.-proot (-1).
 Proof. by move=> h; radcan; rewrite gt_eqF. Qed.
 End Generic.

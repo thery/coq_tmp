@@ -11,37 +11,37 @@ Local Open Scope ring_scope.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma sqrt2_sqrt3 : proot r 2 2 * proot r 2 3 = proot r 2 6.
+Lemma sqrt2_sqrt3 : \sqrt 2 * \sqrt 3 = \sqrt 6.
 Proof. by rewrite -prootM // -natrM. Qed.
 
-Lemma g1 : proot r 2 2 * proot r 2 3 = proot r 2 6. Proof. radcan. Qed.
-Lemma g2 : (1 + proot r 2 2) ^+ 2 = 3 + 2 * proot r 2 2. Proof. radcan. Qed.
-Lemma g3 : proot r 2 8 = 2 * proot r 2 2. Proof. radcan. Qed.
-Lemma g4 : proot r 3 2 * proot r 2 2 = proot r 6 32. Proof. radcan. Qed.
-Lemma g5 : proot r 2 12 - proot r 2 3 = proot r 2 3. Proof. radcan. Qed.
+Lemma g1 : \sqrt 2 * \sqrt 3 = \sqrt 6. Proof. radcan. Qed.
+Lemma g2 : (1 + \sqrt 2) ^+ 2 = 3 + 2 * \sqrt 2. Proof. radcan. Qed.
+Lemma g3 : \sqrt 8 = 2 * \sqrt 2. Proof. radcan. Qed.
+Lemma g4 : 3.-proot 2 * \sqrt 2 = 6.-proot 32. Proof. radcan. Qed.
+Lemma g5 : \sqrt 12 - \sqrt 3 = \sqrt 3. Proof. radcan. Qed.
 
-Lemma d2 : 1 / (1 + proot r 2 2) = proot r 2 2 - 1. Proof. radcan. Qed.
-Lemma d5 : 1 / (1 + proot r 2 2 + proot r 2 3) =
-           (2 + proot r 2 2 - proot r 2 6) / 4.
+Lemma d2 : 1 / (1 + \sqrt 2) = \sqrt 2 - 1. Proof. radcan. Qed.
+Lemma d5 : 1 / (1 + \sqrt 2 + \sqrt 3) = (2 + \sqrt 2 - \sqrt 6) / 4.
 Proof. radcan. Qed.
 
-Lemma v4 : (x - y * proot r 2 3) * (x + y * proot r 2 3) = x ^+ 2 - 3 * y ^+ 2.
+Lemma v4 : (x - y * \sqrt 3) * (x + y * \sqrt 3) = x ^+ 2 - 3 * y ^+ 2.
 Proof. radcan. Qed.
 
-Lemma c1 : 0 <= x -> proot r 2 (x ^+ 2) = x.
+Lemma c1 : 0 <= x -> \sqrt (x ^+ 2) = x.
 Proof. move=> x_ge0. radcan. exact: x_ge0. Qed.
 
 Lemma f1 : 1 < x ->
-  proot r 2 (x ^+ 2 - 1) / proot r 2 (x - 1) = proot r 2 (x + 1).
+  \sqrt (x ^+ 2 - 1) / \sqrt (x - 1) = \sqrt (x + 1).
 Proof. move=> h. radcan. exact: h. Qed.
 
-Lemma dn1 : proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+Lemma dn1 : \sqrt (3 + 2 * \sqrt 2) = 1 + \sqrt 2.
 Proof. radcan. Qed.
 
-Lemma m1 : proot r 2 (10 + 2 * proot r 2 6 + 2 * proot r 2 10
-                         + 2 * proot r 2 15)
-         = proot r 2 2 + proot r 2 3 + proot r 2 5.
+Lemma m1 : \sqrt (10 + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 15)
+         = \sqrt 2 + \sqrt 3 + \sqrt 5.
 Proof. radcan. Qed.
 End Generic.
 

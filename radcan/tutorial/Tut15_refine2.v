@@ -11,35 +11,37 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Multi.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= y + x, 0 <= -1 * y + x, -1 * y + x != 0
    refined: 0 <= x + y, y < x *)
 Lemma g1 : 0 <= x + y -> y < x ->
-  proot r 2 (x ^+ 2 - y ^+ 2) / proot r 2 (x - y) = proot r 2 (x + y).
+  \sqrt (x ^+ 2 - y ^+ 2) / \sqrt (x - y) = \sqrt (x + y).
 Proof. move=> h1 h2. radcan. Show. all: by []. Qed.
 
 (* the same with y <= x and x != y: y < x is lt_def *)
 Lemma g2 : 0 <= x + y -> y <= x -> x != y ->
-  proot r 2 (x ^+ 2 - y ^+ 2) / proot r 2 (x - y) = proot r 2 (x + y).
+  \sqrt (x ^+ 2 - y ^+ 2) / \sqrt (x - y) = \sqrt (x + y).
 Proof. move=> h1 h2 h3. radcan. - exact: h1. - by rewrite lt_def h3 h2. Qed.
 
 (* raw: 0 <= 2 * x - 2 * y   refined: y <= x  (divided by 2) *)
-Lemma g3 : y <= x -> proot r 2 (2 * x - 2 * y) ^+ 2 = 2 * x - 2 * y.
+Lemma g3 : y <= x -> \sqrt (2 * x - 2 * y) ^+ 2 = 2 * x - 2 * y.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 (* a constant stays: raw 0 <= 2 * x - 2 * y + 1   refined: 2 * y - 1 <= 2 * x *)
 Lemma g4 : 2 * y - 1 <= 2 * x ->
-  proot r 2 (2 * x - 2 * y + 1) ^+ 2 = 2 * x - 2 * y + 1.
+  \sqrt (2 * x - 2 * y + 1) ^+ 2 = 2 * x - 2 * y + 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 (* not affine: the constant goes to the other side *)
 (* raw: 0 <= x * y + 1   refined: -1 <= x * y *)
 Lemma g5 : -1 <= x * y ->
-  proot r 2 (x * y + 1) * proot r 2 (x * y + 1) = x * y + 1.
+  \sqrt (x * y + 1) * \sqrt (x * y + 1) = x * y + 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 (* raw: 0 <= x ^+ 2 - 1   refined: 1 <= x ^+ 2 *)
-Lemma g6 : 1 <= x ^+ 2 -> proot r 2 (x ^+ 2 - 1) ^+ 2 = x ^+ 2 - 1.
+Lemma g6 : 1 <= x ^+ 2 -> \sqrt (x ^+ 2 - 1) ^+ 2 = x ^+ 2 - 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 (* raw: x ^+ 2 - 4 != 0   refined: x ^+ 2 != 4 *)

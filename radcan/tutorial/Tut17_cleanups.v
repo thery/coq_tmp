@@ -12,6 +12,8 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Cleanups.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* an inverse atom with exponent 3 is cancelled three times *)
 (* raw: x != 0 *)
@@ -27,7 +29,7 @@ Proof. move=> h1 h2. radcan. Show. all: by []. Qed.
 
 (* the same with a root somewhere *)
 Lemma m3r : x != 0 -> y != 0 ->
-  (x ^+ 3 * y) / (x ^+ 3 * y) = 1 + proot r 2 2 - proot r 2 2.
+  (x ^+ 3 * y) / (x ^+ 3 * y) = 1 + \sqrt 2 - \sqrt 2.
 Proof. move=> h1 h2. radcan. all: by []. Qed.
 
 Lemma m4 : x != 0 -> x ^+ 2 / x = x.
@@ -38,7 +40,7 @@ Proof. move=> h. radcan. exact: h. Qed.
 
 (* rational coefficients in a radicand: x / 2 - 1 = (x - 2) / 2 *)
 (* raw: 0 <= x - 2   refined: 2 <= x *)
-Lemma m6 : 2 <= x -> proot r 2 (x / 2 - 1) ^+ 2 = x / 2 - 1.
+Lemma m6 : 2 <= x -> \sqrt (x / 2 - 1) ^+ 2 = x / 2 - 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 (* inverse atoms are primitive with a positive leading coefficient *)
@@ -61,15 +63,15 @@ Proof. radcan. Qed.
 
 (* a root common to all the terms of a denominator is inverted on its own *)
 Lemma m12 :
-  1 / (proot r 2 2 * x + proot r 2 2) = proot r 2 2 / (2 * (x + 1)).
+  1 / (\sqrt 2 * x + \sqrt 2) = \sqrt 2 / (2 * (x + 1)).
 Proof. radcan. Qed.
 
 (* exact division when the numerator has roots *)
 Lemma m13 : x != -1 ->
-  (proot r 2 2 * x + proot r 2 2) / (x + 1) = proot r 2 2.
+  (\sqrt 2 * x + \sqrt 2) / (x + 1) = \sqrt 2.
 Proof. move=> h. radcan. exact: h. Qed.
 
-Lemma m14 : x != 0 -> x / (proot r 2 2 * x) = proot r 2 2 / 2.
+Lemma m14 : x != 0 -> x / (\sqrt 2 * x) = \sqrt 2 / 2.
 Proof. move=> h. radcan. exact: h. Qed.
 End Cleanups.
 

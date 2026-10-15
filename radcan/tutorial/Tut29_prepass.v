@@ -19,6 +19,7 @@ Local Open Scope ring_scope.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* fractions, then denesting of sqrt (3 + 2 sqrt 2)                         *)
@@ -58,11 +59,13 @@ End Generic.
 (* n.-root (8 / x) * omega_n, then frac_split splits 8 / x                   *)
 Section Omega.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypothesis ov : smallroot w.
 
 (* refined: 0 <= x (0 <= x^-1 is read as 0 <= x) *)
 Lemma o1 : 0 < x ->
-  proot r 3 (-8 / x) = (1 + proot r 2 3 * proot r 2 (-1)) / proot r 3 x.
+  3.-proot (-8 / x) = (1 + \sqrt 3 * \sqrt (-1)) / 3.-proot x.
 Proof. move=> h. Time radcan. all: by rewrite ?invr_ge0 ltW. Qed.
 End Omega.
 

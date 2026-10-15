@@ -14,40 +14,42 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= x + 1   refined: -1 <= x *)
-Lemma g1 : -1 <= x -> proot r 2 (x ^+ 2 + 2 * x + 1) = x + 1.
+Lemma g1 : -1 <= x -> \sqrt (x ^+ 2 + 2 * x + 1) = x + 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 (* raw: 0 <= x - 1   refined: 1 <= x *)
 Lemma g2 : 1 <= x ->
-  proot r 2 (x ^+ 3 - 3 * x ^+ 2 + 3 * x - 1) = (x - 1) * proot r 2 (x - 1).
+  \sqrt (x ^+ 3 - 3 * x ^+ 2 + 3 * x - 1) = (x - 1) * \sqrt (x - 1).
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 (* (x^2 - 1)^2: raw 0 <= x ^+ 2 - 1, refined 1 <= x ^+ 2 *)
-Lemma g3 : 1 <= x ^+ 2 -> proot r 2 (x ^+ 4 - 2 * x ^+ 2 + 1) = x ^+ 2 - 1.
+Lemma g3 : 1 <= x ^+ 2 -> \sqrt (x ^+ 4 - 2 * x ^+ 2 + 1) = x ^+ 2 - 1.
 Proof. move=> h. radcan. Show. exact: h. Qed.
 
 Lemma g4 : -1 <= x ->
-  proot r 2 (x ^+ 2 + 2 * x + 1) * proot r 2 (x + 1) =
-  (x + 1) * proot r 2 (x + 1).
+  \sqrt (x ^+ 2 + 2 * x + 1) * \sqrt (x + 1) =
+  (x + 1) * \sqrt (x + 1).
 Proof. move=> h. radcan. exact: h. Qed.
 
 Lemma g5 : -1 <= x ->
-  proot r 2 (2 * x ^+ 2 + 4 * x + 2) = (x + 1) * proot r 2 2.
+  \sqrt (2 * x ^+ 2 + 4 * x + 2) = (x + 1) * \sqrt 2.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* the same base under a cube root *)
-Lemma g6 : -1 <= x -> proot r 3 (x ^+ 3 + 3 * x ^+ 2 + 3 * x + 1) = x + 1.
+Lemma g6 : -1 <= x -> 3.-proot (x ^+ 3 + 3 * x ^+ 2 + 3 * x + 1) = x + 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* several variables: the condition is 0 <= x + y *)
-Lemma g7 : 0 <= x + y -> proot r 2 (x ^+ 2 + 2 * x * y + y ^+ 2) = x + y.
+Lemma g7 : 0 <= x + y -> \sqrt (x ^+ 2 + 2 * x * y + y ^+ 2) = x + y.
 Proof. move=> h. radcan. Show. first [exact: h | by rewrite addrC]. Qed.
 
 (* y (x + 1)^2: two conditions, 0 <= y and -1 <= x *)
 Lemma g8 : 0 <= y -> -1 <= x ->
-  proot r 2 (y * x ^+ 2 + 2 * x * y + y) = (x + 1) * proot r 2 y.
+  \sqrt (y * x ^+ 2 + 2 * x * y + y) = (x + 1) * \sqrt y.
 Proof. move=> hy hx. radcan. Show. all: by []. Qed.
 
 (* no root: cancellation through gcd (x^2 - 1, x^2 + 2x + 1) = x + 1 *)

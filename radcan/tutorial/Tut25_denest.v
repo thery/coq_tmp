@@ -55,49 +55,51 @@ Ltac radcan_denest r :=
 
 Section Denest.
 Variables (F : numFieldType) (r : posroot F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-(* for the normaliser alone proot r 2 (3 + 2 sqrt 2) is an atom; radcan
+(* for the normaliser alone \sqrt (3 + 2 sqrt 2) is an atom; radcan
    denests it through its pre-pass (Prepass.v, denest_rwc) *)
-Lemma d0 : proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+Lemma d0 : \sqrt (3 + 2 * \sqrt 2) = 1 + \sqrt 2.
 Proof. radcan. Qed.
 
-Lemma d1 : proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+Lemma d1 : \sqrt (3 + 2 * \sqrt 2) = 1 + \sqrt 2.
 Proof. denest_at r. radcan. Qed.
 
-Lemma d2 : proot r 2 (5 + 2 * proot r 2 6) = proot r 2 2 + proot r 2 3.
+Lemma d2 : \sqrt (5 + 2 * \sqrt 6) = \sqrt 2 + \sqrt 3.
 Proof. denest_at r. radcan. Qed.
 
 (* sign certificate: sqrt 3 - 1 >= 0 needs sqrt 3 >= 1 *)
-Lemma d3 : proot r 2 (4 - 2 * proot r 2 3) = proot r 2 3 - 1.
+Lemma d3 : \sqrt (4 - 2 * \sqrt 3) = \sqrt 3 - 1.
 Proof. denest_at r. radcan. Qed.
 
-Lemma d4 : proot r 2 (7 - 4 * proot r 2 3) = 2 - proot r 2 3.
+Lemma d4 : \sqrt (7 - 4 * \sqrt 3) = 2 - \sqrt 3.
 Proof. denest_at r. radcan. Qed.
 
 (* rational coefficients: sqrt (3/2 + sqrt 2) = 1 + sqrt 2 / 2 *)
-Lemma d5 : proot r 2 (3 / 2 + proot r 2 2) = 1 + proot r 2 2 / 2.
+Lemma d5 : \sqrt (3 / 2 + \sqrt 2) = 1 + \sqrt 2 / 2.
 Proof. denest_at r. radcan. Qed.
 
 (* the whole-goal version, several nested roots *)
-Lemma d6 : proot r 2 (3 + 2 * proot r 2 2) - proot r 2 (3 - 2 * proot r 2 2)
+Lemma d6 : \sqrt (3 + 2 * \sqrt 2) - \sqrt (3 - 2 * \sqrt 2)
   = 2.
 Proof. radcan_denest r. Qed.
 
-Lemma d7 : proot r 2 (12 + 6 * proot r 2 3) * proot r 2 (4 - 2 * proot r 2 3)
-  = 2 * proot r 2 3.
+Lemma d7 : \sqrt (12 + 6 * \sqrt 3) * \sqrt (4 - 2 * \sqrt 3)
+  = 2 * \sqrt 3.
 Proof. radcan_denest r. Qed.
 
 (* sqrt (1 + sqrt 2) does not denest: 1 - 2 = -1 is not a square *)
-Goal proot r 2 (1 + proot r 2 2) = 0.
+Goal \sqrt (1 + \sqrt 2) = 0.
 Proof. Fail denest_at r. Abort.
 
 (* it stays as it is, and radcan_denest still proves what radcan proves *)
 (* (the condition 0 <= sqrt 2 + 1 of the square of a root is left) *)
-Lemma d8 : proot r 2 (1 + proot r 2 2) ^+ 2 = 1 + proot r 2 2.
+Lemma d8 : \sqrt (1 + \sqrt 2) ^+ 2 = 1 + \sqrt 2.
 Proof. radcan_denest r. by rewrite addr_ge0 ?proot_ge0. Qed.
 
 (* a wrong candidate is refused: sqrt (4 - 2 sqrt 3) is not 1 - sqrt 3 *)
-Goal proot r 2 (4 - 2 * proot r 2 3) = 1 - proot r 2 3.
+Goal \sqrt (4 - 2 * \sqrt 3) = 1 - \sqrt 3.
 Proof. Fail radcan_denest r. Abort.
 
 End Denest.
@@ -155,49 +157,51 @@ Ltac radcan_denestc r :=
 
 Section DenestVar.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* the condition 0 <= 1 + sqrt (x - 1) of the candidate is dropped (roots
    are nonnegative), 0 <= x - 1 is refined into 1 <= x; radcan does it too,
    through its pre-pass *)
 Lemma v0 (hx : 1 <= x) :
-  proot r 2 (x + 2 * proot r 2 (x - 1)) = 1 + proot r 2 (x - 1).
+  \sqrt (x + 2 * \sqrt (x - 1)) = 1 + \sqrt (x - 1).
 Proof. radcan. exact: hx. Qed.
 
 Lemma v1 (hx : 1 <= x) :
-  proot r 2 (x + 2 * proot r 2 (x - 1)) = 1 + proot r 2 (x - 1).
+  \sqrt (x + 2 * \sqrt (x - 1)) = 1 + \sqrt (x - 1).
 Proof. radcan_denestc r. exact: hx. Qed.
 
 (* one root at a time: the conditions come last *)
 Lemma v1' (hx : 1 <= x) :
-  proot r 2 (x + 2 * proot r 2 (x - 1)) = 1 + proot r 2 (x - 1).
+  \sqrt (x + 2 * \sqrt (x - 1)) = 1 + \sqrt (x - 1).
 Proof. denest_atv r. - radcan. - exact: hx. Qed.
 
 (* the sign of sqrt (x - 1) - 1 is the condition 0 <= (x - 1) - 1 *)
 Lemma v2 (hx : 2 <= x) :
-  proot r 2 (x - 2 * proot r 2 (x - 1)) = proot r 2 (x - 1) - 1.
+  \sqrt (x - 2 * \sqrt (x - 1)) = \sqrt (x - 1) - 1.
 Proof. radcan_denestc r. exact: hx. Qed.
 
-Lemma v3 (hx : 1 <= x) : proot r 2 (2 * x + 2 * proot r 2 (x ^+ 2 - 1)) =
-  proot r 2 (x + 1) + proot r 2 (x - 1).
+Lemma v3 (hx : 1 <= x) : \sqrt (2 * x + 2 * \sqrt (x ^+ 2 - 1)) =
+  \sqrt (x + 1) + \sqrt (x - 1).
 Proof. radcan_denestc r. exact: hx. Qed.
 
 Lemma v4 (hx : 0 <= x) (hy : 0 <= y) :
-  proot r 2 (x + y + 2 * proot r 2 (x * y)) = proot r 2 x + proot r 2 y.
+  \sqrt (x + y + 2 * \sqrt (x * y)) = \sqrt x + \sqrt y.
 Proof. radcan_denestc r. - exact: hx. - exact: hy. Qed.
 
 (* B = 2 x is not constant: the sign of x is a condition of the check *)
 Lemma v5 (hx : 0 <= x) (hy : 0 <= y) :
-  proot r 2 (x ^+ 2 + y + 2 * x * proot r 2 y) = x + proot r 2 y.
+  \sqrt (x ^+ 2 + y + 2 * x * \sqrt y) = x + \sqrt y.
 Proof. radcan_denestc r. - exact: hx. - exact: hy. Qed.
 
 (* two nested roots in one goal *)
 Lemma v6 (hx : 2 <= x) :
-  proot r 2 (x + 2 * proot r 2 (x - 1)) - proot r 2 (x - 2 * proot r 2 (x - 1))
+  \sqrt (x + 2 * \sqrt (x - 1)) - \sqrt (x - 2 * \sqrt (x - 1))
   = 2.
 Proof. radcan_denestc r. exact: hx. Qed.
 
 (* sqrt (x + sqrt x) does not denest: x ^ 2 - x is not a square *)
-Goal proot r 2 (x + proot r 2 x) = 0.
+Goal \sqrt (x + \sqrt x) = 0.
 Proof. Fail denest_atv r. Fail radcan_denestc r. Abort.
 
 End DenestVar.
@@ -230,64 +234,66 @@ Ltac denest_atm r :=
 
 Section DenestMulti.
 Variables (F : numFieldType) (r : posroot F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 Lemma m1 :
-  proot r 2 (10 + 2 * proot r 2 6 + 2 * proot r 2 10 + 2 * proot r 2 15) =
-  proot r 2 2 + proot r 2 3 + proot r 2 5.
+  \sqrt (10 + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 15) =
+  \sqrt 2 + \sqrt 3 + \sqrt 5.
 Proof. denest_atm r. radcan. Qed.
 
 Lemma m2 :
-  proot r 2 (6 + 2 * proot r 2 2 + 2 * proot r 2 3 + 2 * proot r 2 6) =
-  1 + proot r 2 2 + proot r 2 3.
+  \sqrt (6 + 2 * \sqrt 2 + 2 * \sqrt 3 + 2 * \sqrt 6) =
+  1 + \sqrt 2 + \sqrt 3.
 Proof. radcan_denest r. Qed.
 
 (* minus signs, rational coefficients *)
 Lemma m3 :
-  proot r 2 (9 + 4 * proot r 2 2 - 4 * proot r 2 3 - 2 * proot r 2 6) =
-  2 + proot r 2 2 - proot r 2 3.
+  \sqrt (9 + 4 * \sqrt 2 - 4 * \sqrt 3 - 2 * \sqrt 6) =
+  2 + \sqrt 2 - \sqrt 3.
 Proof. radcan_denest r. Qed.
 
 Lemma m4 :
-  proot r 2 ((10 + 2 * proot r 2 6 + 2 * proot r 2 10 + 2 * proot r 2 15) / 4)
-  = (proot r 2 2 + proot r 2 3 + proot r 2 5) / 2.
+  \sqrt ((10 + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 15) / 4)
+  = (\sqrt 2 + \sqrt 3 + \sqrt 5) / 2.
 Proof. radcan_denest r. Qed.
 
 (* the sign certificate chooses sqrt 11 - sqrt 2 - sqrt 3 >= 0 *)
 Lemma m5 :
-  proot r 2 (16 + 2 * proot r 2 6 - 2 * proot r 2 22 - 2 * proot r 2 33) =
-  proot r 2 11 - proot r 2 2 - proot r 2 3.
+  \sqrt (16 + 2 * \sqrt 6 - 2 * \sqrt 22 - 2 * \sqrt 33) =
+  \sqrt 11 - \sqrt 2 - \sqrt 3.
 Proof. radcan_denest r. Qed.
 
 (* four terms, six roots in the radicand *)
 Lemma m6 :
-  proot r 2 (11 + 2 * proot r 2 2 + 2 * proot r 2 3 + 2 * proot r 2 5
-             + 2 * proot r 2 6 + 2 * proot r 2 10 + 2 * proot r 2 15) =
-  1 + proot r 2 2 + proot r 2 3 + proot r 2 5.
+  \sqrt (11 + 2 * \sqrt 2 + 2 * \sqrt 3 + 2 * \sqrt 5
+         + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 15) =
+  1 + \sqrt 2 + \sqrt 3 + \sqrt 5.
 Proof. radcan_denest r. Qed.
 
 (* inside a larger goal, with a phase 1 root *)
 Lemma m7 :
-  proot r 2 (10 + 2 * proot r 2 6 + 2 * proot r 2 10 + 2 * proot r 2 15)
-  - proot r 2 (5 + 2 * proot r 2 6) = proot r 2 5.
+  \sqrt (10 + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 15)
+  - \sqrt (5 + 2 * \sqrt 6) = \sqrt 5.
 Proof. radcan_denest r. Qed.
 
 (* five terms, ten roots; radcan does it too, through its pre-pass *)
 Lemma m8 :
-  proot r 2 (18 + 2 * proot r 2 2 + 2 * proot r 2 3 + 2 * proot r 2 5
-    + 2 * proot r 2 7 + 2 * proot r 2 6 + 2 * proot r 2 10 + 2 * proot r 2 14
-    + 2 * proot r 2 15 + 2 * proot r 2 21 + 2 * proot r 2 35) =
-  1 + proot r 2 2 + proot r 2 3 + proot r 2 5 + proot r 2 7.
+  \sqrt (18 + 2 * \sqrt 2 + 2 * \sqrt 3 + 2 * \sqrt 5
+    + 2 * \sqrt 7 + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 14
+    + 2 * \sqrt 15 + 2 * \sqrt 21 + 2 * \sqrt 35) =
+  1 + \sqrt 2 + \sqrt 3 + \sqrt 5 + \sqrt 7.
 Proof. radcan. Qed.
 
 (* the cross terms 2 sqrt 6, 2 sqrt 10, 3 sqrt 15 come from no candidate:
    the finder fails *)
-Goal proot r 2 (10 + 2 * proot r 2 6 + 2 * proot r 2 10 + 3 * proot r 2 15)
+Goal \sqrt (10 + 2 * \sqrt 6 + 2 * \sqrt 10 + 3 * \sqrt 15)
   = 0.
 Proof. Fail denest_atm r. Abort.
 
 (* a wrong right-hand side is refused *)
-Goal proot r 2 (10 + 2 * proot r 2 6 + 2 * proot r 2 10 + 2 * proot r 2 15)
-  = proot r 2 2 + proot r 2 3 - proot r 2 5.
+Goal \sqrt (10 + 2 * \sqrt 6 + 2 * \sqrt 10 + 2 * \sqrt 15)
+  = \sqrt 2 + \sqrt 3 - \sqrt 5.
 Proof. Fail radcan_denest r. Abort.
 
 End DenestMulti.
@@ -311,53 +317,55 @@ Proof. radcan_denest (rootR_posroot R). Qed.
 
 Section DenestMultiVar.
 Variables (F : numFieldType) (r : posroot F) (x y z : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 Lemma mv1 (hx : 0 <= x) (hy : 0 <= y) (hz : 0 <= z) :
-  proot r 2 (x + y + z + 2 * proot r 2 (x * y) + 2 * proot r 2 (x * z)
-             + 2 * proot r 2 (y * z)) = proot r 2 x + proot r 2 y + proot r 2 z.
+  \sqrt (x + y + z + 2 * \sqrt (x * y) + 2 * \sqrt (x * z)
+         + 2 * \sqrt (y * z)) = \sqrt x + \sqrt y + \sqrt z.
 Proof. radcan. - exact: hz. - exact: hy. - exact: hx. Qed.
 
 Lemma mv2 (hx : 0 <= x) (hy : 0 <= y) :
-  proot r 2 (x + y + 1 + 2 * proot r 2 x + 2 * proot r 2 y
-             + 2 * proot r 2 (x * y)) = 1 + proot r 2 x + proot r 2 y.
+  \sqrt (x + y + 1 + 2 * \sqrt x + 2 * \sqrt y
+         + 2 * \sqrt (x * y)) = 1 + \sqrt x + \sqrt y.
 Proof. radcan. - exact: hy. - exact: hx. Qed.
 
 (* roots of polynomials: 0 <= x + 1 is refined away *)
 Lemma mv3 (hx : 0 <= x) :
-  proot r 2 (2 * x + 2 + 2 * proot r 2 x + 2 * proot r 2 (x + 1)
-             + 2 * proot r 2 (x * (x + 1))) =
-  1 + proot r 2 x + proot r 2 (x + 1).
+  \sqrt (2 * x + 2 + 2 * \sqrt x + 2 * \sqrt (x + 1)
+         + 2 * \sqrt (x * (x + 1))) =
+  1 + \sqrt x + \sqrt (x + 1).
 Proof. radcan. exact: hx. Qed.
 
 (* a polynomial coefficient: c_1 = x *)
 Lemma mv4 (hx : 0 <= x) (hy : 0 <= y) (hz : 0 <= z) :
-  proot r 2 (x ^+ 2 + y + z + 2 * x * proot r 2 y + 2 * x * proot r 2 z
-             + 2 * proot r 2 (y * z)) = x + proot r 2 y + proot r 2 z.
+  \sqrt (x ^+ 2 + y + z + 2 * x * \sqrt y + 2 * x * \sqrt z
+         + 2 * \sqrt (y * z)) = x + \sqrt y + \sqrt z.
 Proof. radcan. - exact: hz. - exact: hy. - exact: hx. Qed.
 
 (* mixed signs: the sign of the candidate is a condition *)
-Lemma mv5 (hx : 0 <= x) (hy : 0 <= y) (h : 1 <= proot r 2 x + proot r 2 y) :
-  proot r 2 (x + y + 1 - 2 * proot r 2 x - 2 * proot r 2 y
-             + 2 * proot r 2 (x * y)) = proot r 2 x + proot r 2 y - 1.
+Lemma mv5 (hx : 0 <= x) (hy : 0 <= y) (h : 1 <= \sqrt x + \sqrt y) :
+  \sqrt (x + y + 1 - 2 * \sqrt x - 2 * \sqrt y
+         + 2 * \sqrt (x * y)) = \sqrt x + \sqrt y - 1.
 Proof. radcan. - exact: hy. - exact: hx. - exact: h. Qed.
 
 (* four terms, six products of roots *)
 Lemma mv6 (hx : 0 <= x) (hy : 0 <= y) (hz : 0 <= z) :
-  proot r 2 (x + y + z + 1 + 2 * proot r 2 x + 2 * proot r 2 y
-    + 2 * proot r 2 z + 2 * proot r 2 (x * y) + 2 * proot r 2 (x * z)
-    + 2 * proot r 2 (y * z)) = 1 + proot r 2 x + proot r 2 y + proot r 2 z.
+  \sqrt (x + y + z + 1 + 2 * \sqrt x + 2 * \sqrt y
+    + 2 * \sqrt z + 2 * \sqrt (x * y) + 2 * \sqrt (x * z)
+    + 2 * \sqrt (y * z)) = 1 + \sqrt x + \sqrt y + \sqrt z.
 Proof. radcan. - exact: hz. - exact: hy. - exact: hx. Qed.
 
 (* the cross terms 2, 2, 3 come from no candidate: radcan fails *)
-Goal proot r 2 (x + y + z + 2 * proot r 2 (x * y) + 2 * proot r 2 (x * z)
-                + 3 * proot r 2 (y * z)) =
-  proot r 2 x + proot r 2 y + proot r 2 z.
+Goal \sqrt (x + y + z + 2 * \sqrt (x * y) + 2 * \sqrt (x * z)
+            + 3 * \sqrt (y * z)) =
+  \sqrt x + \sqrt y + \sqrt z.
 Proof. Fail radcan. Abort.
 
 (* a wrong right-hand side is refused *)
-Goal proot r 2 (x + y + z + 2 * proot r 2 (x * y) + 2 * proot r 2 (x * z)
-                + 2 * proot r 2 (y * z)) =
-  proot r 2 x + proot r 2 y - proot r 2 z.
+Goal \sqrt (x + y + z + 2 * \sqrt (x * y) + 2 * \sqrt (x * z)
+            + 2 * \sqrt (y * z)) =
+  \sqrt x + \sqrt y - \sqrt z.
 Proof. Fail radcan. Abort.
 
 End DenestMultiVar.

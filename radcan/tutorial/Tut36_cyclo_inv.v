@@ -97,8 +97,10 @@ End Complex.
 (* any posroot with the two records on a negroot w *)
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypotheses (cy : cycroot w) (cp : cycprim w).
-Local Notation "\w_ n" := (proot r n (-1)) (at level 3, n at level 2).
+Local Notation "\w_ n" := (n.-proot (-1)) (at level 3, n at level 2).
 
 Lemma g1 : (1 + \w_5)^-1 =
   (4 - 3 * \w_5 + 2 * \w_5 ^+ 2 - \w_5 ^+ 3) / 5.

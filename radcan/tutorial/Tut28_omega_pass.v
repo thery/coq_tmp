@@ -80,9 +80,11 @@ Ltac radcan_omega_raw := radcan_omega_gen false.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypothesis ov : smallroot w.
 Variable x : F.
-Local Notation "\w_ n" := (proot r n (-1)) (at level 3, n at level 2).
+Local Notation "\w_ n" := (n.-proot (-1)) (at level 3, n at level 2).
 
 Lemma o1 : \w_3 ^+ 2 - \w_3 + 1 = 0.
 Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
@@ -104,17 +106,17 @@ Lemma o6 : \w_12 ^+ 2 = \w_6.
 Proof. Time radcan_omega. Qed.
 
 (* omega_4 + omega_4 ^-1 = sqrt 2 *)
-Lemma o7 : \w_4 + (\w_4)^-1 = proot r 2 2.
+Lemma o7 : \w_4 + (\w_4)^-1 = \sqrt 2.
 Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
 
 (* negative constant radicands: n.-root (- p / d) = n.-root (p / d) omega_n *)
-Lemma o8 : proot r 3 (-8) = 1 + proot r 2 3 * \w_2.
+Lemma o8 : 3.-proot (-8) = 1 + \sqrt 3 * \w_2.
 Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
 
-Lemma o9 : proot r 4 (- (1 / 4)) = (1 + \w_2) / 2.
+Lemma o9 : 4.-proot (- (1 / 4)) = (1 + \w_2) / 2.
 Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
 
-Lemma o10 : proot r 12 (-1) ^+ 4 = proot r 3 (-1).
+Lemma o10 : 12.-proot (-1) ^+ 4 = 3.-proot (-1).
 Proof. Time radcan_omega. Qed.
 
 (* the paper's (2), second reading ((1 - x)^(3/4) = ((1 - x)^(1/4))^3):     *)
@@ -123,16 +125,16 @@ Proof. Time radcan_omega. Qed.
 (* raw: 0 <= - (1 - x) (omega_rw, twice), 0 <= x - 1, x - 1 != 0           *)
 (* refined: 1 < x                                                           *)
 Lemma paper2 : 1 < x ->
-  proot r 4 (x - 1) / proot r 4 (1 - x)
-  - proot r 4 (x - 1) ^+ 3 / proot r 4 (1 - x) ^+ 3 - proot r 2 2 = 0.
+  4.-proot (x - 1) / 4.-proot (1 - x)
+  - 4.-proot (x - 1) ^+ 3 / 4.-proot (1 - x) ^+ 3 - \sqrt 2 = 0.
 Proof. move=> h. Fail radcan_plain_gen true. Time radcan_omega. exact: h. Qed.
 
 (* first reading ((1 - x)^(3/4) = 4.-root ((1 - x)^3)): the principal roots *)
 (* make the first two terms cancel, so the left side of (2) is - sqrt 2;   *)
 (* plain radcan already proves it (the omega_4 atoms cancel)               *)
 Lemma paper2' : 1 < x ->
-  proot r 4 (x - 1) / proot r 4 (1 - x)
-  - proot r 4 ((x - 1) ^+ 3) / proot r 4 ((1 - x) ^+ 3) = 0.
+  4.-proot (x - 1) / 4.-proot (1 - x)
+  - 4.-proot ((x - 1) ^+ 3) / 4.-proot ((1 - x) ^+ 3) = 0.
 Proof. move=> h. radcan. exact: h. Qed.
 End Generic.
 
