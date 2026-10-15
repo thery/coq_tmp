@@ -74,7 +74,4 @@ Lemma c1 : 0 < x ->
 Proof. move=> h. Time radcan. all: by rewrite ?invr_ge0 ltW. Qed.
 End Complex.
 
-(* Limitation: omega_rw does not see the sign of a fraction radicand with  *)
-(* a variable, so 4.-root ((1 - x) / y) is first split by frac_split under *)
-(* 0 <= 1 - x, then 4.-root (1 - x) rewritten under 0 <= x - 1: the goal  *)
-(* is proved only for x = 1                                                *)
+(* roots of unity under fractions, e.g. 4.-root ((1 - x) / y): Tut31 *)

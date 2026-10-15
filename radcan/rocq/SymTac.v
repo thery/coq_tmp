@@ -7,6 +7,9 @@
 (*                 the result holds for every y satisfying them.  The         *)
 (*                 cancellation conditions (B != 0), if any, are left as      *)
 (*                 goals.  Roots proot r n a of the goal are opaque atoms.    *)
+(*                 When the plain normal forms differ, inverses mixing        *)
+(*                 symbols are rationalised (M21): 1 / (1 + y) becomes        *)
+(*                 (y - 1) / (x - 2) for y ^+ 2 = x - 1, goal x - 2 != 0.     *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt.

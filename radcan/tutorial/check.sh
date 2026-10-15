@@ -10,7 +10,8 @@ check_one() {
   f=$1; out=$2
   d=$(mktemp -d); b=$(basename "$f")
   cp "$f" "$d/"
-  if rocq compile -w -notation-overridden,-ambiguous-paths,-deprecated \
+  if rocq compile -native-compiler no \
+       -w -notation-overridden,-ambiguous-paths,-deprecated \
        -R . Radcan "$d/$b" >"$d/log" 2>&1
   then echo "ok   $f" >"$out/$b.res"
   else { echo "FAIL $f"; cat "$d/log"; } >"$out/$b.res"; fi

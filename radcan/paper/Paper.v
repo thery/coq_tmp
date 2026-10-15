@@ -84,7 +84,10 @@ Lemma eq3 :
      + (x ^+ 2 + 2 * \sqrt 2 * x + 2))
   * (x ^+ 3 + 6 * x + 9 - (3 * x ^+ 2 + 2) * \sqrt 2)
   / (x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73).
-Proof. move=> hE. radcan_raw. by move: hE; rewrite !addrA mulNr. Qed.
+Proof.
+move=> hE. radcan_raw.
+by apply: contra_neq hE => h; rewrite -h; radcan.
+Qed.
 
 Lemma eqE : ((x + \sqrt 2) ^+ 3 + 9) *
            (x ^+ 3 + 6 * x + 9 - (3 * x ^+ 2 + 2) * \sqrt 2)

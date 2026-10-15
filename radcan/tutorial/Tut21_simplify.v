@@ -1,6 +1,6 @@
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot RootC RootR Syntax Radcan.
-From Radcan Require Import Refine Tactic Simplify SimplifyTac.
+From Radcan Require Import RealRoot Refine Tactic Simplify SimplifyTac.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 (* Part 21: radcan_simplify, the analogue of ring_simplify (milestone M17). *)
@@ -156,8 +156,79 @@ Variables (R : rcfType) (x : R).
 Lemma r1 : rootR 3 (-8 : R) + rootR 2 (x ^+ 2 * 8) - rootR 3 (x ^+ 3) = 0.
 Proof.
 radcan_simplify.
-Show. (* 2 * x * rootR 2 2 - x - 2 = 0,  0 <= x *)
+Show. (* 2 * `|x| * rootR 2 2 - x - 2 = 0, no condition (real mode) *)
 check_stable.
 Abort.
 
 End R.
+
+(* real mode: on an rcfType (rootR) or with a realroot r in the context,  *)
+(* `|a| is read as rootR 2 (a ^+ 2) and printed back as `|a|; even roots  *)
+(* of even powers and odd roots of any sign need no condition             *)
+Section RealMode.
+Variables (R : rcfType) (x y : R).
+
+Lemma a1 : rootR 2 ((x - 2) ^+ 2) = y.
+Proof.
+radcan_simplify.
+Show. (* `|x - 2| = y,  no condition *)
+check_stable.
+Abort.
+
+Lemma a2 : rootR 2 (x ^+ 2 * y ^+ 2) = 0.
+Proof.
+radcan_simplify.
+Show. (* `|x| * `|y| = 0,  no condition *)
+check_stable.
+Abort.
+
+Lemma a3 : rootR 3 (- 8 * x ^+ 3) = y.
+Proof.
+radcan_simplify.
+Show. (* - (2 * x) = y,  no condition *)
+check_stable.
+Abort.
+
+Lemma a4 : rootR 3 (x ^+ 2) * rootR 3 x = y.
+Proof.
+radcan_simplify.
+Show. (* x = y,  no condition *)
+check_stable.
+Abort.
+
+Lemma a5 : rootR 2 (4 * x ^+ 2) + `|x| = y.
+Proof.
+radcan_simplify.
+Show. (* 3 * `|x| = y,  no condition *)
+check_stable.
+Abort.
+
+Lemma a6 : `|x| ^+ 2 = y.
+Proof.
+radcan_simplify.
+Show. (* x ^+ 2 = y,  no condition *)
+check_stable.
+Abort.
+
+End RealMode.
+
+(* any posroot on a realFieldType with an oddroot gives a realroot *)
+Section RealField.
+Variables (F : realFieldType) (r : posroot F) (o : oddroot r) (x y : F).
+Let rl := realroot_of o.
+
+Lemma g1 : proot r 2 ((x + 1) ^+ 2) - proot r 3 (- x ^+ 3) = y.
+Proof.
+radcan_simplify.
+Show. (* x + `|x + 1| = y,  no condition *)
+check_stable.
+Abort.
+
+Lemma g2 : `|x| * proot r 2 (4 * x ^+ 2) = y.
+Proof.
+radcan_simplify.
+Show. (* 2 * x ^+ 2 = y *)
+check_stable.
+Abort.
+
+End RealField.
