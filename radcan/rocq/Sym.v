@@ -9,10 +9,17 @@
 (*                       (y ^+ n.-1 * B^-1) ^+ k (no condition: 0^-1 = 0)     *)
 (*   nf_symred rels f p == these rewritings applied to p until none applies   *)
 (*                       (at most f rounds)                                   *)
-(*   normcs rels e    == the root-free normaliser of CondNorm.v (normc0),     *)
+(*   sym_rat_inv rels d == Some (u, E) (M21): E the reduced d * u, checked    *)
+(*                       nonzero and free of symbols; u from a fraction-free  *)
+(*                       elimination (Ratio.v) on the basis of the symbol     *)
+(*                       monomials, i.e. field arithmetic in Q(x)[y]          *)
+(*   sym_inv rels ra p == the inverse of p, rationalised (u * E^-1, condition *)
+(*                       E != 0) when ra holds and p mixes symbols            *)
+(*   normcs rels ra e == the root-free normaliser of CondNorm.v (normc0),     *)
 (*                       reducing by the relations after each operation       *)
 (*   radcan_check_sym rels e1 e2 == Some cs when both sides have the same     *)
-(*                       normal form (cs: cancellation conditions B != 0)     *)
+(*                       normal form (cs: cancellation conditions B != 0),    *)
+(*                       plain first, then with rationalised inverses         *)
 (*   radcan_eq_cond_sym == its soundness, for any root function rt: only the  *)
 (*                       relations are used (no multiplicativity, merging,    *)
 (*                       sign law or branch of any root)                      *)
@@ -20,7 +27,7 @@
 
 From Stdlib Require Import BinNums BinPos BinInt.
 From mathcomp Require Import all_boot all_order all_algebra.
-From Radcan Require Import PosRoot Syntax Radcan.
+From Radcan Require Import PosRoot Syntax Radcan Ratio.
 Import Order.TTheory GRing.Theory Num.Theory ZNum.
 
 Set Implicit Arguments.
@@ -88,9 +95,83 @@ Fixpoint nf_symred (rels : seq srel) (f : nat) (p : nf) : nf :=
 
 Definition sym_fuel : nat := 32.
 
+(* M21: rationalisation of an inverse d^-1, d a sum mixing symbols, in the
+   field Q(atoms)[y1..yk]/(yi ^+ ni = Bi): basis of the symbol monomials,
+   multiplication by d reduced by the relations, fraction-free elimination
+   (Ratio.v); only E := d * u (reduced) is trusted, after the check *)
+
+Definition sym_is (rels : seq srel) (a : atom) : bool :=
+  if a is AVar i then if sym_find rels i is Some _ then true else false
+  else false.
+
+(* the symbols of d with their index *)
+Definition sym_gens (rels : seq srel) (d : nf) : seq (atom * nat) :=
+  foldr (fun t acc =>
+    foldr (fun ak acc =>
+      if ak.1 is AVar i then
+        if sym_find rels i is Some (n, _) then
+          if rat_is_gen acc ak.1 then acc else (ak.1, n) :: acc
+        else acc
+      else acc) acc t.2.1) [::] d.
+
+Definition sym_free (rels : seq srel) (p : nf) : bool :=
+  all (fun t => ~~ has (fun ak => sym_is rels ak.1) t.2.1) p.
+
+Definition sym_mixed (rels : seq srel) (p : nf) : bool :=
+  (1 < size p)%N && ~~ sym_free rels p.
+
+(* the matrix of the multiplication by d, last column e_1 *)
+Definition sym_matrix (rels : seq srel) (d : nf) :
+  option (seq key * seq (seq nf)) :=
+  let gs := sym_gens rels d in
+  if (foldr (fun an a => an.2 * a) 1 gs > max_dim)%N then None else
+  let B := map (fun v => (v, [::])) (rat_vbasis gs) in
+  let cols := map (fun b => nf_symred rels sym_fuel (nf_mul0 d [:: (c_one, b)]))
+                  B in
+  Some (B, map (fun bi => rcons (map (rat_coef gs bi) cols)
+                                (rat_coef gs bi nf_one)) B).
+
+(* the candidate u, d * u intended symbol-free (unverified) *)
+Definition sym_rat_cand (rels : seq srel) (d : nf) : option nf :=
+  if sym_matrix rels d is Some (B, rows) then
+    if ffgj 0 (size B) nf_one [::] rows is Some (E0, done) then
+      let us0 := map (last [::]) done in
+      let g := foldl (fun g q => if isconst g then g else pgcd gcd_fuel g q)
+                     E0 us0 in
+      let: (E1, us1) := if isconst g then (E0, us0)
+                        else (pexdiv E0 g, map (fun q => pexdiv q g) us0) in
+      let: (c, E2) := nf_prim E1 in
+      let us := if prim_ok E1 c E2 then map (nf_scale (c_inv c)) us1
+                else us1 in
+      Some (foldr (fun bq acc => nf_add (nf_mul0 bq.2 [:: (c_one, bq.1)]) acc)
+                  [::] (zip B us))
+    else None
+  else None.
+
+(* (u, E) with d * u = E: E is computed, then checked symbol-free, nonzero *)
+Definition sym_rat_inv (rels : seq srel) (d : nf) : option (nf * nf) :=
+  if sym_rat_cand rels d is Some u then
+    let E := nf_symred rels sym_fuel (nf_mul0 d u) in
+    if ~~ nilp E && sym_free rels E then Some (u, E) else None
+  else None.
+
+(* a nonzero constant: c * c^-1 = 1 *)
+Definition nf_cst_unit (p : nf) : bool :=
+  if p is [:: (c, ([::], _))] then c_eqb (c_mul c (c_inv c)) c_one else false.
+
+(* the inverse, rationalised when ra holds (condition E != 0) *)
+Definition sym_inv (rels : seq srel) (ra : bool) (p : nf) : nf * seq cond :=
+  if ra && sym_mixed rels p then
+    if sym_rat_inv rels p is Some (u, E) then
+      (nf_mul0 u (nf_inv0 E),
+       if nf_cst_unit E then [::] else [:: CNeq0 (nf_to_rexpr0 E)])
+    else (nf_inv0 p, [::])
+  else (nf_inv0 p, [::]).
+
 Section Normcs.
 
 Variable rels : seq srel.
+Variable ra : bool.
 
 Local Notation sr := (nf_symred rels sym_fuel).
 
@@ -119,16 +200,23 @@ Fixpoint normcs (e : rexpr) : nf * seq cond :=
     let: (s, c3) := sr_cancel (nf_pow0 p k) in (s, c1 ++ c3)
   | RInv e1 =>
     let: (p, c1) := normcs e1 in
-    let: (s, c3) := sr_cancel (nf_inv0 p) in (s, c1 ++ c3)
+    let: (q, c2) := sym_inv rels ra p in
+    let: (s, c3) := sr_cancel q in (s, c1 ++ c2 ++ c3)
   end.
 
 End Normcs.
 
+Definition radcan_check_symr (rels : seq srel) (ra : bool) (e1 e2 : rexpr) :
+  option (seq cond) :=
+  let: (p1, c1) := normcs rels ra e1 in
+  let: (p2, c2) := normcs rels ra e2 in
+  if nf_eqb p1 p2 then Some (cdedup (c1 ++ c2)) else None.
+
+(* rationalisation (condition E != 0) only when the plain forms differ *)
 Definition radcan_check_sym (rels : seq srel) (e1 e2 : rexpr) :
   option (seq cond) :=
-  let: (p1, c1) := normcs rels e1 in
-  let: (p2, c2) := normcs rels e2 in
-  if nf_eqb p1 p2 then Some (cdedup (c1 ++ c2)) else None.
+  if radcan_check_symr rels false e1 e2 is Some cs then Some cs
+  else radcan_check_symr rels true e1 e2.
 
 Local Open Scope ring_scope.
 
@@ -247,42 +335,73 @@ case: nf_cancel0 => s cs /= H /H.
 by rewrite !nf_symred_sound.
 Qed.
 
-Theorem normcs_sound e : holds0 (normcs rels e).2 ->
-  ri e = nf_interp0 (normcs rels e).1.
+Lemma sym_rat_inv_sound d u E : sym_rat_inv rels d = Some (u, E) ->
+  nf_interp0 d * nf_interp0 u = nf_interp0 E.
+Proof.
+rewrite /sym_rat_inv; case: sym_rat_cand => [u'|] //.
+case: ifP => // _ [<- <-].
+by rewrite nf_symred_sound nf_mul0_sound.
+Qed.
+
+Lemma nf_cst_unit_neq0 p : nf_cst_unit p -> nf_interp0 p != 0.
+Proof.
+case: p => [|[c [[|//] m]] [|//]] //= /(@c_eqbP F _ _).
+rewrite C2F_c_mul C2F_c_inv C2F_c_one nf_interp0_cons nf_interp0_nil /=.
+rewrite vmono_interp0_nil mulr1 addr0 => H.
+by apply/eqP => c0; move: H; rewrite c0 mul0r => /eqP; rewrite eq_sym oner_eq0.
+Qed.
+
+Variable ra : bool.
+
+Lemma sym_inv_sound p : holds0 (sym_inv rels ra p).2 ->
+  nf_interp0 (sym_inv rels ra p).1 = (nf_interp0 p)^-1.
+Proof.
+rewrite /sym_inv; case: ifP => _; last by rewrite nf_inv0_sound.
+case E : sym_rat_inv => [[u E']|] /=; last by rewrite nf_inv0_sound.
+have HE : holds0 (if nf_cst_unit E' then [::] else
+                    [:: CNeq0 (nf_to_rexpr0 E')]) -> nf_interp0 E' != 0.
+  case: ifP => [/nf_cst_unit_neq0 //|_].
+  by case/holds0_cons => /= HE _; rewrite nf_to_rexpr0_sound in HE.
+move/HE => {}HE.
+by rewrite nf_mul0_sound nf_inv0_sound (inv_from_mul (sym_rat_inv_sound E)).
+Qed.
+
+Theorem normcs_sound e : holds0 (normcs rels ra e).2 ->
+  ri e = nf_interp0 (normcs rels ra e).1.
 Proof.
 elim: e => [z|i|n p|n e1 IH1|e1 IH1 e2 IH2|e1 IH1|e1 IH1 e2 IH2|e1 IH1 e2 IH2|
             e1 IH1 k|e1 IH1] /=.
 - by move=> _; rewrite nf_single_sound0 /= vmono_interp0_nil mulr1 C2F_c_of_Z.
 - by move=> _; rewrite nf_symred_sound atom_nf_sound0.
 - by move=> _; rewrite atom_nf_sound0.
-- move: IH1; case: (normcs rels e1) => p c1 /= IH1 /IH1 He.
+- move: IH1; case: (normcs rels ra e1) => p c1 /= IH1 /IH1 He.
   by rewrite atom_nf_sound0 /= nf_to_rexpr0_sound He.
-- move: IH1 IH2; case: (normcs rels e1) => p1 c1.
-  case: (normcs rels e2) => p2 c2 /= IH1 IH2.
+- move: IH1 IH2; case: (normcs rels ra e1) => p1 c1.
+  case: (normcs rels ra e2) => p2 c2 /= IH1 IH2.
   have := @sr_cancel_sound (nf_add p1 p2); case: sr_cancel => s c3 /= Hs.
   case/holds0_cat => /IH1 -> /holds0_cat [/IH2 -> /Hs ->].
   by rewrite nf_add_sound0.
-- move: IH1; case: (normcs rels e1) => p c1 /= IH1 /IH1 ->.
+- move: IH1; case: (normcs rels ra e1) => p c1 /= IH1 /IH1 ->.
   by rewrite nf_opp_sound0.
-- move: IH1 IH2; case: (normcs rels e1) => p1 c1.
-  case: (normcs rels e2) => p2 c2 /= IH1 IH2.
+- move: IH1 IH2; case: (normcs rels ra e1) => p1 c1.
+  case: (normcs rels ra e2) => p2 c2 /= IH1 IH2.
   have := @sr_cancel_sound (nf_add p1 (nf_opp p2)).
   case: sr_cancel => s c3 /= Hs.
   case/holds0_cat => /IH1 -> /holds0_cat [/IH2 -> /Hs ->].
   by rewrite nf_add_sound0 nf_opp_sound0.
-- move: IH1 IH2; case: (normcs rels e1) => p1 c1.
-  case: (normcs rels e2) => p2 c2 /= IH1 IH2.
+- move: IH1 IH2; case: (normcs rels ra e1) => p1 c1.
+  case: (normcs rels ra e2) => p2 c2 /= IH1 IH2.
   have := @sr_cancel_sound (nf_mul0 p1 p2); case: sr_cancel => s c3 /= Hs.
   case/holds0_cat => /IH1 -> /holds0_cat [/IH2 -> /Hs ->].
   by rewrite nf_mul0_sound.
-- move: IH1; case: (normcs rels e1) => p c1 /= IH1.
+- move: IH1; case: (normcs rels ra e1) => p c1 /= IH1.
   have := @sr_cancel_sound (nf_pow0 p k); case: sr_cancel => s c3 /= Hs.
   case/holds0_cat => /IH1 -> /Hs ->.
   by rewrite nf_pow0_sound.
-move: IH1; case: (normcs rels e1) => p c1 /= IH1.
-have := @sr_cancel_sound (nf_inv0 p); case: sr_cancel => s c3 /= Hs.
-case/holds0_cat => /IH1 -> /Hs ->.
-by rewrite nf_inv0_sound.
+move: IH1; case: (normcs rels ra e1) => p c1 /= IH1.
+have := @sym_inv_sound p; case: sym_inv => q c2 /= Hq.
+have := @sr_cancel_sound q; case: sr_cancel => s c3 /= Hs.
+by case/holds0_cat => /IH1 -> /holds0_cat [/Hq <- /Hs ->].
 Qed.
 
 End SymSound.
@@ -293,14 +412,18 @@ Theorem radcan_eq_cond_sym (F : numFieldType) (rt : nat -> F -> F)
   radcan_check_sym rels e1 e2 = Some cs -> rels_hold rt env rels ->
   all_conds_gen rt env cs -> rinterp_gen rt env e1 = rinterp_gen rt env e2.
 Proof.
-rewrite /radcan_check_sym => + Hr.
-have := @normcs_sound F rt env rels Hr e1.
-case: (normcs rels e1) => p1 c1 /= H1.
-have := @normcs_sound F rt env rels Hr e2.
-case: (normcs rels e2) => p2 c2 /= H2.
-case: ifP => // /(nf_eqb_eq0 rt env) Hp [<-].
-move=> /all_conds_genP /holds0_dedup /holds0_cat [/H1 -> /H2 ->].
-by rewrite Hp.
+have Hra ra cs' : radcan_check_symr rels ra e1 e2 = Some cs' ->
+    rels_hold rt env rels -> all_conds_gen rt env cs' ->
+    rinterp_gen rt env e1 = rinterp_gen rt env e2.
+  rewrite /radcan_check_symr => + Hr.
+  have := @normcs_sound F rt env rels Hr ra e1.
+  case: (normcs rels ra e1) => p1 c1 /= H1.
+  have := @normcs_sound F rt env rels Hr ra e2.
+  case: (normcs rels ra e2) => p2 c2 /= H2.
+  case: ifP => // /(nf_eqb_eq0 rt env) Hp [<-].
+  move=> /all_conds_genP /holds0_dedup /holds0_cat [/H1 -> /H2 ->].
+  by rewrite Hp.
+by rewrite /radcan_check_sym => /ocase_some [] /Hra.
 Qed.
 
 Theorem radcan_eq_sym (F : numFieldType) (rt : nat -> F -> F)

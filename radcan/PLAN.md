@@ -169,14 +169,14 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
 - Queue order (2026-10-15): integration batch after M16 phase 2 -> Cond.v split -> M15;
   M19 phase 4 after phase 3 (same file Denest.v).
 
-- Fast multivariate gcd (running): pgcd blows up on some 3-variable inputs (> 200 s);
+- Fast multivariate gcd (DONE: MGcd.v coprimality pre-test + GCDHEU, old pgcd_prs fallback): pgcd blows up on some 3-variable inputs (> 200 s);
   replace by a modular / heuristic / EZ gcd (unverified, checked by division), new file
   MGcd.v before Poly.v; tests in tests/GcdTests.v.
 
-- Pre-pass speed (RUNNING, Prepass.v + Tactic.v): measure, incremental rounds, early fixpoint,
+- Pre-pass speed (DONE: side goals reuse computed values, no repeated failing check; cheaper denest verification dropped, gains ~0): measure, incremental rounds, early fixpoint,
   avoid duplicated work at Qed; later in Denest.v: cheaper verification of candidates.
 
-- Constant/inverse conditions (RUNNING): new SignCert.v (sign certificate for constant
+- Constant/inverse conditions (DONE): new SignCert.v (sign certificate for constant
   sums of roots) used by the refinement; 0 <= e^-1 -> 0 <= e; 0 <= proot e dropped given
   0 <= e; products/powers implied. Owns Ref*.v, SignCert.v.
 - Omega under fractions (DONE, Tut31): omega_rw looks through P/Q (4.-root((1-x)/y)). Owns
@@ -185,8 +185,12 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
 - Scope decision (user, 2026-10-15): the paper is the reference. Beyond-paper items (all
   denesting beyond nested-by-simplification, factoring over extensions, cyclotomic/canonical
   forms, performance) stay documented, not pursued. Last paper-scope gap: M21.
-- M21 (RUNNING): rationalisation of inverses in radcan_sym (Q(x)[y] with y^n = B), e.g.
+- M21 (DONE: Sym.v sym_rat_inv/sym_inv, Tut32): rationalisation of inverses in radcan_sym (Q(x)[y] with y^n = B), e.g.
   1/(1+y) = (y-1)/(x-2) for y^2 = x-1; checked d*u = E, condition E != 0; fallback.
+
+- Real mode in radcan_simplify (DONE: mode 4, |a| displayed, Tut21 RealMode/RealField).
+- STATUS 2026-10-15 morning: scope frozen (the paper is the reference); all paper examples
+  proved or refused as misprints; 37/37 scripts green.
 
 ## Work split for M0+M1
 

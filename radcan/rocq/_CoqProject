@@ -43,7 +43,6 @@ OmegaPass.v
 Prepass.v
 Tactic.v
 SymTac.v
-RealTactic.v
 Simplify.v
 SimplifyTac.v
 BigBackend.v

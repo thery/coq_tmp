@@ -7,16 +7,18 @@
 (*                       rational coefficients as a / q, inverse atoms as a   *)
 (*                       denominator, terms with the same inverse atoms over  *)
 (*                       a common denominator; rp: proot n a ^+ k printed as  *)
-(*                       proot n (a ^+ k)                                     *)
-(*   simpl_mk rp e (rt, m) == printed normal form of e in mode m (rt:        *)
+(*                       proot n (a ^+ k); |B| = proot 2 (B ^+ 2) kept        *)
+(*   simpl_mk rp e (rt, m) == printed normal form of e in mode m (rt:         *)
 (*                       rationalise denominators), normc0 if root-free       *)
 (*   simpl_pref chk ms e == Some (e', cs): e' the first candidate (modes ms,  *)
 (*                       rationalised first) proved equal to e by the checker *)
-(*                       chk under cs; then with roots of powers (rp) if     *)
+(*                       chk under cs; then with roots of powers (rp) if      *)
 (*                       they add no condition                                *)
-(*   radcan_simpl, radcan_simpl_odd, radcan_simpl_neg == simpl_pref with      *)
-(*                       radcan_check, radcan_check_odd, radcan_check_neg     *)
-(*   radcan_simpl_sound, ..._odd, ..._neg, radcan_simpl_sound0 ==             *)
+(*   radcan_simpl, radcan_simpl_odd, radcan_simpl_neg, radcan_simpl_real ==   *)
+(*                    simpl_pref with                                         *)
+(*                       radcan_check, radcan_check_odd, radcan_check_neg,    *)
+(*                       radcan_check_real (modes MRealA, MReal)              *)
+(*   radcan_simpl_sound, ..._odd, ..._neg, ..._real, radcan_simpl_sound0 ==   *)
 (*                       rinterp r env e = rinterp r env e' under the refined *)
 (*                       conditions (Refine.v); radcan_simpl_cond*: raw ones  *)
 (* The printer needs no proof: e = e' is proved by the decision procedure,    *)
@@ -26,16 +28,16 @@
 From Stdlib Require Import BinNums BinPos BinInt ZArith QArith_base.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot Syntax Backend Radcan Refine OddRoot.
-From Radcan Require Import NegRootC.
+From Radcan Require Import NegRootC RealRoot AbsRoot.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(* Printing *)
+(* Printing                                                                   *)
 
-(* left-nested products: a * b * c *)
+(* left-nested products: a * b * c                                            *)
 Definition lprod (l : seq rexpr) : rexpr :=
   if l is a :: l' then foldl RMul a l' else RCst 1.
 
@@ -51,10 +53,12 @@ Variable inner : rexpr -> rexpr.
 (* rp: powers of roots printed as roots of powers *)
 Variable rp : bool.
 
+(* |B| = proot 2 (B ^+ 2) (real mode) keeps its form, B printed alone *)
 Definition pp_atom (a : atom) (k : nat) : rexpr :=
   match a with
   | AVar i => pp_pow (RVar i) k
   | AInv e => pp_pow (inner e) k
+  | ARoot 2 (RPow b 2) => pp_pow (RRootE 2 (RPow (inner b) 2)) k
   | ARoot n e => if rp then RRootE n (pp_pow (inner e) k)
                  else pp_pow (RRootE n (inner e)) k
   end.
@@ -228,6 +232,9 @@ Definition radcan_simpl_odd (e : rexpr) : option (rexpr * seq cond) :=
 Definition radcan_simpl_neg (e : rexpr) : option (rexpr * seq cond) :=
   simpl_pref radcan_check_neg [:: MNeg; MNegW] e.
 
+Definition radcan_simpl_real (e : rexpr) : option (rexpr * seq cond) :=
+  simpl_pref radcan_check_real [:: MRealA; MReal] e.
+
 Local Open Scope ring_scope.
 
 (* Soundness *)
@@ -267,6 +274,18 @@ Theorem radcan_simpl_sound_neg (F : numFieldType) (r : posroot F)
   radcan_simpl_neg e = Some (e', cs) -> refine cs = rcs ->
   all_rconds F (proot r) env rcs -> rinterp r env e = rinterp r env e'.
 Proof. by move/simpl_prefP; exact: radcan_eq_refined_neg. Qed.
+
+Theorem radcan_simpl_cond_real (F : numFieldType) (r : posroot F)
+    (rl : realroot r) (env : seq F) e e' cs :
+  radcan_simpl_real e = Some (e', cs) -> all_conds r env cs ->
+  rinterp r env e = rinterp r env e'.
+Proof. by move/simpl_prefP; exact: radcan_eq_cond_real. Qed.
+
+Theorem radcan_simpl_sound_real (F : numFieldType) (r : posroot F)
+    (rl : realroot r) (env : seq F) e e' cs rcs :
+  radcan_simpl_real e = Some (e', cs) -> refine cs = rcs ->
+  all_rconds F (proot r) env rcs -> rinterp r env e = rinterp r env e'.
+Proof. by move/simpl_prefP; exact: radcan_eq_refined_real. Qed.
 
 (* root-free expressions, no root structure *)
 Theorem radcan_simpl_cond0 (F : numFieldType) (env : seq F) e e' cs :
