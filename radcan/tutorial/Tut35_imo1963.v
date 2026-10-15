@@ -25,24 +25,27 @@ Local Open Scope complex_scope.
    (de Moivre), EN, ENE (E x + E (- x) = 2 cos x) come from
    trig/TrigBridge.v. *)
 
-Definition t : R := Rdiv PI (IZR 7).
+Delimit Scope ring_scope with RR.
+Delimit Scope R_scope with R.
+
+Definition t : R := PI / 7.
 Definition z := E t.
 
 Lemma z7 : z ^+ 7 = -1.
 Proof.
 rewrite /z EX EE.
-have -> : Rmult (INR 7) t = PI by rewrite /t /=; field.
+have -> : (INR 7 * t)%R = PI by rewrite /t /=; field.
 by rewrite cos_PI sin_PI rmorph0 mulr0 addr0 rmorphN1.
 Qed.
 
-Lemma Ezk k : E (Rmult (INR k) t) = z ^+ k.
+Lemma Ezk k : E (INR k * t) = z ^+ k.
 Proof. by rewrite /z EX. Qed.
 
 (* e^(-ikt) = - z^(7-k), since z^7 = -1 *)
-Lemma Enk k : (k <= 7)%N -> E (Ropp (Rmult (INR k) t)) = - z ^+ (7 - k).
+Lemma Enk k : (k <= 7)%N -> E (-(INR k * t)) = - z ^+ (7 - k).
 Proof.
 move=> hk.
-have h1 : z ^+ k * E (Ropp (Rmult (INR k) t)) = 1 by rewrite -Ezk EN.
+have h1 : z ^+ k * E (- (INR k * t)) = 1 by rewrite -Ezk EN.
 have h2 : z ^+ (7 - k) * z ^+ k = -1 by rewrite -exprD subnK // z7.
 by rewrite -[RHS]mulr1 -h1 mulNr mulrA h2 mulN1r opprK.
 Qed.
@@ -66,9 +69,9 @@ Qed.
 
 (* the identity in C: 2 cos(kt) = z^k + z^-k, then algebra modulo Phi_14 *)
 Lemma mainC :
-  (E (Rmult (INR 1) t) + E (Ropp (Rmult (INR 1) t)))
-  - (E (Rmult (INR 2) t) + E (Ropp (Rmult (INR 2) t)))
-  + (E (Rmult (INR 3) t) + E (Ropp (Rmult (INR 3) t))) = 1.
+  (E (INR 1 * t) + E (- (INR 1 * t)))
+  - (E (INR 2 * t) + E (- (INR 2 * t)))
+  + (E (INR 3 * t) + E (- (INR 3 * t))) = 1.
 Proof.
 rewrite !Ezk !Enk //=.
 have h6 := Phi14; move: z h6 => w h6.
@@ -77,8 +80,7 @@ Qed.
 
 (* back to R: real parts *)
 Lemma cos_pi7_mc :
-  2 * cos (Rmult (INR 1) t) - 2 * cos (Rmult (INR 2) t)
-  + 2 * cos (Rmult (INR 3) t) = 1.
+  2 * cos (INR 1 * t) - 2 * cos (INR 2 * t) + 2 * cos (INR 3 * t) = 1.
 Proof.
 have := mainC; rewrite !ENE -!rmorphB -rmorphD.
 by move=> /(congr1 (@complex.Re R)).
@@ -93,22 +95,20 @@ Proof. by rewrite /z /t E_rootZ. Qed.
 (* the identity in C again, now by plain radcan on 7.-root (-1): the
    cyclotomic reduction of Tutorial 34 knows Phi_14 *)
 Lemma mainC_omega :
-  (E (Rmult (INR 1) t) + E (Ropp (Rmult (INR 1) t)))
-  - (E (Rmult (INR 2) t) + E (Ropp (Rmult (INR 2) t)))
-  + (E (Rmult (INR 3) t) + E (Ropp (Rmult (INR 3) t))) = 1.
+  (E (INR 1 * t) + E (- (INR 1 * t)))
+  - (E (INR 2 * t) + E (- (INR 2 * t)))
+  + (E (INR 3 * t) + E (- (INR 3 * t))) = 1.
 Proof. rewrite !Ezk !Enk //= z_root. radcan. Qed.
 
 Local Open Scope R_scope.
 
 Theorem imo1963 : cos (PI / 7) - cos (2 * PI / 7) + cos (3 * PI / 7) = 1 / 2.
 Proof.
-have h : Rplus (Rminus (Rmult 2 (cos (Rmult (INR 1) t)))
-                       (Rmult 2 (cos (Rmult (INR 2) t))))
-               (Rmult 2 (cos (Rmult (INR 3) t))) = 1 := cos_pi7_mc.
-move: h; rewrite /t /=.
-have -> : 1 * (PI / 7) = PI / 7 by field.
-have -> : (1 + 1) * (PI / 7) = 2 * PI / 7 by field.
-have -> : (1 + 1 + 1) * (PI / 7) = 3 * PI / 7 by field.
+have: (2 * cos (INR 1 * t) - 2 * cos (INR 2 * t) + 2 * cos (INR 3 * t) = 1)%R.
+  by exact: cos_pi7_mc.
+have -> : INR 1 * t = PI / 7 by rewrite /t /=; field.
+have -> : INR 2 * t = 2 * PI / 7 by rewrite /t /=; field.
+have -> : INR 3 * t = 3 * PI / 7 by rewrite /t /=; field.
 lra.
 Qed.
 
@@ -116,14 +116,11 @@ Qed.
 Theorem imo1963_omega :
   cos (PI / 7) - cos (2 * PI / 7) + cos (3 * PI / 7) = 1 / 2.
 Proof.
-have h : Rplus (Rminus (Rmult 2 (cos (Rmult (INR 1) t)))
-                       (Rmult 2 (cos (Rmult (INR 2) t))))
-               (Rmult 2 (cos (Rmult (INR 3) t))) = 1.
+have : 2 * cos (INR 1 * t) - 2 * cos (INR 2 * t) + 2 * cos (INR 3 * t) = 1.
   have := mainC_omega; rewrite !ENE -!rmorphB -rmorphD.
   by move=> /(congr1 (@complex.Re R)).
-move: h; rewrite /t /=.
-have -> : 1 * (PI / 7) = PI / 7 by field.
-have -> : (1 + 1) * (PI / 7) = 2 * PI / 7 by field.
-have -> : (1 + 1 + 1) * (PI / 7) = 3 * PI / 7 by field.
+have -> : INR 1 * t = PI / 7 by rewrite /t /=; field.
+have -> : INR 2 * t = 2 * PI / 7 by rewrite /t /=; field.
+have -> : INR 3 * t = 3 * PI / 7 by rewrite /t /=; field.
 lra.
 Qed.
