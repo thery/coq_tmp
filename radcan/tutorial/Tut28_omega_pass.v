@@ -140,18 +140,19 @@ End Generic.
 Section Complex.
 Variables (C : numClosedFieldType) (x : C).
 
-(* the two Fail goals of TUTORIAL Part 16 *)
+(* the two goals that failed in TUTORIAL Part 16 (now proved by radcan) *)
 Lemma c1 : 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
-Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
+Proof. radcan_plain_gen true. Qed.
 
+(* c2 is now also proved by the plain check (index law, Tutorial 33) *)
 Lemma c2 : 4.-root (-1 : C) ^+ 2 = 2.-root (-1).
-Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
+Proof. radcan_plain_gen true. Qed.
 
 Lemma c3 : 6.-root (-1 : C) ^+ 2 = 3.-root (-1).
-Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
+Proof. radcan_plain_gen true. Qed.
 
 Lemma c4 : 12.-root (-1 : C) ^+ 3 = 4.-root (-1).
-Proof. Fail radcan_plain_gen true. Time radcan_omega. Qed.
+Proof. radcan_plain_gen true. Qed.
 
 (* the principal cube root of -8 *)
 Lemma c5 : 3.-root (-8 : C) = 1 + 2.-root 3 * 2.-root (-1).

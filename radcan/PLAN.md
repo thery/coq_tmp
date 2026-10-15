@@ -192,6 +192,31 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
 - STATUS 2026-10-15 morning: scope frozen (the paper is the reference); all paper examples
   proved or refused as misprints; 37/37 scripts green.
 
+- Note doc/radcan-note.typ (Typst, 6 pages, style of the Rubik note); its Rocq examples in
+  doc/NoteExamples.v, checked by tutorial/check.sh.
+- Ω3–Ω7 reopened by the user (2026-10-15) and DONE:
+  - Ω3 `UnitArc.v`: `rootC_N1_index`, `rootC_N1_prim`, `rootC_N1_max` (no trigonometry).
+  - Ω4 `OmegaRoot2.v` (`cycroot`), `NegCyc.v`, `CycC.v`: ω merged across indices (modes
+    MNegC, MNegCW; `radcan` mode 4).
+  - Ω5 `Cyclo.v`, `CycloC.v` (`cycprim`), `CycloTac.v`: reduction modulo Φ_2N, Φ checked by
+    `prim_root_cert` (`radcan` mode 5).
+  - Ω6 small table √2, √3, √5 with ω (`sqrtroot`, mode MNegS, `radcan` mode 6). Kept as a
+    documented table by the user's decision: the general case (Gauss sums) needs Gauss's
+    sign theorem.
+  - Ω7 `RootComp.v`: `(nk).-root x = n.-root (k.-root x)` for all x; mathcomp-ready file
+    `plans/mathcomp/nthroot_unity.v`, draft PR `plans/MATHCOMP_PR.md` (not opened).
+  - Tut33 (merge + table), Tut34 (cyclotomic), Tut35 (IMO 1963: symbol proof and ω proof,
+    needs rocq-mathcomp-real-closed).
+- Gauss sums (user, 2026-10-15, scope fixed in writing): IN = Gauss's sign theorem for every
+  odd prime p on C with principal roots (g = sum zeta^(a^2) = sqrt p or i sqrt p), plugged
+  into radcan so sqrt n is written with roots of unity when the goal calls for it; plus
+  omega inside inverses of sums (invert modulo Phi, checked). OUT = higher roots simplifying
+  with roots of unity (Kummer theory, e.g. 4th root of -4 = 1 + i), general denesting,
+  trigonometry directly in R. RUNNING (agents: GaussSum.v; CycloInv.v).
+- Next: one checker + one theorem over a record of root facts (Dispatch.v, agent),
+  table-driven `Tactic.v`, then a clean `-time` build: fix every step > 6 s outside
+  `Require` and the example files.
+
 ## Work split for M0+M1
 
 - Agent 1 (roots): `RootC.v`, `RootR.v`, derived lemmas in `PosRootFacts.v`

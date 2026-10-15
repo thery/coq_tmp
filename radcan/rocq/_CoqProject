@@ -6,7 +6,10 @@ PosRoot.v
 PosRootFacts.v
 RootC.v
 OmegaRoot.v
+OmegaRoot2.v
 OmegaC.v
+UnitArc.v
+RootComp.v
 RootR.v
 Rstruct.v
 RootRstd.v
@@ -37,11 +40,16 @@ Refine.v
 Denest.v
 OddRoot.v
 NegRootC.v
+NegCyc.v
+CycC.v
 AbsRoot.v
 Frac.v
 OmegaPass.v
 Prepass.v
+Cyclo.v
+CycloC.v
 Tactic.v
+CycloTac.v
 SymTac.v
 Simplify.v
 SimplifyTac.v

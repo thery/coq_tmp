@@ -50,16 +50,15 @@ Proof. by radcan. Qed.
 Lemma u9 : 1 / 3.-root (-2 : C) = - 3.-root (-1) ^+ 2 * 3.-root 4 / 2.
 Proof. by radcan. Qed.
 
-(* omega_3 is a root of x^2 - x + 1: the plain check fails, omega atoms
-   are only reduced by omega_n ^+ n = -1 (no cyclotomic relation); the
-   pre-pass (Tutorial 29) rewrites omega_3 by its value (Tutorial 28) *)
+(* omega_3 is a root of x^2 - x + 1: the plain check proves it by the
+   cyclotomic reduction of Tutorial 34 (Phi_6) *)
 Goal 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
-Proof. Fail radcan_plain_gen true. by radcan. Qed.
+Proof. radcan_plain_gen true. Qed.
 
-(* omega atoms of different indices are not merged (no index law) by the
-   plain check; the pre-pass does it through the values of Tutorial 28 *)
+(* omega atoms of different indices are merged by the plain check, through
+   the index law (nk).-root(-1)^k = n.-root(-1) (Tutorial 33) *)
 Goal 4.-root (-1 : C) ^+ 2 = 2.-root (-1).
-Proof. Fail radcan_plain_gen true. by radcan. Qed.
+Proof. radcan_plain_gen true. Qed.
 
 (* a polynomial radicand with no base to flip;
    raw: 0 <= x - 1, refined: 1 <= x *)

@@ -3,6 +3,10 @@
 (*   rmode            == MStd (any posroot), MOdd (needs an oddroot: real odd *)
 (*                      roots), MNeg (needs a negroot: roots of -1, as on C)  *)
 (*                      MNegW (MNeg preferring omega_n to a flipped base),    *)
+(*                      MNegC, MNegCW (MNeg, MNegW merging omega atoms: needs *)
+(*                      the index law windex, OmegaRoot2.v), MNegS (MNegC,    *)
+(*                      and sqrt 2, 3, 5 rewritten into roots of -1 when the  *)
+(*                      normal forms differ: needs wsqrt, CondNorm.v)         *)
 (*                      MReal (needs a realroot: odd roots without sign       *)
 (*                      conditions), MRealA (MReal, and |B| = proot 2 (B^2)   *)
 (*                      for even roots of even powers, no condition)          *)
@@ -12,14 +16,15 @@
 (*                      or through G = gcd P D (condition G != 0)             *)
 (*   nf_simp_sound    == soundness of nf_simp under its conditions            *)
 (* omega_n = proot n (-1), omega_n ^+ n = -1; omega atoms of different        *)
-(* indices are never merged.                                                  *)
+(* indices are merged (lcm, gcd rules, no sign condition) only in the modes   *)
+(* MNegC, MNegCW, MNegS (cyc_mode), whose soundness uses windex r.            *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
 From Stdlib Require Import QArith_base Qreduction.
 From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot PosRootFacts Syntax Backend Mono Factor NF.
-From Radcan Require Import Inverse Poly Ratio RealRoot.
+From Radcan Require Import Inverse Poly Ratio RealRoot OmegaRoot2.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Set Implicit Arguments.
@@ -29,17 +34,24 @@ Unset Printing Implicit Defensive.
 (* MNegW: MNeg preferring omega_n to a flipped base (fallback of MNeg)
    MReal: real field (realroot), odd roots of any sign split and reduced
    without condition; MRealA: the same, and even roots of even powers give
-   absolute values |B| = proot 2 (B ^+ 2) (no condition) *)
-Inductive rmode := MStd | MOdd | MNeg | MNegW | MReal | MRealA.
+   absolute values |B| = proot 2 (B ^+ 2) (no condition)
+   MNegC, MNegCW: MNeg, MNegW where omega atoms are merged across indices
+   MNegS: MNegC, then sqrt 2, 3, 5 written with omega atoms (CondNorm.v) *)
+Inductive rmode :=
+  MStd | MOdd | MNeg | MNegW | MReal | MRealA | MNegC | MNegCW | MNegS.
 
 Definition odd_mode (m : rmode) : bool :=
   match m with MOdd | MReal | MRealA => true | _ => false end.
 Definition neg_mode (m : rmode) : bool :=
-  match m with MNeg | MNegW => true | _ => false end.
+  match m with MNeg | MNegW | MNegC | MNegCW | MNegS => true | _ => false end.
 Definition real_mode (m : rmode) : bool :=
   match m with MReal | MRealA => true | _ => false end.
 Definition abs_mode (m : rmode) : bool := if m is MRealA then true else false.
-Definition negw_mode (m : rmode) : bool := if m is MNegW then true else false.
+Definition negw_mode (m : rmode) : bool :=
+  match m with MNegW | MNegCW => true | _ => false end.
+Definition cyc_mode (m : rmode) : bool :=
+  match m with MNegC | MNegCW | MNegS => true | _ => false end.
+Definition sq_mode (m : rmode) : bool := if m is MNegS then true else false.
 
 (* the radicand -1: ARoot n omega_c is omega_n = proot n (-1) *)
 Definition omega_c : rexpr := RCst (Zneg xH).
@@ -82,7 +94,8 @@ Fixpoint vfind_root (e : rexpr) (v : vmono) :
     else rest
   end.
 
-(* in mode MNeg the atoms omega_n are never merged (no index law) *)
+(* in modes MNeg, MNegW the atoms omega_n are never merged (no index law);
+   in modes MNegC, MNegCW they are, like proot n e with 0 <= e *)
 Fixpoint vmerge (m : rmode) (v : vmono) :
   option (positive * rexpr * nat * vmono) :=
   match v with
@@ -91,7 +104,7 @@ Fixpoint vmerge (m : rmode) (v : vmono) :
     let rest := if vmerge m v' is Some (n', e', k', w) then
                   Some (n', e', k', (a, k) :: w) else None in
     if a is ARoot n e then
-      if neg_mode m && is_omega e then rest else
+      if [&& neg_mode m, ~~ cyc_mode m & is_omega e] then rest else
       let N := Pos.to_nat n in
       if vfind_root e v' is Some (m, k2, w) then
         let M := Pos.to_nat m in
@@ -124,6 +137,7 @@ Definition vodd_root (e : rexpr) (v : vmono) : bool :=
                  else true) v.
 
 Definition merge_cond (m : rmode) (e : rexpr) (v : vmono) : seq cond :=
+  if cyc_mode m && is_omega e then [::] else
   if real_mode m && vodd_root e v then [::] else [:: CGe0 e].
 
 Definition reduce_term (m : rmode) (t : coef * key) : nf * seq cond :=
@@ -228,6 +242,7 @@ Variable mo : rmode.
 Hypothesis Ho : odd_mode mo -> oddroot r.
 Hypothesis Hng : neg_mode mo -> negroot r.
 Hypothesis Hrl : real_mode mo -> realroot r.
+Hypothesis Hcy : cyc_mode mo -> windex r.
 
 Local Notation fct_interp := (fct_interp r).
 Local Notation mono_interp := (mono_interp r).
@@ -284,15 +299,32 @@ have ng0 : (0 < n %/ g)%N by rewrite divn_gt0 // dvdn_leq.
 by rewrite -(proot_exprMn r _ ng0 g0 a0) !divnK.
 Qed.
 
-Lemma vmerge_sound v n e k w : vmerge mo v = Some (n, e, k, w) ->
-  0 <= rinterp r env e ->
+(* the two rewrites of vmerge on proot n a: lift to a multiple index, and
+   divide index and exponent by a common divisor *)
+Definition merge_ok (a : F) : Prop :=
+  (forall n l k, (0 < n)%N -> (0 < l)%N -> (n %| l)%N ->
+     proot r n a ^+ k = proot r l a ^+ (k * (l %/ n))) /\
+  (forall n g k, (0 < n)%N -> (0 < g)%N -> (g %| n)%N -> (g %| k)%N ->
+     proot r n a ^+ k = proot r (n %/ g) a ^+ (k %/ g)).
+
+Lemma merge_ok_ge0 a : 0 <= a -> merge_ok a.
+Proof.
+move=> a0; split=> *; first exact: proot_expr_lift.
+exact: proot_expr_div.
+Qed.
+
+Lemma merge_ok_omega : windex r -> merge_ok (-1).
+Proof. by move=> hw; split=> *; [exact: windex_lift | exact: windex_div]. Qed.
+
+Lemma vmerge_sound_gen v n e k w : vmerge mo v = Some (n, e, k, w) ->
+  merge_ok (rinterp r env e) ->
   vmono_interp v = atom_interp (ARoot n e) ^+ k * vmono_interp w.
 Proof.
 elim: v n e k w => [|[a k'] v IH] n e k w //=.
 have Hrest : (if vmerge mo v is Some (n', e', k'', w') then
                 Some (n', e', k'', (a, k') :: w') else None) =
              Some (n, e, k, w) ->
-             0 <= rinterp r env e ->
+             merge_ok (rinterp r env e) ->
              vmono_interp ((a, k') :: v) =
              atom_interp (ARoot n e) ^+ k * vmono_interp w.
   case E : (vmerge mo v) => [[[[n1 e1] k1] w1]|] // [<- <- <- <-] He.
@@ -307,14 +339,19 @@ case Ef : (vfind_root e' v) => [[[m k2] w2]|].
   rewrite vmono_interp_cons (vfind_root_sound Ef) mulrA /=.
   rewrite Nat2Pos.id; last first.
     by apply/eqP; rewrite -lt0n.
-  by rewrite exprD -!proot_expr_lift ?dvdn_lcml ?dvdn_lcmr.
+  by case: He => Hl _; rewrite exprD -!Hl ?dvdn_lcml ?dvdn_lcmr.
 case: ifP => [g1 [<- <- <- <-] He|_ /Hrest //].
 have g0 : (0 < gcdn k' (Pos.to_nat n'))%N by rewrite gcdn_gt0 N0 orbT.
 have Ng0 : (0 < Pos.to_nat n' %/ gcdn k' (Pos.to_nat n'))%N.
   by rewrite divn_gt0 // dvdn_leq // dvdn_gcdr.
 rewrite vmono_interp_cons /= Nat2Pos.id; last by apply/eqP; rewrite -lt0n.
-by rewrite -proot_expr_div ?dvdn_gcdr ?dvdn_gcdl.
+by case: He => _ Hd; rewrite -Hd ?dvdn_gcdr ?dvdn_gcdl.
 Qed.
+
+Lemma vmerge_sound v n e k w : vmerge mo v = Some (n, e, k, w) ->
+  0 <= rinterp r env e ->
+  vmono_interp v = atom_interp (ARoot n e) ^+ k * vmono_interp w.
+Proof. by move=> H /merge_ok_ge0; exact: vmerge_sound_gen. Qed.
 
 Lemma expr_divmodK (x a : F) N k :
   x ^+ N = a -> x ^+ k = a ^+ (k %/ N) * x ^+ (k %% N).
@@ -431,7 +468,10 @@ case E : (vextract v) => [[[[n e] k] w]|] /=; last first.
     by rewrite nf_interp_cons nf_interp_nil addr0.
   have Hv : holds (merge_cond mo e v) ->
      vmono_interp v = atom_interp (ARoot n e) ^+ k * vmono_interp w.
-    rewrite /merge_cond; case: ifP => [/andP[Hm Hod] _|_].
+    rewrite /merge_cond; case: ifP => [/andP[Hc /is_omegaP Eo] _|_].
+      apply: vmerge_sound_gen Em _; rewrite Eo /= pos2F1.
+      exact: merge_ok_omega (Hcy Hc).
+    case: ifP => [/andP[Hm Hod] _|_].
       exact: (vmerge_sound_odd (Hrl Hm) Em).
     by case/holds_cons => /= He _; apply: vmerge_sound Em He.
   move/Hv => {}Hv.

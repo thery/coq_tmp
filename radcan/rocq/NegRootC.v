@@ -5,9 +5,9 @@
 (*      refine cs = rcs -> all_rconds .. rcs -> rinterp r env e1 = .. e2      *)
 (*   radcan_eq_cond_rootC_neg, radcan_eq_refined_rootC_neg : the instances    *)
 (*      on a numClosedFieldType with n.-root                                  *)
-(* (radcan_eq_cond_neg is in Cond.v.)  The index law w (n * k) ^+ k = w n     *)
-(* holds on C but is not needed: the normaliser never merges omega atoms of   *)
-(* different indices.                                                         *)
+(* (radcan_eq_cond_neg is in Cond.v.)  Plain neg mode does not merge omega   *)
+(* atoms of different indices; the modes of NegCyc.v (index law, record      *)
+(* cycroot) and Cyclo.v (cyclotomic reduction) do.                            *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt.

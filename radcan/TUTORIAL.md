@@ -934,14 +934,14 @@ Proof. by radcan. Qed.
 Lemma u9 : 1 / 3.-root (-2 : C) = - 3.-root (-1) ^+ 2 * 3.-root 4 / 2.
 Proof. by radcan. Qed.
 
-(* omega_3 is a root of x^2 - x + 1 is NOT found: omega atoms are only      *)
-(* reduced by omega_n ^+ n = -1 (no cyclotomic relation)                    *)
+(* omega_3 is a root of x^2 - x + 1: found by the cyclotomic reduction     *)
+(* (Part 34)                                                                *)
 Goal 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
-Proof. Fail radcan. Abort.
+Proof. radcan. Qed.
 
-(* omega atoms of different indices are not merged (no index law) *)
+(* omega atoms of different indices are merged by the index law (Part 33) *)
 Goal 4.-root (-1 : C) ^+ 2 = 2.-root (-1).
-Proof. Fail radcan. Abort.
+Proof. radcan. Qed.
 
 (* a polynomial radicand with no base to flip:                              *)
 (* raw: 0 <= x - 1   refined: 1 <= x                                         *)
@@ -2212,6 +2212,121 @@ Qed.
 End Stress.
 ```
 
+## Part 33 — roots of unity of different indices, and three square roots
+
+Script: [`tutorial/Tut33_omega_merge.v`](tutorial/Tut33_omega_merge.v).
+
+On ℂ, `ω_n = n.-root (-1)` is the principal `n`-th root of `−1`, i.e.
+`e^{iπ/n}`. Until now each `ω_n` was a separate atom, reduced only by
+`ω_n ^+ n = -1`, so `ω_4 ^+ 2` and `ω_2` were different normal forms. Two
+facts about mathcomp's principal roots, proved in `UnitArc.v` without any
+trigonometry, change that:
+
+```coq
+Lemma rootC_N1_index n k : (0 < n)%N -> (0 < k)%N ->
+  (n * k).-root (-1 : C) ^+ k = n.-root (-1).
+Lemma rootC_N1_prim n : (0 < n)%N ->
+  (2 * n).-primitive_root (n.-root (-1 : C)).
+```
+
+With the index law (record `cycroot w`, `OmegaRoot2.v`) the normaliser merges
+the `ω` atoms of a monomial over the lcm of their indices, as Part 11 merges
+`√[n]B` and `√[m]B`:
+
+```coq
+Goal 10.-root (-1 : C) ^+ 2 = 5.-root (-1). Proof. radcan. Qed.
+Goal 8.-root (-1 : C) ^+ 2 * 5.-root (-1) = 20.-root (-1) ^+ 9.
+Proof. radcan. Qed.
+```
+
+The same file has a deliberately small table (record `sqrtroot w`): when the
+goal contains `ω_4`, `ω_6` or `ω_5`, the constant square roots of 2, 3 and 5
+are written with roots of unity,
+
+  `√2 = ω₄ − ω₄³`, `√3 = ω₆ − ω₆⁵`, `√5 = 2ω₅ − 2ω₅⁴ − 1`,
+
+so that, for example, the golden ratio is recognised:
+
+```coq
+Goal 10.-root (-1 : C) ^+ 2 + (5.-root (-1))^-1 = (2.-root 5 + 1) / 2.
+Proof. radcan. Qed.
+```
+
+This table is a recipe, not a general method. In general `√p` is a Gauss
+sum of `p`-th roots of unity, but with principal roots its sign is Gauss's
+sign theorem, which we do not prove. Only 2, 3, 5 are covered.
+
+## Part 34 — cyclotomic reduction
+
+Script: [`tutorial/Tut34_cyclo.v`](tutorial/Tut34_cyclo.v).
+
+After Part 33 every monomial carries at most one `ω_n ^+ k`, but sums can
+still be zero without being recognised: `ω_5` is a root of the cyclotomic
+polynomial `Φ₁₀ = X⁴ − X³ + X² − X + 1`. `Cyclo.v` writes every `ω_n ^+ k`
+as a power of `ω_N`, `N` the lcm of the indices of both sides, and reduces
+modulo `Φ_{2N}`. The polynomial `Φ_{2N}` is computed over ℤ without proof
+and then checked by a certificate:
+
+```coq
+Lemma prim_root_cert (R : idomainType) m (z : R) (p h g : {poly R}) D :
+  m.-primitive_root z -> all (fun d => (0 < d < m)%N) D ->
+  p * h = 'X^m - 1 -> h * g = \prod_(d <- D) ('X^d - 1) -> root p z.
+```
+
+Soundness needs that `ω_N` is a primitive `2N`-th root of unity (record
+`cycprim w`, instance from `rootC_N1_prim`).
+
+```coq
+Goal 5.-root (-1 : C) ^+ 4 - 5.-root (-1) ^+ 3 + 5.-root (-1) ^+ 2
+  - 5.-root (-1) + 1 = 0.
+Proof. radcan. Qed.
+```
+
+A false identity such as `ω₇³ + ω₇ = ω₇²` is refused. An `ω` inside the
+inverse of a sum, as in `(1 + ω₅)⁻¹`, is still an opaque atom.
+
+## Part 35 — a trigonometric identity through ℂ
+
+Script: [`tutorial/Tut35_imo1963.v`](tutorial/Tut35_imo1963.v). It needs the
+package `rocq-mathcomp-real-closed` for ℂ = `R[i]`.
+
+IMO 1963, problem 5, on the reals of the standard library:
+
+```coq
+Theorem imo1963 : cos (PI / 7) - cos (2 * PI / 7) + cos (3 * PI / 7) = 1 / 2.
+```
+
+`radcan` knows nothing about `cos`. The idea is to go to ℂ, where the
+identity becomes algebra:
+
+1. `E x := cos x +i* sin x` in `R[i]`. With the addition formulas,
+   `E x * E y = E (x + y)` (`EM`); the complex product is checked by
+   `radcan_sym`, with `i` a symbol such that `i ^+ 2 = -1`.
+2. De Moivre by induction: `E x ^+ n = E (INR n * x)` (`EX`).
+3. For `z := E (PI / 7)`: `z ^+ 7 = -1` (`z7`), and `z + 1 != 0` because
+   `sin (PI / 7) > 0`. So `z` is a root of
+   `Φ₁₄ = (X⁷ + 1) / (X + 1)` (`Phi14`): `radcan_sym` proves
+   `(z + 1) * Φ₁₄(z) = 0` from `z ^+ 7 = -1`.
+4. `2 cos (k t) = E (k t) + E (- k t)` and `E (- k t) = - z ^+ (7 - k)`.
+   The identity, times 2, becomes `z - z² + z³ - z⁴ + z⁵ - z⁶ = 1`,
+   proved by `radcan_sym` from `Φ₁₄(z) = 0` (`mainC`).
+5. Back to ℝ by taking real parts, then `lra`.
+
+In this first proof the roots of unity of Parts 16 and 33–34 are not used:
+`z` is a symbol with a relation, as in Part 30.
+
+A second proof (`imo1963_omega`) uses them. `z_root` shows that `z` *is*
+mathcomp's principal root `7.-root (-1)`: `z` is a primitive 14-th root of
+unity, so `7.-root (-1) = z ^+ j`; `'Im ≥ 0` excludes `j = 8…13` (`sin < 0`
+on `]π, 2π[`), and `rootC_N1_max` (largest real part) excludes `j = 2…7`
+(`cos` decreasing on `[0, π]`). Then plain `radcan` proves the identity in
+`ω₇`, with the cyclotomic reduction of Part 34:
+
+```coq
+Proof. rewrite !Ezk !Enk //= z_root. radcan. Qed.
+``` The theorem uses the axioms of the
+standard reals and `epsilon_statement` (from `Rstruct.v`).
+
 ## The paper's examples (`paper/Paper.v`)
 
 `paper/Paper.v` runs the examples of Caviness and Fateman through `radcan`.
@@ -2256,6 +2371,9 @@ of `x` in `E`.
 | `Radcan.v`, `RadcanBig.v` | the two instances of the normaliser |
 | `RefPoly.v`, `RefCheck.v`, `SignCert.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, sign certificates of constants in roots, unverified heuristics, `refine` and its soundness |
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
+| `UnitArc.v`, `RootComp.v` | principal roots of `−1` on ℂ: index law, primitivity, largest real part; `(nk).-root x = n.-root (k.-root x)` |
+| `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | records `cycroot` (index law) and `sqrtroot` (√2, √3, √5 table), their theorems and ℂ instances |
+| `Cyclo.v`, `CycloC.v`, `CycloTac.v` | cyclotomic reduction: certified `Φ`, record `cycprim`, ℂ instance, `radcan_cyc` |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
 | `Sym.v`, `SymTac.v` | roots given by hypotheses (y ^+ n = B), `radcan_sym` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
@@ -2279,10 +2397,10 @@ of `x` in `E`.
 
 - Refinement combines conditions only when they are linear in their monomials (`x*y`,
   `x^2` are independent unknowns).
-- There is no factorisation into irreducibles: `x² − 1` is split into `(x−1)(x+1)` only if
-  one of the factors appears in the goal.
 - Absolute values only on real fields with roots (`rootR`, or a `realroot`): on a general
   `numFieldType`, `√((x−2)²) = x − 2` needs `2 <= x`.
 - `√(1−x)·√(x−1) = 0` is not proved (it needs `x = 1`).
-- Even roots of negatives (`√(−4)`) stay opaque on ℝ; on ℂ they use `ω_n`, without cyclotomic
-  relations and without merging `ω_n` of different indices.
+- Even roots of negatives (`√(−4)`) stay opaque on ℝ. On ℂ they use `ω_n`, merged across
+  indices and reduced modulo cyclotomic polynomials, but an `ω` inside the inverse of a
+  sum or inside a radicand stays an opaque atom.
+- Square roots are written with roots of unity only for 2, 3 and 5 (Part 33).

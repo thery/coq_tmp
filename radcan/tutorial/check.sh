@@ -19,7 +19,7 @@ check_one() {
 }
 export -f check_one
 
-ls ../tutorial/*.v ../paper/*.v ../tests/*.v | xargs -P "$JOBS" -I{} bash -c 'check_one "$1" "$2"' _ {} "$out"
+ls ../tutorial/*.v ../paper/*.v ../tests/*.v ../doc/*.v | xargs -P "$JOBS" -I{} bash -c 'check_one "$1" "$2"' _ {} "$out"
 
 cat "$out"/*.res
 grep -q '^FAIL' "$out"/*.res; status=$((1 - $?))
