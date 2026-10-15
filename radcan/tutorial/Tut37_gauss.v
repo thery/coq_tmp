@@ -62,6 +62,7 @@ Proof. rewrite !big_ord_recr big_ord0 /=. Time radcan. Qed.
 (* a wrong coefficient is refused *)
 Goal proot r 2 7 = \w_14 ^+ 21 + 2 * \w_14 ^+ 25 + 2 * \w_14 ^+ 9 + \w_14.
 Proof. Fail radcan. Abort.
+
 End Generic.
 
 (* without the record gaussroot w, the cyclotomic checker alone fails *)
