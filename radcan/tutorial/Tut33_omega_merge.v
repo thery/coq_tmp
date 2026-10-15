@@ -50,9 +50,11 @@ Ltac radcan_negc r w cy :=
 Section Merge.
 
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypothesis cy : cycroot w.
 
-Local Notation om n := (proot r n (-1)).
+Local Notation om n := (n.-proot (-1)).
 
 (* without the index law the plain neg mode fails *)
 Goal om 4 ^+ 2 = om 2.
@@ -86,11 +88,11 @@ Proof. radcan_negc r w cy. Qed.
 
 (* with real radicals and variables (x != 0 for the inverse) *)
 Goal forall x : F, x != 0 ->
-  (proot r 2 2 * om 4 * x) ^+ 2 / x = 2 * om 2 * x.
+  (\sqrt 2 * om 4 * x) ^+ 2 / x = 2 * om 2 * x.
 Proof. move=> x x0; radcan_negc r w cy; exact: x0. Qed.
 
-(* roots of negative constants: proot r n (- a) = proot r n a * omega_n *)
-Goal proot r 4 (-4) ^+ 2 = proot r 2 (-4).
+(* roots of negative constants: n.-proot (- a) = n.-proot a * omega_n *)
+Goal 4.-proot (-4) ^+ 2 = \sqrt (-4).
 Proof. radcan_negc r w cy. Qed.
 
 End Merge.
@@ -128,15 +130,17 @@ End OnC.
 Section Sqrt.
 
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypotheses (cy : cycroot w) (cp : cycprim w) (gs : gaussroot w).
 
-Local Notation om n := (proot r n (-1)).
+Local Notation om n := (n.-proot (-1)).
 
-Goal om 4 + (om 4)^-1 = proot r 2 2.
+Goal om 4 + (om 4)^-1 = \sqrt 2.
 Proof. radcan. Qed.
 
 (* sqrt 6 = sqrt 2 sqrt 3, with omega_4 and omega_6 present *)
-Goal proot r 2 6 = (om 4 - om 4 ^+ 3) * (om 6 - om 6 ^+ 5).
+Goal \sqrt 6 = (om 4 - om 4 ^+ 3) * (om 6 - om 6 ^+ 5).
 Proof. radcan. Qed.
 
 End Sqrt.

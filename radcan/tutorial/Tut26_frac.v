@@ -21,6 +21,7 @@ Local Open Scope ring_scope.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y z : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* plain radcan fails: the radicand (x - 1) / (x + 2) is one opaque atom   *)
@@ -46,9 +47,9 @@ Proof. move=> h. radcan. exact: h. Qed.
 (* the paper's (9): ((x^2 - 1) / (x + 2))^(1/2) / (x^2 + 3x + 2)^(1/3)     *)
 (* refined: 1 <= x (1 <= x ^+ 2 follows from it and is dropped)            *)
 Lemma f4 : 1 <= x ->
-  \sqrt ((x ^+ 2 - 1) / (x + 2)) / proot r 3 (x ^+ 2 + 3 * x + 2) =
+  \sqrt ((x ^+ 2 - 1) / (x + 2)) / 3.-proot (x ^+ 2 + 3 * x + 2) =
   \sqrt (x - 1) * \sqrt (x + 1) / \sqrt (x + 2) /
-  (proot r 3 (x + 1) * proot r 3 (x + 2)).
+  (3.-proot (x + 1) * 3.-proot (x + 2)).
 Proof.
 move=> h. Time radcan; exact: h.
 Qed.

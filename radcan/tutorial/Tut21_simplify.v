@@ -23,6 +23,7 @@ Ltac check_stable :=
 
 Section Simplify.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 Lemma s1 : \sqrt 12 - \sqrt 3 = y.
@@ -67,10 +68,10 @@ radcan_simplify_raw.
 Show. (* \sqrt x - \sqrt y = 0,  0 <= x, 0 <= y, -1 * y + x != 0 *)
 Abort.
 
-Lemma s6 : \sqrt x * proot r 3 x = y.
+Lemma s6 : \sqrt x * 3.-proot x = y.
 Proof.
 radcan_simplify.
-Show. (* proot r 6 (x ^+ 5) = y,  0 <= x *)
+Show. (* 6.-proot (x ^+ 5) = y,  0 <= x *)
 check_stable.
 Abort.
 
@@ -215,16 +216,18 @@ End RealMode.
 (* any posroot on a realFieldType with an oddroot gives a realroot *)
 Section RealField.
 Variables (F : realFieldType) (r : posroot F) (o : oddroot r) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Let rl := realroot_of o.
 
-Lemma g1 : proot r 2 ((x + 1) ^+ 2) - proot r 3 (- x ^+ 3) = y.
+Lemma g1 : \sqrt ((x + 1) ^+ 2) - 3.-proot (- x ^+ 3) = y.
 Proof.
 radcan_simplify.
 Show. (* x + `|x + 1| = y,  no condition *)
 check_stable.
 Abort.
 
-Lemma g2 : `|x| * proot r 2 (4 * x ^+ 2) = y.
+Lemma g2 : `|x| * \sqrt (4 * x ^+ 2) = y.
 Proof.
 radcan_simplify.
 Show. (* 2 * x ^+ 2 = y *)

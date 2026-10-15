@@ -12,22 +12,24 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma c1 : 0 <= x -> proot r 2 (x ^+ 2) = x.
+Lemma c1 : 0 <= x -> \sqrt (x ^+ 2) = x.
 Proof. move=> x_ge0. radcan_raw. exact: x_ge0. Qed.
 
-Lemma c2 : 0 <= x -> proot r 2 (4 * x) = 2 * proot r 2 x.
+Lemma c2 : 0 <= x -> \sqrt (4 * x) = 2 * \sqrt x.
 Proof. move=> x_ge0. radcan_raw. exact: x_ge0. Qed.
 
-Lemma c3 : 0 <= x -> proot r 3 x * proot r 3 (x ^+ 2) = x.
+Lemma c3 : 0 <= x -> 3.-proot x * 3.-proot (x ^+ 2) = x.
 Proof. move=> x_ge0. radcan_raw. exact: x_ge0. Qed.
 
-Lemma c4 : 0 <= x -> 0 <= y -> proot r 2 (x * y) = proot r 2 x * proot r 2 y.
+Lemma c4 : 0 <= x -> 0 <= y -> \sqrt (x * y) = \sqrt x * \sqrt y.
 Proof. move=> x_ge0 y_ge0. radcan_raw. Show. all: by []. Qed.
 
 (* three raw conditions, all consequences of 1 < x *)
 Lemma c5 : 1 < x ->
-  proot r 2 (x ^+ 2 - 1) / proot r 2 (x - 1) = proot r 2 (x + 1).
+  \sqrt (x ^+ 2 - 1) / \sqrt (x - 1) = \sqrt (x + 1).
 Proof.
 move=> x_gt1. radcan_raw. Show.
 - by rewrite addr_ge0 // ltW // (lt_trans ltr01 x_gt1).

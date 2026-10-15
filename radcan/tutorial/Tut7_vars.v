@@ -11,19 +11,21 @@ Import GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
-Lemma v1 : x * proot r 2 2 = proot r 2 2 * x. Proof. radcan. Qed.
-Lemma v2 : x * proot r 2 2 + x * proot r 2 2 = 2 * x * proot r 2 2.
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+Lemma v1 : x * \sqrt 2 = \sqrt 2 * x. Proof. radcan. Qed.
+Lemma v2 : x * \sqrt 2 + x * \sqrt 2 = 2 * x * \sqrt 2.
 Proof. radcan. Qed.
-Lemma v3 : (x + proot r 2 2) ^+ 2 = x ^+ 2 + 2 * x * proot r 2 2 + 2.
+Lemma v3 : (x + \sqrt 2) ^+ 2 = x ^+ 2 + 2 * x * \sqrt 2 + 2.
 Proof. radcan. Qed.
-Lemma v4 : (x - y * proot r 2 3) * (x + y * proot r 2 3) = x ^+ 2 - 3 * y ^+ 2.
+Lemma v4 : (x - y * \sqrt 3) * (x + y * \sqrt 3) = x ^+ 2 - 3 * y ^+ 2.
 Proof. radcan. Qed.
-Lemma v5 : (x + proot r 3 2) ^+ 3
-         = x ^+ 3 + 3 * x ^+ 2 * proot r 3 2 + 3 * x * proot r 3 4 + 2.
+Lemma v5 : (x + 3.-proot 2) ^+ 3
+         = x ^+ 3 + 3 * x ^+ 2 * 3.-proot 2 + 3 * x * 3.-proot 4 + 2.
 Proof. radcan. Qed.
 (* any unrecognised subterm is an atom, e.g. sin x on R or f x here *)
 Variable f : F -> F.
-Lemma v6 : f x * proot r 2 8 = 2 * proot r 2 2 * f x.
+Lemma v6 : f x * \sqrt 8 = 2 * \sqrt 2 * f x.
 Proof. radcan. Qed.
 End Generic.
 

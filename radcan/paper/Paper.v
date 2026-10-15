@@ -19,6 +19,7 @@ Local Open Scope ring_scope.
 
 Section Paper.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* (1): x - y over sqrt x + sqrt y is sqrt x - sqrt y *)
@@ -31,7 +32,7 @@ Lemma eq1q : 0 <= x -> 0 <= y -> x != y ->
 Proof. move=> hx hy hxy. radcan. all: by []. Qed.
 
 (* §2, phase 3: (2^(1/6))^7 = 2 * 2^(1/6) *)
-Lemma phase3 : proot r 6 2 ^+ 7 = 2 * proot r 6 2.
+Lemma phase3 : 6.-proot 2 ^+ 7 = 2 * 6.-proot 2.
 Proof. radcan. Qed.
 
 (* §2, form 2: square-free factorisation of the radicand *)
@@ -43,9 +44,9 @@ Proof. move=> h1 h2. radcan. all: by []. Qed.
 (* §2: with (x+2)^(1/3) the basis splits x^2 + 3x + 2 = (x+1)(x+2) and
    (x+2)^(1/2), (x+2)^(1/3) are merged over index 6 *)
 Lemma form1 : -1 <= x ->
-  \sqrt (x ^+ 4 + 9 * x ^+ 3 + 29 * x ^+ 2 + 39 * x + 18) + proot r 3 (x + 2)
-  = (x + 3) * \sqrt (x + 1) * proot r 6 ((x + 2) ^+ 3) +
-    proot r 6 ((x + 2) ^+ 2).
+  \sqrt (x ^+ 4 + 9 * x ^+ 3 + 29 * x ^+ 2 + 39 * x + 18) + 3.-proot (x + 2)
+  = (x + 3) * \sqrt (x + 1) * 6.-proot ((x + 2) ^+ 3) +
+    6.-proot ((x + 2) ^+ 2).
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* the nested example of §2 (M13): the inner radicand is normalised first;
@@ -55,17 +56,17 @@ Lemma nested : -1 <= x ->
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* (3) as printed is FALSE (check at x = 5/2): radcan refuses it *)
-Goal (x + \sqrt 2 + proot r 3 9) *
-  ((((2 * x ^+ 3 - 4 * x - 9) * \sqrt 2 - x ^+ 4 - 9 * x + 4) * proot r 3 9)
-  + (((-9) * x ^+ 2 - 6) * \sqrt 2 + 3 * x ^+ 3 + 18 * x + 27) * proot r 3 3
+Goal (x + \sqrt 2 + 3.-proot 9) *
+  ((((2 * x ^+ 3 - 4 * x - 9) * \sqrt 2 - x ^+ 4 - 9 * x + 4) * 3.-proot 9)
+  + (((-9) * x ^+ 2 - 6) * \sqrt 2 + 3 * x ^+ 3 + 18 * x + 27) * 3.-proot 3
   + ((- x ^+ 4 + 4 * x ^+ 2 + 18 * x - 4) * \sqrt 2 + x ^+ 5 - 4 * x ^+ 3
      + 9 * x ^+ 2 + 4 * x + 18))
   = x ^+ 5 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73.
 Proof. Fail radcan. Abort.
 
 (* (8): 1 / (x + sqrt 2 + 3^(2/3)) = N / D with D = (x + sqrt 2)^3 + 9 *)
-Lemma eq8 : (x + \sqrt 2 + proot r 3 9) *
-  (- (x + \sqrt 2) * proot r 3 9 + 3 * proot r 3 3
+Lemma eq8 : (x + \sqrt 2 + 3.-proot 9) *
+  (- (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3
    + (x ^+ 2 + 2 * \sqrt 2 * x + 2))
   = (x + \sqrt 2) ^+ 3 + 9.
 Proof. radcan. Qed.
@@ -79,8 +80,8 @@ Proof. Fail radcan. Abort.
 (* (3) with the corrected E, as a quotient: 1 / d = N8 * conj / E *)
 Lemma eq3 :
   x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73 != 0 ->
-  1 / (x + \sqrt 2 + proot r 3 9) =
-  (- (x + \sqrt 2) * proot r 3 9 + 3 * proot r 3 3
+  1 / (x + \sqrt 2 + 3.-proot 9) =
+  (- (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3
      + (x ^+ 2 + 2 * \sqrt 2 * x + 2))
   * (x ^+ 3 + 6 * x + 9 - (3 * x ^+ 2 + 2) * \sqrt 2)
   / (x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73).

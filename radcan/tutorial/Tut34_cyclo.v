@@ -33,9 +33,11 @@ Check @prim_root_cert.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypotheses (cy : cycroot w) (cp : cycprim w).
 Variable x : F.
-Local Notation "\w_ n" := (proot r n (-1)) (at level 3, n at level 2).
+Local Notation "\w_ n" := (n.-proot (-1)) (at level 3, n at level 2).
 
 (* Phi_6 (omega_3) = 0: was out of reach without the explicit value *)
 Lemma g1 : \w_3 ^+ 2 - \w_3 + 1 = 0.
@@ -69,13 +71,13 @@ Lemma g8 : \w_5 + \w_3 = \w_15 ^+ 3 + \w_15 ^+ 5.
 Proof. radcan_cyc. Qed.
 
 (* with a variable and a real radical as coefficients *)
-Lemma g9 : x * proot r 2 2 * (\w_5 ^+ 4 + \w_5 ^+ 2 + 1) =
-  x * proot r 2 2 * (\w_5 ^+ 3 + \w_5).
+Lemma g9 : x * \sqrt 2 * (\w_5 ^+ 4 + \w_5 ^+ 2 + 1) =
+  x * \sqrt 2 * (\w_5 ^+ 3 + \w_5).
 Proof. radcan_cyc. Qed.
 
 (* roots of negative constants (Tutorial 16) feed the same reduction *)
-Lemma g10 : proot r 5 (-32) ^+ 4 - 2 * proot r 5 (-32) ^+ 3
-  + 4 * proot r 5 (-32) ^+ 2 - 8 * proot r 5 (-32) + 16 = 0.
+Lemma g10 : 5.-proot (-32) ^+ 4 - 2 * 5.-proot (-32) ^+ 3
+  + 4 * 5.-proot (-32) ^+ 2 - 8 * 5.-proot (-32) + 16 = 0.
 Proof. radcan_cyc. Qed.
 
 (* a wrong identity is refused *)

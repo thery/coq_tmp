@@ -70,8 +70,10 @@ End Unity.
 (* with any posroot r and a negroot w in the context *)
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma g1 : proot r 2 (- 2) * proot r 2 (- 8) = - 4.
+Lemma g1 : \sqrt (- 2) * \sqrt (- 8) = - 4.
 Proof. by radcan. Qed.
 
 End Generic.

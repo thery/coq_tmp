@@ -65,29 +65,42 @@ with `x ^+ n = a` is the root. `proot_mulr` changes the index:
 `prootMn`, `proot_1`, `proot_0`, `proot1n`, `prootM_big`, `proot_gt0`,
 `proot_proot`, `proot_inj` and `prootV`.
 
+In a section with a variable `r : posroot F`, the scripts use two local
+notations, declared just after the `Variables` line:
+
+```coq
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+```
+
+So `3.-proot 2` is `proot r 3 2` (∛2) and `\sqrt 2` is `proot r 2 2` (√2).
+Square roots are printed with `\sqrt`, the other roots with `n.-proot`.
+
 Here are some small proofs by hand, for an arbitrary field with roots:
 
 ```coq
 Section Tutorial1.
 Variables (F : numFieldType) (r : posroot F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* √2 squared is 2: the side conditions 0 < 2, 0 <= 2 are closed by // *)
-Lemma sqrt2_sq : proot r 2 2 ^+ 2 = 2.
+Lemma sqrt2_sq : \sqrt 2 ^+ 2 = 2.
 Proof. by rewrite prootK. Qed.
 
-Lemma sqrt2_ge0 : 0 <= proot r 2 2.
+Lemma sqrt2_ge0 : 0 <= \sqrt 2.
 Proof. by apply: proot_ge0. Qed.
 
 (* √2·√3 = √6: product of roots, then 2*3 = 6 on numerals *)
-Lemma sqrt2_sqrt3 : proot r 2 2 * proot r 2 3 = proot r 2 6.
+Lemma sqrt2_sqrt3 : \sqrt 2 * \sqrt 3 = \sqrt 6.
 Proof. by rewrite -prootM // -natrM. Qed.
 
 (* √4 = 2, by uniqueness *)
-Lemma sqrt4 : proot r 2 4 = 2.
+Lemma sqrt4 : \sqrt 4 = 2.
 Proof. by apply: proot_eq => //; rewrite expr2 -natrM. Qed.
 
 (* ∛2 = ⁶√4: change of index *)
-Lemma cbrt_sqrt : proot r 3 2 = proot r 6 4.
+Lemma cbrt_sqrt : 3.-proot 2 = 6.-proot 4.
 Proof. by rewrite (proot_mulr r (k := 2)) // expr2 -natrM. Qed.
 End Tutorial1.
 ```
@@ -158,15 +171,17 @@ result, the two sides below are equal by conversion (`by []`):
 ```coq
 Section Tutorial3.
 Variables (F : numFieldType) (r : posroot F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 Definition e1 : rexpr := RMul (RRoot 2%positive 2%positive) (RRoot 2%positive 3%positive).
 
-Lemma e1_val : rinterp r [::] e1 = proot r 2 2 * proot r 2 3.
+Lemma e1_val : rinterp r [::] e1 = \sqrt 2 * \sqrt 3.
 Proof. by []. Qed.
 
 Lemma e2_val :
   rinterp r [::] (RPow (RAdd (RCst (Zpos 1)) (RRoot 2%positive 2%positive)) 2)
-  = (1 + proot r 2 2) ^+ 2.
+  = (1 + \sqrt 2) ^+ 2.
 Proof. by []. Qed.
 End Tutorial3.
 ```
@@ -260,11 +275,13 @@ Import GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F).
-Lemma g1 : proot r 2 2 * proot r 2 3 = proot r 2 6. Proof. radcan. Qed.
-Lemma g2 : (1 + proot r 2 2) ^+ 2 = 3 + 2 * proot r 2 2. Proof. radcan. Qed.
-Lemma g3 : proot r 2 8 = 2 * proot r 2 2. Proof. radcan. Qed.
-Lemma g4 : proot r 3 2 * proot r 2 2 = proot r 6 32. Proof. radcan. Qed.
-Lemma g5 : proot r 2 12 - proot r 2 3 = proot r 2 3. Proof. radcan. Qed.
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+Lemma g1 : \sqrt 2 * \sqrt 3 = \sqrt 6. Proof. radcan. Qed.
+Lemma g2 : (1 + \sqrt 2) ^+ 2 = 3 + 2 * \sqrt 2. Proof. radcan. Qed.
+Lemma g3 : \sqrt 8 = 2 * \sqrt 2. Proof. radcan. Qed.
+Lemma g4 : 3.-proot 2 * \sqrt 2 = 6.-proot 32. Proof. radcan. Qed.
+Lemma g5 : \sqrt 12 - \sqrt 3 = \sqrt 3. Proof. radcan. Qed.
 End Generic.
 
 (* complex: mathcomp's n.-root *)
@@ -302,17 +319,19 @@ in the roots. So the tactic proves polynomial identities over radicals:
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
-Lemma v1 : x * proot r 2 2 = proot r 2 2 * x. Proof. radcan. Qed.
-Lemma v2 : x * proot r 2 2 + x * proot r 2 2 = 2 * x * proot r 2 2. Proof. radcan. Qed.
-Lemma v3 : (x + proot r 2 2) ^+ 2 = x ^+ 2 + 2 * x * proot r 2 2 + 2. Proof. radcan. Qed.
-Lemma v4 : (x - y * proot r 2 3) * (x + y * proot r 2 3) = x ^+ 2 - 3 * y ^+ 2.
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+Lemma v1 : x * \sqrt 2 = \sqrt 2 * x. Proof. radcan. Qed.
+Lemma v2 : x * \sqrt 2 + x * \sqrt 2 = 2 * x * \sqrt 2. Proof. radcan. Qed.
+Lemma v3 : (x + \sqrt 2) ^+ 2 = x ^+ 2 + 2 * x * \sqrt 2 + 2. Proof. radcan. Qed.
+Lemma v4 : (x - y * \sqrt 3) * (x + y * \sqrt 3) = x ^+ 2 - 3 * y ^+ 2.
 Proof. radcan. Qed.
-Lemma v5 : (x + proot r 3 2) ^+ 3
-         = x ^+ 3 + 3 * x ^+ 2 * proot r 3 2 + 3 * x * proot r 3 4 + 2.
+Lemma v5 : (x + 3.-proot 2) ^+ 3
+         = x ^+ 3 + 3 * x ^+ 2 * 3.-proot 2 + 3 * x * 3.-proot 4 + 2.
 Proof. radcan. Qed.
 (* any unrecognised subterm is an atom, e.g. sin x on R or f x here *)
 Variable f : F -> F.
-Lemma v6 : f x * proot r 2 8 = 2 * proot r 2 2 * f x.
+Lemma v6 : f x * \sqrt 8 = 2 * \sqrt 2 * f x.
 Proof. radcan. Qed.
 End Generic.
 
@@ -352,15 +371,17 @@ The inverse of a normal form `d` is computed like this:
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x : F).
-Lemma d1 : 1 / proot r 2 2 = proot r 2 2 / 2. Proof. radcan. Qed.
-Lemma d2 : 1 / (1 + proot r 2 2) = proot r 2 2 - 1. Proof. radcan. Qed.
-Lemma d3 : (proot r 2 3 + proot r 2 2) / (proot r 2 3 - proot r 2 2) = 5 + 2 * proot r 2 6.
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
+Lemma d1 : 1 / \sqrt 2 = \sqrt 2 / 2. Proof. radcan. Qed.
+Lemma d2 : 1 / (1 + \sqrt 2) = \sqrt 2 - 1. Proof. radcan. Qed.
+Lemma d3 : (\sqrt 3 + \sqrt 2) / (\sqrt 3 - \sqrt 2) = 5 + 2 * \sqrt 6.
 Proof. radcan. Qed.
-Lemma d4 : 1 / proot r 3 2 = proot r 3 4 / 2. Proof. radcan. Qed.
-Lemma d5 : 1 / (1 + proot r 2 2 + proot r 2 3) = (2 + proot r 2 2 - proot r 2 6) / 4.
+Lemma d4 : 1 / 3.-proot 2 = 3.-proot 4 / 2. Proof. radcan. Qed.
+Lemma d5 : 1 / (1 + \sqrt 2 + \sqrt 3) = (2 + \sqrt 2 - \sqrt 6) / 4.
 Proof. radcan. Qed.
-Lemma d6 : x / proot r 2 2 + x / proot r 2 2 = x * proot r 2 2. Proof. radcan. Qed.
-Lemma d7 : (x + proot r 2 2) / 3 = x / 3 + proot r 2 2 / 3. Proof. radcan. Qed.
+Lemma d6 : x / \sqrt 2 + x / \sqrt 2 = x * \sqrt 2. Proof. radcan. Qed.
+Lemma d7 : (x + \sqrt 2) / 3 = x / 3 + \sqrt 2 / 3. Proof. radcan. Qed.
 End Generic.
 
 Lemma dc (C : numClosedFieldType) : 1 / (1 + 2.-root 2) = 2.-root 2 - 1 :> C.
@@ -427,23 +448,25 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma c1 : 0 <= x -> proot r 2 (x ^+ 2) = x.
+Lemma c1 : 0 <= x -> \sqrt (x ^+ 2) = x.
 Proof. move=> x_ge0. radcan_raw. exact: x_ge0. Qed.
 
-Lemma c2 : 0 <= x -> proot r 2 (4 * x) = 2 * proot r 2 x.
+Lemma c2 : 0 <= x -> \sqrt (4 * x) = 2 * \sqrt x.
 Proof. move=> x_ge0. radcan_raw. exact: x_ge0. Qed.
 
-Lemma c3 : 0 <= x -> proot r 3 x * proot r 3 (x ^+ 2) = x.
+Lemma c3 : 0 <= x -> 3.-proot x * 3.-proot (x ^+ 2) = x.
 Proof. move=> x_ge0. radcan_raw. exact: x_ge0. Qed.
 
-Lemma c4 : 0 <= x -> 0 <= y -> proot r 2 (x * y) = proot r 2 x * proot r 2 y.
+Lemma c4 : 0 <= x -> 0 <= y -> \sqrt (x * y) = \sqrt x * \sqrt y.
 Proof. move=> x_ge0 y_ge0. radcan_raw. all: by []. Qed.
 (* radcan leaves:  0 <= x   and   0 <= y *)
 
 (* three raw conditions, all consequences of 1 < x *)
 Lemma c5 : 1 < x ->
-  proot r 2 (x ^+ 2 - 1) / proot r 2 (x - 1) = proot r 2 (x + 1).
+  \sqrt (x ^+ 2 - 1) / \sqrt (x - 1) = \sqrt (x + 1).
 Proof.
 move=> x_gt1. radcan_raw.
 (* radcan leaves:  0 <= x + 1,   0 <= x - 1,   x - 1 != 0 *)
@@ -514,10 +537,12 @@ Import Order.TTheory GRing.Theory Num.Theory.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= x + 1, 0 <= x - 1, x - 1 != 0   refined: 1 < x *)
 Lemma f1 : 1 < x ->
-  proot r 2 (x ^+ 2 - 1) / proot r 2 (x - 1) = proot r 2 (x + 1).
+  \sqrt (x ^+ 2 - 1) / \sqrt (x - 1) = \sqrt (x + 1).
 Proof. move=> x_gt1. radcan. exact: x_gt1. Qed.
 
 (* raw: x + 1 != 0, x - 1 != 0   refined: x != -1, x != 1 *)
@@ -525,7 +550,7 @@ Lemma f2 : x != -1 -> x != 1 -> (x ^+ 2 - 1) / (x + 1) / (x - 1) = 1.
 Proof. move=> h1 h2. radcan. all: by []. Qed.
 
 (* raw: 0 <= x + 1, 0 <= x - 1   refined: 1 <= x *)
-Lemma f3 : 1 <= x -> proot r 2 (x ^+ 2 - 1) = proot r 2 (x - 1) * proot r 2 (x + 1).
+Lemma f3 : 1 <= x -> \sqrt (x ^+ 2 - 1) = \sqrt (x - 1) * \sqrt (x + 1).
 Proof. move=> h. radcan. exact: h. Qed.
 End Generic.
 
@@ -548,31 +573,33 @@ reduced index, so both sides of an equality meet.
 Local Open Scope ring_scope.
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* √x · ∛x = ⁶√(x⁵) *)
-Lemma i1 : 0 <= x -> proot r 2 x * proot r 3 x = proot r 6 (x ^+ 5).
+Lemma i1 : 0 <= x -> \sqrt x * 3.-proot x = 6.-proot (x ^+ 5).
 Proof. move=> x_ge0. radcan. exact: x_ge0. Qed.
 
 (* raw: 0 <= x, x != 0   refined: 0 < x *)
-Lemma i2 : 0 < x -> proot r 2 x / proot r 3 x = proot r 6 x.
+Lemma i2 : 0 < x -> \sqrt x / 3.-proot x = 6.-proot x.
 Proof. move=> x_gt0. radcan. exact: x_gt0. Qed.
 
-Lemma i3 : 0 <= x -> proot r 4 x ^+ 2 = proot r 2 x.
+Lemma i3 : 0 <= x -> 4.-proot x ^+ 2 = \sqrt x.
 Proof. move=> x_ge0. radcan. exact: x_ge0. Qed.
 
-Lemma i4 : 0 <= x -> proot r 6 (x ^+ 3) = proot r 2 x.
+Lemma i4 : 0 <= x -> 6.-proot (x ^+ 3) = \sqrt x.
 Proof. move=> x_ge0. radcan. exact: x_ge0. Qed.
 
 Lemma i5 : 1 <= x ->
-  proot r 2 (x - 1) * proot r 3 (x - 1) = proot r 6 ((x - 1) ^+ 5).
+  \sqrt (x - 1) * 3.-proot (x - 1) = 6.-proot ((x - 1) ^+ 5).
 Proof. move=> x_ge1. radcan. exact: x_ge1. Qed.
 
 (* different bases stay apart, no condition *)
-Lemma i6 : proot r 2 2 * proot r 3 x = proot r 3 x * proot r 2 2.
+Lemma i6 : \sqrt 2 * 3.-proot x = 3.-proot x * \sqrt 2.
 Proof. by radcan. Qed.
 
 Lemma i7 : 0 <= x -> 0 <= y ->
-  proot r 2 (x * y) * proot r 3 x = proot r 6 (x ^+ 5) * proot r 2 y.
+  \sqrt (x * y) * 3.-proot x = 6.-proot (x ^+ 5) * \sqrt y.
 Proof. move=> x_ge0 y_ge0. radcan. all: by []. Qed.
 End Generic.
 
@@ -615,47 +642,51 @@ positive constant: `√(1−x)` keeps the base `1 − x`, with condition
 
 Section Odd.
 Variables (F : numFieldType) (r : posroot F) (o : oddroot r) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma n1 : proot r 3 (- 8) = - 2.
+Lemma n1 : 3.-proot (- 8) = - 2.
 Proof. by radcan. Qed.
 
-Lemma n2 : proot r 3 (- 2) * proot r 3 (- 4) = 2.
+Lemma n2 : 3.-proot (- 2) * 3.-proot (- 4) = 2.
 Proof. by radcan. Qed.
 
-Lemma n3 : proot r 3 (- 3) ^+ 3 = - 3.
+Lemma n3 : 3.-proot (- 3) ^+ 3 = - 3.
 Proof. by radcan. Qed.
 
-Lemma n4 : proot r 5 (- 32) + 2 = 0.
+Lemma n4 : 5.-proot (- 32) + 2 = 0.
 Proof. by radcan. Qed.
 
 (* the cube root of 1 - x is minus the cube root of x - 1, no condition *)
-Lemma n5 : proot r 3 (1 - x) = - proot r 3 (x - 1).
+Lemma n5 : 3.-proot (1 - x) = - 3.-proot (x - 1).
 Proof. by radcan. Qed.
 
 (* raw: 0 <= x - 1   refined: 1 <= x *)
-Lemma n6 : 1 <= x -> proot r 3 (1 - x) * proot r 3 (x - 1) ^+ 2 = 1 - x.
+Lemma n6 : 1 <= x -> 3.-proot (1 - x) * 3.-proot (x - 1) ^+ 2 = 1 - x.
 Proof. move=> x_ge1. radcan. Show. exact: x_ge1. Qed.
 End Odd.
 
 Section Even.
 Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* without an oddroot the cube root of -8 is not simplified *)
-Goal proot r 3 (- 8) = - 2.
+Goal 3.-proot (- 8) = - 2.
 Proof. Fail radcan. Abort.
 
 (* even roots: the base keeps the sign of the radicand  *)
 (* raw: 0 <= 1 - x (printed -1 * x + 1)   refined: x <= 1 *)
-Lemma e1 : x <= 1 -> proot r 2 (1 - x) ^+ 2 = 1 - x.
+Lemma e1 : x <= 1 -> \sqrt (1 - x) ^+ 2 = 1 - x.
 Proof. move=> x_le1. radcan. Show. exact: x_le1. Qed.
 
 (* x - 1 is in the basis: sqrt (1 - x) still has base 1 - x *)
 (* raw: 0 <= x - 1, 0 <= 1 - x   refined: 1 <= x, x <= 1 *)
-Lemma e2 : x = 1 -> proot r 2 (x - 1) ^+ 2 + proot r 2 (1 - x) ^+ 2 = 0.
+Lemma e2 : x = 1 -> \sqrt (x - 1) ^+ 2 + \sqrt (1 - x) ^+ 2 = 0.
 Proof. move=> x1. radcan. Show. all: by rewrite x1. Qed.
 
 (* sqrt (1 - x) * sqrt (x - 1) = 0 needs x = 1: not found *)
-Goal proot r 2 (1 - x) * proot r 2 (x - 1) = 0.
+Goal \sqrt (1 - x) * \sqrt (x - 1) = 0.
 Proof. Fail radcan. Abort.
 End Even.
 
@@ -738,38 +769,40 @@ multiplication, so a wrong gcd can only lose a simplification.
 ```coq
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= x + 1   refined: -1 <= x *)
-Lemma g1 : -1 <= x -> proot r 2 (x ^+ 2 + 2 * x + 1) = x + 1.
+Lemma g1 : -1 <= x -> \sqrt (x ^+ 2 + 2 * x + 1) = x + 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* raw: 0 <= x - 1   refined: 1 <= x *)
 Lemma g2 : 1 <= x ->
-  proot r 2 (x ^+ 3 - 3 * x ^+ 2 + 3 * x - 1) = (x - 1) * proot r 2 (x - 1).
+  \sqrt (x ^+ 3 - 3 * x ^+ 2 + 3 * x - 1) = (x - 1) * \sqrt (x - 1).
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* (x^2 - 1)^2: raw 0 <= x ^+ 2 - 1, refined 1 <= x ^+ 2 *)
-Lemma g3 : 1 <= x ^+ 2 -> proot r 2 (x ^+ 4 - 2 * x ^+ 2 + 1) = x ^+ 2 - 1.
+Lemma g3 : 1 <= x ^+ 2 -> \sqrt (x ^+ 4 - 2 * x ^+ 2 + 1) = x ^+ 2 - 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 Lemma g4 : -1 <= x ->
-  proot r 2 (x ^+ 2 + 2 * x + 1) * proot r 2 (x + 1) = (x + 1) * proot r 2 (x + 1).
+  \sqrt (x ^+ 2 + 2 * x + 1) * \sqrt (x + 1) = (x + 1) * \sqrt (x + 1).
 Proof. move=> h. radcan. exact: h. Qed.
 
-Lemma g5 : -1 <= x -> proot r 2 (2 * x ^+ 2 + 4 * x + 2) = (x + 1) * proot r 2 2.
+Lemma g5 : -1 <= x -> \sqrt (2 * x ^+ 2 + 4 * x + 2) = (x + 1) * \sqrt 2.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* the same base under a cube root *)
-Lemma g6 : -1 <= x -> proot r 3 (x ^+ 3 + 3 * x ^+ 2 + 3 * x + 1) = x + 1.
+Lemma g6 : -1 <= x -> 3.-proot (x ^+ 3 + 3 * x ^+ 2 + 3 * x + 1) = x + 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* several variables: the condition is 0 <= x + y *)
-Lemma g7 : 0 <= x + y -> proot r 2 (x ^+ 2 + 2 * x * y + y ^+ 2) = x + y.
+Lemma g7 : 0 <= x + y -> \sqrt (x ^+ 2 + 2 * x * y + y ^+ 2) = x + y.
 Proof. move=> h. radcan. first [exact: h | by rewrite addrC]. Qed.
 
 (* y (x + 1)^2: two conditions, 0 <= y and -1 <= x *)
 Lemma g8 : 0 <= y -> -1 <= x ->
-  proot r 2 (y * x ^+ 2 + 2 * x * y + y) = (x + 1) * proot r 2 y.
+  \sqrt (y * x ^+ 2 + 2 * x * y + y) = (x + 1) * \sqrt y.
 Proof. move=> hy hx. radcan. all: by []. Qed.
 
 (* no root: cancellation through gcd (x^2 - 1, x^2 + 2x + 1) = x + 1 *)
@@ -812,35 +845,37 @@ implies the raw list. Only reasoning valid in any `numFieldType` is used.
 ```coq
 Section Multi.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= y + x, 0 <= -1 * y + x, -1 * y + x != 0
    refined: 0 <= x + y, y < x *)
 Lemma g1 : 0 <= x + y -> y < x ->
-  proot r 2 (x ^+ 2 - y ^+ 2) / proot r 2 (x - y) = proot r 2 (x + y).
+  \sqrt (x ^+ 2 - y ^+ 2) / \sqrt (x - y) = \sqrt (x + y).
 Proof. move=> h1 h2. radcan. all: by []. Qed.
 
 (* the same with y <= x and x != y: y < x is lt_def *)
 Lemma g2 : 0 <= x + y -> y <= x -> x != y ->
-  proot r 2 (x ^+ 2 - y ^+ 2) / proot r 2 (x - y) = proot r 2 (x + y).
+  \sqrt (x ^+ 2 - y ^+ 2) / \sqrt (x - y) = \sqrt (x + y).
 Proof. move=> h1 h2 h3. radcan. - exact: h1. - by rewrite lt_def h3 h2. Qed.
 
 (* raw: 0 <= 2 * x - 2 * y   refined: y <= x  (divided by 2) *)
-Lemma g3 : y <= x -> proot r 2 (2 * x - 2 * y) ^+ 2 = 2 * x - 2 * y.
+Lemma g3 : y <= x -> \sqrt (2 * x - 2 * y) ^+ 2 = 2 * x - 2 * y.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* a constant stays: raw 0 <= 2 * x - 2 * y + 1   refined: 2 * y - 1 <= 2 * x *)
 Lemma g4 : 2 * y - 1 <= 2 * x ->
-  proot r 2 (2 * x - 2 * y + 1) ^+ 2 = 2 * x - 2 * y + 1.
+  \sqrt (2 * x - 2 * y + 1) ^+ 2 = 2 * x - 2 * y + 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* not affine: the constant goes to the other side *)
 (* raw: 0 <= x * y + 1   refined: -1 <= x * y *)
 Lemma g5 : -1 <= x * y ->
-  proot r 2 (x * y + 1) * proot r 2 (x * y + 1) = x * y + 1.
+  \sqrt (x * y + 1) * \sqrt (x * y + 1) = x * y + 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* raw: 0 <= x ^+ 2 - 1   refined: 1 <= x ^+ 2 *)
-Lemma g6 : 1 <= x ^+ 2 -> proot r 2 (x ^+ 2 - 1) ^+ 2 = x ^+ 2 - 1.
+Lemma g6 : 1 <= x ^+ 2 -> \sqrt (x ^+ 2 - 1) ^+ 2 = x ^+ 2 - 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* raw: x ^+ 2 - 4 != 0   refined: x ^+ 2 != 4 *)
@@ -953,8 +988,10 @@ End Unity.
 (* with any posroot r and a negroot w in the context *)
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-Lemma g1 : proot r 2 (- 2) * proot r 2 (- 8) = - 4.
+Lemma g1 : \sqrt (- 2) * \sqrt (- 8) = - 4.
 Proof. by radcan. Qed.
 
 End Generic.
@@ -974,6 +1011,8 @@ Some cancellations were missing, and now work:
 ```coq
 Section Cleanups.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* an inverse atom with exponent 3 is cancelled three times *)
 (* raw: x != 0 *)
@@ -989,7 +1028,7 @@ Proof. move=> h1 h2. radcan. all: by []. Qed.
 
 (* the same with a root somewhere *)
 Lemma m3r : x != 0 -> y != 0 ->
-  (x ^+ 3 * y) / (x ^+ 3 * y) = 1 + proot r 2 2 - proot r 2 2.
+  (x ^+ 3 * y) / (x ^+ 3 * y) = 1 + \sqrt 2 - \sqrt 2.
 Proof. move=> h1 h2. radcan. all: by []. Qed.
 
 Lemma m4 : x != 0 -> x ^+ 2 / x = x.
@@ -1000,7 +1039,7 @@ Proof. move=> h. radcan. exact: h. Qed.
 
 (* rational coefficients in a radicand: x / 2 - 1 = (x - 2) / 2 *)
 (* raw: 0 <= x - 2   refined: 2 <= x *)
-Lemma m6 : 2 <= x -> proot r 2 (x / 2 - 1) ^+ 2 = x / 2 - 1.
+Lemma m6 : 2 <= x -> \sqrt (x / 2 - 1) ^+ 2 = x / 2 - 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* inverse atoms are primitive with a positive leading coefficient *)
@@ -1022,14 +1061,14 @@ Lemma m11 : 1 / (x * y) = (1 / x) * (1 / y).
 Proof. radcan. Qed.
 
 (* a root common to all the terms of a denominator is inverted on its own *)
-Lemma m12 : 1 / (proot r 2 2 * x + proot r 2 2) = proot r 2 2 / (2 * (x + 1)).
+Lemma m12 : 1 / (\sqrt 2 * x + \sqrt 2) = \sqrt 2 / (2 * (x + 1)).
 Proof. radcan. Qed.
 
 (* exact division when the numerator has roots *)
-Lemma m13 : x != -1 -> (proot r 2 2 * x + proot r 2 2) / (x + 1) = proot r 2 2.
+Lemma m13 : x != -1 -> (\sqrt 2 * x + \sqrt 2) / (x + 1) = \sqrt 2.
 Proof. move=> h. radcan. exact: h. Qed.
 
-Lemma m14 : x != 0 -> x / (proot r 2 2 * x) = proot r 2 2 / 2.
+Lemma m14 : x != 0 -> x / (\sqrt 2 * x) = \sqrt 2 / 2.
 Proof. move=> h. radcan. exact: h. Qed.
 End Cleanups.
 
@@ -1069,6 +1108,7 @@ differ does it rationalise every mixed denominator on both sides.
 ```coq
 Section Rational.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* the paper's (1) as a quotient *)
@@ -1087,8 +1127,8 @@ Proof. move=> h. radcan. exact: h. Qed.
 
 (* the paper's (3), with the right E (108 x, not 54 x) *)
 Lemma q4 : 108 * x + 12 * x ^+ 2 + 18 * x ^+ 3 + x ^+ 6 != 6 * x ^+ 4 - 73 ->
-  1 / (x + \sqrt 2 + proot r 3 9) =
-  (- (x + \sqrt 2) * proot r 3 9 + 3 * proot r 3 3 +
+  1 / (x + \sqrt 2 + 3.-proot 9) =
+  (- (x + \sqrt 2) * 3.-proot 9 + 3 * 3.-proot 3 +
      (x ^+ 2 + 2 * \sqrt 2 * x + 2)) *
   (x ^+ 3 + 6 * x + 9 - (3 * x ^+ 2 + 2) * \sqrt 2) /
   (x ^+ 6 - 6 * x ^+ 4 + 18 * x ^+ 3 + 12 * x ^+ 2 + 108 * x + 73).
@@ -1131,22 +1171,24 @@ On Stdlib reals, `radcan_Rstd_back` splits an interval into two goals for
 ```coq
 Section Bounds.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= x - 1, 0 <= -1 * x + 3   refined: 1 <= x <= 3 *)
 Lemma h1 : 1 <= x <= 3 ->
-  proot r 2 (x - 1) * proot r 2 (3 - x) = proot r 2 (- x ^+ 2 + 4 * x - 3).
+  \sqrt (x - 1) * \sqrt (3 - x) = \sqrt (- x ^+ 2 + 4 * x - 3).
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* a strict side: raw 0 <= x - 1, 0 <= -1 * x + 3, x - 3 != 0
    refined: 1 <= x < 3 *)
 Lemma h2 : 1 <= x < 3 ->
-  proot r 2 (x - 1) ^+ 2 * proot r 2 (3 - x) ^+ 2 / (3 - x) = x - 1.
+  \sqrt (x - 1) ^+ 2 * \sqrt (3 - x) ^+ 2 / (3 - x) = x - 1.
 Proof. move=> h. radcan. exact: h. Qed.
 
 (* 0 <= 4 - x follows from x <= 3: raw 0 <= x - 1, 0 <= 3 - x, 0 <= 4 - x
    refined: 1 <= x <= 3 *)
 Lemma h3 : 1 <= x <= 3 ->
-  proot r 2 (x - 1) ^+ 2 + proot r 2 (3 - x) ^+ 2 + proot r 2 (4 - x) ^+ 2
+  \sqrt (x - 1) ^+ 2 + \sqrt (3 - x) ^+ 2 + \sqrt (4 - x) ^+ 2
   = 6 - x.
 Proof. move=> h. radcan. exact: h. Qed.
 
@@ -1155,20 +1197,20 @@ Proof. move=> h. radcan. exact: h. Qed.
    raw: 0 <= y + (x - 2), y + (x - 2) != 0, 0 <= x - 1, 0 <= y - 2
    refined: 1 <= x, 2 <= y *)
 Lemma h4 : 1 <= x -> 2 <= y ->
-  proot r 2 (x + y - 2) / proot r 2 (x + y - 2) * proot r 2 (x - 1)
-  * proot r 2 (y - 2) = proot r 2 ((x - 1) * (y - 2)).
+  \sqrt (x + y - 2) / \sqrt (x + y - 2) * \sqrt (x - 1)
+  * \sqrt (y - 2) = \sqrt ((x - 1) * (y - 2)).
 Proof. move=> hx hy. radcan. all: by []. Qed.
 
 (* only true combinations: 1 <= x and 2 <= y do not give 3 < x + y *)
 (* refined: 1 <= x, 2 <= y, 3 < x + y *)
 Lemma h5 : 1 <= x -> 2 <= y -> 3 < x + y ->
-  proot r 2 (x + y - 3) / proot r 2 (x + y - 3) * proot r 2 (x - 1)
-  * proot r 2 (y - 2) = proot r 2 ((x - 1) * (y - 2)).
+  \sqrt (x + y - 3) / \sqrt (x + y - 3) * \sqrt (x - 1)
+  * \sqrt (y - 2) = \sqrt ((x - 1) * (y - 2)).
 Proof. move=> hx hy hxy. radcan. all: by []. Qed.
 
 (* contradictory bounds are kept as they are: the goal 3 <= x <= 1 *)
 (* cannot be proved                                                   *)
-Goal proot r 2 (x - 3) * proot r 2 (1 - x) = proot r 2 (- x ^+ 2 + 4 * x - 3).
+Goal \sqrt (x - 3) * \sqrt (1 - x) = \sqrt (- x ^+ 2 + 4 * x - 3).
 Proof. radcan. Abort.
 End Bounds.
 
@@ -1204,6 +1246,7 @@ Qed.
 ```coq
 Section Nested.
 Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* the paper's nested example (section 2):                                  *)
@@ -1278,12 +1321,14 @@ End Real.
 (* any posroot on a realFieldType with an oddroot gives a realroot *)
 Section RealField.
 Variables (F : realFieldType) (r : posroot F) (o : oddroot r) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Let rl := realroot_of o.
 
-Lemma f1 : proot r 2 ((x + 1) ^+ 2) = `|x + 1|.
+Lemma f1 : \sqrt ((x + 1) ^+ 2) = `|x + 1|.
 Proof. by radcan. Qed.
 
-Lemma f2 : proot r 3 (- x ^+ 3) = - x.
+Lemma f2 : 3.-proot (- x ^+ 3) = - x.
 Proof. by radcan. Qed.
 End RealField.
 
@@ -1407,6 +1452,7 @@ already proves these goals; the irreducible factors mostly change the
 ```coq
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* raw: 0 <= x + 1, 0 <= x - 1   refined: 1 <= x *)
@@ -1483,6 +1529,7 @@ contains roots.
 ```coq
 Section Denom.
 Variables (F : numFieldType) (r : posroot F) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* the inverse of a product is the product of the inverses: no condition *)
@@ -1590,48 +1637,50 @@ Ltac radcan_denest r :=
 
 Section Denest.
 Variables (F : numFieldType) (r : posroot F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
-(* plain radcan cannot do it: proot r 2 (3 + 2 sqrt 2) stays an atom *)
-Goal proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+(* plain radcan cannot do it: \sqrt (3 + 2 sqrt 2) stays an atom *)
+Goal \sqrt (3 + 2 * \sqrt 2) = 1 + \sqrt 2.
 Proof. Fail radcan. Abort.
 
-Lemma d1 : proot r 2 (3 + 2 * proot r 2 2) = 1 + proot r 2 2.
+Lemma d1 : \sqrt (3 + 2 * \sqrt 2) = 1 + \sqrt 2.
 Proof. denest_at r. radcan. Qed.
 
-Lemma d2 : proot r 2 (5 + 2 * proot r 2 6) = proot r 2 2 + proot r 2 3.
+Lemma d2 : \sqrt (5 + 2 * \sqrt 6) = \sqrt 2 + \sqrt 3.
 Proof. denest_at r. radcan. Qed.
 
 (* sign certificate: sqrt 3 - 1 >= 0 needs sqrt 3 >= 1 *)
-Lemma d3 : proot r 2 (4 - 2 * proot r 2 3) = proot r 2 3 - 1.
+Lemma d3 : \sqrt (4 - 2 * \sqrt 3) = \sqrt 3 - 1.
 Proof. denest_at r. radcan. Qed.
 
-Lemma d4 : proot r 2 (7 - 4 * proot r 2 3) = 2 - proot r 2 3.
+Lemma d4 : \sqrt (7 - 4 * \sqrt 3) = 2 - \sqrt 3.
 Proof. denest_at r. radcan. Qed.
 
 (* rational coefficients: sqrt (3/2 + sqrt 2) = 1 + sqrt 2 / 2 *)
-Lemma d5 : proot r 2 (3 / 2 + proot r 2 2) = 1 + proot r 2 2 / 2.
+Lemma d5 : \sqrt (3 / 2 + \sqrt 2) = 1 + \sqrt 2 / 2.
 Proof. denest_at r. radcan. Qed.
 
 (* the whole-goal version, several nested roots *)
-Lemma d6 : proot r 2 (3 + 2 * proot r 2 2) - proot r 2 (3 - 2 * proot r 2 2)
+Lemma d6 : \sqrt (3 + 2 * \sqrt 2) - \sqrt (3 - 2 * \sqrt 2)
   = 2.
 Proof. radcan_denest r. Qed.
 
-Lemma d7 : proot r 2 (12 + 6 * proot r 2 3) * proot r 2 (4 - 2 * proot r 2 3)
-  = 2 * proot r 2 3.
+Lemma d7 : \sqrt (12 + 6 * \sqrt 3) * \sqrt (4 - 2 * \sqrt 3)
+  = 2 * \sqrt 3.
 Proof. radcan_denest r. Qed.
 
 (* sqrt (1 + sqrt 2) does not denest: 1 - 2 = -1 is not a square *)
-Goal proot r 2 (1 + proot r 2 2) = 0.
+Goal \sqrt (1 + \sqrt 2) = 0.
 Proof. Fail denest_at r. Abort.
 
 (* it stays as it is, and radcan_denest still proves what radcan proves *)
 (* (the condition 0 <= sqrt 2 + 1 of the square of a root is left) *)
-Lemma d8 : proot r 2 (1 + proot r 2 2) ^+ 2 = 1 + proot r 2 2.
+Lemma d8 : \sqrt (1 + \sqrt 2) ^+ 2 = 1 + \sqrt 2.
 Proof. radcan_denest r. by rewrite addr_ge0 ?proot_ge0. Qed.
 
 (* a wrong candidate is refused: sqrt (4 - 2 sqrt 3) is not 1 - sqrt 3 *)
-Goal proot r 2 (4 - 2 * proot r 2 3) = 1 - proot r 2 3.
+Goal \sqrt (4 - 2 * \sqrt 3) = 1 - \sqrt 3.
 Proof. Fail radcan_denest r. Abort.
 
 End Denest.
@@ -1656,6 +1705,7 @@ fails, so goals it proved before keep their conditions.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x y z : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* plain radcan fails: the radicand (x - 1) / (x + 2) is one opaque atom   *)
@@ -1681,9 +1731,9 @@ Proof. move=> h. radcan. exact: h. Qed.
 (* the paper's (9): ((x^2 - 1) / (x + 2))^(1/2) / (x^2 + 3x + 2)^(1/3)     *)
 (* refined: 1 <= x (1 <= x ^+ 2 follows from it and is dropped)            *)
 Lemma f4 : 1 <= x ->
-  \sqrt ((x ^+ 2 - 1) / (x + 2)) / proot r 3 (x ^+ 2 + 3 * x + 2) =
+  \sqrt ((x ^+ 2 - 1) / (x + 2)) / 3.-proot (x ^+ 2 + 3 * x + 2) =
   \sqrt (x - 1) * \sqrt (x + 1) / \sqrt (x + 2) /
-  (proot r 3 (x + 1) * proot r 3 (x + 2)).
+  (3.-proot (x + 1) * 3.-proot (x + 2)).
 Proof.
 move=> h. radcan; exact: h.
 Qed.
@@ -1860,9 +1910,11 @@ Ltac radcan_omega_raw := radcan_omega_gen false.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypothesis ov : smallroot w.
 Variable x : F.
-Local Notation "\w_ n" := (proot r n (-1)) (at level 3, n at level 2).
+Local Notation "\w_ n" := (n.-proot (-1)) (at level 3, n at level 2).
 
 Lemma o1 : \w_3 ^+ 2 - \w_3 + 1 = 0.
 Proof. Fail radcan. radcan_omega. Qed.
@@ -1884,17 +1936,17 @@ Lemma o6 : \w_12 ^+ 2 = \w_6.
 Proof. radcan_omega. Qed.
 
 (* omega_4 + omega_4 ^-1 = sqrt 2 *)
-Lemma o7 : \w_4 + (\w_4)^-1 = proot r 2 2.
+Lemma o7 : \w_4 + (\w_4)^-1 = \sqrt 2.
 Proof. Fail radcan. radcan_omega. Qed.
 
 (* negative constant radicands: n.-root (- p / d) = n.-root (p / d) omega_n *)
-Lemma o8 : proot r 3 (-8) = 1 + proot r 2 3 * \w_2.
+Lemma o8 : 3.-proot (-8) = 1 + \sqrt 3 * \w_2.
 Proof. Fail radcan. radcan_omega. Qed.
 
-Lemma o9 : proot r 4 (- (1 / 4)) = (1 + \w_2) / 2.
+Lemma o9 : 4.-proot (- (1 / 4)) = (1 + \w_2) / 2.
 Proof. Fail radcan. radcan_omega. Qed.
 
-Lemma o10 : proot r 12 (-1) ^+ 4 = proot r 3 (-1).
+Lemma o10 : 12.-proot (-1) ^+ 4 = 3.-proot (-1).
 Proof. radcan_omega. Qed.
 
 (* the paper's (2), second reading ((1 - x)^(3/4) = ((1 - x)^(1/4))^3):     *)
@@ -1903,16 +1955,16 @@ Proof. radcan_omega. Qed.
 (* raw: 0 <= - (1 - x) (omega_rw, twice), 0 <= x - 1, x - 1 != 0           *)
 (* refined: 1 < x                                                           *)
 Lemma paper2 : 1 < x ->
-  proot r 4 (x - 1) / proot r 4 (1 - x)
-  - proot r 4 (x - 1) ^+ 3 / proot r 4 (1 - x) ^+ 3 - proot r 2 2 = 0.
+  4.-proot (x - 1) / 4.-proot (1 - x)
+  - 4.-proot (x - 1) ^+ 3 / 4.-proot (1 - x) ^+ 3 - \sqrt 2 = 0.
 Proof. move=> h. Fail radcan. radcan_omega. exact: h. Qed.
 
 (* first reading ((1 - x)^(3/4) = 4.-root ((1 - x)^3)): the principal roots *)
 (* make the first two terms cancel, so the left side of (2) is - sqrt 2;   *)
 (* plain radcan already proves it (the omega_4 atoms cancel)               *)
 Lemma paper2' : 1 < x ->
-  proot r 4 (x - 1) / proot r 4 (1 - x)
-  - proot r 4 ((x - 1) ^+ 3) / proot r 4 ((1 - x) ^+ 3) = 0.
+  4.-proot (x - 1) / 4.-proot (1 - x)
+  - 4.-proot ((x - 1) ^+ 3) / 4.-proot ((1 - x) ^+ 3) = 0.
 Proof. move=> h. radcan. exact: h. Qed.
 End Generic.
 
@@ -1963,6 +2015,7 @@ the plain check proves are not affected.
 ```coq
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
 Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 
 (* fractions, then denesting of sqrt (3 + 2 sqrt 2)                         *)
@@ -2002,11 +2055,13 @@ End Generic.
 (* n.-root (8 / x) * omega_n, then frac_split splits 8 / x                   *)
 Section Omega.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r) (x : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypothesis ov : smallroot w.
 
 (* refined: 0 <= x (0 <= x^-1 is read as 0 <= x) *)
 Lemma o1 : 0 < x ->
-  proot r 3 (-8 / x) = (1 + proot r 2 3 * proot r 2 (-1)) / proot r 3 x.
+  3.-proot (-8 / x) = (1 + \sqrt 3 * \sqrt (-1)) / 3.-proot x.
 Proof. move=> h. radcan. all: by rewrite ?invr_ge0 ltW. Qed.
 End Omega.
 
@@ -2121,20 +2176,22 @@ End Complex.
 
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r) (x y : F).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypothesis ov : smallroot w.
 
 (* refined: 1 <= x, 0 <= y *)
 Lemma g1 : 1 <= x -> 0 < y ->
-  proot r 4 ((1 - x) / y) = proot r 4 (x - 1) / proot r 4 y * proot r 4 (-1).
+  4.-proot ((1 - x) / y) = 4.-proot (x - 1) / 4.-proot y * 4.-proot (-1).
 Proof. move=> hx hy. radcan; [exact: hx | exact: ltW]. Qed.
 
 (* refined: 0 <= x *)
-Lemma g2 : 0 < x -> proot r 2 (-4 / x) = 2 * proot r 2 (-1) / proot r 2 x.
+Lemma g2 : 0 < x -> \sqrt (-4 / x) = 2 * \sqrt (-1) / \sqrt x.
 Proof. move=> h. radcan. exact: ltW. Qed.
 
 (* the radicand is -1 for x <> 1: the denominator is flipped, then         *)
 (* 4.-root (x - 1) / 4.-root (x - 1) cancels; refined: x != 1 (1 <= x)    *)
-Lemma g3 : 1 < x -> proot r 4 ((x - 1) / (1 - x)) = proot r 4 (-1).
+Lemma g3 : 1 < x -> 4.-proot ((x - 1) / (1 - x)) = 4.-proot (-1).
 Proof. by move=> h; radcan; rewrite gt_eqF. Qed.
 End Generic.
 ```

@@ -38,29 +38,31 @@ Eval vm_compute in (gidx 7%positive, gidx 21%positive, gidx 14%positive).
 (* any negroot with the index law, primitivity and the Gauss sums *)
 Section Generic.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypotheses (cy : cycroot w) (cp : cycprim w) (gs : gaussroot w).
-Local Notation "\w_ n" := (proot r n (-1)) (at level 3, n at level 2).
+Local Notation "\w_ n" := (n.-proot (-1)) (at level 3, n at level 2).
 
 (* sqrt 7 with the 14-th roots of -1 (exponents 21, 25, 9, 1, 1, 9, 25) *)
-Lemma g1 : proot r 2 7 = \w_14 ^+ 21 + 2 * \w_14 ^+ 25 + 2 * \w_14 ^+ 9
+Lemma g1 : \sqrt 7 = \w_14 ^+ 21 + 2 * \w_14 ^+ 25 + 2 * \w_14 ^+ 9
   + 2 * \w_14.
 Proof. Time radcan. Qed.
 
 (* 2 cos (2 pi / 5) = (sqrt 5 - 1) / 2 *)
-Lemma g2 : \w_5 ^+ 2 + (\w_5) ^- 2 = (proot r 2 5 - 1) / 2.
+Lemma g2 : \w_5 ^+ 2 + (\w_5) ^- 2 = (\sqrt 5 - 1) / 2.
 Proof. Time radcan. Qed.
 
 (* the golden ratio, 2 cos (pi / 5) *)
-Lemma g3 : \w_5 + (\w_5)^-1 = (proot r 2 5 + 1) / 2.
+Lemma g3 : \w_5 + (\w_5)^-1 = (\sqrt 5 + 1) / 2.
 Proof. Time radcan. Qed.
 
 (* sqrt 13 with a variable as coefficient *)
-Lemma g4 (x : F) : x * proot r 2 13 =
+Lemma g4 (x : F) : x * \sqrt 13 =
   x * \sum_(a < 13) \w_13 ^+ ((a * a).*2 %% 26).
 Proof. rewrite !big_ord_recr big_ord0 /=. Time radcan. Qed.
 
 (* a wrong coefficient is refused *)
-Goal proot r 2 7 = \w_14 ^+ 21 + 2 * \w_14 ^+ 25 + 2 * \w_14 ^+ 9 + \w_14.
+Goal \sqrt 7 = \w_14 ^+ 21 + 2 * \w_14 ^+ 25 + 2 * \w_14 ^+ 9 + \w_14.
 Proof. Fail radcan. Abort.
 
 End Generic.
@@ -68,10 +70,12 @@ End Generic.
 (* without the record gaussroot w, the cyclotomic checker alone fails *)
 Section NoGauss.
 Variables (F : numFieldType) (r : posroot F) (w : negroot r).
+Local Notation "n .-proot" := (proot r n) (at level 2, format "n .-proot").
+Local Notation "\sqrt a" := (proot r 2 a) (at level 10).
 Hypotheses (cy : cycroot w) (cp : cycprim w).
-Local Notation "\w_ n" := (proot r n (-1)) (at level 3, n at level 2).
+Local Notation "\w_ n" := (n.-proot (-1)) (at level 3, n at level 2).
 
-Goal \w_5 ^+ 2 + (\w_5) ^- 2 = (proot r 2 5 - 1) / 2.
+Goal \w_5 ^+ 2 + (\w_5) ^- 2 = (\sqrt 5 - 1) / 2.
 Proof. Fail radcan. Abort.
 End NoGauss.
 
