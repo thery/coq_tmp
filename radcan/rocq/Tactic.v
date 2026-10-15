@@ -8,12 +8,17 @@
 (*      the atoms (syntactically distinct terms are distinct atoms)           *)
 (*   radcan        == proves a = b when both sides have the same normal form, *)
 (*                    leaving the side conditions refined by Refine.v         *)
-(*                    (e.g. 1 < x); uses the oddroot / negroot available;     *)
+(*                    (e.g. 1 < x); the checker and the decision theorem   *)
+(*                    are those of Dispatch.v, for the facts on the root      *)
+(*                    structure found by typeclass resolution (realroot,      *)
+(*                    oddroot, negroot w with cycroot, cycprim, sqrtroot,     *)
+(*                    smallroot: hypotheses, or the instances on C and R);    *)
 (*                    when the plain check fails, the composed pre-pass of    *)
 (*                    Prepass.v (fractions, denesting, omega_n with a         *)
 (*                    smallroot) runs before the checker                      *)
 (*   radcan_raw    == the same with the raw conditions (0 <= B, B != 0)       *)
-(*   radcan_with r == radcan with an explicit root structure r                *)
+(*   radcan_with r == radcan with an explicit root structure r, no facts      *)
+(*   radcan_with_gen refined r o == the plain check with exactly the facts o  *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt.
@@ -21,7 +26,7 @@ From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot RootC RootR Syntax Radcan Refine OddRoot.
 From Radcan Require Import NegRootC RealRoot AbsRoot OmegaRoot OmegaC.
 From Radcan Require Import Frac Denest OmegaPass Prepass.
-From Radcan Require Import OmegaRoot2 NegCyc CycC Cyclo CycloC.
+From Radcan Require Import OmegaRoot2 NegCyc CycC Cyclo CycloC Dispatch.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -212,112 +217,6 @@ Ltac radcan_split_rconds :=
 Ltac radcan_vm_refl :=
   lazymatch goal with |- _ = ?v => vm_cast_no_check (@erefl _ v) end.
 
-(* refined: refined (Refine.v) or raw conditions; o: tt (generic checker),
-   o : oddroot r (odd mode), o : negroot r (neg mode), o : realroot r
-   (real mode), o : cycroot w (neg mode, omegas merged across indices) or
-   o : (cycroot w * cycprim w) (cyclotomic reduction, Cyclo.v) *)
-Ltac radcan_with_gen refined r o :=
-  radcan_reify r;
-  lazymatch goal with
-  | |- rinterp _ ?env ?e1 = rinterp _ _ ?e2 =>
-      let mode := lazymatch o with
-                  | tt => constr:(0%N)
-                  | _ => lazymatch type of o with
-                         | oddroot _ => constr:(1%N)
-                         | negroot _ => constr:(2%N)
-                         | realroot _ => constr:(3%N)
-                         | cycroot _ => constr:(4%N)
-                         | prod (cycroot _) (cycprim _) => constr:(5%N)
-                         | prod (cycroot _) (sqrtroot _) => constr:(6%N)
-                         end
-                  end in
-      let c := lazymatch mode with
-               | 0%N => eval vm_compute in (radcan_check e1 e2)
-               | 1%N => eval vm_compute in (radcan_check_odd e1 e2)
-               | 2%N => eval vm_compute in (radcan_check_neg e1 e2)
-               | 3%N => eval vm_compute in (radcan_check_real e1 e2)
-               | 4%N => eval vm_compute in (radcan_check_negc e1 e2)
-               | 5%N => eval vm_compute in (radcan_check_cyc e1 e2)
-               | 6%N => eval vm_compute in (radcan_check_negs e1 e2)
-               end in
-      lazymatch c with
-      | Some ?cs =>
-          lazymatch refined with
-          | true =>
-              let rcs := eval vm_compute in (refine cs) in
-              lazymatch mode with
-              | 0%N =>
-                  apply: (@radcan_eq_refined _ r env e1 e2 cs rcs);
-                    [radcan_vm_refl | radcan_vm_refl
-                    | radcan_split_rconds]
-              | 1%N =>
-                  apply: (@radcan_eq_refined_odd _ r o env e1 e2 cs rcs);
-                    [radcan_vm_refl | radcan_vm_refl
-                    | radcan_split_rconds]
-              | 2%N =>
-                  apply: (@radcan_eq_refined_neg _ r o env e1 e2 cs rcs);
-                    [radcan_vm_refl | radcan_vm_refl
-                    | radcan_split_rconds]
-              | 3%N =>
-                  apply: (@radcan_eq_refined_real _ r o env e1 e2 cs rcs);
-                    [radcan_vm_refl | radcan_vm_refl
-                    | radcan_split_rconds]
-              | 4%N =>
-                  lazymatch type of o with @cycroot _ _ ?w =>
-                  apply: (@radcan_eq_refined_negc _ r w o env e1 e2 cs rcs);
-                    [radcan_vm_refl | radcan_vm_refl
-                    | radcan_split_rconds]
-                  end
-              | 5%N =>
-                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
-                  apply: (@radcan_eq_refined_cyc _ r w o.1 o.2 env e1 e2 cs
-                            rcs);
-                    [radcan_vm_refl | radcan_vm_refl
-                    | radcan_split_rconds]
-                  end
-              | 6%N =>
-                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
-                  apply: (@radcan_eq_refined_negs _ r w o.1 o.2 env e1 e2 cs
-                            rcs);
-                    [radcan_vm_refl | radcan_vm_refl
-                    | radcan_split_rconds]
-                  end
-              end
-          | false =>
-              lazymatch mode with
-              | 0%N =>
-                  apply: (@radcan_eq_cond _ r env e1 e2 cs);
-                    [radcan_vm_refl | radcan_split_conds]
-              | 1%N =>
-                  apply: (@radcan_eq_cond_odd _ r o env e1 e2 cs);
-                    [radcan_vm_refl | radcan_split_conds]
-              | 2%N =>
-                  apply: (@radcan_eq_cond_neg _ r o env e1 e2 cs);
-                    [radcan_vm_refl | radcan_split_conds]
-              | 3%N =>
-                  apply: (@radcan_eq_cond_real _ r o env e1 e2 cs);
-                    [radcan_vm_refl | radcan_split_conds]
-              | 4%N =>
-                  lazymatch type of o with @cycroot _ _ ?w =>
-                  apply: (@radcan_eq_cond_negc _ r w o env e1 e2 cs);
-                    [radcan_vm_refl | radcan_split_conds]
-                  end
-              | 5%N =>
-                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
-                  apply: (@radcan_eq_cond_cyc _ r w o.1 o.2 env e1 e2 cs);
-                    [radcan_vm_refl | radcan_split_conds]
-                  end
-              | 6%N =>
-                  lazymatch type of o with prod (@cycroot _ _ ?w) _ =>
-                  apply: (@radcan_eq_cond_negs _ r w o.1 o.2 env e1 e2 cs);
-                    [radcan_vm_refl | radcan_split_conds]
-                  end
-              end
-          end
-      | None => fail "radcan: the normal forms differ"
-      end
-  end.
-
 (* goals without roots: no root structure is needed *)
 Ltac radcan0_gen refined :=
   lazymatch goal with
@@ -346,109 +245,118 @@ Ltac radcan0_gen refined :=
       end
   end.
 
-Ltac radcan_plain_gen refined :=
-  rewrite ?normr_rootR;
+
+(* The checker and the decision theorems of Dispatch.v: fs : rfacts r, the
+   facts on r found by typeclass resolution (hypotheses of the context,
+   instances on C and R); its shape shape_of fs selects the checker *)
+
+(* the root structure of the goal, tt when the goal has no root *)
+Ltac radcan_root :=
   lazymatch goal with
-  | |- context [proot ?r _ _] =>
-      lazymatch goal with
-      | rl : realroot r |- _ =>
-          rewrite ?(normr_proot rl); radcan_with_gen refined r rl
-      | o : oddroot r |- _ => radcan_with_gen refined r o
-      | w : negroot r, cy : @cycroot _ r ?w, cp : @cycprim _ r ?w,
-        sq : @sqrtroot _ r ?w |- _ =>
-          first [ radcan_with_gen refined r (cy, sq)
-                | radcan_with_gen refined r (cy, cp) ]
-      | w : negroot r, cy : @cycroot _ r ?w, cp : @cycprim _ r ?w |- _ =>
-          radcan_with_gen refined r (cy, cp)
-      | w : negroot r, cy : @cycroot _ r ?w, sq : @sqrtroot _ r ?w |- _ =>
-          radcan_with_gen refined r (cy, sq)
-      | w : negroot r, cy : @cycroot _ r ?w |- _ =>
-          radcan_with_gen refined r cy
-      | w : negroot r |- _ => radcan_with_gen refined r w
-      | _ => radcan_with_gen refined r tt
-      end
-  | |- context [@nthroot ?C _ _] =>
-      first [ radcan_with_gen refined (rootC_posroot C)
-                (rootC_cycroot C, rootC_sqrtroot C)
-            | radcan_with_gen refined (rootC_posroot C)
-                (rootC_cycroot C, rootC_cycprim C) ]
-  | |- context [@rootR ?R _ _] =>
-      radcan_with_gen refined (rootR_posroot R) (rootR_realroot R)
-  | _ => radcan0_gen refined
+  | |- context [proot ?r _ _] => constr:(r)
+  | |- context [@nthroot ?C _ _] => constr:(rootC_posroot C)
+  | |- context [@rootR ?R _ _] => constr:(rootR_posroot R)
+  | _ => constr:(tt)
   end.
 
-(* fallback: the composed pre-pass of Prepass.v (fractions, denesting, and
-   omega_rw when ov : smallroot o is given, ov = tt otherwise), iterated at
-   most radcan_fuel times, then the checker of the mode *)
-Definition radcan_fuel : nat := 4.
+(* real mode on a hypothesis rl : realroot r: |a| as proot r 2 (a ^+ 2) *)
+Ltac radcan_normr r :=
+  try lazymatch goal with rl : realroot r |- _ => rewrite ?(normr_proot rl) end.
 
-(* po: the (root, mode) of a plain check that already failed, or tt; when
-   the pre-pass changes neither side and po is (r, o), the same check would
-   fail again: fail at once *)
-Ltac radcan_pre_with_gen refined r o ov po :=
+(* reify, run the checker of fs, apply the decision theorem; refined:
+   refined (Refine.v) or raw conditions *)
+Ltac radcan_with_facts refined r fs :=
   radcan_reify r;
   lazymatch goal with
   | |- rinterp _ ?env ?e1 = rinterp _ _ ?e2 =>
-      let mode := lazymatch o with
-                  | tt => constr:(0%N)
-                  | _ => lazymatch type of o with
-                         | oddroot _ => constr:(1%N)
-                         | negroot _ => constr:(2%N)
-                         | realroot _ => constr:(3%N)
-                         end
-                  end in
-      let b := lazymatch mode with 3%N => constr:(true) | _ => constr:(false)
-               end in
-      let om := lazymatch ov with tt => constr:(false) | _ => constr:(true)
-                end in
-      let hov := lazymatch mode with
-                 | 2%N => lazymatch ov with
-                          | tt => constr:(@smallroot_false _ r o)
-                          | _ => constr:(fun _ : is_true true => ov)
-                          end
-                 | _ => constr:(tt)
-                 end in
-      let p1 := eval vm_compute in (prepass b om radcan_fuel e1) in
-      let p2 := eval vm_compute in (prepass b om radcan_fuel e2) in
+      let s := eval vm_compute in (shape_of fs) in
+      let c := eval vm_compute in (radcan_check_shape false s e1 e2) in
+      lazymatch c with
+      | Some ?cs =>
+          lazymatch refined with
+          | true =>
+              let rcs := eval vm_compute in (refine cs) in
+              apply: (@radcan_eq_refined_shape _ r env false fs e1 e2 cs rcs);
+                [radcan_vm_refl | radcan_vm_refl | radcan_split_rconds]
+          | false =>
+              apply: (@radcan_eq_cond_shape _ r env false fs e1 e2 cs);
+                [radcan_vm_refl | radcan_split_conds]
+          end
+      | None => fail "radcan: the normal forms differ"
+      end
+  end.
+
+(* exactly the facts o: tt (generic checker), o : oddroot r, o : negroot r,
+   o : realroot r, o : cycroot w (omegas merged across indices),
+   (cy, cp) : cycroot w * cycprim w (cyclotomic reduction, Cyclo.v),
+   (cy, sq) : cycroot w * sqrtroot w (square roots as sums of omegas) *)
+Ltac radcan_with_gen refined r o :=
+  let fs := lazymatch o with
+            | tt => constr:(facts_tt r)
+            | (?cy, ?x) =>
+                lazymatch type of x with
+                | cycprim _ => constr:(facts_cycprim cy x)
+                | sqrtroot _ => constr:(facts_cycsqrt cy x)
+                end
+            | _ =>
+                lazymatch type of o with
+                | oddroot _ => constr:(facts_odd o)
+                | negroot _ => constr:(facts_neg o)
+                | realroot _ => constr:(facts_real o)
+                | cycroot _ => constr:(facts_cyc o)
+                end
+            end in
+  radcan_with_facts refined r fs.
+
+(* the plain check, with the facts of the context *)
+Ltac radcan_plain_gen refined :=
+  rewrite ?normr_rootR;
+  let r := radcan_root in
+  lazymatch r with
+  | tt => radcan0_gen refined
+  | _ =>
+      radcan_normr r;
+      let fs := constr:(_ : rfacts r) in
+      radcan_with_facts refined r fs
+  end.
+
+(* fallback: the composed pre-pass of Prepass.v (fractions, denesting, and
+   omega_rw with a smallroot), iterated at most radcan_fuel times, then the
+   checker of the shape (plain neg mode for the negroot modes) *)
+Definition radcan_fuel : nat := 4.
+
+(* after: the plain check already failed on this goal; when the pre-pass
+   changes neither side, the checker would fail again (the plain check
+   tried it, or a stronger one): fail at once *)
+Ltac radcan_pre_with_facts refined r fs after :=
+  radcan_reify r;
+  lazymatch goal with
+  | |- rinterp _ ?env ?e1 = rinterp _ _ ?e2 =>
+      let s := eval vm_compute in (shape_of fs) in
+      let p1 := eval vm_compute in (prepass_shape s radcan_fuel e1) in
+      let p2 := eval vm_compute in (prepass_shape s radcan_fuel e2) in
       lazymatch p1 with (?f1, ?cs1) =>
       lazymatch p2 with (?f2, ?cs2) =>
-      tryif constr_eq (f1, f2, po) (e1, e2, (r, o))
-      then fail "radcan_pre: nothing to rewrite" else idtac;
-      let c := lazymatch mode with
-               | 0%N => eval vm_compute in (radcan_check f1 f2)
-               | 1%N => eval vm_compute in (radcan_check_odd f1 f2)
-               | 2%N => eval vm_compute in (radcan_check_neg f1 f2)
-               | 3%N => eval vm_compute in (radcan_check_real f1 f2)
-               end in
+      lazymatch after with
+      | true =>
+          tryif constr_eq (f1, f2) (e1, e2)
+          then fail "radcan_pre: nothing to rewrite" else idtac
+      | false => idtac
+      end;
+      let c := eval vm_compute in (radcan_check_shape true s f1 f2) in
       lazymatch c with
       | Some ?cs =>
           lazymatch refined with
           | true =>
               let rcs := eval vm_compute in (refine (cs1 ++ cs2 ++ cs)) in
-              lazymatch mode with
-              | 0%N => apply: (@radcan_eq_pre_refined _ r env
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs rcs)
-              | 1%N => apply: (@radcan_eq_pre_refined_odd _ r env o
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs rcs)
-              | 2%N => apply: (@radcan_eq_pre_refined_neg _ r env o om hov
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs rcs)
-              | 3%N => apply: (@radcan_eq_pre_refined_real _ r env o
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs rcs)
-              end;
+              apply: (@radcan_eq_pre_refined_shape _ r env fs
+                        radcan_fuel e1 e2 f1 f2 cs1 cs2 cs rcs);
               [radcan_vm_refl | radcan_vm_refl
               | radcan_vm_refl | radcan_vm_refl
               | radcan_split_rconds]
           | false =>
-              lazymatch mode with
-              | 0%N => apply: (@radcan_eq_pre _ r env
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs)
-              | 1%N => apply: (@radcan_eq_pre_odd _ r env o
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs)
-              | 2%N => apply: (@radcan_eq_pre_neg _ r env o om hov
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs)
-              | 3%N => apply: (@radcan_eq_pre_real _ r env o
-                         radcan_fuel e1 e2 f1 f2 cs1 cs2 cs)
-              end;
+              apply: (@radcan_eq_pre_shape _ r env fs
+                        radcan_fuel e1 e2 f1 f2 cs1 cs2 cs);
               [radcan_vm_refl | radcan_vm_refl
               | radcan_vm_refl | radcan_split_conds]
           end
@@ -456,48 +364,15 @@ Ltac radcan_pre_with_gen refined r o ov po :=
       end end end
   end.
 
-(* the (root, mode) used by radcan_plain_gen, tt without a root *)
-Ltac radcan_plain_sel :=
-  lazymatch goal with
-  | |- context [proot ?r _ _] =>
-      lazymatch goal with
-      | rl : realroot r |- _ => constr:((r, rl))
-      | o : oddroot r |- _ => constr:((r, o))
-      | w : negroot r |- _ => constr:((r, w))
-      | _ => constr:((r, tt))
-      end
-  | |- context [@nthroot ?C _ _] =>
-      constr:((rootC_posroot C, rootC_negroot C))
-  | |- context [@rootR ?R _ _] =>
-      constr:((rootR_posroot R, rootR_realroot R))
-  | _ => constr:(tt)
-  end.
-
-(* the dispatch of the fallback: omega_rw with a smallroot in context, and *)
-(* always on n.-root goals (rootC_smallroot C); after: the plain check     *)
-(* already failed on this goal                                             *)
 Ltac radcan_pre_dispatch refined after :=
   rewrite ?normr_rootR;
-  let po := lazymatch after with
-            | true => radcan_plain_sel
-            | false => constr:(tt)
-            end in
-  lazymatch goal with
-  | |- context [proot ?r _ _] =>
-      lazymatch goal with
-      | rl : realroot r |- _ =>
-          rewrite ?(normr_proot rl); radcan_pre_with_gen refined r rl tt po
-      | o : oddroot r |- _ => radcan_pre_with_gen refined r o tt po
-      | ov : @smallroot _ r ?w |- _ =>
-          radcan_pre_with_gen refined r w ov po
-      | w : negroot r |- _ => radcan_pre_with_gen refined r w tt po
-      | _ => radcan_pre_with_gen refined r tt tt po
-      end
-  | |- context [@nthroot ?C _ _] =>
-      radcan_pre_with_gen refined (rootC_posroot C) (rootC_negroot C)
-        (rootC_smallroot C) po
-  | |- context [@rootR ?R _ _] =>
-      radcan_pre_with_gen refined (rootR_posroot R) (rootR_realroot R) tt po
+  let r := radcan_root in
+  lazymatch r with
+  | tt => fail "radcan_pre: no root in the goal"
+  | _ =>
+      radcan_normr r;
+      let fs := constr:(_ : rfacts r) in
+      radcan_pre_with_facts refined r fs after
   end.
 
 Ltac radcan_pre_only refined := radcan_pre_dispatch refined false.

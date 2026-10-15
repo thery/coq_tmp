@@ -117,9 +117,9 @@ Record posroot (F : numFieldType) := PosRoot {
 }.
 ```
 
-`proot n a` is the $n$-th root of $a$. The three properties say that the root
-is nonnegative, that its $n$-th power gives back $a$, and that the root of a
-product is the product of the roots. All three only hold when $a >= 0$.
+`proot n a` is the $n$-th root of $a$. The first property says that the
+root is nonnegative. The second says that its $n$-th power gives back $a$.
+The third says that the root of a product is the product of the roots. All three only hold when $a >= 0$.
 This restriction is important. Without it, we could prove
 
 $ 1 = sqrt(1) = sqrt((-1) dot (-1)) = sqrt(-1) dot sqrt(-1) = -1. $
@@ -183,8 +183,9 @@ Theorem radcan_eq_cond (F : numFieldType) (r : posroot F) env e1 e2 cs :
 ```
 
 The tactic `radcan` does the rest. It reads the goal and builds the two
-trees (this step is written in the Ltac language), runs `radcan_check`,
-applies the theorem, and leaves the conditions `cs` as new goals.
+trees. This step is written in the Ltac language. Then it runs
+`radcan_check` and applies the theorem. The conditions `cs` are left as new
+goals.
 
 The program uses many algorithms: factoring integers and polynomials,
 greatest common divisors, inverting a matrix. We never prove these
@@ -219,10 +220,9 @@ Lemma l3 : sqrt 12 - sqrt 3 = sqrt 3.
 Proof. radcan_lra. Qed.
 ```
 
-Divisions are handled by making the denominator a plain number, as at
-school: $1 \/ (1 + sqrt(2)) = (sqrt(2) - 1) \/ ((sqrt(2)+1)(sqrt(2)-1)) = sqrt(2) - 1$.
-The program finds the multiplier by linear algebra, and the check is
-again a multiplication (#src("tutorial/Tut8_div.v")):
+For a division, we make the denominator a plain number, as at school: $1 \/ (1 + sqrt(2)) = (sqrt(2) - 1) \/ ((sqrt(2)+1)(sqrt(2)-1)) = sqrt(2) - 1$.
+The program finds the multiplier by linear algebra. The check is again a
+multiplication (#src("tutorial/Tut8_div.v")):
 
 ```coq
 Lemma d2 : 1 / (1 + proot r 2 2) = proot r 2 2 - 1. Proof. radcan. Qed.
@@ -273,9 +273,9 @@ Lemma f1 : 1 < x ->
 Proof. move=> h. radcan. exact: h. Qed.
 ```
 
-The refinement uses only reasoning that is true in every field: the same
+The refinement only uses reasoning that is true in every field. So the same
 tactic works on the complex numbers, where $0 <= x^2$ is false. Its result
-is also checked: a proved function verifies that the new conditions imply
+is also checked. A proved function verifies that the new conditions imply
 the old ones. The refinement knows intervals, combinations of bounds, and
 the sign of constants with roots, for example $0 <= 3 - 2 sqrt(2)$.
 
@@ -321,23 +321,34 @@ checked.
 The complex numbers need care. Mathematical Components chooses one root
 among the $n$ possible ones, the _principal_ root. With this choice the
 root of a product is not always the product of the roots. So we write a
-negative number as a positive one times a root of $-1$, and we use the
-values of the small roots of $-1$, which we prove:
+negative number as a positive one times a root of $-1$. For the small roots
+of $-1$, we also prove their values:
 
 $ root(3, -1) = (1 + sqrt(3) dot i) / 2 quad quad
   root(4, -1) = sqrt(2) / 2 (1 + i). $
 
-This is enough to prove, for example, $omega^2 - omega + 1 = 0$ for
-$omega = root(3, -1)$:
+Later we went further. We write $omega_n$ for $root(n, -1)$, the principal
+root, that is $e^(i pi \/ n)$. The tactic now knows two general laws. The
+first relates the roots of $-1$ of different orders: $omega_(n k)^k =
+omega_n$. The second says that $omega_n$ is a root of a known polynomial,
+the _cyclotomic_ polynomial. So it proves, for example,
 
 ```coq
 Lemma u2 : 3.-root (-1 : C) ^+ 2 - 3.-root (-1) + 1 = 0.
 Proof. by radcan. Qed.
+
+Lemma u10 : 5.-root (-1 : C) ^+ 4 - 5.-root (-1) ^+ 3
+          + 5.-root (-1) ^+ 2 - 5.-root (-1) + 1 = 0.
+Proof. by radcan. Qed.
 ```
 
+The cyclotomic polynomial is computed by the program and then checked, as
+for factors. The two laws themselves are theorems, see
+@sec-theorems.
+
 Finally, we have also added some things that the paper does not do. The
-tactic can _denest_ some roots of roots, it can _simplify_ a term instead of
-proving an equality (like `ring_simplify`), and it can work with symbols
+tactic can _denest_ some roots of roots. It can _simplify_ a term instead of
+proving an equality, like `ring_simplify`. It can also work with symbols
 given by hypotheses (see the next section):
 
 ```coq
@@ -377,7 +388,7 @@ Equation (2) is the most interesting one:
 
 $ (x - 1)^(1\/4) / (1 - x)^(1\/4) - (x - 1)^(3\/4) / (1 - x)^(3\/4) - sqrt(2) = 0. $
 
-With the principal roots of the complex numbers, it is false: when $x > 1$
+With the principal roots of the complex numbers, it is false. When $x > 1$,
 the left side is $-sqrt(2)$, and the tactic proves exactly that. The paper
 reads it in another way. A root is a _symbol_ $u$ with an equation $u^4 = x - 1$,
 and $(x-1)^(3\/4)$ means $u^3$. To prove equalities in this reading, the
@@ -396,6 +407,89 @@ Proof. move=> h. radcan_sym. by rewrite subr_eq0. Qed.
 Here $sqrt(2)$ is $w - w^3$, as in the paper. The condition $x != 1$ is
 needed and the paper leaves it implicit: for $x = 1$, $u = 0$ and the
 divisions make no sense.
+
+= Some theorems proved on the way <sec-theorems>
+
+To make the tactic work on the complex numbers, we had to prove some facts
+that are interesting on their own. None of them uses trigonometry: there is
+no $sin$ or $cos$ in Mathematical Components. They are about the principal
+roots $root(n, x)$ of any algebraically closed field with an order, like
+$CC$ (file #src("rocq/UnitArc.v")).
+
+*Roots of $-1$.* The first two say how the roots $omega_n = root(n, -1)$
+fit together:
+
+```coq
+Lemma rootC_N1_prim n : (0 < n)%N ->
+  (2 * n).-primitive_root (n.-root (-1 : C)).
+Lemma rootC_N1_index n k : (0 < n)%N -> (0 < k)%N ->
+  (n * k).-root (-1 : C) ^+ k = n.-root (-1).
+```
+
+The first says that $omega_n$ has order exactly $2 n$. A comment in
+Mathematical Components states it, but the proof was missing. Here is the idea
+of the proof. Look at the $2 n$-th roots of 1 above the real axis, and take
+the one with the largest real part. Multiplying by its conjugate moves any
+other one closer to 1. Step by step, we reach 1, so all of them are its
+powers.
+
+*Roots of roots.* The second one generalises to every complex number,
+with no condition at all (file #src("rocq/RootComp.v")):
+
+```coq
+Lemma rootC_mul n k (x : C) : (n * k).-root x = n.-root (k.-root x).
+```
+
+For real numbers this is easy. For complex numbers, the principal root
+divides the angle of $x$. Dividing twice is the same as dividing once by
+$n k$. The proof needs a small calculus of angles on the
+circle, again without trigonometry.
+
+*Gauss sums.* For an odd number $n$ and $zeta = e^(2 i pi \/ n)$, Gauss
+proved in 1805 that
+
+$ sum_(a = 0)^(n - 1) zeta^(a^2) = cases(sqrt(n) & "if" n = 1 med (mod 4),
+  i sqrt(n) & "if" n = 3 med (mod 4)). $
+
+That the square of the sum is $plus.minus n$ is easy algebra. The sign is
+the hard part. Gauss wrote that it took him years. We follow his own
+algebraic proof (file #src("rocq/GaussSum.v")). First, the sum is equal to a
+product. Then the sign of each factor is given by the position of a root of
+unity on the circle, which we already know.
+
+```coq
+Theorem gauss_sumC n : odd n -> gauss_sum n = 'i ^+ odd n./2 * sqrtC n%:R.
+```
+
+With this theorem, every square root of an integer can be written with
+roots of unity, so the tactic can relate $sqrt(5)$ and $omega_5$.
+
+*Cyclotomic polynomials.* The program computes the polynomial $Phi_m$
+that is zero at a primitive root of unity of order $m$. We do not prove the
+computation. Instead, a short lemma checks it with two multiplications
+(file #src("rocq/Cyclo.v")):
+
+```coq
+Lemma prim_root_cert (R : idomainType) m (z : R) (p h g : {poly R}) D :
+  m.-primitive_root z -> all (fun d => (0 < d < m)%N) D ->
+  p * h = 'X^m - 1 -> h * g = \prod_(d <- D) ('X^d - 1) -> root p z.
+```
+
+*An olympiad problem.* Problem 5 of the 1963 International Mathematical
+Olympiad asks to show
+
+$ cos(pi / 7) - cos((2 pi) / 7) + cos((3 pi) / 7) = 1 / 2. $
+
+We prove it on the real numbers of the Rocq standard library
+(#src("tutorial/Tut35_imo1963.v")). The tactic knows nothing about $cos$,
+so we go to the complex numbers. The number
+$z = cos(pi \/ 7) + i sin(pi \/ 7)$ satisfies $z^7 = -1$. The cosines are
+$(z^k + z^(-k)) \/ 2$, so the identity becomes algebra. We even show that
+$z$ is exactly $root(7, -1)$. Then the last step is just `radcan`:
+
+```coq
+Theorem imo1963 : cos (PI / 7) - cos (2 * PI / 7) + cos (3 * PI / 7) = 1 / 2.
+```
 
 = Conclusion
 

@@ -213,7 +213,12 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
   omega inside inverses of sums (invert modulo Phi, checked). OUT = higher roots simplifying
   with roots of unity (Kummer theory, e.g. 4th root of -4 = 1 + i), general denesting,
   trigonometry directly in R. RUNNING (agents: GaussSum.v; CycloInv.v).
-- Next: one checker + one theorem over a record of root facts (Dispatch.v, agent),
+- DONE: one checker + one theorem over a record of root facts (`Dispatch.v`); `Tactic.v`
+  511 -> 386 lines, adding a mode no longer touches it.
+- DONE: `GaussSum.v`, Gauss's sign theorem for every odd n (506 lines, no trigonometry).
+- RUNNING: Gauss sums plugged into radcan (GaussMode.v, GaussC.v); inverses of sums of
+  roots of unity modulo Phi (CycloInv.v). Then the note, the -time hunt, push.
+- (old) Next: one checker + one theorem over a record of root facts (Dispatch.v, agent),
   table-driven `Tactic.v`, then a clean `-time` build: fix every step > 6 s outside
   `Require` and the example files.
 

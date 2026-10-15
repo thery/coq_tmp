@@ -105,9 +105,12 @@ make -j4
 | `RefPoly.v`, `RefCheck.v`, `SignCert.v`, `RefHeur.v`, `Refine.v` | refinement of the conditions: polynomials over atoms, proved checker, sign certificates of constants in roots, unverified heuristics, `refine` and its soundness |
 | `OddRoot.v`, `NegRootC.v`, `AbsRoot.v` | theorems for odd roots (ℝ), roots of unity (ℂ), real fields |
 | `UnitArc.v`, `RootComp.v` | principal roots of `−1` on ℂ: index law, primitivity, largest real part; `(nk).-root x = n.-root (k.-root x)` |
+| `GaussSum.v` | Gauss's theorem on the sign of the quadratic Gauss sum, for every odd `n` |
 | `OmegaRoot2.v`, `NegCyc.v`, `CycC.v` | records `cycroot` (index law) and `sqrtroot` (√2, √3, √5 table), theorems, ℂ instances |
 | `Cyclo.v`, `CycloC.v`, `CycloTac.v` | cyclotomic reduction: certified `Φ`, record `cycprim`, ℂ instance |
+| `CycloInv.v` | inverses of sums of roots of unity modulo `Φ`, checked |
 | `OmegaRoot.v`, `OmegaC.v` | explicit values of small roots of unity |
+| `Dispatch.v` | one checker `radcan_check_shape` and one soundness theorem (raw, refined, with pre-pass) over a record of root facts found by typeclass resolution; adding a mode only touches this file (recipe in its header) |
 | `Tactic.v` | reification and the tactics `radcan`, `radcan_raw` |
 | `Simplify.v`, `SimplifyTac.v` | printing normal forms back; `radcan_simplify` |
 | `Examples.v`, `RefineEx.v` | examples with timings |

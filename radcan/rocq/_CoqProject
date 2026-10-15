@@ -10,6 +10,7 @@ OmegaRoot2.v
 OmegaC.v
 UnitArc.v
 RootComp.v
+GaussSum.v
 RootR.v
 Rstruct.v
 RootRstd.v
@@ -48,6 +49,8 @@ OmegaPass.v
 Prepass.v
 Cyclo.v
 CycloC.v
+CycloInv.v
+Dispatch.v
 Tactic.v
 CycloTac.v
 SymTac.v
