@@ -4,6 +4,7 @@ From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import Rstruct PosRoot PosRootFacts RootC RootR RealRoot.
 From Radcan Require Import Syntax Radcan Refine Tactic RootRstd Sym SymTac.
 From Radcan Require Import UnitArc RootComp GaussSum Cyclo.
+From RadcanTrig Require Import TrigBridge.
 Import Order.TTheory GRing.Theory Num.Theory.
 
 Local Open Scope ring_scope.
@@ -62,6 +63,7 @@ Check rootC_N1_index : forall (C : numClosedFieldType) n k,
 Check @rootC_mul.
 Check @gauss_sumC.
 Check @prim_root_cert.
+Check @E_root.
 
 Section Real.
 Variables (R : rcfType) (x : R).

@@ -103,10 +103,12 @@ Variables (C : numClosedFieldType) (x : C).
 Goal 4.-root (x - 1) / 4.-root (1 - x)
      - 4.-root ((x - 1) ^+ 3) / 4.-root ((1 - x) ^+ 3) - 2.-root 2 = 0.
 Proof. Fail radcan. Abort.
-(* the second reading: omega_rw in radcan's pre-pass (Tutorial 29) *)
+(* the second reading: omega_rw in radcan's pre-pass (Tutorial 29); the
+   plain check also proves it since the Gauss-sum mode (Tutorial 37):
+   sqrt 2 = omega_4 - omega_4 ^+ 3, same condition 1 < x *)
 Goal 1 < x -> 4.-root (x - 1) / 4.-root (1 - x)
      - 4.-root (x - 1) ^+ 3 / 4.-root (1 - x) ^+ 3 - 2.-root 2 = 0.
-Proof. move=> h. Fail radcan_plain_gen true. radcan. exact: h. Qed.
+Proof. move=> h. radcan_plain_gen true. exact: h. Qed.
 (* (4) = (6), with omega = 3.-root (-1) (= omega_6 ^+ 2 in the paper's
    convention omega_m = e^(i pi / m); the printed omega_6 makes it false);
    raw: 0 <= x ^+ 2 + 1   refined: -1 <= x ^+ 2 *)

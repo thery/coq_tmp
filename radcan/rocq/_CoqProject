@@ -50,6 +50,8 @@ Prepass.v
 Cyclo.v
 CycloC.v
 CycloInv.v
+GaussMode.v
+GaussC.v
 Dispatch.v
 Tactic.v
 CycloTac.v

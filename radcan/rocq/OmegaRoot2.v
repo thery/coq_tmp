@@ -10,11 +10,6 @@
 (*   windex_lift, windex_div == the two rewrites used to merge omega atoms:   *)
 (*                 omega_n ^+ e = omega_l ^+ (e * (l / n))   (n | l)          *)
 (*                 omega_n ^+ k = omega_(n / g) ^+ (k / g)   (g | n, g | k)   *)
-(*   sqrtroot w == sqrt 2, 3, 5 as sums of roots of -1 (Omega6):             *)
-(*                 sqrt 2 = w4 - w4 ^+ 3,  sqrt 3 = w6 - w6 ^+ 5,             *)
-(*                 sqrt 5 = 2 w5 - 2 w5 ^+ 4 - 1   (wn = wroot w n)           *)
-(*                 (instance rootC_sqrtroot C in CycC.v)                      *)
-(*   wsqrt r    == the same on proot r n (-1); sqrtroot_wsqrt                *)
 (******************************************************************************)
 
 From mathcomp Require Import all_boot all_order all_algebra.
@@ -68,20 +63,3 @@ by rewrite -{1}(divnK gk) mulnC exprM E.
 Qed.
 
 End WIndex.
-
-(* square roots as sums of roots of -1 (milestone Omega6) *)
-Record sqrtroot (F : numFieldType) (r : posroot F) (w : negroot r) : Prop :=
-  SqrtRoot {
-  wsqrt2 : proot r 2 2 = wroot w 4 - wroot w 4 ^+ 3;
-  wsqrt3 : proot r 2 3 = wroot w 6 - wroot w 6 ^+ 5;
-  wsqrt5 : proot r 2 5 = 2 * wroot w 5 - 2 * wroot w 5 ^+ 4 - 1
-}.
-
-Definition wsqrt (F : numFieldType) (r : posroot F) : Prop :=
-  [/\ proot r 2 2 = proot r 4 (-1) - proot r 4 (-1) ^+ 3,
-      proot r 2 3 = proot r 6 (-1) - proot r 6 (-1) ^+ 5 &
-      proot r 2 5 = 2 * proot r 5 (-1) - 2 * proot r 5 (-1) ^+ 4 - 1].
-
-Lemma sqrtroot_wsqrt (F : numFieldType) (r : posroot F) (w : negroot r) :
-  sqrtroot w -> wsqrt r.
-Proof. by case; rewrite !(wrootE w). Qed.

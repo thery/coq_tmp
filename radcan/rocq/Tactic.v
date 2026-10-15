@@ -11,8 +11,8 @@
 (*                    (e.g. 1 < x); the checker and the decision theorem   *)
 (*                    are those of Dispatch.v, for the facts on the root      *)
 (*                    structure found by typeclass resolution (realroot,      *)
-(*                    oddroot, negroot w with cycroot, cycprim, sqrtroot,     *)
-(*                    smallroot: hypotheses, or the instances on C and R);    *)
+(*                    oddroot, negroot w with cycroot, cycprim, smallroot,    *)
+(*                    gaussroot: hypotheses, or the instances on C and R);    *)
 (*                    when the plain check fails, the composed pre-pass of    *)
 (*                    Prepass.v (fractions, denesting, omega_n with a         *)
 (*                    smallroot) runs before the checker                      *)
@@ -288,16 +288,11 @@ Ltac radcan_with_facts refined r fs :=
 
 (* exactly the facts o: tt (generic checker), o : oddroot r, o : negroot r,
    o : realroot r, o : cycroot w (omegas merged across indices),
-   (cy, cp) : cycroot w * cycprim w (cyclotomic reduction, Cyclo.v),
-   (cy, sq) : cycroot w * sqrtroot w (square roots as sums of omegas) *)
+   (cy, cp) : cycroot w * cycprim w (cyclotomic reduction, Cyclo.v) *)
 Ltac radcan_with_gen refined r o :=
   let fs := lazymatch o with
             | tt => constr:(facts_tt r)
-            | (?cy, ?x) =>
-                lazymatch type of x with
-                | cycprim _ => constr:(facts_cycprim cy x)
-                | sqrtroot _ => constr:(facts_cycsqrt cy x)
-                end
+            | (?cy, ?cp) => constr:(facts_cycprim cy cp)
             | _ =>
                 lazymatch type of o with
                 | oddroot _ => constr:(facts_odd o)

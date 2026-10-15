@@ -200,12 +200,11 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
     MNegC, MNegCW; `radcan` mode 4).
   - Ω5 `Cyclo.v`, `CycloC.v` (`cycprim`), `CycloTac.v`: reduction modulo Φ_2N, Φ checked by
     `prim_root_cert` (`radcan` mode 5).
-  - Ω6 small table √2, √3, √5 with ω (`sqrtroot`, mode MNegS, `radcan` mode 6). Kept as a
-    documented table by the user's decision: the general case (Gauss sums) needs Gauss's
-    sign theorem.
+  - Ω6 small table √2, √3, √5 with ω (`sqrtroot`, mode MNegS): REMOVED (user, 2026-10-15),
+    subsumed by the Gauss-sum mode (`gaussroot`, GaussMode.v, GaussC.v).
   - Ω7 `RootComp.v`: `(nk).-root x = n.-root (k.-root x)` for all x; mathcomp-ready file
     `plans/mathcomp/nthroot_unity.v`, draft PR `plans/MATHCOMP_PR.md` (not opened).
-  - Tut33 (merge + table), Tut34 (cyclotomic), Tut35 (IMO 1963: symbol proof and ω proof,
+  - Tut33 (merge, square roots by Gauss sums), Tut34 (cyclotomic), Tut35 (IMO 1963: symbol proof and ω proof,
     needs rocq-mathcomp-real-closed).
 - Gauss sums (user, 2026-10-15, scope fixed in writing): IN = Gauss's sign theorem for every
   odd prime p on C with principal roots (g = sum zeta^(a^2) = sqrt p or i sqrt p), plugged
@@ -218,6 +217,12 @@ closes them. `rootR` is 0 on negatives, so `sqrt = rootR 2` holds unconditionall
 - DONE: `GaussSum.v`, Gauss's sign theorem for every odd n (506 lines, no trigonometry).
 - RUNNING: Gauss sums plugged into radcan (GaussMode.v, GaussC.v); inverses of sums of
   roots of unity modulo Phi (CycloInv.v). Then the note, the -time hunt, push.
+- Trigonometric front-end (user, 2026-10-15, scope fixed in writing): IN = equalities on
+  Stdlib reals with cos, sin, tan of (integer combinations of variables + rational
+  multiples of PI), through C with radcan at the core, conditions given back (cos x <> 0).
+  OUT = inequalities, arcsin/arctan, exp/ln, other angles (cos (x^2), cos (a x)), solving
+  equations. Separate directory trig/ (needs rocq-mathcomp-real-closed). RUNNING (agents:
+  TrigBridge.v incl. E (PI/n) = n.-root (-1) for all n; TrigTac.v radcan_trig, Tut37).
 - (old) Next: one checker + one theorem over a record of root facts (Dispatch.v, agent),
   table-driven `Tactic.v`, then a clean `-time` build: fix every step > 6 s outside
   `Require` and the example files.

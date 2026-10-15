@@ -5,14 +5,15 @@
 (*   rfact P       == option P: the fact P, if known (class; found as a       *)
 (*                    hypothesis or as a global instance, None otherwise)     *)
 (*   wfacts w      == the facts on w : negroot r (record of rfact: cycroot,   *)
-(*                    cycprim, sqrtroot, smallroot)                           *)
+(*                    cycprim, smallroot, gaussroot)                          *)
 (*   negfacts r    == option {w : negroot r & wfacts w}: a negroot of r (a    *)
 (*                    hypothesis or an instance) with its facts               *)
 (*   rfacts r      == the facts on r: realroot r, oddroot r, negfacts r       *)
 (*   shape         == which facts are present (booleans, computable)          *)
 (*   shape_of fs   == the shape of fs : rfacts r                              *)
 (*   radcan_check_w s == the checker of the negroot modes (merged omegas,     *)
-(*                    cyclotomic reduction, square roots as sums of omegas)   *)
+(*                    cyclotomic reduction, then any sqrt n as a sum of     *)
+(*                    omegas by Gauss sums, GaussMode.v)                      *)
 (*   radcan_check_shape pre s == the checker of the shape: realroot first,    *)
 (*                    then oddroot, then the negroot modes (only the plain    *)
 (*                    neg mode after the pre-pass, pre = true), then the      *)
@@ -23,10 +24,10 @@
 (*                    pre-pass of Prepass.v (frac_split true in real mode,    *)
 (*                    omega_rw in neg mode with a smallroot)                  *)
 (*   facts_tt r, facts_odd o, facts_real rl, facts_neg w, facts_cyc cy,       *)
-(*   facts_cycprim cy cp, facts_cycsqrt cy sq == rfacts r with exactly the    *)
-(*                    given facts (resolved in an empty context)              *)
+(*   facts_cycprim cy cp == rfacts r with exactly the given facts (resolved   *)
+(*                    in an empty context)                                    *)
 (*   instances on C (n.-root): rootC_negroot C with cycroot, cycprim,         *)
-(*                    sqrtroot, smallroot; on R (rootR): rootR_realroot R     *)
+(*                    smallroot, gaussroot; on R (rootR): rootR_realroot R    *)
 (* Adding a fact P on w : negroot r with its checker radcan_check_new (and    *)
 (* its theorem radcan_eq_cond_new w (h : P w) : radcan_check_new e1 e2 =      *)
 (* Some cs -> all_conds r env cs -> rinterp r env e1 = rinterp r env e2):     *)
@@ -47,6 +48,7 @@ From mathcomp Require Import all_boot all_order all_algebra.
 From Radcan Require Import PosRoot RootC RootR Syntax Radcan Refine RealRoot.
 From Radcan Require Import OmegaRoot OmegaC OmegaRoot2 OddRoot NegRootC.
 From Radcan Require Import AbsRoot NegCyc CycC Prepass Cyclo CycloC.
+From Radcan Require Import GaussMode GaussC.
 From Radcan Require Import CycloInv. (* CycloInv *)
 
 Set Implicit Arguments.
@@ -70,8 +72,8 @@ Variables (F : numFieldType) (r : posroot F).
 Record wfacts (w : negroot r) : Type := WFacts {
   wf_cyc : rfact (cycroot w);
   wf_prim : rfact (cycprim w);
-  wf_sqrt : rfact (sqrtroot w);
-  wf_small : rfact (smallroot w)
+  wf_small : rfact (smallroot w);
+  wf_gauss : rfact (gaussroot w)
 }.
 
 Definition negfacts : Type := option {w : negroot r & wfacts w}.
@@ -104,10 +106,10 @@ Existing Class rfacts.
   rfact (cycroot (rootC_negroot C)) := Some (rootC_cycroot C).
 #[global] Instance rootC_prim_fact (C : numClosedFieldType) :
   rfact (cycprim (rootC_negroot C)) := Some (rootC_cycprim C).
-#[global] Instance rootC_sqrt_fact (C : numClosedFieldType) :
-  rfact (sqrtroot (rootC_negroot C)) := Some (rootC_sqrtroot C).
 #[global] Instance rootC_small_fact (C : numClosedFieldType) :
   rfact (smallroot (rootC_negroot C)) := Some (rootC_smallroot C).
+#[global] Instance rootC_gauss_fact (C : numClosedFieldType) :
+  rfact (gaussroot (rootC_negroot C)) := Some (rootC_gaussroot C).
 #[global] Instance rootC_negfacts (C : numClosedFieldType) :
   negfacts (rootC_posroot C) :=
   Some (@existT _ (@wfacts _ (rootC_posroot C)) (rootC_negroot C) _).
@@ -127,8 +129,6 @@ Definition facts_neg (w : negroot r) : rfacts r := _.
 Definition facts_cyc (w : negroot r) (cy : cycroot w) : rfacts r := _.
 Definition facts_cycprim (w : negroot r) (cy : cycroot w) (cp : cycprim w) :
   rfacts r := _.
-Definition facts_cycsqrt (w : negroot r) (cy : cycroot w) (sq : sqrtroot w) :
-  rfacts r := _.
 
 End Explicit.
 
@@ -136,7 +136,7 @@ End Explicit.
 
 Record shape := Shape {
   sh_real : bool; sh_odd : bool; sh_neg : bool;
-  sh_cyc : bool; sh_prim : bool; sh_sqrt : bool; sh_small : bool
+  sh_cyc : bool; sh_prim : bool; sh_small : bool; sh_gauss : bool
 }.
 
 (* a boolean on the facts of the negroot, false without one *)
@@ -148,19 +148,21 @@ Definition shape_of (F : numFieldType) (r : posroot F) (fs : rfacts r) :=
   Shape (isSome (rf_real fs)) (isSome (rf_odd fs)) (isSome (rf_neg fs))
     (wbit (fun w h => isSome (wf_cyc h)) (rf_neg fs))
     (wbit (fun w h => isSome (wf_prim h)) (rf_neg fs))
-    (wbit (fun w h => isSome (wf_sqrt h)) (rf_neg fs))
-    (wbit (fun w h => isSome (wf_small h)) (rf_neg fs)).
+    (wbit (fun w h => isSome (wf_small h)) (rf_neg fs))
+    (wbit (fun w h => isSome (wf_gauss h)) (rf_neg fs)).
 
 (* The checkers *)
 
+(* the Gauss-sum mode (GaussMode.v), only when the cyclotomic checker fails *)
+Definition gauss_or (s : shape) (o : option (seq cond)) (e1 e2 : rexpr) :
+    option (seq cond) :=
+  if o is Some cs then Some cs
+  else if sh_gauss s then radcan_check_gauss e1 e2 else None.
+
 Definition radcan_check_w (s : shape) (e1 e2 : rexpr) : option (seq cond) :=
   if sh_cyc s then
-    if sh_sqrt s then
-      if sh_prim s then (* CycloInv: cyc2, conditions filtered *)
-        if radcan_check_negs e1 e2 is Some cs then Some (cyc_cfilter cs)
-        else radcan_check_cyc2 e1 e2
-      else radcan_check_negs e1 e2
-    else if sh_prim s then radcan_check_cyc2 e1 e2 (* CycloInv *)
+    if sh_prim s then
+      gauss_or s (radcan_check_cyc2 e1 e2) e1 e2 (* CycloInv, Gauss *)
     else radcan_check_negc e1 e2
   else radcan_check_neg e1 e2.
 
@@ -192,17 +194,12 @@ Lemma radcan_eq_cond_w (w : negroot r) (h : wfacts w) e1 e2 cs :
     = Some cs ->
   all_conds r env cs -> ri e1 = ri e2.
 Proof.
-case: h => hc hp hq hm; rewrite /radcan_check_w => H Hc.
+case: h => hc hp hm hg; rewrite /radcan_check_w => H Hc.
 case: hc H => [cy|] H; last exact: (radcan_eq_cond_neg w H Hc).
-case: hq H => [sq|] H.
-  case: hp H => [cp|] H; last exact: (radcan_eq_cond_negs cy sq H Hc).
-  (* CycloInv *)
-  case E : (radcan_check_negs e1 e2) H => [cs'|] H; last first.
-    exact: (radcan_eq_cond_cyc2 cy cp H Hc).
-  case: H Hc => <- /(cyc_cfilter_cyc cy cp).
-  exact: (radcan_eq_cond_negs cy sq E).
-case: hp H => [cp|] H; first exact: (radcan_eq_cond_cyc2 cy cp H Hc).
-exact: (radcan_eq_cond_negc cy H Hc).
+case: hp H => [cp|] H; last exact: (radcan_eq_cond_negc cy H Hc).
+(* CycloInv, then Gauss *)
+case/ocase_some: H => H; first exact: (radcan_eq_cond_cyc2 cy cp H Hc).
+case: hg H => // gs H; exact: (radcan_eq_cond_gauss cy cp gs H Hc).
 Qed.
 
 Theorem radcan_eq_cond_shape (pre : bool) (fs : rfacts r) e1 e2 cs :
@@ -227,9 +224,9 @@ Qed.
 Lemma pre_omega_ok (fs : rfacts r) :
   pre_omega (shape_of fs) -> omega_ok r env.
 Proof.
-case: fs => hr ho [[w [hc hp hq [hv _|]]]|]; first exact: omega_ok_small hv.
-  by rewrite /pre_omega /= !(andbF, andFb).
-by rewrite /pre_omega /= !(andbF, andFb).
+case: fs => hr ho [[w [hc hp [hv|] hg]]|] Hs.
+  exact: omega_ok_small hv.
+all: by move: Hs; rewrite /pre_omega /= !(andbF, andFb).
 Qed.
 
 Lemma pre_real_ok (fs : rfacts r) : pre_real (shape_of fs) -> realroot r.

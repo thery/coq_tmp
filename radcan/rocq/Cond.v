@@ -9,14 +9,10 @@
 (*                      irreducible basis (M16) is tried last                 *)
 (*   radcan_check_negc  == MNegC, MNegCW (omega atoms merged across indices), *)
 (*                      then radcan_check_neg                                 *)
-(*   radcan_check_negs  == MNegS (MNegC, then sqrt 2, 3, 5 in roots of -1     *)
-(*                      when the normal forms differ), then radcan_check_negc *)
 (*   radcan_eq_cond, radcan_eq_cond0, radcan_eq_cond_odd,                     *)
 (*   radcan_eq_cond_neg, radcan_eq_cond_real == the decision theorems         *)
 (*   radcan_eq_cond_negc == the same for radcan_check_negc, given a negroot w *)
 (*                      with the index law cycroot w (OmegaRoot2.v)           *)
-(*   radcan_eq_cond_negs == the same for radcan_check_negs, given also       *)
-(*                      sqrtroot w (OmegaRoot2.v)                             *)
 (******************************************************************************)
 
 From Stdlib Require Import BinNums BinPos BinInt ZArith Lia.
@@ -63,13 +59,6 @@ Definition radcan_check_negc (e1 e2 : rexpr) : option (seq cond) :=
   else if radcan_check_rootf true MNegC e1 e2 is Some cs then Some cs
   else if radcan_check_rootf true MNegCW e1 e2 is Some cs then Some cs
   else radcan_check_neg e1 e2.
-
-(* then sqrt 2, sqrt 3, sqrt 5 as sums of roots of -1 (Omega6) *)
-Definition radcan_check_negs (e1 e2 : rexpr) : option (seq cond) :=
-  if no_root e1 && no_root e2 then radcan_check0 e1 e2
-  else if radcan_check_root MNegS e1 e2 is Some cs then Some cs
-  else if radcan_check_rootf true MNegS e1 e2 is Some cs then Some cs
-  else radcan_check_negc e1 e2.
 
 (* real fields: absolute values first (MRealA), then MReal *)
 Definition radcan_check_real (e1 e2 : rexpr) : option (seq cond) :=
@@ -146,25 +135,6 @@ Theorem radcan_eq_negc (F : numFieldType) (r : posroot F) (w : negroot r)
     (cy : cycroot w) (env : seq F) e1 e2 :
   radcan_check_negc e1 e2 = Some [::] -> rinterp r env e1 = rinterp r env e2.
 Proof. by move/(radcan_eq_cond_negc cy); apply. Qed.
-
-Theorem radcan_eq_cond_negs (F : numFieldType) (r : posroot F)
-    (w : negroot r) (cy : cycroot w) (sq : sqrtroot w) (env : seq F)
-    e1 e2 cs :
-  radcan_check_negs e1 e2 = Some cs -> all_conds r env cs ->
-  rinterp r env e1 = rinterp r env e2.
-Proof.
-have hw := cycroot_windex cy; have hs := sqrtroot_wsqrt sq.
-rewrite /radcan_check_negs; case: ifP => n0 H Hc.
-  exact: (radcan_check0_sound H (all_conds_bridge Hc)).
-case/ocase_some: H => H; first exact: radcan_eq_cond_root H Hc.
-case/ocase_some: H => H; first exact: radcan_eq_cond_rootf H Hc.
-by move: H Hc; exact: (@radcan_eq_cond_negc F r w cy env e1 e2 cs).
-Qed.
-
-Theorem radcan_eq_negs (F : numFieldType) (r : posroot F) (w : negroot r)
-    (cy : cycroot w) (sq : sqrtroot w) (env : seq F) e1 e2 :
-  radcan_check_negs e1 e2 = Some [::] -> rinterp r env e1 = rinterp r env e2.
-Proof. by move/(radcan_eq_cond_negs cy sq); apply. Qed.
 
 Theorem radcan_eq_cond_real (F : numFieldType) (r : posroot F)
     (rl : realroot r) (env : seq F) e1 e2 cs :

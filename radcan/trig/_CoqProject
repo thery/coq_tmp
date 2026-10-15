@@ -1,0 +1,6 @@
+-R ../rocq Radcan
+-R . RadcanTrig
+-arg -w -arg -notation-overridden,-ambiguous-paths,-deprecated
+-arg -native-compiler -arg no
+
+TrigBridge.v
