@@ -35,4 +35,5 @@ Lemma sqrt2_sqrt3_R :
 Proof. exact: sqrt2_sqrt3. Qed.
 Lemma sqrt2_sqrt3_C : 2.-root 2 * 2.-root 3 = 2.-root 6 :> C.
 Proof. by rewrite -!rootC_posrootE sqrt2_sqrt3. Qed.
+
 End Tutorial2.
