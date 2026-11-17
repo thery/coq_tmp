@@ -31,18 +31,23 @@ Elpi Accumulate lp:{{
   read-all I [] :- eof I, !.
   read-all I [X | L] :- input_line I X, read-all I L.
 
-  % [drop-until P L R]: R is L from its first element satisfying P
-  pred drop-until i:(string -> prop), i:list string, o:list string.
-  drop-until _ [] [].
-  drop-until P [X | L] [X | L] :- P X, !.
-  drop-until P [_ | L] R :- drop-until P L R.
+  % the lines of the title and of the list items
+  pred title-line i:string.
+  title-line L :- rex.match "^# " L.
+  pred item-line i:string.
+  item-line L :- rex.match "^ *[-*] " L.
 
-  % [split-until P L A B]: L = A ++ B, B starting at the first element
-  % satisfying P
-  pred split-until i:(string -> prop), i:list string, o:list string, o:list string.
-  split-until _ [] [] [].
-  split-until P [X | L] [] [X | L] :- P X, !.
-  split-until P [X | L] [X | A] B :- split-until P L A B.
+  % [from-title L R]: R is L from its title line
+  pred from-title i:list string, o:list string.
+  from-title [] [].
+  from-title [X | L] [X | L] :- title-line X, !.
+  from-title [_ | L] R :- from-title L R.
+
+  % [until-item L A B]: L = A ++ B, B starting at the first list item
+  pred until-item i:list string, o:list string, o:list string.
+  until-item [] [] [].
+  until-item [X | L] [] [X | L] :- item-line X, !.
+  until-item [X | L] [X | A] B :- until-item L A B.
 
   pred trim i:string, o:string.
   trim S T :- rex.replace "^[ \t]+" "" S S1, rex.replace "[ \t]+$" "" S1 T.
@@ -58,16 +63,17 @@ Elpi Accumulate lp:{{
 
   pred field i:list string, i:string, o:string.
   field H K V :-
-    std.mem H L, rex.match ("^ *" ^ K ^ ":") L, !,
-    rex.replace ("^ *" ^ K ^ ": *") "" L V0, trim V0 V.
+    Re is "^ *" ^ K ^ ":", Re1 is "^ *" ^ K ^ ": *",
+    std.mem H L, rex.match Re L, !,
+    rex.replace Re1 "" L V0, trim V0 V.
   field _ _ "".
 
   % the title, the statement and the steps of the proof
   pred body i:list string, o:string, o:string, o:list string.
   body Ls Name Stmt Steps :-
-    drop-until (rex.match "^# ") Ls [T | R],
+    from-title Ls [T | R],
     rex.replace "^# *" "" T Name0, trim Name0 Name,
-    split-until (rex.match "^ *[-*] ") R S Items,
+    until-item R S Items,
     std.filter S (l\ sigma t\ trim l t, not (t = "")) S1,
     std.map S1 trim S2, std.string.concat " " S2 Stmt,
     items-of Items Steps.
@@ -77,7 +83,7 @@ Elpi Accumulate lp:{{
   items-of [] [].
   items-of [L | R] [It | Its] :-
     rex.replace "^ *[-*] +" "" L L1,
-    split-until (rex.match "^ *[-*] ") R Cont R1,
+    until-item R Cont R1,
     std.map Cont trim Cont1, std.string.concat " " [L1 | Cont1] It0, trim It0 It,
     items-of R1 Its.
 
@@ -89,7 +95,7 @@ Elpi Accumulate lp:{{
   type pform string -> piece.
 
   pred pieces i:string, o:list piece.
-  pieces S P :- chars S 0 {size S} "" ff P.
+  pieces S P :- N is size S, chars S 0 N "" ff P.
 
   % [chars S I N Acc InFormula P]: the pieces of S from position I
   pred chars i:string, i:int, i:int, i:string, i:bool, o:list piece.

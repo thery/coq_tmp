@@ -44,5 +44,24 @@ a backward step a proof of `C -> Goal` applied to the proof of `C`.
 
 Build: `rocq c -R . CypV Cyp.v`, then the examples.
 
-Not yet: local scopes (Let/Assume), French and Italian words, a printer
-writing the Markdown version.
+## Cyp File: the Markdown proof itself, read inside Rocq
+
+```coq
+From Stdlib Require Import ZArith Lia.
+Require Import CypFile.
+Open Scope Z_scope.
+Elpi CypFile "sq.md".
+```
+
+reads [sq.md](sq.md), a cyp proof in Markdown, parses each formula between
+backticks in the context of its step (`coq.parse.argument`, the scope of
+the header's `scope:` field), checks the steps as above and defines
+`square_pos_md` as a theorem.  The Markdown stays the only source.
+
+[CypFile.v](CypFile.v) needs `coq.parse.argument`, which is in coq-elpi's
+pull request LPCIC/coq-elpi#1133 (Elpi 4.0): it is built in the opam
+switch `elpi4` (Rocq 9.3, Elpi 4.0.0, rocq-elpi pinned to the branch
+coq-parse-argument); the rest of this directory builds in either switch.
+
+Not yet: nested steps and local scopes, the header's `by:` and `rules:`,
+French and Italian words, and writing the checked Markdown back.
