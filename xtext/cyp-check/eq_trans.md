@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.inductive.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 by: tauto | congruence | lia | firstorder | auto
 ---
 

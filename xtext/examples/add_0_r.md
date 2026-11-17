@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.lemmas.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -16,5 +16,5 @@ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
       - By definition of eq (eq_refl), we have `S m = S m`{.claim} *by eapply @eq_refl; eauto*.
       - By IH we have `m + 0 = m`{.claim}.
       - Rewriting with `m + 0 = m`{.fact} from right to left (eq_ind_r), we get `S (m + 0) = S m`{.claim}.
-- These cases being exhaustive, we deduce `forall n0 : nat, n0 + 0 = n0`{.claim}.
+- These cases being exhaustive, we deduce `forall n0 : nat, n0 + 0 = n0`{.claim} *by eapply (@nat_ind (fun n0 : nat => n0 + 0 = n0)); cbv beta; eauto*.
 - In particular `n + 0 = n`{.claim}.

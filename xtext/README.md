@@ -33,7 +33,8 @@ make          # builds Explain.vo, then paper.v, lemmas.v, inductive.v, which wr
 Files: `xtext.elpi` (the transducer), `Explain.v` (the command),
 `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
 `inductive.v` (induction, case analysis, rewriting, fix), `examples/`
-(the 24 texts produced), `cyp-check/` (cyp's results).
+(the 24 texts produced), `cyp-check/` (cyp's results); see also
+`thesis.v`, `stdlib.v` and `exp_examples.v` below (76 texts in all).
 
 ## The output
 
@@ -146,8 +147,11 @@ They replace the paper's rules for introduction and elimination theorems.
   recursive call f) we have τ`, and a `match` whose case calls `f` is an
   inductive case.  Nothing checks that the calls are on smaller
   arguments, since Rocq already did.
-- A case analysis on a variable `b` gets the justification `*by
-  destruct b; assumption*`, so that cyp can close it.
+- The closing step of an elimination (`These cases being exhaustive, we
+  deduce ...`, `We have τ in all cases`) gets a justification built from
+  the elimination: `*by eapply (@T params motive); cbv beta; eauto*` for an
+  elimination theorem `T`, which closes it from the case claims, and
+  `*by destruct x; cbn; eauto*` for a `match` on a variable `x`.
 - Intro patterns leave redexes `fun h => (fun i => M) h`; they are reduced
   and the user's name `i` is kept.  Other redexes are cuts and are
   rendered with the application rules.  Casts are skipped; `let x := N in
@@ -186,29 +190,251 @@ XText"` so that the `Require Import XText.<file>` of the header works):
 | imp_trans | 5 | 5 | 0 | 0 |
 | eq_trans | 3 | 3 | 0 | 0 |
 | bool_cases | 8 | 7 | 0 | 1 |
-| add_0_r | 11 | 5 | 0 | 6 |
-| plus_n_Sm | 11 | 5 | 0 | 6 |
-| le_0_m | 8 | 4 | 0 | 4 |
-| le_n_S | 8 | 4 | 0 | 4 |
-| or_commut | 8 | 3 | 0 | 5 |
-| or_swap | 8 | 3 | 0 | 5 |
-| app_nil_r | 12 | 3 | 2 | 7 |
-| praeclarum | 11 | 1 | 0 | 10 |
-| nearly_reflexive | 11 | 1 | 0 | 10 |
-| le_0_n_fix | 11 | 1 | 0 | 10 |
-| length_app_fix | 15 | 0 | 10 | 5 |
+| add_0_r | 11 | 8 | 0 | 3 |
+| plus_n_Sm | 11 | 8 | 0 | 3 |
+| le_0_m | 8 | 5 | 0 | 3 |
+| le_n_S | 8 | 5 | 0 | 3 |
+| or_commut | 8 | 5 | 0 | 3 |
+| or_swap | 8 | 5 | 0 | 3 |
+| app_nil_r | 12 | 8 | 0 | 4 |
+| praeclarum | 11 | 9 | 0 | 2 |
+| nearly_reflexive | 11 | 9 | 0 | 2 |
+| le_0_n_fix | 11 | 8 | 0 | 3 |
+| length_app_fix | 15 | 9 | 1 | 5 |
 
-- *Not checked*: steps under an `Assume` or a `Let` inside the proof.  cyp
-  has hypotheses and variables only in the statement.
-- `app_nil_r`: the inductive case and the closing step are true, but
-  cyp's tactics (`tauto | congruence | lia | firstorder | auto`) do not
-  prove them: they need `simpl` or an induction.
-- `length_app_fix`: the body of the fix starts with `Let A` and
-  `Let l1 l2`, and the cases that follow mention `l2`, a variable cyp does
-  not know, so Rocq gives errors.  This is the same limit of cyp as above,
-  made visible.
+- *Not checked*: lines with no claim (`Let`, `Assume`, the announcement
+  of a case analysis) and the cases' own closing.
+- `length_app_fix`: the red step is the recursive call, `By induction
+  hypothesis (the recursive call length_app') we have ...`: it states
+  the theorem itself, which cyp cannot prove without the fix.
 - cyp proves each claim again with its own tactics, so a green step says
   that the claim follows, not that it follows the way the text says.
+
+## The examples of the two theses (`thesis.v`)
+
+The proof terms are written as close as possible to the λ-terms of the
+theses.
+
+**Tauto** (Coscoy, Fig. 1.5, 2.6, 2.8, 2.11): `fun A B C h1 h2 h3 => h3 h1 h2`.
+- Same: the statement (`Let A B C`, `Assume A (h1) and B (h2) and A -> B -> C (h3)`).
+- Different: the thesis writes one step, `En appliquant l'hypothèse h3 à
+  h1 et h2 nous avons C` (its application-to-variables rule).  xtext
+  writes the three hypotheses as dashed lines, then `We deduce C`, so
+  that every formula is shown.  The thesis's closing `Nous avons montré
+  ∀A, B, C ...` is the statement here.
+
+**Trans_Inv** (Coscoy, Fig. 3.5-3.13 and the final form, Fig. 5.11):
+`fun E R h x y z h1 h2 => h z y x h2 h1`, with `Rel`, `Trans`, `Inv` as
+in the thesis.
+- Same: the binders (`Let E : Set`, `Let R : Rel E`, `Assume Trans E R
+  (h)`, `Let x y z : E`, `Assume Inv E R x y (h1) and Inv E R y z (h2)`),
+  the two hypotheses used, then the application of `h`.
+- Already there: the type that a step proves is the one Rocq computes
+  (`In particular R z y -> R y x -> R z x`, `We prove R z x`), so the
+  unfolded form is shown, like the thesis's inherited types (3.3.2).
+- Missing: the thesis's `ce qui est équivalent à`.  Fig. 5.11 says
+  `Montrons (Trans E (Inv E R)), ce qui est équivalent à ∀x, y, z ...`
+  and `Montrons (R z x), ce qui est équivalent à (Inv R x z)`.  xtext states
+  the body's type `R z x` only, and never links `Trans E R` (from `By h`)
+  to its unfolding `forall x y z, ...`: the δ-conversion is silent.  This
+  is the "Cast'" of the thesis (5.2.2), queued as the next round.  Also
+  missing: the specialisation `h z y x` is not said with the names of the
+  instances (`En appliquant h à z, y, x, h2 et h1`).
+
+**ABCD** (Coscoy, Fig. 4.28, 5.5, 5.6):
+`fun A B C D h1 h2 h3 h4 => h1 h4 (h2 h4 (h3 h4)) (h3 h4)`.
+- Same: the same three intermediate results, in the same order
+  (`C`, then `B` from `h2`, then `C` again, then `D`).
+- Different: the thesis names them (`P1`, `P2`, `P3`) and writes one line
+  each (`En appliquant h3 à h4, nous avons C (P1)`); xtext nests them as
+  dashed subproofs with the hypotheses shown.  The thesis's Fig. 5.6 has a
+  typo (`D (h4)` for `A (h4)`).
+
+**or_com** (Coscoy, Fig. 6.2, 6.3, 6.5):
+`fun A B H => or_ind (fun H0 => or_intror H0) (fun H0 => or_introl H0) H`.
+- Same as Fig. 6.5 (ElimOpen / ElimCase / ElimClose): `We prove B \/ A by
+  case analysis on A \/ B (H)`, two cases with `Assume A (H0)` and `By
+  definition of or ..., from A (H0) we deduce B \/ A`, then `We have B \/ A
+  in all cases`.
+- Different: the names of the rules are given, and each case states its
+  goal (`Case 1: we prove A -> B \/ A`).
+
+**or_sym_nd** (Théry, Fig. 3.3): `a \/ b -> b \/ a` with a `match`.
+The thesis's text: `Supposons a ∨ b (1) / a ∨ b par (1) / Il y a donc deux
+cas / Si a (2) / a par (2) / donc b ∨ a évidemment / Si b (3) ... / nous
+avons b ∨ a dans les deux cas / nous avons prouvé a ∨ b ⊃ b ∨ a`.  xtext
+gives the same steps in the same order, except the first `a ∨ b par (1)`,
+which is in the case-analysis line (`on a \/ b (H1)`), and the
+hypothesis of the implication, which is in the statement.
+
+**praeclarum_nd** (Théry, section 3.3.3):
+`conj (proj1 H1 (proj1 H2)) (proj2 H1 (proj2 H2))`.  The thesis's final
+text: `x par (2) / Nous en déduisons z par (1) / y par (2) / Nous en
+déduisons t par (1) / Ceci réuni donne z ∧ t`.  Same structure (two
+modus ponens, then the conjunction), but `proj1` and `proj2` are Rocq
+theorems, not rules, so each ∧-elimination costs xtext two lines (`Using
+proj1 we get ...`, `In particular ...`) where the thesis writes `par (1)`.
+
+**ADD0** (Théry, section 4.9.2, HOL): `nat_ind (fun m => m + 0 = m)
+eq_refl (fun m IH => f_equal S IH) m`.  An induction with a base case and
+an inductive case, as in the thesis's HOL session.  Coscoy's rules
+(6.3.3, 6.3.4) give the generalised statement, `(base)` and
+`(inductive)`, and `Assume by induction hypothesis m0 + 0 = m0 (IH)`.
+
+### xtext's wordings and Théry's Figures 3.4-3.6
+
+| rule | Théry 1994 | xtext |
+|---|---|---|
+| ∧ intro | `ceci réuni donne A ∧ B` | `So by definition of and (conj), we have A /\ B` |
+| ∨ intro | `donc, A ∨ B évidemment` | `By definition of or (or_introl), ... we have A \/ B` |
+| ⊃ intro | `Supposons A (i)` ... `nous avons prouvé A ⊃ B` | `Assume A (i)` ... `We have proved A -> B` |
+| ¬ intro | `Supposons A (j)` ... `d'où ¬A (en niant j)` | as ⊃ intro: `Assume A (j)` ... `We have proved A -> False` |
+| ∀ intro | `Considérons un c arbitraire` ... `comme c était arbitraire, nous avons ∀x A` | `Let us consider an arbitrary c : T` ... `We have τ, since c is arbitrary` |
+| ∃ intro | `par conséquent ∃x A` | `By definition of ex (ex_intro) with witness c, we have ...` |
+| ∧ elim | `A ∧ B, donc C` | one case: `Going back to the definition of and ... in A /\ B (h)`; with `proj1`: `Using proj1`, `In particular` |
+| ∨ elim | `Il y a donc deux cas: si A (k) ... si B (l) ... nous avons C dans les deux cas` | `We prove C by case analysis on A \/ B (h) ...: Case 1 ... Case 2 ... We have C in all cases` |
+| ⊃ elim | `nous en déduisons B` | `We deduce B` |
+| ¬ elim | `il y a une contradiction` | `We deduce False` |
+| ∀ elim | `en particulier A[x\e]` | `In particular A[x\e]` |
+| ∃ elim | `Dans ceci, choisissons c, tel que A[x\c] (m)` ... `(indépendamment de c)` | `Going back to the definition of ex ... Let us consider an arbitrary c ... Assume A (m)` |
+| ⊥ elim | `(donc C)` | `By contradiction (False, ...), from False (f) we can deduce C` |
+| closure | `A par (n)` | `By n we have A` |
+
+The structure is the same as xtext's (the paper of 1995 descends from it):
+a hypothesis opens an indented block, a rule with several premises lists
+them, then states its conclusion.  The differences: xtext names the
+constructors and theorems, has no special words for `¬` (a negation is
+an implication to `False` in Rocq), and states the goal of each case.
+
+Future work, not done: the text of an **incomplete proof** (section 3.3.3),
+where each open goal is written `Prouvez G` at its place (`Supposons (x ⊃
+z) ∧ (y ⊃ t) (1) / Supposons x ∧ y (2) / Prouvez z / Prouvez t / Ceci
+réuni donne z ∧ t`).
+
+## More examples: theses, Stdlib, CORE-MATH
+
+Files: `thesis.v` (the theses' examples, above), `stdlib.v` (40 lemmas
+of Rocq's Stdlib, explained from the library itself: `Time Explain
+app_assoc to ...`), `exp_examples.v` (5 lemmas of the CORE-MATH exp
+proof, read from its compiled `.vo` files, not in `make all`: `make
+exp_examples.vo`).  `measure.sh f.v` prints, for each text, the time of
+`Explain` (Rocq's `Time`), the number of list items and the size;
+`cyprun.sh` and `cyprun_exp.sh` run cyp (300 s per text for the theses and
+Stdlib, 600 s for CORE-MATH).  For the CORE-MATH texts, the header of the
+copy checked by cyp also loads Reals, Flocq and the exp files: the header
+written by xtext only requires the file of the theorem, and its notations
+(`%R`) are then unknown.
+
+`thesis.v`:
+
+| example | items | chars | time (s) | cyp proved / not proved / not checked |
+|---|---|---|---|---|
+| Tauto | 4 | 417 | 0.025 | 4 / 0 / 0 |
+| Trans_Inv | 5 | 561 | 0.01 | 5 / 0 / 0 |
+| ABCD | 12 | 720 | 0.01 | 12 / 0 / 0 |
+| or_com | 8 | 807 | 0.012 | 5 / 0 / 3 |
+| or_sym_nd | 8 | 755 | 0.01 | 5 / 0 / 3 |
+| praeclarum_nd | 17 | 1220 | 0.018 | 17 / 0 / 0 |
+| ADD0 | 12 | 1163 | 0.019 | 9 / 0 / 3 |
+
+`stdlib.v`:
+
+| example | items | chars | time (s) | cyp proved / not proved / not checked |
+|---|---|---|---|---|
+| std_app_assoc | 38 | 3575 | 0.102 | 32 / 0 / 6 |
+| std_app_nil_r | 30 | 2712 | 0.055 | 25 / 0 / 5 |
+| std_app_comm_cons | 1 | 382 | 0.007 | 1 / 0 / 0 |
+| std_rev_involutive | 15 | 1661 | 0.044 | 11 / 0 / 4 |
+| std_rev_app_distr | 18 | 2186 | 0.018 | 14 / 0 / 4 |
+| std_length_rev | 18 | 2232 | 0.015 | 1 / 13 / 4 |
+| std_map_app | 15 | 1945 | 0.017 | 9 / 0 / 6 |
+| std_map_map | 12 | 1802 | 0.014 | 8 / 0 / 4 |
+| std_length_app | 16 | 1969 | 0.015 | 1 / 9 / 6 |
+| std_in_app_or | 31 | 3278 | 0.042 | 18 / 1 / 12 |
+| std_in_or_app | 69 | 5983 | 0.051 | 48 / 0 / 21 |
+| std_in_map | 36 | 3149 | 0.026 | 23 / 0 / 13 |
+| std_in_eq | 4 | 465 | 0.003 | 2 / 0 / 2 |
+| std_in_cons | 4 | 453 | 0.004 | 1 / 0 / 3 |
+| std_Nat_add_comm | 196 | 23612 | 0.159 | 81 / 107 / 8 |
+| std_Nat_add_assoc | 265 | 33470 | 0.333 | 102 / 154 / 9 |
+| std_Nat_mul_comm | 196 | 23620 | 0.23 | 81 / 107 / 8 |
+| std_Nat_le_trans | 484 | 77260 | 0.499 | timeout (300s) |
+| std_Nat_add_0_r | 138 | 15887 | 0.149 | 59 / 73 / 6 |
+| std_Nat_add_succ_r | 202 | 24435 | 0.18 | 85 / 109 / 8 |
+| std_Nat_le_refl | 19 | 1865 | 0.014 | 7 / 10 / 2 |
+| std_Nat_lt_irrefl | 42 | 5456 | 0.032 | 30 / 9 / 3 |
+| std_Nat_mul_1_r | 118 | 13560 | 0.112 | 41 / 73 / 4 |
+| std_Nat_pred_succ | 1 | 288 | 0.003 | 1 / 0 / 0 |
+| std_plus_n_O | 12 | 1142 | 0.008 | 9 / 0 / 3 |
+| std_plus_n_Sm | 12 | 1293 | 0.009 | 9 / 0 / 3 |
+| std_andb_comm | 16 | 1568 | 0.007 | 13 / 0 / 3 |
+| std_orb_comm | 16 | 1563 | 0.007 | 13 / 0 / 3 |
+| std_negb_involutive | 6 | 700 | 0.005 | 5 / 0 / 1 |
+| std_andb_true_r | 6 | 676 | 0.003 | 5 / 0 / 1 |
+| std_orb_false_r | 6 | 681 | 0.003 | 5 / 0 / 1 |
+| std_andb_assoc | 36 | 3838 | 0.016 | 29 / 0 / 7 |
+| std_negb_andb | 16 | 1785 | 0.008 | 13 / 0 / 3 |
+| std_and_comm | 11 | 1078 | 0.147 | 7 / 0 / 4 |
+| std_or_comm | 21 | 1559 | 0.01 | 13 / 0 / 8 |
+| std_and_assoc | 21 | 1933 | 0.014 | 15 / 0 / 6 |
+| std_or_assoc | 39 | 3098 | 0.02 | 25 / 0 / 14 |
+| std_eq_sym | 2 | 425 | 0.003 | 2 / 0 / 0 |
+| std_eq_trans | 2 | 399 | 0.003 | 2 / 0 / 0 |
+| std_f_equal | 2 | 464 | 0.003 | 2 / 0 / 0 |
+
+`exp_examples.v`:
+
+| example | items | chars | time (s) | cyp proved / not proved / not checked |
+|---|---|---|---|---|
+| exp_round_one | 26 | 4370 | 0.037 | 5 / 15 / 6 |
+| exp_succ_one | 13 | 2149 | 0.141 | 11 / 2 / 0 |
+| exp_pred_x_small | 9 | 1837 | 0.311 | 8 / 1 / 0 |
+| exp_grid_plus | 23 | 4903 | 0.037 | 7 / 9 / 7 |
+| exp_rnd_same_half_cell | 379 | 90904 | 2.416 | timeout (600s) |
+
+What breaks or becomes unreadable on the large ones:
+
+- **Generated proofs are explained as they are.**  `Nat.add_comm`,
+  `Nat.mul_comm`, ... are proved with setoid rewriting: their texts (200-480
+  items) are mostly about `Morphisms.Proper`, `ProperProxy`,
+  `RelationClasses.Reflexive`, the internals of `rewrite`, not about
+  arithmetic.  The `lia`, `ring` and `interval` certificates of CORE-MATH
+  appear as local definitions (`Let __ff be Tauto.IMPL (...)`,
+  `RTautoChecker_sound` used 12 times in `rnd_same_half_cell`) and lines
+  of 1500-2200 characters.  Recognising such subproofs and writing `by lia`
+  is the tactic rule queued for the next round.
+- **Implicit arguments.**  Rocq prints `Equivalence eq` or `length [] =
+  0` without the type, and these formulas do not type-check again: cyp
+  marks them as errors, and all the steps after them too.  This is most of
+  the "not proved" of the `Nat.*` and `length_*` texts.  Dropping and
+  keeping arguments by re-elaboration is queued too.
+- **Local definitions** (`Let hyp_list be nil`) have no form in cyp, so a
+  later formula that uses `hyp_list` is a Rocq error.
+- **Size**: `Nat.le_trans` (484 items) and `rnd_same_half_cell` (379
+  items, 91 000 characters) are generated in 0.5 s and 2.4 s, but cyp
+  does not finish them within its limit (300 s and 600 s).
+
+### Fixes to the transducer in this round
+
+Each was needed by an example, and changes no rule of the paper or the
+thesis:
+
+- `tr` keeps its first answer and, when no rule applies to a subterm,
+  shows it unchanged.  `Rnd.grid_plus` took more than 15 minutes because a
+  failure deep in a `ring` certificate made the whole translation
+  backtrack; it now takes 0.04 s.
+- `let x := V in M` keeps `x` with its value in the context (before, it
+  was read as `(fun x => M) V`, and types under `x` were no longer
+  convertible: `rnd_same_half_cell` was left untranslated).  A local proof
+  is now a cut: its subproof, named `(x)`, then the rest.  This changes
+  the texts of `drinker` and `forall_and` (`destruct` on a term builds such
+  a `let`): one level less, and the cases come right after the cut.
+- The header also loads `Bool`, for the Stdlib boolean lemmas.
+- The `destruct x` justification is used only when `x` is not a proof:
+  cyp names hypotheses `H`, `H0`, ..., not as in the text (`or_sym_nd`).
+
+Regression: all 24 earlier texts are generated, and cyp gives the same
+counts as before on the 15 of `cyp-check/`.
 
 ## Not done
 

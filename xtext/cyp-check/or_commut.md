@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.paper.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -14,4 +14,4 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 - Case 2: we prove `B -> B \/ A`{.claim}.
   - Assume `B`{.hyp} (j).
     - By definition of or (or_introl), from `B`{.fact} (j) we deduce `B \/ A`{.claim} *by eapply @or_introl; eauto*.
-- We have `B \/ A`{.claim} in all cases.
+- We have `B \/ A`{.claim} in all cases *by eapply (@or_ind (A) (B) (B \/ A)); cbv beta; eauto*.

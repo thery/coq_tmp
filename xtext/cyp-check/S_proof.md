@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.paper.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 by: tauto | congruence | lia | firstorder | auto
 ---
 

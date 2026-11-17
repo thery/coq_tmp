@@ -1,0 +1,493 @@
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
+by: tauto | congruence | lia | firstorder | auto
+---
+
+# Nat.le_trans
+
+Let `n m p : nat`{.var}. We prove `Basics.impl (n <= m) (m <= p -> n <= p)`{.claim}.
+
+- In particular `n <= m <-> n < m \/ n = m`{.claim}.
+  - Using lt_eq_cases we get `forall n0 m0 : nat, n0 <= m0 <-> n0 < m0 \/ n0 = m0`{.claim} *by exact @lt_eq_cases*.
+- We deduce `Basics.impl (n < m \/ n = m) (m <= p -> n <= p)`{.claim}.
+  - In particular `m <= p <-> m < p \/ m = p`{.claim}.
+    - Using lt_eq_cases we get `forall n0 m0 : nat, n0 <= m0 <-> n0 < m0 \/ n0 = m0`{.claim} *by exact @lt_eq_cases*.
+  - We deduce `Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p)`{.claim}.
+    - In particular `n <= p <-> n < p \/ n = p`{.claim}.
+      - Using lt_eq_cases we get `forall n0 m0 : nat, n0 <= m0 <-> n0 < m0 \/ n0 = m0`{.claim} *by exact @lt_eq_cases*.
+    - We have proved `n < m \/ n = m -> m < p \/ m = p -> n < p \/ n = p`{.claim}.
+      - Assume `n < m \/ n = m`{.hyp} (H).
+        - We prove `m < p \/ m = p -> n < p \/ n = p`{.fact} by case analysis on `n < m \/ n = m`{.fact} (H) (or, match):
+        - Case 1: we prove `n < m -> m < p \/ m = p -> n < p \/ n = p`{.claim}.
+          - Assume `n < m`{.hyp} (LT) and `m < p \/ m = p`{.hyp} (H0).
+            - We prove `n < p \/ n = p`{.fact} by case analysis on `m < p \/ m = p`{.fact} (H0) (or, match):
+            - Case 1.1: we prove `m < p -> n < p \/ n = p`{.claim}.
+              - Assume `m < p`{.hyp} (LT').
+                - In particular `n < m -> m < p -> n < p`{.claim}.
+                  - Using lt_trans we get `forall n0 m0 p0 : nat, n0 < m0 -> m0 < p0 -> n0 < p0`{.claim} *by exact @lt_trans*.
+                - We have proved `(n < m -> m < p -> n < p) -> n < p \/ n = p`{.claim}.
+                  - Assume `n < m -> m < p -> n < p`{.hyp} (H1).
+                    - By LT we have `n < m`{.claim}.
+                    - By LT' we have `m < p`{.claim}.
+                    - By H1 we have `n < m -> m < p -> n < p`{.claim}.
+                    - We deduce `n < p`{.claim}.
+                    - By definition of or (or_introl), we have `n < p \/ n = p`{.claim} *by eapply @or_introl; eauto*.
+                - We deduce `n < p \/ n = p`{.claim}.
+            - Case 1.2: we prove `m = p -> n < p \/ n = p`{.claim}.
+              - Assume `m = p`{.hyp} (EQ').
+                - We deduce `n = p <-> n = m`{.claim}.
+                  - We deduce `p = m`{.claim}.
+                    - By EQ' we have `m = p`{.claim}.
+                    - In particular `m = p -> p = m`{.claim}.
+                      - We deduce `RelationClasses.Symmetric eq`{.claim}.
+                        - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                        - In particular `RelationClasses.Equivalence eq -> RelationClasses.Symmetric eq`{.claim}.
+                          - Using Equivalence_Symmetric we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Symmetric R`{.claim} *by exact @Equivalence_Symmetric*.
+                      - In particular `RelationClasses.Symmetric eq -> forall x y : nat, x = y -> y = x`{.claim}.
+                        - Using symmetry we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Symmetric R -> forall x y : A, R x y -> R y x`{.claim} *by exact @symmetry*.
+                      - We deduce `forall x y : nat, x = y -> y = x`{.claim}.
+                  - In particular `p = m -> n = p <-> n = m`{.claim}.
+                    - We deduce `RelationClasses.PER eq`{.claim}.
+                      - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                      - In particular `RelationClasses.Equivalence eq -> RelationClasses.PER eq`{.claim}.
+                        - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
+                    - In particular `RelationClasses.PER eq -> forall x : nat, Morphisms.Proper (Morphisms.respectful eq iff) (eq x)`{.claim}.
+                      - Using per_partial_app_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> forall x : A, Morphisms.Proper (Morphisms.respectful R iff) (R x)`{.claim} *by exact @per_partial_app_morphism*.
+                    - We deduce `forall x : nat, Morphisms.Proper (Morphisms.respectful eq iff) (eq x)`{.claim}.
+                - We deduce `n < m \/ n = m`{.claim}.
+                  - In particular `n < m -> m < p -> n < p`{.claim}.
+                    - Using lt_trans we get `forall n0 m0 p0 : nat, n0 < m0 -> m0 < p0 -> n0 < p0`{.claim} *by exact @lt_trans*.
+                  - We have proved `(n < m -> m < p -> n < p) -> n < m \/ n = m`{.claim}.
+                    - Assume `n < m -> m < p -> n < p`{.hyp} (H1).
+                      - By definition of or (or_introl), from `n < m`{.fact} (LT) we deduce `n < m \/ n = m`{.claim} *by eapply @or_introl; eauto*.
+                - In particular `n = p <-> n = m -> Basics.flip Basics.impl (n < p \/ n = p) (n < m \/ n = m)`{.claim}.
+                  - We deduce `n < p <-> n < m`{.claim}.
+                    - We deduce `p = m`{.claim}.
+                      - By EQ' we have `m = p`{.claim}.
+                      - In particular `m = p -> p = m`{.claim}.
+                        - We deduce `RelationClasses.Symmetric eq`{.claim}.
+                          - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                          - In particular `RelationClasses.Equivalence eq -> RelationClasses.Symmetric eq`{.claim}.
+                            - Using Equivalence_Symmetric we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Symmetric R`{.claim} *by exact @Equivalence_Symmetric*.
+                        - In particular `RelationClasses.Symmetric eq -> forall x y : nat, x = y -> y = x`{.claim}.
+                          - Using symmetry we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Symmetric R -> forall x y : A, R x y -> R y x`{.claim} *by exact @symmetry*.
+                        - We deduce `forall x y : nat, x = y -> y = x`{.claim}.
+                    - In particular `p = m -> n < p <-> n < m`{.claim}.
+                      - In particular `Morphisms.ProperProxy eq n`{.claim}.
+                        - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
+                          - We deduce `RelationClasses.Reflexive eq`{.claim}.
+                            - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                            - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
+                              - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
+                          - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
+                            - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+                        - In particular `Morphisms.ReflexiveProxy eq -> forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                          - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+                        - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                      - In particular `Morphisms.ProperProxy eq n -> Morphisms.Proper (Morphisms.respectful eq iff) (lt n)`{.claim}.
+                        - Using lt_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) lt`{.claim} *by exact @lt_wd*.
+                        - In particular `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) lt -> forall x : nat, Morphisms.ProperProxy eq x -> Morphisms.Proper (Morphisms.respectful eq iff) (lt x)`{.claim}.
+                          - Using Reflexive_partial_app_morphism we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m0 : A -> B), Morphisms.Proper (Morphisms.respectful R R') m0 -> forall x : A, Morphisms.ProperProxy R x -> Morphisms.Proper R' (m0 x)`{.claim} *by exact @Reflexive_partial_app_morphism*.
+                        - We deduce `forall x : nat, Morphisms.ProperProxy eq x -> Morphisms.Proper (Morphisms.respectful eq iff) (lt x)`{.claim}.
+                      - We deduce `Morphisms.Proper (Morphisms.respectful eq iff) (lt n)`{.claim}.
+                  - In particular `n < p <-> n < m -> Morphisms.respectful iff (Basics.flip Basics.impl) (or (n < p)) (or (n < m))`{.claim}.
+                    - We deduce `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                      - We deduce `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                        - Using iff_flip_impl_subrelation we get `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim} *by exact @iff_flip_impl_subrelation*.
+                        - In particular `RelationClasses.subrelation iff (Basics.flip Basics.impl) -> RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                          - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                            - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                          - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                            - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                          - We deduce `forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                      - In particular `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                        - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                          - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                        - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                          - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                        - We deduce `forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                    - In particular `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                      - Using or_iff_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or`{.claim} *by exact @or_iff_morphism*.
+                      - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or -> forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                        - Using subrelation_proper we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim} *by exact @subrelation_proper*.
+                      - We deduce `forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                    - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                  - We deduce `Morphisms.respectful iff (Basics.flip Basics.impl) (or (n < p)) (or (n < m))`{.claim}.
+                - We deduce `n < p \/ n = p`{.claim}.
+            - We have `n < p \/ n = p`{.claim} in all cases.
+        - Case 2: we prove `n = m -> m < p \/ m = p -> n < p \/ n = p`{.claim}.
+          - Assume `n = m`{.hyp} (EQ) and `m < p \/ m = p`{.hyp} (H0).
+            - We prove `n < p \/ n = p`{.fact} by case analysis on `m < p \/ m = p`{.fact} (H0) (or, match):
+            - Case 2.1: we prove `m < p -> n < p \/ n = p`{.claim}.
+              - Assume `m < p`{.hyp} (LT').
+                - We deduce `n = p <-> m = p`{.claim}.
+                  - In particular `Morphisms.ProperProxy eq p`{.claim}.
+                    - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
+                      - We deduce `RelationClasses.Reflexive eq`{.claim}.
+                        - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                        - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
+                          - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
+                      - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
+                        - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+                    - In particular `Morphisms.ReflexiveProxy eq -> forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                      - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+                    - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                  - In particular `p = p -> n = p <-> m = p`{.claim}.
+                    - By EQ we have `n = m`{.claim}.
+                    - In particular `n = m -> Morphisms.respectful eq iff (eq n) (eq m)`{.claim}.
+                      - We deduce `RelationClasses.PER eq`{.claim}.
+                        - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                        - In particular `RelationClasses.Equivalence eq -> RelationClasses.PER eq`{.claim}.
+                          - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
+                      - In particular `RelationClasses.PER eq -> Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
+                        - Using PER_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful R iff)) R`{.claim} *by exact @PER_morphism*.
+                      - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
+                    - We deduce `Morphisms.respectful eq iff (eq n) (eq m)`{.claim}.
+                - We deduce `m < p \/ m = p`{.claim}.
+                  - In particular `n < m -> m < p -> n < p`{.claim}.
+                    - Using lt_trans we get `forall n0 m0 p0 : nat, n0 < m0 -> m0 < p0 -> n0 < p0`{.claim} *by exact @lt_trans*.
+                  - We have proved `(n < m -> m < p -> n < p) -> m < p \/ m = p`{.claim}.
+                    - Assume `n < m -> m < p -> n < p`{.hyp} (H1).
+                      - By definition of or (or_introl), from `m < p`{.fact} (LT') we deduce `m < p \/ m = p`{.claim} *by eapply @or_introl; eauto*.
+                - In particular `n = p <-> m = p -> Basics.flip Basics.impl (n < p \/ n = p) (m < p \/ m = p)`{.claim}.
+                  - We deduce `n < p <-> m < p`{.claim}.
+                    - In particular `Morphisms.ProperProxy eq p`{.claim}.
+                      - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
+                        - We deduce `RelationClasses.Reflexive eq`{.claim}.
+                          - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                          - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
+                            - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
+                        - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
+                          - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+                      - In particular `Morphisms.ReflexiveProxy eq -> forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                        - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+                      - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                    - In particular `p = p -> n < p <-> m < p`{.claim}.
+                      - By EQ we have `n = m`{.claim}.
+                      - In particular `n = m -> Morphisms.respectful eq iff (lt n) (lt m)`{.claim}.
+                        - Using lt_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) lt`{.claim} *by exact @lt_wd*.
+                      - We deduce `Morphisms.respectful eq iff (lt n) (lt m)`{.claim}.
+                  - In particular `n < p <-> m < p -> Morphisms.respectful iff (Basics.flip Basics.impl) (or (n < p)) (or (m < p))`{.claim}.
+                    - We deduce `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                      - We deduce `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                        - Using iff_flip_impl_subrelation we get `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim} *by exact @iff_flip_impl_subrelation*.
+                        - In particular `RelationClasses.subrelation iff (Basics.flip Basics.impl) -> RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                          - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                            - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                          - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                            - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                          - We deduce `forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                      - In particular `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                        - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                          - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                        - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                          - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                        - We deduce `forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                    - In particular `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                      - Using or_iff_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or`{.claim} *by exact @or_iff_morphism*.
+                      - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or -> forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                        - Using subrelation_proper we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim} *by exact @subrelation_proper*.
+                      - We deduce `forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                    - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                  - We deduce `Morphisms.respectful iff (Basics.flip Basics.impl) (or (n < p)) (or (m < p))`{.claim}.
+                - We deduce `n < p \/ n = p`{.claim}.
+            - Case 2.2: we prove `m = p -> n < p \/ n = p`{.claim}.
+              - Assume `m = p`{.hyp} (EQ').
+                - We deduce `n = p <-> m = p`{.claim}.
+                  - In particular `Morphisms.ProperProxy eq p`{.claim}.
+                    - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
+                      - We deduce `RelationClasses.Reflexive eq`{.claim}.
+                        - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                        - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
+                          - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
+                      - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
+                        - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+                    - In particular `Morphisms.ReflexiveProxy eq -> forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                      - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+                    - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                  - In particular `p = p -> n = p <-> m = p`{.claim}.
+                    - By EQ we have `n = m`{.claim}.
+                    - In particular `n = m -> Morphisms.respectful eq iff (eq n) (eq m)`{.claim}.
+                      - We deduce `RelationClasses.PER eq`{.claim}.
+                        - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                        - In particular `RelationClasses.Equivalence eq -> RelationClasses.PER eq`{.claim}.
+                          - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
+                      - In particular `RelationClasses.PER eq -> Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
+                        - Using PER_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful R iff)) R`{.claim} *by exact @PER_morphism*.
+                      - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
+                    - We deduce `Morphisms.respectful eq iff (eq n) (eq m)`{.claim}.
+                - We deduce `m < p \/ m = p`{.claim}.
+                  - We deduce `m = p <-> m = m`{.claim}.
+                    - We deduce `p = m`{.claim}.
+                      - By EQ' we have `m = p`{.claim}.
+                      - In particular `m = p -> p = m`{.claim}.
+                        - We deduce `RelationClasses.Symmetric eq`{.claim}.
+                          - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                          - In particular `RelationClasses.Equivalence eq -> RelationClasses.Symmetric eq`{.claim}.
+                            - Using Equivalence_Symmetric we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Symmetric R`{.claim} *by exact @Equivalence_Symmetric*.
+                        - In particular `RelationClasses.Symmetric eq -> forall x y : nat, x = y -> y = x`{.claim}.
+                          - Using symmetry we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Symmetric R -> forall x y : A, R x y -> R y x`{.claim} *by exact @symmetry*.
+                        - We deduce `forall x y : nat, x = y -> y = x`{.claim}.
+                    - In particular `p = m -> m = p <-> m = m`{.claim}.
+                      - We deduce `RelationClasses.PER eq`{.claim}.
+                        - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                        - In particular `RelationClasses.Equivalence eq -> RelationClasses.PER eq`{.claim}.
+                          - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
+                      - In particular `RelationClasses.PER eq -> forall x : nat, Morphisms.Proper (Morphisms.respectful eq iff) (eq x)`{.claim}.
+                        - Using per_partial_app_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> forall x : A, Morphisms.Proper (Morphisms.respectful R iff) (R x)`{.claim} *by exact @per_partial_app_morphism*.
+                      - We deduce `forall x : nat, Morphisms.Proper (Morphisms.respectful eq iff) (eq x)`{.claim}.
+                  - We deduce `m < m \/ m = m`{.claim}.
+                    - In particular `n < m -> m < p -> n < p`{.claim}.
+                      - Using lt_trans we get `forall n0 m0 p0 : nat, n0 < m0 -> m0 < p0 -> n0 < p0`{.claim} *by exact @lt_trans*.
+                    - We have proved `(n < m -> m < p -> n < p) -> m < m \/ m = m`{.claim}.
+                      - Assume `n < m -> m < p -> n < p`{.hyp} (H1).
+                        - We deduce `RelationClasses.Reflexive eq`{.claim}.
+                          - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                          - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
+                            - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
+                        - In particular `RelationClasses.Reflexive eq -> forall x : nat, x = x`{.claim}.
+                          - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by exact @reflexivity*.
+                        - We deduce `forall x : nat, x = x`{.claim}.
+                        - In particular `m = m`{.claim}.
+                        - By definition of or (or_intror), we have `m < m \/ m = m`{.claim} *by eapply @or_intror; eauto*.
+                  - In particular `m = p <-> m = m -> Basics.flip Basics.impl (m < p \/ m = p) (m < m \/ m = m)`{.claim}.
+                    - We deduce `m < p <-> m < m`{.claim}.
+                      - We deduce `p = m`{.claim}.
+                        - By EQ' we have `m = p`{.claim}.
+                        - In particular `m = p -> p = m`{.claim}.
+                          - We deduce `RelationClasses.Symmetric eq`{.claim}.
+                            - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                            - In particular `RelationClasses.Equivalence eq -> RelationClasses.Symmetric eq`{.claim}.
+                              - Using Equivalence_Symmetric we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Symmetric R`{.claim} *by exact @Equivalence_Symmetric*.
+                          - In particular `RelationClasses.Symmetric eq -> forall x y : nat, x = y -> y = x`{.claim}.
+                            - Using symmetry we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Symmetric R -> forall x y : A, R x y -> R y x`{.claim} *by exact @symmetry*.
+                          - We deduce `forall x y : nat, x = y -> y = x`{.claim}.
+                      - In particular `p = m -> m < p <-> m < m`{.claim}.
+                        - In particular `Morphisms.ProperProxy eq m`{.claim}.
+                          - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
+                            - We deduce `RelationClasses.Reflexive eq`{.claim}.
+                              - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                              - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
+                                - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
+                            - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
+                              - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+                          - In particular `Morphisms.ReflexiveProxy eq -> forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                            - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+                          - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                        - In particular `Morphisms.ProperProxy eq m -> Morphisms.Proper (Morphisms.respectful eq iff) (lt m)`{.claim}.
+                          - Using lt_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) lt`{.claim} *by exact @lt_wd*.
+                          - In particular `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) lt -> forall x : nat, Morphisms.ProperProxy eq x -> Morphisms.Proper (Morphisms.respectful eq iff) (lt x)`{.claim}.
+                            - Using Reflexive_partial_app_morphism we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m0 : A -> B), Morphisms.Proper (Morphisms.respectful R R') m0 -> forall x : A, Morphisms.ProperProxy R x -> Morphisms.Proper R' (m0 x)`{.claim} *by exact @Reflexive_partial_app_morphism*.
+                          - We deduce `forall x : nat, Morphisms.ProperProxy eq x -> Morphisms.Proper (Morphisms.respectful eq iff) (lt x)`{.claim}.
+                        - We deduce `Morphisms.Proper (Morphisms.respectful eq iff) (lt m)`{.claim}.
+                    - In particular `m < p <-> m < m -> Morphisms.respectful iff (Basics.flip Basics.impl) (or (m < p)) (or (m < m))`{.claim}.
+                      - We deduce `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                        - We deduce `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                          - Using iff_flip_impl_subrelation we get `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim} *by exact @iff_flip_impl_subrelation*.
+                          - In particular `RelationClasses.subrelation iff (Basics.flip Basics.impl) -> RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                            - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                              - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                            - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                              - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                            - We deduce `forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                        - In particular `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                          - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                            - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                          - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                            - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                          - We deduce `forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                      - In particular `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                        - Using or_iff_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or`{.claim} *by exact @or_iff_morphism*.
+                        - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or -> forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                          - Using subrelation_proper we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim} *by exact @subrelation_proper*.
+                        - We deduce `forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                      - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                    - We deduce `Morphisms.respectful iff (Basics.flip Basics.impl) (or (m < p)) (or (m < m))`{.claim}.
+                - In particular `n = p <-> m = p -> Basics.flip Basics.impl (n < p \/ n = p) (m < p \/ m = p)`{.claim}.
+                  - We deduce `n < p <-> m < p`{.claim}.
+                    - In particular `Morphisms.ProperProxy eq p`{.claim}.
+                      - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
+                        - We deduce `RelationClasses.Reflexive eq`{.claim}.
+                          - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
+                          - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
+                            - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
+                        - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
+                          - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+                      - In particular `Morphisms.ReflexiveProxy eq -> forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                        - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+                      - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
+                    - In particular `p = p -> n < p <-> m < p`{.claim}.
+                      - By EQ we have `n = m`{.claim}.
+                      - In particular `n = m -> Morphisms.respectful eq iff (lt n) (lt m)`{.claim}.
+                        - Using lt_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) lt`{.claim} *by exact @lt_wd*.
+                      - We deduce `Morphisms.respectful eq iff (lt n) (lt m)`{.claim}.
+                  - In particular `n < p <-> m < p -> Morphisms.respectful iff (Basics.flip Basics.impl) (or (n < p)) (or (m < p))`{.claim}.
+                    - We deduce `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                      - We deduce `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                        - Using iff_flip_impl_subrelation we get `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim} *by exact @iff_flip_impl_subrelation*.
+                        - In particular `RelationClasses.subrelation iff (Basics.flip Basics.impl) -> RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                          - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                            - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                          - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                            - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                          - We deduce `forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                      - In particular `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                        - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                          - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                        - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                          - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                        - We deduce `forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                    - In particular `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                      - Using or_iff_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or`{.claim} *by exact @or_iff_morphism*.
+                      - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) or -> forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                        - Using subrelation_proper we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim} *by exact @subrelation_proper*.
+                      - We deduce `forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R or`{.claim}.
+                    - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) or`{.claim}.
+                  - We deduce `Morphisms.respectful iff (Basics.flip Basics.impl) (or (n < p)) (or (m < p))`{.claim}.
+                - We deduce `n < p \/ n = p`{.claim}.
+            - We have `n < p \/ n = p`{.claim} in all cases.
+        - We have `m < p \/ m = p -> n < p \/ n = p`{.claim} in all cases.
+    - We have proved `n <= p <-> n < p \/ n = p -> Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n < p \/ n = p))`{.claim}.
+      - Assume `n <= p <-> n < p \/ n = p`{.hyp} (lemma).
+        - We deduce `Basics.impl (m < p \/ m = p) (n <= p) <-> Basics.impl (m < p \/ m = p) (n < p \/ n = p)`{.claim}.
+          - By lemma we have `n <= p <-> n < p \/ n = p`{.claim}.
+          - In particular `n <= p <-> n < p \/ n = p -> Basics.impl (m < p \/ m = p) (n <= p) <-> Basics.impl (m < p \/ m = p) (n < p \/ n = p)`{.claim}.
+            - In particular `Morphisms.ProperProxy iff (m < p \/ m = p)`{.claim}.
+              - We deduce `Morphisms.ReflexiveProxy iff`{.claim}.
+                - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @iff_Reflexive*.
+                - In particular `RelationClasses.Reflexive iff -> Morphisms.ReflexiveProxy iff`{.claim}.
+                  - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+              - In particular `Morphisms.ReflexiveProxy iff -> forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+                - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+              - We deduce `forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+            - In particular `Morphisms.ProperProxy iff (m < p \/ m = p) -> Morphisms.Proper (Morphisms.respectful iff iff) (Basics.impl (m < p \/ m = p))`{.claim}.
+              - Using iff_iff_iff_impl_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim} *by exact @iff_iff_iff_impl_morphism*.
+              - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl -> forall x : Prop, Morphisms.ProperProxy iff x -> Morphisms.Proper (Morphisms.respectful iff iff) (Basics.impl x)`{.claim}.
+                - Using Reflexive_partial_app_morphism we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m0 : A -> B), Morphisms.Proper (Morphisms.respectful R R') m0 -> forall x : A, Morphisms.ProperProxy R x -> Morphisms.Proper R' (m0 x)`{.claim} *by exact @Reflexive_partial_app_morphism*.
+              - We deduce `forall x : Prop, Morphisms.ProperProxy iff x -> Morphisms.Proper (Morphisms.respectful iff iff) (Basics.impl x)`{.claim}.
+            - We deduce `Morphisms.Proper (Morphisms.respectful iff iff) (Basics.impl (m < p \/ m = p))`{.claim}.
+        - In particular `(m < p \/ m = p -> n <= p) <-> (m < p \/ m = p -> n < p \/ n = p) -> Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n < p \/ n = p))`{.claim}.
+          - In particular `Morphisms.ProperProxy iff (n < m \/ n = m)`{.claim}.
+            - We deduce `Morphisms.ReflexiveProxy iff`{.claim}.
+              - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @iff_Reflexive*.
+              - In particular `RelationClasses.Reflexive iff -> Morphisms.ReflexiveProxy iff`{.claim}.
+                - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+            - In particular `Morphisms.ReflexiveProxy iff -> forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+              - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+            - We deduce `forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+          - In particular `Morphisms.ProperProxy iff (n < m \/ n = m) -> Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl (n < m \/ n = m))`{.claim}.
+            - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+              - We deduce `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                - We deduce `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                  - Using iff_flip_impl_subrelation we get `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim} *by exact @iff_flip_impl_subrelation*.
+                  - In particular `RelationClasses.subrelation iff (Basics.flip Basics.impl) -> RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                    - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                      - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                    - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                      - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                    - We deduce `forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                - In particular `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                  - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                    - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                  - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                    - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                  - We deduce `forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+              - In particular `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+                - Using iff_iff_iff_impl_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim} *by exact @iff_iff_iff_impl_morphism*.
+                - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl -> forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R Basics.impl`{.claim}.
+                  - Using subrelation_proper we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim} *by exact @subrelation_proper*.
+                - We deduce `forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R Basics.impl`{.claim}.
+            - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl -> forall x : Prop, Morphisms.ProperProxy iff x -> Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl x)`{.claim}.
+              - Using Reflexive_partial_app_morphism we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m0 : A -> B), Morphisms.Proper (Morphisms.respectful R R') m0 -> forall x : A, Morphisms.ProperProxy R x -> Morphisms.Proper R' (m0 x)`{.claim} *by exact @Reflexive_partial_app_morphism*.
+            - We deduce `forall x : Prop, Morphisms.ProperProxy iff x -> Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl x)`{.claim}.
+          - We deduce `Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl (n < m \/ n = m))`{.claim}.
+        - We deduce `Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n < p \/ n = p))`{.claim}.
+  - We have proved `m <= p <-> m < p \/ m = p -> Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p))`{.claim}.
+    - Assume `m <= p <-> m < p \/ m = p`{.hyp} (lemma).
+      - We deduce `Basics.impl (m <= p) (n <= p) <-> Basics.impl (m < p \/ m = p) (n <= p)`{.claim}.
+        - In particular `Morphisms.ProperProxy iff (n <= p)`{.claim}.
+          - We deduce `Morphisms.ReflexiveProxy iff`{.claim}.
+            - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @iff_Reflexive*.
+            - In particular `RelationClasses.Reflexive iff -> Morphisms.ReflexiveProxy iff`{.claim}.
+              - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+          - In particular `Morphisms.ReflexiveProxy iff -> forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+            - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+          - We deduce `forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+        - In particular `n <= p <-> n <= p -> Basics.impl (m <= p) (n <= p) <-> Basics.impl (m < p \/ m = p) (n <= p)`{.claim}.
+          - By lemma we have `m <= p <-> m < p \/ m = p`{.claim}.
+          - In particular `m <= p <-> m < p \/ m = p -> Morphisms.respectful iff iff (Basics.impl (m <= p)) (Basics.impl (m < p \/ m = p))`{.claim}.
+            - Using iff_iff_iff_impl_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim} *by exact @iff_iff_iff_impl_morphism*.
+          - We deduce `Morphisms.respectful iff iff (Basics.impl (m <= p)) (Basics.impl (m < p \/ m = p))`{.claim}.
+      - In particular `(m <= p -> n <= p) <-> (m < p \/ m = p -> n <= p) -> Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p))`{.claim}.
+        - In particular `Morphisms.ProperProxy iff (n < m \/ n = m)`{.claim}.
+          - We deduce `Morphisms.ReflexiveProxy iff`{.claim}.
+            - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @iff_Reflexive*.
+            - In particular `RelationClasses.Reflexive iff -> Morphisms.ReflexiveProxy iff`{.claim}.
+              - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+          - In particular `Morphisms.ReflexiveProxy iff -> forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+            - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+          - We deduce `forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+        - In particular `Morphisms.ProperProxy iff (n < m \/ n = m) -> Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl (n < m \/ n = m))`{.claim}.
+          - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+            - We deduce `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+              - We deduce `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                - Using iff_flip_impl_subrelation we get `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim} *by exact @iff_flip_impl_subrelation*.
+                - In particular `RelationClasses.subrelation iff (Basics.flip Basics.impl) -> RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+                  - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                    - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                  - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                    - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                  - We deduce `forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+              - In particular `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+                - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                  - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+                - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                  - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+                - We deduce `forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+            - In particular `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+              - Using iff_iff_iff_impl_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim} *by exact @iff_iff_iff_impl_morphism*.
+              - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl -> forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R Basics.impl`{.claim}.
+                - Using subrelation_proper we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim} *by exact @subrelation_proper*.
+              - We deduce `forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R Basics.impl`{.claim}.
+          - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl -> forall x : Prop, Morphisms.ProperProxy iff x -> Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl x)`{.claim}.
+            - Using Reflexive_partial_app_morphism we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m0 : A -> B), Morphisms.Proper (Morphisms.respectful R R') m0 -> forall x : A, Morphisms.ProperProxy R x -> Morphisms.Proper R' (m0 x)`{.claim} *by exact @Reflexive_partial_app_morphism*.
+          - We deduce `forall x : Prop, Morphisms.ProperProxy iff x -> Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl x)`{.claim}.
+        - We deduce `Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (Basics.impl (n < m \/ n = m))`{.claim}.
+      - We deduce `Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p))`{.claim}.
+- We have proved `n <= m <-> n < m \/ n = m -> Basics.flip Basics.impl (Basics.impl (n <= m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m <= p -> n <= p))`{.claim}.
+  - Assume `n <= m <-> n < m \/ n = m`{.hyp} (lemma).
+    - In particular `Morphisms.ProperProxy iff (m <= p -> n <= p)`{.claim}.
+      - We deduce `Morphisms.ReflexiveProxy iff`{.claim}.
+        - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @iff_Reflexive*.
+        - In particular `RelationClasses.Reflexive iff -> Morphisms.ReflexiveProxy iff`{.claim}.
+          - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
+      - In particular `Morphisms.ReflexiveProxy iff -> forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+        - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+      - We deduce `forall x : Prop, Morphisms.ProperProxy iff x`{.claim}.
+    - In particular `(m <= p -> n <= p) <-> (m <= p -> n <= p) -> Basics.flip Basics.impl (Basics.impl (n <= m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m <= p -> n <= p))`{.claim}.
+      - By lemma we have `n <= m <-> n < m \/ n = m`{.claim}.
+      - In particular `n <= m <-> n < m \/ n = m -> Morphisms.respectful iff (Basics.flip Basics.impl) (Basics.impl (n <= m)) (Basics.impl (n < m \/ n = m))`{.claim}.
+        - We deduce `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+          - We deduce `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+            - Using iff_flip_impl_subrelation we get `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim} *by exact @iff_flip_impl_subrelation*.
+            - In particular `RelationClasses.subrelation iff (Basics.flip Basics.impl) -> RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+              - In particular `RelationClasses.subrelation iff iff`{.claim}.
+                - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+              - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+                - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+              - We deduce `forall RB RB' : Relation_Definitions.relation Prop, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+          - In particular `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+            - In particular `RelationClasses.subrelation iff iff`{.claim}.
+              - Using subrelation_refl we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.subrelation R R`{.claim} *by exact @subrelation_refl*.
+            - In particular `RelationClasses.subrelation iff iff -> forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+              - Using subrelation_respectful we get `forall (A B : Type) (RA' RA : Relation_Definitions.relation A), RelationClasses.subrelation RA' RA -> forall RB RB' : Relation_Definitions.relation B, RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful RA RB) (Morphisms.respectful RA' RB')`{.claim} *by exact @subrelation_respectful*.
+            - We deduce `forall RB RB' : Relation_Definitions.relation (Prop -> Prop), RelationClasses.subrelation RB RB' -> RelationClasses.subrelation (Morphisms.respectful iff RB) (Morphisms.respectful iff RB')`{.claim}.
+        - In particular `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+          - Using iff_iff_iff_impl_morphism we get `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim} *by exact @iff_iff_iff_impl_morphism*.
+          - In particular `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl -> forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R Basics.impl`{.claim}.
+            - Using subrelation_proper we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim} *by exact @subrelation_proper*.
+          - We deduce `forall R : Relation_Definitions.relation (Prop -> Prop -> Prop), Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) R (Morphisms.respectful iff (Morphisms.respectful iff iff)) -> RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) R -> Morphisms.Proper R Basics.impl`{.claim}.
+        - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+      - We deduce `Morphisms.respectful iff (Basics.flip Basics.impl) (Basics.impl (n <= m)) (Basics.impl (n < m \/ n = m))`{.claim}.
+    - We deduce `Basics.flip Basics.impl (Basics.impl (n <= m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m <= p -> n <= p))`{.claim}.
+- We deduce `Basics.impl (n <= m) (m <= p -> n <= p)`{.claim}.

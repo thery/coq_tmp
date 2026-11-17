@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.inductive.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -21,4 +21,4 @@ We prove `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + le
     - In particular `length (l ++ l2) = length l + length l2 -> S (length (l ++ l2)) = S (length l + length l2)`{.claim}.
       - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y`{.claim} *by exact @f_equal*.
     - We deduce `S (length (l ++ l2)) = S (length l + length l2)`{.claim}.
-  - These cases being exhaustive, we deduce `length (l1 ++ l2) = length l1 + length l2`{.claim}.
+  - These cases being exhaustive, we deduce `length (l1 ++ l2) = length l1 + length l2`{.claim} *by destruct l1; cbn; eauto*.

@@ -122,6 +122,7 @@ typ (match S RT _) Ty :- typ S TS, coq.reduction.lazy.whd TS W,
   coq.env.indt I _ NP _ _ _ _, std.drop NP As Idx, std.append Idx [S] L,
   coq.mk-app RT L Ty0, beta-ty Ty0 Ty.
 typ X Ty :- name X, decl X _ Ty0, !, beta-ty Ty0 Ty.
+typ X Ty :- name X, def X _ Ty0 _, !, beta-ty Ty0 Ty.
 typ (fix _ _ Ty _) Ty :- !.
 typ T Ty :- coq.typecheck T Ty0 ok, !, beta-ty Ty0 Ty.
 
@@ -299,14 +300,23 @@ pred cur-ih o:list bool.
 % rec-var F: F is the recursive function of an enclosing fix
 pred rec-var o:term.
 
+% tr is deterministic: its first answer is kept, and a subterm that no
+% rule can translate (one whose type cannot be computed) is shown as it
+% is, so that a failure deep inside does not make the whole translation
+% backtrack.
 pred tr i:term, i:ctx, i:list int, o:pf.
-tr (fun _ _ _ as T) Ctx Path P :- !, tr-lam T Ctx Path P.
-tr T Ctx Path P :- (cur-ih [] :- !) => tr-other T Ctx Path P.
+tr T Ctx Path P :- tr.aux T Ctx Path P, !.
+tr T _ _ P :- unchanged T P, !.
+tr T _ _ P :- pp T S0, S is "The term `" ^ S0 ^ "`{.fact} (not translated)", one S P.
+
+pred tr.aux i:term, i:ctx, i:list int, o:pf.
+tr.aux (fun _ _ _ as T) Ctx Path P :- !, tr-lam T Ctx Path P.
+tr.aux T Ctx Path P :- (cur-ih [] :- !) => tr-other T Ctx Path P.
 
 pred tr-other i:term, i:ctx, i:list int, o:pf.
 % a cast (T : A) is read by Elpi as let _ : A := T in _
 tr-other (let _ _ V (x\ x)) Ctx Path P :- !, tr V Ctx Path P.
-tr-other (let N Ty V F) _ Path P :- !, tr-app (fun N Ty F) [V] Path P.
+tr-other (let N Ty V F) Ctx Path P :- !, tr-let N Ty V F Ctx Path P.
 tr-other (app [H|Args]) _ Path P :- !, tr-app H Args Path P.
 tr-other (match S RT Bs) _ Path P :- !, tr-match (match S RT Bs) S Bs Path P.
 tr-other (fix N Rno Ty F) _ Path P :- !, tr-fix N Rno Ty F Path P.
@@ -376,7 +386,20 @@ pred same-type i:string, i:list binder, o:list string, o:list binder.
 same-type FA [b _ Id FA|Bs] [Id|Ids] Rest :- !, same-type FA Bs Ids Rest.
 same-type _ Bs [] Bs.
 
-% --- application
+% --- local definitions: let x : A := V in M.  The variable keeps its
+% value in the context (so that types computed under it stay
+% convertible).  A proof V of a proposition A is a lemma proved on the
+% way (a cut): its subproof, then the rest; otherwise x names a value.
+pred tr-let i:name, i:term, i:term, i:(term -> term), i:ctx, i:list int, o:pf.
+tr-let N Ty V F Ctx Path (prf [L1|LB] C) :-
+  binder-name N N1 Id, fm-fact Ty FT,
+  (if (binder-kind Ty KL, KL = bk-assume)
+      (tr V nostar Path PV, dashed PV (it S0 Ch),
+       L1 = it {calc (S0 ^ " (" ^ Id ^ ")")} Ch)
+      (fm-fact V FV, L1 = it {calc ("Let `" ^ Id ^ "`{.fact} be " ^ FV ^ ", of type " ^ FT)} [])),
+  (pi x\ (def x N1 Ty V, ctx-name Id) => tr (F x) Ctx Path PB),
+  PB = prf LB C.
+
 pred tr-app i:term, i:list term, i:list int, o:pf.
 % rewriting with an equality (eq_ind, eq_ind_r, ...)
 tr-app H Args Path P :-
@@ -391,13 +414,19 @@ tr-app H Args Path P :-
   std.split-at NC Args Cons Rest,
   coq.mk-app H Cons T0, typ T0 Tau, ind-name I C, head-name H EN,
   branch-infos Ks Fls Cis0,
+  % the theorem applied to its parameters and motive, for the
+  % justification of the closing step
+  coq.env.indt I _ NP _ _ _ _, NP1 is NP + 1, std.take NP1 Cons Lead,
+  std.map Lead (a\ s\ sigma S0\ pp a S0, s is "(" ^ S0 ^ ")") LS,
+  std.string.concat " " LS LeadS, AS is "(@" ^ EN ^ " " ^ LeadS ^ ")",
+  ((elim-app EN AS :- !) =>
   (if (Kind = 1)
       (imp-args Ks Cons Imps, std.last Imps Maj, std.drop-last 1 Imps Ns,
        std.drop-last 1 Cis0 Cis,
        tr-elim1 C EN Tau Maj Ns Cis Path P0)
       (imp-args Ks Cons Ns, Cis = Cis0,
        (if (Rest = [_|_]) (typ (app [H|Args]) TF, Fin = some TF) (Fin = none)),
-       tr-elim2 C EN Tau Fin none Ns Cis Path P0)),
+       tr-elim2 C EN Tau Fin none Ns Cis Path P0))),
   apply-rest T0 P0 Rest Path P.
 % introduction theorems
 tr-app H Args Path P :-
@@ -525,7 +554,8 @@ tr-elim1 C R Tau Maj Ns Cis Path (prf L (some (it S []))) :-
   H is "We prove " ^ Ff ^ " " ^ How ^ " on " ^ W ^ " (" ^ C ^ ", " ^ R ^ "):",
   cases Ns Cis Rec Path 1 LC,
   std.append LM [it H []|LC] L,
-  S is "We have " ^ F ^ " in all cases".
+  close-by R Maj J,
+  S is "We have " ^ F ^ " in all cases" ^ J.
 
 % second kind (dependent elimination, thesis 6.3.3 and 6.3.4): Tau is
 % the generalised statement; Fin, if any, the instance finally proved;
@@ -548,11 +578,24 @@ tr-elim2 C R Tau Fin On Ns Cis Path P :-
        H1 is "By definition of " ^ C ^ " (" ^ R ^ ")" ^ OnS ^ ", we prove " ^ F ^ ":",
        P = prf [] (some (it H1 LN)))
       (cases Ns Cis Rec Path 1 LC,
-       % a case analysis on a variable: the justification destructs it
-       (if (On = some O, name O, Rec = ff)
-           (var-name O ON, J is " *by destruct " ^ ON ^ "; assumption*") (J = "")),
+       (if (On = some O) true (O = sort prop)),
+       close-by R O J,
        S is "These cases being exhaustive, we deduce " ^ F ^ J,
        P = prf [it H []|LC] (some (it S [])))).
+
+% The justification of the closing step of an elimination, built from the
+% elimination itself: the theorem T is applied to the case claims, which
+% are in the context; a match on a variable x is a destruct of x.
+pred elim-app o:string, o:string.
+
+pred close-by i:string, i:term, o:string.
+% (a hypothesis is not destructed: its name is not kept by a checker)
+close-by "match" O J :- name O, typ O TO, not (is-prop TO), !,
+  var-name O ON, J is " *by destruct " ^ ON ^ "; cbn; eauto*".
+close-by "match" _ "" :- !.
+close-by T _ J :- elim-app T AS, not (rex.match ".*[*].*" AS), !,
+  J is " *by eapply " ^ AS ^ "; cbv beta; eauto*".
+close-by T _ J :- J is " *by eapply @" ^ T ^ "; cbv beta; eauto*".
 
 % a match is the primitive form of an elimination; inside a fix, a case
 % that calls the recursive function is an inductive case
@@ -657,7 +700,7 @@ header GR H :-
   (if (Path = [Lib|_], (Lib = "Stdlib" ; Lib = "Corelib"))
       (Req = "")
       (std.string.concat "." Path Mod, Req is " Require Import " ^ Mod ^ ".")),
-  R is "require: From Stdlib Require Import Arith Lia List. Import ListNotations." ^ Req,
+  R is "require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations." ^ Req,
   std.string.concat "\n" [
     "---", R,
     "by: tauto | congruence | lia | firstorder | auto",

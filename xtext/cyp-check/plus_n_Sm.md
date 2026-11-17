@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.inductive.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -16,5 +16,5 @@ Let `n m : nat`{.var}. We prove `S (n + m) = n + S m`{.claim}.
       - By definition of eq (eq_refl), we have `S (n0 + S m) = S (n0 + S m)`{.claim} *by eapply @eq_refl; eauto*.
       - By IH we have `S (n0 + m) = n0 + S m`{.claim}.
       - Rewriting with `S (n0 + m) = n0 + S m`{.fact} from right to left (eq_ind_r), we get `S (S (n0 + m)) = S (n0 + S m)`{.claim}.
-- These cases being exhaustive, we deduce `forall n0 : nat, S (n0 + m) = n0 + S m`{.claim}.
+- These cases being exhaustive, we deduce `forall n0 : nat, S (n0 + m) = n0 + S m`{.claim} *by eapply (@nat_ind (fun n0 : nat => S (n0 + m) = n0 + S m)); cbv beta; eauto*.
 - In particular `S (n + m) = n + S m`{.claim}.

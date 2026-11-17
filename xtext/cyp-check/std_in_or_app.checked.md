@@ -1,0 +1,76 @@
+<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. -->
+
+# in_or_app
+
+✅ Let `A : Type`. Let `l m : list A`. Let `a : A`. We prove `In a l \/ In a m -> In a (l ++ m)`.
+
+- ▫️ To prove `In a l \/ In a m -> In a (l ++ m)` by induction (list, list_ind), we generalise it to `forall l0 : list A, In a l0 \/ In a m -> In a (l0 ++ m)`:
+- ✅ Case 1 (base): we prove `In a nil \/ In a m -> In a (nil ++ m)`.
+  - ▫️ Assume `False \/ In a m` (H).
+    - ▫️ We prove `In a m` by case analysis on `False \/ In a m` (H) (or, or_ind):
+    - ✅ Case 1.1: we prove `False -> In a m`.
+      - ▫️ Assume `False` (H0).
+        - ✅ By contradiction (False, False_ind), from `False` (H0) we can deduce `In a m`.
+    - ✅ Case 1.2: we prove `In a m -> In a m`.
+      - ▫️ Assume `In a m` (H0).
+        - ✅ By H0 we have `In a m`.
+    - ✅ We have `In a m` in all cases .*by eapply (@or_ind (False) (In a m) (In a m)); cbv beta; eauto*
+- ✅ Case 2 (inductive): we prove `forall (a0 : A) (l0 : list A), (In a l0 \/ In a m -> In a (l0 ++ m)) -> In a (a0 :: l0) \/ In a m -> In a ((a0 :: l0) ++ m)`.
+  - ▫️ Let `a0 : A`.
+  - ▫️ Let `l0 : list A`.
+  - ▫️ Assume by induction hypothesis `In a l0 \/ In a m -> In a (l0 ++ m)` (IHl).
+    - ▫️ Assume `(a0 = a \/ In a l0) \/ In a m` (H).
+      - ▫️ We prove `a0 = a \/ In a (l0 ++ m)` by case analysis on `(a0 = a \/ In a l0) \/ In a m` (H) (or, or_ind):
+      - ✅ Case 2.1: we prove `a0 = a \/ In a l0 -> a0 = a \/ In a (l0 ++ m)`.
+        - ▫️ Assume `a0 = a \/ In a l0` (H0).
+          - ▫️ We prove `a0 = a \/ In a (l0 ++ m)` by case analysis on `a0 = a \/ In a l0` (H0) (or, or_ind):
+          - ✅ Case 2.1.1: we prove `a0 = a -> a0 = a \/ In a (l0 ++ m)`.
+            - ▫️ Assume `a0 = a` (H1).
+              - ✅ We have proved `In a l0 -> In a (l0 ++ m)` (H00).
+                - ▫️ Assume `In a l0` (H00).
+                  - ✅ By definition of or (or_introl), from `In a l0` (H00) we deduce `In a l0 \/ In a m` .*by eapply @or_introl; eauto*
+                  - ✅ By IHl we have `In a l0 \/ In a m -> In a (l0 ++ m)`.
+                  - ✅ We deduce `In a (l0 ++ m)`.
+              - ✅ We have proved `In a m -> In a (l0 ++ m)` (H10).
+                - ▫️ Assume `In a m` (H10).
+                  - ✅ By definition of or (or_intror), from `In a m` (H10) we deduce `In a l0 \/ In a m` .*by eapply @or_intror; eauto*
+                  - ✅ By IHl we have `In a l0 \/ In a m -> In a (l0 ++ m)`.
+                  - ✅ We deduce `In a (l0 ++ m)`.
+              - ✅ By definition of or (or_introl), from `a0 = a` (H1) we deduce `a0 = a \/ In a (l0 ++ m)` .*by eapply @or_introl; eauto*
+          - ✅ Case 2.1.2: we prove `In a l0 -> a0 = a \/ In a (l0 ++ m)`.
+            - ▫️ Assume `In a l0` (H1).
+              - ✅ We have proved `In a l0 -> In a (l0 ++ m)` (H00).
+                - ▫️ Assume `In a l0` (H00).
+                  - ✅ By definition of or (or_introl), from `In a l0` (H00) we deduce `In a l0 \/ In a m` .*by eapply @or_introl; eauto*
+                  - ✅ By IHl we have `In a l0 \/ In a m -> In a (l0 ++ m)`.
+                  - ✅ We deduce `In a (l0 ++ m)`.
+              - ✅ We have proved `In a m -> In a (l0 ++ m)` (H10).
+                - ▫️ Assume `In a m` (H10).
+                  - ✅ By definition of or (or_intror), from `In a m` (H10) we deduce `In a l0 \/ In a m` .*by eapply @or_intror; eauto*
+                  - ✅ By IHl we have `In a l0 \/ In a m -> In a (l0 ++ m)`.
+                  - ✅ We deduce `In a (l0 ++ m)`.
+              - ✅ We deduce `In a (l0 ++ m)` (H2).
+                - ✅ By H1 we have `In a l0`.
+                - ✅ By H00 we have `In a l0 -> In a (l0 ++ m)`.
+              - ✅ By definition of or (or_intror), from `In a (l0 ++ m)` (H2) we deduce `a0 = a \/ In a (l0 ++ m)` .*by eapply @or_intror; eauto*
+          - ✅ We have `a0 = a \/ In a (l0 ++ m)` in all cases .*by eapply (@or_ind (a0 = a) (In a l0) (a0 = a \/ In a (l0 ++ m))); cbv beta; eauto*
+      - ✅ Case 2.2: we prove `In a m -> a0 = a \/ In a (l0 ++ m)`.
+        - ▫️ Assume `In a m` (H0).
+          - ✅ We have proved `In a l0 -> In a (l0 ++ m)` (H1).
+            - ▫️ Assume `In a l0` (H1).
+              - ✅ By definition of or (or_introl), from `In a l0` (H1) we deduce `In a l0 \/ In a m` .*by eapply @or_introl; eauto*
+              - ✅ By IHl we have `In a l0 \/ In a m -> In a (l0 ++ m)`.
+              - ✅ We deduce `In a (l0 ++ m)`.
+          - ✅ We have proved `In a m -> In a (l0 ++ m)` (H10).
+            - ▫️ Assume `In a m` (H10).
+              - ✅ By definition of or (or_intror), from `In a m` (H10) we deduce `In a l0 \/ In a m` .*by eapply @or_intror; eauto*
+              - ✅ By IHl we have `In a l0 \/ In a m -> In a (l0 ++ m)`.
+              - ✅ We deduce `In a (l0 ++ m)`.
+          - ✅ We deduce `In a (l0 ++ m)` (H2).
+            - ✅ By H0 we have `In a m`.
+            - ✅ By H10 we have `In a m -> In a (l0 ++ m)`.
+          - ✅ By definition of or (or_intror), from `In a (l0 ++ m)` (H2) we deduce `a0 = a \/ In a (l0 ++ m)` .*by eapply @or_intror; eauto*
+      - ✅ We have `a0 = a \/ In a (l0 ++ m)` in all cases .*by eapply (@or_ind (a0 = a \/ In a l0) (In a m) (a0 = a \/ In a (l0 ++ m))); cbv beta; eauto*
+- ✅ These cases being exhaustive, we deduce `forall l0 : list A, In a l0 \/ In a m -> In a (l0 ++ m)` .*by eapply (@list_ind (A) (fun l0 : list A => In a l0 \/ In a m -> In a (l0 ++ m))); cbv beta; eauto*
+- ✅ In particular `In a l \/ In a m -> In a (l ++ m)`.
+

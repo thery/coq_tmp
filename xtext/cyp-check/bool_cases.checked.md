@@ -1,4 +1,4 @@
-<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.inductive. -->
+<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive. -->
 
 # bool_cases
 
@@ -11,5 +11,5 @@
 - ✅ Case 2: we prove `false = true \/ false = false`.
   - ✅ By definition of eq (eq_refl), we have `false = false` .*by eapply @eq_refl; eauto*
   - ✅ By definition of or (or_intror), we have `false = true \/ false = false` .*by eapply @or_intror; eauto*
-- ✅ These cases being exhaustive, we deduce `b = true \/ b = false` .*by destruct b; assumption*
+- ✅ These cases being exhaustive, we deduce `b = true \/ b = false` .*by destruct b; cbn; eauto*
 

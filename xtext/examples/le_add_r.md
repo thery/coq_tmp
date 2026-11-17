@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.lemmas.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -20,5 +20,5 @@ Let `n m : nat`{.var}. We prove `n <= n + m`{.claim}.
       - In particular `n + S m0 = S (n + m0)`{.claim}.
         - Using add_succ_r we get `forall n0 m1 : nat, n0 + S m1 = S (n0 + m1)`{.claim} *by exact @add_succ_r*.
       - Rewriting with `n + S m0 = S (n + m0)`{.fact} from right to left (eq_ind_r), we get `n <= n + S m0`{.claim}.
-- These cases being exhaustive, we deduce `forall n0 : nat, n <= n + n0`{.claim}.
+- These cases being exhaustive, we deduce `forall n0 : nat, n <= n + n0`{.claim} *by eapply (@nat_ind (fun m0 : nat => n <= n + m0)); cbv beta; eauto*.
 - In particular `n <= n + m`{.claim}.

@@ -1,5 +1,5 @@
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.inductive.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -17,4 +17,4 @@ We prove `forall n : nat, 0 <= n`{.claim}.
         - By induction hypothesis (the recursive call le_0_n') we have `forall n0 : nat, 0 <= n0`{.claim}.
         - In particular `0 <= m`{.claim}.
         - By definition of le (le_S) with witness `m`{.fact}, we have `0 <= S m`{.claim} *by eapply @le_S; eauto*.
-    - These cases being exhaustive, we deduce `0 <= n`{.claim}.
+    - These cases being exhaustive, we deduce `0 <= n`{.claim} *by destruct n; cbn; eauto*.
