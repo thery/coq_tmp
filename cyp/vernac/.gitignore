@@ -6,3 +6,5 @@
 .coq-native/
 *.checked.md
 *.cyp.json
+.lia.cache
+.nia.cache
