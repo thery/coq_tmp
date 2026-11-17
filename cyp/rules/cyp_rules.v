@@ -14,6 +14,9 @@ Elpi Db cyp.db lp:{{
   type ltac string -> cyptac.
   type lemma term -> cyptac.
   pred justify i:term, o:cyptac.
+  % [justify_first Pattern Tac]: the same, tried before every [justify]
+  % rule, for the rules of one proof that must win over shared ones
+  pred justify_first i:term, o:cyptac.
 }}.
 
 Ltac cyp_split := split.
@@ -35,6 +38,7 @@ Elpi Accumulate lp:{{
     coq.ltac.call-ltac1 "cyp_left" G GL, premises GL.
   close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
     coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
+  close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
   close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
 
   pred premises i:list sealed-goal.

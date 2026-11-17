@@ -33,8 +33,10 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
 
 - **The header** (between the two `---`): `require`, the Rocq preamble;
   `scope`, a scope to open; `by`, the tactics tried on a step with no
-  justification; `rules`, a file of rules (below); `flags`, options given to
-  `rocq c` (e.g. `-Q dir Name`); `lang`, the language of the text, `en`
+  justification; `rules`, files of rules (below), separated by spaces,
+  copied in order after the preamble; `flags`, options given to
+  `rocq c` (e.g. `-Q dir Name`; the directories of `-Q`, `-R`, `-I` and
+  the rule files are relative to the directory of the proof); `lang`, the language of the text, `en`
   (default), `fr` or `it`, which gives the role words below; `timeout`, the seconds
   allowed per step (10).
 - **A proposition** starts with `# name`.  Its statement is the text that
@@ -65,9 +67,13 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   and the claims of the steps before it.  A step that says *suffices*,
   *enough*, *equivalent to prove* or *written as* goes backwards: its
   claim replaces the goal, and the step checks that the new goal implies
-  the old one.  At the end, the last goal must follow from all the claims.
+  the old one.  It is the last phrase before the claim that counts: in
+  *it is enough to check all the cases, so we have `C`*, the claim is
+  announced by *so*, and the step goes forward.  At the end, the last goal must follow from all the claims.
 - **A justification** is written `*by tactic*` in the step; otherwise the
   tactics of `by` are tried.
+- **A local definition**: *Let `u := e`* introduces `u`, equal to `e`, for
+  the steps that follow (a `let` in their goals).
 - **A local scope**: a step that only introduces variables or hypotheses
   (*Let `n : nat`*, *Assume `P n`*) adds them for its sub-steps, or, if it
   has none, for the steps that follow it.  Its result, `forall n, P n -> C`
@@ -104,7 +110,19 @@ Elpi Accumulate cyp.db lp:{{
   the rules again.
 
 On a step with no `*by ...*`, the rules are tried in order, then the
-tactics of `by`.  Example: [examples/rules_demo.md](examples/rules_demo.md)
+tactics of `by`.  `justify_first Pattern Tac` declares a rule tried
+before every `justify` rule: the rules of one proof that must win over
+shared ones.  The rule files are copied into the proof, not loaded with
+`Load`: a lemma proved by `interval` in a loaded file keeps its numerical
+check as an assumption (`Print Assumptions` lists it as an axiom).
+A rule file may name the constants of a model to unfold before numeric
+tactics by redefining an Ltac hook (`Ltac model_unfold ::= unfold ...`,
+see [exp/float_rules.v](exp/float_rules.v)).
+
+**The cache.**  cyp keeps, next to the proof, a file `*.cyp-cache` of the
+steps it proved; a step whose preamble, goal and tactic have not changed
+since is not checked again.  While a proof is being written, only the
+changed steps and those not yet proved are run.  Example: [examples/rules_demo.md](examples/rules_demo.md)
 with [examples/rules_demo_rules.v](examples/rules_demo_rules.v) proves its
 three steps; without the rule file, `lra` proves only one.
 

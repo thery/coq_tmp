@@ -202,7 +202,18 @@ let rec build_steps items =
    the rule file of a proof. *)
 let rules_prelude = Prelude.text
 
+let absolute d = if Filename.is_relative d then Filename.concat (Sys.getcwd ()) d else d
+
 let parse ~dir src =
+  (* a path of the header, relative to the directory of the proof *)
+  let abs f = if Filename.is_relative f then Filename.concat (absolute dir) f else f in
+  (* the directories of -Q and -R in flags, relative to that directory *)
+  let relative_flags fl =
+    let rec go = function
+      | ("-Q" | "-R" | "-I" as o) :: d :: r -> o :: abs d :: go r
+      | x :: r -> x :: go r
+      | [] -> [] in
+    String.concat " " (go (List.filter (( <> ) "") (String.split_on_char ' ' fl))) in
   let ls = lines src in
   (* the front matter between two lines "---" *)
   let header, body =
@@ -227,7 +238,7 @@ let parse ~dir src =
     require = get "require" "From Stdlib Require Import ZArith Lia.";
     default_by = get "by" "lia";
     timeout = int_of_string (get "timeout" "10");
-    flags = get "flags" "";
+    flags = relative_flags (get "flags" "");
   } in
   lang := get "lang" "en";
   let h =
@@ -238,11 +249,14 @@ let parse ~dir src =
      after the preamble; the default justification then tries the rules
      first *)
   let h =
-    match get "rules" "" with
-    | "" -> h
-    | f ->
-        let f = if Filename.is_relative f then Filename.concat dir f else f in
-        { h with require = h.require ^ "\n" ^ rules_prelude ^ "\n" ^ read_file f;
+    (* several rule files, in order, copied after the preamble (copied,
+       not loaded: a lemma proved by [interval] in a loaded file would
+       keep its numerical check as an assumption) *)
+    match List.filter (( <> ) "") (String.split_on_char ' ' (get "rules" "")) with
+    | [] -> h
+    | fs ->
+        let text = String.concat "\n" (List.map (fun f -> read_file (abs f)) fs) in
+        { h with require = h.require ^ "\n" ^ rules_prelude ^ "\n" ^ text;
                  default_by = "elpi cyp_by | " ^ h.default_by } in
   (* the propositions, each starting with a line "# name" *)
   let props = ref [] in
@@ -312,16 +326,41 @@ let by_of h ps =
   | Some t -> t
   | None -> "first [" ^ h.default_by ^ "]"
 
+(* A step goes backwards when the last phrase before its first claim (a
+   role word or a backward phrase) is a backward phrase: in "it is enough
+   to check all cases, so `C`", the claim is announced by "so". *)
 let is_backward ps =
-  let txt = String.concat " " (List.filter_map (function
-      | Text t -> Some (lower t) | _ -> None) ps) in
-  List.exists (contains txt) (backward_words_of !lang)
+  let last_pos re t =
+    let rec go pos acc =
+      match Str.search_forward re t pos with
+      | p -> go (p + 1) (Some p)
+      | exception Not_found -> acc in
+    go 0 None in
+  let phrase t =
+    let t = " " ^ lower t ^ " " in
+    let best words kind acc =
+      List.fold_left (fun acc w ->
+          let re = Str.regexp ("[^a-zà-ÿ]" ^ Str.quote w ^ "[^a-zà-ÿ]") in
+          match last_pos re t, acc with
+          | Some p, Some (q, _) when q >= p -> acc
+          | Some p, _ -> Some (p, kind)
+          | None, _ -> acc) acc words in
+    let acc = best (List.map fst (role_words_of !lang)) false None in
+    Option.map snd (best (backward_words_of !lang) true acc) in
+  let rec go last = function
+    | Text t :: r -> go (match phrase t with Some k -> k | None -> last) r
+    | Formula (Claim, _) :: _ -> last
+    | _ :: r -> go last r
+    | [] -> false in
+  go false ps
 
 (* [forall vars, hyps -> c], the result of a local scope *)
+(* A variable "u := e" is a local definition: [let u := e in]. *)
 let generalise vars hyps c =
   let body = String.concat " -> " (List.map (fun f -> "(" ^ f ^ ")") (hyps @ [c])) in
-  if vars = [] then body
-  else "forall " ^ String.concat " " (List.map (fun v -> "(" ^ v ^ ")") vars) ^ ", " ^ body
+  List.fold_right (fun v acc ->
+      if contains v ":=" then "let " ^ v ^ " in " ^ acc
+      else "forall (" ^ v ^ "), " ^ acc) vars body
 
 let obligations h props =
   let obs = ref [] in
@@ -396,11 +435,7 @@ let step_tac h o =
     h.timeout o.tac h.timeout o.tac
 
 (* The Rocq goal of an obligation. *)
-let goal_of o =
-  let binders = String.concat " " (List.map (fun v -> "(" ^ v ^ ")") o.vars) in
-  let body =
-    String.concat " -> " (List.map (fun f -> "(" ^ f ^ ")") (o.hyps @ [o.concl])) in
-  if binders = "" then body else "forall " ^ binders ^ ", " ^ body
+let goal_of o = generalise o.vars o.hyps o.concl
 
 (* ------------------------------------------------------------------ *)
 (* Running Rocq                                                        *)
@@ -621,7 +656,21 @@ let () =
       let h, props = parse ~dir:(Filename.dirname md) (read_file md) in
       flags := h.flags;
       let obs = obligations h props in
-      let status = check h obs in
+      (* the cache: a step proved before, with the same preamble, goal and
+         tactic, is not checked again *)
+      let cache_file = Filename.remove_extension md ^ ".cyp-cache" in
+      let key o = Digest.to_hex (Digest.string
+          (String.concat "\000" [h.require; h.flags; goal_of o; step_tac h o])) in
+      let cached =
+        try List.filter (( <> ) "") (lines (read_file cache_file)) with _ -> [] in
+      let fresh, known = List.partition (fun o -> not (List.mem (key o) cached)) obs in
+      let status = if fresh = [] then Hashtbl.create 1 else check h fresh in
+      List.iter (fun o -> Hashtbl.replace status o.num Ok) known;
+      write_file cache_file (String.concat "\n" (List.filter_map (fun o ->
+          if Hashtbl.find_opt status o.num = Some Ok then Some (key o) else None) obs) ^ "\n");
+      if known <> [] then
+        Printf.eprintf "cyp: %d step(s) unchanged since they were proved, not checked again\n%!"
+          (List.length known);
       let base = Filename.remove_extension md in
       write_file (base ^ ".cyp.v") (v_file h obs);
       write_file (base ^ ".checked.md") (md_file h props obs status);
