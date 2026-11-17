@@ -5,7 +5,8 @@
                                     goal;
      justify Pattern (lemma T)      refine the goal with T, then close each
                                     premise with the rules again.
-   The rules are tried in order; the first one that closes the goal wins. *)
+   The rules are tried in order; the first one that closes the goal wins.
+   Conjunctions and disjunctions are handled by cyp itself. *)
 From elpi Require Import elpi.
 
 Elpi Db cyp.db lp:{{
@@ -15,13 +16,39 @@ Elpi Db cyp.db lp:{{
   pred justify i:term, o:cyptac.
 }}.
 
+Ltac cyp_split := split.
+Ltac cyp_left := left.
+Ltac cyp_right := right.
+
 Elpi Tactic cyp_by.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate lp:{{
-  pred run i:cyptac, i:goal, o:list sealed-goal.
-  run (ltac N) G GL :- coq.ltac.call-ltac1 N G GL.
-  run (lemma T) G GL :-
-    refine T G GL1, coq.ltac.all (coq.ltac.open solve) GL1 GL.
+  % [close G]: some rule closes the goal G; premises of a lemma are closed
+  % by [close] again, so that a failure backtracks to the next rule
+  pred close i:goal.
+  % a conjunction: both sides; a disjunction: one side, then the other.
+  % The two sides are taken from the goal, so that the new holes live
+  % under the goal's variables.
+  close (goal _ _ {{ _ /\ _ }} _ _ as G) :-
+    coq.ltac.call-ltac1 "cyp_split" G GL, premises GL.
+  close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
+    coq.ltac.call-ltac1 "cyp_left" G GL, premises GL.
+  close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
+    coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
+  close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
 
-  solve (goal _ _ Ty _ _ as G) [] :- justify Ty Tac, run Tac G [].
+  pred premises i:list sealed-goal.
+  premises GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
+
+  pred run i:cyptac, i:goal.
+  run (ltac N) G :- coq.ltac.call-ltac1 N G [].
+  run (lemma T) G :- refine T G GL, premises GL.
+
+  pred close-tac i:goal, o:list sealed-goal.
+  close-tac G [] :- close G.
+
+  solve G [] :- close G, !.
+  % no rule closes the goal: an ordinary tactic failure, only here at the
+  % top, so that the default tactics are tried next
+  solve _ _ :- coq.ltac.fail 0 "cyp: no rule closes this goal".
 }}.

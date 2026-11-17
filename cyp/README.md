@@ -33,7 +33,8 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
 
 - **The header** (between the two `---`): `require`, the Rocq preamble;
   `scope`, a scope to open; `by`, the tactics tried on a step with no
-  justification; `rules`, a file of rules (below); `timeout`, the seconds
+  justification; `rules`, a file of rules (below); `flags`, options given to
+  `rocq c` (e.g. `-Q dir Name`); `timeout`, the seconds
   allowed per step (10).
 - **A proposition** starts with `# name`.  Its statement is the text that
   follows, up to the first list item.

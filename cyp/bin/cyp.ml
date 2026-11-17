@@ -65,6 +65,7 @@ type header = {
   require : string;               (* the Rocq preamble *)
   default_by : string;            (* the default justification *)
   timeout : int;                  (* seconds per step *)
+  flags : string;                 (* options of rocq c, e.g. load paths *)
 }
 
 (* Words that give the role of the formulas that follow them. *)
@@ -98,6 +99,12 @@ let role_of_text txt =
 (* An explicit role, written right after a formula: `x`{.hyp}. *)
 let tag_re = Str.regexp "{\\.\\(var\\|hyp\\|claim\\|fact\\)}"
 
+(* Does a formula state something: an equality, a comparison, a
+   connective or a quantifier? *)
+let relation_re =
+  Str.regexp ".*\\(=\\|<\\|>\\|->\\|/\\\\\\|\\\\/\\|~\\|forall\\|exists\\|_format\\|True\\|False\\)"
+let is_relation f = Str.string_match relation_re f 0
+
 (* Cut a text into pieces: `...` are formulas, *by ...* a justification. *)
 let pieces_of_text ~default txt =
   let by_re = Str.regexp "\\*by \\([^*]*\\)\\*" in
@@ -124,7 +131,11 @@ let pieces_of_text ~default txt =
         let e = Str.match_end () in
         let f = Formula (r, s) in
         f :: go (i + 1) (String.sub next e (String.length next - e) :: rest)
-    | s :: rest -> let f = Formula (!role, s) in f :: go (i + 1) rest in
+    | s :: rest ->
+        (* a formula with no relation is a mention (a number, a function),
+           not a claim *)
+        let r = if !role = Claim && not (is_relation s) then Fact else !role in
+        let f = Formula (r, s) in f :: go (i + 1) rest in
   let ps = go 0 parts in
   match by with Some t -> ps @ [By t] | None -> ps
 
@@ -177,6 +188,7 @@ let parse ~dir src =
     require = get "require" "From Stdlib Require Import ZArith Lia.";
     default_by = get "by" "lia";
     timeout = int_of_string (get "timeout" "10");
+    flags = get "flags" "";
   } in
   let h =
     let scope = get "scope" "" in
@@ -327,12 +339,14 @@ let tmpdir =
 
 (* Compile [src] as a file of [tmpdir]; returns the exit code and the
    output (stdout and stderr). *)
+let flags = ref ""
+
 let compile name src =
   let f = Filename.concat tmpdir (name ^ ".v") in
   let out = Filename.concat tmpdir (name ^ ".out") in
   write_file f src;
-  let code = Sys.command (Printf.sprintf "cd %s && %s %s > %s 2>&1"
-                            (Filename.quote tmpdir) rocq
+  let code = Sys.command (Printf.sprintf "cd %s && %s %s %s > %s 2>&1"
+                            (Filename.quote tmpdir) rocq !flags
                             (Filename.quote (name ^ ".v")) (Filename.quote out)) in
   (code, read_file out)
 
@@ -366,6 +380,7 @@ let error_line out =
    checked again. *)
 let check h obs =
   let status = Hashtbl.create 16 in
+  let seen = ref [] in
   let rec loop obs =
     let src, starts = check_file h obs in
     let code, out = compile "cyp_check" src in
@@ -381,7 +396,14 @@ let check h obs =
     else
       match Option.bind (error_line out) (obligation_at starts) with
       | Some n ->
-          Hashtbl.replace status n (Err out);
+          (* the message without its position: the same formula rejected
+             again in a later step's context is the earlier step's fault *)
+          let key = Str.global_replace (Str.regexp "File .*\n") "" out in
+          let msg =
+            if List.mem key !seen then
+              "This step does not type-check because an earlier step does not: see the first Rocq error above."
+            else (seen := key :: !seen; out) in
+          Hashtbl.replace status n (Err msg);
           loop (List.filter (fun o -> o.num <> n) obs)
       | None ->
           (* the preamble itself fails: every obligation gets the message *)
@@ -519,6 +541,7 @@ let () =
   match List.filter (( <> ) "--json") args with
   | [ md ] ->
       let h, props = parse ~dir:(Filename.dirname md) (read_file md) in
+      flags := h.flags;
       let obs = obligations h props in
       let status = check h obs in
       let base = Filename.remove_extension md in
