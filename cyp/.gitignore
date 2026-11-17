@@ -1,0 +1,3 @@
+_build/
+examples/*.v
+examples/*.html

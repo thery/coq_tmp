@@ -1,0 +1,4 @@
+(executable
+ (name cyp)
+ (public_name cyp)
+ (libraries str unix))
