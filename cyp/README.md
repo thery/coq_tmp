@@ -56,6 +56,11 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   the old one.  At the end, the last goal must follow from all the claims.
 - **A justification** is written `*by tactic*` in the step; otherwise the
   tactics of `by` are tried.
+- **A local scope**: a step that only introduces variables or hypotheses
+  (*Let `n : nat`*, *Assume `P n`*) adds them for its sub-steps, or, if it
+  has none, for the steps that follow it.  Its result, `forall n, P n -> C`
+  with C the last claim of the scope, is then known to the steps after it.
+  This is how a case of an induction is written.
 - **Sub-steps** (an indented list) prove their parent's claim; the parent's
   justification then closes it from the sub-steps.
 
@@ -74,10 +79,10 @@ clauses added to the database `cyp.db` (defined in
 [rules/cyp_rules.v](rules/cyp_rules.v)):
 
 ```coq
-Ltac cyp_lra := lra.
+Ltac real_lra := lra.
 Elpi Accumulate cyp.db lp:{{
   justify {{ (_ * _ <= _ * _)%R }} (lemma {{ Rmult_le_compat _ _ _ _ _ _ _ _ }}).
-  justify {{ (_ <= _)%R }} (ltac "cyp_lra").
+  justify {{ (_ <= _)%R }} (ltac "real_lra").
 }}.
 ```
 

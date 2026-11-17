@@ -281,32 +281,56 @@ let is_backward ps =
       | Text t -> Some (String.lowercase_ascii t) | _ -> None) ps) in
   List.exists (contains txt) backward_words
 
+(* [forall vars, hyps -> c], the result of a local scope *)
+let generalise vars hyps c =
+  let body = String.concat " -> " (List.map (fun f -> "(" ^ f ^ ")") (hyps @ [c])) in
+  if vars = [] then body
+  else "forall " ^ String.concat " " (List.map (fun v -> "(" ^ v ^ ")") vars) ^ ", " ^ body
+
 let obligations h props =
   let obs = ref [] in
   let n = ref 0 in
   let add owner vars hyps concl tac =
     incr n;
     obs := { num = !n; owner; vars; hyps; concl; tac } :: !obs in
-  (* the steps [st] prove [goal] in the context [hyps]; the last
-     obligation, that [goal] follows, belongs to [owner] *)
-  let rec level owner owner_tac vars hyps goal st =
-    let hyps, goal =
-      List.fold_left (fun (hyps, goal) s ->
-          match conj (formulas Claim s.pieces) with
-          | None -> (hyps, goal)      (* a comment: nothing to check *)
-          | Some c ->
-              let tac = by_of h s.pieces in
-              if is_backward s.pieces then begin
-                (* the new goal [c] implies the old one *)
-                add s.id vars (hyps @ [c]) goal tac;
-                if s.children <> [] then
-                  level s.id (by_of h []) vars hyps c s.children;
-                (hyps, c)
-              end else begin
-                if s.children <> [] then level s.id tac vars hyps c s.children
-                else add s.id vars hyps c tac;
-                (hyps @ [c], goal)
-              end) (hyps, goal) st in
+  (* the steps [st], in the context [vars] [hyps]: their obligations, and
+     the context and the goal after them *)
+  let rec steps vars hyps goal st =
+    match st with
+    | [] -> (hyps, goal)
+    | s :: rest ->
+        let sv = formulas Var s.pieces and sh = formulas Hyp s.pieces in
+        match conj (formulas Claim s.pieces) with
+        | None when sv <> [] || sh <> [] ->
+            (* a local scope: "Let x" or "Assume A" introduces [sv] and [sh]
+               for its sub-steps, or else for the steps that follow it; its
+               result is [forall sv, sh -> C], C its last claim *)
+            let body, rest = if s.children <> [] then (s.children, rest) else (rest, []) in
+            let inner = hyps @ sh in
+            let after, _ = steps (vars @ sv) inner goal body in
+            let hyps =
+              if List.length after > List.length inner then
+                hyps @ [generalise sv sh (List.nth after (List.length after - 1))]
+              else hyps in
+            steps vars hyps goal rest
+        | None -> steps vars hyps goal rest        (* a comment *)
+        | Some c ->
+            let tac = by_of h s.pieces in
+            if is_backward s.pieces then begin
+              (* the new goal [c] implies the old one *)
+              add s.id vars (hyps @ [c]) goal tac;
+              if s.children <> [] then
+                level s.id (by_of h []) vars hyps c s.children;
+              steps vars hyps c rest
+            end else begin
+              if s.children <> [] then level s.id tac vars hyps c s.children
+              else add s.id vars hyps c tac;
+              steps vars (hyps @ [c]) goal rest
+            end
+  (* the steps [st] prove [goal]; the last obligation, that [goal]
+     follows, belongs to [owner] *)
+  and level owner owner_tac vars hyps goal st =
+    let hyps, goal = steps vars hyps goal st in
     add owner vars hyps goal owner_tac in
   List.iter (fun p ->
       let vars = formulas Var p.statement in
@@ -316,6 +340,24 @@ let obligations h props =
       | Some goal -> level p.pid (by_of h p.statement) vars hyps goal p.steps)
     props;
   List.rev !obs
+
+(* Introduce exactly the context of an obligation (its variables and
+   hypotheses), leaving its claim whole. *)
+let intro_ctx o =
+  let names v =
+    match String.index_opt v ':' with
+    | Some i ->
+        List.length (List.filter (( <> ) "")
+          (String.split_on_char ' ' (String.sub v 0 i)))
+    | None -> 1 in
+  let k = List.fold_left (fun n v -> n + names v) 0 o.vars + List.length o.hyps in
+  if k = 0 then "idtac" else Printf.sprintf "do %d intro" k
+
+(* The tactic of an obligation: first on the claim whole, then with the
+   claim taken apart by [intros]. *)
+let step_tac h o =
+  Printf.sprintf "first [ solve [timeout %d (%s)] | intros; solve [timeout %d (%s)] ]"
+    h.timeout o.tac h.timeout o.tac
 
 (* The Rocq goal of an obligation. *)
 let goal_of o =
@@ -361,8 +403,8 @@ let check_file h obs =
   List.iter (fun o ->
       starts := (line_count (Buffer.contents b) + 1, o.num) :: !starts;
       Printf.bprintf b
-        "Goal %s.\nProof. intros.\ntryif solve [timeout %d (%s)] then idtac \"CYP-OK %d\" else idtac \"CYP-KO %d\".\nAbort.\n"
-        (goal_of o) h.timeout o.tac o.num o.num) obs;
+        "Goal %s.\nProof. %s.\ntryif %s then idtac \"CYP-OK %d\" else idtac \"CYP-KO %d\".\nAbort.\n"
+        (goal_of o) (intro_ctx o) (step_tac h o) o.num o.num) obs;
   (Buffer.contents b, List.rev !starts)
 
 (* The obligation whose text contains line [l] of the checking file. *)
@@ -414,8 +456,8 @@ let check h obs =
       match Hashtbl.find_opt status o.num with
       | Some (Ko _) ->
           let src = Printf.sprintf
-              "%s\nGoal %s.\nProof. intros. idtac \"CYP-GOAL\". Show.\nsolve [timeout %d (%s)].\nQed.\n"
-              h.require (goal_of o) h.timeout o.tac in
+              "%s\nGoal %s.\nProof. intros. idtac \"CYP-GOAL\". Show.\n%s.\nQed.\n"
+              h.require (goal_of o) (step_tac h o) in
           let _, out = compile (Printf.sprintf "cyp_ko_%d" o.num) src in
           let goal, msg =
             match Str.search_forward (Str.regexp_string "CYP-GOAL") out 0 with
@@ -438,8 +480,8 @@ let v_file h obs =
   let b = Buffer.create 4096 in
   Buffer.add_string b ("(* Generated by cyp: one goal per step. *)\n" ^ h.require ^ "\n\n");
   List.iter (fun o ->
-      Printf.bprintf b "(* step %d *)\nGoal %s.\nProof. intros. %s. Qed.\n\n"
-        o.owner (goal_of o) o.tac) obs;
+      Printf.bprintf b "(* step %d *)\nGoal %s.\nProof. %s. %s. Qed.\n\n"
+        o.owner (goal_of o) (intro_ctx o) (step_tac h o)) obs;
   Buffer.contents b
 
 (* The colour of a step: all its obligations proved, one failed, or
