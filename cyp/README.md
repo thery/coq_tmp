@@ -124,6 +124,9 @@ assumption (`Print Assumptions` lists it as an axiom).
 Example: [examples/rules_demo.md](examples/rules_demo.md) with
 [examples/rules_demo.elpi](examples/rules_demo.elpi) proves its three
 steps; without the rule file, `lra` proves only one.
+A larger example: [exp/](exp/README.md), proofs of lemmas of the CORE-MATH
+exp paper with a library of float lemmas (`exp/float_lemmas.v`) and
+shared rules (`exp/float.elpi`).
 
 **The cache.**  cyp keeps, next to the proof, a file `*.cyp-cache` of the
 steps it proved; a step whose preamble, goal and tactic have not changed

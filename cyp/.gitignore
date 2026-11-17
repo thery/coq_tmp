@@ -2,3 +2,10 @@ _build/
 *.cyp.v
 *.checked.md
 *.cyp-cache
+*.vo
+*.vok
+*.vos
+*.glob
+.*.aux
+.coq-native/
+.lia.cache
