@@ -11,8 +11,8 @@ Let `A : Prop`{.var}. We prove `~ ~ (A \/ ~ A)`{.claim}.
   - By definition of or (or_intror), we have `A \/ ~ A`{.claim} *by eapply @or_intror; eauto*.
     - Assume `A`{.hyp} (a).
       - By definition of or (or_introl), from `A`{.fact} (a) we deduce `A \/ ~ A`{.claim} *by eapply @or_introl; eauto*.
-      - By H we have `~ (A \/ ~ A)`{.claim}.
+      - By H we have `~ (A \/ ~ A)`{.claim}, that is `A \/ ~ A -> False`{.fact}.
       - We deduce `False`{.claim}.
     - We have proved `A -> False`{.claim}.
-  - By H we have `~ (A \/ ~ A)`{.claim}.
+  - By H we have `~ (A \/ ~ A)`{.claim}, that is `A \/ ~ A -> False`{.fact}.
   - We deduce `False`{.claim}.

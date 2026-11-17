@@ -5,7 +5,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # or_assoc
 
-Let `A B C : Prop`{.var}. We prove `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)`{.claim}.
+Let `A B C : Prop`{.var}. We prove `(A \/ B) \/ C <-> A \/ B \/ C`{.claim}.
 
 - We have proved `(A \/ B) \/ C -> A \/ B \/ C`{.claim}.
   - Assume `(A \/ B) \/ C`{.hyp} (H).
@@ -45,4 +45,4 @@ Let `A B C : Prop`{.var}. We prove `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/
             - By definition of or (or_intror), from `C`{.fact} (H1) we deduce `(A \/ B) \/ C`{.claim} *by eapply @or_intror; eauto*.
         - We have `(A \/ B) \/ C`{.claim} in all cases.
     - We have `(A \/ B) \/ C`{.claim} in all cases.
-- So by definition of and (conj), we have `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)`{.claim} *by eapply @conj; eauto*.
+- So by definition of and (conj), we have `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)`{.claim} *by eapply @conj; eauto*, that is `(A \/ B) \/ C <-> A \/ B \/ C`{.fact}.

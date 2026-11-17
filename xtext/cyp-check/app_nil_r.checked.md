@@ -5,8 +5,8 @@
 ✅ Let `A : Type`. Let `l : list A`. We prove `l ++ [] = l`.
 
 - ▫️ To prove `l ++ [] = l` by induction (list, list_ind), we generalise it to `forall l0 : list A, l0 ++ [] = l0`:
-- ✅ Case 1 (base): we prove `([]) = ([]) :> list A`.
-  - ✅ By definition of eq (eq_refl), we have `([]) = ([]) :> list A` .*by eapply @eq_refl; eauto*
+- ✅ Case 1 (base): we prove `[] = (@nil A)`.
+  - ✅ By definition of eq (eq_refl), we have `[] = (@nil A)` .*by eapply @eq_refl; eauto*
 - ✅ Case 2 (inductive): we prove `forall (x : A) (l0 : list A), l0 ++ [] = l0 -> (x :: l0) ++ [] = x :: l0`.
   - ▫️ Let `x : A`.
   - ▫️ Let `l0 : list A`.

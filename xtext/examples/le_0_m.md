@@ -5,7 +5,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # le_0_m
 
-We prove `forall n : nat, 0 <= n`{.claim}.
+We prove `forall m : nat, 0 <= m`{.claim}.
 
 - We prove `forall n : nat, 0 <= n`{.fact} by induction (nat, nat_ind):
 - Case 1 (base): we prove `0 <= 0`{.claim}.

@@ -14,8 +14,7 @@ Let `m : nat`{.var}. We prove `m + 0 = m`{.claim}.
   - Let us consider an arbitrary `m0 : nat`{.var}.
     - Assume by induction hypothesis `m0 + 0 = m0`{.hyp} (IH).
       - By IH we have `m0 + 0 = m0`{.claim}.
-      - In particular `m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.
-        - Using f_equal we get `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y`{.claim} *by exact @f_equal*.
+      - Using f_equal we get `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
       - We deduce `S (m0 + 0) = S m0`{.claim}.
 - These cases being exhaustive, we deduce `forall n : nat, n + 0 = n`{.claim} *by eapply (@nat_ind (fun m0 : nat => m0 + 0 = m0)); cbv beta; eauto*.
 - In particular `m + 0 = m`{.claim}.

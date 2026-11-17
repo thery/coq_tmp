@@ -14,8 +14,7 @@ Let `n m : nat`{.var}. We prove `S (n + m) = n + S m`{.claim}.
   - Let us consider an arbitrary `n0 : nat`{.var}.
     - Assume by induction hypothesis `S (n0 + m) = n0 + S m`{.hyp} (IHn).
       - By IHn we have `S (n0 + m) = n0 + S m`{.claim}.
-      - In particular `S (n0 + m) = n0 + S m -> S (S (n0 + m)) = S (n0 + S m)`{.claim}.
-        - Using f_equal_nat we get `forall (B : Type) (f : nat -> B) (x y : nat), x = y -> f x = f y`{.claim} *by exact @f_equal_nat*.
+      - Using f_equal_nat we get `forall (B : Type) (f : nat -> B) (x y : nat), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Peano.f_equal_nat*.
       - We deduce `S (S (n0 + m)) = S (n0 + S m)`{.claim}.
 - These cases being exhaustive, we deduce `forall n0 : nat, S (n0 + m) = n0 + S m`{.claim} *by eapply (@nat_ind (fun n0 : nat => S (n0 + m) = n0 + S m)); cbv beta; eauto*.
 - In particular `S (n + m) = n + S m`{.claim}.

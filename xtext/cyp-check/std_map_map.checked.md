@@ -6,7 +6,7 @@
 
 - ▫️ To prove `map g (map f l) = map (fun x : A => g (f x)) l` by induction (list, list_ind), we generalise it to `forall l0 : list A, map g (map f l0) = map (fun x : A => g (f x)) l0`:
 - ✅ Case 1 (base): we prove `map g (map f nil) = map (fun x : A => g (f x)) nil`.
-  - ✅ By definition of eq (eq_refl), we have `(nil) = (nil) :> list C` .*by eapply @eq_refl; eauto*
+  - ✅ By definition of eq (eq_refl), we have `nil = (@nil C)` .*by eapply @eq_refl; eauto*
 - ✅ Case 2 (inductive): we prove `forall (a : A) (l0 : list A), map g (map f l0) = map (fun x : A => g (f x)) l0 -> map g (map f (a :: l0)) = map (fun x : A => g (f x)) (a :: l0)`.
   - ▫️ Let `a : A`.
   - ▫️ Let `l0 : list A`.

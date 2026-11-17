@@ -5,7 +5,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # and_comm
 
-Let `A B : Prop`{.var}. We prove `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)`{.claim}.
+Let `A B : Prop`{.var}. We prove `A /\ B <-> B /\ A`{.claim}.
 
 - We have proved `A /\ B -> B /\ A`{.claim}.
   - Assume `A /\ B`{.hyp} (H).
@@ -17,4 +17,4 @@ Let `A B : Prop`{.var}. We prove `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)`{.cla
     - Going back to the definition of and (match) in `B /\ A`{.fact} (H), we prove `A /\ B`{.claim}:
       - Assume `B`{.hyp} (H0) and `A`{.hyp} (H00).
         - By definition of and (conj), from `A`{.fact} (H00) and `B`{.fact} (H0) we deduce `A /\ B`{.claim} *by eapply @conj; eauto*.
-- So by definition of and (conj), we have `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)`{.claim} *by eapply @conj; eauto*.
+- So by definition of and (conj), we have `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)`{.claim} *by eapply @conj; eauto*, that is `A /\ B <-> B /\ A`{.fact}.

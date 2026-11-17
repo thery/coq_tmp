@@ -36,8 +36,7 @@
         ```
 
         </details>
-    - ✅ In particular `length (l ++ l2) = length l + length l2 -> S (length (l ++ l2)) = S (length l + length l2)`.
-      - ✅ Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y` .*by exact @f_equal*
+    - ✅ Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y` .*by exact @Corelib.Init.Logic.f_equal*
     - ✅ We deduce `S (length (l ++ l2)) = S (length l + length l2)`.
   - ✅ These cases being exhaustive, we deduce `length (l1 ++ l2) = length l1 + length l2` .*by destruct l1; cbn; eauto*
 

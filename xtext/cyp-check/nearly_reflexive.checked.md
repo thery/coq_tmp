@@ -10,9 +10,7 @@
       - ✅ By i we have `R x y0`.
       - ✅ We deduce `R y0 x`.
         - ✅ By i we have `R x y0`.
-        - ✅ In particular `R x y0 -> R y0 x`.
-          - ✅ By symmetry we have `forall x0 y : A, R x0 y -> R y x0`.
-      - ✅ In particular `R x y0 -> R y0 x -> R x x`.
-        - ✅ By transitivity we have `forall x0 y z : A, R x0 y -> R y z -> R x0 z`.
+        - ✅ By symmetry we have `forall x0 y : A, R x0 y -> R y x0`.
+      - ✅ By transitivity we have `forall x0 y z : A, R x0 y -> R y z -> R x0 z`.
       - ✅ We deduce `R x x`.
 

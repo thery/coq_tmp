@@ -2,7 +2,7 @@
 
 # app_comm_cons
 
-✅ Let `A : Type`. Let `x y : list A`. Let `a : A`. We prove `(a :: x) ++ y = (a :: x) ++ y`.
+✅ Let `A : Type`. Let `x y : list A`. Let `a : A`. We prove `a :: x ++ y = (a :: x) ++ y`.
 
-- ✅ By definition of eq (eq_refl), we have `(a :: x) ++ y = (a :: x) ++ y` .*by eapply @eq_refl; eauto*
+- ✅ By definition of eq (eq_refl), we have `(a :: x) ++ y = (a :: x) ++ y` , that is `a :: x ++ y = (a :: x) ++ y`.*by eapply @eq_refl; eauto*
 

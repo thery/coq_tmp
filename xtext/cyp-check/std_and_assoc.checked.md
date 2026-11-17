@@ -2,7 +2,7 @@
 
 # and_assoc
 
-✅ Let `A B C : Prop`. We prove `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)`.
+✅ Let `A B C : Prop`. We prove `(A /\ B) /\ C <-> A /\ B /\ C`.
 
 - ✅ We have proved `(A /\ B) /\ C -> A /\ B /\ C`.
   - ▫️ Assume `(A /\ B) /\ C` (H).
@@ -24,5 +24,5 @@
             - ✅ By definition of and (conj), from `A` (H0) and `B` (H01) we deduce `A /\ B` .*by eapply @conj; eauto*
             - ✅ By H1 we have `C`.
             - ✅ So by definition of and (conj), we have `(A /\ B) /\ C` .*by eapply @conj; eauto*
-- ✅ So by definition of and (conj), we have `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)` .*by eapply @conj; eauto*
+- ✅ So by definition of and (conj), we have `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)` , that is `(A /\ B) /\ C <-> A /\ B /\ C`.*by eapply @conj; eauto*
 

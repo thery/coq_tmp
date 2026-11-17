@@ -11,8 +11,7 @@
   - ▫️ Let us consider an arbitrary `n0 : nat`.
     - ▫️ Assume by induction hypothesis `n0 = n0 + 0` (IHn).
       - ✅ By IHn we have `n0 = n0 + 0`.
-      - ✅ In particular `n0 = n0 + 0 -> S n0 = S (n0 + 0)`.
-        - ✅ Using f_equal_nat we get `forall (B : Type) (f : nat -> B) (x y : nat), x = y -> f x = f y` .*by exact @f_equal_nat*
+      - ✅ Using f_equal_nat we get `forall (B : Type) (f : nat -> B) (x y : nat), x = y -> f x = f y` .*by exact @Corelib.Init.Peano.f_equal_nat*
       - ✅ We deduce `S n0 = S (n0 + 0)`.
 - ✅ These cases being exhaustive, we deduce `forall n0 : nat, n0 = n0 + 0` .*by eapply (@nat_ind (fun n0 : nat => n0 = n0 + 0)); cbv beta; eauto*
 - ✅ In particular `n = n + 0`.

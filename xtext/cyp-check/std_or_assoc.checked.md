@@ -2,7 +2,7 @@
 
 # or_assoc
 
-❌ Let `A B C : Prop`. We prove `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)`.
+❌ Let `A B C : Prop`. We prove `(A \/ B) \/ C <-> A \/ B \/ C`.
 
 <details><summary>not proved</summary>
 
@@ -14,7 +14,7 @@
   H0 : A \/ B \/ C -> (A \/ B) \/ C
   H1 : ((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)
   ============================
-  ((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)
+  (A \/ B) \/ C <-> A \/ B \/ C
 
 File "./cyp_ko_26.v", line 4, characters 0-168:
 Error: No applicable tactic.
@@ -22,7 +22,26 @@ Error: No applicable tactic.
 
 </details>
 
-- ✅ We have proved `(A \/ B) \/ C -> A \/ B \/ C`.
+- ❌ We have proved `(A \/ B) \/ C -> A \/ B \/ C`.
+
+  <details><summary>not proved</summary>
+
+  ```
+  1 goal
+    
+    A, B, C : Prop
+    H : (A \/ B) \/ C -> A \/ B -> A \/ B \/ C
+    H0 : (A \/ B) \/ C -> C -> A \/ B \/ C
+    H1 : (A \/ B) \/ C -> A \/ B \/ C
+    H2 : (A \/ B) \/ C
+    ============================
+    A \/ B \/ C
+  
+  File "./cyp_ko_12.v", line 4, characters 0-168:
+  Error: No applicable tactic.
+  ```
+
+  </details>
   - ▫️ Assume `(A \/ B) \/ C` (H).
     - ▫️ We prove `A \/ B \/ C` by case analysis on `(A \/ B) \/ C` (H) (or, match):
     - ✅ Case 1: we prove `A \/ B -> A \/ B \/ C`.
@@ -41,14 +60,56 @@ Error: No applicable tactic.
         - ✅ By definition of or (or_intror), from `C` (H0) we deduce `B \/ C` .*by eapply @or_intror; eauto*
         - ✅ By definition of or (or_intror), we have `A \/ B \/ C` .*by eapply @or_intror; eauto*
     - ✅ We have `A \/ B \/ C` in all cases.
-- ✅ We have proved `A \/ B \/ C -> (A \/ B) \/ C`.
+- ❌ We have proved `A \/ B \/ C -> (A \/ B) \/ C`.
+
+  <details><summary>not proved</summary>
+
+  ```
+  1 goal
+    
+    A, B, C : Prop
+    H : (A \/ B) \/ C -> A \/ B \/ C
+    H0 : A \/ B \/ C -> A -> (A \/ B) \/ C
+    H1 : A \/ B \/ C -> B \/ C -> (A \/ B) \/ C
+    H2 : A \/ B \/ C -> (A \/ B) \/ C
+    H3 : A \/ B \/ C
+    ============================
+    (A \/ B) \/ C
+  
+  File "./cyp_ko_24.v", line 4, characters 0-168:
+  Error: No applicable tactic.
+  ```
+
+  </details>
   - ▫️ Assume `A \/ B \/ C` (H).
     - ▫️ We prove `(A \/ B) \/ C` by case analysis on `A \/ B \/ C` (H) (or, match):
     - ✅ Case 1: we prove `A -> (A \/ B) \/ C`.
       - ▫️ Assume `A` (H0).
         - ✅ By definition of or (or_introl), from `A` (H0) we deduce `A \/ B` .*by eapply @or_introl; eauto*
         - ✅ By definition of or (or_introl), we have `(A \/ B) \/ C` .*by eapply @or_introl; eauto*
-    - ✅ Case 2: we prove `B \/ C -> (A \/ B) \/ C`.
+    - ❌ Case 2: we prove `B \/ C -> (A \/ B) \/ C`.
+
+      <details><summary>not proved</summary>
+
+      ```
+      1 goal
+        
+        A, B, C : Prop
+        H : (A \/ B) \/ C -> A \/ B \/ C
+        H0 : A \/ B \/ C
+        H1 : A -> (A \/ B) \/ C
+        H2 : B \/ C -> B -> (A \/ B) \/ C
+        H3 : B \/ C -> C -> (A \/ B) \/ C
+        H4 : B \/ C -> (A \/ B) \/ C
+        H5 : B \/ C
+        ============================
+        (A \/ B) \/ C
+      
+      File "./cyp_ko_22.v", line 4, characters 0-168:
+      Error: No applicable tactic.
+      ```
+
+      </details>
       - ▫️ Assume `B \/ C` (H0).
         - ▫️ We prove `(A \/ B) \/ C` by case analysis on `B \/ C` (H0) (or, match):
         - ✅ Case 2.1: we prove `B -> (A \/ B) \/ C`.
@@ -60,5 +121,5 @@ Error: No applicable tactic.
             - ✅ By definition of or (or_intror), from `C` (H1) we deduce `(A \/ B) \/ C` .*by eapply @or_intror; eauto*
         - ✅ We have `(A \/ B) \/ C` in all cases.
     - ✅ We have `(A \/ B) \/ C` in all cases.
-- ✅ So by definition of and (conj), we have `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)` .*by eapply @conj; eauto*
+- ✅ So by definition of and (conj), we have `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)` , that is `(A \/ B) \/ C <-> A \/ B \/ C`.*by eapply @conj; eauto*
 

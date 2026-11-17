@@ -10,138 +10,104 @@ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
 - Thus we have `forall x y : nat, x = y -> x + 0 = x <-> y + 0 = y`{.claim}.
   - Let us choose arbitrarily `x : nat`{.var}, `y : nat`{.var}.
     - Assume `x = y`{.hyp} (H).
-      - In particular `Morphisms.ProperProxy eq (y + 0 = y)`{.claim}.
-        - Using eq_proper_proxy we get `forall (A : Type) (x0 : A), Morphisms.ProperProxy eq x0`{.claim} *by exact @eq_proper_proxy*.
+      - In particular `Morphisms.ProperProxy eq (y + 0 = y)`{.claim}, that is `(y + 0 = y) = (y + 0 = y)`{.fact}.
+        - Using eq_proper_proxy we get `forall (A : Type) (x0 : A), Morphisms.ProperProxy eq x0`{.claim} *by exact @Corelib.Classes.Morphisms.eq_proper_proxy*.
       - In particular `y + 0 = y <-> y + 0 = y`{.claim}.
-        - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @iff_Reflexive*.
-        - In particular `RelationClasses.Reflexive iff -> forall x0 : Prop, x0 <-> x0`{.claim}.
-          - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x0 : A, R x0 x0`{.claim} *by exact @reflexivity*.
+        - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @Corelib.Classes.RelationClasses.iff_Reflexive*.
+        - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x0 : A, R x0 x0`{.claim} *by exact @Corelib.Classes.RelationClasses.reflexivity*.
         - We deduce `forall x0 : Prop, x0 <-> x0`{.claim}.
-      - In particular `(y + 0 = y) = (y + 0 = y) -> Basics.flip Basics.impl (x + 0 = x <-> y + 0 = y) (y + 0 = y <-> y + 0 = y)`{.claim}.
+      - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + 0 = x)) (iff (y + 0 = y))`{.claim}, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x + 0 = x <-> x0) (y + 0 = y <-> y0)`{.fact}.
         - We deduce `x + 0 = x <-> y + 0 = y`{.claim}.
           - By H we have `x = y`{.claim}.
-          - In particular `x = y -> x + 0 = x <-> y + 0 = y`{.claim}.
+          - We deduce `Morphisms.respectful eq iff (eq (x + 0)) (eq (y + 0))`{.claim}, that is `forall x0 y0 : nat, x0 = y0 -> x + 0 = x0 <-> y + 0 = y0`{.fact}.
             - We deduce `x + 0 = y + 0`{.claim}.
-              - In particular `Morphisms.ProperProxy eq 0`{.claim}.
-                - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
-                  - We deduce `RelationClasses.Reflexive eq`{.claim}.
-                    - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
-                    - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
-                      - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
-                  - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
-                    - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
-                - In particular `Morphisms.ReflexiveProxy eq -> forall x0 : nat, Morphisms.ProperProxy eq x0`{.claim}.
-                  - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x0 : A, Morphisms.ProperProxy R x0`{.claim} *by exact @reflexive_proper_proxy*.
+              - In particular `Morphisms.ProperProxy eq 0`{.claim}, that is `0 = 0`{.fact}.
+                - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
+                  - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
+                    - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
+                    - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
+                  - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @Corelib.Classes.Morphisms.reflexive_reflexive_proxy*.
+                - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x0 : A, Morphisms.ProperProxy R x0`{.claim} *by exact @Corelib.Classes.Morphisms.reflexive_proper_proxy*.
                 - We deduce `forall x0 : nat, Morphisms.ProperProxy eq x0`{.claim}.
-              - In particular `0 = 0 -> x + 0 = y + 0`{.claim}.
+              - We deduce `Morphisms.respectful eq eq (Init.Nat.add x) (Init.Nat.add y)`{.claim}, that is `forall x0 y0 : nat, x0 = y0 -> x + x0 = y + y0`{.fact}.
                 - By H we have `x = y`{.claim}.
-                - In particular `x = y -> Morphisms.respectful eq eq (Init.Nat.add x) (Init.Nat.add y)`{.claim}.
-                  - Using add_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim} *by exact @add_wd*.
-                - We deduce `Morphisms.respectful eq eq (Init.Nat.add x) (Init.Nat.add y)`{.claim}.
-            - In particular `x + 0 = y + 0 -> Morphisms.respectful eq iff (eq (x + 0)) (eq (y + 0))`{.claim}.
-              - We deduce `RelationClasses.PER eq`{.claim}.
-                - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
-                - In particular `RelationClasses.Equivalence eq -> RelationClasses.PER eq`{.claim}.
-                  - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
-              - In particular `RelationClasses.PER eq -> Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
-                - Using PER_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful R iff)) R`{.claim} *by exact @PER_morphism*.
-              - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
-            - We deduce `Morphisms.respectful eq iff (eq (x + 0)) (eq (y + 0))`{.claim}.
-        - In particular `x + 0 = x <-> y + 0 = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + 0 = x)) (iff (y + 0 = y))`{.claim}.
-          - Using iff_Transitive we get `RelationClasses.Transitive iff`{.claim} *by exact @iff_Transitive*.
-          - In particular `RelationClasses.Transitive iff -> Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful eq (Basics.flip Basics.impl))) iff`{.claim}.
-            - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by exact @trans_co_eq_inv_impl_morphism*.
-          - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful eq (Basics.flip Basics.impl))) iff`{.claim}.
-        - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + 0 = x)) (iff (y + 0 = y))`{.claim}.
+                - Using add_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.add_wd*, that is `forall x0 y0 : nat, x0 = y0 -> Morphisms.respectful eq eq (Init.Nat.add x0) (Init.Nat.add y0)`{.fact}.
+            - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) (@eq nat)`{.claim}, that is `forall x0 y0 : nat, x0 = y0 -> Morphisms.respectful eq iff (eq x0) (eq y0)`{.fact}.
+              - We deduce `RelationClasses.PER (@eq nat)`{.claim}.
+                - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
+                - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_PER*.
+              - Using PER_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful R iff)) R`{.claim} *by exact @Corelib.Classes.Morphisms.PER_morphism*.
+        - We deduce `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful eq (Basics.flip Basics.impl))) iff`{.claim}, that is `forall x0 y0 : Prop, x0 <-> y0 -> Morphisms.respectful eq (Basics.flip Basics.impl) (iff x0) (iff y0)`{.fact}.
+          - Using iff_Transitive we get `RelationClasses.Transitive iff`{.claim} *by exact @Corelib.Classes.RelationClasses.iff_Transitive*.
+          - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by exact @Corelib.Classes.Morphisms.trans_co_eq_inv_impl_morphism*.
       - We deduce `x + 0 = x <-> y + 0 = y`{.claim}.
     - We have proved `x = y -> x + 0 = x <-> y + 0 = y`{.claim}.
 - We deduce `0 + 0 = 0`{.claim}.
   - In particular `0 + 0 = 0`{.claim}.
-    - Using add_0_l we get `forall n0 : nat, 0 + n0 = n0`{.claim} *by exact @add_0_l*.
-  - In particular `0 = 0`{.claim}.
-    - We deduce `RelationClasses.Reflexive eq`{.claim}.
-      - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
-      - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
-        - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
-    - In particular `RelationClasses.Reflexive eq -> forall x : nat, x = x`{.claim}.
-      - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by exact @reflexivity*.
+    - Using add_0_l we get `forall n0 : nat, 0 + n0 = n0`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.add_0_l*.
+  - In particular `0 = 0`{.claim}, that is `0 = 0`{.fact}.
+    - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
+      - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
+      - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
+    - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by exact @Corelib.Classes.RelationClasses.reflexivity*.
     - We deduce `forall x : nat, x = x`{.claim}.
   - We have proved `0 + 0 = 0 -> Basics.flip Basics.impl (0 + 0 = 0) (0 = 0)`{.claim}.
     - Assume `0 + 0 = 0`{.hyp} (lemma).
-      - In particular `Morphisms.ProperProxy eq 0`{.claim}.
-        - Using eq_proper_proxy we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim} *by exact @eq_proper_proxy*.
-      - In particular `0 = 0 -> Basics.flip Basics.impl (0 + 0 = 0) (0 = 0)`{.claim}.
+      - In particular `Morphisms.ProperProxy eq 0`{.claim}, that is `0 = 0`{.fact}.
+        - Using eq_proper_proxy we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim} *by exact @Corelib.Classes.Morphisms.eq_proper_proxy*.
+      - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (0 + 0)) (eq 0)`{.claim}, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (0 + 0 = x) (0 = y)`{.fact}.
         - By lemma we have `0 + 0 = 0`{.claim}.
-        - In particular `0 + 0 = 0 -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq (0 + 0)) (eq 0)`{.claim}.
-          - We deduce `RelationClasses.Transitive eq`{.claim}.
-            - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
-            - In particular `RelationClasses.Equivalence eq -> RelationClasses.Transitive eq`{.claim}.
-              - Using Equivalence_Transitive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Transitive R`{.claim} *by exact @Equivalence_Transitive*.
-          - In particular `RelationClasses.Transitive eq -> Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) eq`{.claim}.
-            - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by exact @trans_co_eq_inv_impl_morphism*.
-          - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) eq`{.claim}.
-        - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (0 + 0)) (eq 0)`{.claim}.
+        - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
+          - We deduce `RelationClasses.Transitive (@eq nat)`{.claim}.
+            - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
+            - Using Equivalence_Transitive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Transitive R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_Transitive*.
+          - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by exact @Corelib.Classes.Morphisms.trans_co_eq_inv_impl_morphism*.
       - We deduce `Basics.flip Basics.impl (0 + 0 = 0) (0 = 0)`{.claim}.
 - We have `forall n0 : nat, n0 + 0 = n0 <-> S n0 + 0 = S n0`{.claim}, since `n0`{.fact} is arbitrary.
   - Let us consider an arbitrary `n0 : nat`{.var}.
     - In particular `S n0 + 0 = S (n0 + 0)`{.claim}.
-      - Using add_succ_l we get `forall n1 m : nat, S n1 + m = S (n1 + m)`{.claim} *by exact @add_succ_l*.
+      - Using add_succ_l we get `forall n1 m : nat, S n1 + m = S (n1 + m)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.add_succ_l*.
     - We deduce `n0 + 0 = n0 <-> S (n0 + 0) = S n0`{.claim}.
       - In particular `S (n0 + 0) = S n0 <-> n0 + 0 = n0`{.claim}.
-        - Using succ_inj_wd we get `forall n1 n2 : nat, S n1 = S n2 <-> n1 = n2`{.claim} *by exact @succ_inj_wd*.
+        - Using succ_inj_wd we get `forall n1 n2 : nat, S n1 = S n2 <-> n1 = n2`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.succ_inj_wd*.
       - In particular `n0 + 0 = n0 <-> n0 + 0 = n0`{.claim}.
-        - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @iff_Reflexive*.
-        - In particular `RelationClasses.Reflexive iff -> forall x : Prop, x <-> x`{.claim}.
-          - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by exact @reflexivity*.
+        - Using iff_Reflexive we get `RelationClasses.Reflexive iff`{.claim} *by exact @Corelib.Classes.RelationClasses.iff_Reflexive*.
+        - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by exact @Corelib.Classes.RelationClasses.reflexivity*.
         - We deduce `forall x : Prop, x <-> x`{.claim}.
       - We have proved `S (n0 + 0) = S n0 <-> n0 + 0 = n0 -> Basics.flip Basics.impl (n0 + 0 = n0 <-> S (n0 + 0) = S n0) (n0 + 0 = n0 <-> n0 + 0 = n0)`{.claim}.
         - Assume `S (n0 + 0) = S n0 <-> n0 + 0 = n0`{.hyp} (lemma).
           - By lemma we have `S (n0 + 0) = S n0 <-> n0 + 0 = n0`{.claim}.
-          - In particular `S (n0 + 0) = S n0 <-> n0 + 0 = n0 -> Basics.flip Basics.impl (n0 + 0 = n0 <-> S (n0 + 0) = S n0) (n0 + 0 = n0 <-> n0 + 0 = n0)`{.claim}.
+          - We deduce `forall x : Prop, Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (iff x)`{.claim}.
             - We deduce `RelationClasses.PER iff`{.claim}.
-              - Using iff_equivalence we get `RelationClasses.Equivalence iff`{.claim} *by exact @iff_equivalence*.
-              - In particular `RelationClasses.Equivalence iff -> RelationClasses.PER iff`{.claim}.
-                - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
-            - In particular `RelationClasses.PER iff -> forall x : Prop, Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (iff x)`{.claim}.
-              - Using trans_sym_co_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> forall x : A, Morphisms.Proper (Morphisms.respectful R (Basics.flip Basics.impl)) (R x)`{.claim} *by exact @trans_sym_co_inv_impl_morphism*.
-            - We deduce `forall x : Prop, Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (iff x)`{.claim}.
+              - Using iff_equivalence we get `RelationClasses.Equivalence iff`{.claim} *by exact @Corelib.Classes.RelationClasses.iff_equivalence*.
+              - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_PER*.
+            - Using trans_sym_co_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> forall x : A, Morphisms.Proper (Morphisms.respectful R (Basics.flip Basics.impl)) (R x)`{.claim} *by exact @Corelib.Classes.Morphisms.trans_sym_co_inv_impl_morphism*.
           - We deduce `Basics.flip Basics.impl (n0 + 0 = n0 <-> S (n0 + 0) = S n0) (n0 + 0 = n0 <-> n0 + 0 = n0)`{.claim}.
     - We have proved `S n0 + 0 = S (n0 + 0) -> Basics.flip Basics.impl (n0 + 0 = n0 <-> S n0 + 0 = S n0) (n0 + 0 = n0 <-> S (n0 + 0) = S n0)`{.claim}.
       - Assume `S n0 + 0 = S (n0 + 0)`{.hyp} (lemma).
         - We deduce `S n0 + 0 = S n0 <-> S (n0 + 0) = S n0`{.claim}.
-          - In particular `Morphisms.ProperProxy eq (S n0)`{.claim}.
-            - We deduce `Morphisms.ReflexiveProxy eq`{.claim}.
-              - We deduce `RelationClasses.Reflexive eq`{.claim}.
-                - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
-                - In particular `RelationClasses.Equivalence eq -> RelationClasses.Reflexive eq`{.claim}.
-                  - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Equivalence_Reflexive*.
-              - In particular `RelationClasses.Reflexive eq -> Morphisms.ReflexiveProxy eq`{.claim}.
-                - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @reflexive_reflexive_proxy*.
-            - In particular `Morphisms.ReflexiveProxy eq -> forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
-              - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @reflexive_proper_proxy*.
+          - In particular `Morphisms.ProperProxy eq (S n0)`{.claim}, that is `S n0 = S n0`{.fact}.
+            - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
+              - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
+                - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
+                - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
+              - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by exact @Corelib.Classes.Morphisms.reflexive_reflexive_proxy*.
+            - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by exact @Corelib.Classes.Morphisms.reflexive_proper_proxy*.
             - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
-          - In particular `S n0 = S n0 -> S n0 + 0 = S n0 <-> S (n0 + 0) = S n0`{.claim}.
+          - We deduce `Morphisms.respectful eq iff (eq (S n0 + 0)) (eq (S (n0 + 0)))`{.claim}, that is `forall x y : nat, x = y -> S n0 + 0 = x <-> S (n0 + 0) = y`{.fact}.
             - By lemma we have `S n0 + 0 = S (n0 + 0)`{.claim}.
-            - In particular `S n0 + 0 = S (n0 + 0) -> Morphisms.respectful eq iff (eq (S n0 + 0)) (eq (S (n0 + 0)))`{.claim}.
-              - We deduce `RelationClasses.PER eq`{.claim}.
-                - Using eq_equiv we get `RelationClasses.Equivalence eq`{.claim} *by exact @eq_equiv*.
-                - In particular `RelationClasses.Equivalence eq -> RelationClasses.PER eq`{.claim}.
-                  - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
-              - In particular `RelationClasses.PER eq -> Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
-                - Using PER_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful R iff)) R`{.claim} *by exact @PER_morphism*.
-              - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) eq`{.claim}.
-            - We deduce `Morphisms.respectful eq iff (eq (S n0 + 0)) (eq (S (n0 + 0)))`{.claim}.
-        - In particular `S n0 + 0 = S n0 <-> S (n0 + 0) = S n0 -> Basics.flip Basics.impl (n0 + 0 = n0 <-> S n0 + 0 = S n0) (n0 + 0 = n0 <-> S (n0 + 0) = S n0)`{.claim}.
+            - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq iff)) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq iff (eq x) (eq y)`{.fact}.
+              - We deduce `RelationClasses.PER (@eq nat)`{.claim}.
+                - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
+                - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_PER*.
+              - Using PER_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful R iff)) R`{.claim} *by exact @Corelib.Classes.Morphisms.PER_morphism*.
+        - We deduce `forall x : Prop, Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (iff x)`{.claim}.
           - We deduce `RelationClasses.PER iff`{.claim}.
-            - Using iff_equivalence we get `RelationClasses.Equivalence iff`{.claim} *by exact @iff_equivalence*.
-            - In particular `RelationClasses.Equivalence iff -> RelationClasses.PER iff`{.claim}.
-              - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Equivalence_PER*.
-          - In particular `RelationClasses.PER iff -> forall x : Prop, Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (iff x)`{.claim}.
-            - Using trans_sym_co_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> forall x : A, Morphisms.Proper (Morphisms.respectful R (Basics.flip Basics.impl)) (R x)`{.claim} *by exact @trans_sym_co_inv_impl_morphism*.
-          - We deduce `forall x : Prop, Morphisms.Proper (Morphisms.respectful iff (Basics.flip Basics.impl)) (iff x)`{.claim}.
+            - Using iff_equivalence we get `RelationClasses.Equivalence iff`{.claim} *by exact @Corelib.Classes.RelationClasses.iff_equivalence*.
+            - Using Equivalence_PER we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.PER R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_PER*.
+          - Using trans_sym_co_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.PER R -> forall x : A, Morphisms.Proper (Morphisms.respectful R (Basics.flip Basics.impl)) (R x)`{.claim} *by exact @Corelib.Classes.Morphisms.trans_sym_co_inv_impl_morphism*.
         - We deduce `Basics.flip Basics.impl (n0 + 0 = n0 <-> S n0 + 0 = S n0) (n0 + 0 = n0 <-> S (n0 + 0) = S n0)`{.claim}.
     - We deduce `n0 + 0 = n0 <-> S n0 + 0 = S n0`{.claim}.
-- In particular `Morphisms.Proper (Morphisms.respectful eq iff) (fun t : nat => t + 0 = t) -> 0 + 0 = 0 -> (forall n0 : nat, n0 + 0 = n0 <-> S n0 + 0 = S n0) -> forall n0 : nat, n0 + 0 = n0`{.claim}.
-  - Using bi_induction we get `forall A : nat -> Prop, Morphisms.Proper (Morphisms.respectful eq iff) A -> A 0 -> (forall n0 : nat, A n0 <-> A (S n0)) -> forall n0 : nat, A n0`{.claim} *by exact @bi_induction*.
+- Using bi_induction we get `forall A : nat -> Prop, Morphisms.Proper (Morphisms.respectful eq iff) A -> A 0 -> (forall n0 : nat, A n0 <-> A (S n0)) -> forall n0 : nat, A n0`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.bi_induction*.
 - We deduce `forall n0 : nat, n0 + 0 = n0`{.claim}.
 - In particular `n + 0 = n`{.claim}.

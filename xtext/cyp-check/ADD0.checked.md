@@ -11,8 +11,7 @@
   - ▫️ Let us consider an arbitrary `m0 : nat`.
     - ▫️ Assume by induction hypothesis `m0 + 0 = m0` (IH).
       - ✅ By IH we have `m0 + 0 = m0`.
-      - ✅ In particular `m0 + 0 = m0 -> S (m0 + 0) = S m0`.
-        - ✅ Using f_equal we get `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y` .*by exact @f_equal*
+      - ✅ Using f_equal we get `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y` .*by exact @Corelib.Init.Logic.f_equal*
       - ✅ We deduce `S (m0 + 0) = S m0`.
 - ✅ These cases being exhaustive, we deduce `forall n : nat, n + 0 = n` .*by eapply (@nat_ind (fun m0 : nat => m0 + 0 = m0)); cbv beta; eauto*
 - ✅ In particular `m + 0 = m`.

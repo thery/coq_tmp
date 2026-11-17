@@ -2,7 +2,7 @@
 
 # Nat.pred_succ
 
-✅ Let `n : nat`. We prove `n = n`.
+✅ Let `n : nat`. We prove `Nat.pred (S n) = n`.
 
-- ✅ By definition of eq (eq_refl), we have `n = n` .*by eapply @eq_refl; eauto*
+- ✅ By definition of eq (eq_refl), we have `n = n` , that is `Nat.pred (S n) = n`.*by eapply @eq_refl; eauto*
 

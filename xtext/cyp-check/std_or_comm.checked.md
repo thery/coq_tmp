@@ -2,7 +2,7 @@
 
 # or_comm
 
-✅ Let `A B : Prop`. We prove `(A \/ B -> B \/ A) /\ (B \/ A -> A \/ B)`.
+✅ Let `A B : Prop`. We prove `A \/ B <-> B \/ A`.
 
 - ✅ We have proved `A \/ B -> B \/ A`.
   - ▫️ Assume `A \/ B` (H).
@@ -24,5 +24,5 @@
       - ▫️ Assume `A` (H0).
         - ✅ By definition of or (or_introl), from `A` (H0) we deduce `A \/ B` .*by eapply @or_introl; eauto*
     - ✅ We have `A \/ B` in all cases.
-- ✅ So by definition of and (conj), we have `(A \/ B -> B \/ A) /\ (B \/ A -> A \/ B)` .*by eapply @conj; eauto*
+- ✅ So by definition of and (conj), we have `(A \/ B -> B \/ A) /\ (B \/ A -> A \/ B)` , that is `A \/ B <-> B \/ A`.*by eapply @conj; eauto*
 

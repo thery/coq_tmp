@@ -2,7 +2,7 @@
 
 # and_comm
 
-✅ Let `A B : Prop`. We prove `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)`.
+✅ Let `A B : Prop`. We prove `A /\ B <-> B /\ A`.
 
 - ✅ We have proved `A /\ B -> B /\ A`.
   - ▫️ Assume `A /\ B` (H).
@@ -14,5 +14,5 @@
     - ✅ Going back to the definition of and (match) in `B /\ A` (H), we prove `A /\ B`:
       - ▫️ Assume `B` (H0) and `A` (H00).
         - ✅ By definition of and (conj), from `A` (H00) and `B` (H0) we deduce `A /\ B` .*by eapply @conj; eauto*
-- ✅ So by definition of and (conj), we have `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)` .*by eapply @conj; eauto*
+- ✅ So by definition of and (conj), we have `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)` , that is `A /\ B <-> B /\ A`.*by eapply @conj; eauto*
 

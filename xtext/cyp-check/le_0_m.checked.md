@@ -2,7 +2,7 @@
 
 # le_0_m
 
-✅ We prove `forall n : nat, 0 <= n`.
+✅ We prove `forall m : nat, 0 <= m`.
 
 - ▫️ We prove `forall n : nat, 0 <= n` by induction (nat, nat_ind):
 - ✅ Case 1 (base): we prove `0 <= 0`.

@@ -31,16 +31,14 @@ Let `A : Type`{.var}. Let `l m n : list A`{.var}. We prove `l ++ m ++ n = (l ++ 
       - We have proved `a = a -> l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
         - By definition of eq (eq_refl), we have `A = A`{.claim} *by eapply @eq_refl; eauto* (H1).
         - Assume `a = a`{.hyp} (H00) and `l0 ++ m ++ n = (l0 ++ m) ++ n`{.hyp} (H10).
-          - We deduce `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim}.
+          - We deduce `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim}, that is `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.fact}.
             - By definition of eq (eq_refl), we have `cons a = cons a`{.claim} *by eapply @eq_refl; eauto*.
             - In particular `cons a = cons a -> a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim}.
-              - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @f_equal*.
-          - We deduce `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+              - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
+          - We deduce `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}, that is `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.fact}.
             - By H10 we have `l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
-            - In particular `l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
-              - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @f_equal*.
-          - In particular `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
-            - Using eq_trans we get `forall (A0 : Type) (x y z : A0), x = y -> y = z -> x = z`{.claim} *by exact @eq_trans*.
+            - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
+          - Using eq_trans we get `forall (A0 : Type) (x y z : A0), x = y -> y = z -> x = z`{.claim} *by exact @Corelib.Init.Logic.eq_trans*.
           - We deduce `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
     - We deduce `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
 - These cases being exhaustive, we deduce `forall l0 : list A, l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim} *by eapply (@list_ind (A) (fun l0 : list A => l0 ++ m ++ n = (l0 ++ m) ++ n)); cbv beta; eauto*.

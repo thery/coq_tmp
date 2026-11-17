@@ -229,17 +229,18 @@ in the thesis.
 - Same: the binders (`Let E : Set`, `Let R : Rel E`, `Assume Trans E R
   (h)`, `Let x y z : E`, `Assume Inv E R x y (h1) and Inv E R y z (h2)`),
   the two hypotheses used, then the application of `h`.
-- Already there: the type that a step proves is the one Rocq computes
-  (`In particular R z y -> R y x -> R z x`, `We prove R z x`), so the
-  unfolded form is shown, like the thesis's inherited types (3.3.2).
-- Missing: the thesis's `ce qui est équivalent à`.  Fig. 5.11 says
-  `Montrons (Trans E (Inv E R)), ce qui est équivalent à ∀x, y, z ...`
-  and `Montrons (R z x), ce qui est équivalent à (Inv R x z)`.  xtext states
-  the body's type `R z x` only, and never links `Trans E R` (from `By h`)
-  to its unfolding `forall x y z, ...`: the δ-conversion is silent.  This
-  is the "Cast'" of the thesis (5.2.2), queued as the next round.  Also
-  missing: the specialisation `h z y x` is not said with the names of the
-  instances (`En appliquant h à z, y, x, h2 et h1`).
+- With "that is" (mechanism (4) below) and the inferable arguments (3b),
+  the text is now that of Fig. 3.13: `By h2 we have Inv E R y z, that is R
+  z y`, `By h1 we have Inv E R x y, that is R y x`, `By h we have Trans E
+  R, that is forall x0 y0 z0 : E, R x0 y0 -> R y0 z0 -> R x0 z0`, `We
+  deduce R z x, that is Inv E R x z`, and the statement is the declared
+  one, `We prove Inv E R x z`.  The step `In particular R z y -> R y x
+  -> R z x` is gone: `z`, `y`, `x` are inferred (as in Fig. 5.11, `En
+  appliquant h à h2 et h1`).
+- Still different from Fig. 5.11: the goal `Trans E (Inv E R)` is not
+  announced with its unfolding before the binders `x y z` (`Montrons
+  (Trans E (Inv E R)), ce qui est équivalent à ∀x, y, z ...`): the
+  statement is `Let x y z : E`, `Assume ...`, as the λ-term gives it.
 
 **ABCD** (Coscoy, Fig. 4.28, 5.5, 5.6):
 `fun A B C D h1 h2 h3 h4 => h1 h4 (h2 h4 (h3 h4)) (h3 h4)`.
@@ -325,72 +326,8 @@ copy checked by cyp also loads Reals, Flocq and the exp files: the header
 written by xtext only requires the file of the theorem, and its notations
 (`%R`) are then unknown.
 
-`thesis.v`:
-
-| example | items | chars | time (s) | cyp proved / not proved / not checked |
-|---|---|---|---|---|
-| Tauto | 4 | 417 | 0.025 | 4 / 0 / 0 |
-| Trans_Inv | 5 | 561 | 0.01 | 5 / 0 / 0 |
-| ABCD | 12 | 720 | 0.01 | 12 / 0 / 0 |
-| or_com | 8 | 807 | 0.012 | 5 / 0 / 3 |
-| or_sym_nd | 8 | 755 | 0.01 | 5 / 0 / 3 |
-| praeclarum_nd | 17 | 1220 | 0.018 | 17 / 0 / 0 |
-| ADD0 | 12 | 1163 | 0.019 | 9 / 0 / 3 |
-
-`stdlib.v`:
-
-| example | items | chars | time (s) | cyp proved / not proved / not checked |
-|---|---|---|---|---|
-| std_app_assoc | 38 | 3575 | 0.102 | 32 / 0 / 6 |
-| std_app_nil_r | 30 | 2712 | 0.055 | 25 / 0 / 5 |
-| std_app_comm_cons | 1 | 382 | 0.007 | 1 / 0 / 0 |
-| std_rev_involutive | 15 | 1661 | 0.044 | 11 / 0 / 4 |
-| std_rev_app_distr | 18 | 2186 | 0.018 | 14 / 0 / 4 |
-| std_length_rev | 18 | 2232 | 0.015 | 1 / 13 / 4 |
-| std_map_app | 15 | 1945 | 0.017 | 9 / 0 / 6 |
-| std_map_map | 12 | 1802 | 0.014 | 8 / 0 / 4 |
-| std_length_app | 16 | 1969 | 0.015 | 1 / 9 / 6 |
-| std_in_app_or | 31 | 3278 | 0.042 | 18 / 1 / 12 |
-| std_in_or_app | 69 | 5983 | 0.051 | 48 / 0 / 21 |
-| std_in_map | 36 | 3149 | 0.026 | 23 / 0 / 13 |
-| std_in_eq | 4 | 465 | 0.003 | 2 / 0 / 2 |
-| std_in_cons | 4 | 453 | 0.004 | 1 / 0 / 3 |
-| std_Nat_add_comm | 196 | 23612 | 0.159 | 81 / 107 / 8 |
-| std_Nat_add_assoc | 265 | 33470 | 0.333 | 102 / 154 / 9 |
-| std_Nat_mul_comm | 196 | 23620 | 0.23 | 81 / 107 / 8 |
-| std_Nat_le_trans | 484 | 77260 | 0.499 | timeout (300s) |
-| std_Nat_add_0_r | 138 | 15887 | 0.149 | 59 / 73 / 6 |
-| std_Nat_add_succ_r | 202 | 24435 | 0.18 | 85 / 109 / 8 |
-| std_Nat_le_refl | 19 | 1865 | 0.014 | 7 / 10 / 2 |
-| std_Nat_lt_irrefl | 42 | 5456 | 0.032 | 30 / 9 / 3 |
-| std_Nat_mul_1_r | 118 | 13560 | 0.112 | 41 / 73 / 4 |
-| std_Nat_pred_succ | 1 | 288 | 0.003 | 1 / 0 / 0 |
-| std_plus_n_O | 12 | 1142 | 0.008 | 9 / 0 / 3 |
-| std_plus_n_Sm | 12 | 1293 | 0.009 | 9 / 0 / 3 |
-| std_andb_comm | 16 | 1568 | 0.007 | 13 / 0 / 3 |
-| std_orb_comm | 16 | 1563 | 0.007 | 13 / 0 / 3 |
-| std_negb_involutive | 6 | 700 | 0.005 | 5 / 0 / 1 |
-| std_andb_true_r | 6 | 676 | 0.003 | 5 / 0 / 1 |
-| std_orb_false_r | 6 | 681 | 0.003 | 5 / 0 / 1 |
-| std_andb_assoc | 36 | 3838 | 0.016 | 29 / 0 / 7 |
-| std_negb_andb | 16 | 1785 | 0.008 | 13 / 0 / 3 |
-| std_and_comm | 11 | 1078 | 0.147 | 7 / 0 / 4 |
-| std_or_comm | 21 | 1559 | 0.01 | 13 / 0 / 8 |
-| std_and_assoc | 21 | 1933 | 0.014 | 15 / 0 / 6 |
-| std_or_assoc | 39 | 3098 | 0.02 | 25 / 0 / 14 |
-| std_eq_sym | 2 | 425 | 0.003 | 2 / 0 / 0 |
-| std_eq_trans | 2 | 399 | 0.003 | 2 / 0 / 0 |
-| std_f_equal | 2 | 464 | 0.003 | 2 / 0 / 0 |
-
-`exp_examples.v`:
-
-| example | items | chars | time (s) | cyp proved / not proved / not checked |
-|---|---|---|---|---|
-| exp_round_one | 26 | 4370 | 0.037 | 5 / 15 / 6 |
-| exp_succ_one | 13 | 2149 | 0.141 | 11 / 2 / 0 |
-| exp_pred_x_small | 9 | 1837 | 0.311 | 8 / 1 / 0 |
-| exp_grid_plus | 23 | 4903 | 0.037 | 7 / 9 / 7 |
-| exp_rnd_same_half_cell | 379 | 90904 | 2.416 | timeout (600s) |
+The sizes, times and cyp results of all texts are in the table of the next
+section (columns "none" and "cyp before" are the state of this section).
 
 What breaks or becomes unreadable on the large ones:
 
@@ -401,15 +338,16 @@ What breaks or becomes unreadable on the large ones:
   arithmetic.  The `lia`, `ring` and `interval` certificates of CORE-MATH
   appear as local definitions (`Let __ff be Tauto.IMPL (...)`,
   `RTautoChecker_sound` used 12 times in `rnd_same_half_cell`) and lines
-  of 1500-2200 characters.  Recognising such subproofs and writing `by lia`
-  is the tactic rule queued for the next round.
+  of 1500-2200 characters.  Now partly handled, see "Tactic-built
+  subproofs" below.
 - **Implicit arguments.**  Rocq prints `Equivalence eq` or `length [] =
   0` without the type, and these formulas do not type-check again: cyp
   marks them as errors, and all the steps after them too.  This is most of
-  the "not proved" of the `Nat.*` and `length_*` texts.  Dropping and
-  keeping arguments by re-elaboration is queued too.
-- **Local definitions** (`Let hyp_list be nil`) have no form in cyp, so a
-  later formula that uses `hyp_list` is a Rocq error.
+  the "not proved" of the `Nat.*` and `length_*` texts.  Now handled,
+  see "Formulas that type-check again" below.
+- **Local definitions** (`Let hyp_list be nil`) had no form in cyp, so a
+  later formula that used `hyp_list` was a Rocq error.  They are now
+  written as cyp's local definitions (below).
 - **Size**: `Nat.le_trans` (484 items) and `rnd_same_half_cell` (379
   items, 91 000 characters) are generated in 0.5 s and 2.4 s, but cyp
   does not finish them within its limit (300 s and 600 s).
@@ -435,6 +373,219 @@ thesis:
 
 Regression: all 24 earlier texts are generated, and cyp gives the same
 counts as before on the 15 of `cyp-check/`.
+
+## Inferable arguments, tactics, unfolding
+
+Four generic mechanisms, after Coscoy's thesis.  Each can be switched
+off for measurements with the environment variable `XTEXT_OFF` (a
+comma-separated list of `explicit`, `args`, `tactics`, `thatis`).
+
+### (3a) Formulas that type-check again (thesis 5.4, applied to formulas)
+
+Rocq's printer leaves out the implicit arguments, so `@eq (list A) []
+[]` prints as `[] = []`, which does not type-check again.  For each
+formula, xtext builds its *skeleton*: the implicit arguments of every
+application become holes.  It elaborates the skeleton
+(`coq.elaborate-skeleton`) and keeps the printed form only if the result
+is ground and convertible to the formula.  Otherwise it decides
+application by application, in the order of the term: the arguments of
+an application are left out if the skeleton still elaborates back,
+with the earlier applications as decided and the later ones written in
+full.  The kept applications are printed `@f a1 .. an`, for example
+`[] = (@nil A)` or `RelationClasses.Reflexive (@eq nat)`.
+
+- Rocq's implicit status (`coq.arguments.implicit`) only says which
+  arguments the printer can drop.  Re-elaboration decides which ones may
+  stay dropped.
+- Limits: a kept application under a binder cannot be put back into the
+  printed text by the placeholder method used here, so the whole formula
+  is printed with `Printing All` (`@eq nat (@length A ...)`).  A formula
+  with more than 60 such applications is printed in full when the fast
+  test fails.  The test is up to conversion and assumes that Rocq parses
+  the printed text back to the skeleton (notations, scopes).
+- Binder types (`Let`, `Assume`) and the local definitions get the same
+  treatment.
+
+### (3b) Inferable arguments of an application (thesis 5.4, the extended App)
+
+A run of specialisations followed by a run of premises (`h z y x h2 h1`)
+is written as one modus ponens step when the specialised arguments can be
+inferred.  The test: the application with these arguments as holes
+elaborates, against its type, back to the same term.  The step `In
+particular R z y -> R y x -> R z x` then disappears.  Nothing is
+dropped by name.
+
+### (5) Tactic-built subproofs (thesis 5.4, the pragmatic method)
+
+A proper subproof whose proof term has at least `xtext-threshold` nodes
+(default 300) is first tried with the tactics of `xtext-tactic`, in
+order, on its statement in its own context.  The defaults are
+`tauto` then `lia`, each with a 2 s time limit.  The first tactic that
+closes it gives one step, `We have P *by lia*`, instead of the walk
+through the term.  The success of the tactic is the guarantee; no
+constant is recognised by its name.
+
+- Where: on every subproof but the whole proof (the body of the theorem,
+  and the body of a cast or `let` that is the whole proof).  The size is
+  that of the proof term, so the large terms built by `lia`, `ring` or
+  setoid rewriting are the ones tried.  Short subproofs keep their text.
+- Parameters, in the Elpi database `xtext.db` (`Explain.v`):
+  `xtext-tactic Ltac Text` (an Ltac definition, and the text written after
+  *by*), `xtext-threshold N`.  To add `lra`, write `Ltac my_lra := timeout
+  2 lra.` then `Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra".
+  }}`.  To change the threshold, write `:before "xtext-threshold"
+  xtext-threshold 50 :- !.`
+- Limits: a subproof that a tactic closes loses its explanation, even if
+  it was written by hand (e.g. the inductive step of `Nat.add_assoc` at a
+  lower threshold).  The threshold is the only control.  Tactics are run
+  in Explain's environment; one not loaded there must be added as above.
+
+### (4) "that is" (thesis 3.3 and 5.2.2, Cast')
+
+When the type a subproof proves (synthesised) differs syntactically
+from the type expected at its place (inherited) but Rocq finds them
+convertible (`coq.unify-eq`), its conclusion says both: `By h2 we have Inv
+E R y z, that is R z y`.  The expected types come from the type of the
+function applied (premises of an application, of a constructor) and from
+the declared type of the theorem for the whole proof.  The statement now
+shows the declared type (`We prove Inv E R x z`, not `R z x`).  A
+function whose type is a product only after unfolding gets the unfolded
+type too (`By h we have Trans E R, that is forall x0 y0 z0 : E, ...`).
+This is any definition, with no list of names.  With it, `Trans_Inv`
+reads as Fig. 3.13 of the thesis.
+
+- Limits: the cases of an elimination and the branches of a `match` do
+  not get it (their goals are stated from the eliminator).  Many "that is"
+  in the setoid-rewriting proofs (`Proper ...`, that is `forall x y, ...`)
+  are true but noisy.
+
+### Local definitions
+
+`let u := e in M`, when `e` is not a proof, is now written *Let `u : T :=
+e`* (role `{.var}`), the local definition of cyp, so that the steps after
+it may use `u`.
+
+### Measurements
+
+All 76 texts, generated with each mechanism alone and with all of them
+(`XTEXT_OFF`; generation time is the sum of Rocq's `Time` over the texts):
+
+| mechanisms on | list items | characters | generation time (s) |
+|---|---|---|---|
+| none | 2916 | 418139 | 11.6 |
+| formulas that type-check (3a) | 2916 | 426998 | 14.8 |
+| inferable arguments (3b) | 2429 | 346399 | 8.1 |
+| tactics (5) | 2163 | 310935 | 14.7 |
+| "that is" (4) | 2916 | 431659 | 10.1 |
+| all | 1856 | 278197 | 16.1 |
+
+The tactics and the inferable arguments shorten the texts (by 26 % and
+17 % in items); the formulas that type-check and "that is" make them
+longer (by 2 % and 3 % in characters).  With all four, the texts have
+36 % fewer items.  All 76 texts are still generated, in 16 s in all.
+
+Per text: items and characters with no mechanism and with all; cyp
+(proved / not proved / not checked), before (previous section) and after.
+The texts were checked with a time limit of 300 s each.  `Nat.le_trans`
+and `rnd_same_half_cell` time out both before and after (484 → 112 and
+379 → 335 items).  A few texts not checked in the previous rounds are
+"not run" before.
+
+| example | items none → all | chars none → all | time all (s) | cyp before | cyp after |
+|---|---|---|---|---|---|
+| identity | 1 → 1 | 272 → 272 | 0.04 | not run | 1 / 0 / 0 |
+| S_proof | 6 → 6 | 484 → 484 | 0.01 | 6 / 0 / 0 | 6 / 0 / 0 |
+| or_intro_example | 2 → 2 | 475 → 475 | 0.01 | not run | 2 / 0 / 0 |
+| or_commut | 8 → 8 | 805 → 805 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
+| le_0_m | 8 → 8 | 882 → 882 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
+| praeclarum | 11 → 11 | 942 → 942 | 0.02 | 9 / 0 / 2 | 9 / 0 / 2 |
+| nearly_reflexive | 11 → 9 | 1075 → 960 | 0.02 | 9 / 0 / 2 | 7 / 0 / 2 |
+| drinker | 26 → 25 | 2387 → 2338 | 0.06 | not run | 18 / 0 / 7 |
+| and_swap | 3 → 3 | 525 → 525 | 0.04 | not run | 2 / 0 / 1 |
+| or_swap | 8 → 8 | 747 → 747 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
+| imp_trans | 5 → 5 | 444 → 444 | 0.01 | 5 / 0 / 0 | 5 / 0 / 0 |
+| not_not_intro | 4 → 4 | 375 → 404 | 0.01 | not run | 3 / 0 / 1 |
+| ex_forall | 7 → 7 | 881 → 881 | 0.03 | not run | 4 / 0 / 3 |
+| forall_and | 5 → 5 | 585 → 585 | 0.02 | not run | 4 / 0 / 1 |
+| add_0_r | 11 → 11 | 1110 → 1110 | 0.04 | 8 / 0 / 3 | 8 / 0 / 3 |
+| le_add_r | 15 → 15 | 1594 → 1594 | 0.08 | not run | 12 / 0 / 3 |
+| double_neg_em | 9 → 9 | 715 → 787 | 0.01 | not run | 7 / 0 / 2 |
+| plus_n_Sm | 11 → 11 | 1295 → 1295 | 0.07 | 8 / 0 / 3 | 8 / 0 / 3 |
+| app_nil_r | 12 → 12 | 1224 → 1236 | 0.05 | 8 / 0 / 4 | 8 / 0 / 4 |
+| eq_trans | 3 → 3 | 437 → 437 | 0.02 | 3 / 0 / 0 | 3 / 0 / 0 |
+| le_n_S | 8 → 8 | 992 → 992 | 0.07 | 5 / 0 / 3 | 5 / 0 / 3 |
+| le_0_n_fix | 11 → 11 | 1048 → 1048 | 0.01 | 8 / 0 / 3 | 8 / 0 / 3 |
+| length_app_fix | 15 → 14 | 1676 → 1552 | 0.04 | 9 / 1 / 5 | 8 / 1 / 5 |
+| bool_cases | 8 → 8 | 977 → 977 | 0.01 | 7 / 0 / 1 | 7 / 0 / 1 |
+| Tauto | 4 → 4 | 417 → 417 | 0.09 | 4 / 0 / 0 | 4 / 0 / 0 |
+| Trans_Inv | 5 → 4 | 567 → 661 | 0.01 | 5 / 0 / 0 | 4 / 0 / 0 |
+| ABCD | 12 → 12 | 720 → 720 | 0.01 | 12 / 0 / 0 | 12 / 0 / 0 |
+| or_com | 8 → 8 | 807 → 807 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
+| or_sym_nd | 8 → 8 | 755 → 755 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
+| praeclarum_nd | 17 → 13 | 1296 → 1082 | 0.01 | 17 / 0 / 0 | 13 / 0 / 0 |
+| ADD0 | 12 → 11 | 1182 → 1114 | 0.02 | 9 / 0 / 3 | 8 / 0 / 3 |
+| std_app_assoc | 38 → 36 | 3632 → 3469 | 0.29 | 32 / 0 / 6 | 30 / 0 / 6 |
+| std_app_nil_r | 30 → 28 | 2741 → 2633 | 0.11 | 25 / 0 / 5 | 23 / 0 / 5 |
+| std_app_comm_cons | 1 → 1 | 380 → 426 | 0.01 | 1 / 0 / 0 | 1 / 0 / 0 |
+| std_rev_involutive | 15 → 15 | 1651 → 1661 | 0.04 | 11 / 0 / 4 | 11 / 0 / 4 |
+| std_rev_app_distr | 18 → 18 | 2222 → 2222 | 0.06 | 14 / 0 / 4 | 14 / 0 / 4 |
+| std_length_rev | 18 → 18 | 2276 → 2286 | 0.07 | 1 / 13 / 4 | 14 / 0 / 4 |
+| std_map_app | 15 → 15 | 1945 → 1945 | 0.05 | 9 / 0 / 6 | 9 / 0 / 6 |
+| std_map_map | 12 → 12 | 1788 → 1793 | 0.04 | 8 / 0 / 4 | 8 / 0 / 4 |
+| std_length_app | 16 → 15 | 1988 → 1908 | 0.04 | 1 / 9 / 6 | 9 / 0 / 6 |
+| std_in_app_or | 31 → 31 | 3278 → 3278 | 0.21 | 18 / 1 / 12 | 18 / 1 / 12 |
+| std_in_or_app | 69 → 18 | 5983 → 1755 | 0.08 | 48 / 0 / 21 | 10 / 0 / 8 |
+| std_in_map | 36 → 36 | 3149 → 3149 | 0.08 | 23 / 0 / 13 | 23 / 0 / 13 |
+| std_in_eq | 4 → 4 | 465 → 465 | 0.01 | 2 / 0 / 2 | 2 / 0 / 2 |
+| std_in_cons | 4 → 4 | 453 → 453 | 0.01 | 1 / 0 / 3 | 1 / 0 / 3 |
+| std_Nat_add_comm | 196 → 85 | 25194 → 11659 | 0.41 | 81 / 107 / 8 | 80 / 1 / 4 |
+| std_Nat_add_assoc | 265 → 105 | 35634 → 15181 | 0.42 | 102 / 154 / 9 | 100 / 1 / 4 |
+| std_Nat_mul_comm | 196 → 85 | 25202 → 11657 | 0.37 | 81 / 107 / 8 | 80 / 1 / 4 |
+| std_Nat_le_trans | 484 → 112 | 80900 → 21247 | 0.51 | timeout | timeout |
+| std_Nat_add_0_r | 138 → 104 | 16997 → 14066 | 0.45 | 59 / 73 / 6 | 95 / 3 / 6 |
+| std_Nat_add_succ_r | 202 → 87 | 26069 → 12046 | 0.47 | 85 / 109 / 8 | 82 / 1 / 4 |
+| std_Nat_le_refl | 19 → 16 | 1981 → 1784 | 0.04 | 7 / 10 / 2 | 14 / 0 / 2 |
+| std_Nat_lt_irrefl | 42 → 35 | 5707 → 4457 | 0.12 | 30 / 9 / 3 | 32 / 0 / 3 |
+| std_Nat_mul_1_r | 118 → 89 | 14492 → 12345 | 0.37 | 41 / 73 / 4 | 85 / 0 / 4 |
+| std_Nat_pred_succ | 1 → 1 | 301 → 338 | 0.01 | 1 / 0 / 0 | 1 / 0 / 0 |
+| std_plus_n_O | 12 → 11 | 1161 → 1093 | 0.02 | 9 / 0 / 3 | 8 / 0 / 3 |
+| std_plus_n_Sm | 12 → 11 | 1312 → 1222 | 0.03 | 9 / 0 / 3 | 8 / 0 / 3 |
+| std_andb_comm | 16 → 16 | 1568 → 1568 | 0.02 | 13 / 0 / 3 | 13 / 0 / 3 |
+| std_orb_comm | 16 → 16 | 1563 → 1563 | 0.02 | 13 / 0 / 3 | 13 / 0 / 3 |
+| std_negb_involutive | 6 → 6 | 700 → 700 | 0.01 | 5 / 0 / 1 | 5 / 0 / 1 |
+| std_andb_true_r | 6 → 6 | 676 → 676 | 0.04 | 5 / 0 / 1 | 5 / 0 / 1 |
+| std_orb_false_r | 6 → 6 | 681 → 681 | 0.01 | 5 / 0 / 1 | 5 / 0 / 1 |
+| std_andb_assoc | 36 → 36 | 3838 → 3838 | 0.06 | 29 / 0 / 7 | 29 / 0 / 7 |
+| std_negb_andb | 16 → 16 | 1785 → 1785 | 0.03 | 13 / 0 / 3 | 13 / 0 / 3 |
+| std_and_comm | 11 → 11 | 1055 → 1091 | 0.02 | 7 / 0 / 4 | 7 / 0 / 4 |
+| std_or_comm | 21 → 21 | 1536 → 1572 | 0.02 | 13 / 0 / 8 | 13 / 0 / 8 |
+| std_and_assoc | 21 → 21 | 1898 → 1946 | 0.05 | 15 / 0 / 6 | 15 / 0 / 6 |
+| std_or_assoc | 39 → 39 | 3063 → 3111 | 0.05 | 25 / 0 / 14 | 22 / 3 / 14 |
+| std_eq_sym | 2 → 2 | 425 → 425 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
+| std_eq_trans | 2 → 2 | 399 → 399 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
+| std_f_equal | 2 → 2 | 464 → 464 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
+| exp_round_one | 26 → 21 | 4338 → 3547 | 0.07 | 5 / 15 / 6 | 7 / 8 / 6 |
+| exp_succ_one | 13 → 12 | 2184 → 2070 | 0.16 | 11 / 2 / 0 | 10 / 2 / 0 |
+| exp_pred_x_small | 9 → 9 | 1883 → 1835 | 0.40 | 8 / 1 / 0 | 8 / 1 / 0 |
+| exp_grid_plus | 23 → 23 | 4889 → 5003 | 0.31 | 7 / 9 / 7 | 7 / 9 / 7 |
+| exp_rnd_same_half_cell | 379 → 335 | 90602 → 84057 | 9.64 | timeout | timeout |
+
+
+Over the 65 texts checked both before and after, cyp proves 1084 steps
+(1036 before) and fails on 32 (693 before); 222 are not checked (252).  The
+failures before were mostly formulas that did not type-check again (`length
+[] = 0`, `Equivalence eq`) and the steps after them; after, most of the
+`Nat.*` failures are gone (`Nat.add_comm`: 107 → 1).  What remains:
+
+- `std_or_assoc` (3, was 0) and the CORE-MATH texts: steps whose claim is
+  true but that cyp's default tactics do not prove in their time limit;
+- `length_app_fix` (1): the recursive call, as before;
+- the CORE-MATH certificates that are not closed by `tauto` or `lia`
+  (`lra`, `field`, `interval` are not among the default tactics).
+
+Also fixed in this round: the `*by exact @T*` of a theorem uses its full
+name (`@Stdlib.Classes.Morphisms.eq_proper_proxy`), which needs only
+that its library be loaded, not imported.
 
 ## Not done
 

@@ -8,8 +8,8 @@ by: tauto | congruence | lia | firstorder | auto
 Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ [] = l`{.claim}.
 
 - To prove `l ++ [] = l`{.fact} by induction (list, list_ind), we generalise it to `forall l0 : list A, l0 ++ [] = l0`{.fact}:
-- Case 1 (base): we prove `([]) = ([]) :> list A`{.claim}.
-  - By definition of eq (eq_refl), we have `([]) = ([]) :> list A`{.claim} *by eapply @eq_refl; eauto*.
+- Case 1 (base): we prove `[] = (@nil A)`{.claim}.
+  - By definition of eq (eq_refl), we have `[] = (@nil A)`{.claim} *by eapply @eq_refl; eauto*.
 - Case 2 (inductive): we prove `forall (x : A) (l0 : list A), l0 ++ [] = l0 -> (x :: l0) ++ [] = x :: l0`{.claim}.
   - Let `x : A`{.var}.
   - Let `l0 : list A`{.var}.

@@ -5,7 +5,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # and_assoc
 
-Let `A B C : Prop`{.var}. We prove `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)`{.claim}.
+Let `A B C : Prop`{.var}. We prove `(A /\ B) /\ C <-> A /\ B /\ C`{.claim}.
 
 - We have proved `(A /\ B) /\ C -> A /\ B /\ C`{.claim}.
   - Assume `(A /\ B) /\ C`{.hyp} (H).
@@ -27,4 +27,4 @@ Let `A B C : Prop`{.var}. We prove `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\
             - By definition of and (conj), from `A`{.fact} (H0) and `B`{.fact} (H01) we deduce `A /\ B`{.claim} *by eapply @conj; eauto*.
             - By H1 we have `C`{.claim}.
             - So by definition of and (conj), we have `(A /\ B) /\ C`{.claim} *by eapply @conj; eauto*.
-- So by definition of and (conj), we have `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)`{.claim} *by eapply @conj; eauto*.
+- So by definition of and (conj), we have `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)`{.claim} *by eapply @conj; eauto*, that is `(A /\ B) /\ C <-> A /\ B /\ C`{.fact}.

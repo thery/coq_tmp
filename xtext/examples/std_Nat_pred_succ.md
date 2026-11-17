@@ -5,6 +5,6 @@ by: tauto | congruence | lia | firstorder | auto
 
 # Nat.pred_succ
 
-Let `n : nat`{.var}. We prove `n = n`{.claim}.
+Let `n : nat`{.var}. We prove `Nat.pred (S n) = n`{.claim}.
 
-- By definition of eq (eq_refl), we have `n = n`{.claim} *by eapply @eq_refl; eauto*.
+- By definition of eq (eq_refl), we have `n = n`{.claim} *by eapply @eq_refl; eauto*, that is `Nat.pred (S n) = n`{.fact}.

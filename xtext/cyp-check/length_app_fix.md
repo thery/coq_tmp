@@ -18,7 +18,6 @@ We prove `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + le
     - Let `l : list A`{.var}.
     - In particular `length (l ++ l2) = length l + length l2`{.claim}.
       - By induction hypothesis (the recursive call length_app') we have `forall (A0 : Type) (l10 l20 : list A0), length (l10 ++ l20) = length l10 + length l20`{.claim}.
-    - In particular `length (l ++ l2) = length l + length l2 -> S (length (l ++ l2)) = S (length l + length l2)`{.claim}.
-      - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y`{.claim} *by exact @f_equal*.
+    - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
     - We deduce `S (length (l ++ l2)) = S (length l + length l2)`{.claim}.
   - These cases being exhaustive, we deduce `length (l1 ++ l2) = length l1 + length l2`{.claim} *by destruct l1; cbn; eauto*.
