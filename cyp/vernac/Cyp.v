@@ -35,7 +35,11 @@ Elpi Db cyp.db lp:{{
   kind cyptac type.
   type ltac string -> cyptac.
   type lemma term -> cyptac.
+  % [apply T]: apply the lemma T, its arguments found by unification
+  type apply term -> cyptac.
   pred justify i:term, o:cyptac.
+  % [justify_first]: the same, tried before every [justify] rule
+  pred justify_first i:term, o:cyptac.
 
   % the tactics tried when no rule closes a step
   pred default-ltac o:string.
@@ -62,13 +66,13 @@ Elpi Db cyp.db lp:{{
 }}.
 
 Ltac cyp_intros := progress intros.
+Ltac cyp_eapply t := eapply t.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.
 
-#[arguments(raw)] Elpi Command Cyp.
-Elpi Accumulate Db cyp.db.
-Elpi Accumulate lp:{{
+(* The step machinery, shared by Cyp Lemma and Cyp File. *)
+Elpi File cyp_core lp:{{
 
   % ---------------------------------------------------------------- %
   % Closing a goal: the rules, then the default tactics
@@ -80,17 +84,20 @@ Elpi Accumulate lp:{{
     coq.ltac.call-ltac1 "cyp_left" G GL, premises GL.
   close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
     coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
+  close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
   close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
 
   pred run i:cyptac, i:goal.
   run (ltac N) G :- coq.ltac.call-ltac1 N G [].
   run (lemma T) G :- refine T G GL, premises GL.
+  run (apply T) G :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL.
 
   pred premises i:list sealed-goal.
   premises GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
 
+  % a premise: the rules, else the default tactics
   pred close-tac i:goal, o:list sealed-goal.
-  close-tac G [] :- close G.
+  close-tac G [] :- close-step G.
 
   % a step's goal: the rules, else the first default tactic that closes it
   pred close-step i:goal.
@@ -210,10 +217,10 @@ Elpi Accumulate lp:{{
   % current context; Ko are the steps not proved.  A forward step proves
   % its claim C and adds it to the context (let c : C := P in ...); a
   % backward step proves C -> Goal, and the rest proves C.
-  pred skel i:int, i:list term, i:term, o:term, o:list string.
+  pred skel i:int, i:list (list item), i:term, o:term, o:list string.
   skel _ [] G P Ko :- step-proof none "the statement follows" G P Ko.
-  skel K [S | Rest] G Skel Ko :-
-    items S L, step-text L Text, step-tac L Tac,
+  skel K [L | Rest] G Skel Ko :-
+    step-text L Text, step-tac L Tac,
     step-claims L claim Cs,
     if (Cs = []) (skel K Rest G Skel Ko)              % a comment
     (conj Cs C0,
@@ -234,7 +241,8 @@ Elpi Accumulate lp:{{
   pred lemma i:term, i:term, o:term, o:list string.
   lemma (prod N T A) (fun _ _ B) (fun N T S) Ko :- !,
     pi x\ decl x N T => lemma (A x) (B x) (S x) Ko.
-  lemma G Body Skel Ko :- list-of Body Steps, skel 0 Steps G Skel Ko.
+  lemma G Body Skel Ko :-
+    list-of Body Steps, std.map Steps items Ls, skel 0 Ls G Skel Ko.
 
   pred list-of i:term, o:list term.
   list-of (app [global (indc Cons), _, X, R]) [X | L] :-
@@ -244,6 +252,12 @@ Elpi Accumulate lp:{{
 
   % ---------------------------------------------------------------- %
 
+}}.
+
+#[arguments(raw)] Elpi Command Cyp.
+Elpi Accumulate Db cyp.db.
+Elpi Accumulate File cyp_core.
+Elpi Accumulate lp:{{
   main [const-decl Name (some Body) Arity] :-
     coq.arity->term Arity Ty0,
     std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) "cyp: the statement does not type-check",
