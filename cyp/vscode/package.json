@@ -1,0 +1,32 @@
+{
+  "name": "cyp",
+  "displayName": "cyp: coloured proofs",
+  "description": "Checks a Markdown proof step by step with Rocq and colours it in the editor",
+  "version": "0.1.0",
+  "publisher": "thery",
+  "license": "MIT",
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onLanguage:markdown"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "cyp.check", "title": "cyp: check this proof" }
+    ],
+    "configuration": {
+      "title": "cyp",
+      "properties": {
+        "cyp.command": {
+          "type": "string",
+          "default": "opam exec --root=/home/thery/opam-rocq.9.1.0 --switch=native -- /home/thery/git/coq_tmp/cyp/_build/default/bin/cyp.exe",
+          "description": "The command that runs cyp; the options --json and the file name are added at the end."
+        },
+        "cyp.checkOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check a cyp proof each time it is saved (a Markdown file that starts with a front matter holding 'require:' or 'by:')."
+        }
+      }
+    }
+  }
+}

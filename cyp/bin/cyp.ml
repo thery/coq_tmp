@@ -1,8 +1,8 @@
 (* cyp: colour a proof written in Markdown by checking each of its steps
    with Rocq.
 
-   cyp proof.md  writes  proof.v    (one goal per step)
-                         proof.html (the proof, each step coloured)
+   cyp proof.md  writes  proof.cyp.v    (one goal per step)
+                         proof.checked.md (the proof, each step marked)
 
    The format is described in README.md. *)
 
@@ -30,16 +30,6 @@ let indent_of s =
   let rec go i = if i < n && s.[i] = ' ' then go (i + 1) else i in
   go 0
 
-let html_escape s =
-  let b = Buffer.create (String.length s) in
-  String.iter (function
-    | '<' -> Buffer.add_string b "&lt;"
-    | '>' -> Buffer.add_string b "&gt;"
-    | '&' -> Buffer.add_string b "&amp;"
-    | '"' -> Buffer.add_string b "&quot;"
-    | c -> Buffer.add_char b c) s;
-  Buffer.contents b
-
 let contains s sub =
   try ignore (Str.search_forward (Str.regexp_string sub) s 0); true
   with Not_found -> false
@@ -58,6 +48,8 @@ type step = {
   id : int;
   pieces : piece list;
   children : step list;
+  first : int;                    (* its lines in the source, from 0 *)
+  last : int;
 }
 
 type prop = {
@@ -65,6 +57,8 @@ type prop = {
   pid : int;                      (* the id of the statement *)
   statement : piece list;
   steps : step list;
+  sfirst : int;                   (* the lines of the statement *)
+  slast : int;
 }
 
 type header = {
@@ -101,6 +95,9 @@ let role_of_text txt =
       | None -> ()) role_words;
   Option.map snd !best
 
+(* An explicit role, written right after a formula: `x`{.hyp}. *)
+let tag_re = Str.regexp "{\\.\\(var\\|hyp\\|claim\\|fact\\)}"
+
 (* Cut a text into pieces: `...` are formulas, *by ...* a justification. *)
 let pieces_of_text ~default txt =
   let by_re = Str.regexp "\\*by \\([^*]*\\)\\*" in
@@ -120,6 +117,13 @@ let pieces_of_text ~default txt =
     | s :: rest when i mod 2 = 0 ->
         (match role_of_text s with Some r -> role := r | None -> ());
         (if s = "" then [] else [Text s]) @ go (i + 1) rest
+    | s :: next :: rest when Str.string_match tag_re next 0 ->
+        (* an explicit role written right after the formula *)
+        let r = match Str.matched_group 1 next with
+          | "var" -> Var | "hyp" -> Hyp | "fact" -> Fact | _ -> Claim in
+        let e = Str.match_end () in
+        let f = Formula (r, s) in
+        f :: go (i + 1) (String.sub next e (String.length next - e) :: rest)
     | s :: rest -> let f = Formula (!role, s) in f :: go (i + 1) rest in
   let ps = go 0 parts in
   match by with Some t -> ps @ [By t] | None -> ps
@@ -130,20 +134,25 @@ let fresh () = incr counter; !counter
 (* A list item starts with "- ", "* " or "1. ". *)
 let item_re = Str.regexp "^\\(-\\|\\*\\|[0-9]+\\.\\) +"
 
-(* Parse the list items of a proof: each item is (indent, text). *)
+(* Parse the list items of a proof: each item is (indent, text, first
+   line, last line). *)
 let rec build_steps items =
   match items with
   | [] -> []
-  | (ind, txt) :: rest ->
+  | (ind, txt, first, last) :: rest ->
       let rec split acc = function
-        | (i, t) :: r when i > ind -> split ((i, t) :: acc) r
+        | ((i, _, _, _) as it) :: r when i > ind -> split (it :: acc) r
         | r -> (List.rev acc, r) in
       let sub, rest = split [] rest in
       let id = fresh () in
       { id; pieces = pieces_of_text ~default:Claim txt;
-        children = build_steps sub } :: build_steps rest
+        children = build_steps sub; first; last } :: build_steps rest
 
-let parse src =
+(* The rule database and its tactic (rules/cyp_rules.v), put in front of
+   the rule file of a proof. *)
+let rules_prelude = Prelude.text
+
+let parse ~dir src =
   let ls = lines src in
   (* the front matter between two lines "---" *)
   let header, body =
@@ -155,6 +164,8 @@ let parse src =
           | [] -> (List.rev acc, []) in
         take [] rest
     | _ -> ([], ls) in
+  (* the number of the first line of [body] *)
+  let offset = if header = [] && body == ls then 0 else List.length header + 2 in
   let get k d =
     match List.find_opt (fun l -> starts_with (k ^ ":") (trim l)) header with
     | Some l ->
@@ -171,6 +182,16 @@ let parse src =
     let scope = get "scope" "" in
     if scope = "" then h
     else { h with require = h.require ^ "\nOpen Scope " ^ scope ^ "." } in
+  (* a rule file: Rocq text (Ltac definitions, Elpi Accumulate cyp.db) put
+     after the preamble; the default justification then tries the rules
+     first *)
+  let h =
+    match get "rules" "" with
+    | "" -> h
+    | f ->
+        let f = if Filename.is_relative f then Filename.concat dir f else f in
+        { h with require = h.require ^ "\n" ^ rules_prelude ^ "\n" ^ read_file f;
+                 default_by = "elpi cyp_by | " ^ h.default_by } in
   (* the propositions, each starting with a line "# name" *)
   let props = ref [] in
   let cur = ref None in
@@ -178,13 +199,18 @@ let parse src =
     match !cur with
     | Some (name, stmt, items) ->
         let pid = fresh () in
-        let stmt_text = String.concat " " (List.rev stmt) in
+        let stmt_text = String.concat " " (List.rev_map snd stmt) in
+        let sfirst, slast =
+          match stmt with
+          | [] -> (0, 0)
+          | (l, _) :: _ -> (fst (List.nth stmt (List.length stmt - 1)), l) in
         let items = List.rev items in
         props := { name; pid;
                    statement = pieces_of_text ~default:Claim stmt_text;
-                   steps = build_steps items } :: !props
+                   steps = build_steps items; sfirst; slast } :: !props
     | None -> () in
-  List.iter (fun l ->
+  List.iteri (fun k l ->
+      let k = k + offset in
       let t = trim l in
       if starts_with "# " t then begin
         flush ();
@@ -197,12 +223,12 @@ let parse src =
             if Str.string_match item_re t 0 then
               let txt = String.sub t (Str.match_end ())
                   (String.length t - Str.match_end ()) in
-              cur := Some (n, stmt, (ind, txt) :: items)
+              cur := Some (n, stmt, (ind, txt, k, k) :: items)
             else if t = "" then ()
             else (match items with
-                | (i, txt) :: r when ind > 0 ->
-                    cur := Some (n, stmt, (i, txt ^ " " ^ t) :: r)
-                | _ when items = [] -> cur := Some (n, t :: stmt, items)
+                | (i, txt, f, _) :: r when ind > 0 ->
+                    cur := Some (n, stmt, (i, txt ^ " " ^ t, f, k) :: r)
+                | _ when items = [] -> cur := Some (n, (k, t) :: stmt, items)
                 | _ -> ())) body;
   flush ();
   (h, List.rev !props)
@@ -404,97 +430,106 @@ let step_status obs status id =
   else if List.for_all (( = ) Ok) sts then (`Ok, [])
   else (`Ko, List.filter (( <> ) Ok) sts)
 
-let css = {|
-body { font-family: Georgia, serif; max-width: 52em; margin: 2em auto;
-       padding: 0 1em; line-height: 1.5; color: #222; background: #fff; }
-h1 { font-size: 1.3em; border-bottom: 1px solid #ccc; }
-code { font-family: Menlo, Consolas, monospace; font-size: 0.92em;
-       padding: 0 0.2em; border-radius: 3px; }
-.hyp { background: #e3ecff; color: #1a3d8f; }
-.fact { background: #f0e6ff; color: #5b2a86; }
-.var { background: #eee; }
-.ok .claim, .ok > .stmt .claim { background: #dff5df; color: #14601e; }
-.ko .claim, .ko > .stmt .claim { background: #fde0e0; color: #9b1c1c; }
-.none .claim { background: #eee; }
-.by { font-family: Menlo, Consolas, monospace; font-size: 0.8em;
-      color: #777; margin-left: 0.5em; }
-li { margin: 0.3em 0; }
-.mark { display: inline-block; width: 1.2em; font-weight: bold; }
-.ok > .mark { color: #14601e; }
-.ko > .mark { color: #9b1c1c; }
-.none > .mark { color: #aaa; }
-details { margin: 0.3em 0 0.6em 1.2em; }
-summary { cursor: pointer; color: #9b1c1c; font-size: 0.9em; }
-pre { background: #f7f7f7; padding: 0.6em; overflow-x: auto;
-      font-size: 0.85em; white-space: pre-wrap; }
-.legend { font-size: 0.85em; color: #555; }
-|}
-
-let html_pieces ps =
+(* A piece back as Markdown, as the author wrote it (without role tags). *)
+let md_pieces ps =
   String.concat "" (List.map (function
-      | Text t -> html_escape t
-      | Formula (r, f) ->
-          let c = match r with
-            | Var -> "var" | Hyp -> "hyp" | Claim -> "claim" | Fact -> "fact" in
-          Printf.sprintf "<code class=\"%s\">%s</code>" c (html_escape f)
-      | By t -> Printf.sprintf "<span class=\"by\">by %s</span>" (html_escape t))
-      ps)
+      | Text t -> t
+      | Formula (_, f) -> "`" ^ f ^ "`"
+      | By t -> "*by " ^ t ^ "*") ps)
 
-let html_details sts =
+let mark = function `Ok -> "✅" | `Ko -> "❌" | `None -> "▫️"
+
+(* Under a failing step: its goal and Rocq's message, folded, indented by
+   [pad] to stay inside the list item. *)
+let md_details pad sts =
+  let block title body =
+    let body = String.concat "\n" (List.map (fun l -> pad ^ l) (lines body)) in
+    Printf.sprintf "\n%s<details><summary>%s</summary>\n\n%s```\n%s\n%s```\n\n%s</details>\n"
+      pad title pad body pad pad in
   String.concat "" (List.map (function
-      | Ko (goal, msg) ->
-          Printf.sprintf "<details><summary>not proved</summary><pre>%s</pre><pre>%s</pre></details>"
-            (html_escape goal) (html_escape msg)
-      | Err msg ->
-          Printf.sprintf "<details><summary>Rocq error</summary><pre>%s</pre></details>"
-            (html_escape msg)
+      | Ko (goal, msg) -> block "not proved" (goal ^ "\n\n" ^ msg)
+      | Err msg -> block "Rocq error" msg
       | Ok -> "") sts)
 
-let html_file title props obs status =
+let md_file h props obs status =
   let b = Buffer.create 8192 in
-  let cls = function `Ok -> "ok" | `Ko -> "ko" | `None -> "none" in
-  let mark = function `Ok -> "&#10003;" | `Ko -> "&#10007;" | `None -> "&middot;" in
-  let rec steps st =
-    Buffer.add_string b "<ul style=\"list-style:none; padding-left:1.2em\">\n";
+  Printf.bprintf b "<!-- checked by cyp; prelude: %s -->\n\n"
+    (String.concat " " (lines h.require));
+  let rec steps depth st =
     List.iter (fun s ->
         let k, sts = step_status obs status s.id in
-        Printf.bprintf b "<li class=\"%s\"><span class=\"mark\">%s</span>%s%s"
-          (cls k) (mark k) (html_pieces s.pieces) (html_details sts);
-        if s.children <> [] then steps s.children;
-        Buffer.add_string b "</li>\n") st;
-    Buffer.add_string b "</ul>\n" in
-  Printf.bprintf b
-    "<!doctype html>\n<html><head><meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>%s</title><style>%s</style></head><body>\n"
-    (html_escape title) css;
-  Buffer.add_string b
-    "<p class=\"legend\"><code class=\"hyp\">hypothesis</code> <code class=\"fact\">fact used</code> claim: <span class=\"ok\"><code class=\"claim\">proved</code></span> <span class=\"ko\"><code class=\"claim\">not proved</code></span></p>\n";
+        let pad = String.make (2 * depth) ' ' in
+        Printf.bprintf b "%s- %s %s\n%s" pad (mark k) (md_pieces s.pieces)
+          (md_details (pad ^ "  ") sts);
+        steps (depth + 1) s.children) st in
   List.iter (fun p ->
       let k, sts = step_status obs status p.pid in
-      Printf.bprintf b "<h1>%s</h1>\n<div class=\"%s\"><p class=\"stmt\"><span class=\"mark\">%s</span>%s</p>%s"
-        (html_escape p.name) (cls k) (mark k) (html_pieces p.statement)
-        (html_details sts);
-      steps p.steps;
-      Buffer.add_string b "</div>\n") props;
-  Buffer.add_string b "</body></html>\n";
+      Printf.bprintf b "# %s\n\n%s %s\n%s\n" p.name (mark k)
+        (md_pieces p.statement) (md_details "" sts);
+      steps 0 p.steps;
+      Buffer.add_string b "\n") props;
   Buffer.contents b
+
+(* The result for an editor: for each step (and statement), its lines,
+   its status, the formulas with their roles, and for a failure the goal
+   and Rocq's message. *)
+let json_string s =
+  let b = Buffer.create (String.length s + 2) in
+  Buffer.add_char b '"';
+  String.iter (function
+      | '"' -> Buffer.add_string b "\\\""
+      | '\\' -> Buffer.add_string b "\\\\"
+      | '\n' -> Buffer.add_string b "\\n"
+      | '\r' -> ()
+      | '\t' -> Buffer.add_string b "\\t"
+      | c when Char.code c < 32 -> Printf.bprintf b "\\u%04x" (Char.code c)
+      | c -> Buffer.add_char b c) s;
+  Buffer.add_char b '"';
+  Buffer.contents b
+
+let json_file props obs status =
+  let items = ref [] in
+  let one id first last ps =
+    let k, sts = step_status obs status id in
+    let st = match k with `Ok -> "ok" | `Ko -> "ko" | `None -> "none" in
+    let formulas = List.filter_map (function
+        | Formula (r, f) ->
+            let r = match r with
+              | Var -> "var" | Hyp -> "hyp" | Claim -> "claim" | Fact -> "fact" in
+            Some (Printf.sprintf "{\"role\":\"%s\",\"text\":%s}" r (json_string f))
+        | _ -> None) ps in
+    let msgs = List.filter_map (function
+        | Ko (goal, msg) -> Some (goal ^ "\n\n" ^ msg)
+        | Err msg -> Some msg
+        | Ok -> None) sts in
+    items := Printf.sprintf
+        "{\"first\":%d,\"last\":%d,\"status\":\"%s\",\"formulas\":[%s],\"message\":%s}"
+        first last st (String.concat "," formulas)
+        (json_string (String.concat "\n\n" msgs)) :: !items in
+  let rec steps st =
+    List.iter (fun s -> one s.id s.first s.last s.pieces; steps s.children) st in
+  List.iter (fun p -> one p.pid p.sfirst p.slast p.statement; steps p.steps) props;
+  "{\"steps\":[" ^ String.concat ",\n" (List.rev !items) ^ "]}\n"
 
 (* ------------------------------------------------------------------ *)
 
 let () =
-  match Array.to_list Sys.argv with
-  | [ _; md ] ->
-      let h, props = parse (read_file md) in
+  let args = List.tl (Array.to_list Sys.argv) in
+  let json = List.mem "--json" args in
+  match List.filter (( <> ) "--json") args with
+  | [ md ] ->
+      let h, props = parse ~dir:(Filename.dirname md) (read_file md) in
       let obs = obligations h props in
       let status = check h obs in
       let base = Filename.remove_extension md in
-      write_file (base ^ ".v") (v_file h obs);
-      write_file (base ^ ".html")
-        (html_file (Filename.basename base) props obs status);
+      write_file (base ^ ".cyp.v") (v_file h obs);
+      write_file (base ^ ".checked.md") (md_file h props obs status);
+      if json then print_string (json_file props obs status) else
       let count p = List.length (List.filter p obs) in
       let st o = Hashtbl.find_opt status o.num in
       Printf.printf "%s: %d steps, %d proved, %d not proved, %d errors\n"
-        (base ^ ".html") (List.length obs)
+        (base ^ ".checked.md") (List.length obs)
         (count (fun o -> st o = Some Ok))
         (count (fun o -> match st o with Some (Ko _) -> true | _ -> false))
         (count (fun o -> match st o with Some (Err _) | None -> true | _ -> false))
-  | _ -> prerr_endline "usage: cyp proof.md"; exit 2
+  | _ -> prerr_endline "usage: cyp [--json] proof.md"; exit 2

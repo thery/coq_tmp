@@ -2,3 +2,15 @@
  (name cyp)
  (public_name cyp)
  (libraries str unix))
+
+; rules/cyp_rules.v as an OCaml string
+(rule
+ (target prelude.ml)
+ (deps ../rules/cyp_rules.v)
+ (action
+  (with-stdout-to
+   prelude.ml
+   (progn
+    (echo "let text = {cyp|")
+    (cat ../rules/cyp_rules.v)
+    (echo "|cyp}\n")))))

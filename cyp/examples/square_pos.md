@@ -13,3 +13,4 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
 - From `0 < a < b` we have `0 < b + a` and `0 < b - a`.
 - Hence `0 < b - a + 1`. *by lia*
 - So `0 < a - b`, a wrong step on purpose.
+- A tagged formula `0 <= a * a`{.claim}, whatever the words before it.
