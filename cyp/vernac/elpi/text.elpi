@@ -1,0 +1,157 @@
+% The text of a step: words and formulas, and the role of each formula.
+%
+% A formula is written between backticks.  Its role is given by the last
+% phrase of the vocabulary written before it (see vocab_*.elpi), or by a
+% tag right after it ({.var}, {.hyp}, {.claim}, {.fact}); a step's
+% justification is written *by X*; a hypothesis may be named by a word in
+% parentheses right after it: `P` (h).
+
+kind role type.
+type rvar, rhyp, rclaim, rfact, rback role.
+
+% [phrase Lang Phrase Role], in the vocabulary files
+pred phrase o:string, o:string, o:role.
+
+% the language of the text being read
+pred current-lang o:string.
+
+% the elements of a step, once its text is read
+kind element type.
+type elt role -> string -> element.     % a formula and its role
+type hname string -> element.           % the name of the hypothesis before it
+type txt string -> element.             % words
+
+% ------------------------------------------------------------------ %
+% Lower case, also for the accented capitals of French and Italian
+
+pred lower i:string, o:string.
+lower S L :-
+  std.fold [pr "A" "a", pr "B" "b", pr "C" "c", pr "D" "d", pr "E" "e",
+            pr "F" "f", pr "G" "g", pr "H" "h", pr "I" "i", pr "J" "j",
+            pr "K" "k", pr "L" "l", pr "M" "m", pr "N" "n", pr "O" "o",
+            pr "P" "p", pr "Q" "q", pr "R" "r", pr "S" "s", pr "T" "t",
+            pr "U" "u", pr "V" "v", pr "W" "w", pr "X" "x", pr "Y" "y",
+            pr "Z" "z", pr "À" "à", pr "Â" "â", pr "Ç" "ç", pr "É" "é",
+            pr "È" "è", pr "Ê" "ê", pr "Î" "î", pr "Ô" "ô", pr "Ù" "ù",
+            pr "Ì" "ì", pr "Ò" "ò"] S lower-step L.
+
+pred lower-step i:pair string string, i:string, o:string.
+lower-step (pr U L) S S1 :- rex.replace U L S S1.
+
+% ------------------------------------------------------------------ %
+% The role given by a text: its last phrase; on a tie (the same end),
+% the longer phrase ("that is" against "is")
+
+% a word boundary
+pred boundary o:string.
+boundary "[] ,.;:()!?'\"*-]".
+
+pred text-role i:string, o:role.
+text-role S R :-
+  lower S L0, L is " " ^ L0 ^ " ",
+  current-lang Lang,
+  std.findall (phrase Lang _ _) Ps,
+  best-phrase L Ps none (some (triple _ _ R)).
+
+% [best-phrase Text Phrases Acc Best]: Best = (Suffix length, Phrase
+% length, Role) of the phrase that ends last in Text
+pred best-phrase i:string, i:list prop, i:option (triple int int role),
+  o:option (triple int int role).
+best-phrase _ [] B B.
+best-phrase T [phrase _ P R | Ps] Acc B :-
+  boundary Bd,
+  Re is ".*" ^ Bd ^ P ^ Bd,
+  rex.match Re T, !,
+  rex.replace Re "" T Suffix,
+  N is size Suffix, M is size P,
+  better (triple N M R) Acc Acc1,
+  best-phrase T Ps Acc1 B.
+best-phrase T [_ | Ps] Acc B :- best-phrase T Ps Acc B.
+
+pred better i:triple int int role, i:option (triple int int role),
+  o:option (triple int int role).
+better X none (some X) :- !.
+better (triple N M R) (some (triple N1 _ _)) (some (triple N M R)) :- N < N1, !.
+better (triple N M R) (some (triple N M1 _)) (some (triple N M R)) :- M > M1, !.
+better _ B B.
+
+% ------------------------------------------------------------------ %
+% Cutting a text into words and formulas (between backticks)
+
+kind piece type.
+type ptext string -> piece.
+type pform string -> piece.
+
+pred pieces i:string, o:list piece.
+pieces S P :- N is size S, chars S 0 N "" ff P.
+
+% [chars S I N Acc InFormula P]: the pieces of S from position I
+pred chars i:string, i:int, i:int, i:string, i:bool, o:list piece.
+chars _ N N Acc F P :- !, last-piece Acc F P.
+chars S I N Acc F P :-
+  C is substring S I 1, I1 is I + 1,
+  if (C = "`")
+     (flush Acc F P P1, negb F F1, chars S I1 N "" F1 P1)
+     (Acc1 is Acc ^ C, chars S I1 N Acc1 F P).
+
+pred negb i:bool, o:bool.
+negb tt ff.
+negb ff tt.
+
+pred flush i:string, i:bool, o:list piece, o:list piece.
+flush "" _ P P :- !.
+flush A ff [ptext A | P] P.
+flush A tt [pform A | P] P.
+
+pred last-piece i:string, i:bool, o:list piece.
+last-piece "" _ [] :- !.
+last-piece A ff [ptext A].
+last-piece A tt [pform A].
+
+% ------------------------------------------------------------------ %
+% The elements of a step: each formula with its role
+
+% the justification *by X* of a text, and the text without it
+pred justification i:string, o:option string, o:string.
+justification S (some X) S1 :-
+  rex.match ".*[*]by [^*]+[*]" S, !,
+  rex.replace ".*[*]by \\([^*]+\\)[*].*" "\\1" S X0,
+  rex.replace "[*]by [^*]+[*]" "" S S1,
+  rex.replace "^ +\\| +$" "" X0 X.
+justification S none S.
+
+% [elements Pieces Role Elements]: Role is the role before the first
+% formula (claim in a step, the conclusion in a statement)
+pred elements i:list piece, i:role, o:list element.
+elements [] _ [].
+elements [ptext W | P] R [txt W | L] :- !,
+  (text-role W R1, ! ; R1 = R), elements P R1 L.
+elements [pform F, ptext W | P] R [elt R1 F | L] :-
+  tag W R1 W1, !, elements [ptext W1 | P] R L.
+elements [pform F, ptext W | P] rhyp [elt rhyp F, hname H | L] :-
+  rex.match "^ *([A-Za-z_][A-Za-z0-9_']*)" W, !,
+  rex.replace "^ *(\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" W H,
+  rex.replace "^ *([A-Za-z_][A-Za-z0-9_']*)" "" W W1,
+  elements [ptext W1 | P] rhyp L.
+elements [pform F | P] R [elt R F | L] :- elements P R L.
+
+% a tag right after a formula
+pred tag i:string, o:role, o:string.
+tag W R W1 :-
+  rex.match "^{[.]\\(var\\|hyp\\|claim\\|fact\\)}" W,
+  rex.replace "^{[.]\\([a-z]*\\)}.*" "\\1" W T, tag-role T R,
+  rex.replace "^{[.][a-z]*}" "" W W1.
+
+pred tag-role i:string, o:role.
+tag-role "var" rvar.
+tag-role "hyp" rhyp.
+tag-role "claim" rclaim.
+tag-role "fact" rfact.
+
+% the text of a step, to report it
+pred elements-text i:list element, o:string.
+elements-text L S :- std.map L element-text Ws, std.string.concat "" Ws S.
+pred element-text i:element, o:string.
+element-text (txt W) W.
+element-text (elt _ F) S :- S is "`" ^ F ^ "`".
+element-text (hname H) S :- S is " (" ^ H ^ ")".

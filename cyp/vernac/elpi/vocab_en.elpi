@@ -1,0 +1,18 @@
+% The English vocabulary of cyp: the phrase written before a formula gives
+% its role.  [phrase Lang Phrase Role]; phrases in lower case.
+phrase "en" "let" rvar.
+phrase "en" "if" rhyp.        phrase "en" "assume" rhyp.  phrase "en" "suppose" rhyp.
+phrase "en" "from" rfact.     phrase "en" "using" rfact.  phrase "en" "since" rfact.
+phrase "en" "because" rfact.  phrase "en" "for" rfact.
+phrase "en" "then" rclaim.    phrase "en" "show" rclaim.  phrase "en" "prove" rclaim.
+phrase "en" "have" rclaim.    phrase "en" "get" rclaim.   phrase "en" "thus" rclaim.
+phrase "en" "hence" rclaim.   phrase "en" "so" rclaim.    phrase "en" "obtain" rclaim.
+phrase "en" "deduce" rclaim.  phrase "en" "is" rclaim.    phrase "en" "that is" rfact.
+% a claim after one of these replaces the goal (a backward step)
+phrase "en" "suffices" rback. phrase "en" "enough" rback.
+phrase "en" "equivalent to prove" rback.  phrase "en" "written as" rback.
+phrase "en" "amounts to" rback.           phrase "en" "reduces to" rback.
+% the full phrases, which end where "prove" or "show" ends
+phrase "en" "suffices to prove" rback.  phrase "en" "suffices to show" rback.
+phrase "en" "enough to prove" rback.    phrase "en" "enough to show" rback.
+phrase "en" "suffices to check" rback.  phrase "en" "enough to check" rback.

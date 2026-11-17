@@ -1,0 +1,15 @@
+% The French vocabulary of cyp (see vocab_en.elpi).
+phrase "fr" "soit" rvar.      phrase "fr" "soient" rvar.  phrase "fr" "considérons" rvar.
+phrase "fr" "si" rhyp.        phrase "fr" "supposons" rhyp.
+phrase "fr" "posons par hypothèse" rhyp.
+phrase "fr" "à partir de" rfact.  phrase "fr" "en utilisant" rfact.
+phrase "fr" "puisque" rfact.  phrase "fr" "d'après" rfact.  phrase "fr" "grâce à" rfact.
+phrase "fr" "ce qui est équivalent à" rfact.
+phrase "fr" "alors" rclaim.   phrase "fr" "montrons" rclaim.  phrase "fr" "prouvons" rclaim.
+phrase "fr" "nous avons" rclaim.  phrase "fr" "on a" rclaim.  phrase "fr" "donc" rclaim.
+phrase "fr" "ainsi" rclaim.   phrase "fr" "d'où" rclaim.
+phrase "fr" "nous en déduisons" rclaim.  phrase "fr" "nous déduisons" rclaim.
+phrase "fr" "nous obtenons" rclaim.  phrase "fr" "on obtient" rclaim.
+phrase "fr" "il suffit" rback.  phrase "fr" "revient à" rback.
+phrase "fr" "se réduit à" rback.  phrase "fr" "équivaut à montrer" rback.
+phrase "fr" "il suffit de montrer" rback.  phrase "fr" "il suffit de prouver" rback.

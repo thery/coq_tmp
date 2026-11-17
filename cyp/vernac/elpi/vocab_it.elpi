@@ -1,0 +1,12 @@
+% The Italian vocabulary of cyp (see vocab_en.elpi).
+phrase "it" "sia" rvar.       phrase "it" "siano" rvar.   phrase "it" "consideriamo" rvar.
+phrase "it" "se" rhyp.        phrase "it" "supponiamo" rhyp.  phrase "it" "assumiamo" rhyp.
+phrase "it" "da" rfact.       phrase "it" "usando" rfact.  phrase "it" "poiché" rfact.
+phrase "it" "grazie a" rfact. phrase "it" "cioè" rfact.
+phrase "it" "allora" rclaim.  phrase "it" "mostriamo" rclaim.  phrase "it" "dimostriamo" rclaim.
+phrase "it" "abbiamo" rclaim. phrase "it" "quindi" rclaim.  phrase "it" "dunque" rclaim.
+phrase "it" "ne segue" rclaim.  phrase "it" "ne deduciamo" rclaim.  phrase "it" "otteniamo" rclaim.
+phrase "it" "basta" rback.    phrase "it" "è sufficiente" rback.
+phrase "it" "si riduce a" rback.  phrase "it" "equivale a dimostrare" rback.
+phrase "it" "basta dimostrare" rback.  phrase "it" "basta mostrare" rback.
+phrase "it" "è sufficiente dimostrare" rback.
