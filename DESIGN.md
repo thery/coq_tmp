@@ -118,11 +118,20 @@ setting, not a path written in the code.
   and Italian square_pos);
 - xtext's 76 texts: generation, and cyp's counts per text.
 
-## The decisions needed
+## Decisions (2026-11-17)
 
-1. Agree on the single implementation in Elpi, with the OCaml program
-   reduced to a driver (part 7).
-2. Move xtext to the switch `elpi4` (it shares the vocabulary).
-3. Drop the cache of proved steps (or keep it in the driver, by the hash of
-   each step).
-4. Keep `Cyp Lemma` (the vernacular form) as well as `Cyp File`.
+1. One implementation in Elpi; the OCaml program becomes the thin driver
+   of part 7, kept unchanged until the Elpi version passes all the checks.
+2. xtext moves to the switch `elpi4`.
+3. The cache of proved steps is dropped.
+4. `Cyp Lemma` is kept, as well as `Cyp File`.
+
+## Order of the work
+
+- 3a, now: the Elpi core reaches the OCaml cyp's features (nested steps,
+  local scopes and definitions, tags, names, vocabulary files for en, fr,
+  it, the checked Markdown and the JSON), checked on cyp's examples and the
+  exp lemmas in `elpi4`.
+- 3b, when the agents' rounds are over: xtext moves to `elpi4` and writes
+  with the vocabulary; the OCaml program becomes the driver; the shared
+  floating-point rules made general; the READMEs rewritten.
