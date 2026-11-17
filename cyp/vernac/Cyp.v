@@ -95,6 +95,12 @@ Elpi Accumulate lp:{{
   pred by-clause i:string, o:prop.
   by-clause N (proof-default T) :- trim N T.
 
+  % a list without its repetitions
+  pred undup i:list int, o:list int.
+  undup [] [].
+  undup [X | L] R :- std.mem L X, !, undup L R.
+  undup [X | L] [X | R] :- undup L R.
+
   main [str F] :-
     rex.replace "[.]md$" ".checked.md" F OutMd,
     rex.replace "[.]md$" ".cyp.json" F OutJs,
@@ -110,8 +116,11 @@ Elpi Accumulate lp:{{
       statement Vs Hs Gs Steps Ty Proof Rs,
       write-md OutMd H Name Stmt Ns Rs,
       write-json OutJs SF SL SEs Ns Rs),
-    std.filter Rs (r\ sigma I S\ r = rep I S, not (S = ok)) Ko,
-    std.length Rs NR, std.length Ko NK, NP is NR - NK,
+    % counted by step: a step is not proved if one of its obligations is not
+    std.map Rs (r\ i\ sigma S\ r = rep i S) Ids0, undup Ids0 Ids,
+    std.filter Rs (r\ sigma I S\ r = rep I S, not (S = ok)) Ko0,
+    std.map Ko0 (r\ i\ sigma S\ r = rep i S) KoIds0, undup KoIds0 Ko,
+    std.length Ids NR, std.length Ko NK, NP is NR - NK,
     if (Ko = [])
        (std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
         coq.env.add-const Name Proof Ty @opaque! _,
