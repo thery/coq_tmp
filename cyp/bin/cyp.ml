@@ -69,18 +69,57 @@ type header = {
 }
 
 (* Words that give the role of the formulas that follow them. *)
-let role_words = [
-  "let", Var;
-  "if", Hyp; "assume", Hyp; "suppose", Hyp; "where", Hyp;
-  "from", Fact; "using", Fact; "since", Fact; "because", Fact;
-  "then", Claim; "show", Claim; "prove", Claim; "have", Claim;
-  "get", Claim; "thus", Claim; "hence", Claim; "so", Claim;
-  "written as", Claim; "is", Claim; "obtain", Claim; "deduce", Claim;
-]
+(* The words of each language: [en], [fr] and [it], chosen by the field
+   [lang:] of the header. *)
+let role_words_of = function
+  | "fr" -> [
+      "soit", Var; "soient", Var; "considérons", Var;
+      "si", Hyp; "supposons", Hyp; "posons par hypothèse", Hyp;
+      "à partir de", Fact; "en utilisant", Fact; "puisque", Fact;
+      "d'après", Fact; "grâce à", Fact;
+      "alors", Claim; "montrons", Claim; "prouvons", Claim;
+      "nous avons", Claim; "on a", Claim; "donc", Claim; "ainsi", Claim;
+      "d'où", Claim; "nous en déduisons", Claim; "nous déduisons", Claim;
+      "nous obtenons", Claim; "on obtient", Claim; "c'est-à-dire", Claim;
+      "équivalent à", Claim;
+    ]
+  | "it" -> [
+      "sia", Var; "siano", Var; "consideriamo", Var;
+      "se", Hyp; "supponiamo", Hyp; "assumiamo", Hyp;
+      "da", Fact; "usando", Fact; "poiché", Fact; "grazie a", Fact;
+      "allora", Claim; "mostriamo", Claim; "dimostriamo", Claim;
+      "abbiamo", Claim; "quindi", Claim; "dunque", Claim; "ne segue", Claim;
+      "ne deduciamo", Claim; "otteniamo", Claim; "cioè", Claim;
+    ]
+  | _ -> [
+      "let", Var;
+      "if", Hyp; "assume", Hyp; "suppose", Hyp; "where", Hyp;
+      "from", Fact; "using", Fact; "since", Fact; "because", Fact;
+      "then", Claim; "show", Claim; "prove", Claim; "have", Claim;
+      "get", Claim; "thus", Claim; "hence", Claim; "so", Claim;
+      "written as", Claim; "is", Claim; "obtain", Claim; "deduce", Claim;
+    ]
+
+(* Words that make a step go backwards: its formula replaces the goal. *)
+let backward_words_of = function
+  | "fr" -> [ "il suffit"; "équivaut à montrer"; "revient à"; "se réduit à" ]
+  | "it" -> [ "basta"; "è sufficiente"; "equivale a dimostrare"; "si riduce a" ]
+  | _ -> [ "suffices"; "enough"; "equivalent to prove"; "written as";
+           "amounts to"; "reduces to" ]
+
+(* The language of the proof being read. *)
+let lang = ref "en"
+
+(* Lower case, also for the accented capitals of French and Italian. *)
+let lower s =
+  List.fold_left (fun s (a, b) -> Str.global_replace (Str.regexp_string a) b s)
+    (String.lowercase_ascii s)
+    [ "À", "à"; "Â", "â"; "Ç", "ç"; "É", "é"; "È", "è"; "Ê", "ê"; "Ë", "ë";
+      "Î", "î"; "Ï", "ï"; "Ô", "ô"; "Ù", "ù"; "Û", "û"; "Ì", "ì"; "Ò", "ò" ]
 
 (* The role given by the last role word of [txt], if any. *)
 let role_of_text txt =
-  let t = " " ^ String.lowercase_ascii txt ^ " " in
+  let t = " " ^ lower txt ^ " " in
   let best = ref None in
   List.iter (fun (w, r) ->
       let re = Str.regexp ("[^a-z]" ^ Str.quote w ^ "[^a-z]") in
@@ -93,7 +132,7 @@ let role_of_text txt =
           (match !best with
            | Some (q, _) when q >= p -> ()
            | _ -> best := Some (p, r))
-      | None -> ()) role_words;
+      | None -> ()) (role_words_of !lang);
   Option.map snd !best
 
 (* An explicit role, written right after a formula: `x`{.hyp}. *)
@@ -190,6 +229,7 @@ let parse ~dir src =
     timeout = int_of_string (get "timeout" "10");
     flags = get "flags" "";
   } in
+  lang := get "lang" "en";
   let h =
     let scope = get "scope" "" in
     if scope = "" then h
@@ -272,14 +312,10 @@ let by_of h ps =
   | Some t -> t
   | None -> "first [" ^ h.default_by ^ "]"
 
-(* Words that make a step go backwards: its formula replaces the goal. *)
-let backward_words = [ "suffices"; "enough"; "equivalent to prove";
-                       "written as"; "amounts to"; "reduces to" ]
-
 let is_backward ps =
   let txt = String.concat " " (List.filter_map (function
-      | Text t -> Some (String.lowercase_ascii t) | _ -> None) ps) in
-  List.exists (contains txt) backward_words
+      | Text t -> Some (lower t) | _ -> None) ps) in
+  List.exists (contains txt) (backward_words_of !lang)
 
 (* [forall vars, hyps -> c], the result of a local scope *)
 let generalise vars hyps c =

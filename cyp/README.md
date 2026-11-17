@@ -34,7 +34,8 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
 - **The header** (between the two `---`): `require`, the Rocq preamble;
   `scope`, a scope to open; `by`, the tactics tried on a step with no
   justification; `rules`, a file of rules (below); `flags`, options given to
-  `rocq c` (e.g. `-Q dir Name`); `timeout`, the seconds
+  `rocq c` (e.g. `-Q dir Name`); `lang`, the language of the text, `en`
+  (default), `fr` or `it`, which gives the role words below; `timeout`, the seconds
   allowed per step (10).
 - **A proposition** starts with `# name`.  Its statement is the text that
   follows, up to the first list item.
@@ -44,6 +45,17 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   - after *if*, *assume*, *suppose*: hypotheses;
   - after *from*, *using*, *since*: facts used (shown, not checked);
   - after *then*, *have*, *show*, *prove*, *hence*, *so*, ...: claims;
+  - in French: *soit*, *soient*, *considérons* (variables); *si*,
+    *supposons*, *posons par hypothèse* (hypotheses); *à partir de*, *en
+    utilisant*, *puisque*, *d'après*, *grâce à* (facts); *alors*,
+    *montrons*, *nous avons*, *donc*, *ainsi*, *d'où*, *nous en déduisons*,
+    *nous obtenons*, *c'est-à-dire*, ... (claims); a backward step says *il
+    suffit*, *revient à* or *se réduit à*;
+  - in Italian: *sia*, *siano*, *consideriamo*; *se*, *supponiamo*,
+    *assumiamo*; *da*, *usando*, *poiché*, *grazie a*; *allora*,
+    *mostriamo*, *dimostriamo*, *abbiamo*, *quindi*, *dunque*, *ne segue*,
+    *ne deduciamo*, *otteniamo*, *cioè*; backward: *basta*, *è
+    sufficiente*, *si riduce a*;
   - a formula with no such word keeps the role of the one before it;
   - a tag written right after a formula gives its role explicitly, whatever
     the words: `` `0 <= a * a`{.claim} `` (also `{.var}`, `{.hyp}`,
