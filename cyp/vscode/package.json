@@ -5,21 +5,30 @@
   "version": "0.1.0",
   "publisher": "thery",
   "license": "MIT",
-  "engines": { "vscode": "^1.80.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onLanguage:markdown"],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
-      { "command": "cyp.check", "title": "cyp: check this proof" }
+      {
+        "command": "cyp.check",
+        "title": "cyp: check this proof"
+      }
     ],
     "configuration": {
       "title": "cyp",
       "properties": {
         "cyp.command": {
           "type": "string",
-          "default": "opam exec --root=/home/thery/opam-rocq.9.1.0 --switch=native -- /home/thery/git/coq_tmp/cyp/_build/default/bin/cyp.exe",
-          "description": "The command that runs cyp; the options --json and the file name are added at the end."
+          "default": "cyp",
+          "description": "The command that runs cyp (the driver, in an opam switch with Elpi 4 and the cyp library; e.g. 'opam exec --switch=elpi4 -- env CYP_LIB=/path/to/cyp/vernac cyp'); the options --json and the file name are added at the end."
         },
         "cyp.checkOnSave": {
           "type": "boolean",

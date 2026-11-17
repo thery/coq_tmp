@@ -1,5 +1,5 @@
 From Stdlib Require Import ZArith Lia PrimString List.
-Require Import Cyp.
+From CypV Require Import Cyp.
 Import ListNotations.
 Open Scope Z_scope.
 Open Scope pstring_scope.

@@ -1,5 +1,5 @@
 From Stdlib Require Import Reals Lra PrimString List.
-Require Import Cyp.
+From CypV Require Import Cyp.
 Import ListNotations.
 Open Scope R_scope.
 Elpi Accumulate cyp.db lp:{{
