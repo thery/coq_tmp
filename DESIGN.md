@@ -135,3 +135,25 @@ setting, not a path written in the code.
 - 3b, when the agents' rounds are over: xtext moves to `elpi4` and writes
   with the vocabulary; the OCaml program becomes the driver; the shared
   floating-point rules made general; the READMEs rewritten.
+
+## Status of 3a (2026-11-17)
+
+The Elpi core is in cyp/vernac (Cyp.v and elpi/: text, vocab_en/fr/it,
+check, proof, markdown), run by the driver script cyp/vernac/cyprun.py, in
+the switch elpi4.  Checked, same results as the OCaml cyp:
+
+| proof | OCaml cyp (native) | Elpi core (elpi4) |
+|---|---|---|
+| exp Lemma 1 | 11/11 | 11 steps, proved |
+| exp Lemma "red" (Let u := ...) | 19/19 | 19 steps, proved |
+| exp Lemma 2 | 10/10 | 10 steps, proved |
+| examples: square_pos | 6/7 (one wrong on purpose) | 1 of 7 not proved |
+| rules_demo, named_demo, features, by_lemma_demo, apply_demo | proved | proved |
+| square_pos in French and in Italian | proved | proved |
+| a nested-scope demo (vernac/scope_demo.md) | -- | proved |
+
+Not possible yet: a justification written as tactic code (*by destruct b;
+cbn; eauto*), which xtext writes: Rocq-Elpi cannot turn a string into a
+tactic (coq.parse.argument does not accept ltac_tactic:(...), and
+"(ltac:(...))" raw is not implemented).  For the same reason the default
+tactics are called through one table of Ltac wrappers in Cyp.v.
