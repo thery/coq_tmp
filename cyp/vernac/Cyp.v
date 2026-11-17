@@ -96,6 +96,8 @@ Elpi Accumulate lp:{{
   by-clause N (proof-default T) :- trim N T.
 
   main [str F] :-
+    rex.replace "[.]md$" ".checked.md" F OutMd,
+    rex.replace "[.]md$" ".cyp.json" F OutJs,
     read-proof F H Name Stmt SF SL Ns,
     field H "scope" Sc, field H "by" By, field H "lang" Lang0,
     (Lang0 = "", Lang = "en" ; Lang = Lang0), !,
@@ -106,8 +108,6 @@ Elpi Accumulate lp:{{
       binders SEs Vs, hyps SEs Hs, claims SEs Gs,
       steps-of 1 Ns _ Steps,
       statement Vs Hs Gs Steps Ty Proof Rs,
-      rex.replace "[.]md$" ".checked.md" F OutMd,
-      rex.replace "[.]md$" ".cyp.json" F OutJs,
       write-md OutMd H Name Stmt Ns Rs,
       write-json OutJs SF SL SEs Ns Rs),
     std.filter Rs (r\ sigma I S\ r = rep I S, not (S = ok)) Ko,

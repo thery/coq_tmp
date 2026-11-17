@@ -1,0 +1,4 @@
+(executable
+ (name cypd)
+ (public_name cypd)
+ (libraries str unix))
