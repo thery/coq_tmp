@@ -66,6 +66,7 @@ type header = {
   default_by : string;            (* the default justification *)
   timeout : int;                  (* seconds per step *)
   flags : string;                 (* options of rocq c, e.g. load paths *)
+  rules : bool;                   (* the rule tactics are loaded *)
 }
 
 (* Words that give the role of the formulas that follow them. *)
@@ -239,6 +240,7 @@ let parse ~dir src =
     default_by = get "by" "lia";
     timeout = int_of_string (get "timeout" "10");
     flags = relative_flags (get "flags" "");
+    rules = false;
   } in
   lang := get "lang" "en";
   let h =
@@ -265,6 +267,7 @@ let parse ~dir src =
         let text = String.concat "\n" (List.map one fs) in
         { h with require = h.require ^ "\n" ^ rules_prelude ^ "\n" ^ text
                            ^ "\nLtac cyp_default ::= first [" ^ h.default_by ^ "].";
+                 rules = true;
                  default_by = "elpi cyp_by | " ^ h.default_by } in
   (* the propositions, each starting with a line "# name" *)
   let props = ref [] in
@@ -329,8 +332,14 @@ let conj = function
   | [] -> None
   | fs -> Some (String.concat " /\\ " (List.map (fun f -> "(" ^ f ^ ")") fs))
 
+(* A justification made of words (a name of rules, a lemma, a tactic
+   name) goes through cyp_justify; anything else is a tactic. *)
+let name_re = Str.regexp "^[A-Za-z_][A-Za-z0-9_' .-]*$"
+
 let by_of h ps =
   match List.find_map (function By t -> Some t | _ -> None) ps with
+  | Some t when h.rules && Str.string_match name_re t 0 ->
+      Printf.sprintf "elpi cyp_justify \"%s\"" t
   | Some t -> t
   | None -> "first [" ^ h.default_by ^ "]"
 

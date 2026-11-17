@@ -40,6 +40,9 @@ Elpi Db cyp.db lp:{{
   pred justify i:term, o:cyptac.
   % [justify_first]: the same, tried before every [justify] rule
   pred justify_first i:term, o:cyptac.
+  % [named Name Pattern Tac]: a rule with a name, tried like the others,
+  % and the only ones tried when a step says "by Name"
+  pred named o:string, o:term, o:cyptac.
 
   % the tactics tried when no rule closes a step
   pred default-ltac o:string.
@@ -67,6 +70,10 @@ Elpi Db cyp.db lp:{{
 
 Ltac cyp_intros := progress intros.
 Ltac cyp_eapply t := eapply t.
+Ltac cyp_std_lia := lia.        Ltac cyp_std_nia := nia.
+Ltac cyp_std_lra := lra.        Ltac cyp_std_nra := nra.
+Ltac cyp_std_tauto := tauto.    Ltac cyp_std_auto := auto.
+Ltac cyp_std_easy := easy.      Ltac cyp_std_assumption := assumption.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.
@@ -85,6 +92,7 @@ Elpi File cyp_core lp:{{
   close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
     coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
   close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
+  close (goal _ _ Ty _ _ as G) :- named _ Ty Tac, run Tac G.
   close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
 
   pred run i:cyptac, i:goal.
@@ -196,9 +204,17 @@ Elpi File cyp_core lp:{{
   solve-step Tac G [] :-
     coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (solve-step Tac) SG [].
 
+  % "by X": the rules named X if there are any, else the lemma X, else the
+  % Ltac tactic X or the standard tactic X
   pred try-close i:option string, i:goal.
   try-close none G :- close-step G.
-  try-close (some N) G :- coq.ltac.call-ltac1 N G [].
+  try-close (some N) (goal _ _ Ty _ _ as G) :-
+    std.findall (named N _ _) [_ | _], !, named N Ty T, run T G, !.
+  try-close (some N) G :-
+    coq.locate-all N L, std.mem L (loc-gref GR), !,
+    coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, premises GL.
+  try-close (some N) G :- coq.ltac.call-ltac1 N G [], !.
+  try-close (some N) G :- coq.ltac.call-ltac1 {calc ("cyp_std_" ^ N)} G [].
 
   % [step-proof Tac Text T P Ko]: as [prove], reporting the step; a step
   % not proved leaves its hole open and is listed in Ko
@@ -208,9 +224,14 @@ Elpi File cyp_core lp:{{
 
   % the justification of a step: a word "by name", name an Ltac tactic
   pred step-tac i:list item, o:option string.
+  % the justification of a step: a word "by X" (Cyp Lemma), or "*by X*"
+  % inside the text (Cyp File)
   step-tac L (some N) :-
-    std.mem L (word S), rex.match "^by [A-Za-z_0-9]+$" S, !,
+    std.mem L (word S), rex.match "^by [A-Za-z_0-9' .-]+$" S, !,
     rex.replace "^by " "" S N.
+  step-tac L (some N) :-
+    std.mem L (word S), rex.match ".*\\*by [^*]+\\*" S, !,
+    rex.replace ".*\\*by \\([^*]+\\)\\*.*" "\\1" S N.
   step-tac _ none.
 
   % [skel Steps Goal Skel Ko]: Skel proves Goal from the steps, in the

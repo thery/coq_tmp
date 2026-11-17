@@ -70,8 +70,14 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   the old one.  It is the last phrase before the claim that counts: in
   *it is enough to check all the cases, so we have `C`*, the claim is
   announced by *so*, and the step goes forward.  At the end, the last goal must follow from all the claims.
-- **A justification** is written `*by tactic*` in the step; otherwise the
-  tactics of `by` are tried.
+- **A justification** is written `*by X*` in the step, as a paper says
+  "by Lemma 3".  When X is made of words, it is a name: the rules of that
+  name (see `named` below) if there are any, and only them; else the lemma
+  X, applied, its premises closed by the rules or the default tactics;
+  else the tactic X (an Ltac name, or `lia`, `lra`, `nia`, `nra`, `ring`,
+  `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`).  When X
+  is code (`interval with (i_prec 100)`), it is a tactic.  A step with no
+  `*by*` is closed by all the rules, then the tactics of `by`.
 - **A local definition**: *Let `u := e`* introduces `u`, equal to `e`, for
   the steps that follow (a `let` in their goals).
 - **A local scope**: a step that only introduces variables or hypotheses
@@ -113,6 +119,11 @@ justify {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat }}).
   `apply`.
 - `justify_first Pattern Tac`: a rule tried before every `justify` rule,
   for the rules of one proof that must win over shared ones.
+- `named "name" Pattern Tac`: a rule with a name, tried like the others,
+  and the only kind tried when a step says `*by name*`: the text says why
+  a step holds (*by monotonicity*), the rule file says what that means,
+  and Rocq checks that this reason, and no other, closes the step
+  ([examples/named_demo.md](examples/named_demo.md)).
 
 On a step with no `*by ...*`, the rules are tried in order, then the
 default tactics.  Conjunctions and disjunctions are split by cyp itself.

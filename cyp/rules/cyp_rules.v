@@ -10,6 +10,7 @@
    The rules are tried in order; the first one that closes the goal wins.
    Conjunctions and disjunctions are handled by cyp itself. *)
 From elpi Require Import elpi.
+From Stdlib Require Import Lia Lra Field.
 
 Elpi Db cyp.db lp:{{
   kind cyptac type.
@@ -22,14 +23,56 @@ Elpi Db cyp.db lp:{{
   % [justify_first Pattern Tac]: the same, tried before every [justify]
   % rule, for the rules of one proof that must win over shared ones
   pred justify_first i:term, o:cyptac.
+  % [named Name Pattern Tac]: a rule with a name, tried like the [justify]
+  % rules, and the only ones tried when a step says *by Name*
+  pred named o:string, o:term, o:cyptac.
 }}.
 
 Ltac cyp_eapply t := eapply t.
+(* the standard tactics a step may name in *by X* *)
+Ltac cyp_std_lia := lia.        Ltac cyp_std_nia := nia.
+Ltac cyp_std_lra := lra.        Ltac cyp_std_nra := nra.
+Ltac cyp_std_ring := ring.      Ltac cyp_std_field := field.
+Ltac cyp_std_tauto := tauto.    Ltac cyp_std_auto := auto.
+Ltac cyp_std_easy := easy.      Ltac cyp_std_reflexivity := reflexivity.
+Ltac cyp_std_assumption := assumption.
 (* the default tactics of a proof (its header's by:), redefined for it *)
 Ltac cyp_default := fail.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.
+
+(* [cyp_justify "X"]: the justification *by X* of a step, X one name: the
+   lemma X, applied, its premises closed by the rules or the default
+   tactics; else the Ltac tactic X *)
+Elpi Tactic cyp_justify.
+Elpi Accumulate Db cyp.db.
+Elpi Accumulate lp:{{
+  pred premise i:goal, o:list sealed-goal.
+  premise G [] :- justify_first {coq.goal->type G} T, run-j T G, !.
+  premise G [] :- justify {coq.goal->type G} T, run-j T G, !.
+  premise G [] :- coq.ltac.call-ltac1 "cyp_default" G [].
+  pred run-j i:cyptac, i:goal.
+  run-j (ltac N) G :- coq.ltac.call-ltac1 N G [].
+  run-j (apply T) G :-
+    coq.ltac.call "cyp_eapply" [trm T] G GL, coq.ltac.all (coq.ltac.open premise) GL [].
+  run-j (lemma T) G :- refine T G GL, coq.ltac.all (coq.ltac.open premise) GL [].
+  pred coq.goal->type i:goal, o:term.
+  coq.goal->type (goal _ _ Ty _ _) Ty.
+
+  % *by X*: the rules named X, if there are any
+  solve (goal _ _ Ty _ [str X] as G) [] :-
+    std.findall (named X _ _) [_ | _], !,
+    named X Ty T, run-j T G, !.
+  % else the lemma X
+  solve (goal _ _ _ _ [str X] as G) [] :-
+    coq.locate-all X L, std.mem L (loc-gref GR), !,
+    coq.ltac.call "cyp_eapply" [trm (global GR)] G GL,
+    coq.ltac.all (coq.ltac.open premise) GL [].
+  % else an Ltac tactic X, or one of the standard tactics
+  solve (goal _ _ _ _ [str X] as G) [] :- coq.ltac.call-ltac1 X G [], !.
+  solve (goal _ _ _ _ [str X] as G) [] :- coq.ltac.call-ltac1 {calc ("cyp_std_" ^ X)} G [].
+}}.
 
 Elpi Tactic cyp_by.
 Elpi Accumulate Db cyp.db.
@@ -47,6 +90,7 @@ Elpi Accumulate lp:{{
   close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
     coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
   close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
+  close (goal _ _ Ty _ _ as G) :- named _ Ty Tac, run Tac G.
   close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
 
   pred premises i:list sealed-goal.
