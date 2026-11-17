@@ -118,6 +118,7 @@ Elpi File cyp_core lp:{{
   kind item type.
   type word string -> item.
   type formula term -> item.
+  type claimf term -> item.     % a formula tagged {.claim}
 
   pred items i:term, o:list item.
   items (app [primitive (pstring P) | Args]) [word S | L] :- !,
@@ -166,6 +167,7 @@ Elpi File cyp_core lp:{{
     (text-role S R1, ! ; R1 = R), step-claims L R1 C.
   step-claims [formula F | L] claim [F | C] :- is-prop F, !, step-claims L claim C.
   step-claims [formula _ | L] R C :- step-claims L R C.
+  step-claims [claimf F | L] R [F | C] :- step-claims L R C.
 
   pred is-prop i:term.
   is-prop F :- coq.elaborate-skeleton F Ty _ ok, coq.unify-eq Ty (sort prop) ok.
@@ -178,6 +180,7 @@ Elpi File cyp_core lp:{{
   step-text L S :- std.map L item-text Ws, std.string.concat " " Ws S.
   pred item-text i:item, o:string.
   item-text (word S) S.
+  item-text (claimf F) S :- item-text (formula F) S.
   item-text (formula F) S :-
     (coq.elaborate-skeleton F _ F1 ok, ! ; F1 = F),
     coq.term->string F1 S0, S is "`" ^ S0 ^ "`".

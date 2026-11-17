@@ -14,7 +14,7 @@
 
 From Stdlib Require Import PrimString List.
 From elpi Require Import elpi.
-Require Import Cyp.
+From CypV Require Import Cyp.
 
 Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
@@ -126,9 +126,20 @@ Elpi Accumulate lp:{{
     coq.parse.argument {calc ("(" ^ S ^ ")")} ff Scope (trm T) ok, !.
   parse-formula _ S (word Q) :- Q is "`" ^ S ^ "`".
 
+  % a tag right after a formula gives its role: {.fact} a mention,
+  % {.claim} a claim, whatever the words
   pred step-items i:string, i:list piece, o:list item.
   step-items _ [] [].
   step-items Sc [ptext W | P] [word W | L] :- step-items Sc P L.
+  step-items Sc [pform F, ptext W | P] [word Q | L] :-
+    rex.match "^{[.]\\(fact\\|hyp\\|var\\)}" W, !,
+    Q is "`" ^ F ^ "`", rex.replace "^{[.][a-z]*}" "" W W1,
+    step-items Sc [ptext W1 | P] L.
+  step-items Sc [pform F, ptext W | P] [I | L] :-
+    rex.match "^{[.]claim}" W, !,
+    parse-formula Sc F I0, (I0 = formula T, I = claimf T ; I = I0), !,
+    rex.replace "^{[.]claim}" "" W W1,
+    step-items Sc [ptext W1 | P] L.
   step-items Sc [pform F | P] [I | L] :- parse-formula Sc F I, step-items Sc P L.
 
   % ---------------------------------------------------------------- %

@@ -65,3 +65,21 @@ coq-parse-argument); the rest of this directory builds in either switch.
 
 Not yet: nested steps and local scopes, the header's `by:` and `rules:`,
 French and Italian words, and writing the checked Markdown back.
+
+### Lemma 1 of the exp paper, from its Markdown
+
+[lemma1_md.v](lemma1_md.v) runs `Cyp File` on [../exp/lemma1.md](../exp/lemma1.md)
+itself: every step is proved, `lemma1` is defined, and `Print Assumptions`
+lists only Rocq's standard axioms (classical logic, functional
+extensionality, classical reals) and the axioms of primitive integers and
+floats (33 s).  In the switch `elpi4`, with libm's model (Common, Rnd,
+Algorithm, Branch1, accpath/Pow2Table/Data) built in a separate copy of
+its sources, so that the .vo files of the repository (built with the
+switch `native`) are not overwritten:
+
+    rocq c -Q <copy>/exp Exp Branch1.v ...         (in the copy, in order)
+    (cd ../exp && rocq c -Q <copy>/exp Exp -Q . CypExp float_lemmas.v)
+    rocq c -Q . CypV Cyp.v && rocq c -Q . CypV CypFile.v
+    rocq c -Q <copy>/exp Exp -Q ../exp CypExp -Q . CypV lemma1_md.v
+
+Role tags `{.fact}` and `{.claim}` after a formula are understood.
