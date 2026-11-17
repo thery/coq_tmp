@@ -4,7 +4,9 @@
                                     Ltac1 tactic [name]; it must close the
                                     goal;
      justify Pattern (lemma T)      refine the goal with T, then close each
-                                    premise with the rules again.
+                                    premise with the rules again;
+     justify Pattern (apply T)      apply the lemma T, its arguments found
+                                    by unification, then the same.
    The rules are tried in order; the first one that closes the goal wins.
    Conjunctions and disjunctions are handled by cyp itself. *)
 From elpi Require Import elpi.
@@ -13,12 +15,18 @@ Elpi Db cyp.db lp:{{
   kind cyptac type.
   type ltac string -> cyptac.
   type lemma term -> cyptac.
+  % [apply T]: apply the lemma T (its arguments are found by unification),
+  % then close each premise with the rules again
+  type apply term -> cyptac.
   pred justify i:term, o:cyptac.
   % [justify_first Pattern Tac]: the same, tried before every [justify]
   % rule, for the rules of one proof that must win over shared ones
   pred justify_first i:term, o:cyptac.
 }}.
 
+Ltac cyp_eapply t := eapply t.
+(* the default tactics of a proof (its header's by:), redefined for it *)
+Ltac cyp_default := fail.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.
@@ -47,9 +55,12 @@ Elpi Accumulate lp:{{
   pred run i:cyptac, i:goal.
   run (ltac N) G :- coq.ltac.call-ltac1 N G [].
   run (lemma T) G :- refine T G GL, premises GL.
+  run (apply T) G :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL.
 
+  % a premise: the rules, else the default tactics of the proof
   pred close-tac i:goal, o:list sealed-goal.
-  close-tac G [] :- close G.
+  close-tac G [] :- close G, !.
+  close-tac G [] :- coq.ltac.call-ltac1 "cyp_default" G [].
 
   solve G [] :- close G, !.
   % no rule closes the goal: an ordinary tactic failure, only here at the

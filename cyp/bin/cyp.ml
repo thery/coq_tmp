@@ -255,8 +255,16 @@ let parse ~dir src =
     match List.filter (( <> ) "") (String.split_on_char ' ' (get "rules" "")) with
     | [] -> h
     | fs ->
-        let text = String.concat "\n" (List.map (fun f -> read_file (abs f)) fs) in
-        { h with require = h.require ^ "\n" ^ rules_prelude ^ "\n" ^ text;
+        (* a file .elpi holds rules only: it is added to cyp.db; a file .v
+           is Rocq text, copied as it is *)
+        let one f =
+          let t = read_file (abs f) in
+          if Filename.check_suffix f ".elpi" then
+            "Elpi Accumulate cyp.db lp:{{\n" ^ t ^ "\n}}."
+          else t in
+        let text = String.concat "\n" (List.map one fs) in
+        { h with require = h.require ^ "\n" ^ rules_prelude ^ "\n" ^ text
+                           ^ "\nLtac cyp_default ::= first [" ^ h.default_by ^ "].";
                  default_by = "elpi cyp_by | " ^ h.default_by } in
   (* the propositions, each starting with a line "# name" *)
   let props = ref [] in
@@ -383,10 +391,10 @@ let obligations h props =
             let body, rest = if s.children <> [] then (s.children, rest) else (rest, []) in
             let inner = hyps @ sh in
             let after, _ = steps (vars @ sv) inner goal body in
-            let hyps =
-              if List.length after > List.length inner then
-                hyps @ [generalise sv sh (List.nth after (List.length after - 1))]
-              else hyps in
+            (* every claim of the scope, generalised *)
+            let rec drop n l = if n = 0 then l else drop (n - 1) (List.tl l) in
+            let claims = drop (List.length inner) after in
+            let hyps = hyps @ List.map (generalise sv sh) claims in
             steps vars hyps goal rest
         | None -> steps vars hyps goal rest        (* a comment *)
         | Some c ->

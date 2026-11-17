@@ -76,8 +76,8 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   the steps that follow (a `let` in their goals).
 - **A local scope**: a step that only introduces variables or hypotheses
   (*Let `n : nat`*, *Assume `P n`*) adds them for its sub-steps, or, if it
-  has none, for the steps that follow it.  Its result, `forall n, P n -> C`
-  with C the last claim of the scope, is then known to the steps after it.
+  has none, for the steps that follow it.  Its claims C are then known to the steps after it as `forall n, P n -> C`.
+  Every claim of the scope is known after it in this generalised form.
   This is how a case of an induction is written.
 - **Sub-steps** (an indented list) prove their parent's claim; the parent's
   justification then closes it from the sub-steps.
@@ -89,42 +89,46 @@ on paper: a red step is the one to look at first.
 
 A field has its own way of proving things: products of nonnegative reals
 are compared by a monotonicity lemma, rounding errors by a lemma of Flocq,
-bounds by `interval`.  This knowledge goes in a rule file, named in the
-header (`rules: my_rules.v`), not in cyp.
+bounds by `interval`.  This knowledge goes in rule files named in the
+header (`rules: float.elpi my_proof.elpi`), not in cyp.
 
-A rule file is Rocq text, put after the preamble.  Its rules are Elpi
-clauses added to the database `cyp.db` (defined in
+The proved facts the rules use are ordinary Rocq lemmas, in a library the
+proof loads in its `require:` field.  The rules themselves are Elpi
+clauses, in files `.elpi`, added to the database `cyp.db` (defined in
 [rules/cyp_rules.v](rules/cyp_rules.v)):
 
-```coq
-Ltac real_lra := lra.
-Elpi Accumulate cyp.db lp:{{
-  justify {{ (_ * _ <= _ * _)%R }} (lemma {{ Rmult_le_compat _ _ _ _ _ _ _ _ }}).
-  justify {{ (_ <= _)%R }} (ltac "real_lra").
-}}.
+```elpi
+% the product of nonnegative reals is monotone
+justify {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat }}).
 ```
 
-- `justify Pattern (ltac "name")`: on a goal that matches `Pattern`, try
-  the Ltac tactic `name`, which must close it.
-- `justify Pattern (lemma T)`: apply `T`, then close each premise with
-  the rules again.
+- `justify Pattern (apply T)`: on a goal that matches `Pattern`, apply
+  the lemma `T`, its arguments found by unification, then close each
+  premise with the rules, or else with the default tactics of the proof
+  (its `by:` field).
+- `justify Pattern (lemma T)`: the same with an explicit term `T`, holes
+  written `_`.
+- `justify Pattern (ltac "name")`: the Ltac tactic `name`, which must
+  close the goal; for genuine tactics (`interval with ...`), not for an
+  `apply`.
+- `justify_first Pattern Tac`: a rule tried before every `justify` rule,
+  for the rules of one proof that must win over shared ones.
 
 On a step with no `*by ...*`, the rules are tried in order, then the
-tactics of `by`.  `justify_first Pattern Tac` declares a rule tried
-before every `justify` rule: the rules of one proof that must win over
-shared ones.  The rule files are copied into the proof, not loaded with
-`Load`: a lemma proved by `interval` in a loaded file keeps its numerical
-check as an assumption (`Print Assumptions` lists it as an axiom).
-A rule file may name the constants of a model to unfold before numeric
-tactics by redefining an Ltac hook (`Ltac model_unfold ::= unfold ...`,
-see [exp/float_rules.v](exp/float_rules.v)).
+default tactics.  Conjunctions and disjunctions are split by cyp itself.
+A rule file may also be a `.v` file of Rocq text, copied into the proof
+as it is.  Rule files are copied, never loaded with `Load`: a lemma
+proved by `interval` in a loaded file keeps its numerical check as an
+assumption (`Print Assumptions` lists it as an axiom).
+
+Example: [examples/rules_demo.md](examples/rules_demo.md) with
+[examples/rules_demo.elpi](examples/rules_demo.elpi) proves its three
+steps; without the rule file, `lra` proves only one.
 
 **The cache.**  cyp keeps, next to the proof, a file `*.cyp-cache` of the
 steps it proved; a step whose preamble, goal and tactic have not changed
 since is not checked again.  While a proof is being written, only the
-changed steps and those not yet proved are run.  Example: [examples/rules_demo.md](examples/rules_demo.md)
-with [examples/rules_demo_rules.v](examples/rules_demo_rules.v) proves its
-three steps; without the rule file, `lra` proves only one.
+changed steps and those not yet proved are run.
 
 ## The editor
 

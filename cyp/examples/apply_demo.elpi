@@ -1,0 +1,2 @@
+% the product of nonnegative reals is monotone; the premises are linear
+justify {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat }}).
