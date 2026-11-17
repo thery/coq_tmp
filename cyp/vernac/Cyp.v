@@ -1,276 +1,161 @@
-(* Cyp: a proof written as text, checked step by step, inside Rocq.
+(* cyp: a proof written as text, checked step by step, inside Rocq.
 
-     Cyp Lemma name binders : statement :=
-       [ "words" (formula) "words" (formula) ... ;
-         ... ].
+     Elpi CypFile "proof.md".
+       reads a cyp proof in Markdown, checks it, writes proof.checked.md
+       and proof.cyp.json, and defines the lemma when every step is proved;
 
-   The body is a list of steps; a step mixes words (primitive strings) and
-   formulas.  The words before a formula give its role, as in the Markdown
-   cyp: a claim (after "we have", "hence", "show"...), a fact (after
-   "from", "using", "since"), shown but not checked.  A step whose words
-   say "suffices" or "equivalent to prove" goes backwards: its claim
-   replaces the goal.
+     Cyp Lemma name binders : statement := [ step ; step ; ... ].
+       the same with the steps written in Rocq: a step is words (strings)
+       and formulas (terms), "by X" for its justification.
 
-   Each step becomes one hole of a proof skeleton
-     fun binders => let c1 : C1 := ?1 in let c2 : C2 := ?2 in ... ?n
-   elaborated by Rocq, so that each hole has exactly the context of its
-   step; the rules of cyp.db, then the default tactics, close the holes.
-   When every step is closed, the lemma is defined; otherwise the command
-   fails and says which steps are not proved. *)
+   What a proof means is in the Elpi files of elpi/: text.elpi (words,
+   formulas and their roles), vocab_*.elpi (the vocabulary of each
+   language), check.elpi (closing a goal), proof.elpi (the proof of a
+   statement from its steps), markdown.elpi (the Markdown).  The rules of a
+   field are added to the database cyp.db (justify, justify_first, named). *)
 
-From Stdlib Require Import PrimString List Lia Lra.
+From Stdlib Require Import PrimString List Lia Lra Ring Field.
 From elpi Require Import elpi.
 
-(* The default tactics, tried in order on a step that no rule closes;
-   a proof file may add others with [Elpi Accumulate cyp.db]. *)
-Ltac cyp_tauto := tauto.
-Ltac cyp_lia := lia.
-Ltac cyp_nia := nia.
-Ltac cyp_lra := lra.
+(* The tactics a proof may name in *by X* or in its header's by:, and the
+   default tactics.  More with
+     Ltac my_tac := ...  Elpi Accumulate cyp.db lp:{{ tactic-name "my" "my_tac". }}. *)
+Ltac cyp_lia := lia.            Ltac cyp_nia := nia.
+Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
+Ltac cyp_ring := ring.          Ltac cyp_field := field.
+Ltac cyp_tauto := tauto.        Ltac cyp_auto := auto.
+Ltac cyp_easy := easy.          Ltac cyp_reflexivity := reflexivity.
+Ltac cyp_assumption := assumption.
+(* used by cyp itself *)
+Ltac cyp_intros := progress intros.
+Ltac cyp_eapply t := eapply t.
+Ltac cyp_split := split.
+Ltac cyp_left := left.
+Ltac cyp_right := right.
 
 Elpi Db cyp.db lp:{{
-  % [justify Pattern Tac]: on a goal that matches Pattern, try Tac:
-  % [ltac "name"], an Ltac tactic that must close the goal, or [lemma T],
-  % refine with T, then close each premise with the rules again
+  % the tactics of a rule: [ltac N] the Ltac tactic N, which must close the
+  % goal; [apply T] the lemma T, its arguments found by unification, its
+  % premises closed by the rules or the default tactics; [lemma T] the
+  % same with an explicit term T (holes _)
   kind cyptac type.
   type ltac string -> cyptac.
-  type lemma term -> cyptac.
-  % [apply T]: apply the lemma T, its arguments found by unification
   type apply term -> cyptac.
+  type lemma term -> cyptac.
+
+  % [justify Pattern Tac]: on a goal that matches Pattern, try Tac
   pred justify i:term, o:cyptac.
-  % [justify_first]: the same, tried before every [justify] rule
+  % [justify_first Pattern Tac]: the same, tried before every [justify]
   pred justify_first i:term, o:cyptac.
   % [named Name Pattern Tac]: a rule with a name, tried like the others,
-  % and the only ones tried when a step says "by Name"
+  % and the only ones tried when a step says *by Name*
   pred named o:string, o:term, o:cyptac.
 
-  % the tactics tried when no rule closes a step
+  % [tactic-name Name Ltac]: a tactic a proof may name
+  pred tactic-name o:string, o:string.
+  tactic-name "lia" "cyp_lia".        tactic-name "nia" "cyp_nia".
+  tactic-name "lra" "cyp_lra".        tactic-name "nra" "cyp_nra".
+  tactic-name "ring" "cyp_ring".      tactic-name "field" "cyp_field".
+  tactic-name "tauto" "cyp_tauto".    tactic-name "auto" "cyp_auto".
+  tactic-name "easy" "cyp_easy".      tactic-name "reflexivity" "cyp_reflexivity".
+  tactic-name "assumption" "cyp_assumption".
+
+  % the tactics tried when no rule closes a step, after the proof's own
   pred default-ltac o:string.
   default-ltac "cyp_tauto".
   default-ltac "cyp_lia".
   default-ltac "cyp_nia".
   default-ltac "cyp_lra".
-
-  % [role-word W R]: a formula after the word W has the role R
-  kind role type.
-  type claim, fact role.
-  pred role-word o:string, o:role.
-  role-word "have" claim.   role-word "hence" claim.  role-word "so" claim.
-  role-word "then" claim.   role-word "show" claim.   role-word "prove" claim.
-  role-word "thus" claim.   role-word "get" claim.    role-word "deduce" claim.
-  role-word "is" claim.     role-word "obtain" claim. role-word "as" claim.
-  role-word "from" fact.    role-word "using" fact.   role-word "since" fact.
-  role-word "because" fact. role-word "for" fact.
-
-  % [backward-word W]: a step whose words contain W goes backwards
-  pred backward-word o:string.
-  backward-word "suffices". backward-word "enough".
-  backward-word "equivalent". backward-word "written".
 }}.
 
-Ltac cyp_intros := progress intros.
-Ltac cyp_eapply t := eapply t.
-Ltac cyp_std_lia := lia.        Ltac cyp_std_nia := nia.
-Ltac cyp_std_lra := lra.        Ltac cyp_std_nra := nra.
-Ltac cyp_std_tauto := tauto.    Ltac cyp_std_auto := auto.
-Ltac cyp_std_easy := easy.      Ltac cyp_std_assumption := assumption.
-Ltac cyp_split := split.
-Ltac cyp_left := left.
-Ltac cyp_right := right.
+From CypV Extra Dependency "elpi/text.elpi" as cyp_text.
+From CypV Extra Dependency "elpi/vocab_en.elpi" as cyp_vocab_en.
+From CypV Extra Dependency "elpi/vocab_fr.elpi" as cyp_vocab_fr.
+From CypV Extra Dependency "elpi/vocab_it.elpi" as cyp_vocab_it.
+From CypV Extra Dependency "elpi/check.elpi" as cyp_check.
+From CypV Extra Dependency "elpi/proof.elpi" as cyp_proof.
+From CypV Extra Dependency "elpi/markdown.elpi" as cyp_markdown.
 
-(* The step machinery, shared by Cyp Lemma and Cyp File. *)
-Elpi File cyp_core lp:{{
+(* ------------------------------------------------------------------ *)
 
-  % ---------------------------------------------------------------- %
-  % Closing a goal: the rules, then the default tactics
+Elpi Command CypFile.
+Elpi Accumulate Db cyp.db.
+Elpi Accumulate File cyp_text.
+Elpi Accumulate File cyp_vocab_en.
+Elpi Accumulate File cyp_vocab_fr.
+Elpi Accumulate File cyp_vocab_it.
+Elpi Accumulate File cyp_check.
+Elpi Accumulate File cyp_proof.
+Elpi Accumulate File cyp_markdown.
+Elpi Accumulate lp:{{
+  % the default tactics of the header's by: field, e.g. "lra | assumption"
+  pred by-clauses i:string, o:list prop.
+  by-clauses "" [] :- !.
+  by-clauses S Cl :- rex.split " *| *" S Ns, std.map Ns by-clause Cl.
+  pred by-clause i:string, o:prop.
+  by-clause N (proof-default T) :- trim N T.
 
-  pred close i:goal.
-  close (goal _ _ {{ _ /\ _ }} _ _ as G) :-
-    coq.ltac.call-ltac1 "cyp_split" G GL, premises GL.
-  close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
-    coq.ltac.call-ltac1 "cyp_left" G GL, premises GL.
-  close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
-    coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
-  close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
-  close (goal _ _ Ty _ _ as G) :- named _ Ty Tac, run Tac G.
-  close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
+  main [str F] :-
+    read-proof F H Name Stmt SF SL Ns,
+    field H "scope" Sc, field H "by" By, field H "lang" Lang0,
+    (Lang0 = "", Lang = "en" ; Lang = Lang0), !,
+    by-clauses By Cl,
+    coq.say "cyp:" Name,
+    (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
+      justification Stmt _ Stmt1, pieces Stmt1 P, elements P rclaim SEs,
+      binders SEs Vs, hyps SEs Hs, claims SEs Gs,
+      steps-of 1 Ns _ Steps,
+      statement Vs Hs Gs Steps Ty Proof Rs,
+      rex.replace "[.]md$" ".checked.md" F OutMd,
+      rex.replace "[.]md$" ".cyp.json" F OutJs,
+      write-md OutMd H Name Stmt Ns Rs,
+      write-json OutJs SF SL SEs Ns Rs),
+    std.filter Rs (r\ sigma I S\ r = rep I S, not (S = ok)) Ko,
+    std.length Rs NR, std.length Ko NK, NP is NR - NK,
+    if (Ko = [])
+       (std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
+        coq.env.add-const Name Proof Ty @opaque! _,
+        coq.say "cyp:" Name "proved," NP "steps")
+       (coq.error "cyp:" NK "of" NR "steps of" Name "not proved, see" OutMd).
+}}.
 
-  pred run i:cyptac, i:goal.
-  run (ltac N) G :- coq.ltac.call-ltac1 N G [].
-  run (lemma T) G :- refine T G GL, premises GL.
-  run (apply T) G :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL.
+(* ------------------------------------------------------------------ *)
 
-  pred premises i:list sealed-goal.
-  premises GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
+#[arguments(raw)] Elpi Command Cyp.
+Elpi Accumulate Db cyp.db.
+Elpi Accumulate File cyp_text.
+Elpi Accumulate File cyp_vocab_en.
+Elpi Accumulate File cyp_check.
+Elpi Accumulate File cyp_proof.
+Elpi Accumulate lp:{{
+  % a step written in Rocq: words (primitive strings) and terms
+  pred raw-step i:int, i:term, o:step.
+  raw-step I T (step I Es Tac []) :-
+    raw-items T Is, raw-elements Is rclaim Es0,
+    (std.mem Es0 (txt W), rex.match "^by " W, !,
+     rex.replace "^by +" "" W X, Tac = some X,
+     std.filter Es0 (e\ not (e = txt W)) Es ; Tac = none, Es = Es0).
 
-  % a premise: the rules, else the default tactics
-  pred close-tac i:goal, o:list sealed-goal.
-  close-tac G [] :- close-step G.
+  kind ritem type.
+  type rword string -> ritem.
+  type rterm term -> ritem.
 
-  % a step's goal: the rules, else the first default tactic that closes it
-  pred close-step i:goal.
-  close-step G :- close G, !.
-  close-step G :- default-ltac N, coq.ltac.call-ltac1 N G [], !.
+  pred raw-items i:term, o:list ritem.
+  raw-items (app [primitive (pstring P) | As]) [rword S | L] :- !,
+    coq.pstring->string P S, raw-args As L.
+  raw-items (primitive (pstring P)) [rword S] :- !, coq.pstring->string P S.
+  raw-items T [rterm T].
+  pred raw-args i:list term, o:list ritem.
+  raw-args [] [].
+  raw-args [primitive (pstring P) | R] [rword S | L] :- !,
+    coq.pstring->string P S, raw-args R L.
+  raw-args [T | R] [rterm T | L] :- raw-args R L.
 
-  % ---------------------------------------------------------------- %
-  % Reading a step: its words and formulas, and their roles
-
-  kind item type.
-  type word string -> item.
-  type formula term -> item.
-  type claimf term -> item.     % a formula tagged {.claim}
-
-  pred items i:term, o:list item.
-  items (app [primitive (pstring P) | Args]) [word S | L] :- !,
-    coq.pstring->string P S, args Args L.
-  items (primitive (pstring P)) [word S] :- !, coq.pstring->string P S.
-  items T [formula T].
-
-  pred args i:list term, o:list item.
-  args [] [].
-  args [primitive (pstring P) | R] [word S | L] :- !,
-    coq.pstring->string P S, args R L.
-  args [T | R] [formula T | L] :- args R L.
-
-  % the words of a text, in lower case, last one first
-  pred words-rev i:string, o:list string.
-  words-rev S W :-
-    rex.split "[^A-Za-z'-]+" S W0,
-    std.map W0 lower W1, std.rev W1 W.
-
-  pred lower i:string, o:string.
-  lower S L :-
-    std.fold ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O",
-              "P","Q","R","S","T","U","V","W","X","Y","Z"] S
-      (u\ s\ s'\ sigma l\ lower-letter u l, rex.replace u l s s') L.
-
-  pred lower-letter i:string, o:string.
-  lower-letter "A" "a". lower-letter "B" "b". lower-letter "C" "c".
-  lower-letter "D" "d". lower-letter "E" "e". lower-letter "F" "f".
-  lower-letter "G" "g". lower-letter "H" "h". lower-letter "I" "i".
-  lower-letter "J" "j". lower-letter "K" "k". lower-letter "L" "l".
-  lower-letter "M" "m". lower-letter "N" "n". lower-letter "O" "o".
-  lower-letter "P" "p". lower-letter "Q" "q". lower-letter "R" "r".
-  lower-letter "S" "s". lower-letter "T" "t". lower-letter "U" "u".
-  lower-letter "V" "v". lower-letter "W" "w". lower-letter "X" "x".
-  lower-letter "Y" "y". lower-letter "Z" "z".
-
-  % the role given by the last role word of a text, if any
-  pred text-role i:string, o:role.
-  text-role S R :- words-rev S W, std.mem W X, role-word X R, !.
-
-  % the claims of a step: formulas whose role is claim and that are
-  % propositions; the others are shown, not checked
-  pred step-claims i:list item, i:role, o:list term.
-  step-claims [] _ [].
-  step-claims [word S | L] R C :- !,
-    (text-role S R1, ! ; R1 = R), step-claims L R1 C.
-  step-claims [formula F | L] claim [F | C] :- is-prop F, !, step-claims L claim C.
-  step-claims [formula _ | L] R C :- step-claims L R C.
-  step-claims [claimf F | L] R [F | C] :- step-claims L R C.
-
-  pred is-prop i:term.
-  is-prop F :- coq.elaborate-skeleton F Ty _ ok, coq.unify-eq Ty (sort prop) ok.
-
-  pred backward i:list item.
-  backward L :- std.mem L (word S), words-rev S W, std.mem W X, backward-word X, !.
-
-  % the text of a step, to report it
-  pred step-text i:list item, o:string.
-  step-text L S :- std.map L item-text Ws, std.string.concat " " Ws S.
-  pred item-text i:item, o:string.
-  item-text (word S) S.
-  item-text (claimf F) S :- item-text (formula F) S.
-  item-text (formula F) S :-
-    (coq.elaborate-skeleton F _ F1 ok, ! ; F1 = F),
-    coq.term->string F1 S0, S is "`" ^ S0 ^ "`".
-
-  pred conj i:list term, o:term.
-  conj [C] C :- !.
-  conj [C | L] {{ lp:C /\ lp:R }} :- conj L R.
-
-  % ---------------------------------------------------------------- %
-  % The proof skeleton: one hole per step
-
-  % [prove Tac T P]: a proof P of T, in the current context, by the
-  % step's tactic [some N] or else ([none]) by the rules and the default
-  % tactics; if they fail, the premises of T are introduced and they are
-  % tried again.  Fails if nothing closes the goal.
-  pred prove i:option string, i:term, o:term.
-  prove Tac T P :-
-    coq.typecheck P T ok,
-    coq.ltac.collect-goals P [SG] _,
-    coq.ltac.open (solve-step Tac) SG [].
-
-  pred solve-step i:option string, i:goal, o:list sealed-goal.
-  solve-step Tac G [] :- try-close Tac G, !.
-  solve-step Tac G [] :-
-    coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (solve-step Tac) SG [].
-
-  % "by X": the rules named X if there are any, else the lemma X, else the
-  % Ltac tactic X or the standard tactic X
-  pred try-close i:option string, i:goal.
-  try-close none G :- close-step G.
-  try-close (some N) (goal _ _ Ty _ _ as G) :-
-    std.findall (named N _ _) [_ | _], !, named N Ty T, run T G, !.
-  try-close (some N) G :-
-    coq.locate-all N L, std.mem L (loc-gref GR), !,
-    coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, premises GL.
-  try-close (some N) G :- coq.ltac.call-ltac1 N G [], !.
-  try-close (some N) G :- coq.ltac.call-ltac1 {calc ("cyp_std_" ^ N)} G [].
-
-  % [step-proof Tac Text T P Ko]: as [prove], reporting the step; a step
-  % not proved leaves its hole open and is listed in Ko
-  % a step not proved is listed by its position I among the steps (the
-  % closing step "the statement follows" is "end")
-  pred step-proof i:option string, i:string, i:string, i:term, o:term, o:list string.
-  step-proof Tac _ Text T P [] :- prove Tac T P, !, coq.say "  ✅" Text.
-  step-proof _ I Text _ _ [I] :- coq.say "  ❌" Text.
-
-  % the justification of a step: a word "by name", name an Ltac tactic
-  pred step-tac i:list item, o:option string.
-  % the justification of a step: a word "by X" (Cyp Lemma), or "*by X*"
-  % inside the text (Cyp File)
-  step-tac L (some N) :-
-    std.mem L (word S), rex.match "^by [A-Za-z_0-9' .-]+$" S, !,
-    rex.replace "^by " "" S N.
-  step-tac L (some N) :-
-    std.mem L (word S), rex.match ".*\\*by [^*]+\\*" S, !,
-    rex.replace ".*\\*by \\([^*]+\\)\\*.*" "\\1" S N.
-  step-tac _ none.
-
-  % [skel Steps Goal Skel Ko]: Skel proves Goal from the steps, in the
-  % current context; Ko are the steps not proved.  A forward step proves
-  % its claim C and adds it to the context (let c : C := P in ...); a
-  % backward step proves C -> Goal, and the rest proves C.
-  % [skel K I Steps Goal Skel Ko]: K the number of claims so far, I the
-  % position of the first of the steps
-  pred skel i:int, i:int, i:list (list item), i:term, o:term, o:list string.
-  skel _ _ [] G P Ko :- step-proof none "end" "the statement follows" G P Ko.
-  skel K I [L | Rest] G Skel Ko :-
-    step-text L Text, step-tac L Tac, I1 is I + 1, std.any->string I Is,
-    step-claims L claim Cs,
-    if (Cs = []) (skel K I1 Rest G Skel Ko)           % a comment
-    (conj Cs C0,
-     std.assert-ok! (coq.elaborate-ty-skeleton C0 _ C) "cyp: a claim does not type-check",
-     if (backward L)
-       (step-proof Tac Is Text (prod `_` C (_\ G)) P Ko1,
-        Skel = app [P, SkelB],
-        skel K I1 Rest C SkelB Ko2,
-        std.append Ko1 Ko2 Ko)
-       % the claims are named c1, c2, ...: one name each
-       (step-proof Tac Is Text C P Ko1,
-        K1 is K + 1, Id is "c" ^ {std.any->string K1}, coq.id->name Id Nm,
-        Skel = let Nm C P SkelF,
-        (pi x\ decl x Nm C => skel K1 I1 Rest G (SkelF x) Ko2),
-        std.append Ko1 Ko2 Ko)).
-
-  % the binders of the statement and of the body, in parallel
-  pred lemma i:term, i:term, o:term, o:list string.
-  lemma (prod N T A) (fun _ _ B) (fun N T S) Ko :- !,
-    pi x\ decl x N T => lemma (A x) (B x) (S x) Ko.
-  lemma G Body Skel Ko :-
-    list-of Body Steps, std.map Steps items Ls, skel 0 0 Ls G Skel Ko.
+  pred raw-elements i:list ritem, i:role, o:list element.
+  raw-elements [] _ [].
+  raw-elements [rword W | L] R [txt W | E] :-
+    (text-role W R1, ! ; R1 = R), raw-elements L R1 E.
+  raw-elements [rterm T | L] R [eltt R T | E] :- raw-elements L R E.
 
   pred list-of i:term, o:list term.
   list-of (app [global (indc Cons), _, X, R]) [X | L] :-
@@ -278,23 +163,27 @@ Elpi File cyp_core lp:{{
   list-of (app [global (indc Nil), _]) [] :- coq.locate "nil" (indc Nil), !.
   list-of T [T].
 
-  % ---------------------------------------------------------------- %
+  pred numbered i:int, i:list term, o:list step.
+  numbered _ [] [].
+  numbered I [T | L] [S | Ss] :- raw-step I T S, I1 is I + 1, numbered I1 L Ss.
 
-}}.
+  % the binders of the statement and of the body, in parallel
+  pred lemma i:term, i:term, o:term, o:list report.
+  lemma (prod N T A) (fun _ _ B) (fun N T S) Rs :- !,
+    pi x\ decl x N T => lemma (A x) (B x) (S x) Rs.
+  lemma G Body P Rs :-
+    list-of Body Ts, numbered 1 Ts Steps, level 0 0 none Steps G P Rs.
 
-#[arguments(raw)] Elpi Command Cyp.
-Elpi Accumulate Db cyp.db.
-Elpi Accumulate File cyp_core.
-Elpi Accumulate lp:{{
   main [const-decl Name (some Body) Arity] :-
     coq.arity->term Arity Ty0,
     std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) "cyp: the statement does not type-check",
     coq.say "cyp:" Name,
-    lemma Ty Body Proof Ko,
+    (current-lang "en" :- !) => (current-scope "" :- !) => lemma Ty Body Proof Rs,
+    std.forall Rs (r\ sigma I S\ r = rep I S, (S = ok, coq.say "  ✅ step" I ; coq.say "  ❌ step" I S)),
+    std.filter Rs (r\ sigma I S\ r = rep I S, not (S = ok)) Ko,
     if (Ko = [])
        (std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
         coq.env.add-const Name Proof Ty @opaque! _, coq.say "cyp:" Name "proved")
-       (std.length Ko N,
-        coq.error "cyp:" N "step(s) of" Name "not proved").
+       (std.length Ko N, coq.error "cyp:" N "step(s) of" Name "not proved").
 }}.
 Elpi Export Cyp.

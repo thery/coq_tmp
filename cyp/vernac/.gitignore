@@ -4,3 +4,5 @@
 *.glob
 .*.aux
 .coq-native/
+*.checked.md
+*.cyp.json

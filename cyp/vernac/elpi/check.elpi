@@ -1,0 +1,77 @@
+% Closing a goal: by the step's justification, or by the rules, or by the
+% default tactics.
+%
+% The rules are in the database cyp.db (Cyp.v): [justify_first], [named],
+% [justify] clauses, tried in this order; their tactics [ltac N], [apply T]
+% and [lemma T].  Conjunctions and disjunctions are split here.
+
+% [tactic-name Name Ltac]: the tactic a step may name in *by Name*, and the
+% Ltac definition that runs it (Cyp.v); tactics defined with Ltac are
+% found by their own name
+pred tactic-name o:string, o:string.
+
+% the default tactics of the proof being checked (its header's by:), then
+% cyp's own ones (default-ltac in cyp.db)
+pred proof-default o:string.
+
+pred close i:goal.
+close (goal _ _ {{ _ /\ _ }} _ _ as G) :-
+  coq.ltac.call-ltac1 "cyp_split" G GL, premises GL.
+close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
+  coq.ltac.call-ltac1 "cyp_left" G GL, premises GL.
+close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
+  coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
+close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
+close (goal _ _ Ty _ _ as G) :- named _ Ty Tac, run Tac G.
+close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
+
+pred run i:cyptac, i:goal.
+run (ltac N) G :- coq.ltac.call-ltac1 N G [].
+run (lemma T) G :- refine T G GL, premises GL.
+run (apply T) G :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL.
+
+% the premises of a lemma: the rules, else the default tactics
+pred premises i:list sealed-goal.
+premises GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
+
+pred close-tac i:goal, o:list sealed-goal.
+close-tac G [] :- close-default G.
+
+% the rules, else the default tactics, first those of the proof
+pred close-default i:goal.
+close-default G :- close G, !.
+close-default G :- proof-default N, run-name N G, !.
+close-default G :- default-ltac N, coq.ltac.call-ltac1 N G [], !.
+
+% a tactic by its name (an identifier: tactic code cannot be run from a
+% string yet, see the README)
+pred run-name i:string, i:goal.
+run-name N G :- tactic-name N L, !, coq.ltac.call-ltac1 L G [].
+run-name N G :- rex.match "^[A-Za-z_][A-Za-z0-9_']*$" N, coq.ltac.call-ltac1 N G [].
+
+% [justify Tac G]: the justification of a step (*by X*), or none
+pred justify-step i:option string, i:goal.
+justify-step none G :- close-default G.
+% the rules named X, and only them, if there are any
+justify-step (some X) (goal _ _ Ty _ _ as G) :-
+  std.findall (named X _ _) [_ | _], !, named X Ty T, run T G, !.
+% else the lemma X, applied, its premises closed by the rules
+justify-step (some X) G :-
+  coq.locate-all X L, std.mem L (loc-gref GR), !,
+  coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, premises GL.
+% else the tactic X
+justify-step (some X) G :- run-name X G.
+
+% [solve-step Tac G]: as [justify-step], and again after introducing the
+% premises of the goal
+pred solve-step i:option string, i:goal, o:list sealed-goal.
+solve-step Tac G [] :- justify-step Tac G, !.
+solve-step Tac G [] :-
+  coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (solve-step Tac) SG [].
+
+% [prove Tac T P]: a proof P of T, in the current context
+pred prove i:option string, i:term, o:term.
+prove Tac T P :-
+  coq.typecheck P T ok,
+  coq.ltac.collect-goals P [SG] _,
+  coq.ltac.open (solve-step Tac) SG [].

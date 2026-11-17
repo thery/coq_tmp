@@ -1,0 +1,206 @@
+% A cyp proof in Markdown: reading it, and writing it back checked.
+%
+%   ---
+%   scope: Z            the notation scope of the formulas (name or key)
+%   by: lia | nia       the default tactics of the proof
+%   lang: en            the language of the text (en, fr, it)
+%   ---
+%   # name
+%   The statement: Let `x : T`. If `A` (h) then `C`.
+%   - a step
+%     - a sub-step
+%
+% The other fields of the header (require:, rules:, flags:) are for the
+% driver: the libraries and the rules are loaded by the .v file.
+
+pred read-lines i:string, o:list string.
+read-lines F L :- open_in F I, read-all I L, close_in I.
+
+pred read-all i:in_stream, o:list string.
+read-all I [] :- eof I, !.
+read-all I [X | L] :- input_line I X, read-all I L.
+
+pred trim i:string, o:string.
+trim S T :- rex.replace "^[ \t]+" "" S S1, rex.replace "[ \t]+$" "" S1 T.
+
+% the lines of a file, numbered from 0
+kind line type.
+type ln int -> string -> line.
+
+pred number i:int, i:list string, o:list line.
+number _ [] [].
+number I [S | L] [ln I S | N] :- I1 is I + 1, number I1 L N.
+
+% the header: the lines between the first two lines "---"
+pred header i:list line, o:list string, o:list line.
+header [ln _ L | R] H B :- trim L "---", !, take-header R H B.
+header L [] L.
+pred take-header i:list line, o:list string, o:list line.
+take-header [ln _ L | R] [] R :- trim L "---", !.
+take-header [ln _ L | R] [L | H] B :- take-header R H B.
+take-header [] [] [].
+
+pred field i:list string, i:string, o:string.
+field H K V :-
+  Re is "^ *" ^ K ^ ":", Re1 is "^ *" ^ K ^ ": *",
+  std.mem H L, rex.match Re L, !,
+  rex.replace Re1 "" L V0, trim V0 V.
+field _ _ "".
+
+pred title-line i:line.
+title-line (ln _ L) :- rex.match "^# " L.
+pred item-line i:line.
+item-line (ln _ L) :- rex.match "^ *[-*] " L.
+
+pred from-title i:list line, o:list line.
+from-title [] [].
+from-title [X | L] [X | L] :- title-line X, !.
+from-title [_ | L] R :- from-title L R.
+
+pred until-item i:list line, o:list line, o:list line.
+until-item [] [] [].
+until-item [X | L] [] [X | L] :- item-line X, !.
+until-item [X | L] [X | A] B :- until-item L A B.
+
+% a list item: its indentation, its text (continuation lines joined), its
+% first and last lines
+kind item-md type.
+type it int -> string -> int -> int -> item-md.
+
+pred items-md i:list line, o:list item-md.
+items-md [] [].
+items-md [ln F L | R] [it Ind Txt F La | Its] :-
+  rex.replace "[^ ].*" "" L Sp, Ind is size Sp,
+  rex.replace "^ *[-*] +" "" L L1,
+  until-item R Cont R1,
+  std.map Cont line-text Cont0, std.filter Cont0 (s\ not (s = "")) Cont1,
+  std.string.concat " " [L1 | Cont1] T0, trim T0 Txt,
+  last-line F Cont La,
+  items-md R1 Its.
+
+pred line-text i:line, o:string.
+line-text (ln _ S) T :- trim S T.
+pred last-line i:int, i:list line, o:int.
+last-line F [] F.
+last-line _ L La :- std.last L (ln La _).
+
+% the tree of the items, by indentation
+kind node type.
+type node item-md -> list node -> node.
+
+pred tree i:list item-md, o:list node.
+tree [] [].
+tree [it I T F La | R] [node (it I T F La) Ch | Ns] :-
+  deeper I R Sub Rest, tree Sub Ch, tree Rest Ns.
+
+pred deeper i:int, i:list item-md, o:list item-md, o:list item-md.
+deeper _ [] [] [].
+deeper I [it J T F La | R] [it J T F La | A] B :- J > I, !, deeper I R A B.
+deeper _ L [] L.
+
+% the steps of a tree, numbered in order from 1
+pred steps-of i:int, i:list node, o:int, o:list step.
+steps-of K [] K [].
+steps-of K [node (it _ T _ _) Ch | Ns] K2 [step K Es Tac Sub | Ss] :-
+  justification T Tac T1, pieces T1 P, elements P rclaim Es,
+  K0 is K + 1, steps-of K0 Ch K1 Sub, steps-of K1 Ns K2 Ss.
+
+% ------------------------------------------------------------------ %
+% The checked Markdown and the JSON
+
+pred status-of i:list report, i:int, o:string, o:string.
+status-of Rs I "ko" M :- std.mem Rs (rep I (ko G)), !, M is "not proved: " ^ G.
+status-of Rs I "ko" M :- std.mem Rs (rep I (bad E)), !, M is "does not parse: " ^ E.
+status-of Rs I "ok" "" :- std.mem Rs (rep I ok), !.
+status-of _ _ "none" "".
+
+pred mark i:string, o:string.
+mark "ok" "✅".
+mark "ko" "❌".
+mark "none" "▫️".
+
+pred write-md i:string, i:list string, i:string, i:string, i:list node,
+  i:list report.
+write-md Out H Name Stmt Ns Rs :-
+  open_out Out O,
+  output O "---\n", std.forall H (l\ output O {calc (l ^ "\n")}), output O "---\n\n",
+  output O {calc ("# " ^ Name ^ "\n\n")},
+  status-of Rs 0 S M, mark S Mk,
+  output O {calc (Mk ^ " " ^ Stmt ^ "\n")}, details O "" M,
+  output O "\n",
+  write-nodes O "" 1 Ns Rs _,
+  close_out O.
+
+pred details i:out_stream, i:string, i:string.
+details _ _ "" :- !.
+details O Pad M :-
+  output O {calc ("\n" ^ Pad ^ "<details><summary>" ^ M ^ "</summary></details>\n\n")}.
+
+% [write-nodes O Pad K Ns Rs K1]: the nodes, numbered from K as in steps-of
+pred write-nodes i:out_stream, i:string, i:int, i:list node, i:list report, o:int.
+write-nodes _ _ K [] _ K.
+write-nodes O Pad K [node (it _ T _ _) Ch | Ns] Rs K2 :-
+  status-of Rs K S M, mark S Mk,
+  output O {calc (Pad ^ "- " ^ Mk ^ " " ^ T ^ "\n")},
+  details O {calc (Pad ^ "  ")} M,
+  K0 is K + 1, write-nodes O {calc (Pad ^ "  ")} K0 Ch Rs K1,
+  write-nodes O Pad K1 Ns Rs K2.
+
+% the JSON for the editor: per step its lines, status, formulas, message
+pred json-string i:string, o:string.
+json-string S J :-
+  rex.replace "\\\\" "\\\\\\\\" S S1, rex.replace "\"" "\\\\\"" S1 S2,
+  rex.replace "\n" "\\\\n" S2 S3, J is "\"" ^ S3 ^ "\"".
+
+pred write-json i:string, i:int, i:int, i:list element, i:list node, i:list report.
+write-json Out F La SEs Ns Rs :-
+  open_out Out O,
+  output O "{\"steps\":[",
+  json-step O 0 F La SEs Rs,
+  json-nodes O 1 Ns Rs _,
+  output O "]}\n",
+  close_out O.
+
+pred json-step i:out_stream, i:int, i:int, i:int, i:list element, i:list report.
+json-step O K F La Es Rs :-
+  status-of Rs K S M,
+  std.filter Es (e\ sigma R X\ e = elt R X) Fs,
+  std.map Fs json-formula Js, std.string.concat "," Js J,
+  (K = 0, Sep = "" ; Sep = ","), !,
+  output O {calc (Sep ^ "{\"first\":" ^ {std.any->string F} ^ ",\"last\":" ^
+     {std.any->string La} ^ ",\"status\":\"" ^ S ^ "\",\"formulas\":[" ^ J ^
+     "],\"message\":" ^ {json-string M} ^ "}")}.
+
+pred json-formula i:element, o:string.
+json-formula (elt R X) J :-
+  role-name R N, J is "{\"role\":\"" ^ N ^ "\",\"text\":" ^ {json-string X} ^ "}".
+
+pred role-name i:role, o:string.
+role-name rvar "var".
+role-name rhyp "hyp".
+role-name rclaim "claim".
+role-name rback "claim".
+role-name rfact "fact".
+
+pred json-nodes i:out_stream, i:int, i:list node, i:list report, o:int.
+json-nodes _ K [] _ K.
+json-nodes O K [node (it _ T F La) Ch | Ns] Rs K2 :-
+  justification T _ T1, pieces T1 P, elements P rclaim Es,
+  json-step O K F La Es Rs,
+  K0 is K + 1, json-nodes O K0 Ch Rs K1, json-nodes O K1 Ns Rs K2.
+
+% ------------------------------------------------------------------ %
+% Reading a proof
+
+% [read-proof F Header Name Stmt StmtFirst StmtLast Nodes]
+pred read-proof i:string, o:list string, o:string, o:string, o:int, o:int, o:list node.
+read-proof F H Name Stmt SF SL Ns :-
+  read-lines F Ls0, number 0 Ls0 Ls,
+  header Ls H B,
+  from-title B [ln _ T | R],
+  rex.replace "^# *" "" T Name0, trim Name0 Name,
+  until-item R S Items,
+  std.filter S (l\ sigma X\ line-text l X, not (X = "")) S1,
+  std.map S1 line-text S2, std.string.concat " " S2 Stmt,
+  (S1 = [ln SF _ | _], last-line SF S1 SL, ! ; SF = 0, SL = 0),
+  items-md Items Its, tree Its Ns.
