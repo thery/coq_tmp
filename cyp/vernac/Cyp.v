@@ -53,7 +53,7 @@ Elpi Db cyp.db lp:{{
   role-word "thus" claim.   role-word "get" claim.    role-word "deduce" claim.
   role-word "is" claim.     role-word "obtain" claim. role-word "as" claim.
   role-word "from" fact.    role-word "using" fact.   role-word "since" fact.
-  role-word "because" fact.
+  role-word "because" fact. role-word "for" fact.
 
   % [backward-word W]: a step whose words contain W goes backwards
   pred backward-word o:string.
@@ -61,6 +61,7 @@ Elpi Db cyp.db lp:{{
   backward-word "equivalent". backward-word "written".
 }}.
 
+Ltac cyp_intros := progress intros.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.
@@ -173,47 +174,67 @@ Elpi Accumulate lp:{{
   % ---------------------------------------------------------------- %
   % The proof skeleton: one hole per step
 
-  % [prove T P]: a proof P of T, in the current context, by the rules or
-  % the default tactics; fails if none closes the goal
-  pred prove i:term, o:term.
-  prove T P :-
+  % [prove Tac T P]: a proof P of T, in the current context, by the
+  % step's tactic [some N] or else ([none]) by the rules and the default
+  % tactics; if they fail, the premises of T are introduced and they are
+  % tried again.  Fails if nothing closes the goal.
+  pred prove i:option string, i:term, o:term.
+  prove Tac T P :-
     coq.typecheck P T ok,
     coq.ltac.collect-goals P [SG] _,
-    coq.ltac.open (g\ gl\ close-step g, gl = []) SG [].
+    coq.ltac.open (solve-step Tac) SG [].
 
-  % [step-proof Text T P Ko]: as [prove], reporting the step; a step not
-  % proved leaves its hole open and is listed in Ko
-  pred step-proof i:string, i:term, o:term, o:list string.
-  step-proof Text T P [] :- prove T P, !, coq.say "  ✅" Text.
-  step-proof Text _ _ [Text] :- coq.say "  ❌" Text.
+  pred solve-step i:option string, i:goal, o:list sealed-goal.
+  solve-step Tac G [] :- try-close Tac G, !.
+  solve-step Tac G [] :-
+    coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (solve-step Tac) SG [].
+
+  pred try-close i:option string, i:goal.
+  try-close none G :- close-step G.
+  try-close (some N) G :- coq.ltac.call-ltac1 N G [].
+
+  % [step-proof Tac Text T P Ko]: as [prove], reporting the step; a step
+  % not proved leaves its hole open and is listed in Ko
+  pred step-proof i:option string, i:string, i:term, o:term, o:list string.
+  step-proof Tac Text T P [] :- prove Tac T P, !, coq.say "  ✅" Text.
+  step-proof _ Text _ _ [Text] :- coq.say "  ❌" Text.
+
+  % the justification of a step: a word "by name", name an Ltac tactic
+  pred step-tac i:list item, o:option string.
+  step-tac L (some N) :-
+    std.mem L (word S), rex.match "^by [A-Za-z_0-9]+$" S, !,
+    rex.replace "^by " "" S N.
+  step-tac _ none.
 
   % [skel Steps Goal Skel Ko]: Skel proves Goal from the steps, in the
   % current context; Ko are the steps not proved.  A forward step proves
   % its claim C and adds it to the context (let c : C := P in ...); a
   % backward step proves C -> Goal, and the rest proves C.
-  pred skel i:list term, i:term, o:term, o:list string.
-  skel [] G P Ko :- step-proof "the statement follows" G P Ko.
-  skel [S | Rest] G Skel Ko :-
-    items S L, step-text L Text,
+  pred skel i:int, i:list term, i:term, o:term, o:list string.
+  skel _ [] G P Ko :- step-proof none "the statement follows" G P Ko.
+  skel K [S | Rest] G Skel Ko :-
+    items S L, step-text L Text, step-tac L Tac,
     step-claims L claim Cs,
-    if (Cs = []) (skel Rest G Skel Ko)                % a comment
+    if (Cs = []) (skel K Rest G Skel Ko)              % a comment
     (conj Cs C0,
      std.assert-ok! (coq.elaborate-ty-skeleton C0 _ C) "cyp: a claim does not type-check",
      if (backward L)
-       (step-proof Text (prod `_` C (_\ G)) P Ko1,
+       (step-proof Tac Text (prod `_` C (_\ G)) P Ko1,
         Skel = app [P, SkelB],
-        skel Rest C SkelB Ko2,
+        skel K Rest C SkelB Ko2,
         std.append Ko1 Ko2 Ko)
-       (step-proof Text C P Ko1,
-        Skel = let `c` C P SkelF,
-        (pi x\ decl x `c` C => skel Rest G (SkelF x) Ko2),
+       % the claims are named c1, c2, ...: one name each
+       (step-proof Tac Text C P Ko1,
+        K1 is K + 1, Id is "c" ^ {std.any->string K1}, coq.id->name Id Nm,
+        Skel = let Nm C P SkelF,
+        (pi x\ decl x Nm C => skel K1 Rest G (SkelF x) Ko2),
         std.append Ko1 Ko2 Ko)).
 
   % the binders of the statement and of the body, in parallel
   pred lemma i:term, i:term, o:term, o:list string.
   lemma (prod N T A) (fun _ _ B) (fun N T S) Ko :- !,
     pi x\ decl x N T => lemma (A x) (B x) (S x) Ko.
-  lemma G Body Skel Ko :- list-of Body Steps, skel Steps G Skel Ko.
+  lemma G Body Skel Ko :- list-of Body Steps, skel 0 Steps G Skel Ko.
 
   pred list-of i:term, o:list term.
   list-of (app [global (indc Cons), _, X, R]) [X | L] :-
