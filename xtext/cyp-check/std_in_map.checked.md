@@ -24,18 +24,16 @@
           - ✅ By definition of or (or_introl), we have `f a = f x \/ In (f x) (map f l0)` .*by eapply @or_introl; eauto*
       - ✅ Case 2.2: we prove `In x l0 -> f a = f x \/ In (f x) (map f l0)`.
         - ▫️ Assume `In x l0` (H0).
-          - ✅ In particular `In x l0 -> In (f x) (map f l0)`.
-            - ✅ By IHl we have `forall x0 : A, In x0 l0 -> In (f x0) (map f l0)`.
+          - ✅ By IHl we have `forall x0 : A, In x0 l0 -> In (f x0) (map f l0)`.
           - ✅ We have proved `(In x l0 -> In (f x) (map f l0)) -> In (f x) (map f l0)`.
             - ▫️ Assume `In x l0 -> In (f x) (map f l0)` (H00).
-              - ✅ We deduce `In (f x) (map f l0)`.
-                - ✅ By H0 we have `In x l0`.
-                - ✅ By H00 we have `In x l0 -> In (f x) (map f l0)`.
+              - ✅ By H0 we have `In x l0`.
+              - ✅ By H00 we have `In x l0 -> In (f x) (map f l0)`.
               - ✅ We have proved `In (f x) (map f l0) -> In (f x) (map f l0)`.
                 - ▫️ Assume `In (f x) (map f l0)` (H01).
                   - ✅ By H01 we have `In (f x) (map f l0)`.
-              - ✅ We deduce `In (f x) (map f l0)`.
-          - ✅ We deduce `In (f x) (map f l0)`.
+              - ✅ We deduce `In (f x) (map f l0)` .*by tauto*
+          - ✅ We deduce `In (f x) (map f l0)` .*by firstorder*
           - ✅ By definition of or (or_intror), we have `f a = f x \/ In (f x) (map f l0)` .*by eapply @or_intror; eauto*
       - ✅ We have `In (f x) (map f (a :: l0))` in all cases .*by eapply (@or_ind (a = x) (In x l0) (In (f x) (map f (a :: l0)))); cbv beta; eauto*
 - ✅ These cases being exhaustive, we deduce `forall (l0 : list A) (x : A), In x l0 -> In (f x) (map f l0)` .*by eapply (@list_ind (A) (fun l0 : list A => forall x : A, In x l0 -> In (f x) (map f l0))); cbv beta; eauto*

@@ -134,8 +134,8 @@ They replace the paper's rules for introduction and elimination theorems.
   type-checks as a formula.
 - `match` is read as an elimination (the thesis hides the primitive
   operator behind `C_ind`): first kind if the inductive type is in `Prop`,
-  else second kind.  Elimination theorems are found by Rocq's naming
-  scheme `C_ind` / `C_sind`, not by the shape of their type (6.4.2).
+  else second kind.  Elimination theorems are found by the shape of
+  their type (6.4.2, see below), not by their name.
 - **Rewriting** (`eq_ind`, `eq_ind_r`, `eq_rect`, ...): the thesis says
   (end of 6.4.2) that the generic text is poor and that a specific rule is
   needed, but gives none.  Here the proof of `P x` and the proof of the
@@ -307,10 +307,8 @@ them, then states its conclusion.  The differences: xtext names the
 constructors and theorems, has no special words for `¬` (a negation is
 an implication to `False` in Rocq), and states the goal of each case.
 
-Future work, not done: the text of an **incomplete proof** (section 3.3.3),
-where each open goal is written `Prouvez G` at its place (`Supposons (x ⊃
-z) ∧ (y ⊃ t) (1) / Supposons x ∧ y (2) / Prouvez z / Prouvez t / Ceci
-réuni donne z ∧ t`).
+The text of an **incomplete proof** (section 3.3.3), where each open goal
+is written `Prouvez G` at its place, is now `Explain_partial` (below).
 
 ## More examples: theses, Stdlib, CORE-MATH
 
@@ -587,6 +585,160 @@ Also fixed in this round: the `*by exact @T*` of a theorem uses its full
 name (`@Stdlib.Classes.Morphisms.eq_proper_proxy`), which needs only
 that its library be loaded, not imported.
 
+## Contraction, eliminations by their type, proofs in progress
+
+### (2) Contraction of application steps (thesis 3.4.2, Fig. 3.11-3.13)
+
+A modus ponens step lists its premises as dashed subproofs.  A premise
+that is itself an application step (`We deduce B`, `In particular ...`),
+used only there, can be **contracted**: its own premises take its place,
+and its conclusion disappears.  This is the thesis's "contraction de
+l'application" (Fig. 3.11), applied to the text.  Three strategies:
+
+- `none`: no contraction (the texts of the previous rounds);
+- `maximal`: every such premise is contracted (the thesis's maximal
+  contraction, Fig. 3.12);
+- `guarded` (default): a premise is contracted only if (1) the step still
+  follows from its new premises, checked by one of the tactics of
+  `xtext-guard-tactic` (cyp's default ones: `tauto`, `congruence`, `lia`,
+  `firstorder`, `auto`, 1 s each).  The tactic that closes the last
+  accepted configuration becomes the step's justification (`We deduce C
+  *by auto*`), so that cyp runs the same tactic.  (2) Its line has no "that
+  is", so
+  no conversion step is hidden (the thesis's guarded contraction keeps the
+  type expressions that belong to a conversion, Fig. 3.13).
+
+Parameters, in `xtext.db`: `xtext-contraction "none" | "guarded" |
+"maximal"` (the variable `XTEXT_CONTRACTION` overrides it) and
+`xtext-guard-tactic Ltac Text`.  The decision is greedy, premise by premise,
+in the order of the text.
+
+Limits:
+- Only application steps are contracted, not the rules for
+  constructors, eliminations or rewriting.
+- The guard is checked with the premises of the step only, not with all
+  the claims before it as cyp does.  It is conservative.
+- Contraction can repeat a line: `ABCD` reads `By h4 we have A` four
+  times.
+- On propositional proofs `tauto` always succeeds, so guarded is maximal
+  there; the two differ on arithmetic and rewriting (`Nat.*`).
+
+Example, `ABCD` (Fig. 5.6 of the thesis has the three intermediate
+results `P1`, `P2`, `P3`): with contraction, the text is the eight uses
+of hypotheses (12 items become 9) and `We deduce D`.  The thesis keeps the
+three named intermediate results, which xtext's contraction drops.
+
+### (6) Elimination principles recognised by their type (thesis 6.4.2)
+
+A constant is an elimination principle if its type has this shape, with
+no condition on its name:
+- parameters;
+- a motive `P`, whose type ends in `Prop`;
+- between them and the object, binders that are branches (their
+  conclusion is `P` applied) or indices (not propositions);
+- the eliminated object, of an inductive type `I`;
+- a conclusion that is `P` applied to the object (kind 2) or `P` (kind 1:
+  the object is a proof).
+
+The type of the object must not mention `P`.  Without this condition,
+`proj1 : forall A B, A /\ B -> A` would be read as an elimination with
+motive `A`.  Induction hypotheses are still the branch binders whose type
+mentions `P`.
+
+Tests (`elim_type.v`):
+- `half_le` is proved by `induction n using strong_induction`, a
+  course-of-values principle defined in the file: `By definition of nat
+  (strong_induction), ...`, with `Assume by induction hypothesis forall
+  m, m < n0 -> m / 2 <= m (IH)`.
+- `even_or_odd` uses `two_step` (`P 0 -> P 1 -> (forall n, P n -> P (S
+  (S n))) -> forall n, P n`, as `list_2_ind` in 6.4.2): `by induction
+  (nat, two_step)`, Case 1 (base), Case 2 (base), Case 3 (inductive).
+
+No regression: with `none`, the 76 earlier texts are the same, byte for
+byte, as before this round.
+
+### (8) Proofs in progress (L. Théry's thesis, 3.3.3)
+
+`Explain_partial.` (or `Explain_partial to "f.md".`), inside a proof,
+prints the text of the proof so far.  Each open goal is written `Prove
+G` at its place, as the thesis's `Prouvez G`.  The open goals are the holes
+of the partial proof term; their statements are their types.
+
+Limit: rocq-elpi gives the partial proof term only to a command that
+closes the proof, so `Explain_partial` ends the proof, as `Abort` does.
+In an editor, undo it to go on.
+
+Tests (`partial.v`, texts `examples/*_partial*.md`):
+- `or_swap_partial`, after `destruct`: two cases, each `Prove B \/ A`;
+- `add_0_r_partial`, after `induction` and the base case: the inductive
+  case is `Prove S m + 0 = S m`;
+- `praeclarum_partial1` and `2`, the session of section 3.3.3: after
+  `split`, `Prove z` and `Prove t`, then `So by definition of and (conj)`,
+  as the thesis's `Prouvez z / Prouvez t / Ceci réuni donne z ∧ t`.  After
+  the first conjunct, `We deduce z` (from `Hx` and `Hxz`) and `Prove t`.
+
+### Measurements
+
+All 78 texts (the 76 earlier ones and the two of `elim_type.v`), with each
+contraction strategy.  The generation time is the sum of Rocq's `Time`
+over the texts; the guard costs it.
+
+| strategy | list items | characters | generation time (s) |
+|---|---|---|---|
+| none | 1919 | 288045 | 13.6 |
+| maximal | 1720 | 267311 | 13.6 |
+| guarded | 1818 | 279926 | 33.5 |
+
+Texts that change, with cyp (proved / not proved / not checked; 300 s
+per text).  "cyp none" is the previous round.  "= guarded" means the
+maximal text has the same structure as the guarded one.
+
+| example | items none / maximal / guarded | chars none → guarded | cyp none | cyp maximal | cyp guarded |
+|---|---|---|---|---|---|
+| S_proof | 6 / 5 / 5 | 484 → 466 | 6 / 0 / 0 | = guarded | 5 / 0 / 0 |
+| nearly_reflexive | 9 / 8 / 8 | 960 → 936 | 7 / 0 / 2 | = guarded | 5 / 1 / 2 (†) |
+| imp_trans | 5 / 4 / 4 | 444 → 426 | 5 / 0 / 0 | = guarded | 4 / 0 / 0 |
+| length_app_fix | 14 / 13 / 13 | 1552 → 1495 | 8 / 1 / 5 | = guarded | 7 / 1 / 5 |
+| ABCD | 12 / 9 / 9 | 720 → 638 | 12 / 0 / 0 | = guarded | 9 / 0 / 0 |
+| praeclarum_nd | 13 / 11 / 11 | 1082 → 1042 | 13 / 0 / 0 | = guarded | 11 / 0 / 0 |
+| std_app_assoc | 36 / 35 / 35 | 3469 → 3382 | 30 / 0 / 6 | = guarded | 29 / 0 / 6 |
+| std_app_nil_r | 28 / 27 / 27 | 2633 → 2552 | 23 / 0 / 5 | = guarded | 22 / 0 / 5 |
+| std_length_app | 15 / 14 / 14 | 1908 → 1849 | 9 / 0 / 6 | = guarded | 8 / 0 / 6 |
+| std_in_map | 36 / 34 / 34 | 3149 → 3045 | 23 / 0 / 13 | = guarded | 21 / 0 / 13 |
+| std_Nat_add_comm | 85 / 66 / 75 | 11659 → 10948 | 80 / 1 / 4 | 59 / 3 / 4 | 67 / 4 / 4 (†) |
+| std_Nat_add_assoc | 105 / 82 / 93 | 15181 → 14188 | 100 / 1 / 4 | 75 / 3 / 4 | 83 / 6 / 4 (†) |
+| std_Nat_mul_comm | 85 / 66 / 75 | 11657 → 10946 | 80 / 1 / 4 | 59 / 3 / 4 | 67 / 4 / 4 (†) |
+| std_Nat_le_trans | 112 / 73 / 110 | 21247 → 21059 | timeout | = guarded | timeout |
+| std_Nat_add_0_r | 104 / 82 / 91 | 14066 → 13115 | 95 / 3 / 6 | 73 / 3 / 6 | 79 / 6 / 6 (†) |
+| std_Nat_add_succ_r | 87 / 68 / 75 | 12046 → 11167 | 82 / 1 / 4 | 61 / 3 / 4 | 66 / 5 / 4 (†) |
+| std_Nat_le_refl | 16 / 15 / 15 | 1784 → 1730 | 14 / 0 / 2 | = guarded | 13 / 0 / 2 |
+| std_Nat_lt_irrefl | 35 / 28 / 32 | 4457 → 4298 | 32 / 0 / 3 | 25 / 0 / 3 | 28 / 1 / 3 (†) |
+| std_Nat_mul_1_r | 89 / 70 / 80 | 12345 → 11719 | 85 / 0 / 4 | 66 / 0 / 4 | 74 / 2 / 4 (†) |
+| half_le | 36 / 29 / 30 | 6438 → 5345 | not run | = guarded | 19 / 4 / 6 (†) |
+| even_or_odd | 27 / 27 / 27 | 3410 → 3410 | not run | = guarded | 19 / 0 / 8 |
+| exp_round_one | 21 / 19 / 19 | 3547 → 3293 | 7 / 8 / 6 | = guarded | 8 / 5 / 6 |
+| exp_succ_one | 12 / 11 / 11 | 2070 → 2023 | 10 / 2 / 0 | = guarded | 10 / 1 / 0 |
+| exp_grid_plus | 23 / 22 / 23 | 5003 → 5003 | 7 / 9 / 7 | 7 / 8 / 7 | 7 / 9 / 7 |
+| exp_rnd_same_half_cell | 335 / 329 / 329 | 84057 → 83174 | timeout | = guarded | timeout |
+
+
+- Over the 66 texts checked both before and after (guarded): 25 steps not
+  proved before, 21 after, for fewer steps (576 proved before, 563
+  after, since steps were merged).
+- With `maximal`, the 8 `Nat.*` texts and `grid_plus` lose more steps
+  (561 → 425 proved) and keep slightly more failures (16 → 23): a
+  contracted step that cyp's tactics cannot close becomes one more red
+  step.  This is why `guarded` is the default.
+- (†) These 9 texts changed after a last fix of the guard (the head of a
+  modus ponens claimed the type of the bare function, not of its
+  instance).  They could not be checked again: cyp was being rebuilt in
+  the meantime (the new driver needs its compiled library, `CYP_LIB`),
+  so their guarded results are those of the version before the fix.
+- `Nat.le_trans` and `rnd_same_half_cell` time out in cyp, as before.
+
+The texts in progress (`*_partial*.md`) have one `Prove G` step per open
+goal.  They are not counted above.
+
 ## Not done
 
 - The section "Further optimizations" of the paper (one-use
@@ -594,8 +746,7 @@ that its library be loaded, not imported.
 - The specific wordings of the paper's figures for the usual connectives
   and classical reasoning (`Altogether`, `Obviously`, `If we have ...
   Otherwise`).
-- From the thesis: leaving out the generalised predicate (6.4.1),
-  elimination theorems recognised by the shape of their type (6.4.2), and
+- From the thesis: leaving out the generalised predicate (6.4.1), and
   its other chapters (type annotations, reversible scripts).
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.

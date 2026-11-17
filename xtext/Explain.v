@@ -1,6 +1,7 @@
 (* The command [Explain foo.]: print the proof of [foo] as text, after the
    basic transducer of "Extracting Text from Proofs" (TLCA 1995).
-   [Explain foo to "foo.md".] writes the text to the file foo.md. *)
+   [Explain foo to "foo.md".] writes the text to the file foo.md.
+   [Explain_partial.], inside a proof, prints the proof so far. *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
 From XText Extra Dependency "xtext.elpi" as xtext.
@@ -10,6 +11,12 @@ From XText Extra Dependency "xtext.elpi" as xtext.
    time limit. *)
 Ltac xtext_tauto := timeout 2 tauto.
 Ltac xtext_lia := timeout 2 lia.
+(* the tactics that check a contraction (those of cyp's default "by") *)
+Ltac xtext_g_tauto := timeout 1 tauto.
+Ltac xtext_g_congruence := timeout 1 congruence.
+Ltac xtext_g_lia := timeout 1 lia.
+Ltac xtext_g_firstorder := timeout 1 firstorder.
+Ltac xtext_g_auto := timeout 1 auto.
 
 Elpi Db xtext.db lp:{{
   % [xtext-tactic Ltac Text]: the Ltac definition Ltac is tried on a long
@@ -24,6 +31,21 @@ Elpi Db xtext.db lp:{{
   pred xtext-threshold o:int.
   :name "xtext-threshold"
   xtext-threshold 300.
+  % [xtext-contraction S]: the contraction of application steps (thesis
+  % 3.4.2): "none", "guarded" (default) or "maximal".  The variable
+  % XTEXT_CONTRACTION overrides it.
+  pred xtext-contraction o:string.
+  :name "xtext-contraction"
+  xtext-contraction "guarded".
+  % [xtext-guard-tactic Ltac Text]: the tactics that check a guarded
+  % contraction (the step must still follow from its premises); the one
+  % that succeeds becomes the step's justification, *by Text*.
+  pred xtext-guard-tactic o:string, o:string.
+  xtext-guard-tactic "xtext_g_tauto" "tauto".
+  xtext-guard-tactic "xtext_g_congruence" "congruence".
+  xtext-guard-tactic "xtext_g_lia" "lia".
+  xtext-guard-tactic "xtext_g_firstorder" "firstorder".
+  xtext-guard-tactic "xtext_g_auto" "auto".
 }}.
 
 Elpi Command Explain.
@@ -37,3 +59,22 @@ Elpi Accumulate lp:{{
   main _ :- coq.error "usage: Explain name. or Explain name to \"file.md\".".
 }}.
 Elpi Export Explain.
+
+(* [Explain_partial.] inside a proof: prints the text of the proof so far,
+   each open goal written "Prove G" at its place.  It ends the proof (as
+   Abort does): rocq-elpi gives the partial proof only to a command that
+   closes the proof. *)
+Elpi Command Explain_partial.
+Elpi Accumulate Db xtext.db.
+Elpi Accumulate File xtext.
+Elpi Accumulate lp:{{
+  main-interp-qed [str "to", str F] _ P _ Name :- !,
+    (if (var Name) (N = "proof") (N = Name)),
+    explain-partial N P T, open_out F O, output O T, close_out O,
+    coq.say "Explain_partial: written" F.
+  main-interp-qed _ _ P _ Name :-
+    (if (var Name) (N = "proof") (N = Name)),
+    explain-partial N P T, coq.say T.
+}}.
+#[proof="end"]
+Elpi Export Explain_partial.

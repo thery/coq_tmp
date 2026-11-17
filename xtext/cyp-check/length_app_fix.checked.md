@@ -13,30 +13,29 @@
   - ✅ Case 2 (inductive): we prove `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`.
     - ▫️ Let `x : A`.
     - ▫️ Let `l : list A`.
-    - ✅ In particular `length (l ++ l2) = length l + length l2`.
-      - ❌ By induction hypothesis (the recursive call length_app') we have `forall (A0 : Type) (l10 l20 : list A0), length (l10 ++ l20) = length l10 + length l20`.
+    - ❌ By induction hypothesis (the recursive call length_app') we have `forall (A0 : Type) (l10 l20 : list A0), length (l10 ++ l20) = length l10 + length l20`.
 
-        <details><summary>not proved</summary>
+      <details><summary>not proved</summary>
 
-        ```
-        1 goal
-          
-          A : Type
-          l1, l2 : list A
-          x : A
-          l : list A
-          H : length ([] ++ l2) = length ([] ++ l2)
-          A0 : Type
-          l10, l20 : list A0
-          ============================
-          length (l10 ++ l20) = length l10 + length l20
+      ```
+      1 goal
         
-        File "./cyp_ko_3.v", line 4, characters 0-168:
-        Error: No applicable tactic.
-        ```
+        A : Type
+        l1, l2 : list A
+        x : A
+        l : list A
+        H : length ([] ++ l2) = length ([] ++ l2)
+        A0 : Type
+        l10, l20 : list A0
+        ============================
+        length (l10 ++ l20) = length l10 + length l20
+      
+      File "./cyp_ko_3.v", line 4, characters 0-168:
+      Error: No applicable tactic.
+      ```
 
-        </details>
+      </details>
     - ✅ Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y` .*by exact @Corelib.Init.Logic.f_equal*
-    - ✅ We deduce `S (length (l ++ l2)) = S (length l + length l2)`.
+    - ✅ We deduce `S (length (l ++ l2)) = S (length l + length l2)` .*by congruence*
   - ✅ These cases being exhaustive, we deduce `length (l1 ++ l2) = length l1 + length l2` .*by destruct l1; cbn; eauto*
 

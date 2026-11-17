@@ -23,10 +23,9 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ nil = l`{.claim}.
       - We have proved `a = a -> l0 ++ nil = l0 -> a :: l0 ++ nil = a :: l0`{.claim}.
         - By definition of eq (eq_refl), we have `A = A`{.claim} *by eapply @eq_refl; eauto* (H1).
         - Assume `a = a`{.hyp} (H00) and `l0 ++ nil = l0`{.hyp} (H10).
-          - We deduce `a :: l0 ++ nil = a :: l0 ++ nil`{.claim}, that is `a :: l0 ++ nil = a :: l0 ++ nil`{.fact}.
+          - We deduce `a :: l0 ++ nil = a :: l0 ++ nil`{.claim} *by tauto*, that is `a :: l0 ++ nil = a :: l0 ++ nil`{.fact}.
             - By definition of eq (eq_refl), we have `cons a = cons a`{.claim} *by eapply @eq_refl; eauto*.
-            - In particular `cons a = cons a -> a :: l0 ++ nil = a :: l0 ++ nil`{.claim}.
-              - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
+            - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
           - We deduce `a :: l0 ++ nil = a :: l0`{.claim}, that is `a :: l0 ++ nil = a :: l0`{.fact}.
             - By H10 we have `l0 ++ nil = l0`{.claim}.
             - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.

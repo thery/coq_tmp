@@ -7,8 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B C : Prop`{.var}. Assume `A -> B`{.hyp} (f) and `B -> C`{.hyp} (g) and `A`{.hyp} (a). We prove `C`{.claim}.
 
-- We deduce `B`{.claim}.
-  - By a we have `A`{.claim}.
-  - By f we have `A -> B`{.claim}.
+- By a we have `A`{.claim}.
+- By f we have `A -> B`{.claim}.
 - By g we have `B -> C`{.claim}.
-- We deduce `C`{.claim}.
+- We deduce `C`{.claim} *by tauto*.

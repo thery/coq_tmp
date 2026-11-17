@@ -4,9 +4,8 @@
 
 ✅ Let `A B C : Prop`. Assume `A -> B` (f) and `B -> C` (g) and `A` (a). We prove `C`.
 
-- ✅ We deduce `B`.
-  - ✅ By a we have `A`.
-  - ✅ By f we have `A -> B`.
+- ✅ By a we have `A`.
+- ✅ By f we have `A -> B`.
 - ✅ By g we have `B -> C`.
-- ✅ We deduce `C`.
+- ✅ We deduce `C` .*by tauto*
 

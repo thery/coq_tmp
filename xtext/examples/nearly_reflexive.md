@@ -11,8 +11,7 @@ Let `A : Set`{.var}. Let `R : A -> A -> Prop`{.var}. Assume `forall x y : A, R x
   - Let us consider an arbitrary `y0 : A`{.var}.
     - Assume `R x y0`{.hyp} (i).
       - By i we have `R x y0`{.claim}.
-      - We deduce `R y0 x`{.claim}.
-        - By i we have `R x y0`{.claim}.
-        - By symmetry we have `forall x0 y : A, R x0 y -> R y x0`{.claim}.
+      - By i we have `R x y0`{.claim}.
+      - By symmetry we have `forall x0 y : A, R x0 y -> R y x0`{.claim}.
       - By transitivity we have `forall x0 y z : A, R x0 y -> R y z -> R x0 z`{.claim}.
-      - We deduce `R x x`{.claim}.
+      - We deduce `R x x`{.claim} *by firstorder*.

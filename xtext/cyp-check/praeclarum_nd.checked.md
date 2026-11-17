@@ -4,17 +4,15 @@
 
 ✅ Let `x y z t : Prop`. Assume `(x -> z) /\ (y -> t)` (H1) and `x /\ y` (H2). We prove `z /\ t`.
 
-- ✅ We deduce `z`.
+- ✅ We deduce `z` .*by tauto*
   - ✅ By H1 we have `(x -> z) /\ (y -> t)`.
-  - ✅ We deduce `x`.
-    - ✅ By H2 we have `x /\ y`.
-    - ✅ Using proj1 we get `forall A B : Prop, A /\ B -> A` .*by exact @Corelib.Init.Logic.proj1*
+  - ✅ By H2 we have `x /\ y`.
   - ✅ Using proj1 we get `forall A B : Prop, A /\ B -> A` .*by exact @Corelib.Init.Logic.proj1*
-- ✅ We deduce `t`.
+  - ✅ Using proj1 we get `forall A B : Prop, A /\ B -> A` .*by exact @Corelib.Init.Logic.proj1*
+- ✅ We deduce `t` .*by tauto*
   - ✅ By H1 we have `(x -> z) /\ (y -> t)`.
-  - ✅ We deduce `y`.
-    - ✅ By H2 we have `x /\ y`.
-    - ✅ Using proj2 we get `forall A B : Prop, A /\ B -> B` .*by exact @Corelib.Init.Logic.proj2*
+  - ✅ By H2 we have `x /\ y`.
+  - ✅ Using proj2 we get `forall A B : Prop, A /\ B -> B` .*by exact @Corelib.Init.Logic.proj2*
   - ✅ Using proj2 we get `forall A B : Prop, A /\ B -> B` .*by exact @Corelib.Init.Logic.proj2*
 - ✅ So by definition of and (conj), we have `z /\ t` .*by eapply @conj; eauto*
 

@@ -27,18 +27,16 @@ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove
           - By definition of or (or_introl), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by eapply @or_introl; eauto*.
       - Case 2.2: we prove `In x l0 -> f a = f x \/ In (f x) (map f l0)`{.claim}.
         - Assume `In x l0`{.hyp} (H0).
-          - In particular `In x l0 -> In (f x) (map f l0)`{.claim}.
-            - By IHl we have `forall x0 : A, In x0 l0 -> In (f x0) (map f l0)`{.claim}.
+          - By IHl we have `forall x0 : A, In x0 l0 -> In (f x0) (map f l0)`{.claim}.
           - We have proved `(In x l0 -> In (f x) (map f l0)) -> In (f x) (map f l0)`{.claim}.
             - Assume `In x l0 -> In (f x) (map f l0)`{.hyp} (H00).
-              - We deduce `In (f x) (map f l0)`{.claim}.
-                - By H0 we have `In x l0`{.claim}.
-                - By H00 we have `In x l0 -> In (f x) (map f l0)`{.claim}.
+              - By H0 we have `In x l0`{.claim}.
+              - By H00 we have `In x l0 -> In (f x) (map f l0)`{.claim}.
               - We have proved `In (f x) (map f l0) -> In (f x) (map f l0)`{.claim}.
                 - Assume `In (f x) (map f l0)`{.hyp} (H01).
                   - By H01 we have `In (f x) (map f l0)`{.claim}.
-              - We deduce `In (f x) (map f l0)`{.claim}.
-          - We deduce `In (f x) (map f l0)`{.claim}.
+              - We deduce `In (f x) (map f l0)`{.claim} *by tauto*.
+          - We deduce `In (f x) (map f l0)`{.claim} *by firstorder*.
           - By definition of or (or_intror), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by eapply @or_intror; eauto*.
       - We have `In (f x) (map f (a :: l0))`{.claim} in all cases *by eapply (@or_ind (a = x) (In x l0) (In (f x) (map f (a :: l0)))); cbv beta; eauto*.
 - These cases being exhaustive, we deduce `forall (l0 : list A) (x : A), In x l0 -> In (f x) (map f l0)`{.claim} *by eapply (@list_ind (A) (fun l0 : list A => forall x : A, In x l0 -> In (f x) (map f l0))); cbv beta; eauto*.

@@ -16,9 +16,8 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, leng
   - Let `l0 : list A`{.var}.
   - Assume by induction hypothesis `forall l' : list A, length (l0 ++ l') = length l0 + length l'`{.hyp} (IHl).
     - Let `l' : list A`{.var}.
-    - In particular `length (l0 ++ l') = length l0 + length l'`{.claim}.
-      - By IHl we have `forall l'0 : list A, length (l0 ++ l'0) = length l0 + length l'0`{.claim}.
+    - By IHl we have `forall l'0 : list A, length (l0 ++ l'0) = length l0 + length l'0`{.claim}.
     - Using f_equal_nat we get `forall (B : Type) (f : nat -> B) (x y : nat), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Peano.f_equal_nat*.
-    - We deduce `S (length (l0 ++ l')) = S (length l0 + length l')`{.claim}.
+    - We deduce `S (length (l0 ++ l')) = S (length l0 + length l')`{.claim} *by congruence*.
 - These cases being exhaustive, we deduce `forall l0 l' : list A, length (l0 ++ l') = length l0 + length l'`{.claim} *by eapply (@list_ind (A) (fun l0 : list A => forall l' : list A, length (l0 ++ l') = length l0 + length l')); cbv beta; eauto*.
 - In particular `forall l' : list A, length (l ++ l') = length l + length l'`{.claim}.

@@ -12,11 +12,10 @@
       - ▫️ Assume `n0 <= m -> n0 < m \/ n0 = m` (h) and `n0 < m \/ n0 = m -> n0 <= m` (h0).
         - ✅ By h0 we have `n0 < m \/ n0 = m -> n0 <= m`.
 - ✅ By definition of or (or_intror), we have `n < n \/ n = n` .*by eapply @or_intror; eauto*
-  - ✅ We deduce `RelationClasses.Reflexive (@eq nat)`.
-    - ✅ Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)` .*by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*
-    - ✅ Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R` .*by exact @Corelib.Classes.RelationClasses.Equivalence_Reflexive*
+  - ✅ Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)` .*by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*
+  - ✅ Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R` .*by exact @Corelib.Classes.RelationClasses.Equivalence_Reflexive*
   - ✅ Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x` .*by exact @Corelib.Classes.RelationClasses.reflexivity*
-  - ✅ We deduce `forall x : nat, x = x`.
+  - ✅ We deduce `forall x : nat, x = x` .*by tauto*
   - ✅ In particular `n = n`, that is `n = n`.
 - ✅ By H we have `forall n0 m : nat, n0 < m \/ n0 = m -> n0 <= m`.
 - ✅ We deduce `n <= n`.

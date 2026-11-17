@@ -13,10 +13,9 @@
   - ▫️ Let `l0 : list A`.
   - ▫️ Assume by induction hypothesis `forall l' : list A, length (l0 ++ l') = length l0 + length l'` (IHl).
     - ▫️ Let `l' : list A`.
-    - ✅ In particular `length (l0 ++ l') = length l0 + length l'`.
-      - ✅ By IHl we have `forall l'0 : list A, length (l0 ++ l'0) = length l0 + length l'0`.
+    - ✅ By IHl we have `forall l'0 : list A, length (l0 ++ l'0) = length l0 + length l'0`.
     - ✅ Using f_equal_nat we get `forall (B : Type) (f : nat -> B) (x y : nat), x = y -> f x = f y` .*by exact @Corelib.Init.Peano.f_equal_nat*
-    - ✅ We deduce `S (length (l0 ++ l')) = S (length l0 + length l')`.
+    - ✅ We deduce `S (length (l0 ++ l')) = S (length l0 + length l')` .*by congruence*
 - ✅ These cases being exhaustive, we deduce `forall l0 l' : list A, length (l0 ++ l') = length l0 + length l'` .*by eapply (@list_ind (A) (fun l0 : list A => forall l' : list A, length (l0 ++ l') = length l0 + length l')); cbv beta; eauto*
 - ✅ In particular `forall l' : list A, length (l ++ l') = length l + length l'`.
 

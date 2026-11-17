@@ -15,11 +15,10 @@ Let `n : nat`{.var}. We prove `n <= n`{.claim}.
       - Assume `n0 <= m -> n0 < m \/ n0 = m`{.hyp} (h) and `n0 < m \/ n0 = m -> n0 <= m`{.hyp} (h0).
         - By h0 we have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.
 - By definition of or (or_intror), we have `n < n \/ n = n`{.claim} *by eapply @or_intror; eauto*.
-  - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
-    - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-    - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
+  - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by exact @Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
+  - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by exact @Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
   - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by exact @Corelib.Classes.RelationClasses.reflexivity*.
-  - We deduce `forall x : nat, x = x`{.claim}.
+  - We deduce `forall x : nat, x = x`{.claim} *by tauto*.
   - In particular `n = n`{.claim}, that is `n = n`{.fact}.
 - By H we have `forall n0 m : nat, n0 < m \/ n0 = m -> n0 <= m`{.claim}.
 - We deduce `n <= n`{.claim}.

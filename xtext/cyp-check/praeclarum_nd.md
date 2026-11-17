@@ -7,16 +7,14 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `x y z t : Prop`{.var}. Assume `(x -> z) /\ (y -> t)`{.hyp} (H1) and `x /\ y`{.hyp} (H2). We prove `z /\ t`{.claim}.
 
-- We deduce `z`{.claim}.
+- We deduce `z`{.claim} *by tauto*.
   - By H1 we have `(x -> z) /\ (y -> t)`{.claim}.
-  - We deduce `x`{.claim}.
-    - By H2 we have `x /\ y`{.claim}.
-    - Using proj1 we get `forall A B : Prop, A /\ B -> A`{.claim} *by exact @Corelib.Init.Logic.proj1*.
+  - By H2 we have `x /\ y`{.claim}.
   - Using proj1 we get `forall A B : Prop, A /\ B -> A`{.claim} *by exact @Corelib.Init.Logic.proj1*.
-- We deduce `t`{.claim}.
+  - Using proj1 we get `forall A B : Prop, A /\ B -> A`{.claim} *by exact @Corelib.Init.Logic.proj1*.
+- We deduce `t`{.claim} *by tauto*.
   - By H1 we have `(x -> z) /\ (y -> t)`{.claim}.
-  - We deduce `y`{.claim}.
-    - By H2 we have `x /\ y`{.claim}.
-    - Using proj2 we get `forall A B : Prop, A /\ B -> B`{.claim} *by exact @Corelib.Init.Logic.proj2*.
+  - By H2 we have `x /\ y`{.claim}.
+  - Using proj2 we get `forall A B : Prop, A /\ B -> B`{.claim} *by exact @Corelib.Init.Logic.proj2*.
   - Using proj2 we get `forall A B : Prop, A /\ B -> B`{.claim} *by exact @Corelib.Init.Logic.proj2*.
 - So by definition of and (conj), we have `z /\ t`{.claim} *by eapply @conj; eauto*.

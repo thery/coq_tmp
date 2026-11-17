@@ -31,10 +31,9 @@ Let `A : Type`{.var}. Let `l m n : list A`{.var}. We prove `l ++ m ++ n = (l ++ 
       - We have proved `a = a -> l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
         - By definition of eq (eq_refl), we have `A = A`{.claim} *by eapply @eq_refl; eauto* (H1).
         - Assume `a = a`{.hyp} (H00) and `l0 ++ m ++ n = (l0 ++ m) ++ n`{.hyp} (H10).
-          - We deduce `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim}, that is `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.fact}.
+          - We deduce `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim} *by tauto*, that is `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.fact}.
             - By definition of eq (eq_refl), we have `cons a = cons a`{.claim} *by eapply @eq_refl; eauto*.
-            - In particular `cons a = cons a -> a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim}.
-              - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
+            - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.
           - We deduce `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}, that is `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.fact}.
             - By H10 we have `l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
             - Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim} *by exact @Corelib.Init.Logic.f_equal*.

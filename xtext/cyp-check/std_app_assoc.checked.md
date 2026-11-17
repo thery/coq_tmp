@@ -28,10 +28,9 @@
       - ✅ We have proved `a = a -> l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`.
         - ✅ By definition of eq (eq_refl), we have `A = A`  (H1).*by eapply @eq_refl; eauto*
         - ▫️ Assume `a = a` (H00) and `l0 ++ m ++ n = (l0 ++ m) ++ n` (H10).
-          - ✅ We deduce `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`, that is `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`.
+          - ✅ We deduce `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n` , that is `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`.*by tauto*
             - ✅ By definition of eq (eq_refl), we have `cons a = cons a` .*by eapply @eq_refl; eauto*
-            - ✅ In particular `cons a = cons a -> a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`.
-              - ✅ Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y` .*by exact @Corelib.Init.Logic.f_equal*
+            - ✅ Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y` .*by exact @Corelib.Init.Logic.f_equal*
           - ✅ We deduce `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`, that is `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`.
             - ✅ By H10 we have `l0 ++ m ++ n = (l0 ++ m) ++ n`.
             - ✅ Using f_equal we get `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y` .*by exact @Corelib.Init.Logic.f_equal*
