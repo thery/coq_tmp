@@ -1,0 +1,717 @@
+/* xtext: the basic transducer of "Extracting Text from Proofs"
+   (Coscoy, Kahn, Théry, TLCA 1995), section 3.1, written in Rocq-Elpi.
+
+   A proof term is turned into a list of lines (Markdown list items);
+   the output follows the Markdown format of cyp.                     */
+
+% ------------------------------------------------------------------
+% Text
+
+% a line of text, with its indented sub-lines
+kind line type.
+type it string -> list line -> line.
+
+% the text of a proof: the lines above its conclusion, and the
+% conclusion (none in the * context of the paper)
+kind pf type.
+type prf list line -> option line -> pf.
+
+% the kind of a lambda binder: its type is in Type, in Prop, or in Set
+kind bk type.
+type bk-let, bk-assume, bk-set bk.
+
+% the kind of an argument: specialisation (forall) or modus ponens (=>)
+kind ak type.
+type ak-all, ak-imp ak.
+
+% the * context: forget the conclusions of a series of abstractions
+kind ctx type.
+type star, nostar ctx.
+
+% a binder of a lambda series: kind, name, printed type
+kind binder type.
+type b bk -> string -> string -> binder.
+type bih string -> string -> binder.  % an induction hypothesis
+
+% ------------------------------------------------------------------
+% Printing
+
+% the names of the variables of the context (decl cannot be enumerated)
+pred ctx-name o:string.
+
+pred pp i:term, o:string.
+pp T0 S :-
+  std.findall (ctx-name _) Ds,
+  std.map Ds (d\ i\ d = ctx-name i) Used,
+  rename Used T0 T,
+  (@ppwidth! 100000 => coq.term->string T S0),
+  rex.replace "[\n ]+" " " S0 S.
+
+% bound names that clash with the context are renamed (else Rocq-Elpi
+% prints them as elpi_ctx_entry_N_)
+pred rename i:list string, i:term, o:term.
+rename U (prod N T F) (prod N1 T1 F1) :- !, fresh U N N1 Id,
+  rename U T T1, pi x\ rename [Id|U] (F x) (F1 x).
+rename U (fun N T F) (fun N1 T1 F1) :- !, fresh U N N1 Id,
+  rename U T T1, pi x\ rename [Id|U] (F x) (F1 x).
+rename U (let N T B F) (let N1 T1 B1 F1) :- !, fresh U N N1 Id,
+  rename U T T1, rename U B B1, pi x\ rename [Id|U] (F x) (F1 x).
+rename U (app L) (app L1) :- !, std.map L (rename U) L1.
+rename U (match T R B) (match T1 R1 B1) :- !,
+  rename U T T1, rename U R R1, std.map B (rename U) B1.
+rename _ X Y :- copy X Y.
+
+% the name of a new hypothesis or variable: anonymous ones are called h,
+% and a name already in the context gets a number
+pred binder-name i:name, o:name, o:string.
+binder-name N N1 Id :-
+  coq.name->id N Id0, (if (Id0 = "_") (Id1 = "h") (Id1 = Id0)),
+  std.findall (ctx-name _) Ds, std.map Ds (d\ i\ d = ctx-name i) Used,
+  (if (std.mem! Used Id1) (fresh-aux Used Id1 0 Id) (Id = Id1)),
+  coq.id->name Id N1.
+
+pred fresh i:list string, i:name, o:name, o:string.
+fresh U N N1 Id :- coq.name->id N Id0,
+  if (Id0 = "_" ; not (std.mem! U Id0)) (N1 = N, Id = Id0)
+     (fresh-aux U Id0 0 Id, coq.id->name Id N1).
+pred fresh-aux i:list string, i:string, i:int, o:string.
+fresh-aux U B I Id :- Id0 is B ^ {std.any->string I},
+  if (std.mem! U Id0) (I1 is I + 1, fresh-aux U B I1 Id) (Id = Id0).
+
+% a formula, between backticks
+% Each formula carries its role for cyp, as a Pandoc attribute:
+% {.claim} (proved by the step), {.hyp}, {.var}, {.fact} (shown only).
+pred fm i:term, o:string.
+fm T S :- ppf T S0, S is "`" ^ S0 ^ "`{.claim}".
+pred fm-fact i:term, o:string.
+fm-fact T S :- ppf T S0, S is "`" ^ S0 ^ "`{.fact}".
+
+% A formula.  Rocq prints @eq (list A) [] [] as [] = [], which does not
+% type-check again; when a side of an equality is a constructor applied
+% to its parameters only, the type is written: [] = [] :> list A.
+pred ppf i:term, o:string.
+ppf (app [G, Ty, A, B]) S :- gr-of G (indt E), coq.locate "eq" (indt E),
+  (bare-constructor A ; bare-constructor B), !,
+  pp A SA, pp B SB, pp Ty ST,
+  S is "(" ^ SA ^ ") = (" ^ SB ^ ") :> " ^ ST.
+ppf T S :- pp T S.
+
+pred bare-constructor i:term.
+bare-constructor C :- gr-of C (indc K), !, coq.env.indc K NP _ _ _, NP > 0.
+bare-constructor (app [C|Args]) :- gr-of C (indc K), coq.env.indc K NP _ _ _,
+  std.length Args NP.
+
+% the type of a term, beta-iota normalised for printing
+pred typ i:term, o:term.
+
+% the type of a term applied to arguments
+pred inst i:term, i:list term, o:term.
+inst Ty [] Ty :- !.
+inst (prod _ _ B) [A|As] R :- !, inst (B A) As R.
+inst Ty As R :- coq.reduction.lazy.whd Ty (prod N D B), !, inst (prod N D B) As R.
+inst Ty _ _ :- coq.error "xtext: not a product" {coq.term->string Ty}.
+
+% The type is computed from the types of the head and of the binders,
+% so that it keeps the binder names of the proof term (coq.typecheck may
+% name them elpi_ctx_entry_N_).
+typ (fun N A F) (prod N A B) :- !, pi x\ decl x N A => typ (F x) (B x).
+typ (let _ T _ (x\ x)) Ty :- !, beta-ty T Ty.
+typ (app [H|Args]) Ty :- !, typ H TH, inst TH Args Ty0, beta-ty Ty0 Ty.
+typ (match S RT _) Ty :- typ S TS, coq.reduction.lazy.whd TS W,
+  (W = app [HI|As] ; (W = HI, As = [])), gr-of HI (indt I), !,
+  coq.env.indt I _ NP _ _ _ _, std.drop NP As Idx, std.append Idx [S] L,
+  coq.mk-app RT L Ty0, beta-ty Ty0 Ty.
+typ X Ty :- name X, decl X _ Ty0, !, beta-ty Ty0 Ty.
+typ (fix _ _ Ty _) Ty :- !.
+typ T Ty :- coq.typecheck T Ty0 ok, !, beta-ty Ty0 Ty.
+
+pred var-name i:term, o:string.
+var-name X S :- decl X N _, coq.name->id N S0, !,
+  if (S0 = "_") (S = "h") (S = S0).
+var-name X S :- def X N _ _, coq.name->id N S, !.
+
+pred gr-of i:term, o:gref.
+gr-of (global GR) GR.
+gr-of (pglobal GR _) GR.
+
+% the name of a variable or of a global constant
+pred head-name i:term, o:string.
+head-name X S :- name X, !, var-name X S.
+head-name H S :- gr-of H GR, coq.gref->id GR S.
+
+pred is-sym i:term.
+is-sym X :- name X, !.
+is-sym H :- gr-of H _.
+
+% ------------------------------------------------------------------
+% Kinds of binders and arguments
+
+pred is-set-sort i:term.
+is-set-sort S :- pp S "Set".
+
+pred binder-kind i:term, o:bk.  % call it with a fresh output
+binder-kind A K :-
+  typ A S0, coq.reduction.lazy.whd S0 S, !, sort-kind S K.
+binder-kind _ bk-let.
+
+pred sort-kind i:term, o:bk.
+sort-kind (sort prop) bk-assume :- !.
+sort-kind (sort sprop) bk-assume :- !.
+sort-kind S bk-set :- is-set-sort S, !.
+sort-kind _ bk-let.
+
+pred is-prop i:term.
+is-prop D :- typ D S0, coq.reduction.lazy.whd S0 (sort prop).
+
+% kind of the argument of a product: => if non-dependent with a
+% domain in Prop, forall otherwise
+pred arg-kind i:term, i:(term -> term), o:ak.
+arg-kind D B ak-imp :- (B = (_\ _)), is-prop D, !.
+arg-kind _ _ ak-all.
+
+% the kinds of the arguments Args of a term of type Ty
+pred kinds i:term, i:list term, o:list ak.
+kinds _ [] [] :- !.
+kinds Ty [A|As] [K|Ks] :-
+  coq.reduction.lazy.whd Ty (prod _ D B), !,
+  arg-kind D B K, kinds (B A) As Ks.
+kinds _ As Ks :- std.map As (_\ k\ k = ak-all) Ks.
+
+% the maximal prefix of arguments with the same kind
+pred run i:list ak, i:list term, o:ak, o:list term, o:list term.
+run [K|Ks] [A|As] K [A|R] Rest :- run-same K Ks As R Rest.
+pred run-same i:ak, i:list ak, i:list term, o:list term, o:list term.
+run-same K [K|Ks] [A|As] [A|R] Rest :- !, run-same K Ks As R Rest.
+run-same _ _ As [] As.
+
+% ------------------------------------------------------------------
+% Inductive types: introduction and elimination theorems
+
+pred final-sort i:term, o:sort.
+final-sort (prod N D B) S :- !, pi x\ decl x N D => final-sort (B x) S.
+final-sort (sort S) S.
+
+pred ind-in-prop i:inductive.
+ind-in-prop I :- coq.env.indt I _ _ _ Ar _ _, final-sort Ar S, !,
+  (S = prop ; S = sprop).
+
+pred count-prods i:term, o:int.
+count-prods (prod N D B) M :- !,
+  pi x\ decl x N D => (count-prods (B x) M0, M is M0 + 1).
+count-prods _ 0.
+
+pred ind-name i:inductive, o:string.
+ind-name I S :- coq.gref->id (indt I) S.
+
+% H is an introduction theorem (a constructor of a proposition C)
+% that takes NC arguments
+pred intro-info i:term, o:inductive, o:int.
+intro-info H I NC :-
+  gr-of H (indc K), coq.env.indc->indt K I _, ind-in-prop I,
+  coq.env.indc K _ _ _ KTy, count-prods KTy NC.
+
+% The binders of the type of an elimination scheme: their kinds and, for
+% a branch (a premise), which of its own binders are induction
+% hypotheses: those whose type mentions the motive P (thesis 6.3.4).
+% M is the position of the motive (after the parameters).
+pred scheme-info i:term, i:int, i:int, i:option term, o:list ak, o:list (list bool).
+scheme-info (prod N D B) M I MV [K|Ks] [Fl|Fls] :- !,
+  arg-kind D B K,
+  (if (K = ak-imp, MV = some P) (ih-flags D P Fl) (Fl = [])),
+  I1 is I + 1,
+  pi x\ decl x N D => sigma MV1\
+    (if (I = M) (MV1 = some x) (MV1 = MV)),
+    scheme-info (B x) M I1 MV1 Ks Fls.
+scheme-info _ _ _ _ [] [].
+
+pred ih-flags i:term, i:term, o:list bool.
+ih-flags (prod N D B) P [F|Fs] :- !,
+  (if (occurs P D) (F = tt) (F = ff)),
+  pi x\ decl x N D => ih-flags (B x) P Fs.
+ih-flags _ _ [].
+
+% H is an elimination theorem C_ind of a proposition C.
+% Kind 1: C_ind : ... Phi_1 => ... => Phi_i => C u => B   (NC = all binders)
+% Kind 2: C_ind : ... Phi_1 => ... => Phi_i => forall x : C u, B
+%         (NC = the binders before the indexes and x)
+pred elim-info i:term, o:inductive, o:int, o:int, o:list ak, o:list (list bool).
+elim-info H I Kind NC Ks Fls :-
+  gr-of H (const C), coq.gref->id (const C) S,
+  rex.match "^.*_s?ind$" S,
+  rex.replace "_s?ind$" "" S Pre,
+  coq.locate Pre (indt I),
+  coq.env.const C _ Ty,
+  coq.env.indt I _ NP _ Ar _ _,
+  scheme-info Ty NP 0 none Ks0 Fls0,
+  std.length Ks0 L,
+  std.last Ks0 KL,
+  if (KL = ak-imp)
+     (Kind = 1, NC = L, Ks = Ks0, Fls = Fls0)
+     (Kind = 2, count-prods Ar NA,
+      NC is L - (NA - NP + 1), NC >= 0, std.take NC Ks0 Ks, std.take NC Fls0 Fls).
+
+% the IH flags of the branches (the premises), as cases
+kind case-info type.
+type ci bool -> list bool -> case-info.
+pred branch-infos i:list ak, i:list (list bool), o:list case-info.
+branch-infos [] _ [].
+branch-infos [ak-imp|Ks] [Fl|Fls] [ci Ind Fl|Cs] :- !,
+  (if (std.mem! Fl tt) (Ind = tt) (Ind = ff)), branch-infos Ks Fls Cs.
+branch-infos [_|Ks] [_|Fls] Cs :- branch-infos Ks Fls Cs.
+
+% the arguments of kind => in a list of arguments
+pred imp-args i:list ak, i:list term, o:list term.
+imp-args [] _ [].
+imp-args [ak-imp|Ks] [A|As] [A|R] :- !, imp-args Ks As R.
+imp-args [_|Ks] [_|As] R :- imp-args Ks As R.
+
+% ------------------------------------------------------------------
+% Assembling text
+
+pred flatten i:pf, o:list line.
+flatten (prf L none) L.
+flatten (prf L (some C)) R :- std.append L [C] R.
+
+% a subproof written with a dash in front of its conclusion: the
+% lines above it are indented below it
+pred dashed i:pf, o:line.
+dashed (prf L (some (it C Ch))) (it C L1) :- std.append L Ch L1.
+dashed (prf L none) (it "We have" L).
+
+% a proof whose text is a single conclusion
+pred one i:string, o:pf.
+one S (prf [] (some (it S []))).
+
+pred join-names i:list string, o:string.
+join-names L S :- std.string.concat ", " L S.
+
+pred dewey i:list int, o:string.
+dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S.
+
+% ------------------------------------------------------------------
+% The transducer.  tr T Ctx Path P: the text P of the proof T, in the
+% context Ctx (star or nostar), Path being the number of the current
+% case (Dewey notation).
+
+% cur-ih Fl: the induction-hypothesis flags of the binders of the branch
+% being translated (set by the elimination rules)
+pred cur-ih o:list bool.
+% rec-var F: F is the recursive function of an enclosing fix
+pred rec-var o:term.
+
+pred tr i:term, i:ctx, i:list int, o:pf.
+tr (fun _ _ _ as T) Ctx Path P :- !, tr-lam T Ctx Path P.
+tr T Ctx Path P :- (cur-ih [] :- !) => tr-other T Ctx Path P.
+
+pred tr-other i:term, i:ctx, i:list int, o:pf.
+% a cast (T : A) is read by Elpi as let _ : A := T in _
+tr-other (let _ _ V (x\ x)) Ctx Path P :- !, tr V Ctx Path P.
+tr-other (let N Ty V F) _ Path P :- !, tr-app (fun N Ty F) [V] Path P.
+tr-other (app [H|Args]) _ Path P :- !, tr-app H Args Path P.
+tr-other (match S RT Bs) _ Path P :- !, tr-match (match S RT Bs) S Bs Path P.
+tr-other (fix N Rno Ty F) _ Path P :- !, tr-fix N Rno Ty F Path P.
+tr-other H _ Path P :- is-sym H, !, tr-app H [] Path P.
+tr-other T _ _ P :- unchanged T P.
+
+% expressions that match no rule are left unchanged
+pred unchanged i:term, o:pf.
+unchanged T (prf [] (some (it S []))) :-
+  typ T Tau, fm-fact T FT, fm Tau F,
+  S is "Using " ^ FT ^ " we get " ^ F.
+
+% --- abstraction: iterated abstraction rules
+pred tr-lam i:term, i:ctx, i:list int, o:pf.
+tr-lam (fun _ A _ as T) Ctx Path P :-
+  (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
+  binder-kind A K, typ T Tau0, fm Tau0 FT, lam-run K [] T FT Fl Ctx Path P.
+
+pred lam-run i:bk, i:list binder, i:term, i:string, i:list bool, i:ctx, i:list int, o:pf.
+lam-run K Acc (fun N A F) FT Fl Ctx Path P :- binder-kind A K1, K1 = K, !,
+  (if (Fl = [F0|Fr]) true (F0 = ff, Fr = [])),
+  binder-name N N1 Id,
+  pp A FA,
+  (if (F0 = tt, K = bk-assume) (B = bih Id FA) (B = b K Id FA)),
+  pi x\ (decl x N1 A, ctx-name Id) => lam-run K [B|Acc] (F x) FT Fr Ctx Path P.
+lam-run K Acc Body FT Fl Ctx Path P :-
+  std.rev Acc Bs,
+  ((cur-ih Fl :- !) => tr Body Ctx Path PB), flatten PB LB,
+  lam-text K Bs FT LB Ctx P.
+
+pred lam-text i:bk, i:list binder, i:string, i:list line, i:ctx, o:pf.
+lam-text bk-let Bs FT LB Ctx (prf L C) :-
+  let-lines Bs Ls, std.append Ls LB L,
+  concl Ctx ("We have proved " ^ FT) C.
+lam-text bk-assume Bs FT LB Ctx (prf [it H LB] C) :-
+  std.map Bs assume-text L,
+  std.string.concat " and " L S, H is "Assume " ^ S,
+  concl Ctx ("We have proved " ^ FT) C.
+lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
+  H is "Let us consider an arbitrary `" ^ Id ^ " : " ^ FA ^ "`{.var}",
+  concl Ctx ("We have " ^ FT ^ ", since `" ^ Id ^ "`{.fact} is arbitrary") C.
+lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
+  std.map Bs (x\ y\ sigma Id FA\ x = b _ Id FA,
+     y is "`" ^ Id ^ " : " ^ FA ^ "`{.var}") L,
+  std.string.concat ", " L S, H is "Let us choose arbitrarily " ^ S,
+  concl Ctx ("Thus we have " ^ FT) C.
+
+pred assume-text i:binder, o:string.
+assume-text (b _ Id FA) S :- S is "`" ^ FA ^ "`{.hyp} (" ^ Id ^ ")".
+assume-text (bih Id FA) S :-
+  S is "by induction hypothesis `" ^ FA ^ "`{.hyp} (" ^ Id ^ ")".
+
+pred concl i:ctx, i:string, o:option line.
+concl star _ none.
+concl nostar S (some (it S1 [])) :- S1 is S.
+
+% "Let A B : T" for consecutive binders with the same type
+pred let-lines i:list binder, o:list line.
+let-lines [] [].
+let-lines [b _ Id FA|Bs] [it S []|Ls] :-
+  same-type FA Bs Ids Rest,
+  std.string.concat " " [Id|Ids] Vs,
+  S is "Let `" ^ Vs ^ " : " ^ FA ^ "`{.var}",
+  let-lines Rest Ls.
+
+pred same-type i:string, i:list binder, o:list string, o:list binder.
+same-type FA [b _ Id FA|Bs] [Id|Ids] Rest :- !, same-type FA Bs Ids Rest.
+same-type _ Bs [] Bs.
+
+% --- application
+pred tr-app i:term, i:list term, i:list int, o:pf.
+% rewriting with an equality (eq_ind, eq_ind_r, ...)
+tr-app H Args Path P :-
+  rewrite-info H Dir, std.length Args L, L >= 6, !,
+  std.split-at 6 Args Cons Rest, Cons = [_, _, _, PX, _, E],
+  coq.mk-app H Cons T0, typ T0 Tau, head-name H RN,
+  tr-rewrite RN Dir Tau PX E Path P0,
+  apply-rest T0 P0 Rest Path P.
+% elimination theorems
+tr-app H Args Path P :-
+  elim-info H I Kind NC Ks Fls, std.length Args L, L >= NC, !,
+  std.split-at NC Args Cons Rest,
+  coq.mk-app H Cons T0, typ T0 Tau, ind-name I C, head-name H EN,
+  branch-infos Ks Fls Cis0,
+  (if (Kind = 1)
+      (imp-args Ks Cons Imps, std.last Imps Maj, std.drop-last 1 Imps Ns,
+       std.drop-last 1 Cis0 Cis,
+       tr-elim1 C EN Tau Maj Ns Cis Path P0)
+      (imp-args Ks Cons Ns, Cis = Cis0,
+       (if (Rest = [_|_]) (typ (app [H|Args]) TF, Fin = some TF) (Fin = none)),
+       tr-elim2 C EN Tau Fin none Ns Cis Path P0)),
+  apply-rest T0 P0 Rest Path P.
+% introduction theorems
+tr-app H Args Path P :-
+  intro-info H I NC, std.length Args L, L >= NC, !,
+  std.split-at NC Args Cons Rest,
+  coq.mk-app H Cons T0, typ T0 Tau, ind-name I C, typ H TyH,
+  kinds TyH Cons Ks, imp-args Ks Cons Ns,
+  head-name H K, gr-of H (indc KC), coq.env.indc KC NP _ _ _,
+  % the arguments that are not parameters nor premises are witnesses
+  std.drop NP Cons Ws0, std.drop NP Ks KWs,
+  witnesses KWs Ws0 Ws,
+  (if (Ws = []) (WS = "")
+      (std.map Ws fm-fact FWs, std.string.concat ", " FWs WS0,
+       WS is " with witness " ^ WS0)),
+  CD is C ^ " (" ^ K ^ ")" ^ WS,
+  tr-intro CD K Tau Ns Path P0,
+  apply-rest T0 P0 Rest Path P.
+tr-app H [] _ P :- name H, rec-var H, !,
+  var-name H N, typ H Tau, fm Tau F,
+  S is "By induction hypothesis (the recursive call " ^ N ^ ") we have " ^ F,
+  one S P.
+tr-app H [] _ P :- name H, !,
+  var-name H N, typ H Tau, fm Tau F,
+  S is "By " ^ N ^ " we have " ^ F, one S P.
+tr-app H [] _ P :- gr-of H GR, !,
+  coq.gref->id GR N, typ H Tau, fm Tau F,
+  S is "Using " ^ N ^ " we get " ^ F ^ " *by exact @" ^ N ^ "*", one S P.
+tr-app H Args Path P :-
+  (if (is-sym H) (tr-app H [] Path P0) (tr H nostar Path P0)),
+  apply-rest H P0 Args Path P.
+
+pred dashed-all i:list term, i:list int, o:list line.
+dashed-all Ts Path Ds :-
+  std.map Ts (t\ d\ sigma P\ tr t nostar Path P, dashed P d) Ds.
+
+% iterated application: the arguments of T0 (whose text is P0) are
+% split into maximal runs of the same kind
+pred apply-rest i:term, i:pf, i:list term, i:list int, o:pf.
+apply-rest _ P0 [] _ P0 :- !.
+apply-rest T0 P0 Args Path P :-
+  typ T0 Ty0, kinds Ty0 Args Ks, run Ks Args K Run Rest,
+  coq.mk-app T0 Run T1, typ T1 Tau1, fm Tau1 F,
+  apply-run K Run P0 F Path P1,
+  apply-rest T1 P1 Rest Path P.
+
+pred apply-run i:ak, i:list term, i:pf, i:string, i:list int, o:pf.
+apply-run ak-all _ P0 F _ (prf L (some (it S []))) :-
+  flatten P0 L, S is "In particular " ^ F.
+apply-run ak-imp Run P0 F Path (prf L (some (it S []))) :-
+  dashed-all Run Path Ds, dashed P0 D0, std.append Ds [D0] L,
+  S is "We deduce " ^ F.
+
+pred witnesses i:list ak, i:list term, o:list term.
+witnesses [ak-all|Ks] [W|Ws] [W|R] :- !, witnesses Ks Ws R.
+witnesses [_|Ks] [_|Ws] R :- !, witnesses Ks Ws R.
+witnesses _ _ [].
+
+% --- introduction theorems (thesis 6.2.1, tactic Constr)
+pred tr-intro i:string, i:string, i:term, i:list term, i:list int, o:pf.
+tr-intro C K Tau [] _ P :- !,
+  fm Tau F,
+  S is "By definition of " ^ C ^ ", we have " ^ F ^ " *by eapply @" ^ K ^ "; eauto*",
+  one S P.
+% all premises are hypotheses: "By definition, from H0 we deduce B \/ A"
+tr-intro C K Tau Ns _ P :- std.forall Ns name, !,
+  std.map Ns (h\ s\ sigma N T F\ var-name h N, typ h T, fm-fact T F,
+                 s is F ^ " (" ^ N ^ ")") Hs,
+  std.string.concat " and " Hs HS, fm Tau F,
+  S is "By definition of " ^ C ^ ", from " ^ HS ^ " we deduce " ^ F
+       ^ " *by eapply @" ^ K ^ "; eauto*",
+  one S P.
+tr-intro C K Tau [N] Path (prf L (some (it S []))) :- !,
+  tr N nostar Path PN, flatten PN L,
+  fm Tau F,
+  S is "By definition of " ^ C ^ ", we have " ^ F ^ " *by eapply @" ^ K ^ "; eauto*".
+tr-intro C K Tau Ns Path (prf Ds (some (it S []))) :-
+  dashed-all Ns Path Ds,
+  fm Tau F,
+  S is "So by definition of " ^ C ^ ", we have " ^ F ^ " *by eapply @" ^ K ^ "; eauto*".
+
+% --- elimination theorems (thesis 6.2.2, tactics ElimOpen, ElimCase,
+% ElimClose, and 6.3)
+
+% the cases N1 ... Ni, numbered after Path.  A case states its goal (the
+% type of the branch) and its branch is translated in the * context,
+% since the goal is already stated.  Rec: the elimination is recursive,
+% the cases are then marked base or inductive (thesis 6.3.4).
+pred cases i:list term, i:list case-info, i:bool, i:list int, i:int, o:list line.
+cases [] _ _ _ _ [].
+cases [N|Ns] Cis Rec Path J [it H L|Ls] :-
+  (if (Cis = [ci Ind Fl|Cr]) true (Ind = ff, Fl = [], Cr = [])),
+  std.append Path [J] Path1, dewey Path1 D,
+  (if (Rec = tt) (if (Ind = tt) (Lab = " (inductive)") (Lab = " (base)")) (Lab = "")),
+  typ N TN, fm TN FN, H is "Case " ^ D ^ Lab ^ ": we prove " ^ FN,
+  ((cur-ih Fl :- !) => tr N star Path1 PN), flatten PN L,
+  J1 is J + 1, cases Ns Cr Rec Path J1 Ls.
+
+pred recursive i:list case-info, o:bool.
+recursive Cis tt :- std.mem! Cis (ci tt _), !.
+recursive _ ff.
+
+% the object eliminated: its subproof (if it is not a hypothesis) and
+% the words that name it
+pred major i:term, i:list int, o:list line, o:string.
+major M _ [] S :- name M, !,
+  var-name M N, typ M T, fm-fact T F, S is F ^ " (" ^ N ^ ")".
+major M Path L F :- tr M nostar Path PM, flatten PM L, typ M T, fm-fact T F.
+
+% first kind: the eliminated object is a proof of (C u1 .. uk)
+pred tr-elim1 i:string, i:string, i:term, i:term, i:list term, i:list case-info, i:list int, o:pf.
+% zero case (thesis 6.3.2): a proof by contradiction
+tr-elim1 C R Tau Maj [] _ Path (prf LM (some (it S []))) :- !,
+  major Maj Path LM W, fm Tau F,
+  S is "By contradiction (" ^ C ^ ", " ^ R ^ "), from " ^ W ^ " we can deduce " ^ F.
+% one case (thesis 6.3.1): back to the definition
+tr-elim1 C R Tau Maj [N] Cis Path (prf LM (some (it H LN))) :- !,
+  major Maj Path LM W, fm Tau F,
+  (if (Cis = [ci _ Fl|_]) true (Fl = [])),
+  ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
+  H is "Going back to the definition of " ^ C ^ " (" ^ R ^ ") in " ^ W ^ ", we prove " ^ F ^ ":".
+tr-elim1 C R Tau Maj Ns Cis Path (prf L (some (it S []))) :-
+  major Maj Path LM W, fm Tau F, fm-fact Tau Ff,
+  recursive Cis Rec,
+  (if (Rec = tt) (How = "by induction") (How = "by case analysis")),
+  H is "We prove " ^ Ff ^ " " ^ How ^ " on " ^ W ^ " (" ^ C ^ ", " ^ R ^ "):",
+  cases Ns Cis Rec Path 1 LC,
+  std.append LM [it H []|LC] L,
+  S is "We have " ^ F ^ " in all cases".
+
+% second kind (dependent elimination, thesis 6.3.3 and 6.3.4): Tau is
+% the generalised statement; Fin, if any, the instance finally proved;
+% On, if any, the object eliminated (for a match)
+pred tr-elim2 i:string, i:string, i:term, i:option term, i:option term, i:list term, i:list case-info, i:list int, o:pf.
+tr-elim2 C R Tau _ _ [] _ _ P :- !,
+  fm Tau F, S is "There is no element of " ^ C ^ " (" ^ R ^ "), so " ^ F, one S P.
+tr-elim2 C R Tau Fin On Ns Cis Path P :-
+  fm Tau F, fm-fact Tau Ff, recursive Cis Rec,
+  (if (Rec = tt) (How = "by induction") (How = "by case analysis")),
+  (if (On = some O) (fm-fact O FO, OnS is " on " ^ FO) (OnS = "")),
+  (if (Fin = some TF)
+      (fm-fact TF FF,
+       H is "To prove " ^ FF ^ " " ^ How ^ " (" ^ C ^ ", " ^ R ^ "), we generalise it to " ^ Ff ^ ":")
+      (H is "We prove " ^ Ff ^ " " ^ How ^ OnS ^ " (" ^ C ^ ", " ^ R ^ "):")),
+  (if (Ns = [N])
+      (% one case: no case header, no conclusion
+       (if (Cis = [ci _ Fl|_]) true (Fl = [])),
+       ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
+       H1 is "By definition of " ^ C ^ " (" ^ R ^ ")" ^ OnS ^ ", we prove " ^ F ^ ":",
+       P = prf [] (some (it H1 LN)))
+      (cases Ns Cis Rec Path 1 LC,
+       % a case analysis on a variable: the justification destructs it
+       (if (On = some O, name O, Rec = ff)
+           (var-name O ON, J is " *by destruct " ^ ON ^ "; assumption*") (J = "")),
+       S is "These cases being exhaustive, we deduce " ^ F ^ J,
+       P = prf [it H []|LC] (some (it S [])))).
+
+% a match is the primitive form of an elimination; inside a fix, a case
+% that calls the recursive function is an inductive case
+pred tr-match i:term, i:term, i:list term, i:list int, o:pf.
+tr-match M S Bs Path P :-
+  typ S TS, coq.reduction.lazy.whd TS TSw,
+  (TSw = app [HI|_] ; TSw = HI), gr-of HI (indt I), !,
+  typ M Tau, ind-name I C,
+  std.findall (rec-var _) RVs,
+  std.map Bs (b\ c\ sigma Ind\
+    (if (std.exists RVs (r\ sigma F\ r = rec-var F, occurs F b)) (Ind = tt) (Ind = ff)),
+    c = ci Ind []) Cis,
+  if (ind-in-prop I) (tr-elim1 C "match" Tau S Bs Cis Path P)
+                     (tr-elim2 C "match" Tau none (some S) Bs Cis Path P).
+tr-match M _ _ _ P :- unchanged M P.
+
+% --- fix: a proof by recursion; the recursive calls are induction
+% hypotheses (not in the thesis, which only treats C_ind theorems)
+pred tr-fix i:name, i:int, i:term, i:(term -> term), i:list int, o:pf.
+tr-fix N Rno Ty F Path (prf [] (some (it H LB))) :-
+  binder-name N N1 Id, fm Ty FT,
+  (pi f\ (decl f N1 Ty, ctx-name Id, rec-var f) =>
+    (nth-binder (F f) Rno X, tr (F f) star Path PB, flatten PB LB)),
+  H is "We prove " ^ FT ^ " by recursion on " ^ X ^ " (fix " ^ Id ^ "):".
+
+% the name of the n-th binder of a lambda
+pred nth-binder i:term, i:int, o:string.
+nth-binder (fun N _ _) 0 S :- !, coq.name->id N S0, S is "`" ^ S0 ^ "`{.fact}".
+nth-binder (fun N T F) K S :- !, K1 is K - 1,
+  pi x\ decl x N T => nth-binder (F x) K1 S.
+nth-binder _ K S :- S is "argument " ^ {std.any->string K}.
+
+% --- rewriting (eq_ind and friends): the equality and the proof of the
+% statement before rewriting are shown, then the rewritten statement
+pred rewrite-info i:term, o:string.
+rewrite-info H Dir :- gr-of H (const C), coq.gref->id (const C) S,
+  std.mem! ["eq_ind", "eq_rect", "eq_rec", "eq_sind"] S, !, Dir = "from left to right".
+rewrite-info H Dir :- gr-of H (const C), coq.gref->id (const C) S,
+  std.mem! ["eq_ind_r", "eq_rect_r", "eq_rec_r", "eq_sind_r"] S, Dir = "from right to left".
+
+pred tr-rewrite i:string, i:string, i:term, i:term, i:term, i:list int, o:pf.
+tr-rewrite RN Dir Tau PX E Path (prf [D1, D2] (some (it S []))) :-
+  tr PX nostar Path P1, dashed P1 D1,
+  tr E nostar Path P2, dashed P2 D2,
+  typ E TE, fm-fact TE FE, fm Tau F,
+  S is "Rewriting with " ^ FE ^ " " ^ Dir ^ " (" ^ RN ^ "), we get " ^ F.
+
+% ------------------------------------------------------------------
+% Top level: the abstractions at the top of the proof make the
+% statement (the * context of the paper, where the theorem is
+% announced); the rest is the proof.
+
+pred top-run i:list binder, i:term, o:string, o:list line.
+top-run Acc (fun N A F) Stmt L :- !,
+  binder-kind A K, binder-name N N1 Id,
+  pp A FA,
+  pi x\ (decl x N1 A, ctx-name Id) => top-run [b K Id FA|Acc] (F x) Stmt L.
+top-run Acc Body Stmt L :-
+  std.rev Acc Bs, typ Body Tau, fm Tau FT,
+  statement Bs Ss, WP is "We prove " ^ FT ^ ".", std.append Ss [WP] Ss1,
+  std.string.concat " " Ss1 Stmt,
+  tr Body star [] P, flatten P L.
+
+pred statement i:list binder, o:list string.
+statement [] [].
+statement [b bk-assume Id FA|Bs] [S|Ss] :- !,
+  assume-run [b bk-assume Id FA|Bs] Hs Rest,
+  std.string.concat " and " Hs H, S is "Assume " ^ H ^ ".",
+  statement Rest Ss.
+statement Bs [S|Ss] :-
+  let-run Bs Ls Rest, let-lines Ls Lines,
+  std.map Lines (l\ s\ sigma T\ l = it T [], s is T ^ ".") L,
+  std.string.concat " " L S,
+  statement Rest Ss.
+
+pred assume-run i:list binder, o:list string, o:list binder.
+assume-run [b bk-assume Id FA|Bs] [H|Hs] Rest :- !,
+  H is "`" ^ FA ^ "`{.hyp} (" ^ Id ^ ")", assume-run Bs Hs Rest.
+assume-run Bs [] Bs.
+
+pred let-run i:list binder, o:list binder, o:list binder.
+let-run [b bk-assume Id FA|Bs] [] [b bk-assume Id FA|Bs] :- !.
+let-run [B|Bs] [B|Ls] Rest :- !, let-run Bs Ls Rest.
+let-run [] [] [].
+
+pred render i:string, i:list line, o:list string.
+render _ [] [].
+render I [it S Ch|L] Out :-
+  end-dot S S1, Line is I ^ "- " ^ S1,
+  I2 is I ^ "  ", render I2 Ch O1, render I L O2,
+  std.append [Line|O1] O2 Out.
+
+pred end-dot i:string, o:string.
+end-dot S S :- rex.match "^.*[:.,]$" S, !.
+end-dot S S1 :- S1 is S ^ ".".
+
+% the cyp header; the file that defines the theorem is required too, so
+% that the lemmas it uses are known to cyp
+pred header i:gref, o:string.
+header GR H :-
+  coq.gref->path GR Path,
+  (if (Path = [Lib|_], (Lib = "Stdlib" ; Lib = "Corelib"))
+      (Req = "")
+      (std.string.concat "." Path Mod, Req is " Require Import " ^ Mod ^ ".")),
+  R is "require: From Stdlib Require Import Arith Lia List. Import ListNotations." ^ Req,
+  std.string.concat "\n" [
+    "---", R,
+    "by: tauto | congruence | lia | firstorder | auto",
+    "---" ] H.
+
+% beta-reduction of the redexes (fun i => M) x, x a variable, left by
+% intro patterns: fun h => (fun i => M) h becomes fun i => M, keeping the
+% name chosen by the user.  Other redexes are cuts and are kept.
+pred beta i:term, o:term.
+beta T R :- beta.aux ff T R.
+
+% full beta-reduction, for the types that are printed
+pred beta-ty i:term, o:term.
+beta-ty T R :- beta.aux tt T R.
+
+% fun x => .. => (fun y1 .. yk => M) a1 .. x .. : the name of the binder yi
+% that receives x
+pred redex-name i:(term -> term), o:name.
+redex-name F M :- pi x\ find-redex (F x) x M.
+pred find-redex i:term, i:term, o:name.
+find-redex (app [Hd|As]) X M :- nth-fun-name Hd As X M.
+find-redex (fun _ _ G) X M :- pi z\ find-redex (G z) X M.
+pred nth-fun-name i:term, i:list term, i:term, o:name.
+nth-fun-name (fun M _ _) [X|_] Y M :- X == Y, !.
+nth-fun-name (fun _ _ G) [_|As] Y M :- pi z\ nth-fun-name (G z) As Y M.
+
+% beta.aux All T R: All = tt reduces every redex, All = ff only those
+% whose argument is a variable
+pred beta.aux i:bool, i:term, o:term.
+beta.aux All (fun N T F) (fun N1 T1 F1) :- !,
+  (if (redex-name F M) (N1 = M) (N1 = N)),
+  beta.aux All T T1, pi x\ beta.aux All (F x) (F1 x).
+beta.aux All (app [fun _ _ F, A|Rest]) R :- (All = tt ; name A), !,
+  coq.mk-app (F A) Rest T1, beta.aux All T1 R.
+beta.aux All (app L) R :- !, std.map L (beta.aux All) L1,
+  (if (L1 = [fun _ _ _, A|_], (All = tt ; name A))
+      (beta.aux All (app L1) R) (R = app L1)).
+beta.aux All (prod N T F) (prod N T1 F1) :- !,
+  beta.aux All T T1, pi x\ beta.aux All (F x) (F1 x).
+beta.aux All (let N T B F) (let N T1 B1 F1) :- !,
+  beta.aux All T T1, beta.aux All B B1, pi x\ beta.aux All (F x) (F1 x).
+beta.aux All (match T R B) (match T1 R1 B1) :- !,
+  beta.aux All T T1, beta.aux All R R1, std.map B (beta.aux All) B1.
+beta.aux _ X Y :- copy X Y.
+
+pred explain i:string, o:string.
+explain Name Text :-
+  coq.locate Name GR,
+  ((GR = const C, coq.env.const-body C (some Bo)), !
+   ; coq.error "xtext:" Name "is not a constant with a body"),
+  % the beta-redexes left by tactics (intro patterns) are reduced first
+  beta Bo Bo1,
+  top-run [] Bo1 Stmt L, render "" L Lines,
+  header GR Hd,
+  Title is "# " ^ Name,
+  std.append [Hd, "", Title, "", Stmt, ""] Lines All,
+  std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
