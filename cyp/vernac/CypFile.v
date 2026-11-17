@@ -169,7 +169,7 @@ Elpi Accumulate lp:{{
     std.assert-ok! (coq.parse.argument {calc ("(" ^ G ^ ")")} ff Sc (trm T))
       "cyp: the conclusion of the statement does not parse",
     std.map StepPieces (step-items Sc) Steps,
-    skel 0 Steps T P Ko.
+    skel 0 0 Steps T P Ko.
 
   pred binders i:int, i:string, i:context-decl, i:list (pair srole string),
     i:list (list piece), o:term, o:term, o:list string.
@@ -180,16 +180,54 @@ Elpi Accumulate lp:{{
 
   % ---------------------------------------------------------------- %
 
+  % the default tactics of the header's by: field ("lra | assumption"),
+  % as clauses of default-ltac, tried before cyp's own defaults
+  pred by-clauses i:string, o:list prop.
+  by-clauses "" [] :- !.
+  by-clauses S Cl :- rex.split " *| *" S Ns, by-names Ns Cl.
+
+  pred by-names i:list string, o:list prop.
+  by-names [] [].
+  by-names [N | Ns] [default-ltac M | Cl] :-
+    trim N T, M is "cyp_std_" ^ T, by-names Ns Cl.
+
+  % the checked Markdown: the file again, with a mark in front of the
+  % statement and of each step (Ko: the positions of the steps not proved)
+  pred write-checked i:string, i:list string, i:string, i:string,
+    i:list string, i:list string.
+  write-checked F H Name Stmt StepTexts Ko :-
+    rex.replace "[.]md$" ".checked.md" F Out,
+    open_out Out O,
+    output O "---\n", std.forall H (l\ output O {calc (l ^ "\n")}), output O "---\n\n",
+    output O {calc ("# " ^ Name ^ "\n\n")},
+    mark Ko "end" M,
+    output O {calc (M ^ " " ^ Stmt ^ "\n\n")},
+    write-steps O 0 StepTexts Ko,
+    close_out O.
+
+  pred mark i:list string, i:string, o:string.
+  mark Ko I "❌" :- std.mem Ko I, !.
+  mark _ _ "✅".
+
+  pred write-steps i:out_stream, i:int, i:list string, i:list string.
+  write-steps _ _ [] _.
+  write-steps O I [T | Ts] Ko :-
+    mark Ko {std.any->string I} M,
+    output O {calc ("- " ^ M ^ " " ^ T ^ "\n")},
+    I1 is I + 1, write-steps O I1 Ts Ko.
+
   main [str F] :-
     read-lines F Ls,
-    header Ls H B, field H "scope" Sc,
+    header Ls H B, field H "scope" Sc, field H "by" By,
     body B Name Stmt StepTexts,
     pieces Stmt SP, statement-roles SP sgoal Roles,
     coq.say "cyp:" Name,
     % the steps are parsed inside the context, by [statement]: they are
     % kept as texts until then
     std.map StepTexts pieces StepPieces,
-    statement 0 Sc Roles StepPieces Ty Proof Ko,
+    by-clauses By Defaults,
+    (Defaults => statement 0 Sc Roles StepPieces Ty Proof Ko),
+    write-checked F H Name Stmt StepTexts Ko,
     if (Ko = [])
        (std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
         coq.env.add-const Name Proof Ty @opaque! _, coq.say "cyp:" Name "proved")

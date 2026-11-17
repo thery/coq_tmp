@@ -218,9 +218,11 @@ Elpi File cyp_core lp:{{
 
   % [step-proof Tac Text T P Ko]: as [prove], reporting the step; a step
   % not proved leaves its hole open and is listed in Ko
-  pred step-proof i:option string, i:string, i:term, o:term, o:list string.
-  step-proof Tac Text T P [] :- prove Tac T P, !, coq.say "  ✅" Text.
-  step-proof _ Text _ _ [Text] :- coq.say "  ❌" Text.
+  % a step not proved is listed by its position I among the steps (the
+  % closing step "the statement follows" is "end")
+  pred step-proof i:option string, i:string, i:string, i:term, o:term, o:list string.
+  step-proof Tac _ Text T P [] :- prove Tac T P, !, coq.say "  ✅" Text.
+  step-proof _ I Text _ _ [I] :- coq.say "  ❌" Text.
 
   % the justification of a step: a word "by name", name an Ltac tactic
   pred step-tac i:list item, o:option string.
@@ -238,24 +240,26 @@ Elpi File cyp_core lp:{{
   % current context; Ko are the steps not proved.  A forward step proves
   % its claim C and adds it to the context (let c : C := P in ...); a
   % backward step proves C -> Goal, and the rest proves C.
-  pred skel i:int, i:list (list item), i:term, o:term, o:list string.
-  skel _ [] G P Ko :- step-proof none "the statement follows" G P Ko.
-  skel K [L | Rest] G Skel Ko :-
-    step-text L Text, step-tac L Tac,
+  % [skel K I Steps Goal Skel Ko]: K the number of claims so far, I the
+  % position of the first of the steps
+  pred skel i:int, i:int, i:list (list item), i:term, o:term, o:list string.
+  skel _ _ [] G P Ko :- step-proof none "end" "the statement follows" G P Ko.
+  skel K I [L | Rest] G Skel Ko :-
+    step-text L Text, step-tac L Tac, I1 is I + 1, std.any->string I Is,
     step-claims L claim Cs,
-    if (Cs = []) (skel K Rest G Skel Ko)              % a comment
+    if (Cs = []) (skel K I1 Rest G Skel Ko)           % a comment
     (conj Cs C0,
      std.assert-ok! (coq.elaborate-ty-skeleton C0 _ C) "cyp: a claim does not type-check",
      if (backward L)
-       (step-proof Tac Text (prod `_` C (_\ G)) P Ko1,
+       (step-proof Tac Is Text (prod `_` C (_\ G)) P Ko1,
         Skel = app [P, SkelB],
-        skel K Rest C SkelB Ko2,
+        skel K I1 Rest C SkelB Ko2,
         std.append Ko1 Ko2 Ko)
        % the claims are named c1, c2, ...: one name each
-       (step-proof Tac Text C P Ko1,
+       (step-proof Tac Is Text C P Ko1,
         K1 is K + 1, Id is "c" ^ {std.any->string K1}, coq.id->name Id Nm,
         Skel = let Nm C P SkelF,
-        (pi x\ decl x Nm C => skel K1 Rest G (SkelF x) Ko2),
+        (pi x\ decl x Nm C => skel K1 I1 Rest G (SkelF x) Ko2),
         std.append Ko1 Ko2 Ko)).
 
   % the binders of the statement and of the body, in parallel
@@ -263,7 +267,7 @@ Elpi File cyp_core lp:{{
   lemma (prod N T A) (fun _ _ B) (fun N T S) Ko :- !,
     pi x\ decl x N T => lemma (A x) (B x) (S x) Ko.
   lemma G Body Skel Ko :-
-    list-of Body Steps, std.map Steps items Ls, skel 0 Ls G Skel Ko.
+    list-of Body Steps, std.map Steps items Ls, skel 0 0 Ls G Skel Ko.
 
   pred list-of i:term, o:list term.
   list-of (app [global (indc Cons), _, X, R]) [X | L] :-
