@@ -116,7 +116,7 @@ Elpi Accumulate lp:{{
        (std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
         coq.env.add-const Name Proof Ty @opaque! _,
         coq.say "cyp:" Name "proved," NP "steps")
-       (coq.error "cyp:" NK "of" NR "steps of" Name "not proved, see" OutMd).
+       (Msg is "cyp: " ^ {std.any->string NK} ^ " of " ^ {std.any->string NR} ^ " steps of " ^ Name ^ " not proved, see " ^ OutMd, coq.error Msg).
 }}.
 
 (* ------------------------------------------------------------------ *)
