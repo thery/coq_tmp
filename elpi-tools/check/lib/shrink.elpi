@@ -6,8 +6,8 @@
 %    body of a binder when it does not use the bound variable);
 % 3. the term with one argument replaced by one of its candidates.
 % For an int N: 0, N/2, N-1 towards 0; for a string: ""; a float: 0.0.
-% Every candidate is strictly smaller (check.gen.size), so the greedy
-% loop in run.elpi stops.
+% Every candidate weighs strictly less (weight: its size plus the absolute
+% values of its integers), so the greedy loop in run.elpi stops.
 
 namespace check.shrink {
 
@@ -15,9 +15,30 @@ namespace check.shrink {
 pred candidate i:reflect.ty, i:any, o:any.
 candidate T X Y :- check.types.expand T T1, candidate.of T1 X Y, smaller Y X.
 
+% [smaller Y X]: Y weighs less than X
 pred smaller i:any, i:any.
-smaller Y X :- check.gen.size Y NY, check.gen.size X NX, NY < NX, !.
-smaller Y X :- is_cdata X "int", int-abs Y AY, int-abs X AX, AY < AX, !.   % same size: closer to 0
+smaller Y X :- weight Y WY, weight X WX, WY < WX.
+
+% [weight X W]: the size of X plus the absolute values of its integers and
+% the lengths of its strings: a candidate always weighs less, so shrinking
+% stops
+func weight any -> int.
+weight X W :- check.gen.size X S, literals X L, W is S + L.
+
+func literals any -> int.
+literals X 0 :- var X, !.
+literals [] 0 :- !.
+literals [H | T] N :- !, literals H NH, literals T NT, N is NH + NT.
+literals X N :- is_cdata X "int", !, int-abs X N.
+literals X N :- is_cdata X "string", !, N is size X.
+literals X 0 :- is_cdata X _, !.
+literals X N :- constant X _ Args, !, literals-of Args N.
+literals X N :- name X _ Args, !, literals-of Args N.
+literals (x\ B x) N :- pi y\ literals (B y) N.
+
+func literals-of list any -> int.
+literals-of [] 0.
+literals-of [X | Xs] N :- literals X A, literals-of Xs B, N is A + B.
 
 func int-abs any -> int.
 :untyped

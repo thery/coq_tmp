@@ -1,0 +1,14 @@
+; elpi-reflect on a sample program; the facts are type checked and queried
+; by Elpi itself (query.elpi), the output must be query.expected.
+
+(rule
+ (with-stdout-to sample.reflect.elpi
+  (run %{exe:../bin/elpi_reflect_main.exe} %{dep:sample.elpi})))
+
+(rule
+ (deps reflect.elpi sample.elpi sample.reflect.elpi)
+ (action (with-stdout-to query.out (run elpi -I . -test %{dep:query.elpi}))))
+
+(rule (copy ../reflect.elpi reflect.elpi))
+
+(rule (alias runtest) (action (diff query.expected query.out)))

@@ -87,7 +87,7 @@ pred tests i:int, i:list check.variable, i:int, i:int, i:int, i:int, i:int, i:in
 tests _ _ Tests _ T P D Sum (result passed P D Avg) :- T > Tests, !, average Sum P Avg.
 tests I Vars Tests MaxSize T P D Sum Result :-
   Size is 1 + ((T - 1) * MaxSize) div Tests,
-  one-test I Vars Size Values Outcome,
+  isolated-test I Vars Size Values Outcome,
   T1 is T + 1,
   if (Outcome = failed)
      (Result = result (failed-with Values) P D T)
@@ -107,6 +107,13 @@ func values-size list (option any) -> int.
 values-size [] 0.
 values-size [none | Vs] N :- values-size Vs N.
 values-size [some V | Vs] N :- values-size Vs M, check.gen.size V S, N is M + S.
+
+% [isolated-test I Vars Size Values Outcome]: one-test, its first solution
+% copied out by findall, so that the bindings made by the test are undone
+% (otherwise the memory grows with the number of tests)
+pred isolated-test i:int, i:list check.variable, i:int, o:list (option any), o:outcome.
+isolated-test I Vars Size Values Outcome :-
+  std.findall (std.once (one-test I Vars Size V_ O_)) [std.once (one-test _ _ _ Values Outcome)].
 
 % [one-test I Vars Size Values Outcome]
 pred one-test i:int, i:list check.variable, i:int, o:list (option any), o:outcome.

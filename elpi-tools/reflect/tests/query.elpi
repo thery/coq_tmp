@@ -1,0 +1,20 @@
+% Reads the facts of sample.elpi and runs some of its rules.
+accumulate reflect, sample, sample.reflect.
+
+pred show-rule o:any.
+main :-
+  std.forall {std.findall (reflect.clause P_ I_ L_ A_ H_ B_)} show,
+  print "-- the rules of arith.plus2, run from the facts:",
+  reflect.clause arith.plus2 2 _ _ (arith.plus2 5 Y) Body, Body,
+  print "plus2 5 =" Y,
+  print "-- constructors of tm:",
+  std.forall {std.findall (reflect.constructor N_ K_ (reflect.tarrow _ (reflect.tcon "tm" [])) L2_)} show,
+  std.forall {std.findall (reflect.constructor N2_ K2_ (reflect.tarrow _ (reflect.tarrow _ (reflect.tcon "tm" []))) L3_)} show,
+  print "-- CHR:",
+  std.forall {std.findall (reflect.chr-rule I3_ L4_ A3_ C_ M_ R_ G_ N3_)} show.
+
+pred show i:(pred).
+show (reflect.clause P I (reflect.srcloc _ Line _) _ H B) :- !, print P I "line" Line ":" H ":-" B.
+show (reflect.constructor N _ T _) :- !, print N T.
+show (reflect.chr-rule I _ A C M R G N) :- !, print "rule" I A C M R G N.
+show X :- print X.

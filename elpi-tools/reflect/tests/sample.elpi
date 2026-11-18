@@ -1,0 +1,36 @@
+% A program using the constructs that elpi-reflect has to handle.
+data tm.
+symb app tm -> tm -> tm.
+symb lam (tm -> tm) -> tm.
+typeabbrev (two A) (pair A A).
+
+namespace arith {
+  func succ int -> int.
+  succ X Y :- Y is X + 1.
+  % spilling: {succ X} is desugared
+  func plus2 int -> int.
+  :name "plus2-main"
+  plus2 X Y :- succ {succ X} Y.
+  % :before puts this rule first
+  :before "plus2-main"
+  plus2 0 2 :- !.
+}
+
+% names written short after shorten
+shorten arith.{ succ }.
+func three -> int.
+three N :- succ 2 N.
+
+% head patterns uvar and as
+func wait int, int.
+wait A (uvar as B) :- !, declare_constraint (wait A B) [B].
+wait _ _.
+
+% a binder in the body, with its type written
+pred is-is-closed i:tm.
+is-closed (lam F) :- pi x : tm \ is-closed x => is-closed (F x).
+is-closed (app M N) :- is-closed M, is-closed N.
+
+constraint wait {
+  rule (wait A _) \ (wait B X) | (A < B) <=> (C is B - A, wait C X).
+}
