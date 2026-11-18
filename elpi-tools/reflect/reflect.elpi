@@ -102,6 +102,14 @@ pred type-abbrev o:ty, o:ty, o:srcloc.
 % fact: each lookup gives a fresh copy of the rule.
 pred clause o:any, o:int, o:srcloc, o:list attribute, o:(pred), o:(pred).
 
+% [closed-clause N Clause] (printed with option -closed): for each rule,
+% its fact [clause] under N binders, one per variable of the rule, in order
+% of appearance (Clause = V1\ .. VN\ clause P I Loc Attributes Head Body,
+% each _ a variable of its own).  Applied to N eigenvariables, it is the
+% rule with no unification variable, whatever builtins it uses: a tool can
+% compile it once into a clause of its own (as elpi-debug does).
+pred closed-clause o:int, o:any.
+
 % [chr-rule Index Loc Attributes Clique ToMatch ToRemove Guard NewGoal]:
 % rule ToMatch \ ToRemove | Guard <=> NewGoal, inside constraint Clique {..}.
 pred chr-rule o:int, o:srcloc, o:list attribute, o:list any,

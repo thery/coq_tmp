@@ -15,11 +15,13 @@ and reads the program by querying the facts.  The facts mention the
 program's own constants (`rev`, `app`, …), so they are type checked with the
 program and a rule's head and body are ordinary goals that can be run.
 
-    elpi-reflect [-I DIR].. [-D VAR].. [-builtins] FILE..     # facts on standard output
+    elpi-reflect [-I DIR].. [-D VAR].. [-builtins] [-closed] FILE..     # facts on standard output
 
 With `-builtins` it also prints the declarations (data types, constructors,
 signatures; not the rules) of Elpi's builtins and standard library, e.g.
-the signature of `std.rev`.
+the signature of `std.rev`.  With `-closed` it also prints each rule
+closed, its variables bound: `closed-clause` below (elpi-debug and
+elpi-check use it).
 
 Standalone Elpi 4 only (opam switch `elpi5`), not Rocq-Elpi.
 
@@ -43,6 +45,7 @@ pred constructor o:string, o:any, o:ty, o:srcloc.                % symb app tm -
 pred signature   o:string, o:any, o:functionality, o:list arg, o:bool, o:srcloc.
 pred type-abbrev o:ty, o:ty, o:srcloc.
 pred clause      o:any, o:int, o:srcloc, o:list attribute, o:(pred), o:(pred).
+pred closed-clause o:int, o:any.                                    % with -closed
 pred chr-rule    o:int, o:srcloc, o:list attribute, o:list any,
                  o:list sequent, o:list sequent, o:option (pred), o:option sequent.
 ```
@@ -81,6 +84,15 @@ reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [(reflect.binders [])] (rev L
   `clause` fact gives a fresh copy of the rule, as `clause/2` does.  Bound
   variables (`pi x\`, `x\`) are Elpi lambdas; their source names are in the
   attribute `binders`.
+- **Closed rules** (`-closed`): `closed-clause N F` gives each rule under
+  N binders, one per variable (in order of appearance, each `_` a variable
+  of its own): `F = V1\ .. VN\ clause P I Loc Attrs Head Body`.  Applied
+  to N eigenvariables, `F` is the rule with no unification variable, which
+  Elpi itself cannot do: no builtin finds the variables of a term, and a
+  walk of the term in Elpi cannot take apart the application of a builtin
+  written in OCaml (`var X`, `print X`, `X = Y` ...).  A tool can then
+  compile the rule once into a closed clause of its own (elpi-debug,
+  `../debug/lib/compiled.elpi`).
 - **Order**: the `Index` of a `clause` is its rank among the rules of its
   predicate in the order Elpi tries them, after `:before`, `:after`,
   `:replace` and `:remove`; the facts are printed in that order too.  Rules

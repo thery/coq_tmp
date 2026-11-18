@@ -128,33 +128,36 @@ frame-text (frame Id _ _ G) [{box-name Id}, " ", {show-term G}].
 func frame-depth frame -> int.
 frame-depth (frame _ D _ _) D.
 
-% [try-port Box]: a candidate clause is tried (for the profile).
+% [try-port Ctx]: a candidate clause is tried by the call whose body would
+% run in Ctx (for the profile: with option profile, it comes first in the
+% head unification of every compiled clause, compiled.elpi).
 :nooc
-pred try-port o:box.
-try-port _ :- quiet, !.
-try-port Box :- record-event try-step Box.
+pred try-port i:ctx.
+try-port (ctx _ [Frame | Above]) :- record-event try-step (box Frame Above called).
 
 % ===== The steps of λProlog inside a call ===============================================
 
-% [match-with-port Modes Box Origin G Head]: head matching of the clause
-% from Origin, with its unify event when it is shown or when a breakpoint
-% is set on the clause: the variables of G are looked at before and after,
-% for the bindings it makes.  The event runs in the context of the clause:
-% [runs Id Origin] and [made-bindings Bindings] are in force, for the
-% stepper and the machine-readable channel (stepper.elpi, machine.elpi).
+% [unify-port Ctx Origin Head Post]: the end of the head unification of
+% the clause from Origin with head Head (Post: what follows the prefix that
+% Elpi matched when it selected the clause, compiled.elpi), for the call
+% whose body runs in Ctx, with its unify event when it is shown or when a
+% breakpoint is set on the clause: the variables of the goal are looked at
+% before and after, for the bindings it makes (the matching of the prefix
+% binds none).  The event runs in the context of the clause: [runs Id
+% Origin] and [made-bindings Bindings] are in force, for the stepper and
+% the machine-readable channel (stepper.elpi, machine.elpi).
 :nooc
-pred match-with-port i:list mode, o:box, i:origin, i:(pred), i:(pred).
-match-with-port Modes _ _ G Head :- quiet, !, head-matches Modes G Head.
-match-with-port Modes (box Frame Above _) Origin G Head :-
+pred unify-port i:ctx, i:origin, i:(pred), i:(pred).
+unify-port (ctx _ [Frame | Above]) Origin _ Post :-
   not (event-shown unify-step (focus Frame Above)), not (clause-breakpoint-on Origin), !,
-  head-matches Modes G Head.
-match-with-port Modes (box (frame Id D P G0) Above _) Origin G Head :-
+  Post.
+unify-port (ctx _ [frame Id D P G | Above]) Origin Head Post :-
   logic-vars G Vs, snapshot Vs Before,
-  head-matches Modes G Head,
+  Post,
   bindings-made Before Bindings,
   std.map Bindings binding-line Lines,
   [runs Id Origin, made-bindings Bindings] =>
-    event unify-step D (focus (frame Id D P G0) Above)
+    event unify-step D (focus (frame Id D P G) Above)
       [{box-name Id}, " with ", {origin-string Origin}, ": ", {show-term Head} | Lines].
 
 % [runs Id Origin]: the call Id runs the clause from Origin (in force in

@@ -132,16 +132,16 @@ higher-order binding and a pruning:
     F = c0 \ app c0 c0
 
   $ elpi-debug -trace lambda.elpi 'pi x\ pi y\ same (G x) (F x y)'
-  Pi: x#1 is a new eigenvariable; its scope: pi c1 \ same X0^1 (X1^1 c1)
-  Pi: x#2 is a new eigenvariable; its scope: same X0^1 (X1^1 x#2)
-  Call: #1 same X0^1 (X1^1 x#2)
-  Unify: #1 with lambda.elpi:22: same (X5 x#1) (X5 x#1)
-        X2 := c2 \ X4 c2
-        X3 := c2 \ c3 \ X4 c2   (pruned: X5 gets 1 of the 2 arguments)
-  Exit: #1 same (X5 x#1) (X5 x#1)
+  Pi: x#1 is a new eigenvariable; its scope: pi c1 \ same X0^1 (X1 x#1 c1)
+  Pi: x#2 is a new eigenvariable; its scope: same X0^1 (X1 x#1 x#2)
+  Call: #1 same X0^1 (X1 x#1 x#2)
+  Unify: #1 with lambda.elpi:22: same (X4 x#1) (X4 x#1)
+        X2 := c2 \ X3 c2
+        X1 := c2 \ c3 \ X3 c2   (pruned: X4 gets 1 of the 2 arguments)
+  Exit: #1 same (X4 x#1) (X4 x#1)
   Solution 1:
-    F = c0 \ c1 \ X5 c0
-    G = c0 \ X5 c0
+    F = c0 \ c1 \ X4 c0
+    G = c0 \ X4 c0
 
 Retry at a fail port: the call is run again from its call port (and fails
 again); the help:
@@ -198,15 +198,15 @@ the same number (as ECLiPSe's DELAY and RESUME ports):
      ? c
   Exit: #1 even X0
      ? c
-  Call: #2 odd X2
+  Call: #2 odd X1
      ? c
-  Unify: #2 with chr.elpi:14: odd X2
+  Unify: #2 with chr.elpi:14: odd X1
      ? c
   Cut: #2 commits to its current clause
      ? c
-    Delay: [S2] odd X2 on [X2]
+    Delay: [S2] odd X1 on [X1]
      ? c
-  Exit: #2 odd X2
+  Exit: #2 odd X1
      ? c
     Resume: [S1] #3 even 4
      ? c

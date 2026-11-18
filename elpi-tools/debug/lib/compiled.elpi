@@ -1,0 +1,289 @@
+% compiled.elpi: the clauses of the program, compiled once.
+%
+% Each rule of the program is compiled when [run] starts, and each
+% hypothetical clause when => adds it, into a clause of [compiled],
+% installed as a local clause.  Elpi itself then selects the candidate
+% clauses of a goal, with its own indexing on the arguments of the goal,
+% and matches their heads, as when it runs the program natively; the
+% interpreter no longer compiles a body at each call ([compile],
+% interpreter.elpi) nor matches a head argument by argument with = and
+% pattern_match, whose occurs check walks the arguments of the goal (a
+% list of 200 elements: 20 µs for each binding).
+%
+% A compiled clause does all its work in its body and returns nothing: Elpi
+% makes the occurs check on every hypothetical clause (:nooc does not apply
+% to them), so a binding made by a local clause walks the term bound, and
+% the body of the clause would hold the arguments of the goal and the
+% stack of calls.  Its body is built without that walk, as the body of any
+% clause.  So the cut in the body of a rule is the native cut of its
+% compiled clause: it discards the other candidates of the goal and the
+% choice points before it in the body, Elpi's semantics.
+
+
+% [compiled G Key Id Ctx]: a clause of the program (a rule, or a
+% hypothetical clause in scope), compiled, applied to the goal G of the
+% call Id whose body runs in the context Ctx.  The head of the clause is
+% the head of the rule as Elpi matches it natively: its first arguments, up
+% to the first one that needs more than matching (an output, a uvar or as
+% pattern), as they are, and fresh variables for the others.  Its body
+% does the others in order, as Elpi does from left to right (an output
+% unified, an input matched), with the unify event, and then runs the body
+% of the rule compiled.  Key is [by-ref Ref], Ref the reference of the
+% clause, or [shuffled-for Id] for the clauses of the call Id installed
+% again in a random order (ordered-clause, strategy.elpi).  Indexed to depth 2: on the predicate of
+% the goal and the head constants of its arguments, the first-argument
+% indexing of Elpi and more.
+:index(2)
+pred compiled i:(pred), o:clause-key, i:int, i:ctx.
+
+data clause-key.
+symb by-ref candidate-ref -> clause-key.
+symb shuffled-for int -> clause-key.
+
+% [candidate-of P Ref]: with a random order, Ref is the reference of a
+% candidate clause of P (in Elpi's order: they are installed with the
+% clauses).
+pred candidate-of o:any, o:candidate-ref.
+
+% [clause-entry P Ref F]: with a random order that honours the cut, the
+% compiled clause of P of reference Ref, for any key (F Key is the clause).
+pred clause-entry o:any, o:candidate-ref, o:(clause-key -> (pred)).
+
+% ===== The rules =================================================================
+
+% [rule-clauses Cs]: the local clauses that hold the compiled rules of the
+% program, in Elpi's order.
+pred rule-clauses o:list (pred).
+rule-clauses Cs :- compiled-rules Rules, installed-rules Rules Cs.
+
+% A compiled rule: its predicate, its reference and its clause for any key.
+data compiled-rule.
+symb compiled-rule any -> candidate-ref -> (clause-key -> (pred)) -> compiled-rule.
+
+pred installed-rules i:list compiled-rule, o:list (pred).
+installed-rules [] [].
+installed-rules [compiled-rule P Ref F | Rs] Cs :- installed-rules Rs Cs1, installed-clauses P Ref F Cs1 Cs.
+
+% [compiled-rules Rs]: the rules of the program compiled, once per set of
+% options that the compilation depends on when a cache is in scope
+% ([with-rule-cache]).  (A compiled rule is a closed term, which a safe can
+% keep from one run to the next.)
+pred compiled-rules o:list compiled-rule.
+compiled-rules Rs :- rule-cache S, !, compilation-options Os, cached-rules S Os Rs.
+compiled-rules Rs :- compile-rules Rs.
+
+% [with-rule-cache G]: G runs with a cache of the compiled rules, so that
+% each debug.run in G compiles the rules of the program once (for a caller
+% that runs many goals, such as the property checker of ../check).
+pred with-rule-cache i:(pred).
+with-rule-cache G :- new_safe S, (rule-cache S => G).
+
+pred rule-cache o:safe.
+
+% An entry of the cache: the options of the compilation and its rules.
+data cached-rules.
+symb cached list bool -> list compiled-rule -> cached-rules.
+
+pred cached-rules i:safe, i:list bool, o:list compiled-rule.
+cached-rules S Os Rs :- open_safe S Entries, cached-entry Entries Os Rs, !.
+cached-rules S Os Rs :- compile-rules Rs, stash_in_safe S (cached Os Rs).
+
+pred cached-entry i:list cached-rules, i:list bool, o:list compiled-rule.
+cached-entry [cached Os Rs | _] Os Rs :- !.
+cached-entry [_ | Es] Os Rs :- cached-entry Es Os Rs.
+
+% [compilation-options Os]: the options that the compilation of a clause
+% depends on: no event shown, the profile, the machine channel, the cut
+% ignored.
+pred compilation-options o:list bool.
+compilation-options [{holds quiet}, {holds (opt profile)}, {holds (opt machine)}, {holds cut-ignored-here}].
+
+pred holds i:(pred), o:bool.
+holds G tt :- G, !.
+holds _ ff.
+
+% [compile-rules Rs]: the rules of the program compiled, from their closed
+% form given by reflect (a fact [reflect.closed-clause N R] per rule, R the
+% rule under N binders, one per variable): each one is compiled under N
+% eigenvariables, which then become the binders of the compiled clause, a
+% fresh copy at each use.
+pred compile-rules o:list compiled-rule.
+compile-rules Rs :- std.findall (reflect.closed-clause _ _) Rules, compile-rules-of Rules Rs.
+
+pred compile-rules-of i:list (pred), o:list compiled-rule.
+compile-rules-of [] [].
+compile-rules-of [reflect.closed-clause N R | Rules] [compiled-rule P (rule-ref I) F | Rs] :-
+  rule-closure N R P I F, !,
+  compile-rules-of Rules Rs.
+compile-rules-of [_ | Rules] Rs :- compile-rules-of Rules Rs.
+
+% [rule-closure N R P I F]: F Key is the compiled clause of the rule R, the
+% rule I of P (none for a rule of an overloaded predicate, which has no
+% index: program.elpi).
+pred rule-closure i:int, i:any, o:any, o:int, o:(clause-key -> (pred)).
+rule-closure N R P I (key\ C key) :-
+  fresh-vars N Vs, mk-app R Vs (reflect.clause P I _ _ H _),
+  constant H Q _, same_term Q P,
+  pi key\ under-binders N [] (rule-clause R key) (C key),
+  check-closed (key\ C key).
+
+% [rule-clause R Key Xs C]: C, the compiled clause of the rule R for the
+% eigenvariables Xs in place of its variables.
+pred rule-clause i:any, i:clause-key, i:list any, o:(pred).
+rule-clause R Key Xs C :-
+  mk-app R Xs (reflect.clause _ _ Loc Attrs H B),
+  binder-names-of-body (at Loc Attrs) H B Names,
+  clause-of Key (at Loc Attrs) Names H B C.
+
+% [under-binders N Xs Build C]: C is pi x1..xN\ C', where Build (Xs @ [x1..xN]) C'.
+pred under-binders i:int, i:list any, i:(pred i:list any, o:(pred)), o:(pred).
+under-binders 0 Xs Build C :- !, Build {std.rev Xs} C.
+under-binders N Xs Build (pi x\ C x) :- M is N - 1, pi x\ under-binders M [x|Xs] Build (C x).
+
+pred fresh-vars i:int, o:list any.
+fresh-vars 0 [] :- !.
+fresh-vars N [_|Vs] :- M is N - 1, fresh-vars M Vs.
+
+% [check-closed F]: F has no unification variable (a closed clause).
+pred check-closed i:any.
+check-closed F :- ground_term F, !.
+check-closed F :- std.fatal-error-w-data "debug: a rule could not be compiled into a closed clause" F.
+
+% ===== Hypothetical clauses ==========================================================
+
+% [hyp-closure Origin C F]: F Key is the compiled clause of the
+% hypothetical clause C, with the same binders (pi), sharing its other
+% variables.
+pred hyp-closure i:origin, i:(pred), o:(clause-key -> (pred)).
+hyp-closure Origin C (key\ E key) :- pi key\ hyp-clause key Origin C (E key).
+
+pred hyp-clause i:clause-key, i:origin, i:(pred), o:(pred).
+hyp-clause Key Origin (pi x\ C x) (pi x\ E x) :- !, pi x\ hyp-clause Key Origin (C x) (E x).
+hyp-clause Key Origin (H :- B) E :- !, clause-of Key Origin [] H B E.
+hyp-clause Key Origin H E :- clause-of Key Origin [] H true E.
+
+% [installed-clauses P Ref F Cs0 Cs]: Cs0 and the local clauses of the
+% compiled clause F of P, of reference Ref: the clause and, with a random
+% order, its reference (and its entry when the cut is honoured).
+pred installed-clauses i:any, i:candidate-ref, i:(clause-key -> (pred)), i:list (pred), o:list (pred).
+installed-clauses P Ref F Cs [F (by-ref Ref), candidate-of P Ref, clause-entry P Ref F | Cs] :-
+  the-strategy (strategy shuffled _ _ honour-cut), !.
+installed-clauses P Ref F Cs [F (by-ref Ref), candidate-of P Ref | Cs] :-
+  the-strategy (strategy shuffled _ _ _), !.
+installed-clauses _ Ref F Cs [F (by-ref Ref) | Cs].
+
+% ===== One clause ======================================================================
+
+% [clause-of Key Origin Names H B C]: C, the [compiled] clause of H :- B
+% with key Key; Names are the source names of the binders of B.  The
+% arguments of the head after its matched prefix, the call and the context
+% of the body are bound variables of C.
+pred clause-of i:clause-key, i:origin, i:list string, i:(pred), i:(pred), o:(pred).
+clause-of Key Origin Names H B C :-
+  constant H P Args,
+  modes-of P H Modes,
+  matched-prefix Modes Args K,
+  std.split-at K Args Prefix Rest,
+  std.drop K Modes RestModes,
+  std.length Rest R,
+  under-binders R [] (clause-with Key Origin Names H B P Prefix RestModes Rest) C.
+
+% [clause-with Key Origin Names H B P Prefix Modes Rest Vs C]: the clause,
+% the variables Vs in place of the arguments Rest.
+pred clause-with i:clause-key, i:origin, i:list string, i:(pred), i:(pred), i:any,
+                 i:list any, i:list mode, i:list any, i:list any, o:(pred).
+clause-with Key Origin Names H B P Prefix Modes Rest Vs
+    (pi id\ pi ctx\ compiled G Key id ctx :- Body id ctx) :-
+  std.append Prefix Vs Args, mk-app P Args G,
+  rest-goals Modes Vs Rest Gs,
+  pi id\ pi ctx\ clause-body id ctx Origin Names H B Gs (Body id ctx).
+
+% [clause-body Id Ctx Origin Names H B Gs Body]: the body of the compiled
+% clause of H :- B, for the call Id whose body runs in Ctx: the goals Gs
+% of the head arguments after its prefix (with the unify event), then the
+% compiled body B (with option machine under [runs Id Origin], so that a
+% stop inside knows the clause each call of the stack runs; the cut goes
+% through =>).
+pred clause-body i:int, i:ctx, i:origin, i:list string, i:(pred), i:(pred), i:list (pred), o:(pred).
+clause-body Id Ctx Origin Names H B Gs (Unify, Run) :-
+  head-rest Ctx Gs Post,
+  unify-goal Ctx Origin H Post Unify,
+  compile Ctx Names B Code _,
+  run-goal Id Origin Code Run.
+
+% [unify-goal Ctx Origin H Post G]: G ends the head unification: Post, with
+% its unify event when events are shown (ports.elpi).
+pred unify-goal i:ctx, i:origin, i:(pred), i:(pred), o:(pred).
+unify-goal _ _ _ Post Post :- quiet, !.
+unify-goal Ctx Origin H Post (debug.unify-port Ctx Origin H Post).
+
+pred run-goal i:int, i:origin, i:(pred), o:(pred).
+run-goal Id Origin Code (debug.runs Id Origin => Code) :- opt machine, !.
+run-goal _ _ Code Code.
+
+% [matched-prefix Modes Args K]: Elpi's own matching does the K first
+% arguments of the head: inputs, with no uvar or as pattern at their top.
+% None with option profile: every clause is then entered, so that its try
+% is recorded (head-rest).
+pred matched-prefix i:list mode, i:list any, o:int.
+matched-prefix _ _ 0 :- opt profile, !.
+matched-prefix Ms As K :- matched-prefix-from Ms As 0 K.
+
+pred matched-prefix-from i:list mode, i:list any, i:int, o:int.
+matched-prefix-from [i|Ms] [A|As] K0 K :- plain-pattern A, !, K1 is K0 + 1, matched-prefix-from Ms As K1 K.
+matched-prefix-from _ _ K K.
+
+% [plain-pattern A]: A is matched as Elpi matches a term (not a uvar or as
+% pattern of reflect).
+pred plain-pattern i:any.
+plain-pattern A :- var A, !.
+plain-pattern reflect.uvar-pattern :- !, fail.
+plain-pattern (reflect.as-pattern _ _) :- !, fail.
+plain-pattern _.
+
+% [rest-goals Modes Vs Bs Gs]: the goals that do the arguments Bs of the
+% head on the arguments Vs of the goal, in order (the mode of an argument
+% beyond the declaration is output, as in first-mode).
+pred rest-goals i:list mode, i:list any, i:list any, o:list (pred).
+rest-goals _ [] [] [].
+rest-goals Ms [V|Vs] [B|Bs] [G|Gs] :- first-mode Ms M Ms1, arg-goal M V B G, rest-goals Ms1 Vs Bs Gs.
+
+% [arg-goal M V B G]: G does the argument B of the head, of mode M, on the
+% argument V of the goal (as arg-match does, interpreter.elpi).
+pred arg-goal i:mode, i:any, i:any, o:(pred).
+arg-goal _ V reflect.uvar-pattern (var V) :- !.
+arg-goal M V (reflect.as-pattern P X) (G, debug.match-arg X V) :- !, arg-goal M V P G.
+arg-goal i V B (debug.match-arg B V).
+arg-goal o V B (debug.unify-arg V B).
+
+% [head-rest Ctx Gs Post]: Post, the goals Gs of the arguments after the
+% prefix; with option profile, first the try of the clause.
+pred head-rest i:ctx, i:list (pred), o:(pred).
+head-rest Ctx Gs (debug.try-port Ctx, G) :- opt profile, !, mk-conj Gs G.
+head-rest _ Gs G :- mk-conj Gs G.
+
+% [mk-app P Args G]: G is P applied to Args.
+pred mk-app i:any, i:list any, o:any.
+:untyped
+mk-app P [] P.
+:untyped
+mk-app P [A|As] G :- mk-app (P A) As G.
+
+% ===== Unification without walking ====================================================
+%
+% The builtins = and pattern_match make Elpi's occurs check, which walks
+% the term a fresh variable gets; the head unification of a :nooc clause
+% does not.  Elpi's own head unification walks no argument of the goal
+% either.
+
+% [match-arg Pattern A]: the argument A of the goal matches Pattern (as
+% pattern_match A Pattern): only the variables of Pattern are assigned.
+:nooc
+pred match-arg o:A, i:A.
+match-arg X X.
+
+% [unify-arg A B]: the argument A of the goal unifies with the output
+% argument B of the head (with the occurs check, as Elpi's head
+% unification of an output).
+pred unify-arg o:A, o:A.
+unify-arg X X.

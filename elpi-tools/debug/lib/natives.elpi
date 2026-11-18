@@ -25,10 +25,10 @@ native-ports Exited Ctx G :-
 % [run-native Ctx G]: run G, with Ctx as the context of the program goals
 % it may call back (through their bridges).  Installing the local clause
 % costs the same whatever the size of Ctx (measured: under 1 µs, with 1 or
-% 50 frames of large goals; reading it back is a head unification of
-% the :nooc predicate current-ctx, which does not walk Ctx either), far
-% less than looking into G for a possible call back, so it is always
-% installed.
+% 50 frames of large goals), far less than looking into G for a possible
+% call back, so it is always installed.  (Reading it back, at a call
+% back only, walks Ctx: Elpi makes the occurs check on the head
+% unification of every local clause.)
 :nooc
 pred run-native o:ctx, i:(pred).
 run-native Ctx G :- (current-ctx called Ctx => G).

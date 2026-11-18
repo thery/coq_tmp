@@ -175,11 +175,53 @@ let fact ?(untyped = false) name args =
   (if untyped then ":untyped\n" else "")
   ^ discard_linear_type_variables ("reflect." ^ name ^ " " ^ String.concat " " args) ^ ".\n"
 
-let rule_fact ~overloaded index (r : rule) =
+(* [rule_variables ts]: the variables of the terms ts, in order of
+   appearance, once each, and the terms with each discard _ named
+   (Reflect_discard_N), so that it can be bound.  A variable is a name the
+   parser deems one (capital or _) that no binder around it binds. *)
+let rule_variables (ts : Term.t list) : string list * Term.t list =
+  let discards = ref 0 in
+  let rec walk bound vars (t : Term.t) =
+    match t.it with
+    | Term.Const f when Func.equal f Func.dummyname || Func.show f = "_" ->
+        incr discards;
+        let n = Printf.sprintf "Reflect_discard_%d" !discards in
+        (vars @ [ n ], { t with it = Term.Const (Func.from_string n) })
+    | Term.Const f when Func.is_uvar_name f && not (List.mem (Func.show f) bound) ->
+        let name = Func.show f in
+        ((if List.mem name vars then vars else vars @ [ name ]), t)
+    | Term.App (hd, args) ->
+        let vars, hd = walk bound vars hd in
+        let vars, args = List.fold_left_map (walk bound) vars args in
+        (vars, { t with it = Term.App (hd, args) })
+    | Term.Lam (x, l, ty, b) ->
+        let vars, b = walk (Func.show x :: bound) vars b in
+        (vars, { t with it = Term.Lam (x, l, ty, b) })
+    | Term.Cast (u, ty) -> let vars, u = walk bound vars u in (vars, { t with it = Term.Cast (u, ty) })
+    | Term.Parens u -> let vars, u = walk bound vars u in (vars, { t with it = Term.Parens u })
+    | Term.Const _ | Term.CData _ | Term.Quoted _ -> (vars, t)
+  in
+  List.fold_left_map (walk []) [] ts
+
+(* [rule_fact ~overloaded ~closed index r]: the fact [clause] of the rule;
+   with [closed], also its fact [closed-clause N (V1\ .. VN\ clause ...)],
+   the same under a binder per variable of the rule. *)
+let rule_fact ~overloaded ~closed index (r : rule) =
   let attrs = List.filter_map attribute_data r.attrs @ [ binders_data (binders r.head @ binders r.body) ] in
-  fact ~untyped:(List.mem Untyped r.attrs || StrSet.mem r.pred overloaded) "clause"
+  let untyped = List.mem Untyped r.attrs || StrSet.mem r.pred overloaded in
+  let args head body =
     [ Print.constant r.pred; string_of_int index; srcloc r.loc;
-      "[" ^ String.concat ", " attrs ^ "]"; Print.term r.head; Print.term r.body ]
+      "[" ^ String.concat ", " attrs ^ "]"; Print.term head; Print.term body ] in
+  let plain = fact ~untyped "clause" (args r.head r.body) in
+  if not closed then plain
+  else
+    match rule_variables [ r.head; r.body ] with
+    | vars, [ head; body ] ->
+        let binders = String.concat "" (List.map (fun v -> v ^ "\\ ") vars) in
+        plain ^ fact ~untyped "closed-clause"
+                  [ string_of_int (List.length vars);
+                    "(" ^ binders ^ "reflect.clause " ^ String.concat " " (args head body) ^ ")" ]
+    | _ -> assert false
 
 (* The arity of a kind: the number of arrows of type -> .. -> type *)
 let rec arity (t : _ TypeExpression.t) =
@@ -275,9 +317,10 @@ let overloaded_symbols (decls : Scope.resolved list) =
   in
   StrSet.of_list (dups sorted)
 
-(* [facts ~defines ~rules decls]: the text of the facts for the resolved
-   declarations [decls]; the rules and CHR rules only when [rules]. *)
-let facts ~defines ~rules (decls : Scope.resolved list) : string =
+(* [facts ~defines ~rules ~closed decls]: the text of the facts for the
+   resolved declarations [decls]; the rules and CHR rules only when
+   [rules]; with [closed], the closed form of each rule too. *)
+let facts ~defines ~rules ?(closed = false) (decls : Scope.resolved list) : string =
   let overloaded = overloaded_symbols decls in
   let b = Buffer.create 4096 in
   let section title = Buffer.add_string b ("\n% -- " ^ title ^ "\n") in
@@ -309,7 +352,7 @@ let facts ~defines ~rules (decls : Scope.resolved list) : string =
     List.iter (fun r ->
       let n = 1 + Option.value ~default:0 (Hashtbl.find_opt counts r.pred) in
       Hashtbl.replace counts r.pred n;
-      Buffer.add_string b (rule_fact ~overloaded n r)) (place_rules rules);
+      Buffer.add_string b (rule_fact ~overloaded ~closed n r)) (place_rules rules);
     section "CHR rules";
     let index = ref 0 in
     each (fun d -> match d.decl with
@@ -367,10 +410,12 @@ let in_block file (p : Program.t) =
   let loc = Loc.initial file in
   { p with ast = (Program.Begin loc :: p.ast) @ [ Program.End loc ] }
 
-(* [reflect_files ~paths ~defines ~builtins files]: the facts of the program
-   made of [files] (each as if accumulated); with [builtins], also the
-   declarations (not the rules) of Elpi's builtins and standard library. *)
-let reflect_files ?(paths = []) ?(defines = []) ?(builtins = false) files : string =
+(* [reflect_files ~paths ~defines ~builtins ~closed files]: the facts of
+   the program made of [files] (each as if accumulated); with [builtins],
+   also the declarations (not the rules) of Elpi's builtins and standard
+   library; with [closed], also the closed form of each rule
+   (closed-clause). *)
+let reflect_files ?(paths = []) ?(defines = []) ?(builtins = false) ?(closed = false) files : string =
   let defines = StrSet.of_list defines in
   let program = List.concat_map (fun file -> Scope.resolve_program (in_block file (parse ~paths file))) files in
   let builtin_text =
@@ -380,4 +425,4 @@ let reflect_files ?(paths = []) ?(defines = []) ?(builtins = false) files : stri
       ^ facts ~defines ~rules:false
           (List.filter not_a_connective (Scope.resolve_program (in_block "builtin.elpi" (builtin_declarations ()))))
   in
-  header ^ facts ~defines ~rules:true program ^ builtin_text
+  header ^ facts ~defines ~rules:true ~closed program ^ builtin_text

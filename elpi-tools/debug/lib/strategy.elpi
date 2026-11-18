@@ -37,13 +37,32 @@ pred candidate i:any, o:origin, o:(pred), o:(pred).
 candidate P Origin Head Body :- hyp P Origin C, clause-parts C Head Body.
 candidate P Origin Head Body :- program-rule P _ Head Body Origin.
 
-% [ordered-candidate P Origin Head Body]: the candidates in the order of
-% the strategy.
-pred ordered-candidate i:any, o:origin, o:(pred), o:(pred).
-ordered-candidate P Origin Head Body :- the-strategy (strategy shuffled _ _ _), !,
-  candidate-refs P Refs, shuffle Refs Shuffled,
-  std.mem Shuffled Ref, candidate-of-ref P Ref Origin Head Body.
-ordered-candidate P Origin Head Body :- candidate P Origin Head Body.
+% [ordered-clause G Id Ctx]: the goal G of the call Id, solved by its
+% compiled clauses (compiled.elpi) in the order of the strategy, their
+% bodies running in the context Ctx.
+:nooc
+pred ordered-clause i:(pred), i:int, i:ctx.
+ordered-clause G Id Ctx :- the-strategy (strategy shuffled _ _ Cut), !,
+  constant G P _, candidate-refs P Refs, shuffle Refs Shuffled,
+  shuffled-clause Cut P G Shuffled Id Ctx.
+ordered-clause G Id Ctx :- compiled G (by-ref _) Id Ctx.
+
+% [shuffled-clause Cut P G Refs Id Ctx]: the candidates of reference Refs,
+% in that order.  When the cut is ignored, no compiled clause has one:
+% they are tried one by one.  When it is honoured, they are installed
+% again for the call alone (key shuffled-for Id), in that order, so that a
+% cut in one of them discards the ones after it.
+:nooc
+pred shuffled-clause i:cut-policy, i:any, i:(pred), i:list candidate-ref, i:int, i:ctx.
+shuffled-clause cut-ignored _ G Refs Id Ctx :- std.mem Refs Ref, compiled G (by-ref Ref) Id Ctx.
+shuffled-clause honour-cut P G Refs Id Ctx :-
+  std.map Refs (keyed-clause P (shuffled-for Id)) Cs,
+  Cs => compiled G (shuffled-for Id) Id Ctx.
+
+% [keyed-clause P Key Ref C]: C, the compiled clause of P of reference Ref,
+% with key Key.
+pred keyed-clause i:any, i:clause-key, i:candidate-ref, o:(pred).
+keyed-clause P Key Ref C :- clause-entry P Ref F, !, mk-app F [Key] C.
 
 % A reference to a candidate: a hypothetical clause by its number, or a
 % rule by its index.  (References, since std.findall would copy the
@@ -53,20 +72,10 @@ symb hyp-ref int -> candidate-ref.
 symb rule-ref int -> candidate-ref.
 
 pred candidate-refs i:any, o:list candidate-ref.
-candidate-refs P Refs :-
-  std.findall (hyp P (added-by _ _) _) Hyps, std.map Hyps hyp-ref-of HRefs,
-  std.findall (program-rule P _ _ _ _) Rules, std.map Rules rule-ref-of RRefs,
-  std.append HRefs RRefs Refs.
+candidate-refs P Refs :- std.findall (candidate-of P _) Cs, std.map Cs ref-of-candidate Refs.
 
-func hyp-ref-of (pred) -> candidate-ref.
-hyp-ref-of (hyp _ (added-by _ K) _) (hyp-ref K).
-
-func rule-ref-of (pred) -> candidate-ref.
-rule-ref-of (program-rule _ I _ _ _) (rule-ref I).
-
-pred candidate-of-ref i:any, i:candidate-ref, o:origin, o:(pred), o:(pred).
-candidate-of-ref P (hyp-ref K) (added-by S K) Head Body :- hyp P (added-by S K) C, !, clause-parts C Head Body.
-candidate-of-ref P (rule-ref I) Origin Head Body :- program-rule P I Head Body Origin, !.
+func ref-of-candidate (pred) -> candidate-ref.
+ref-of-candidate (candidate-of _ Ref) Ref.
 
 % [shuffle L S]: S is L in a random order.
 pred shuffle i:list A, o:list A.
