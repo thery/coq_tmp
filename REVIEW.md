@@ -2,9 +2,9 @@
 
 Step 1 of the cleaning session: findings only, nothing changed.  Reviewed:
 cyp at main (bin/cyp.ml, rules/cyp_rules.v, vernac/Cyp.v, vernac/CypFile.v,
-exp/float_lemmas.v and the .elpi rules, vscode/), xtext at 40d1b6d
-(xtext.elpi, Explain.v).  The rounds the agents are doing now (cyp: Lemma 3;
-xtext: 2/6/8) are not included.
+the rules of the private case study, vscode/), xtext at 40d1b6d
+(xtext.elpi, Explain.v).  The rounds the agents were doing then are not
+included.
 
 ## A. The same thing done in several places
 
@@ -38,20 +38,16 @@ different list), `xtext_tauto`/`xtext_lia` in xtext's Explain.v.
 ## B. Ad hoc choices
 
 **B1.** `bin/cyp.ml`, `relation_re`: "a formula is a claim if it contains
-`=`, `<`, ..., `forall`, `exists`, `_format`, `True`, `False`".  `_format`
-is a name of libm; the vernacular version asks Rocq whether the formula is a
-proposition, which is the generic test.
+`=`, `<`, ..., `forall`, `exists`, `True`, `False`", plus a name from one
+particular library; the vernacular version asks Rocq whether the formula
+is a proposition, which is the generic test.
 
-**B2.** `exp/float.elpi` lines 19-30 and `exp/float_lemmas.v` lines 93-145:
-rules and lemmas for particular numbers (1 − 2⁻⁵³, 2⁻⁵³, −2⁻⁵⁴, their
-predecessors and successors, "below 2⁻⁵³ means at most 2⁻⁵³ − 2⁻¹⁰⁶"),
-written for Lemma 1, in the SHARED files.  The general facts exist in Flocq
-(format of ±2^e, `pred_bpow`, `succ` of a power of two): one rule that
-computes the predecessor of any power of two, and Lemma 1's special point
-(`float_exp_mid`, the midpoint at −2⁻⁵⁴) in a file of Lemma 1.
+**B2.** In the shared floating-point rules of the private case study:
+rules and lemmas for particular numbers, where the general facts exist in
+Flocq (format of ±2^e, `pred_bpow`, `succ` of a power of two).
 
-**B3.** `exp/float_lemmas.v` lines 216, 244, 256: `interval with
-(i_prec 130)` written three times: one parameter.
+**B3.** In the same files: the precision of `interval` written three
+times: one parameter.
 
 **B4.** xtext, `xtext.elpi` lines 376-378 and 864-870: elimination
 principles found by their name (`C_ind`, `_rect`, `_sind`), rewriting by a
@@ -92,8 +88,8 @@ compiled once more to get its message.  `Cyp File` does the same inside
 Rocq, with real terms and real goals.
 
 **C2.** `Cyp File` has fewer features than the Markdown cyp: no nested
-steps, no local scopes (*Let*, *Assume*), no local definitions.  Lemma
-"red" and Lemma 2 cannot go through it yet.
+steps, no local scopes (*Let*, *Assume*), no local definitions.  Some
+proofs of the private case study cannot go through it yet.
 
 ## D. Documentation
 

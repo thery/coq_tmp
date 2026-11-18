@@ -34,8 +34,8 @@ Files: `xtext.elpi` (the transducer), `Explain.v` (the command),
 `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
 `inductive.v` (induction, case analysis, rewriting, fix), `examples/`
 (the 24 texts produced), `cyp-check/` (cyp's results); see also
-`thesis.v` and `stdlib.v` below.  (The texts of 5 lemmas of the CORE-MATH
-exp proof, `exp_examples.v`, are kept in a private branch.)
+`thesis.v` and `stdlib.v` below.  (The texts of a larger case study, a
+floating-point proof, are kept in a private branch.)
 
 ## The output
 
@@ -311,17 +311,13 @@ an implication to `False` in Rocq), and states the goal of each case.
 The text of an **incomplete proof** (section 3.3.3), where each open goal
 is written `Prouvez G` at its place, is now `Explain_partial` (below).
 
-## More examples: theses, Stdlib, CORE-MATH
+## More examples: theses, Stdlib
 
 Files: `thesis.v` (the theses' examples, above), `stdlib.v` (40 lemmas
 of Rocq's Stdlib, explained from the library itself: `Time Explain
 app_assoc to ...`).  `measure.sh f.v` prints, for each text, the time of
 `Explain` (Rocq's `Time`), the number of list items and the size;
-`cyprun.sh` and `cyprun_exp.sh` run cyp (300 s per text for the theses and
-Stdlib, 600 s for CORE-MATH).  For the CORE-MATH texts, the header of the
-copy checked by cyp also loads Reals, Flocq and the exp files: the header
-written by xtext only requires the file of the theorem, and its notations
-(`%R`) are then unknown.
+`cyprun.sh` runs cyp (300 s per text).
 
 The sizes, times and cyp results of all texts are in the table of the next
 section (columns "none" and "cyp before" are the state of this section).
@@ -332,11 +328,10 @@ What breaks or becomes unreadable on the large ones:
   `Nat.mul_comm`, ... are proved with setoid rewriting: their texts (200-480
   items) are mostly about `Morphisms.Proper`, `ProperProxy`,
   `RelationClasses.Reflexive`, the internals of `rewrite`, not about
-  arithmetic.  The `lia`, `ring` and `interval` certificates of CORE-MATH
-  appear as local definitions (`Let __ff be Tauto.IMPL (...)`,
-  `RTautoChecker_sound` used 12 times in `rnd_same_half_cell`) and lines
-  of 1500-2200 characters.  Now partly handled, see "Tactic-built
-  subproofs" below.
+  arithmetic.  The certificates of `lia`, `ring` or `interval` appear as
+  local definitions (`Let __ff be Tauto.IMPL (...)`) and lines of
+  1500-2200 characters.  Now partly handled, see "Tactic-built subproofs"
+  below.
 - **Implicit arguments.**  Rocq prints `Equivalence eq` or `length [] =
   0` without the type, and these formulas do not type-check again: cyp
   marks them as errors, and all the steps after them too.  This is most of
@@ -345,9 +340,8 @@ What breaks or becomes unreadable on the large ones:
 - **Local definitions** (`Let hyp_list be nil`) had no form in cyp, so a
   later formula that used `hyp_list` was a Rocq error.  They are now
   written as cyp's local definitions (below).
-- **Size**: `Nat.le_trans` (484 items) and `rnd_same_half_cell` (379
-  items, 91 000 characters) are generated in 0.5 s and 2.4 s, but cyp
-  does not finish them within its limit (300 s and 600 s).
+- **Size**: `Nat.le_trans` (484 items) is generated in 0.5 s, but cyp
+  does not finish it within its limit (300 s).
 
 ### Fixes to the transducer in this round
 
@@ -355,12 +349,12 @@ Each was needed by an example, and changes no rule of the paper or the
 thesis:
 
 - `tr` keeps its first answer and, when no rule applies to a subterm,
-  shows it unchanged.  `Rnd.grid_plus` took more than 15 minutes because a
-  failure deep in a `ring` certificate made the whole translation
-  backtrack; it now takes 0.04 s.
+  shows it unchanged.  A failure deep in a `ring` certificate used to make
+  the whole translation backtrack (more than 15 minutes on one example);
+  it now takes 0.04 s.
 - `let x := V in M` keeps `x` with its value in the context (before, it
   was read as `(fun x => M) V`, and types under `x` were no longer
-  convertible: `rnd_same_half_cell` was left untranslated).  A local proof
+  convertible).  A local proof
   is now a cut: its subproof, named `(x)`, then the rest.  This changes
   the texts of `drinker` and `forall_and` (`destruct` on a term builds such
   a `let`): one level less, and the cases come right after the cut.
@@ -484,8 +478,7 @@ longer (by 2 % and 3 % in characters).  With all four, the texts have
 Per text: items and characters with no mechanism and with all; cyp
 (proved / not proved / not checked), before (previous section) and after.
 The texts were checked with a time limit of 300 s each.  `Nat.le_trans`
-and `rnd_same_half_cell` time out both before and after (484 → 112 and
-379 → 335 items).  A few texts not checked in the previous rounds are
+times out both before and after (484 → 112 items).  A few texts not checked in the previous rounds are
 "not run" before.
 
 | example | items none → all | chars none → all | time all (s) | cyp before | cyp after |
@@ -561,11 +554,6 @@ and `rnd_same_half_cell` time out both before and after (484 → 112 and
 | std_eq_sym | 2 → 2 | 425 → 425 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
 | std_eq_trans | 2 → 2 | 399 → 399 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
 | std_f_equal | 2 → 2 | 464 → 464 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
-| exp_round_one | 26 → 21 | 4338 → 3547 | 0.07 | 5 / 15 / 6 | 7 / 8 / 6 |
-| exp_succ_one | 13 → 12 | 2184 → 2070 | 0.16 | 11 / 2 / 0 | 10 / 2 / 0 |
-| exp_pred_x_small | 9 → 9 | 1883 → 1835 | 0.40 | 8 / 1 / 0 | 8 / 1 / 0 |
-| exp_grid_plus | 23 → 23 | 4889 → 5003 | 0.31 | 7 / 9 / 7 | 7 / 9 / 7 |
-| exp_rnd_same_half_cell | 379 → 335 | 90602 → 84057 | 9.64 | timeout | timeout |
 
 
 Over the 65 texts checked both before and after, cyp proves 1084 steps
@@ -574,11 +562,9 @@ failures before were mostly formulas that did not type-check again (`length
 [] = 0`, `Equivalence eq`) and the steps after them; after, most of the
 `Nat.*` failures are gone (`Nat.add_comm`: 107 → 1).  What remains:
 
-- `std_or_assoc` (3, was 0) and the CORE-MATH texts: steps whose claim is
-  true but that cyp's default tactics do not prove in their time limit;
-- `length_app_fix` (1): the recursive call, as before;
-- the CORE-MATH certificates that are not closed by `tauto` or `lia`
-  (`lra`, `field`, `interval` are not among the default tactics).
+- `std_or_assoc` (3, was 0): steps whose claim is true but that cyp's
+  default tactics do not prove in their time limit;
+- `length_app_fix` (1): the recursive call, as before.
 
 Also fixed in this round: the `*by exact @T*` of a theorem uses its full
 name (`@Stdlib.Classes.Morphisms.eq_proper_proxy`), which needs only
@@ -715,16 +701,12 @@ maximal text has the same structure as the guarded one.
 | std_Nat_mul_1_r | 89 / 70 / 80 | 12345 → 11719 | 85 / 0 / 4 | 66 / 0 / 4 | 74 / 2 / 4 (†) |
 | half_le | 36 / 29 / 30 | 6438 → 5345 | not run | = guarded | 19 / 4 / 6 (†) |
 | even_or_odd | 27 / 27 / 27 | 3410 → 3410 | not run | = guarded | 19 / 0 / 8 |
-| exp_round_one | 21 / 19 / 19 | 3547 → 3293 | 7 / 8 / 6 | = guarded | 8 / 5 / 6 |
-| exp_succ_one | 12 / 11 / 11 | 2070 → 2023 | 10 / 2 / 0 | = guarded | 10 / 1 / 0 |
-| exp_grid_plus | 23 / 22 / 23 | 5003 → 5003 | 7 / 9 / 7 | 7 / 8 / 7 | 7 / 9 / 7 |
-| exp_rnd_same_half_cell | 335 / 329 / 329 | 84057 → 83174 | timeout | = guarded | timeout |
 
 
 - Over the 66 texts checked both before and after (guarded): 25 steps not
   proved before, 21 after, for fewer steps (576 proved before, 563
   after, since steps were merged).
-- With `maximal`, the 8 `Nat.*` texts and `grid_plus` lose more steps
+- With `maximal`, the 8 `Nat.*` texts and one other lose more steps
   (561 → 425 proved) and keep slightly more failures (16 → 23): a
   contracted step that cyp's tactics cannot close becomes one more red
   step.  This is why `guarded` is the default.
@@ -733,7 +715,7 @@ maximal text has the same structure as the guarded one.
   instance).  They could not be checked again: cyp was being rebuilt in
   the meantime (the new driver needs its compiled library, `CYP_LIB`),
   so their guarded results are those of the version before the fix.
-- `Nat.le_trans` and `rnd_same_half_cell` time out in cyp, as before.
+- `Nat.le_trans` times out in cyp, as before.
 
 The texts in progress (`*_partial*.md`) have one `Prove G` step per open
 goal.  They are not counted above.

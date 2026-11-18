@@ -102,8 +102,7 @@ setting, not a path written in the code.
   `coq.parse.argument`) until that API is released.  xtext, today in
   `native` (Elpi 3.7), moves to `elpi4` too, since it shares the
   vocabulary: its Elpi code needs the small Elpi 4 fixes cyp needed (typed
-  higher-order arguments).  libm's model is built in its separate copy for
-  `elpi4` (done for Lemma 1; Lemma 2 also needs the accpath tables).
+  higher-order arguments).
 - **The cache of proved steps** (the OCaml cyp's) goes: inside Rocq each
   run checks every step.  A failing step costs its time limit, which becomes
   a parameter per proof (`timeout:`).  Make-style caching per file remains.
@@ -112,8 +111,7 @@ setting, not a path written in the code.
 
 ## The checks, before and after
 
-- the exp lemmas: Lemma 1 (11), Lemma "red" (19), Lemma 2 (10), and
-  Lemma 3 if done by then;
+- the proofs of the private case study;
 - cyp's examples (square_pos, rules_demo, named_demo, features, the French
   and Italian square_pos);
 - xtext's 76 texts: generation, and cyp's counts per text.
@@ -131,7 +129,7 @@ setting, not a path written in the code.
 - 3a, now: the Elpi core reaches the OCaml cyp's features (nested steps,
   local scopes and definitions, tags, names, vocabulary files for en, fr,
   it, the checked Markdown and the JSON), checked on cyp's examples and the
-  exp lemmas in `elpi4`.
+  private case study in `elpi4`.
 - 3b, when the agents' rounds are over: xtext moves to `elpi4` and writes
   with the vocabulary; the OCaml program becomes the driver; the shared
   floating-point rules made general; the READMEs rewritten.
@@ -144,9 +142,7 @@ the switch elpi4.  Checked, same results as the OCaml cyp:
 
 | proof | OCaml cyp (native) | Elpi core (elpi4) |
 |---|---|---|
-| exp Lemma 1 | 11/11 | 11 steps, proved |
-| exp Lemma "red" (Let u := ...) | 19/19 | 19 steps, proved |
-| exp Lemma 2 | 10/10 | 10 steps, proved |
+| the proofs of the private case study | proved | proved, same steps |
 | examples: square_pos | 6/7 (one wrong on purpose) | 1 of 7 not proved |
 | rules_demo, named_demo, features, by_lemma_demo, apply_demo | proved | proved |
 | square_pos in French and in Italian | proved | proved |
