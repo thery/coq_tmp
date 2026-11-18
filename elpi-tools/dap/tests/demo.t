@@ -253,7 +253,7 @@ exit of insert:
 
 7. The profile (the times, which vary, replaced by T):
 
-  $ replay demo-profile.dap | sed -E 's/ [0-9]+[.][0-9]+\\n/ T\\n/g'
+  $ replay demo-profile.dap | sed -E 's/ +[0-9]+[.][0-9]+\\n/ T\\n/g'
   # Configuration 7 with a shorter list (std.iota 20): the profile is printed at the end.
   -> {"seq":1,"type":"request","command":"initialize","arguments":{"adapterID":"elpi"}}
   <- {"seq":1,"type":"response","request_seq":1,"success":true,"command":"initialize","body":{"supportsConfigurationDoneRequest":true,"supportsFunctionBreakpoints":true,"supportsRestartFrame":true,"supportsTerminateRequest":true,"supportsEvaluateForHovers":false,"supportsStepBack":false}}
@@ -264,12 +264,12 @@ exit of insert:
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
   <- {"seq":5,"type":"event","event":"output","body":{"category":"stdout","output":"Profile (ports per predicate; tries = clauses tried; self time):\n"}}
   <- {"seq":6,"type":"event","event":"output","body":{"category":"stdout","output":"  predicate                        calls   exits   redos   fails   tries   time (ms)\n"}}
-  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  (query)                              0       0       0       0       0        T\n"}}
-  <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"  append                             210     210       0       0     400       T\n"}}
-  <- {"seq":9,"type":"event","event":"output","body":{"category":"stdout","output":"  naive-rev                           21      21       0       0      41       T\n"}}
-  <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"  rev                                  1       1       0       0       1        T\n"}}
-  <- {"seq":11,"type":"event","event":"output","body":{"category":"stdout","output":"  rev-onto                            21      21       0       0      41        T\n"}}
-  <- {"seq":12,"type":"event","event":"output","body":{"category":"stdout","output":"  std.iota (builtin)                   1       1       0       0       0        T\n"}}
+  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  (query)                              0       0       0       0       0 T\n"}}
+  <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"  append                             210     210       0       0     400 T\n"}}
+  <- {"seq":9,"type":"event","event":"output","body":{"category":"stdout","output":"  naive-rev                           21      21       0       0      41 T\n"}}
+  <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"  rev                                  1       1       0       0       1 T\n"}}
+  <- {"seq":11,"type":"event","event":"output","body":{"category":"stdout","output":"  rev-onto                            21      21       0       0      41 T\n"}}
+  <- {"seq":12,"type":"event","event":"output","body":{"category":"stdout","output":"  std.iota (builtin)                   1       1       0       0       0 T\n"}}
   <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"Solution 1:\n"}}
   <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"  L = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]\n"}}
   <- {"seq":15,"type":"event","event":"output","body":{"category":"stdout","output":"  R1 = [19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]\n"}}
