@@ -6,13 +6,18 @@
 %   2. contraction:  nested applications and abstractions are merged when
 %                    no conversion would be hidden, section 2.3 and its
 %                    guarded form, section 3.4.2, Fig. 3.11;
+%      or selection: the type expressions the text keeps are chosen on
+%                    the term itself, section 4.3.1, Fig. 4.10 (the
+%                    guarded contraction, and the identifiers lose their
+%                    single annotation in an application);
 %   3. writing:      the contracted term becomes sentences, section 2.3.3
 %                    (Fig. 2.10 for applications) and section 3.4.1 (a
 %                    conclusion says both types when they differ).
 %
 % Each stage is a separate predicate on a separate data type, so that each
 % can be read against its figure.  The stages are used when the switch
-% "translation" is "staged" (switches.elpi).  The forms the thesis does
+% "translation" is "staged" (switches.elpi); the selection replaces the
+% contraction when the switch "selection" is "thesis".  The forms the thesis does
 % not treat in chapters 2-3 (let, match, fix, casts, and the
 % introduction, elimination and rewriting theorems of chapter 6) are
 % written by the direct writer; their subproofs come back here.
@@ -24,7 +29,9 @@
 kind annot type.
 type single term -> annot.         % a single type
 type double term -> term -> annot. % the constrained type, the required type
-type merged annot.                 % no type: the node is merged into its parent
+type merged annot.                 % no type: the node is merged into its parent,
+                                   % or (selection) it is an identifier
+                                   % whose type the reader knows
 
 % A node of the annotated term.
 kind aterm type.
@@ -45,7 +52,7 @@ type adone pf -> aterm.
 % An argument of an application.
 kind aarg type.
 type aproof aterm -> aarg.        % a proof (rule App1)
-type aelem  term -> term -> aarg. % a term that is not a proof, and its type (App2)
+type aelem  term -> annot -> aarg. % a term that is not a proof, and its type (App2)
 
 % ------------------------------------------------------------------
 % The switch "translation" (switches.elpi)
@@ -63,9 +70,14 @@ is-direct-only M :- direct-only K, K == M, !.
 staged-text M Ctx Path P :-
   required-type M Tr,
   annotate M Tr A,
-  switch "contraction" Strategy,
-  contract Strategy A C,
+  drop-annotations A C,
   write C Ctx Path P.
+
+% stage 2: the selection of the thesis (switch "selection"), or else the
+% contraction (switch "contraction")
+pred drop-annotations i:aterm, o:aterm.
+drop-annotations A C :- switch "selection" "thesis", !, select A C.
+drop-annotations A C :- switch "contraction" Strategy, contract Strategy A C.
 
 % the type M is used at: the one required of it (type-expressions.elpi), or else
 % the one it proves
@@ -114,7 +126,7 @@ annotate M _ (aother M).
 
 pred annotate-argument i:term, i:term, o:aarg.
 annotate-argument M1 T1 (aproof A) :- is-prop T1, !, annotate M1 T1 A.
-annotate-argument M1 T1 (aelem M1 T1).
+annotate-argument M1 T1 (aelem M1 (single T1)).
 
 % The statement (top-run, document.elpi) stops at the first abstraction
 % whose annotation is double: that abstraction is then a step of the proof,
@@ -208,6 +220,53 @@ merges "guarded" (single _).
 % by the writer, see binder-phrases.)
 
 % ------------------------------------------------------------------
+% Stage 2, as a selection (thesis 4.3.1, Fig. 4.10)
+%
+% The selection decides, on the term, which type expressions the text
+% says: after it, the term has exactly the assertions of the text.  Its
+% five rewriting rules are applied as long as one applies (the system
+% terminates and is confluent, 4.3.1).  Only the first rule makes an
+% annotation single, and the four others rewrite only single annotations,
+% so that no conversion step disappears.
+
+pred select i:aterm, o:aterm.
+
+% Redundant type expressions:  ((M : Tc) : Tr) → (M : Tr)  if Tc = Tr
+% Successive abstractions:     λx1:T1.((λx2:T2.M) : T) → λx1:T1.λx2:T2.M
+% Successive applications:     (((M N1) : T) N2) → ((M N1) N2)
+% These three rules are the guarded contraction of Fig. 3.11
+% (redundant-annotation, contract-body, merge-application).  The two
+% others leave the type of an identifier out, and no rule makes a new
+% identifier, so they can come after.
+select A S :-
+  contract "guarded" A C,
+  identifiers-unannotated C S.
+
+% the two rules on identifiers, everywhere in the term
+pred identifiers-unannotated i:aterm, o:aterm.
+identifiers-unannotated (aapp F Args A) (aapp F1 Args1 A) :- !,
+  application-head F F1,
+  std.map Args application-argument Args1.
+identifiers-unannotated (alam N T Joined Body A) (alam N T Joined Body1 A) :- !,
+  pi x\ decl x N T => identifiers-unannotated (Body x) (Body1 x).
+identifiers-unannotated X X.
+
+% Head of application:  ((M : T) N) → (M N)  if M is an identifier
+% (its type is the statement of the hypothesis or of the theorem, already
+% said when it was introduced)
+pred application-head i:aterm, o:aterm.
+application-head (aid M (single _)) (aid M merged) :- !.
+application-head F F1 :- identifiers-unannotated F F1.
+
+% Argument of application:  (M (N : T)) → (M N)  if N is an identifier;
+% a term that is not a proof (App2) is an argument too
+pred application-argument i:aarg, o:aarg.
+application-argument (aproof (aid M (single _))) (aproof (aid M merged)) :- !.
+application-argument (aproof A) (aproof A1) :- identifiers-unannotated A A1.
+application-argument (aelem M (single _)) (aelem M merged) :- is-sym M, !.
+application-argument E E.
+
+% ------------------------------------------------------------------
 % Stage 3: writing (thesis 2.3.3 and 3.4.1)
 
 pred write i:aterm, i:ctx, i:list int, o:pf.
@@ -251,17 +310,24 @@ conclusion-parts merged [].
 % said in its own sentence).
 kind app-element type.
 type app-element option string -> line -> app-element.
+% an identifier whose type the selection left out (Fig. 4.10): it has no
+% text of its own, only its name
+type named-only string -> app-element.
 
 pred head-element i:aterm, i:list int, o:app-element.
+head-element (aid M merged) _ (named-only N) :- !, head-name M N.
 head-element F Path (app-element Name Line) :-
   identifier-name F Name,
   write F nostar Path P, dashed P Line.
 
 pred argument-element i:list int, i:aarg, o:app-element.
+argument-element _ (aproof (aid M merged)) (named-only N) :- !, head-name M N.
+% (a term is named as formulas print it: le and BinInt.Z.le differ)
+argument-element _ (aelem M merged) (named-only N) :- !, ppf M N.
 argument-element Path (aproof A) (app-element Name Line) :-
   identifier-name A Name,
   write A nostar Path P, dashed P Line.
-argument-element _ (aelem M T) (app-element Name (it S [])) :-
+argument-element _ (aelem M (single T)) (app-element Name (it S [])) :-
   term-name M Name,
   sentence [wd "the-element", fml rfact M, wd "belongs-to", fml rfact T] S.
 
@@ -277,6 +343,7 @@ term-name M (some N) :- contracted-text, head-name M N, !.
 term-name _ none.
 
 pred contracted-text.
+contracted-text :- switch "selection" "thesis", !.
 contracted-text :- switch "contraction" S, not (S = "none").
 
 % The four rules of Fig. 2.10, the first one that applies (2.3.3: "nous
@@ -284,16 +351,25 @@ contracted-text :- switch "contraction" S, not (S = "none").
 pred application-text i:app-element, i:list app-element, i:list part,
   o:list line, o:string.
 
+% With the selection (Fig. 4.10), an argument may have no text of its own
+% (named-only): rules (2) and (4), where the arguments have their own
+% texts, then name it after "to" or "with" (Fig. 4.30: "Nous appliquons
+% h2 à h4 et P1").  Without the selection, every argument has a text there
+% and the rules are those of Fig. 2.10.
+
 % (1) all identifiers: "Applying M0 to M1, .. and Mn, we have T"
-application-text (app-element (some F) _) Args Concl [] S :-
+application-text Head Args Concl [] S :-
+  element-name Head F,
   all-names Args Names, !,
   sentence {std.append [wd "applying", nm F, wd "to", enum Names, tx ",", wd "have"] Concl} S.
 
 % (2) the function is an identifier: the texts of the arguments, then
 %     "Applying M0, we have T"
-application-text (app-element (some F) _) Args Concl Lines S :- !,
-  std.map Args element-line Lines,
-  sentence {std.append [wd "applying", nm F, tx ",", wd "have"] Concl} S.
+application-text Head Args Concl Lines S :-
+  element-name Head F, !,
+  texts-and-names Args Lines Names,
+  named-after [wd "to"] Names To,
+  sentence {std.append [wd "applying", nm F | To] [tx ",", wd "have" | Concl]} S.
 
 % (3) the arguments are identifiers: the text of the function, then
 %     "By application, with M1, .. and Mn, we have T"
@@ -304,16 +380,30 @@ application-text (app-element none FLine) Args Concl [FLine] S :-
 % (4) otherwise: the texts of the function and of the arguments, then
 %     "By application, we have T"
 application-text (app-element none FLine) Args Concl [FLine | Lines] S :-
-  std.map Args element-line Lines,
-  sentence {std.append [wd "by-application", tx ",", wd "have"] Concl} S.
+  texts-and-names Args Lines Names,
+  named-after [tx ",", wd "with"] Names With,
+  sentence {std.append [wd "by-application" | With] [tx ",", wd "have" | Concl]} S.
+
+% the name of an element that is an identifier
+pred element-name i:app-element, o:string.
+element-name (app-element (some N) _) N.
+element-name (named-only N) N.
 
 % the names of the elements, when they are all identifiers
 pred all-names i:list app-element, o:list (list part).
 all-names [] [].
-all-names [app-element (some N) _ | Es] [[nm N] | Ns] :- all-names Es Ns.
+all-names [E | Es] [[nm N] | Ns] :- element-name E N, all-names Es Ns.
 
-pred element-line i:app-element, o:line.
-element-line (app-element _ L) L.
+% the texts of the elements that have one, and the names of the others
+pred texts-and-names i:list app-element, o:list line, o:list (list part).
+texts-and-names [] [] [].
+texts-and-names [app-element _ L | Es] [L | Ls] Ns :- texts-and-names Es Ls Ns.
+texts-and-names [named-only N | Es] Ls [[nm N] | Ns] :- texts-and-names Es Ls Ns.
+
+% "Words N1, .. and Nn", nothing when there are no names
+pred named-after i:list part, i:list (list part), o:list part.
+named-after _ [] [] :- !.
+named-after Words Names Parts :- std.append Words [enum Names] Parts.
 
 % --- Abstractions (thesis 2.3.3, the example of Tauto, and 4.2.5)
 %
@@ -406,3 +496,34 @@ type-runs [b _ Id FT | Bs] [pr [Id | Ids] FT | Runs] :-
 
 pred run-formula i:pair (list string) string, o:list part.
 run-formula (pr Ids FT) [tx F] :- declaration-formula Ids FT F.
+
+% ------------------------------------------------------------------
+% The annotated term, printed as the thesis prints it (Figs. 3.10, 4.23,
+% 4.24): (M : T) for a single annotation, ((M : Tc) : Tr) for a double
+% one, M alone when the annotation is left out; λx:T. M for an
+% abstraction, (M N1 .. Nn) for an application.  For the tests
+% (selection.v) and to read a stage against its figure.
+
+pred aterm-string i:aterm, o:string.
+aterm-string (aid M A) S :- pp M S0, annotated S0 A S.
+aterm-string (aapp F Args A) S :-
+  aterm-string F SF,
+  std.map Args aarg-string SArgs,
+  std.string.concat " " [SF | SArgs] S0,
+  annotated {calc ("(" ^ S0 ^ ")")} A S.
+aterm-string (alam N T _ Body A) S :-
+  binder-name N N1 Id, pp T ST,
+  (pi x\ (decl x N1 T, ctx-name Id) => aterm-string (Body x) SB),
+  annotated {calc ("λ" ^ Id ^ ":" ^ ST ^ ". " ^ SB)} A S.
+aterm-string (aother M) S :- pp M S.
+aterm-string (adone _) "…".
+
+pred aarg-string i:aarg, o:string.
+aarg-string (aproof A) S :- aterm-string A S.
+aarg-string (aelem M A) S :- pp M S0, annotated S0 A S.
+
+pred annotated i:string, i:annot, o:string.
+annotated S (single T) R :- pp T ST, R is "(" ^ S ^ " : " ^ ST ^ ")".
+annotated S (double Tc Tr) R :- pp Tc SC, pp Tr SR,
+  R is "((" ^ S ^ " : " ^ SC ^ ") : " ^ SR ^ ")".
+annotated S merged S.

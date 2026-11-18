@@ -1,7 +1,7 @@
 # Build the command and regenerate the examples (examples/*.md).
 ROCQ = rocq c -R . XText -Q ../lexicon Lexicon -Q ../prooftext ProofText
 
-all: Explain.vo paper.vo lemmas.vo inductive.vo thesis.vo stdlib.vo elim_type.vo partial.vo vocab_check.vo multilingual.vo
+all: Explain.vo paper.vo lemmas.vo inductive.vo thesis.vo stdlib.vo elim_type.vo partial.vo vocab_check.vo selection.vo multilingual.vo
 
 Explain.vo: Explain.v $(wildcard elpi/*.elpi) $(wildcard ../lexicon/*.elpi) $(wildcard ../prooftext/*.elpi)
 	$(ROCQ) Explain.v
@@ -26,6 +26,9 @@ elim_type.vo: elim_type.v Explain.vo
 
 partial.vo: partial.v Explain.vo
 	$(ROCQ) partial.v
+
+selection.vo: selection.v Explain.vo thesis.vo
+	$(ROCQ) selection.v
 
 vocab_check.vo: vocab_check.v Explain.vo
 	$(ROCQ) vocab_check.v

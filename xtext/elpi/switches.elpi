@@ -25,6 +25,9 @@ pred switch-values o:string, o:list string.
 switch-values "translation" ["direct", "staged"].
 % the contraction of application steps (thesis 3.4.2)
 switch-values "contraction" ["none", "guarded", "maximal"].
+% the selection of the type expressions the text keeps (thesis 4.3.1):
+% none (the contraction decides), or the rules of the thesis (Fig. 4.10)
+switch-values "selection" ["none", "thesis"].
 % the language of the text: those of the lexicon that have the writer's
 % phrases
 switch-values "lang" Ls :-

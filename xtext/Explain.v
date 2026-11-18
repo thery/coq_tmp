@@ -106,6 +106,9 @@ Elpi Db xtext.db lp:{{
   %     elpi/staged.elpi);
   %   contraction: the contraction of application steps (thesis 3.4.2),
   %     "none", "guarded" or "maximal";
+  %   selection: with the staged translation, the type expressions the
+  %     text keeps, "none" (decided by the contraction) or "thesis" (the
+  %     selection of thesis 4.3.1, which then replaces the contraction);
   %   lang: the language of the texts (those of the lexicon, ../lexicon),
   %     also given by the command, Explain foo in "fr".
   % Change a default with
@@ -114,6 +117,7 @@ Elpi Db xtext.db lp:{{
   :name "xtext-switch"
   xtext-switch "translation" "XTEXT_TRANSLATION" "direct".
   xtext-switch "contraction" "XTEXT_CONTRACTION" "guarded".
+  xtext-switch "selection" "XTEXT_SELECTION" "none".
   xtext-switch "lang" "XTEXT_LANG" "en".
 }}.
 
