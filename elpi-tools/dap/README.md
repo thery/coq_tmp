@@ -200,13 +200,12 @@ module ([`vscode/test`](vscode/test)), not in VS Code.
    button in the margin.  If not: the output channel "Elpi properties"
    (View, Output) shows the command run and its error.
 3. Click the run button of line 44 (`sort-length`): after about a second
-   it turns red and the message on the line starts with `FAILED at test`;
-   with `-p` the counterexample differs from the run of the whole file
-   (the random values depend on the properties run before): `L = [2, 2]`,
-   `S = [2]`.  Run the whole file (the button of `lists.elpi` in the Testing
-   view): `sort-sorted` and `rev-agree` green, `sort-length` red with
-   `L = [0, 0]`, `S = [0]`, `N = 2`, `M = 1`, the counts `22 passed, 0
-   discarded` and the replay goal.
+   it turns red and the message on the line starts with `FAILED at test`,
+   with `L = [0, 0]`, `S = [0]`, `N = 2`, `M = 1`, the counts `21 passed, 0
+   discarded` and the replay goal.  Run the whole file (the button of
+   `lists.elpi` in the Testing view): `sort-sorted` and `rev-agree` green,
+   `sort-length` red with the same counterexample (a property draws its
+   values from a random stream of its own, alone or in its file).
 4. In the peek view of the failure, the button "Debug this counterexample"
    (also in the context menu of the message and of the test): the debugger
    starts on `sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M`,

@@ -28,14 +28,14 @@ counterexamples, and the goal that replays the shrunk one:
   {"event": "result", "name": "rev-identity", "file": "rev.elpi", "line": 20, "status": "failed", "passed": 11, "discarded": 0, "failed-at-test": 12, "first": [{"name": "L", "value": "[-1, 1]"}, {"name": "R", "value": "[1, -1]"}], "shrunk": [{"name": "L", "value": "[0, 1]"}, {"name": "R", "value": "[1, 0]"}], "shrink-steps": 1, "replay": "rev [0, 1] R, R = [0, 1]"}
   {"event": "summary", "holds": 2, "properties": 3, "seed": 1}
 
-A premise that discards, a false property shrunk in one step, a long
-counterexample shrunk to eight zeros:
+A premise that discards, a false property shrunk to zeros (X and L
+together), a long counterexample shrunk to eight zeros:
 
   $ elpi-check -json sort.elpi | mask
   {"event": "property", "name": "insert-sorted", "file": "sort.elpi", "line": 25, "variables": [{"name": "X", "type": "int", "kind": "generated"}, {"name": "L", "type": "list int", "kind": "generated"}, {"name": "R", "type": "list int", "kind": "computed"}]}
   {"event": "result", "name": "insert-sorted", "file": "sort.elpi", "line": 25, "status": "ok", "passed": 41, "discarded": 59, "average-size": 3}
   {"event": "property", "name": "insert-length", "file": "sort.elpi", "line": 29, "variables": [{"name": "X", "type": "int", "kind": "generated"}, {"name": "L", "type": "list int", "kind": "generated"}, {"name": "R", "type": "list int", "kind": "computed"}, {"name": "N", "type": "int", "kind": "computed"}, {"name": "M", "type": "int", "kind": "computed"}]}
-  {"event": "result", "name": "insert-length", "file": "sort.elpi", "line": 29, "status": "failed", "passed": 37, "discarded": 0, "failed-at-test": 38, "first": [{"name": "X", "value": "7"}, {"name": "L", "value": "[7, -1]"}, {"name": "R", "value": "[7, -1]"}, {"name": "N", "value": "2"}, {"name": "M", "value": "2"}], "shrunk": [{"name": "X", "value": "7"}, {"name": "L", "value": "[7]"}, {"name": "R", "value": "[7]"}, {"name": "N", "value": "1"}, {"name": "M", "value": "1"}], "shrink-steps": 1, "replay": "insert-wrong 7 [7] R, std.length [7] N, std.length R M, M is (N + 1)"}
+  {"event": "result", "name": "insert-length", "file": "sort.elpi", "line": 29, "status": "failed", "passed": 37, "discarded": 0, "failed-at-test": 38, "first": [{"name": "X", "value": "7"}, {"name": "L", "value": "[7, -1]"}, {"name": "R", "value": "[7, -1]"}, {"name": "N", "value": "2"}, {"name": "M", "value": "2"}], "shrunk": [{"name": "X", "value": "0"}, {"name": "L", "value": "[0]"}, {"name": "R", "value": "[0]"}, {"name": "N", "value": "1"}, {"name": "M", "value": "1"}], "shrink-steps": 2, "replay": "insert-wrong 0 [0] R, std.length [0] N, std.length R M, M is (N + 1)"}
   {"event": "property", "name": "insert-length-right", "file": "sort.elpi", "line": 33, "variables": [{"name": "X", "type": "int", "kind": "generated"}, {"name": "L", "type": "list int", "kind": "generated"}, {"name": "R", "type": "list int", "kind": "computed"}, {"name": "N", "type": "int", "kind": "computed"}, {"name": "M", "type": "int", "kind": "computed"}]}
   {"event": "result", "name": "insert-length-right", "file": "sort.elpi", "line": 33, "status": "ok", "passed": 100, "discarded": 0, "average-size": 10}
   {"event": "property", "name": "short-lists", "file": "sort.elpi", "line": 38, "variables": [{"name": "L", "type": "list int", "kind": "generated"}, {"name": "N", "type": "int", "kind": "computed"}]}
@@ -89,7 +89,7 @@ Every replay goal fails when elpi-debug runs it (the debugger shows why):
   > done
   rev: rev [0, 1] R, R = [0, 1]
   No solution.
-  sort: insert-wrong 7 [7] R, std.length [7] N, std.length R M, M is (N + 1)
+  sort: insert-wrong 0 [0] R, std.length [0] N, std.length R M, M is (N + 1)
   No solution.
   sort: std.length [0, 0, 0, 0, 0, 0, 0, 0] N, N < 8
   No solution.

@@ -6,6 +6,8 @@
 %    body of a binder when it does not use the bound variable);
 % 3. the term with one argument replaced by one of its candidates.
 % For an int N: 0, N/2, N-1 towards 0; for a string: ""; a float: 0.0.
+% And for the values of a counterexample together: a literal that occurs
+% more than once replaced everywhere by the same candidate ([together]).
 % Every candidate weighs strictly less (weight: its size plus the absolute
 % values of its integers), so the greedy loop in run.elpi stops.
 
@@ -25,21 +27,38 @@ smaller Y X :- weight Y WY, weight X WX, WY < WX.
 func weight any -> int.
 weight X W :- check.gen.size X S, literals X L, W is S + L.
 
+% [literals X N]: the absolute values of the integers of X plus the
+% lengths of its strings
 func literals any -> int.
-literals X 0 :- var X, !.
-literals [] 0 :- !.
-literals [H | T] N :- !, literals H NH, literals T NT, N is NH + NT.
-literals X N :- is_cdata X "int", !, int-abs X N.
-literals X N :- is_cdata X "string", !, N is size X.
-literals X 0 :- is_cdata X _, !.
-literals X N :- constant X _ Args, !, literals-of Args N.
-literals X N :- name X _ Args, !, literals-of Args N.
-literals (x\ B x) N :- pi y\ literals (B y) N.
+literals X N :- occurrences X [] Ls, std.fold Ls 0 add-literal-weight N.
 
-func literals-of list any -> int.
-literals-of [] 0.
-literals-of [X | Xs] N :- literals X A, literals-of Xs B, N is A + B.
+% [add-literal-weight L Acc N]: N is Acc plus the weight of the literal L
+func add-literal-weight any, int -> int.
+add-literal-weight L Acc N :- literal-weight L W, N is Acc + W.
 
+% [literal-weight L W]: |L| for an int, the length for a string, else 0
+func literal-weight any -> int.
+literal-weight L W :- is_cdata L "int", !, int-abs L W.
+literal-weight L W :- is_cdata L "string", !, W is size L.
+literal-weight _ 0.
+
+% [occurrences X Acc Ls]: Ls is the literals of X (ints, strings, floats
+% .., every occurrence, binders included) followed by Acc
+func occurrences any, list any -> list any.
+occurrences X Acc Acc :- var X, !.
+occurrences [] Acc Acc :- !.
+occurrences [H | T] Acc Ls :- !, occurrences T Acc Acc1, occurrences H Acc1 Ls.
+occurrences X Acc [X | Acc] :- is_cdata X _, !.
+occurrences X Acc Ls :- constant X _ Args, !, occurrences-of Args Acc Ls.
+occurrences X Acc Ls :- name X _ Args, !, occurrences-of Args Acc Ls.
+occurrences (x\ B x) Acc Ls :- pi y\ occurrences (B y) Acc Ls.
+
+% [occurrences-of Xs Acc Ls]: the literals of the terms Xs, then Acc
+func occurrences-of list any, list any -> list any.
+occurrences-of [] Acc Acc.
+occurrences-of [X | Xs] Acc Ls :- occurrences-of Xs Acc Acc1, occurrences X Acc1 Ls.
+
+% [int-abs N M]: M is the absolute value of the int N
 func int-abs any -> int.
 :untyped
 int-abs N M :- if (N < 0) (M is 0 - N) (M = N).
@@ -96,5 +115,61 @@ same-type-argument T [_ | As] [_ | ATs] Y :- same-type-argument T As ATs Y.
 pred one-argument-smaller i:list any, i:list reflect.ty, o:list any.
 one-argument-smaller [A | As] [AT | _] [B | As] :- candidate AT A B.
 one-argument-smaller [A | As] [_ | ATs] [A | Bs] :- one-argument-smaller As ATs Bs.
+
+% -- Equal literals shrunk together ---------------------------------------
+%
+% A counterexample can need two literals to stay equal: [2, 2] for a sort
+% that drops an element equal to another, X = 7 and L = [7] for an
+% insertion that loses X.  Shrinking one occurrence alone makes the test
+% pass, so the literals that occur more than once in the values of a
+% counterexample (all its variables together) are also shrunk together:
+% every occurrence is replaced by the same smaller candidate.
+
+% [together Values Values1]: Values1 is Values with every occurrence of a
+% repeated literal replaced by one of its candidates
+pred together i:list (option any), o:list (option any).
+together Values Values1 :-
+  std.fold Values [] option-occurrences Ls,
+  repeated Ls L,
+  literal-candidate L M,
+  std.map Values (option-replace L M) Values1.
+
+% [option-occurrences V Acc Ls]: the literals of the value V (none for a
+% computed variable), then Acc
+func option-occurrences option any, list any -> list any.
+option-occurrences none Acc Acc.
+option-occurrences (some X) Acc Ls :- occurrences X Acc Ls.
+
+% [repeated Ls L]: L occurs at least twice in Ls (each such L once)
+pred repeated i:list any, o:any.
+repeated [L | Ls] L :- std.mem! Ls L.
+repeated [L | Ls] M :- std.filter Ls (different L) Rest, repeated Rest M.
+
+func different any, any.
+different L X :- not (X = L).
+
+% [literal-candidate L M]: M is a smaller literal than L, of the same type
+% (a float is not shrunk together: it does not count in the weight)
+pred literal-candidate i:any, o:any.
+literal-candidate N M :- is_cdata N "int", !, int-candidate N M.
+literal-candidate S "" :- is_cdata S "string", not (S = "").
+
+% [option-replace L M V V1]: every occurrence of L in the value V replaced
+% by M
+func option-replace any, any, option any -> option any.
+option-replace _ _ none none.
+option-replace L M (some X) (some Y) :- replace L M X Y.
+
+% [replace L M X Y]: Y is X with every occurrence of the literal L replaced
+% by M, the variables of X kept
+func replace any, any, any -> any.
+replace _ _ X X :- var X, !.
+replace L M X M :- is_cdata X _, X = L, !.
+replace _ _ X X :- is_cdata X _, !.
+replace _ _ [] [] :- !.
+replace L M [H | T] [H1 | T1] :- !, replace L M H H1, replace L M T T1.
+replace L M X Y :- constant X K Args, !, std.map Args (replace L M) Args1, constant Y K Args1.
+replace L M X Y :- name X K Args, !, std.map Args (replace L M) Args1, name Y K Args1.
+replace L M (x\ B x) (x\ C x) :- pi y\ replace L M (B y) (C y).
 
 }

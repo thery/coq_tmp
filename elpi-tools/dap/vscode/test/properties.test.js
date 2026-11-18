@@ -92,7 +92,7 @@ test('run all: one elpi-check on the file; passed, failed with the shrunk counte
   assert.strictEqual(run.finalState(items.get('rev-agree').id).state, 'passed');
   const failure = run.finalState(items.get('sort-length').id);
   assert.strictEqual(failure.state, 'failed');
-  assert.match(failure.message.message, /^FAILED at test 22 \(21 passed, 0 discarded\); counterexample, shrunk in 1 steps:\n  L = \[-2, -2\]\n  S = \[-2\]/);
+  assert.match(failure.message.message, /^FAILED at test 22 \(21 passed, 0 discarded\); counterexample, shrunk in 2 steps:\n  L = \[0, 0\]\n  S = \[0\]/);
   assert.strictEqual(failure.message.contextValue, 'elpiCounterexample');
   assert.strictEqual(failure.message.location.range.start.line, 43);
   assert.match(run.output, /sort-sorted: passed 100 tests, 0 discarded/);
@@ -119,7 +119,7 @@ test('Debug this counterexample, from the failure message: the replay goal under
     request: 'launch',
     name: 'Counterexample of sort-length',
     program: lists,
-    goal: 'sort [-2, -2] S, std.length [-2, -2] N, std.length S M, N = M',
+    goal: 'sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M',
     args: ['-I', checkLibrary],
     cwd: demo,
     stopOnEntry: true

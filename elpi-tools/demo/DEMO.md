@@ -45,18 +45,18 @@ by running `of` with random choices.
 $ elpi-check lambda.elpi
 property preservation (lambda.elpi:30)
   variables: M : tm (generated-by), T : ty (generated-by), N : tm (computed)
-  FAILED at test 6 (0 passed, 5 discarded); first counterexample:
-    M = app (lam c0 \ c) c
+  FAILED at test 16 (0 passed, 15 discarded); first counterexample:
+    M = app (app (app (lam (c0 \ c0)) (lam (c0 \ c0))) (lam (c0 \ app c0 c))) (lam (c0 \ c))
     T = base
-    N = lam c0 \ c
-  shrunk in 0 steps to:
-    M = app (lam c0 \ c) c
+    N = app (app (lam (c0 \ c0)) (lam (c0 \ c0))) (lam (c0 \ c))
+  shrunk in 3 steps to:
+    M = app (lam (c0 \ c)) c
     T = base
-    N = lam c0 \ c
+    N = lam (c0 \ c)
 property unique-type (lambda.elpi:34)
   variables: M : tm (generated-by), T1 : ty (generated-by), T2 : ty (computed)
-  OK: passed 100 tests, 0 discarded; average size of the values 28
-elpi-check: 1 of 2 properties hold
+  OK: passed 100 tests, 0 discarded; average size of the values 23
+elpi-check: 1 of 2 properties hold (seed 1)
 ```
 
 `(λx. c) c` has type `base`, but it reduces to `λx. c`, which does not.
@@ -246,29 +246,31 @@ property "rev-agree" (pi L R1 R2\ naive-rev L R1 ==> rev L R2 ==> R1 = R2).
 ```
 
 `elpi-check` finds the bug, and shrinks the counterexample from three
-elements to two:
+elements to two zeros: first the last element is dropped (`[-2, -2]`),
+then the two equal elements are shrunk together (one alone would make the
+test pass):
 
 ```
 $ elpi-check lists.elpi
 property sort-sorted (lists.elpi:41)
   variables: L : list int (generated), S : list int (computed)
-  OK: passed 100 tests, 0 discarded; average size of the values 11
+  OK: passed 100 tests, 0 discarded; average size of the values 10
 property sort-length (lists.elpi:44)
   variables: L : list int (generated), S : list int (computed), N : int (computed), M : int (computed)
-  FAILED at test 23 (22 passed, 0 discarded); first counterexample:
-    L = [-4, 0, 0]
-    S = [-4, 0]
+  FAILED at test 22 (21 passed, 0 discarded); first counterexample:
+    L = [-2, -2, 1]
+    S = [-2, 1]
     N = 3
     M = 2
-  shrunk in 1 steps to:
+  shrunk in 2 steps to:
     L = [0, 0]
     S = [0]
     N = 2
     M = 1
 property rev-agree (lists.elpi:48)
   variables: L : list int (generated), R1 : list int (computed), R2 : list int (computed)
-  OK: passed 100 tests, 0 discarded; average size of the values 11
-elpi-check: 2 of 3 properties hold
+  OK: passed 100 tests, 0 discarded; average size of the values 10
+elpi-check: 2 of 3 properties hold (seed 1)
 ```
 
 The trace of the shrunk case shows the wrong clause at work (line 10,
@@ -370,7 +372,7 @@ starts are scripted in [`../dap/tests/demo.t`](../dap/tests/demo.t).
    message
 
    ```
-   FAILED at test 6 (0 passed, 5 discarded); counterexample, shrunk in 0 steps:
+   FAILED at test 16 (0 passed, 15 discarded); counterexample, shrunk in 3 steps:
      M = app (lam (c0 \ c)) c
      T = base
      N = lam (c0 \ c)
@@ -399,9 +401,10 @@ starts are scripted in [`../dap/tests/demo.t`](../dap/tests/demo.t).
    < 0`, called from `#5 insert 0 [0] [0, 0]` (as in the second example
    above).
 4. The debug button of a property (the Debug profile) runs it and, if it
-   fails, debugs its counterexample at once.  Running one property alone
-   draws other random values than running its file: `sort-length` alone
-   fails with `L = [2, 2]`.
+   fails, debugs its counterexample at once.  A property run alone draws
+   the same random values as in its file (its random stream depends only
+   on the seed and its name): `sort-length` alone fails with `L = [0, 0]`
+   too.
 
 Step by step, with what to check: [`../dap/README.md`, "Manual check in VS
 Code"](../dap/README.md#manual-check-in-vs-code-to-be-done-by-a-person-not-done).

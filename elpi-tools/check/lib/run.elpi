@@ -222,11 +222,18 @@ value-or-variable none _.
 pred shrink i:int, i:list check.variable, i:list (option any), i:int, o:list (option any), o:int.
 shrink I Vars Values Steps Out StepsOut :-
   Steps < 1000,
-  smaller-values Vars Values Candidate,
+  smaller-candidate Vars Values Candidate,
   test-values I Vars Candidate failed, !,
   Steps1 is Steps + 1,
   shrink I Vars Candidate Steps1 Out StepsOut.
 shrink _ _ Values Steps Values Steps.
+
+% [smaller-candidate Vars Values Values1]: smaller values, the first ones
+% tried first: one value replaced by a candidate, then the repeated
+% literals of all the values shrunk together
+pred smaller-candidate i:list check.variable, i:list (option any), o:list (option any).
+smaller-candidate Vars Values Values1 :- smaller-values Vars Values Values1.
+smaller-candidate _ Values Values1 :- check.shrink.together Values Values1.
 
 % [smaller-values Vars Values Values1]: one value replaced by a candidate
 pred smaller-values i:list check.variable, i:list (option any), o:list (option any).
