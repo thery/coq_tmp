@@ -29,13 +29,15 @@ property rev-identity (rev.elpi:20)
   shrunk in 0 steps to:
     L = [0, -1]
     R = [-1, 0]
-elpi-check: 2 of 3 properties hold
+elpi-check: 2 of 3 properties hold (seed 1)
 ```
 
     elpi-check [-n TESTS] [-size SIZE] [-seed SEED] [-p PROPERTY] [-json] [-list] [-I DIR].. [-D VAR].. [-v] FILE
 
 `-n` tests per property (100), `-size` largest size (20), `-seed` (1: the
-runs are reproducible), `-p` one property only, `-v` the compiler's
+runs are reproducible; each property draws its values from its own random
+stream, started from the seed and its name, so it gets the same values
+alone with `-p` as in its file; the summary line gives the seed), `-p` one property only, `-v` the compiler's
 warnings, `-json` the report as JSON lines for tools (below), `-list` the
 properties and their variables only, without tests.  The exit code is 0 when every property holds, 1 otherwise, 2 for
 an error in the program.

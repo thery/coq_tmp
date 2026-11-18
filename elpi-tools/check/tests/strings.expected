@@ -8,10 +8,10 @@ property shout-identity (strings.elpi:10)
     T = "!"
 property short-string-lists (strings.elpi:13)
   variables: L : list string (generated), N : int (computed)
-  FAILED at test 11 (10 passed, 0 discarded); first counterexample:
-    L = ["c", ""]
-    N = 2
-  shrunk in 1 steps to:
+  FAILED at test 12 (11 passed, 0 discarded); first counterexample:
     L = ["", ""]
     N = 2
-elpi-check: 0 of 2 properties hold
+  shrunk in 0 steps to:
+    L = ["", ""]
+    N = 2
+elpi-check: 0 of 2 properties hold (seed 1)
