@@ -10,9 +10,10 @@
 % what is left is the statement, inherited by the body (thesis 3.3.2).
 pred top-run i:list binder, i:term, i:term, o:string, o:list line.
 top-run Acc (fun N A F) Ty Stmt L :- not (statement-stops-at Ty N A), !,
-  binder-kind A K, binder-name N N1 Id,
+  binder-name N N1 Id,
   ppf A FA,
   (if (Ty = prod _ _ B) true (whnf Ty (prod _ _ B) ; B = (_\ Ty))),
+  abstraction-binder-kind A B K,
   pi x\ (decl x N1 A, ctx-name Id) => top-run [b K Id FA|Acc] (F x) (B x) Stmt L.
 top-run Acc Body Ty0 Stmt L :-
   std.rev Acc Bs, beta-ty Ty0 Ty, formula rclaim Ty FT,

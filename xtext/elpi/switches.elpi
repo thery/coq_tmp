@@ -28,6 +28,10 @@ switch-values "contraction" ["none", "guarded", "maximal"].
 % the selection of the type expressions the text keeps (thesis 4.3.1):
 % none (the contraction decides), or the rules of the thesis (Fig. 4.10)
 switch-values "selection" ["none", "thesis"].
+% the subproofs after the selection (thesis 4.3.2, 4.3.3, subproofs.elpi):
+% none, or the intermediate results named (all), a result proved once for
+% each type in scope (shared)
+switch-values "naming" ["none", "all", "shared"].
 % the language of the text: those of the lexicon that have the writer's
 % phrases
 switch-values "lang" Ls :-
@@ -65,9 +69,11 @@ with-values-of [Name | Names] G :-
   read-switch Name V, (switch Name V :- !) => with-values-of Names G.
 
 % [with-switch Name Origin V G]: G, with the switch Name set to V (the
-% language given to the command: Explain foo in "fr")
+% language given to the command: Explain foo in "fr"), whatever value it
+% had before (the new clause answers for every value asked)
 pred with-switch i:string, i:string, i:string, i:prop.
-with-switch Name Origin V G :- known-value Name Origin V, (switch Name V :- !) => G.
+with-switch Name Origin V G :- known-value Name Origin V,
+  (pi X\ switch Name X :- !, X = V) => G.
 
 % ------------------------------------------------------------------
 % Mechanisms switched off, for measurements: XTEXT_OFF is a

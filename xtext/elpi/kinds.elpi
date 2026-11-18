@@ -24,9 +24,11 @@ pred is-prop i:term.
 is-prop D :- typ D S0, whnf S0 (sort prop).
 
 % kind of the argument of a product: => if non-dependent with a
-% domain in Prop, forall otherwise
+% domain in Prop, forall otherwise.  (The body of B = (_\ C_) is a variable
+% of the clause, which cannot depend on the bound one; an anonymous one,
+% (_\ _), would: it unifies with any B.)
 pred arg-kind i:term, i:(term -> term), o:ak.
-arg-kind D B ak-imp :- (B = (_\ _)), is-prop D, !.
+arg-kind D B ak-imp :- B = (_\ C_), is-prop D, !.
 arg-kind _ _ ak-all.
 
 % the kinds of the arguments Args of a term of type Ty
@@ -44,3 +46,17 @@ run [K|Ks] [A|As] K [A|R] Rest :- run-same K Ks As R Rest.
 pred run-same i:ak, i:list ak, i:list term, o:list term, o:list term.
 run-same K [K|Ks] [A|As] [A|R] Rest :- !, run-same K Ks As R Rest.
 run-same _ _ As [] As.
+
+% the characterisation of subproofs is on (switch naming; defined in
+% subproofs.elpi, used here and in staged.elpi)
+pred characterising.
+
+% [abstraction-binder-kind A B K]: the kind K of the binder of an
+% abstraction of type Πx:A.B, by the sort of A (binder-kind); with the
+% characterisation of subproofs (Coscoy's thesis 4.3.2, Fig. 4.13: switch
+% naming, subproofs.elpi), a proof of a proposition A is a hypothesis
+% only when B does not depend on it (A ⇒ B), else it is a variable
+pred abstraction-binder-kind i:term, i:(term -> term), o:bk.
+abstraction-binder-kind A B bk-let :-
+  characterising, binder-kind A K, K = bk-assume, arg-kind A B Arg, Arg = ak-all, !.
+abstraction-binder-kind A _ K :- binder-kind A K.

@@ -1,0 +1,225 @@
+% xtext: The subproofs of the staged translation, after the selection of
+% the type expressions (Y. Coscoy, thesis, Nice 2000, 4.3.2 and 4.3.3).
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+%
+% With the switch "naming" (switches.elpi) set to "all" or "shared", and
+% the selection of the thesis (switch "selection" = "thesis"), the
+% selected term goes through two more steps before it is written:
+%
+%   1. translatable occurrences: which subterms are proofs the text
+%      translates; the others are written as terms, "the element M
+%      belongs to T" (4.3.2).  A binder of a proposition the rest of the
+%      type depends on is introduced as a variable, not as a hypothesis
+%      (abstraction-binder-kind, kinds.elpi);
+%   2. intermediate results: each translatable subproof that is the
+%      function or an argument of an application and keeps a type
+%      expression is given a name, P1, P2, ..., and proved before the
+%      step that uses it: the term becomes let P1 : T1 = M1 in ... in M,
+%      a β-expansion (4.3.3).  The definitions come in postfix order, so
+%      that the proof is a list of facts rather than a tree; under an
+%      abstraction they stay under it, numbered after its name (Dewey).
+%      With "shared", a subproof whose type a result in scope already
+%      proves is not proved again: that result is used.
+%
+% The steps are run on the selected term of each call of the stages:
+% the subproofs of a form of the direct writer (match, elimination, ...)
+% come back to the stages later, and name their results under the path
+% the enclosing term gives them (anested, results-scope).
+
+% the switch "naming": the steps run, and the text is translated with the
+% characterisation of subproofs (declared in kinds.elpi)
+characterising :- staged-mode, not (switch "naming" "none").
+
+% [name-subproofs C N]: the selected term C, with its translatable
+% occurrences and its intermediate results (the switch "naming"), or C
+% itself (naming = none); declared in staged.elpi
+name-subproofs C C :- switch "naming" "none", !.
+name-subproofs C N :-
+  (switch "selection" "thesis", !
+  ; coq.error "xtext: the switch naming names the subproofs of the selected term: set the switch selection to thesis (XTEXT_SELECTION=thesis)"),
+  translatable C K,
+  enclosing-scope Path I Scope,
+  name-in-scope Path I Scope K _ N.
+
+% the scope of a call of the stages: the proof, numbered from P1, or the
+% scope a form of the direct writer gives to its subproofs
+pred enclosing-scope o:list int, o:int, o:list result.
+enclosing-scope Path I Scope :- results-scope Path I Scope, !.
+enclosing-scope [] 1 [].
+
+% ------------------------------------------------------------------
+% Translatable occurrences (thesis 4.3.2, Fig. 4.12)
+%
+% The stage starts with the root, a proof to translate.  An occurrence
+% inside a translatable one is translatable when it is
+%   - the term under a type annotation (head of an explicit typing),
+%   - the body of an abstraction (head of an abstraction),
+%   - the function of an application (head of an application),
+%   - an argument of an application whose function has the type T ⇒ T'
+%     (argument of an application): T is a proposition, and T' does not
+%     depend on the argument.
+% Every proof of the term has a type that is a proposition, and every
+% translatable occurrence can be replaced by any proof of its type: the
+% term stays well typed (an "irrelevant occurrence"), which is what makes
+% the naming of intermediate results correct (4.3.3).  An argument that
+% is a proof but is not translatable (a type depends on it) is written as
+% a term.  (The rule of Fig. 4.13, for the binders, is
+% abstraction-binder-kind, kinds.elpi.)
+
+% [translatable A K]: A, translatable, with its occurrences that are not
+% translatable made terms
+pred translatable i:aterm, o:aterm.
+translatable (aapp F Args A) (aapp F1 Args1 A) :- !,
+  translatable F F1,
+  aterm-term F MF, typ MF Ty,
+  translatable-arguments Ty Args Args1.
+translatable (alam N T J Body A) (alam N T J Body1 A) :- !,
+  pi x\ decl x N T => translatable (Body x) (Body1 x).
+translatable A A.
+
+% [translatable-arguments Ty Args Args1]: the arguments Args of a
+% function of type Ty
+pred translatable-arguments i:term, i:list aarg, o:list aarg.
+translatable-arguments _ [] [].
+translatable-arguments Ty [Arg | Args] [Arg1 | Args1] :-
+  whnf Ty (prod _ T B),
+  translatable-argument T B Arg Arg1,
+  argument-term Arg1 M,
+  translatable-arguments (B M) Args Args1.
+
+% an argument of a function of type Πx:T.B
+pred translatable-argument i:term, i:(term -> term), i:aarg, o:aarg.
+translatable-argument T B (aproof A) (aproof A1) :- arg-kind T B ak-imp, !,
+  translatable A A1.
+translatable-argument T _ (aproof A) (aelem M E) :- !,
+  aterm-term A M, element-annotation A T E.
+translatable-argument _ _ E E.
+
+% the type of a proof written as a term: none for an identifier whose
+% type the selection left out, else the type it is required to prove
+pred element-annotation i:aterm, i:term, o:annot.
+element-annotation (aid _ merged) _ merged :- !.
+element-annotation _ T (single T1) :- beta-ty T T1.
+
+% [aterm-term A M]: the term M that the annotated term A stands for
+pred aterm-term i:aterm, o:term.
+aterm-term (aid M _) M.
+aterm-term (aapp F Args _) M :-
+  aterm-term F MF, std.map Args argument-term Ms, coq.mk-app MF Ms M.
+aterm-term (alam N T _ Body _) (fun N T F) :-
+  pi x\ aterm-term (Body x) (F x).
+aterm-term (aother M) M.
+aterm-term (adone M _) M.
+
+pred argument-term i:aarg, o:term.
+argument-term (aproof A) M :- aterm-term A M.
+argument-term (aelem M _) M.
+
+% ------------------------------------------------------------------
+% Intermediate results (thesis 4.3.3, Fig. 4.14, the β-expansion)
+%
+% A subproof is named when it is the function or an argument of an
+% application and keeps a type expression after the selection (rules
+% App♡♡, App♡◇, App◇♡ of Fig. 4.14): its own results are named first,
+% then it is defined, let P : T = M, T the type it is required to prove.
+% An identifier, a proof with no type expression, a term, and a form of
+% the direct writer stay where they are (App◇◇, Ident, Défaut).  Fig. 4.14
+% is written for an application of one argument; an application of
+% several is its function, then its arguments from left to right, so that
+% the names follow the order of the facts (Fig. 4.27: P1, P2, P3).
+%
+% Names are P followed by a Dewey number: the index of the result in its
+% scope, after the path of the scope.  A scope is the proof, or the body
+% of a named abstraction, whose results are numbered after the
+% abstraction's own name (P2 is an abstraction: its results are P2.1,
+% P2.2, ...; rule Abs).  The definitions of a scope are put in front of
+% its body: they stay under the binders of the abstraction.
+
+% The naming in a scope: the next index, the results in scope (the last
+% defined first), the definitions made in the scope (the last first).
+kind naming type.
+type naming int -> list result -> list aterm -> naming.
+
+% [name-in-scope Path I Scope A I1 A1]: A, the body of a scope numbered
+% under Path from the index I, the results of Scope known; A1 is A with
+% its results named, their definitions in front; I1 is the next index
+pred name-in-scope i:list int, i:int, i:list result, i:aterm, o:int, o:aterm.
+% a form of the direct writer that is the whole scope: its subproofs
+% continue the scope
+name-in-scope Path I Scope (aother M) I (anested Path I Scope (aother M)) :- !.
+name-in-scope Path I Scope A I1 A1 :-
+  name-node Path (naming I Scope []) A (naming I1 _ Defs) A0,
+  std.rev Defs Ds,
+  definitions-before Ds A0 A1.
+
+% [definitions-before Ds A A1]: let D1 in .. let Dn in A
+pred definitions-before i:list aterm, i:aterm, o:aterm.
+definitions-before [] A A.
+definitions-before [D | Ds] A (alet D A1) :- definitions-before Ds A A1.
+
+% [name-node Path S A S1 A1]: the results inside the node A, in the
+% scope of path Path, the naming going from S to S1
+pred name-node i:list int, i:naming, i:aterm, o:naming, o:aterm.
+% an application: its function, then its arguments, left to right
+name-node Path S (aapp F Args A) S2 (aapp F1 Args1 A) :- !,
+  name-part Path S F S1 F1,
+  name-arguments Path S1 Args S2 Args1.
+% an abstraction that is not named itself (the proof, the body of a
+% series): its body continues the scope, its definitions stay under it
+name-node Path (naming I Scope Defs) (alam N T J Body A)
+               (naming I1 Scope Defs) (alam N T J Body1 A) :- !,
+  pi x\ decl x N T => name-in-scope Path I Scope (Body x) I1 (Body1 x).
+% a form of the direct writer inside the scope: its subproofs, written
+% later, number their results after the next index, as an abstraction
+name-node Path (naming I Scope Defs) (aother M)
+               (naming I Scope Defs) (anested [I | Path] 1 Scope (aother M)) :- !.
+% an identifier, a subproof already written (Ident, Défaut)
+name-node _ S A S A.
+
+pred name-arguments i:list int, i:naming, i:list aarg, o:naming, o:list aarg.
+name-arguments _ S [] S [].
+name-arguments Path S [aproof A | Args] S2 [aproof A1 | Args1] :- !,
+  name-part Path S A S1 A1,
+  name-arguments Path S1 Args S2 Args1.
+name-arguments Path S [E | Args] S1 [E | Args1] :-
+  name-arguments Path S Args S1 Args1.
+
+% [name-part Path S A S1 A1]: the function or an argument A of an
+% application: named when it keeps a type expression
+pred name-part i:list int, i:naming, i:aterm, o:naming, o:aterm.
+name-part Path S A S1 A1 :-
+  annotation-of A Annot, kept-type Annot T, !,
+  name-subproof Path S A T S1 A1.
+name-part Path S A S1 A1 :- name-node Path S A S1 A1.
+
+% [name-subproof Path S A T S1 R]: the subproof A, required to prove T,
+% replaced by the result R
+pred name-subproof i:list int, i:naming, i:aterm, i:term, o:naming, o:aterm.
+% - shared: a result in scope that proves T (thesis 4.3.3, "Suppression
+%   des doublets", Fig. 4.17: the types are compared, not the proofs);
+name-subproof _ (naming I Scope Defs) _ T (naming I Scope Defs) (aresult P) :-
+  switch "naming" "shared",
+  std.mem Scope (result P T1), same-ty T T1, !.
+% - an abstraction: its body is a scope numbered after its name (Abs);
+name-subproof Path (naming I Scope Defs) (alam _ _ _ _ _ as A) T
+               (naming I1 [result P T | Scope] [D | Defs]) (aresult P) :- !,
+  name-node [I | Path] (naming 1 Scope []) A _ A1,
+  define Path I A1 P D, I1 is I + 1.
+% - else its own results first, in the same scope, then itself.
+name-subproof Path S A T (naming I1 [result P T | Scope] [D | Defs]) (aresult P) :-
+  name-node Path S A (naming I Scope Defs) A1,
+  define Path I A1 P D, I1 is I + 1.
+
+% [define Path I A P D]: the definition D of the result P, the I-th of
+% the scope of path Path, proved by A
+pred define i:list int, i:int, i:aterm, o:string, o:aterm.
+define Path I A P D :-
+  std.rev [I | Path] Dewey, dewey Dewey N, P is "P" ^ N,
+  annotation-of A Annot, with-annotation A (named P Annot) D.
+
+% the type a proof keeps after the selection, the one it is required to
+% prove
+pred kept-type i:annot, o:term.
+kept-type (single T) T.
+kept-type (double _ Tr) Tr.
+

@@ -51,6 +51,7 @@ From XText Extra Dependency "elpi/inductive-text.elpi" as xt_inductive_text.
 From XText Extra Dependency "elpi/document.elpi" as xt_document.
 From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
 From XText Extra Dependency "elpi/staged.elpi" as xt_staged.
+From XText Extra Dependency "elpi/subproofs.elpi" as xt_subproofs.
 
 (* The tactics tried on long subproofs (see xtext-tactic below).  Each is
    an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
@@ -117,6 +118,11 @@ Elpi Db xtext.db lp:{{
   %   selection: with the staged translation, the type expressions the
   %     text keeps, "none" (decided by the contraction) or "thesis" (the
   %     selection of thesis 4.3.1, which then replaces the contraction);
+  %   naming: after the selection (selection "thesis"), the subproofs of
+  %     thesis 4.3.2-4.3.3 (elpi/subproofs.elpi): "none", "all" (each
+  %     subproof used in an application is named, P1, P2, ..., and proved
+  %     before the step that uses it) or "shared" (the same, a result
+  %     proved once for each type in scope);
   %   lang: the language of the texts (those of the lexicon, ../lexicon),
   %     also given by the command, Explain foo in "fr".
   % Change a default with
@@ -126,6 +132,7 @@ Elpi Db xtext.db lp:{{
   xtext-switch "translation" "XTEXT_TRANSLATION" "staged".
   xtext-switch "contraction" "XTEXT_CONTRACTION" "guarded".
   xtext-switch "selection" "XTEXT_SELECTION" "none".
+  xtext-switch "naming" "XTEXT_NAMING" "none".
   xtext-switch "lang" "XTEXT_LANG" "en".
 }}.
 
@@ -138,7 +145,7 @@ Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
   xt_abstractions xt_applications xt_inductive_text xt_document
-  xt_type_expressions xt_staged.
+  xt_type_expressions xt_staged xt_subproofs.
 Elpi Accumulate lp:{{
   main [str N] :- !, with-switches (explain N D), say-document D.
   main [str N, str "in", str L] :- !, in-language L (explain N D), say-document D.
@@ -173,7 +180,7 @@ Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
   xt_abstractions xt_applications xt_inductive_text xt_document
-  xt_type_expressions xt_staged.
+  xt_type_expressions xt_staged xt_subproofs.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
