@@ -24,7 +24,7 @@ continue to the end:
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setBreakpoints","body":{"breakpoints":[{"verified":true,"line":6},{"verified":false,"message":"no clause at this line"}]}}
   -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Running append [1,2] [3] L (to the first breakpoint, or to the end).\n"}}
+  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: append [1,2] [3] L   (running to the first breakpoint, or to the end)\n"}}
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"Unify: #1 with append.elpi:6: append [1, 2] [3] [1 | X1]\n"}}
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"      X0 := [1 | X1]\n"}}
   <- {"seq":9,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Unify step","text":"Unify: #1 with append.elpi:6: append [1, 2] [3] [1 | X1]\n      X0 := [1 | X1]","threadId":1,"allThreadsStopped":true}}
@@ -89,7 +89,7 @@ on); a frame running a hypothetical clause; f from the debug console:
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Stopped before the first call of of (lam x\\ lam y\\ x) T: Step Into (F11) to follow the run, Continue (F5) to run to a breakpoint or to the end.\n"}}
+  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Start: of (lam x\\ lam y\\ x) T   (stopped before the first call: F11 steps into it, F5 runs to a breakpoint or to the end)\n"}}
   <- {"seq":6,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
   -> {"seq":4,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
   <- {"seq":7,"type":"response","request_seq":4,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Start: (the query)","id":0,"column":1,"line":0}],"totalFrames":1}}
@@ -175,7 +175,7 @@ goal that CHR suspended:
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setFunctionBreakpoints","body":{"breakpoints":[{"verified":true},{"verified":true,"message":"the program has no rule for nowhere"}]}}
   -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Running double 3 Y (to the first breakpoint, or to the end).\n"}}
+  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: double 3 Y   (running to the first breakpoint, or to the end)\n"}}
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Call: #2 even X0\n"}}
   <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Call port","text":"Call: #2 even X0","threadId":1,"allThreadsStopped":true}}
   -> {"seq":5,"type":"request","command":"continue","arguments":{"threadId":1}}

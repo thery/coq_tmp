@@ -425,10 +425,10 @@ let configuration_done s r =
   match s.stop with
   | Some stop when s.stop_on_entry ->
       output s "console"
-        (Printf.sprintf "Stopped before the first call of %s: Step Into (F11) to follow the run, Continue (F5) to run to a breakpoint or to the end.\n" s.query);
+        (Printf.sprintf "Start: %s   (stopped before the first call: F11 steps into it, F5 runs to a breakpoint or to the end)\n" s.query);
       report_stop s stop
   | Some _ ->
-      output s "console" (Printf.sprintf "Running %s (to the first breakpoint, or to the end).\n" s.query);
+      output s "console" (Printf.sprintf "Start: %s   (running to the first breakpoint, or to the end)\n" s.query);
       resume s "l"
   | None -> ()
 

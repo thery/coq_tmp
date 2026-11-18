@@ -21,7 +21,7 @@ of the wrong rule, after the first two answers were looked for:
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setBreakpoints","body":{"breakpoints":[{"verified":true,"line":26}]}}
   -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Running step (app (lam x\\ c) c) N (to the first breakpoint, or to the end).\n"}}
+  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: step (app (lam x\\ c) c) N   (running to the first breakpoint, or to the end)\n"}}
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"Solution 1:\n"}}
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"  N = c\n"}}
   <- {"seq":9,"type":"event","event":"output","body":{"category":"stdout","output":"Unify: #1 with lambda.elpi:26: step (app (lam c0 \\ c) c) (lam c0 \\ c)\n"}}
@@ -66,7 +66,7 @@ hypothesis added by #1; the scopes of the call:
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Stopped before the first call of of (lam x\\ lam y\\ x) T: Step Into (F11) to follow the run, Continue (F5) to run to a breakpoint or to the end.\n"}}
+  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Start: of (lam x\\ lam y\\ x) T   (stopped before the first call: F11 steps into it, F5 runs to a breakpoint or to the end)\n"}}
   <- {"seq":6,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
   -> {"seq":4,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":7,"type":"response","request_seq":4,"success":true,"command":"stepIn","body":null}
@@ -139,7 +139,7 @@ hypothesis added by #1; the scopes of the call:
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Stopped before the first call of of (lam x\\ app x x) T: Step Into (F11) to follow the run, Continue (F5) to run to a breakpoint or to the end.\n"}}
+  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Start: of (lam x\\ app x x) T   (stopped before the first call: F11 steps into it, F5 runs to a breakpoint or to the end)\n"}}
   <- {"seq":6,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
   -> {"seq":4,"type":"request","command":"continue","arguments":{"threadId":1}}
   <- {"seq":7,"type":"response","request_seq":4,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
@@ -177,7 +177,7 @@ one step in shows its fail port:
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setFunctionBreakpoints","body":{"breakpoints":[{"verified":true,"message":"the program has no rule for positive"}]}}
   -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Running check [1,2] (to the first breakpoint, or to the end).\n"}}
+  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: check [1,2]   (running to the first breakpoint, or to the end)\n"}}
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Call: #2 positive 1\n"}}
   <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Call port","text":"Call: #2 positive 1","threadId":1,"allThreadsStopped":true}}
   -> {"seq":5,"type":"request","command":"stepIn","arguments":{"threadId":1}}
@@ -212,7 +212,7 @@ exit of insert:
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setBreakpoints","body":{"breakpoints":[{"verified":true,"line":10}]}}
   -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Running sort [0,0] S (to the first breakpoint, or to the end).\n"}}
+  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: sort [0,0] S   (running to the first breakpoint, or to the end)\n"}}
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Unify: #5 with lists.elpi:10: insert 0 [0] [0]\n"}}
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"      X0 := [0]\n"}}
   <- {"seq":9,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Unify step","text":"Unify: #5 with lists.elpi:10: insert 0 [0] [0]\n      X0 := [0]","threadId":1,"allThreadsStopped":true}}
@@ -244,7 +244,7 @@ exit of insert:
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Running sort [0,0] [0,0] (to the first breakpoint, or to the end).\n"}}
+  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Start: sort [0,0] [0,0]   (running to the first breakpoint, or to the end)\n"}}
   <- {"seq":6,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): 0 < 0\n"}}
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
@@ -268,7 +268,7 @@ exit of insert:
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Running std.iota 20 L, naive-rev L R1, rev L R2 (to the first breakpoint, or to the end).\n"}}
+  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Start: std.iota 20 L, naive-rev L R1, rev L R2   (running to the first breakpoint, or to the end)\n"}}
   <- {"seq":6,"type":"event","event":"output","body":{"category":"stdout","output":"Profile (ports per predicate; tries = clauses tried; self time):\n"}}
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  predicate                        calls   exits   redos   fails   tries   time (ms)\n"}}
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"  (query)                              0       0       0       0       0 T\n"}}
@@ -300,7 +300,7 @@ pinned:
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Stopped before the first call of sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M: Step Into (F11) to follow the run, Continue (F5) to run to a breakpoint or to the end.\n"}}
+  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Start: sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M   (stopped before the first call: F11 steps into it, F5 runs to a breakpoint or to the end)\n"}}
   <- {"seq":6,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
   -> {"seq":4,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
   <- {"seq":7,"type":"response","request_seq":4,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Start: (the query)","id":0,"column":1,"source":{"name":"lists.elpi","path":"lists.elpi"},"line":44}],"totalFrames":1}}
@@ -335,7 +335,7 @@ pinned:
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
-  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Stopped before the first call of of (app (lam (c0 \\ c)) c) base, step (app (lam (c0 \\ c)) c) N, N = lam (c0 \\ c), of N base: Step Into (F11) to follow the run, Continue (F5) to run to a breakpoint or to the end.\n"}}
+  <- {"seq":5,"type":"event","event":"output","body":{"category":"console","output":"Start: of (app (lam (c0 \\ c)) c) base, step (app (lam (c0 \\ c)) c) N, N = lam (c0 \\ c), of N base   (stopped before the first call: F11 steps into it, F5 runs to a breakpoint or to the end)\n"}}
   <- {"seq":6,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
   -> {"seq":4,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":7,"type":"response","request_seq":4,"success":true,"command":"stepIn","body":null}
