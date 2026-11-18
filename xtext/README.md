@@ -152,9 +152,9 @@ writer's phrases:
 
 A sentence is written as a list of parts, `wd Use` (the phrase of a use in
 the language of the text) and `tx S` (formulas, names, punctuation), joined
-by spaces (`say` in `elpi/words.elpi`); a sentence that starts with a phrase
+by spaces (`text-of-parts` in `elpi/words.elpi`); a sentence that starts with a phrase
 has its first letter capitalised, by the capital letters of the lexicon
-(`say-cap`).  The same lists serve every language: only the table changes,
+(`sentence`).  The same lists serve every language: only the table changes,
 so a text in another language has the structure, the formulas and the
 justifications of the English one (`Supposons ... (h). Montrons ...`).
 The language is the switch `lang` (see "Switches").  A phrase that the

@@ -33,7 +33,7 @@ Two translations exist, chosen by the switch `translation`
 
 | thesis | what | code |
 |---|---|---|
-| 3.1.2 | the double annotation ((M : Tc) : Tr) | the type `annot` (`one`, `two`) in `staged.elpi` |
+| 3.1.2 | the double annotation ((M : Tc) : Tr) | the type `annot` (`single`, `double`) in `staged.elpi` |
 | 3.2.4, Fig. 3.3 | weak head normal form | `whnf` in `printing.elpi` |
 | 3.3.1, Fig. 3.4 | synthesis of types (Var, Const, Abs, App) | `synth` in `type-expressions.elpi` |
 | 3.3.2 | inheritance of types, from the statement | `required`, `req` in `type-expressions.elpi`; the statement in `document.elpi` (`top-run`) |
@@ -45,7 +45,7 @@ Two translations exist, chosen by the switch `translation`
 | 3.4.2, Fig. 3.13 | Trans_Inv, guarded contraction | `examples-staged-guarded/Trans_Inv.md` |
 
 The direct writer also has a contraction of application steps
-(`applications.elpi`, `contract`, strategies `none`, `guarded`,
+(`applications.elpi`, `contract-premises`, strategies `none`, `guarded`,
 `maximal`), guarded by tactics rather than by the annotations: it is not
 the contraction of Fig. 3.11.
 

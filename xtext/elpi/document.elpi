@@ -16,7 +16,7 @@ top-run Acc (fun N A F) Ty Stmt L :- not (statement-stops-at Ty N A), !,
   pi x\ (decl x N1 A, ctx-name Id) => top-run [b K Id FA|Acc] (F x) (B x) Stmt L.
 top-run Acc Body Ty0 Stmt L :-
   std.rev Acc Bs, beta-ty Ty0 Ty, formula rclaim Ty FT,
-  statement Bs Ss, say-cap [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
+  statement Bs Ss, sentence [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
   std.string.concat " " Ss1 Stmt,
   (if (staged-mode)
      % (thesis 3.3.4: the body has the statement as required type; an
@@ -36,7 +36,7 @@ that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-
   not (off "thatis"), typ T Syn, not (Syn = Exp), coq.unify-eq Syn Exp ok, !,
   % the second form is shown, not claimed: Rocq checked the conversion,
   % and the step's justification is about the first form
-  formula rfact Exp F, say-cap [tx S, tx ",", wd "that-is", tx F] S1.
+  formula rfact Exp F, sentence [tx S, tx ",", wd "that-is", tx F] S1.
 that-is _ _ P P.
 
 % the expected types of the arguments As of a term of type Ty
@@ -59,7 +59,7 @@ dashed-exp [T|Ts] Es Path [D|Ds] :-
 statement [] [].
 statement [b bk-assume Id FA|Bs] [S|Ss] :- !,
   assume-run [b bk-assume Id FA|Bs] Hs Rest,
-  and-parts Hs HP, say-cap {std.append [wd "assume" | HP] [tx "."]} S,
+  and-parts Hs HP, sentence {std.append [wd "assume" | HP] [tx "."]} S,
   statement Rest Ss.
 statement Bs [S|Ss] :-
   let-run Bs Ls Rest, let-lines Ls Lines,

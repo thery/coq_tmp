@@ -46,14 +46,14 @@ tr-app H Args Path P :-
   apply-rest T0 P0 Rest Path P.
 tr-app H [] _ P :- name H, rec-var H, !,
   var-name H N, typ H Tau, formula rclaim Tau F,
-  say-cap [wd "ih", tx "(", wd "recursive-call", tx N, tx ")", wd "have", tx F] S,
-  one S P.
+  sentence [wd "ih", tx "(", wd "recursive-call", tx N, tx ")", wd "have", tx F] S,
+  conclusion-only S P.
 tr-app H [] _ P :- name H, !,
   var-name H N, typ H Tau, formula rclaim Tau F,
-  say-cap [wd "by", tx N, wd "have", tx F] S, one S P.
+  sentence [wd "by", tx N, wd "have", tx F] S, conclusion-only S P.
 tr-app H [] _ P :- gr-of H GR, !,
   coq.gref->id GR N, typ H Tau, formula rclaim Tau F, qual-name GR Q,
-  by-part Q BJ, say-cap [wd "using", tx N, wd "get", tx F, BJ] S, one S P.
+  by-part Q BJ, sentence [wd "using", tx N, wd "get", tx F, BJ] S, conclusion-only S P.
 
 % the full name of a global reference, usable when its module is loaded
 % but not imported
@@ -111,7 +111,7 @@ inferable T0 Run Run2 T2 :-
 
 pred apply-run i:ak, i:list term, i:list term, i:term, i:pf, i:term, i:list int, o:pf.
 apply-run ak-all _ _ T0 P0 Tau _ (prfp (prf L (some (it S []))) [Ty0]) :-
-  flatten P0 L, formula rclaim Tau F, say-cap [wd "particular", tx F] S, typ T0 Ty0.
+  flatten P0 L, formula rclaim Tau F, sentence [wd "particular", tx F] S, typ T0 Ty0.
 apply-run ak-imp Run Es T0 P0 Tau Path P :- mp-step Run Es T0 P0 Tau Path P.
 
 % --- Contraction (thesis 3.4.2, "contraction gardée", Fig. 3.11-3.13).
@@ -131,8 +131,8 @@ pred mp-step i:list term, i:list term, i:term, i:pf, i:term, i:list int, o:pf.
 mp-step Run Es T0 P0 Tau Path (prfp (prf L (some (it S []))) Tys) :-
   premise-cands Run Es Path Cs0,
   typ T0 Ty0, cand-of P0 Ty0 C0, std.append Cs0 [C0] Cs,
-  switch "contraction" Strat, contract Strat Cs Tau L Tys By,
-  formula rclaim Tau F, by-part By J, say-cap [wd "deduce", tx F, J] S.
+  switch "contraction" Strat, contract-premises Strat Cs Tau L Tys By,
+  formula rclaim Tau F, by-part By J, sentence [wd "deduce", tx F, J] S.
 
 % the candidates of the premises (with their expected types)
 pred premise-cands i:list term, i:list term, i:list int, o:list cand.
@@ -148,12 +148,12 @@ cand-of (prfp (prf L (some (it S Ch))) Tys) Ty (cand D Lift Tys Ty tt) :- !,
   dashed (prf L (some (it S Ch))) D, std.append L Ch Lift.
 cand-of P Ty (cand D [] [] Ty ff) :- dashed P D.
 
-% [contract Strat Cs Tau L Tys]: the lines L of the step and the types
+% [contract-premises Strat Cs Tau L Tys]: the lines L of the step and the types
 % Tys they prove, after contracting some of the candidates Cs
 % By: the justification of the step after a guarded contraction (the
 % tactic that closed the last accepted configuration), "" otherwise
-pred contract i:string, i:list cand, i:term, o:list line, o:list term, o:string.
-contract Strat Cs Tau L Tys By :-
+pred contract-premises i:string, i:list cand, i:term, o:list line, o:list term, o:string.
+contract-premises Strat Cs Tau L Tys By :-
   std.map Cs (c\ b\ b = ff) Dec0,
   decide Strat Cs Tau 0 Dec0 "" Dec By,
   lines-of Cs Dec L Tys.

@@ -1,7 +1,7 @@
 % Building sentences.  A sentence is a list of parts (kind part, the writer:
 % [wd Use] a word of the language of the text, [tx S] text as it is); this
 % file adds the parts that the writer would otherwise build by hand, and
-% [say]/[say-cap] (the writer) turn a list of parts into a string.
+% [text-of-parts]/[sentence] (the writer) turn a list of parts into a string.
 
 % a formula, from its term, with its role for cyp: `F`{.claim}
 type fml role -> term -> part.
@@ -15,7 +15,7 @@ type enum list (list part) -> part.
 part-text (fml R T) S :- formula R T S.
 part-text (fmls R S0) S :- prooftext.formula R S0 S.
 part-text (nm N) N.
-part-text (enum Ls) S :- enum-parts Ls Ps, say Ps S.
+part-text (enum Ls) S :- enum-parts Ls Ps, text-of-parts Ps S.
 
 % "A", "A and B", "A, B and C"
 pred enum-parts i:list (list part), o:list part.

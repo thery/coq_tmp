@@ -15,11 +15,11 @@ flatten (prf L (some C)) R :- std.append L [C] R.
 pred dashed i:pf, o:line.
 dashed (prfp P _) D :- !, dashed P D.
 dashed (prf L (some (it C Ch))) (it C L1) :- std.append L Ch L1.
-dashed (prf L none) (it S L) :- say-cap [wd "have"] S.
+dashed (prf L none) (it S L) :- sentence [wd "have"] S.
 
 % a proof whose text is a single conclusion
-pred one i:string, o:pf.
-one S (prf [] (some (it S []))).
+pred conclusion-only i:string, o:pf.
+conclusion-only S (prf [] (some (it S []))).
 
 pred join-names i:list string, o:string.
 join-names L S :- std.string.concat ", " L S.
@@ -69,12 +69,12 @@ tr-root T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ct
 tr-root T Ctx Path P :- tr.aux T Ctx Path P, !.
 tr-root T _ _ P :- unchanged T P, !.
 tr-root T _ _ P :- pp T S0, prooftext.formula rfact S0 F,
-  say-cap [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, one S P.
+  sentence [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, conclusion-only S P.
 
 % an open goal of a proof in progress (a hole of the partial proof term)
 % is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez")
 pred open-goal i:term, o:pf.
-open-goal T P :- var T, typ T G, formula rclaim G F, say-cap [wd "prove", tx F] S, one S P.
+open-goal T P :- var T, typ T G, formula rclaim G F, sentence [wd "prove", tx F] S, conclusion-only S P.
 
 % Tactic-built subproofs (thesis 5.4, the "pragmatic method"): a proper
 % subproof whose proof term has at least xtext-threshold nodes is first
@@ -86,7 +86,7 @@ tactic-step T P :- not (off "tactics"),
   xtext-threshold N, size-ge T N,
   typ T Ty, binder-kind Ty K, K = bk-assume,
   xtext-tactic L Txt, try-tactic L Ty, !,
-  formula rclaim Ty F, by-part Txt J, say-cap [wd "have", tx F, J] S, one S P.
+  formula rclaim Ty F, by-part Txt J, sentence [wd "have", tx F, J] S, conclusion-only S P.
 
 pred try-tactic i:string, i:term.
 try-tactic L Ty :-
@@ -132,4 +132,4 @@ tr-other T _ _ P :- unchanged T P.
 pred unchanged i:term, o:pf.
 unchanged T (prf [] (some (it S []))) :-
   typ T Tau, formula rfact T FT, formula rclaim Tau F,
-  say-cap [wd "using", tx FT, wd "get", tx F] S.
+  sentence [wd "using", tx FT, wd "get", tx F] S.

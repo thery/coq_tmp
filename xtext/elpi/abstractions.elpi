@@ -25,17 +25,17 @@ lam-text bk-let Bs FT LB Ctx (prf L C) :-
   concl Ctx [wd "proved", tx FT] C.
 lam-text bk-assume Bs FT LB Ctx (prf [it H LB] C) :-
   std.map Bs assume-text L, and-parts L Ps,
-  say-cap [wd "assume" | Ps] H,
+  sentence [wd "assume" | Ps] H,
   concl Ctx [wd "proved", tx FT] C.
 lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
   declaration-formula [Id] FA V, prooftext.formula rfact Id X,
-  say-cap [wd "consider", tx V] H,
+  sentence [wd "consider", tx V] H,
   concl Ctx [wd "have", tx FT, tx ",", wd "since", tx X, wd "arbitrary"] C.
 lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
   std.map Bs (x\ y\ sigma Id FA\ x = b _ Id FA,
      declaration-formula [Id] FA y) L,
   std.map L (v\ p\ p = [tx v]) L1, sep-parts [tx ","] L1 Ps,
-  say-cap [wd "choose" | Ps] H,
+  sentence [wd "choose" | Ps] H,
   concl Ctx [wd "thus-have", tx FT] C.
 
 % [sep-parts Sep Ls Ps]: the lists of parts Ls, with Sep between them
@@ -53,7 +53,7 @@ assume-text (bih Id FA) [wd "ih", tx F, tx "(", tx Id, tx ")"] :- prooftext.form
 
 pred concl i:ctx, i:list part, o:option line.
 concl star _ none.
-concl nostar Ps (some (it S [])) :- say-cap Ps S.
+concl nostar Ps (some (it S [])) :- sentence Ps S.
 
 % "Let A B : T" for consecutive binders with the same type
 pred let-lines i:list binder, o:list line.
@@ -61,7 +61,7 @@ let-lines [] [].
 let-lines [b _ Id FA|Bs] [it S []|Ls] :-
   same-type FA Bs Ids Rest,
   declaration-formula [Id|Ids] FA V,
-  (if (Ids = []) (U = "let") (U = "let-plural")), say-cap [wd U, tx V] S,
+  (if (Ids = []) (U = "let") (U = "let-plural")), sentence [wd U, tx V] S,
   let-lines Rest Ls.
 
 pred same-type i:string, i:list binder, o:list string, o:list binder.
@@ -80,7 +80,7 @@ tr-let R N Ty V F Ctx Path (prf [L1|LB] C) :-
        L1 = it {calc (S0 ^ " (" ^ Id ^ ")")} Ch)
       (ppf V FV, ppf Ty FTy,
        prooftext.formula rvar {calc (Id ^ " : " ^ FTy ^ " := " ^ FV)} LV,
-       say-cap [wd "let", tx LV] SL, L1 = it SL [])),
+       sentence [wd "let", tx LV] SL, L1 = it SL [])),
   (pi x\ (def x N1 Ty V, ctx-name Id) =>
      if (R = tt) ((root-term (F x) :- !) => tr-root (F x) Ctx Path PB)
                  (tr (F x) Ctx Path PB)),

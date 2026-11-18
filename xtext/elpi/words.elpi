@@ -1,5 +1,4 @@
-% xtext: Words and sentences in the language of the text (from the lexicon), and
-% the options for measurements.
+% xtext: Words and sentences in the language of the text (from the lexicon).
 % (part of xtext's writer; the files are loaded in the order of Explain.v)
 
 % ------------------------------------------------------------------
@@ -18,18 +17,18 @@ pred word i:string, o:string.
 word U S :- switch "lang" L, (write-role L U S _ ; write-word L U S), !.
 word U _ :- switch "lang" L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
 
-% [say Parts S]: the parts joined by spaces, none before , . : ; ) nor
+% [text-of-parts Parts S]: the parts joined by spaces, none before , . : ; ) nor
 % after (, empty parts left out
-pred say i:list part, o:string.
-say Ps0 S :- place Ps0 Ps, std.map Ps part-text Ss0, std.filter Ss0 (x\ not (x = "")) Ss, join-words Ss S.
+pred text-of-parts i:list part, o:string.
+text-of-parts Ps0 S :- place Ps0 Ps, std.map Ps part-text Ss0, std.filter Ss0 (x\ not (x = "")) Ss, join-words Ss S.
 
-% [say-cap Parts S]: the same, at the start of a sentence: capitalised when
+% [sentence Parts S]: the same, at the start of a sentence: capitalised when
 % it starts with a phrase (not with a name or a formula, after the
 % placement of the phrases)
-pred say-cap i:list part, o:string.
-say-cap Ps S :- say Ps S0, place Ps [P | _], !,
+pred sentence i:list part, o:string.
+sentence Ps S :- text-of-parts Ps S0, place Ps [P | _], !,
   (if (P = wd _) (capitalised S0 S) (S = S0)).
-say-cap _ "".
+sentence _ "".
 
 % A phrase that stands after its formula (lexicon: phrase-after) is put
 % after the parts that follow it, up to the next phrase of a role, the next

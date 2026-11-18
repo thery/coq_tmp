@@ -6,24 +6,24 @@
 
 tr-intro CD K Tau [] _ _ P :- !,
   formula rclaim Tau F, intro-by K J,
-  say-cap {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S,
-  one S P.
+  sentence {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S,
+  conclusion-only S P.
 % all premises are hypotheses: "By definition, from H0 we deduce B \/ A"
 tr-intro CD K Tau Ns _ _ P :- std.forall Ns name, !,
   std.map Ns (h\ s\ sigma N T F\ var-name h N, typ h T, formula rfact T F,
                  s = [tx F, tx "(", tx N, tx ")"]) Hs,
   and-parts Hs HS, formula rclaim Tau F, intro-by K J,
-  say-cap {std.append [wd "definition" | CD] [tx ",", wd "from" | {std.append HS [wd "deduce", tx F, J]}]} S,
-  one S P.
+  sentence {std.append [wd "definition" | CD] [tx ",", wd "from" | {std.append HS [wd "deduce", tx F, J]}]} S,
+  conclusion-only S P.
 tr-intro CD K Tau [N] Es Path (prf L (some (it S []))) :- !,
   tr N nostar Path PN0,
   (if (Es = [E|_], ground_term E) (that-is N E PN0 PN) (PN = PN0)), flatten PN L,
   formula rclaim Tau F, intro-by K J,
-  say-cap {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
+  sentence {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
 tr-intro CD K Tau Ns Es Path (prf Ds (some (it S []))) :-
   dashed-exp Ns Es Path Ds,
   formula rclaim Tau F, intro-by K J,
-  say-cap {std.append [wd "so", wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
+  sentence {std.append [wd "so", wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
 
 % the justification of a constructor step: the constructor (cyp applies it
 % and proves its premises)
@@ -45,7 +45,7 @@ cases [N|Ns] Cis Rec Path J [it H L|Ls] :-
   (if (Rec = tt) (if (Ind = tt) (Lab = [tx "(", wd "inductive", tx ")"])
                                 (Lab = [tx "(", wd "base", tx ")"])) (Lab = [])),
   typ N TN, formula rclaim TN FN,
-  say-cap {std.append [wd "case", tx D | Lab] [tx ":", wd "we-prove", tx FN]} H,
+  sentence {std.append [wd "case", tx D | Lab] [tx ":", wd "we-prove", tx FN]} H,
   ((cur-ih Fl :- !) => tr N star Path1 PN), flatten PN L,
   J1 is J + 1, cases Ns Cr Rec Path J1 Ls.
 
@@ -78,45 +78,45 @@ major M Path L [tx F] :- tr M nostar Path PM, flatten PM L, typ M T, formula rfa
 % zero case (thesis 6.3.2): a proof by contradiction
 tr-elim1 C R Tau Maj [] _ Path (prf LM (some (it S []))) :- !,
   major Maj Path LM W, formula rclaim Tau F, elim-name C R CR,
-  say-cap {std.append [wd "contradiction" | CR] [tx ",", wd "from" | {std.append W [wd "can-deduce", tx F]}]} S.
+  sentence {std.append [wd "contradiction" | CR] [tx ",", wd "from" | {std.append W [wd "can-deduce", tx F]}]} S.
 % one case (thesis 6.3.1): back to the definition
 tr-elim1 C R Tau Maj [N] Cis Path (prf LM (some (it H LN))) :- !,
   major Maj Path LM W, formula rclaim Tau F,
   (if (Cis = [ci _ Fl|_]) true (Fl = [])),
   ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-  say-cap {std.append [wd "back", tx C, tx "(", tx R, tx ")", wd "in" | W] [tx ",", wd "we-prove", tx F, tx ":"]} H.
+  sentence {std.append [wd "back", tx C, tx "(", tx R, tx ")", wd "in" | W] [tx ",", wd "we-prove", tx F, tx ":"]} H.
 tr-elim1 C R Tau Maj Ns Cis Path (prf L (some (it S []))) :-
   major Maj Path LM W, formula rclaim Tau F, formula rfact Tau Ff,
   recursive Cis Rec, how-on Rec HowOn, elim-name C R CR,
-  say-cap {std.append [wd "we-prove", tx Ff, HowOn | W] {std.append CR [tx ":"]}} H,
+  sentence {std.append [wd "we-prove", tx Ff, HowOn | W] {std.append CR [tx ":"]}} H,
   cases Ns Cis Rec Path 1 LC,
   std.append LM [it H []|LC] L,
-  say-cap [wd "have", tx F, wd "all-cases"] S.
+  sentence [wd "have", tx F, wd "all-cases"] S.
 
 % second kind (dependent elimination, thesis 6.3.3 and 6.3.4): Tau is
 % the generalised statement; Fin, if any, the instance finally proved;
 % On, if any, the object eliminated (for a match)
 
 tr-elim2 C R Tau _ _ [] _ _ P :- !,
-  formula rclaim Tau F, say-cap [wd "no-element", tx C, tx "(", tx R, tx ")", tx ",", wd "so", tx F] S, one S P.
+  formula rclaim Tau F, sentence [wd "no-element", tx C, tx "(", tx R, tx ")", tx ",", wd "so", tx F] S, conclusion-only S P.
 tr-elim2 C R Tau Fin On Ns Cis Path P :-
   formula rclaim Tau F, formula rfact Tau Ff, recursive Cis Rec, how Rec How, elim-name C R CR,
   (if (On = some O) (formula rfact O FO, OnS = [wd "on", tx FO]) (OnS = [])),
   (if (Fin = some TF)
       (formula rfact TF FF,
-       say-cap {std.append [wd "to-prove", tx FF, How | CR] [tx ",", wd "generalise", tx Ff, tx ":"]} H)
+       sentence {std.append [wd "to-prove", tx FF, How | CR] [tx ",", wd "generalise", tx Ff, tx ":"]} H)
       (if (On = some O) (formula rfact O FO, how-on Rec HowOn, Hw = [HowOn, tx FO]) (Hw = [How]),
-       say-cap {std.append [wd "we-prove", tx Ff | Hw] {std.append CR [tx ":"]}} H)),
+       sentence {std.append [wd "we-prove", tx Ff | Hw] {std.append CR [tx ":"]}} H)),
   (if (Ns = [N])
       (% one case: no case header, no conclusion
        (if (Cis = [ci _ Fl|_]) true (Fl = [])),
        ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-       say-cap {std.append [wd "definition", tx C, tx "(", tx R, tx ")" | OnS] [tx ",", wd "we-prove", tx F, tx ":"]} H1,
+       sentence {std.append [wd "definition", tx C, tx "(", tx R, tx ")" | OnS] [tx ",", wd "we-prove", tx F, tx ":"]} H1,
        P = prf [] (some (it H1 LN)))
       (cases Ns Cis Rec Path 1 LC,
        (if (On = some O) true (O = sort prop)),
        close-by R O J,
-       say-cap [wd "exhaustive", tx ",", wd "deduce", tx F, J] S,
+       sentence [wd "exhaustive", tx ",", wd "deduce", tx F, J] S,
        P = prf [it H []|LC] (some (it S [])))).
 
 % The justification of the closing step of a dependent elimination (the
@@ -154,7 +154,7 @@ tr-fix N Rno Ty F Path (prf [] (some (it H LB))) :-
   binder-name N N1 Id, formula rclaim Ty FT,
   (pi f\ (decl f N1 Ty, ctx-name Id, rec-var f) =>
     (nth-binder (F f) Rno X, tr (F f) star Path PB, flatten PB LB)),
-  say-cap {std.append [wd "we-prove", tx FT, wd "recursion" | X] [tx "(", wd "fix", tx Id, tx ")", tx ":"]} H.
+  sentence {std.append [wd "we-prove", tx FT, wd "recursion" | X] [tx "(", wd "fix", tx Id, tx ")", tx ":"]} H.
 
 % the name of the n-th binder of a lambda
 pred nth-binder i:term, i:int, o:list part.
@@ -176,4 +176,4 @@ tr-rewrite RN Dir Tau PX E Path (prf [D1, D2] (some (it S []))) :-
   tr PX nostar Path P1, dashed P1 D1,
   tr E nostar Path P2, dashed P2 D2,
   typ E TE, formula rfact TE FE, formula rclaim Tau F,
-  say-cap [wd "rewriting", tx FE, wd Dir, tx "(", tx RN, tx ")", tx ",", wd "get", tx F] S.
+  sentence [wd "rewriting", tx FE, wd Dir, tx "(", tx RN, tx ")", tx ",", wd "get", tx F] S.
