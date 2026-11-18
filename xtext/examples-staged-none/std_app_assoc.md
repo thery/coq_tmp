@@ -1,0 +1,77 @@
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
+by: tauto | congruence | lia | firstorder | auto
+---
+
+# app_assoc
+
+Let `A : Type`{.var}. Let `l m n : list A`{.var}. We prove `l ++ m ++ n = (l ++ m) ++ n`{.claim}.
+
+- To prove `l ++ m ++ n = (l ++ m) ++ n`{.fact} by induction (list, list_ind), we generalise it to `forall l0 : list A, l0 ++ m ++ n = (l0 ++ m) ++ n`{.fact}:
+- Case 1 (base): we prove `nil ++ m ++ n = (nil ++ m) ++ n`{.claim}.
+  - By definition of eq (eq_refl), we have `n = n`{.claim} *by Corelib.Init.Logic.eq_refl* (H).
+  - By application, we have `n = n -> m ++ n = m ++ n`{.claim}.
+    - By definition of eq (eq_refl), we have `m = m`{.claim} *by Corelib.Init.Logic.eq_refl* (H0).
+    - We have proved `m = m -> n = n -> m ++ n = m ++ n`{.claim}.
+      - By definition of eq (eq_refl), we have `A = A`{.claim} *by Corelib.Init.Logic.eq_refl* (H1).
+      - Assume `m = m`{.hyp} (H00).
+        - Assume `n = n`{.hyp} (H10).
+          - By definition of eq (eq_refl), we have `m ++ n = m ++ n`{.claim} *by Corelib.Init.Logic.eq_refl*.
+        - We have proved `n = n -> m ++ n = m ++ n`{.claim}.
+    - By H0 we have `m = m`{.claim}.
+  - By H we have `n = n`{.claim}.
+  - By application, we have `m ++ n = m ++ n`{.claim}.
+- Case 2 (inductive): we prove `forall (a : A) (l0 : list A), l0 ++ m ++ n = (l0 ++ m) ++ n -> (a :: l0) ++ m ++ n = ((a :: l0) ++ m) ++ n`{.claim}.
+  - Let `a : A`{.var}.
+    - Let `l0 : list A`{.var}.
+      - Assume `l0 ++ m ++ n = (l0 ++ m) ++ n`{.hyp} (IHl).
+        - By IHl we have `l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim} (H).
+        - By application, we have `l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+          - By definition of eq (eq_refl), we have `a = a`{.claim} *by Corelib.Init.Logic.eq_refl* (H0).
+          - We have proved `a = a -> l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+            - By definition of eq (eq_refl), we have `A = A`{.claim} *by Corelib.Init.Logic.eq_refl* (H1).
+            - Assume `a = a`{.hyp} (H00).
+              - Assume `l0 ++ m ++ n = (l0 ++ m) ++ n`{.hyp} (H10).
+                - By application, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+                  - By application, we have `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+                    - By application, we have `forall z : list A, a :: l0 ++ m ++ n = a :: l0 ++ m ++ n -> a :: l0 ++ m ++ n = z -> a :: l0 ++ m ++ n = z`{.claim}.
+                      - By application, we have `forall y z : list A, a :: l0 ++ m ++ n = y -> y = z -> a :: l0 ++ m ++ n = z`{.claim}.
+                        - By application, we have `forall x y z : list A, x = y -> y = z -> x = z`{.claim}.
+                          - By eq_trans we have `forall (elpi_ctx_entry_12_ : Type) (x y z : elpi_ctx_entry_12_), x = y -> y = z -> x = z`{.claim}.
+                          - The element `list A`{.fact} belongs to `Type`{.fact}.
+                        - The element `a :: l0 ++ m ++ n`{.fact} belongs to `list A`{.fact}.
+                      - The element `a :: l0 ++ m ++ n`{.fact} belongs to `list A`{.fact}.
+                    - The element `a :: (l0 ++ m) ++ n`{.fact} belongs to `list A`{.fact}.
+                  - By application, we have `a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim}.
+                    - By application, we have `cons a = cons a -> a :: l0 ++ m ++ n = a :: l0 ++ m ++ n`{.claim}.
+                      - By application, we have `forall y : list A -> list A, cons a = y -> a :: l0 ++ m ++ n = y (l0 ++ m ++ n)`{.claim}.
+                        - By application, we have `forall x y : list A -> list A, x = y -> x (l0 ++ m ++ n) = y (l0 ++ m ++ n)`{.claim}.
+                          - By application, we have `forall (f : (list A -> list A) -> list A) (x y : list A -> list A), x = y -> f x = f y`{.claim}.
+                            - By application, we have `forall (B : Type) (f : (list A -> list A) -> B) (x y : list A -> list A), x = y -> f x = f y`{.claim}.
+                              - By f_equal we have `forall (elpi_ctx_entry_12_ B : Type) (f : elpi_ctx_entry_12_ -> B) (x y : elpi_ctx_entry_12_), x = y -> f x = f y`{.claim}.
+                              - The element `list A -> list A`{.fact} belongs to `Type`{.fact}.
+                            - The element `list A`{.fact} belongs to `Type`{.fact}.
+                          - The element `fun f : list A -> list A => f (l0 ++ m ++ n)`{.fact} belongs to `(list A -> list A) -> list A`{.fact}.
+                        - The element `cons a`{.fact} belongs to `list A -> list A`{.fact}.
+                      - The element `cons a`{.fact} belongs to `list A -> list A`{.fact}.
+                    - By definition of eq (eq_refl), we have `cons a = cons a`{.claim} *by Corelib.Init.Logic.eq_refl*.
+                - By application, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+                  - By application, we have `l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+                    - By application, we have `forall y : list A, l0 ++ m ++ n = y -> a :: l0 ++ m ++ n = a :: y`{.claim}.
+                      - By application, we have `forall x y : list A, x = y -> a :: x = a :: y`{.claim}.
+                        - By application, we have `forall (f : list A -> list A) (x y : list A), x = y -> f x = f y`{.claim}.
+                          - By application, we have `forall (B : Type) (f : list A -> B) (x y : list A), x = y -> f x = f y`{.claim}.
+                            - By f_equal we have `forall (elpi_ctx_entry_12_ B : Type) (f : elpi_ctx_entry_12_ -> B) (x y : elpi_ctx_entry_12_), x = y -> f x = f y`{.claim}.
+                            - The element `list A`{.fact} belongs to `Type`{.fact}.
+                          - The element `list A`{.fact} belongs to `Type`{.fact}.
+                        - The element `cons a`{.fact} belongs to `list A -> list A`{.fact}.
+                      - The element `l0 ++ m ++ n`{.fact} belongs to `list A`{.fact}.
+                    - The element `(l0 ++ m) ++ n`{.fact} belongs to `list A`{.fact}.
+                  - By H10 we have `l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
+                - By application, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+              - We have proved `l0 ++ m ++ n = (l0 ++ m) ++ n -> a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+          - By H0 we have `a = a`{.claim}.
+        - By H we have `l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
+        - By application, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
+- These cases being exhaustive, we deduce `forall l0 : list A, l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim} *by Corelib.Init.Datatypes.list_ind*.
+- In particular `l ++ m ++ n = (l ++ m) ++ n`{.claim}.

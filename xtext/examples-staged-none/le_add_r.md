@@ -1,0 +1,28 @@
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
+by: tauto | congruence | lia | firstorder | auto
+---
+
+# le_add_r'
+
+Let `n m : nat`{.var}. We prove `n <= n + m`{.claim}.
+
+- To prove `n <= n + m`{.fact} by induction (nat, nat_ind), we generalise it to `forall n0 : nat, n <= n + n0`{.fact}:
+- Case 1 (base): we prove `n <= n + 0`{.claim}.
+  - By definition of le (le_n), we have `n <= n`{.claim} *by Corelib.Init.Peano.le_n*.
+  - By application, we have `n + 0 = n`{.claim}.
+    - By add_0_r we have `forall elpi_ctx_entry_2_ : nat, elpi_ctx_entry_2_ + 0 = elpi_ctx_entry_2_`{.claim}.
+    - The element `n`{.fact} belongs to `nat`{.fact}.
+  - Rewriting with `n + 0 = n`{.fact} from right to left (eq_ind_r), we get `n <= n + 0`{.claim}.
+- Case 2 (inductive): we prove `forall m0 : nat, n <= n + m0 -> n <= n + S m0`{.claim}.
+  - Let us choose arbitrarily `m0 : nat`{.var}.
+    - Assume `n <= n + m0`{.hyp} (IH).
+      - By definition of le (le_S) with witness `n + m0`{.fact}, from `n <= n + m0`{.fact} (IH) we deduce `n <= S (n + m0)`{.claim} *by Corelib.Init.Peano.le_S*.
+      - By application, we have `n + S m0 = S (n + m0)`{.claim}.
+        - By application, we have `forall elpi_ctx_entry_4_ : nat, n + S elpi_ctx_entry_4_ = S (n + elpi_ctx_entry_4_)`{.claim}.
+          - By add_succ_r we have `forall elpi_ctx_entry_4_ elpi_ctx_entry_5_ : nat, elpi_ctx_entry_4_ + S elpi_ctx_entry_5_ = S (elpi_ctx_entry_4_ + elpi_ctx_entry_5_)`{.claim}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+        - The element `m0`{.fact} belongs to `nat`{.fact}.
+      - Rewriting with `n + S m0 = S (n + m0)`{.fact} from right to left (eq_ind_r), we get `n <= n + S m0`{.claim}.
+- These cases being exhaustive, we deduce `forall n0 : nat, n <= n + n0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
+- In particular `n <= n + m`{.claim}.
