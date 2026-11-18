@@ -1,15 +1,18 @@
-<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.partial. -->
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.partial.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+by: tauto | congruence | lia | firstorder | auto
+---
 
 # or_swap_partial (proof in progress)
 
-✅ Let `A B : Prop`. Assume `A \/ B` (H). We prove `B \/ A`.
+✅ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (H). We prove `B \/ A`{.claim}.
 
-- ▫️ We prove `B \/ A` by case analysis on `A \/ B` (H) (or, match):
-- ✅ Case 1: we prove `A -> B \/ A`.
-  - ▫️ Assume `A` (a).
-    - ✅ Prove `B \/ A`.
-- ✅ Case 2: we prove `B -> B \/ A`.
-  - ▫️ Assume `B` (b).
-    - ✅ Prove `B \/ A`.
-- ✅ We have `B \/ A` in all cases.
-
+- ▫️ We prove `B \/ A`{.fact} by case analysis on `A \/ B`{.fact} (H) (or, match):
+- ✅ Case 1: we prove `A -> B \/ A`{.claim}.
+  - ▫️ Assume `A`{.hyp} (a).
+    - ✅ Prove `B \/ A`{.claim}.
+- ✅ Case 2: we prove `B -> B \/ A`{.claim}.
+  - ▫️ Assume `B`{.hyp} (b).
+    - ✅ Prove `B \/ A`{.claim}.
+- ✅ We have `B \/ A`{.claim} in all cases.

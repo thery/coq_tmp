@@ -1,0 +1,88 @@
+% French (see lang_en.elpi).
+phrase "fr" "soit" rvar.      phrase "fr" "soient" rvar.  phrase "fr" "considérons" rvar.
+phrase "fr" "si" rhyp.        phrase "fr" "supposons" rhyp.
+phrase "fr" "posons par hypothèse" rhyp.
+phrase "fr" "à partir de" rfact.  phrase "fr" "en utilisant" rfact.
+phrase "fr" "puisque" rfact.  phrase "fr" "d'après" rfact.  phrase "fr" "grâce à" rfact.
+phrase "fr" "ce qui est équivalent à" rfact.
+phrase "fr" "alors" rclaim.   phrase "fr" "montrons" rclaim.  phrase "fr" "prouvons" rclaim.
+phrase "fr" "nous avons" rclaim.  phrase "fr" "on a" rclaim.  phrase "fr" "donc" rclaim.
+phrase "fr" "ainsi" rclaim.   phrase "fr" "d'où" rclaim.
+phrase "fr" "nous en déduisons" rclaim.  phrase "fr" "nous déduisons" rclaim.
+phrase "fr" "nous obtenons" rclaim.  phrase "fr" "on obtient" rclaim.
+phrase "fr" "il suffit" rback.  phrase "fr" "revient à" rback.
+phrase "fr" "se réduit à" rback.  phrase "fr" "équivaut à montrer" rback.
+phrase "fr" "il suffit de montrer" rback.  phrase "fr" "il suffit de prouver" rback.
+
+% The phrases of a writer (see lang_en.elpi).
+write-role "fr" "let" "soit" rvar.
+write-role "fr" "let-plural" "soient" rvar.
+write-role "fr" "consider" "considérons un élément arbitraire" rvar.
+write-role "fr" "choose" "choisissons arbitrairement" rvar.
+write-role "fr" "assume" "supposons" rhyp.
+write-role "fr" "we-prove" "montrons" rclaim.
+write-role "fr" "prove" "prouvez" rclaim.
+write-role "fr" "proved" "nous avons prouvé" rclaim.
+write-role "fr" "have" "nous avons" rclaim.
+write-role "fr" "thus-have" "ainsi nous avons" rclaim.
+write-role "fr" "get" "nous obtenons" rclaim.
+write-role "fr" "particular" "en particulier" rclaim.
+write-role "fr" "deduce" "nous en déduisons" rclaim.
+write-role "fr" "can-deduce" "nous pouvons déduire" rclaim.
+write-role "fr" "so" "donc" rclaim.
+write-role "fr" "from" "à partir de" rfact.
+write-role "fr" "since" "puisque" rfact.
+write-role "fr" "using" "en utilisant" rfact.
+write-role "fr" "that-is" "c'est-à-dire" rfact.
+write-word "fr" "and" "et".
+write-word "fr" "by" "par".
+write-word "fr" "arbitrary" "est arbitraire".
+write-word "fr" "ih" "par hypothèse de récurrence".
+write-word "fr" "recursive-call" "l'appel récursif".
+write-word "fr" "definition" "par définition de".
+write-role "fr" "witness" "avec le témoin" rfact.
+write-word "fr" "case" "cas".
+write-word "fr" "base" "base".
+write-word "fr" "inductive" "inductif".
+write-word "fr" "contradiction" "par contradiction".
+write-word "fr" "back" "en revenant à la définition de".
+write-word "fr" "in" "dans".
+write-word "fr" "by-induction" "par récurrence".
+write-word "fr" "by-cases" "par analyse de cas".
+write-role "fr" "by-induction-on" "par récurrence sur" rfact.
+write-role "fr" "by-cases-on" "par analyse de cas sur" rfact.
+write-word "fr" "on" "sur".
+write-word "fr" "all-cases" "dans tous les cas".
+write-word "fr" "no-element" "il n'y a pas d'élément de".
+write-word "fr" "to-prove" "pour montrer".
+write-role "fr" "generalise" "nous le généralisons en" rfact.
+write-word "fr" "exhaustive" "ces cas étant exhaustifs".
+write-role "fr" "recursion" "par récursion sur" rfact.
+write-word "fr" "fix" "fix".
+write-word "fr" "argument" "argument".
+write-role "fr" "rewriting" "en réécrivant avec" rfact.
+write-word "fr" "left-right" "de gauche à droite".
+write-word "fr" "right-left" "de droite à gauche".
+write-role "fr" "the-term" "le terme" rfact.
+write-word "fr" "not-translated" "non traduit".
+
+% The capital letters with accents (the others are those of lang_en.elpi).
+capital "fr" "À" "à".
+capital "fr" "Â" "â".
+capital "fr" "Ç" "ç".
+capital "fr" "É" "é".
+capital "fr" "È" "è".
+capital "fr" "Ê" "ê".
+capital "fr" "Ë" "ë".
+capital "fr" "Î" "î".
+capital "fr" "Ï" "ï".
+capital "fr" "Ô" "ô".
+capital "fr" "Ù" "ù".
+capital "fr" "Û" "û".
+capital "fr" "Œ" "œ".
+capital "fr" "Æ" "æ".
+
+% Plural (CLDR, integers): one for 0 and 1, other otherwise (CLDR's "many"
+% for 1 000 000 and its multiples, in "un million de", is left out).
+plural-category "fr" N "one" :- N < 2, !.
+plural-category "fr" _ "other".

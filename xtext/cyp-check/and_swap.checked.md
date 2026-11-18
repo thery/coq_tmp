@@ -1,10 +1,13 @@
-<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas. -->
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+by: tauto | congruence | lia | firstorder | auto
+---
 
 # and_swap
 
-✅ Let `A B : Prop`. Assume `A /\ B` (H). We prove `B /\ A`.
+✅ Let `A B : Prop`{.var}. Assume `A /\ B`{.hyp} (H). We prove `B /\ A`{.claim}.
 
-- ✅ Going back to the definition of and (match) in `A /\ B` (H), we prove `B /\ A`:
-  - ▫️ Assume `A` (a) and `B` (b).
-    - ✅ By definition of and (conj), from `B` (b) and `A` (a) we deduce `B /\ A` .*by eapply @conj; eauto*
-
+- ✅ Going back to the definition of and (match) in `A /\ B`{.fact} (H), we prove `B /\ A`{.claim}:
+  - ▫️ Assume `A`{.hyp} (a) and `B`{.hyp} (b).
+    - ✅ By definition of and (conj), from `B`{.fact} (b) and `A`{.fact} (a) we deduce `B /\ A`{.claim} *by Corelib.Init.Logic.conj*.

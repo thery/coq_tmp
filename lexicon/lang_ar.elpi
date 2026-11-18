@@ -1,0 +1,69 @@
+% Arabic.  Phrases of the usual mathematical style ("ليكن", "لنفرض أن",
+% "إذن", "بما أن ... فإن", "يكفي أن نثبت أن"), as in Arabic textbooks.
+% The conjunctions و and ف are glued to the next word (clitic): a reader
+% leaves them out, so "فإن" is read as the phrase "إن", "وإذن" as "إذن".
+% For review by a speaker.
+clitic "ar" "و".  clitic "ar" "ف".
+punctuation "ar" "،".  punctuation "ar" "؛".  punctuation "ar" "؟".
+phrase "ar" "إذا كان" rhyp.      phrase "ar" "إن" rclaim.
+phrase "ar" "يكفي أن نثبت أن" rback.  phrase "ar" "هذا يكافئ" rback.
+
+write-role "ar" "let" "ليكن" rvar.
+write-role "ar" "let-plural" "لتكن" rvar.
+write-role "ar" "consider" "لنأخذ عنصرا اختياريا" rvar.
+write-role "ar" "choose" "لنختر اختياريا" rvar.
+write-role "ar" "assume" "لنفرض أن" rhyp.
+write-role "ar" "we-prove" "سنثبت أن" rclaim.
+write-role "ar" "prove" "يجب إثبات أن" rclaim.
+write-role "ar" "proved" "لقد أثبتنا أن" rclaim.
+write-role "ar" "have" "لدينا" rclaim.
+write-role "ar" "thus-have" "وبالتالي لدينا" rclaim.
+write-role "ar" "get" "نحصل على" rclaim.
+write-role "ar" "particular" "بشكل خاص" rclaim.
+write-role "ar" "deduce" "نستنتج أن" rclaim.
+write-role "ar" "can-deduce" "يمكننا أن نستنتج أن" rclaim.
+write-role "ar" "so" "إذن" rclaim.
+write-role "ar" "from" "من" rfact.
+write-role "ar" "since" "بما أن" rfact.
+write-role "ar" "using" "باستخدام" rfact.
+write-role "ar" "that-is" "أي" rfact.
+write-role "ar" "witness" "مع الشاهد" rfact.
+write-role "ar" "by-induction-on" "بالاستقراء على" rfact.
+write-role "ar" "by-cases-on" "بدراسة الحالات على" rfact.
+write-role "ar" "generalise" "نعممها إلى" rfact.
+write-role "ar" "recursion" "بالتكرار على" rfact.
+write-role "ar" "rewriting" "بإعادة الكتابة باستخدام" rfact.
+write-role "ar" "the-term" "الحد" rfact.
+write-word "ar" "and" "و".
+write-word "ar" "by" "حسب".
+write-word "ar" "arbitrary" "اختياري".
+write-word "ar" "ih" "حسب فرضية الاستقراء".
+write-word "ar" "recursive-call" "الاستدعاء التكراري".
+write-word "ar" "definition" "حسب تعريف".
+write-word "ar" "case" "الحالة".
+write-word "ar" "base" "الأساس".
+write-word "ar" "inductive" "الاستقرائية".
+write-word "ar" "contradiction" "بالتناقض".
+write-word "ar" "back" "بالعودة إلى تعريف".
+write-word "ar" "in" "في".
+write-word "ar" "by-induction" "بالاستقراء".
+write-word "ar" "by-cases" "بدراسة الحالات".
+write-word "ar" "on" "على".
+write-word "ar" "all-cases" "في جميع الحالات".
+write-word "ar" "no-element" "لا يوجد عنصر من".
+write-word "ar" "to-prove" "لإثبات".
+write-word "ar" "exhaustive" "هذه الحالات شاملة".
+write-word "ar" "fix" "fix".
+write-word "ar" "argument" "الوسيط".
+write-word "ar" "left-right" "من اليسار إلى اليمين".
+write-word "ar" "right-left" "من اليمين إلى اليسار".
+write-word "ar" "not-translated" "غير مترجم".
+
+% Plural (CLDR, integers): zero, one, two, few (3-10 mod 100), many
+% (11-99 mod 100), other.
+plural-category "ar" 0 "zero" :- !.
+plural-category "ar" 1 "one" :- !.
+plural-category "ar" 2 "two" :- !.
+plural-category "ar" N "few" :- H is N mod 100, H >= 3, H =< 10, !.
+plural-category "ar" N "many" :- H is N mod 100, H >= 11, !.
+plural-category "ar" _ "other".

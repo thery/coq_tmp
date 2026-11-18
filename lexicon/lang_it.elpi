@@ -1,0 +1,77 @@
+% Italian (see lang_en.elpi).
+phrase "it" "sia" rvar.       phrase "it" "siano" rvar.   phrase "it" "consideriamo" rvar.
+phrase "it" "se" rhyp.        phrase "it" "supponiamo" rhyp.  phrase "it" "assumiamo" rhyp.
+phrase "it" "da" rfact.       phrase "it" "usando" rfact.  phrase "it" "poiché" rfact.
+phrase "it" "grazie a" rfact. phrase "it" "cioè" rfact.
+phrase "it" "allora" rclaim.  phrase "it" "mostriamo" rclaim.  phrase "it" "dimostriamo" rclaim.
+phrase "it" "abbiamo" rclaim. phrase "it" "quindi" rclaim.  phrase "it" "dunque" rclaim.
+phrase "it" "ne segue" rclaim.  phrase "it" "ne deduciamo" rclaim.  phrase "it" "otteniamo" rclaim.
+phrase "it" "basta" rback.    phrase "it" "è sufficiente" rback.
+phrase "it" "si riduce a" rback.  phrase "it" "equivale a dimostrare" rback.
+phrase "it" "basta dimostrare" rback.  phrase "it" "basta mostrare" rback.
+phrase "it" "è sufficiente dimostrare" rback.
+
+% The phrases of a writer (see lang_en.elpi).
+write-role "it" "let" "sia" rvar.
+write-role "it" "let-plural" "siano" rvar.
+write-role "it" "consider" "consideriamo un elemento arbitrario" rvar.
+write-role "it" "choose" "scegliamo arbitrariamente" rvar.
+write-role "it" "assume" "supponiamo" rhyp.
+write-role "it" "we-prove" "dimostriamo" rclaim.
+write-role "it" "prove" "resta da dimostrare" rclaim.
+write-role "it" "proved" "abbiamo dimostrato" rclaim.
+write-role "it" "have" "abbiamo" rclaim.
+write-role "it" "thus-have" "quindi abbiamo" rclaim.
+write-role "it" "get" "otteniamo" rclaim.
+write-role "it" "particular" "in particolare" rclaim.
+write-role "it" "deduce" "ne deduciamo" rclaim.
+write-role "it" "can-deduce" "possiamo dedurre" rclaim.
+write-role "it" "so" "dunque" rclaim.
+write-role "it" "from" "da" rfact.
+write-role "it" "since" "poiché" rfact.
+write-role "it" "using" "usando" rfact.
+write-role "it" "that-is" "cioè" rfact.
+write-word "it" "and" "e".
+write-word "it" "by" "per".
+write-word "it" "arbitrary" "è arbitrario".
+write-word "it" "ih" "per ipotesi di induzione".
+write-word "it" "recursive-call" "la chiamata ricorsiva".
+write-word "it" "definition" "per definizione di".
+write-role "it" "witness" "con testimone" rfact.
+write-word "it" "case" "caso".
+write-word "it" "base" "base".
+write-word "it" "inductive" "induttivo".
+write-word "it" "contradiction" "per contraddizione".
+write-word "it" "back" "tornando alla definizione di".
+write-word "it" "in" "in".
+write-word "it" "by-induction" "per induzione".
+write-word "it" "by-cases" "per casi".
+write-role "it" "by-induction-on" "per induzione su" rfact.
+write-role "it" "by-cases-on" "per casi su" rfact.
+write-word "it" "on" "su".
+write-word "it" "all-cases" "in tutti i casi".
+write-word "it" "no-element" "non c'è nessun elemento di".
+write-word "it" "to-prove" "per dimostrare".
+write-role "it" "generalise" "lo generalizziamo in" rfact.
+write-word "it" "exhaustive" "essendo questi casi esaustivi".
+write-role "it" "recursion" "per ricorsione su" rfact.
+write-word "it" "fix" "fix".
+write-word "it" "argument" "argomento".
+write-role "it" "rewriting" "riscrivendo con" rfact.
+write-word "it" "left-right" "da sinistra a destra".
+write-word "it" "right-left" "da destra a sinistra".
+write-role "it" "the-term" "il termine" rfact.
+write-word "it" "not-translated" "non tradotto".
+
+% The capital letters with accents (the others are those of lang_en.elpi).
+capital "it" "À" "à".
+capital "it" "È" "è".
+capital "it" "É" "é".
+capital "it" "Ì" "ì".
+capital "it" "Ò" "ò".
+capital "it" "Ù" "ù".
+
+% Plural (CLDR, integers): one for 1, other otherwise (CLDR's "many" for
+% the multiples of 1 000 000 is left out).
+plural-category "it" 1 "one" :- !.
+plural-category "it" _ "other".

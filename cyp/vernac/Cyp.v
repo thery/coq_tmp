@@ -19,7 +19,7 @@
        formulas (terms), "by X" for its justification.
 
    What a proof means is in the Elpi files of elpi/: text.elpi (words,
-   formulas and their roles), vocab_*.elpi (the vocabulary of each
+   formulas and their roles), lexicon/ (the vocabulary of each
    language), check.elpi (closing a goal), proof.elpi (the proof of a
    statement from its steps), markdown.elpi (the Markdown).  The rules of a
    field are added to the database cyp.db (justify, justify_first, named). *)
@@ -85,10 +85,19 @@ Elpi Db cyp.db lp:{{
   default-ltac "cyp_lra".
 }}.
 
+(* the language data, shared with xtext: lexicon/ *)
+From Lexicon Extra Dependency "lexicon.elpi" as lexicon.
+From Lexicon Extra Dependency "lang_en.elpi" as lexicon_en.
+From Lexicon Extra Dependency "lang_fr.elpi" as lexicon_fr.
+From Lexicon Extra Dependency "lang_it.elpi" as lexicon_it.
+From Lexicon Extra Dependency "lang_de.elpi" as lexicon_de.
+From Lexicon Extra Dependency "lang_nl.elpi" as lexicon_nl.
+From Lexicon Extra Dependency "lang_ru.elpi" as lexicon_ru.
+From Lexicon Extra Dependency "lang_zh.elpi" as lexicon_zh.
+From Lexicon Extra Dependency "lang_ar.elpi" as lexicon_ar.
+From Lexicon Extra Dependency "lang_ko.elpi" as lexicon_ko.
+From Lexicon Extra Dependency "lang_la.elpi" as lexicon_la.
 From CypV Extra Dependency "elpi/text.elpi" as cyp_text.
-From CypV Extra Dependency "elpi/vocab_en.elpi" as cyp_vocab_en.
-From CypV Extra Dependency "elpi/vocab_fr.elpi" as cyp_vocab_fr.
-From CypV Extra Dependency "elpi/vocab_it.elpi" as cyp_vocab_it.
 From CypV Extra Dependency "elpi/check.elpi" as cyp_check.
 From CypV Extra Dependency "elpi/proof.elpi" as cyp_proof.
 From CypV Extra Dependency "elpi/markdown.elpi" as cyp_markdown.
@@ -103,15 +112,23 @@ From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
 
 Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File lexicon_en.
+Elpi Accumulate File lexicon_fr.
+Elpi Accumulate File lexicon_it.
+Elpi Accumulate File lexicon_de.
+Elpi Accumulate File lexicon_nl.
+Elpi Accumulate File lexicon_ru.
+Elpi Accumulate File lexicon_zh.
+Elpi Accumulate File lexicon_ar.
+Elpi Accumulate File lexicon_ko.
+Elpi Accumulate File lexicon_la.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.
 Elpi Accumulate File cyp_messages_en.
 Elpi Accumulate File cyp_messages_fr.
 Elpi Accumulate File cyp_messages_it.
-Elpi Accumulate File cyp_vocab_en.
-Elpi Accumulate File cyp_vocab_fr.
-Elpi Accumulate File cyp_vocab_it.
 Elpi Accumulate File cyp_check.
 Elpi Accumulate File cyp_proof.
 Elpi Accumulate File cyp_markdown.
@@ -142,15 +159,23 @@ Elpi Export CypFile.
 
 #[arguments(raw)] Elpi Command Cyp.
 Elpi Accumulate Db cyp.db.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File lexicon_en.
+Elpi Accumulate File lexicon_fr.
+Elpi Accumulate File lexicon_it.
+Elpi Accumulate File lexicon_de.
+Elpi Accumulate File lexicon_nl.
+Elpi Accumulate File lexicon_ru.
+Elpi Accumulate File lexicon_zh.
+Elpi Accumulate File lexicon_ar.
+Elpi Accumulate File lexicon_ko.
+Elpi Accumulate File lexicon_la.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.
 Elpi Accumulate File cyp_messages_en.
 Elpi Accumulate File cyp_messages_fr.
 Elpi Accumulate File cyp_messages_it.
-Elpi Accumulate File cyp_vocab_en.
-Elpi Accumulate File cyp_vocab_fr.
-Elpi Accumulate File cyp_vocab_it.
 Elpi Accumulate File cyp_check.
 Elpi Accumulate File cyp_proof.
 Elpi Accumulate File cyp_markdown.
@@ -242,6 +267,17 @@ Elpi Accumulate lp:{{
 
 (* the end of the Proof block of Cyp File or Cyp Lemma *)
 Elpi Command CypQed.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File lexicon_en.
+Elpi Accumulate File lexicon_fr.
+Elpi Accumulate File lexicon_it.
+Elpi Accumulate File lexicon_de.
+Elpi Accumulate File lexicon_nl.
+Elpi Accumulate File lexicon_ru.
+Elpi Accumulate File lexicon_zh.
+Elpi Accumulate File lexicon_ar.
+Elpi Accumulate File lexicon_ko.
+Elpi Accumulate File lexicon_la.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.

@@ -1,12 +1,15 @@
-<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper. -->
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+by: tauto | congruence | lia | firstorder | auto
+---
 
 # S_proof
 
-✅ Let `A B C : Prop`. Assume `A -> B -> C` (h) and `A -> B` (h0) and `A` (h1). We prove `C`.
+✅ Let `A B C : Prop`{.var}. Assume `A -> B -> C`{.hyp} (h) and `A -> B`{.hyp} (h0) and `A`{.hyp} (h1). We prove `C`{.claim}.
 
-- ✅ By h1 we have `A`.
-- ✅ By h1 we have `A`.
-- ✅ By h0 we have `A -> B`.
-- ✅ By h we have `A -> B -> C`.
-- ✅ We deduce `C` .*by tauto*
-
+- ✅ By h1 we have `A`{.claim}.
+- ✅ By h1 we have `A`{.claim}.
+- ✅ By h0 we have `A -> B`{.claim}.
+- ✅ By h we have `A -> B -> C`{.claim}.
+- ✅ We deduce `C`{.claim} *by tauto*.

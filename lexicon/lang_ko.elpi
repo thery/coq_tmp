@@ -1,0 +1,63 @@
+% Korean.  The role is given by an ending after the formula (phrase-after):
+% "`A`라고 가정하자" (assume A), "`A`이므로 `B`이다" (since A, B), "`x`라
+% 하자" (let x); a few adverbs stand before it ("따라서", "특히", "즉").
+% The particles after a formula are written in the forms that do not
+% depend on its last sound (이므로, 임을, 을(를)).  The writer keeps the
+% English order of the other words.  For review by a speaker.
+phrase "ko" "이면" rhyp.          phrase-after "ko" "이면".
+phrase "ko" "임을 보이면 충분하다" rback.  phrase-after "ko" "임을 보이면 충분하다".
+phrase "ko" "로 귀결된다" rback.  phrase-after "ko" "로 귀결된다".
+
+write-role "ko" "let" "라 하자" rvar.            phrase-after "ko" "라 하자".
+write-role "ko" "let-plural" "라 하자" rvar.
+write-role "ko" "consider" "임의의" rvar.
+write-role "ko" "choose" "임의로 택한" rvar.
+write-role "ko" "assume" "라고 가정하자" rhyp.     phrase-after "ko" "라고 가정하자".
+write-role "ko" "we-prove" "임을 보이자" rclaim.   phrase-after "ko" "임을 보이자".
+write-role "ko" "prove" "임을 보여야 한다" rclaim. phrase-after "ko" "임을 보여야 한다".
+write-role "ko" "proved" "임을 보였다" rclaim.     phrase-after "ko" "임을 보였다".
+write-role "ko" "have" "이다" rclaim.              phrase-after "ko" "이다".
+write-role "ko" "thus-have" "그러므로" rclaim.
+write-role "ko" "get" "임을 얻는다" rclaim.        phrase-after "ko" "임을 얻는다".
+write-role "ko" "particular" "특히" rclaim.
+write-role "ko" "deduce" "따라서" rclaim.
+write-role "ko" "can-deduce" "임을 유도할 수 있다" rclaim.  phrase-after "ko" "임을 유도할 수 있다".
+write-role "ko" "so" "그러므로" rclaim.
+write-role "ko" "from" "로부터" rfact.             phrase-after "ko" "로부터".
+write-role "ko" "since" "이므로" rfact.            phrase-after "ko" "이므로".
+write-role "ko" "using" "을(를) 이용하여" rfact.   phrase-after "ko" "을(를) 이용하여".
+write-role "ko" "that-is" "즉" rfact.
+write-role "ko" "witness" "증인" rfact.
+write-role "ko" "by-induction-on" "에 대한 귀납법으로" rfact.  phrase-after "ko" "에 대한 귀납법으로".
+write-role "ko" "by-cases-on" "에 대한 경우 분석으로" rfact.  phrase-after "ko" "에 대한 경우 분석으로".
+write-role "ko" "generalise" "로 일반화한다" rfact.  phrase-after "ko" "로 일반화한다".
+write-role "ko" "recursion" "에 대한 재귀로" rfact.   phrase-after "ko" "에 대한 재귀로".
+write-role "ko" "rewriting" "을(를) 이용하여 다시 쓰면" rfact.  phrase-after "ko" "을(를) 이용하여 다시 쓰면".
+write-role "ko" "the-term" "항" rfact.
+write-word "ko" "and" "그리고".
+write-word "ko" "by" "에 의해".                   phrase-after "ko" "에 의해".
+write-word "ko" "arbitrary" "는 임의이다".
+write-word "ko" "ih" "귀납 가정에 의해".
+write-word "ko" "recursive-call" "재귀 호출".
+write-word "ko" "definition" "의 정의에 의해".     phrase-after "ko" "의 정의에 의해".
+write-word "ko" "case" "경우".
+write-word "ko" "base" "기저".
+write-word "ko" "inductive" "귀납".
+write-word "ko" "contradiction" "모순에 의해".
+write-word "ko" "back" "의 정의로 돌아가서".       phrase-after "ko" "의 정의로 돌아가서".
+write-word "ko" "in" "에서".                      phrase-after "ko" "에서".
+write-word "ko" "by-induction" "귀납법으로".
+write-word "ko" "by-cases" "경우 분석으로".
+write-word "ko" "on" "에 대하여".                 phrase-after "ko" "에 대하여".
+write-word "ko" "all-cases" "모든 경우에".
+write-word "ko" "no-element" "의 원소는 없다".     phrase-after "ko" "의 원소는 없다".
+write-word "ko" "to-prove" "을(를) 보이기 위해".   phrase-after "ko" "을(를) 보이기 위해".
+write-word "ko" "exhaustive" "이 경우들이 전부이므로".
+write-word "ko" "fix" "fix".
+write-word "ko" "argument" "인수".
+write-word "ko" "left-right" "왼쪽에서 오른쪽으로".
+write-word "ko" "right-left" "오른쪽에서 왼쪽으로".
+write-word "ko" "not-translated" "번역되지 않음".
+
+% Plural (CLDR): no plural forms, the category is always other.
+plural-category "ko" _ "other".

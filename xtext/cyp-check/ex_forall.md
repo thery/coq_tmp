@@ -1,5 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -13,4 +14,4 @@ Let `P : nat -> nat -> Prop`{.var}. Assume `exists x : nat, forall y : nat, P x 
       - Let us consider an arbitrary `y : nat`{.var}.
         - By H we have `forall y0 : nat, P x y0`{.claim}.
         - In particular `P x y`{.claim}.
-        - By definition of ex (ex_intro) with witness `x`{.fact}, we have `exists x0 : nat, P x0 y`{.claim} *by eapply @ex_intro; eauto*.
+        - By definition of ex (ex_intro) with witness `x`{.fact}, we have `exists x0 : nat, P x0 y`{.claim} *by Corelib.Init.Logic.ex_intro*.

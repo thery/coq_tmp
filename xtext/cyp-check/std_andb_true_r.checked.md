@@ -1,13 +1,19 @@
-<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. -->
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+by: tauto | congruence | lia | firstorder | auto
+---
 
 # andb_true_r
 
-✅ Let `b : bool`. We prove `b && true = b`.
+✅ Let `b : bool`{.var}. We prove `b && true = b`{.claim}.
 
-- ▫️ We prove `b && true = b` by case analysis on `b` (bool, match):
-- ✅ Case 1: we prove `true && true = true`.
-  - ✅ By definition of eq (eq_refl), we have `true = true` .*by eapply @eq_refl; eauto*
-- ✅ Case 2: we prove `false && true = false`.
-  - ✅ By definition of eq (eq_refl), we have `false = false` .*by eapply @eq_refl; eauto*
-- ✅ These cases being exhaustive, we deduce `b && true = b` .*by destruct b; cbn; eauto*
+- ▫️ We prove `b && true = b`{.fact} by case analysis on `b`{.fact} (bool, match):
+- ✅ Case 1: we prove `true && true = true`{.claim}.
+  - ✅ By definition of eq (eq_refl), we have `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
+- ✅ Case 2: we prove `false && true = false`{.claim}.
+  - ✅ By definition of eq (eq_refl), we have `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
+- ❌ These cases being exhaustive, we deduce `b && true = b`{.claim}.
+
+  <details><summary>not proved: b && true = b</summary></details>
 

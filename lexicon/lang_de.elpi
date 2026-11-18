@@ -1,0 +1,66 @@
+% German.  Phrases of the usual mathematical style ("Sei", "Angenommen",
+% "Es gilt", "Es genügt zu zeigen", "Daraus folgt"), as in German
+% textbooks; for review by a speaker.
+phrase "de" "sei" rvar.          phrase "de" "seien" rvar.
+phrase "de" "wenn" rhyp.         phrase "de" "falls" rhyp.
+phrase "de" "dann" rclaim.       phrase "de" "folgt" rclaim.   phrase "de" "wir haben" rclaim.
+phrase "de" "es genügt zu zeigen" rback.   phrase "de" "es reicht zu zeigen" rback.
+phrase "de" "das ist gleichbedeutend mit" rback.
+
+write-role "de" "let" "sei" rvar.
+write-role "de" "let-plural" "seien" rvar.
+write-role "de" "consider" "sei beliebig" rvar.
+write-role "de" "choose" "seien beliebig" rvar.
+write-role "de" "assume" "angenommen" rhyp.
+write-role "de" "we-prove" "wir zeigen" rclaim.
+write-role "de" "prove" "zu zeigen" rclaim.
+write-role "de" "proved" "wir haben gezeigt" rclaim.
+write-role "de" "have" "es gilt" rclaim.
+write-role "de" "thus-have" "also gilt" rclaim.
+write-role "de" "get" "wir erhalten" rclaim.
+write-role "de" "particular" "insbesondere" rclaim.
+write-role "de" "deduce" "daraus folgt" rclaim.
+write-role "de" "can-deduce" "können wir folgern" rclaim.
+write-role "de" "so" "also" rclaim.
+write-role "de" "from" "aus" rfact.
+write-role "de" "since" "da" rfact.
+write-role "de" "using" "mit" rfact.
+write-role "de" "that-is" "das heißt" rfact.
+write-role "de" "generalise" "verallgemeinern wir es zu" rfact.
+write-word "de" "witness" "mit dem Zeugen".
+write-word "de" "by-induction-on" "durch Induktion über".
+write-word "de" "by-cases-on" "durch Fallunterscheidung über".
+write-word "de" "recursion" "durch Rekursion über".
+write-word "de" "rewriting" "durch Umschreiben mit".
+write-word "de" "the-term" "der Term".
+write-word "de" "and" "und".
+write-word "de" "by" "nach".
+write-word "de" "arbitrary" "beliebig ist".
+write-word "de" "ih" "nach Induktionsvoraussetzung".
+write-word "de" "recursive-call" "dem rekursiven Aufruf".
+write-word "de" "definition" "nach Definition von".
+write-word "de" "case" "Fall".
+write-word "de" "base" "Anfang".
+write-word "de" "inductive" "Schritt".
+write-word "de" "contradiction" "durch Widerspruch".
+write-word "de" "back" "zurück zur Definition von".
+write-word "de" "in" "in".
+write-word "de" "by-induction" "durch Induktion".
+write-word "de" "by-cases" "durch Fallunterscheidung".
+write-word "de" "on" "über".
+write-word "de" "all-cases" "in allen Fällen".
+write-word "de" "no-element" "es gibt kein Element von".
+write-word "de" "to-prove" "um zu zeigen".
+write-word "de" "exhaustive" "da diese Fälle vollständig sind".
+write-word "de" "fix" "fix".
+write-word "de" "argument" "Argument".
+write-word "de" "left-right" "von links nach rechts".
+write-word "de" "right-left" "von rechts nach links".
+write-word "de" "not-translated" "nicht übersetzt".
+
+% The capital letters with umlauts (the others are those of lang_en.elpi).
+capital "de" "Ä" "ä".  capital "de" "Ö" "ö".  capital "de" "Ü" "ü".
+
+% Plural (CLDR): one for 1, other otherwise.
+plural-category "de" 1 "one" :- !.
+plural-category "de" _ "other".

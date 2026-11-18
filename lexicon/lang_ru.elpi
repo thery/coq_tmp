@@ -1,0 +1,77 @@
+% Russian.  Phrases of the usual mathematical style ("Пусть",
+% "Предположим, что", "Тогда", "Следовательно", "Поскольку ..., имеем",
+% "Достаточно доказать, что"), as in Russian textbooks; for review by a
+% speaker.
+phrase "ru" "если" rhyp.         phrase "ru" "то" rclaim.
+phrase "ru" "достаточно доказать, что" rback.  phrase "ru" "достаточно доказать" rback.
+phrase "ru" "что равносильно" rback.
+
+write-role "ru" "let" "пусть" rvar.
+write-role "ru" "let-plural" "пусть" rvar.
+write-role "ru" "consider" "рассмотрим произвольное" rvar.
+write-role "ru" "choose" "выберем произвольно" rvar.
+write-role "ru" "assume" "предположим, что" rhyp.
+write-role "ru" "we-prove" "докажем, что" rclaim.
+write-role "ru" "prove" "требуется доказать" rclaim.
+write-role "ru" "proved" "мы доказали" rclaim.
+write-role "ru" "have" "имеем" rclaim.
+write-role "ru" "thus-have" "таким образом, имеем" rclaim.
+write-role "ru" "get" "получаем" rclaim.
+write-role "ru" "particular" "в частности" rclaim.
+write-role "ru" "deduce" "следовательно" rclaim.
+write-role "ru" "can-deduce" "можно вывести" rclaim.
+write-role "ru" "so" "тогда" rclaim.
+write-role "ru" "from" "из" rfact.
+write-role "ru" "since" "поскольку" rfact.
+write-role "ru" "using" "используя" rfact.
+write-role "ru" "that-is" "то есть" rfact.
+write-role "ru" "witness" "со свидетелем" rfact.
+write-role "ru" "by-induction-on" "индукцией по" rfact.
+write-role "ru" "by-cases-on" "разбором случаев по" rfact.
+write-role "ru" "generalise" "обобщим до" rfact.
+write-role "ru" "recursion" "рекурсией по" rfact.
+write-role "ru" "rewriting" "переписывая с помощью" rfact.
+write-role "ru" "the-term" "терм" rfact.
+write-word "ru" "and" "и".
+write-word "ru" "by" "по".
+write-word "ru" "arbitrary" "произвольно".
+write-word "ru" "ih" "по предположению индукции".
+write-word "ru" "recursive-call" "рекурсивный вызов".
+write-word "ru" "definition" "по определению".
+write-word "ru" "case" "случай".
+write-word "ru" "base" "база".
+write-word "ru" "inductive" "шаг".
+write-word "ru" "contradiction" "от противного".
+write-word "ru" "back" "возвращаясь к определению".
+write-word "ru" "in" "в".
+write-word "ru" "by-induction" "индукцией".
+write-word "ru" "by-cases" "разбором случаев".
+write-word "ru" "on" "по".
+write-word "ru" "all-cases" "во всех случаях".
+write-word "ru" "no-element" "нет элементов типа".
+write-word "ru" "to-prove" "чтобы доказать".
+write-word "ru" "exhaustive" "эти случаи исчерпывают все возможности".
+write-word "ru" "fix" "fix".
+write-word "ru" "argument" "аргумент".
+write-word "ru" "left-right" "слева направо".
+write-word "ru" "right-left" "справа налево".
+write-word "ru" "not-translated" "не переведено".
+
+% The Cyrillic capital letters.
+capital "ru" "А" "а".  capital "ru" "Б" "б".  capital "ru" "В" "в".  capital "ru" "Г" "г".
+capital "ru" "Д" "д".  capital "ru" "Е" "е".  capital "ru" "Ё" "ё".  capital "ru" "Ж" "ж".
+capital "ru" "З" "з".  capital "ru" "И" "и".  capital "ru" "Й" "й".  capital "ru" "К" "к".
+capital "ru" "Л" "л".  capital "ru" "М" "м".  capital "ru" "Н" "н".  capital "ru" "О" "о".
+capital "ru" "П" "п".  capital "ru" "Р" "р".  capital "ru" "С" "с".  capital "ru" "Т" "т".
+capital "ru" "У" "у".  capital "ru" "Ф" "ф".  capital "ru" "Х" "х".  capital "ru" "Ц" "ц".
+capital "ru" "Ч" "ч".  capital "ru" "Ш" "ш".  capital "ru" "Щ" "щ".  capital "ru" "Ъ" "ъ".
+capital "ru" "Ы" "ы".  capital "ru" "Ь" "ь".  capital "ru" "Э" "э".  capital "ru" "Ю" "ю".
+capital "ru" "Я" "я".
+punctuation "ru" "«".  punctuation "ru" "»".
+
+% Plural (CLDR, integers): one (1, 21, 31, ... but not 11), few (2-4,
+% 22-24, ... but not 12-14), many (the others).
+plural-category "ru" N "one" :- M is N mod 10, H is N mod 100, M = 1, not (H = 11), !.
+plural-category "ru" N "few" :- M is N mod 10, H is N mod 100, M >= 2, M =< 4,
+  not (H >= 12, H =< 14), !.
+plural-category "ru" _ "many".

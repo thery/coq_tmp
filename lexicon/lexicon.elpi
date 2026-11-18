@@ -1,0 +1,72 @@
+% lexicon: the words of proofs written in natural language, per language.
+%
+% Pure data, loaded by a reader (cyp) and by a writer (xtext), with the few
+% generic predicates over it (case folding, plural forms).  No reading or
+% writing logic.  Load this file first, then the tables lang_<xx>.elpi.
+
+% ------------------------------------------------------------------ %
+% Roles: what a formula is in a step of a proof
+
+kind role type.
+type rvar, rhyp, rclaim, rfact, rback role.
+% rvar: a variable (or a definition) introduced; rhyp: a hypothesis;
+% rclaim: a claim, proved by the step; rfact: a fact used (a mention);
+% rback: a claim that replaces the goal (a backward step)
+
+% ------------------------------------------------------------------ %
+% Phrases
+
+% [phrase Lang Phrase Role]: a phrase that gives its role to a formula
+% (in lower case)
+pred phrase o:string, o:string, o:role.
+
+% [phrase-after Lang Phrase]: the phrase stands after the formula whose
+% role it gives (Korean "`A`라고 가정하자"); by default a phrase stands
+% before it
+pred phrase-after o:string, o:string.
+
+% The phrases of a writer, by their use (the same use in every language):
+%   [write-role Lang Use Phrase Role]: a phrase that gives a role; it is a
+%   phrase of the table above (the clause below);
+%   [write-word Lang Use Words]: the other words.
+pred write-role o:string, o:string, o:string, o:role.
+pred write-word o:string, o:string, o:string.
+phrase Lang P R :- write-role Lang _ P R.
+
+% ------------------------------------------------------------------ %
+% Writing systems
+
+% [capital Lang Upper Lower]: the capital letters of a language and their
+% lower case (case folding uses those of all the languages loaded)
+pred capital o:string, o:string, o:string.
+
+% [clitic Lang Prefix]: a prefix glued to the next word (Arabic و, ف);
+% a reader leaves it out of the words and of the phrases before matching
+pred clitic o:string, o:string.
+
+% [punctuation Lang P]: a punctuation mark of the language other than the
+% ASCII ones (Chinese "，", Arabic "،"): it ends a word
+pred punctuation o:string, o:string.
+
+% [unspaced Lang]: the language is written without spaces between words
+% (Chinese): a phrase is found anywhere in a text, not only between words
+pred unspaced o:string.
+
+% [lower S L]: S in lower case, by the capital letters of all the languages
+pred lower i:string, o:string.
+lower S L :- std.findall (capital _ _ _) Cs, std.fold Cs S lower-step L.
+pred lower-step i:prop, i:string, o:string.
+lower-step (capital _ U L) S S1 :- rex.replace U L S S1.
+
+% ------------------------------------------------------------------ %
+% Plural (the categories of the Unicode CLDR plural rules, for integers:
+% "zero", "one", "two", "few", "many", "other")
+
+% [plural-category Lang N Cat]: the category of the count N >= 0
+pred plural-category i:string, i:int, o:string.
+
+% [plural Lang N Forms W]: the form W of a word for the count N, from its
+% forms by category (the "other" form when the category has none)
+pred plural i:string, i:int, i:list (pair string string), o:string.
+plural L N Fs W :- plural-category L N C, std.lookup Fs C W, !.
+plural _ _ Fs W :- std.lookup Fs "other" W.

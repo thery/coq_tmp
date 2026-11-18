@@ -1,11 +1,14 @@
-<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas. -->
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+by: tauto | congruence | lia | firstorder | auto
+---
 
 # not_not_intro
 
-✅ Let `A : Prop`. Assume `A` (a). We prove `~ ~ A`.
+✅ Let `A : Prop`{.var}. Assume `A`{.hyp} (a). We prove `~ ~ A`{.claim}.
 
-- ▫️ Assume `~ A` (na).
-  - ✅ By a we have `A`.
-  - ✅ By na we have `~ A`, that is `A -> False`.
-  - ✅ We deduce `False`.
-
+- ▫️ Assume `~ A`{.hyp} (na).
+  - ✅ By a we have `A`{.claim}.
+  - ✅ By na we have `~ A`{.claim}, that is `A -> False`{.fact}.
+  - ✅ We deduce `False`{.claim}.

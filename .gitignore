@@ -4,3 +4,4 @@ cyp/vernac/lemma1.v
 xtext/exp_examples.v
 xtext/examples/exp_*
 xtext/cyp-check/exp_*
+xtext/cyp-check/**/*.out

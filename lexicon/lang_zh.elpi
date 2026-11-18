@@ -1,0 +1,64 @@
+% Chinese (simplified).  Phrases of the usual mathematical style ("设",
+% "假设", "若 ...，则", "因为 ...，所以", "只需证明"), as in Chinese
+% textbooks; written without spaces between words (unspaced).  For review
+% by a speaker.
+unspaced "zh".
+phrase "zh" "若" rhyp.           phrase "zh" "如果" rhyp.
+phrase "zh" "则" rclaim.         phrase "zh" "那么" rclaim.   phrase "zh" "可得" rclaim.
+phrase "zh" "只需证明" rback.    phrase "zh" "即证" rback.
+
+write-role "zh" "let" "设" rvar.
+write-role "zh" "let-plural" "设" rvar.
+write-role "zh" "consider" "任取" rvar.
+write-role "zh" "choose" "任意选取" rvar.
+write-role "zh" "assume" "假设" rhyp.
+write-role "zh" "we-prove" "我们证明" rclaim.
+write-role "zh" "prove" "需证" rclaim.
+write-role "zh" "proved" "我们已证明" rclaim.
+write-role "zh" "have" "我们有" rclaim.
+write-role "zh" "thus-have" "因此我们有" rclaim.
+write-role "zh" "get" "我们得到" rclaim.
+write-role "zh" "particular" "特别地" rclaim.
+write-role "zh" "deduce" "由此可得" rclaim.
+write-role "zh" "can-deduce" "可以推出" rclaim.
+write-role "zh" "so" "所以" rclaim.
+write-role "zh" "from" "由" rfact.
+write-role "zh" "since" "因为" rfact.
+write-role "zh" "using" "利用" rfact.
+write-role "zh" "that-is" "即" rfact.
+write-role "zh" "witness" "取见证" rfact.
+write-role "zh" "generalise" "我们将其推广为" rfact.
+write-role "zh" "rewriting" "用等式改写" rfact.
+write-word "zh" "by-induction-on" "用归纳法，对".
+write-word "zh" "by-cases-on" "分情形讨论，对".
+write-word "zh" "recursion" "用递归，对".
+write-word "zh" "the-term" "项".
+write-word "zh" "and" "且".
+write-word "zh" "by" "根据".
+write-word "zh" "arbitrary" "是任意的".
+write-word "zh" "ih" "根据归纳假设".
+write-word "zh" "recursive-call" "递归调用".
+write-word "zh" "definition" "根据定义".
+write-word "zh" "case" "情形".
+write-word "zh" "base" "基础".
+write-word "zh" "inductive" "归纳".
+write-word "zh" "contradiction" "根据矛盾".
+write-word "zh" "back" "回到定义".
+write-word "zh" "in" "于".
+write-word "zh" "by-induction" "用归纳法".
+write-word "zh" "by-cases" "分情形讨论".
+write-word "zh" "on" "对".
+write-word "zh" "all-cases" "在所有情形下".
+write-word "zh" "no-element" "没有元素属于".
+write-word "zh" "to-prove" "为证明".
+write-word "zh" "exhaustive" "这些情形是穷尽的".
+write-word "zh" "fix" "fix".
+write-word "zh" "argument" "参数".
+write-word "zh" "left-right" "从左到右".
+write-word "zh" "right-left" "从右到左".
+write-word "zh" "not-translated" "未翻译".
+punctuation "zh" "，".  punctuation "zh" "。".  punctuation "zh" "：".
+punctuation "zh" "；".  punctuation "zh" "、".  punctuation "zh" "（".  punctuation "zh" "）".
+
+% Plural (CLDR): no plural forms, the category is always other.
+plural-category "zh" _ "other".

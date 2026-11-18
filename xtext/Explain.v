@@ -1,10 +1,25 @@
 (* The command [Explain foo.]: print the proof of [foo] as text, after the
    basic transducer of "Extracting Text from Proofs" (TLCA 1995).
    [Explain foo to "foo.md".] writes the text to the file foo.md.
+   [Explain foo to "foo.md" in "fr".]: the same in French (the languages of
+   the lexicon: en, fr, it, de, nl, ru, zh, ar, ko, la
    [Explain_partial.], inside a proof, prints the proof so far. *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
 From XText Extra Dependency "xtext.elpi" as xtext.
+(* the lexicon (../lexicon): the roles and the phrases of each language,
+   shared with the reader cyp *)
+From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
+From Lexicon Extra Dependency "lang_en.elpi" as lex_en.
+From Lexicon Extra Dependency "lang_fr.elpi" as lex_fr.
+From Lexicon Extra Dependency "lang_it.elpi" as lex_it.
+From Lexicon Extra Dependency "lang_de.elpi" as lex_de.
+From Lexicon Extra Dependency "lang_nl.elpi" as lex_nl.
+From Lexicon Extra Dependency "lang_ru.elpi" as lex_ru.
+From Lexicon Extra Dependency "lang_zh.elpi" as lex_zh.
+From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
+From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
+From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
 
 (* The tactics tried on long subproofs (see xtext-tactic below).  Each is
    an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
@@ -46,17 +61,37 @@ Elpi Db xtext.db lp:{{
   xtext-guard-tactic "xtext_g_lia" "lia".
   xtext-guard-tactic "xtext_g_firstorder" "firstorder".
   xtext-guard-tactic "xtext_g_auto" "auto".
+  % [xtext-lang L]: the language of the texts ("en", "fr", "it"), whose
+  % phrases are those of the lexicon's lang_L.elpi.  The variable XTEXT_LANG
+  % overrides it.
+  pred xtext-lang o:string.
+  :name "xtext-lang"
+  xtext-lang "en".
 }}.
 
 Elpi Command Explain.
 Elpi Accumulate Db xtext.db.
+Elpi Accumulate File lex_core.
+Elpi Accumulate File lex_en.
+Elpi Accumulate File lex_fr.
+Elpi Accumulate File lex_it.
+Elpi Accumulate File lex_de.
+Elpi Accumulate File lex_nl.
+Elpi Accumulate File lex_ru.
+Elpi Accumulate File lex_zh.
+Elpi Accumulate File lex_ar.
+Elpi Accumulate File lex_ko.
+Elpi Accumulate File lex_la.
 Elpi Accumulate File xtext.
 Elpi Accumulate lp:{{
   main [str N] :- !, explain N T, coq.say T.
-  main [str N, str "to", str F] :- !, explain N T,
-    open_out F O, output O T, close_out O,
-    coq.say "Explain: written" F.
-  main _ :- coq.error "usage: Explain name. or Explain name to \"file.md\".".
+  main [str N, str "in", str L] :- !, ((writer-lang L :- !) => explain N T), coq.say T.
+  main [str N, str "to", str F] :- !, explain N T, write-text F T.
+  main [str N, str "to", str F, str "in", str L] :- !,
+    ((writer-lang L :- !) => explain N T), write-text F T.
+  main _ :- coq.error "usage: Explain name [to \"file.md\"] [in \"lang\"].".
+  pred write-text i:string, i:string.
+  write-text F T :- open_out F O, output O T, close_out O, coq.say "Explain: written" F.
 }}.
 Elpi Export Explain.
 
@@ -66,6 +101,17 @@ Elpi Export Explain.
    closes the proof. *)
 Elpi Command Explain_partial.
 Elpi Accumulate Db xtext.db.
+Elpi Accumulate File lex_core.
+Elpi Accumulate File lex_en.
+Elpi Accumulate File lex_fr.
+Elpi Accumulate File lex_it.
+Elpi Accumulate File lex_de.
+Elpi Accumulate File lex_nl.
+Elpi Accumulate File lex_ru.
+Elpi Accumulate File lex_zh.
+Elpi Accumulate File lex_ar.
+Elpi Accumulate File lex_ko.
+Elpi Accumulate File lex_la.
 Elpi Accumulate File xtext.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,

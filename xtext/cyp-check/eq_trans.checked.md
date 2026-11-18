@@ -1,10 +1,13 @@
-<!-- checked by cyp; prelude: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive. -->
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+by: tauto | congruence | lia | firstorder | auto
+---
 
 # eq_trans'
 
-✅ Let `a b c : nat`. Assume `a = b` (H1) and `b = c` (H2). We prove `a = c`.
+✅ Let `a b c : nat`{.var}. Assume `a = b`{.hyp} (H1) and `b = c`{.hyp} (H2). We prove `a = c`{.claim}.
 
-- ✅ By H2 we have `b = c`.
-- ✅ By H1 we have `a = b`.
-- ✅ Rewriting with `a = b` from right to left (eq_ind_r), we get `a = c`.
-
+- ✅ By H2 we have `b = c`{.claim}.
+- ✅ By H1 we have `a = b`{.claim}.
+- ✅ Rewriting with `a = b`{.fact} from right to left (eq_ind_r), we get `a = c`{.claim}.

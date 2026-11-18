@@ -13,4 +13,4 @@ Let `x y z t : Prop`{.var}. Assume `(x -> z) /\ (y -> t)`{.hyp} (H). We prove `x
       - Assume `x`{.hyp} (Hx) and `y`{.hyp} (Hy).
         - Prove `z`{.claim}.
         - Prove `t`{.claim}.
-        - So by definition of and (conj), we have `z /\ t`{.claim} *by eapply @conj; eauto*.
+        - So by definition of and (conj), we have `z /\ t`{.claim} *by Corelib.Init.Logic.conj*.

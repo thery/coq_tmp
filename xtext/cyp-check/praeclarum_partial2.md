@@ -1,5 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.partial.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -15,4 +16,4 @@ Let `x y z t : Prop`{.var}. Assume `(x -> z) /\ (y -> t)`{.hyp} (H). We prove `x
           - By Hx we have `x`{.claim}.
           - By Hxz we have `x -> z`{.claim}.
         - Prove `t`{.claim}.
-        - So by definition of and (conj), we have `z /\ t`{.claim} *by eapply @conj; eauto*.
+        - So by definition of and (conj), we have `z /\ t`{.claim} *by Corelib.Init.Logic.conj*.

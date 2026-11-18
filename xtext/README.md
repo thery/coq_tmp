@@ -13,35 +13,42 @@ cyp can check it again.
 
 ```coq
 From XText Require Import Explain.
-Explain foo.                       (* prints the text *)
-Explain foo to "examples/foo.md".  (* writes it to a file *)
+Explain foo.                                (* prints the text *)
+Explain foo to "examples/foo.md".           (* writes it to a file *)
+Explain foo to "examples/fr/foo.md" in "fr".   (* in French; also it de nl ru zh ar ko la *)
 ```
 
 Proofs ending with `Qed` work too: the body is read with
-`coq.env.const-body`, which rocq-elpi 3.4.0 gives even for opaque
+`coq.env.const-body`, which rocq-elpi gives even for opaque
 constants.
 
 ## Build
 
-Rocq 9.1.1 and rocq-elpi 3.4.0 (opam switch `native`):
+Rocq 9.1.1, Elpi 4.0.0 and rocq-elpi 3.5.1 (opam switch `elpi4`, the
+switch of cyp).  xtext needs the lexicon, `../lexicon` (logical name
+`Lexicon`), and nothing of cyp:
 
 ```sh
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=native --set-switch)"
-make          # builds Explain.vo, then paper.v, lemmas.v, inductive.v, which write examples/*.md
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4)"
+make          # builds Explain.vo, then the example files, which write examples/*.md
 ```
 
 Files: `xtext.elpi` (the transducer), `Explain.v` (the command),
 `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
-`inductive.v` (induction, case analysis, rewriting, fix), `examples/`
-(the 24 texts produced), `cyp-check/` (cyp's results); see also
-`thesis.v` and `stdlib.v` below.  (The texts of a larger case study, a
-floating-point proof, are kept in a private branch.)
+`inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`,
+`stdlib.v`, `elim_type.v`, `partial.v` (see below): the texts in
+`examples/` (82 with those of a private case study, kept in a private
+branch); `multilingual.v`: 12 of them in each of the other
+languages of the lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`,
+`ko`, `la`); `vocab_check.v` (the vocabulary, below); the optional checks with cyp:
+`cyprun.sh`, `cyp-check/` (cyp's results, below), and
+`cyp-check/roles_check.sh`.
 
 ## The output
 
 ```markdown
 ---
-require: From Stdlib Require Import Arith Lia List. Import ListNotations. Require Import XText.paper.
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -52,21 +59,78 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 - We prove `B \/ A`{.fact} by case analysis on `A \/ B`{.fact} (h) (or, or_ind):
 - Case 1: we prove `A -> B \/ A`{.claim}.
   - Assume `A`{.hyp} (i).
-    - By definition of or (or_intror), from `A`{.fact} (i) we deduce `B \/ A`{.claim} *by eapply @or_intror; eauto*.
+    - By definition of or (or_intror), from `A`{.fact} (i) we deduce `B \/ A`{.claim} *by Corelib.Init.Logic.or_intror*.
 - Case 2: we prove `B -> B \/ A`{.claim}.
   ...
 - We have `B \/ A`{.claim} in all cases.
 ```
 
 - the header is cyp's; `require` loads the file that defines the theorem;
+  a text in another language has `lang: fr`, `lang: ko`, ...;
 - the abstractions at the top of the proof make the statement (`Let`,
   `Assume`, `We prove`);
 - each formula carries its cyp role (`{.var}`, `{.hyp}`, `{.claim}`,
   `{.fact}`), so that cyp does not have to guess it from the words;
 - a subproof is a list item: its conclusion, with the lines that lead to
   it indented below;
-- each step names its rule or lemma; a theorem step carries `*by exact
-  @T*`, a constructor step `*by eapply @K; eauto*`.
+- each step names its rule or lemma, and its justification for cyp is a
+  name, which cyp applies (`*by X*`: cyp runs no tactic code): a theorem
+  step and a constructor step carry the full name of the theorem or of the
+  constructor, `*by Stdlib.Lists.List.rev_unit*`; the closing step of a
+  dependent elimination (the generalised statement) the elimination
+  theorem, `*by Corelib.Init.Datatypes.nat_ind*`; a step proved by a
+  tactic (below) the tactic's name, `*by lia*`.  The closing steps of a
+  `match` and of a first-kind elimination (`or_ind`, `le_ind`) have none:
+  the motive is not found from the goal by unification when the type has
+  indices, and a `match` would need `destruct`; cyp's default tactics
+  close them when they can.
+
+### The words: the lexicon
+
+xtext takes every phrase it writes from the lexicon
+([`../lexicon`](../lexicon/README.md), `lang_<lang>.elpi`), a library of
+its own that cyp reads proofs with too; xtext does not depend on cyp.
+Next to the reading table (`phrase Lang Phrase Role`), each table has the
+writer's phrases:
+
+- `write-role Lang Use Phrase Role`: a phrase that gives the role of the
+  formula after it (`"deduce" "we deduce" rclaim`, `"rewriting"
+  "rewriting with" rfact`).  It is also a phrase of the reading table (one
+  clause, `phrase L P R :- write-role L _ P R`), so cyp reads it with the
+  role the writer means;
+- `write-word Lang Use Words`: the other words (`"by-cases" "by case
+  analysis"`, `"base" "base"`).
+
+A sentence is written as a list of parts, `wd Use` (the phrase of a use in
+the language of the text) and `tx S` (formulas, names, punctuation), joined
+by spaces (`say` in `xtext.elpi`); a sentence that starts with a phrase
+has its first letter capitalised, by the capital letters of the lexicon
+(`say-cap`).  The same lists serve every language: only the table changes,
+so a text in another language has the structure, the formulas and the
+justifications of the English one (`Supposons ... (h). Montrons ...`).
+The language is the `in "fr"` of the command, or `xtext-lang` in
+`xtext.db` (default `en`), or the variable `XTEXT_LANG`.  A phrase that the
+lexicon puts after its formula (`phrase-after`, Korean) is moved after the
+parts it governs: up to the next phrase of a role, the next `,` `.` `:`
+`;` outside parentheses, or the justification (`` `A`{.hyp} (h) 그리고
+`B`{.hyp} (h2) 라고 가정하자 ``).  Otherwise the word order is the English
+one: the tables avoid the phrases that would need another order
+(`Considérons un élément arbitraire x : A`), and the Korean texts keep the
+English order of the words that give no role (`` `B \/ A`{.claim} 모든
+경우에 이다 ``, "in all cases ... is").  No text was reviewed by a speaker.
+
+- `vocab_check.v` checks that each language has a phrase for every use
+  of the English table and that the phrases of roles are in lower case.
+- `cyp-check/roles_check.sh` (optional, with cyp) reads every text with
+  cyp's reader twice, with the tags
+  and without them, and lists the formulas whose role comes only from
+  the tag.  Over the 82 English texts (1933 lines), 94 lines: the goal
+  announced before a proof by cases (``We prove `G`{.fact} by case
+  analysis on ...``, a mention after a claim phrase, 65 lines) and the
+  object in ``Going back to the definition of and (match) in `A /\ B`{.fact}``
+  (29 lines; `in` is too common a word to be a fact phrase for cyp).
+  Over the 12 texts (136 lines) of each other language: fr 11, it 11,
+  de 12, nl 11, ru 11, zh 12, ar 11, ko 8, la 10 lines.
 
 ## Rules of the paper (TLCA 1995, section 3.1)
 
@@ -148,11 +212,11 @@ They replace the paper's rules for introduction and elimination theorems.
   recursive call f) we have τ`, and a `match` whose case calls `f` is an
   inductive case.  Nothing checks that the calls are on smaller
   arguments, since Rocq already did.
-- The closing step of an elimination (`These cases being exhaustive, we
-  deduce ...`, `We have τ in all cases`) gets a justification built from
-  the elimination: `*by eapply (@T params motive); cbv beta; eauto*` for an
-  elimination theorem `T`, which closes it from the case claims, and
-  `*by destruct x; cbn; eauto*` for a `match` on a variable `x`.
+- The closing step of a dependent elimination (`These cases being
+  exhaustive, we deduce ...`) is justified by the elimination theorem
+  (`*by Corelib.Init.Datatypes.nat_ind*`), which cyp applies to the case
+  claims; the closing step of a first-kind elimination or of a `match`
+  (`We have τ in all cases`) has no justification (see "The output").
 - Intro patterns leave redexes `fun h => (fun i => M) h`; they are reduced
   and the user's name `i` is kept.  Other redexes are cuts and are
   rendered with the application rules.  Casts are skipped; `let x := N in
@@ -181,36 +245,8 @@ They replace the paper's rules for introduction and elimination theorems.
   hypothesis `n <= m` (`le_n_S'`), a `Fixpoint` on `nat` (`le_0_n'`) and
   on lists (`length_app'`), case analysis on a boolean (`bool_cases`).
 
-All 24 texts are generated (`examples/`).  cyp was run on 15 of them
-(`cyp-check/`, with `CYP_ROCQ="rocq c -R /home/thery/git/coq_tmp/xtext
-XText"` so that the `Require Import XText.<file>` of the header works):
-
-| text | list items | proved | not proved | not checked |
-|---|---|---|---|---|
-| S_proof | 6 | 6 | 0 | 0 |
-| imp_trans | 5 | 5 | 0 | 0 |
-| eq_trans | 3 | 3 | 0 | 0 |
-| bool_cases | 8 | 7 | 0 | 1 |
-| add_0_r | 11 | 8 | 0 | 3 |
-| plus_n_Sm | 11 | 8 | 0 | 3 |
-| le_0_m | 8 | 5 | 0 | 3 |
-| le_n_S | 8 | 5 | 0 | 3 |
-| or_commut | 8 | 5 | 0 | 3 |
-| or_swap | 8 | 5 | 0 | 3 |
-| app_nil_r | 12 | 8 | 0 | 4 |
-| praeclarum | 11 | 9 | 0 | 2 |
-| nearly_reflexive | 11 | 9 | 0 | 2 |
-| le_0_n_fix | 11 | 8 | 0 | 3 |
-| length_app_fix | 15 | 9 | 1 | 5 |
-
-- *Not checked*: lines with no claim (`Let`, `Assume`, the announcement
-  of a case analysis) and the cases' own closing.
-- `length_app_fix`: the red step is the recursive call, `By induction
-  hypothesis (the recursive call length_app') we have ...`: it states
-  the theorem itself, which cyp cannot prove without the fix.
-- cyp proves each claim again with its own tactics, so a green step says
-  that the claim follows, not that it follows the way the text says.
-
+All these texts are generated in `examples/`; cyp's results are below
+("Checking the texts with cyp").
 ## The examples of the two theses (`thesis.v`)
 
 The proof terms are written as close as possible to the λ-terms of the
@@ -317,10 +353,6 @@ Files: `thesis.v` (the theses' examples, above), `stdlib.v` (40 lemmas
 of Rocq's Stdlib, explained from the library itself: `Time Explain
 app_assoc to ...`).  `measure.sh f.v` prints, for each text, the time of
 `Explain` (Rocq's `Time`), the number of list items and the size;
-`cyprun.sh` runs cyp (300 s per text).
-
-The sizes, times and cyp results of all texts are in the table of the next
-section (columns "none" and "cyp before" are the state of this section).
 
 What breaks or becomes unreadable on the large ones:
 
@@ -330,8 +362,8 @@ What breaks or becomes unreadable on the large ones:
   `RelationClasses.Reflexive`, the internals of `rewrite`, not about
   arithmetic.  The certificates of `lia`, `ring` or `interval` appear as
   local definitions (`Let __ff be Tauto.IMPL (...)`) and lines of
-  1500-2200 characters.  Now partly handled, see "Tactic-built subproofs"
-  below.
+  1500-2200 characters.  Now partly handled, see "Tactic-built
+  subproofs" below.
 - **Implicit arguments.**  Rocq prints `Equivalence eq` or `length [] =
   0` without the type, and these formulas do not type-check again: cyp
   marks them as errors, and all the steps after them too.  This is most of
@@ -342,28 +374,6 @@ What breaks or becomes unreadable on the large ones:
   written as cyp's local definitions (below).
 - **Size**: `Nat.le_trans` (484 items) is generated in 0.5 s, but cyp
   does not finish it within its limit (300 s).
-
-### Fixes to the transducer in this round
-
-Each was needed by an example, and changes no rule of the paper or the
-thesis:
-
-- `tr` keeps its first answer and, when no rule applies to a subterm,
-  shows it unchanged.  A failure deep in a `ring` certificate used to make
-  the whole translation backtrack (more than 15 minutes on one example);
-  it now takes 0.04 s.
-- `let x := V in M` keeps `x` with its value in the context (before, it
-  was read as `(fun x => M) V`, and types under `x` were no longer
-  convertible).  A local proof
-  is now a cut: its subproof, named `(x)`, then the rest.  This changes
-  the texts of `drinker` and `forall_and` (`destruct` on a term builds such
-  a `let`): one level less, and the cases come right after the cut.
-- The header also loads `Bool`, for the Stdlib boolean lemmas.
-- The `destruct x` justification is used only when `x` is not a proof:
-  cyp names hypotheses `H`, `H0`, ..., not as in the text (`or_sym_nd`).
-
-Regression: all 24 earlier texts are generated, and cyp gives the same
-counts as before on the 15 of `cyp-check/`.
 
 ## Inferable arguments, tactics, unfolding
 
@@ -475,100 +485,83 @@ The tactics and the inferable arguments shorten the texts (by 26 % and
 longer (by 2 % and 3 % in characters).  With all four, the texts have
 36 % fewer items.  All 76 texts are still generated, in 16 s in all.
 
-Per text: items and characters with no mechanism and with all; cyp
-(proved / not proved / not checked), before (previous section) and after.
-The texts were checked with a time limit of 300 s each.  `Nat.le_trans`
-times out both before and after (484 → 112 items).  A few texts not checked in the previous rounds are
-"not run" before.
+Per text: items and characters with no mechanism and with all, and the
+generation time with all (switch `native`).
 
-| example | items none → all | chars none → all | time all (s) | cyp before | cyp after |
-|---|---|---|---|---|---|
-| identity | 1 → 1 | 272 → 272 | 0.04 | not run | 1 / 0 / 0 |
-| S_proof | 6 → 6 | 484 → 484 | 0.01 | 6 / 0 / 0 | 6 / 0 / 0 |
-| or_intro_example | 2 → 2 | 475 → 475 | 0.01 | not run | 2 / 0 / 0 |
-| or_commut | 8 → 8 | 805 → 805 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
-| le_0_m | 8 → 8 | 882 → 882 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
-| praeclarum | 11 → 11 | 942 → 942 | 0.02 | 9 / 0 / 2 | 9 / 0 / 2 |
-| nearly_reflexive | 11 → 9 | 1075 → 960 | 0.02 | 9 / 0 / 2 | 7 / 0 / 2 |
-| drinker | 26 → 25 | 2387 → 2338 | 0.06 | not run | 18 / 0 / 7 |
-| and_swap | 3 → 3 | 525 → 525 | 0.04 | not run | 2 / 0 / 1 |
-| or_swap | 8 → 8 | 747 → 747 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
-| imp_trans | 5 → 5 | 444 → 444 | 0.01 | 5 / 0 / 0 | 5 / 0 / 0 |
-| not_not_intro | 4 → 4 | 375 → 404 | 0.01 | not run | 3 / 0 / 1 |
-| ex_forall | 7 → 7 | 881 → 881 | 0.03 | not run | 4 / 0 / 3 |
-| forall_and | 5 → 5 | 585 → 585 | 0.02 | not run | 4 / 0 / 1 |
-| add_0_r | 11 → 11 | 1110 → 1110 | 0.04 | 8 / 0 / 3 | 8 / 0 / 3 |
-| le_add_r | 15 → 15 | 1594 → 1594 | 0.08 | not run | 12 / 0 / 3 |
-| double_neg_em | 9 → 9 | 715 → 787 | 0.01 | not run | 7 / 0 / 2 |
-| plus_n_Sm | 11 → 11 | 1295 → 1295 | 0.07 | 8 / 0 / 3 | 8 / 0 / 3 |
-| app_nil_r | 12 → 12 | 1224 → 1236 | 0.05 | 8 / 0 / 4 | 8 / 0 / 4 |
-| eq_trans | 3 → 3 | 437 → 437 | 0.02 | 3 / 0 / 0 | 3 / 0 / 0 |
-| le_n_S | 8 → 8 | 992 → 992 | 0.07 | 5 / 0 / 3 | 5 / 0 / 3 |
-| le_0_n_fix | 11 → 11 | 1048 → 1048 | 0.01 | 8 / 0 / 3 | 8 / 0 / 3 |
-| length_app_fix | 15 → 14 | 1676 → 1552 | 0.04 | 9 / 1 / 5 | 8 / 1 / 5 |
-| bool_cases | 8 → 8 | 977 → 977 | 0.01 | 7 / 0 / 1 | 7 / 0 / 1 |
-| Tauto | 4 → 4 | 417 → 417 | 0.09 | 4 / 0 / 0 | 4 / 0 / 0 |
-| Trans_Inv | 5 → 4 | 567 → 661 | 0.01 | 5 / 0 / 0 | 4 / 0 / 0 |
-| ABCD | 12 → 12 | 720 → 720 | 0.01 | 12 / 0 / 0 | 12 / 0 / 0 |
-| or_com | 8 → 8 | 807 → 807 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
-| or_sym_nd | 8 → 8 | 755 → 755 | 0.01 | 5 / 0 / 3 | 5 / 0 / 3 |
-| praeclarum_nd | 17 → 13 | 1296 → 1082 | 0.01 | 17 / 0 / 0 | 13 / 0 / 0 |
-| ADD0 | 12 → 11 | 1182 → 1114 | 0.02 | 9 / 0 / 3 | 8 / 0 / 3 |
-| std_app_assoc | 38 → 36 | 3632 → 3469 | 0.29 | 32 / 0 / 6 | 30 / 0 / 6 |
-| std_app_nil_r | 30 → 28 | 2741 → 2633 | 0.11 | 25 / 0 / 5 | 23 / 0 / 5 |
-| std_app_comm_cons | 1 → 1 | 380 → 426 | 0.01 | 1 / 0 / 0 | 1 / 0 / 0 |
-| std_rev_involutive | 15 → 15 | 1651 → 1661 | 0.04 | 11 / 0 / 4 | 11 / 0 / 4 |
-| std_rev_app_distr | 18 → 18 | 2222 → 2222 | 0.06 | 14 / 0 / 4 | 14 / 0 / 4 |
-| std_length_rev | 18 → 18 | 2276 → 2286 | 0.07 | 1 / 13 / 4 | 14 / 0 / 4 |
-| std_map_app | 15 → 15 | 1945 → 1945 | 0.05 | 9 / 0 / 6 | 9 / 0 / 6 |
-| std_map_map | 12 → 12 | 1788 → 1793 | 0.04 | 8 / 0 / 4 | 8 / 0 / 4 |
-| std_length_app | 16 → 15 | 1988 → 1908 | 0.04 | 1 / 9 / 6 | 9 / 0 / 6 |
-| std_in_app_or | 31 → 31 | 3278 → 3278 | 0.21 | 18 / 1 / 12 | 18 / 1 / 12 |
-| std_in_or_app | 69 → 18 | 5983 → 1755 | 0.08 | 48 / 0 / 21 | 10 / 0 / 8 |
-| std_in_map | 36 → 36 | 3149 → 3149 | 0.08 | 23 / 0 / 13 | 23 / 0 / 13 |
-| std_in_eq | 4 → 4 | 465 → 465 | 0.01 | 2 / 0 / 2 | 2 / 0 / 2 |
-| std_in_cons | 4 → 4 | 453 → 453 | 0.01 | 1 / 0 / 3 | 1 / 0 / 3 |
-| std_Nat_add_comm | 196 → 85 | 25194 → 11659 | 0.41 | 81 / 107 / 8 | 80 / 1 / 4 |
-| std_Nat_add_assoc | 265 → 105 | 35634 → 15181 | 0.42 | 102 / 154 / 9 | 100 / 1 / 4 |
-| std_Nat_mul_comm | 196 → 85 | 25202 → 11657 | 0.37 | 81 / 107 / 8 | 80 / 1 / 4 |
-| std_Nat_le_trans | 484 → 112 | 80900 → 21247 | 0.51 | timeout | timeout |
-| std_Nat_add_0_r | 138 → 104 | 16997 → 14066 | 0.45 | 59 / 73 / 6 | 95 / 3 / 6 |
-| std_Nat_add_succ_r | 202 → 87 | 26069 → 12046 | 0.47 | 85 / 109 / 8 | 82 / 1 / 4 |
-| std_Nat_le_refl | 19 → 16 | 1981 → 1784 | 0.04 | 7 / 10 / 2 | 14 / 0 / 2 |
-| std_Nat_lt_irrefl | 42 → 35 | 5707 → 4457 | 0.12 | 30 / 9 / 3 | 32 / 0 / 3 |
-| std_Nat_mul_1_r | 118 → 89 | 14492 → 12345 | 0.37 | 41 / 73 / 4 | 85 / 0 / 4 |
-| std_Nat_pred_succ | 1 → 1 | 301 → 338 | 0.01 | 1 / 0 / 0 | 1 / 0 / 0 |
-| std_plus_n_O | 12 → 11 | 1161 → 1093 | 0.02 | 9 / 0 / 3 | 8 / 0 / 3 |
-| std_plus_n_Sm | 12 → 11 | 1312 → 1222 | 0.03 | 9 / 0 / 3 | 8 / 0 / 3 |
-| std_andb_comm | 16 → 16 | 1568 → 1568 | 0.02 | 13 / 0 / 3 | 13 / 0 / 3 |
-| std_orb_comm | 16 → 16 | 1563 → 1563 | 0.02 | 13 / 0 / 3 | 13 / 0 / 3 |
-| std_negb_involutive | 6 → 6 | 700 → 700 | 0.01 | 5 / 0 / 1 | 5 / 0 / 1 |
-| std_andb_true_r | 6 → 6 | 676 → 676 | 0.04 | 5 / 0 / 1 | 5 / 0 / 1 |
-| std_orb_false_r | 6 → 6 | 681 → 681 | 0.01 | 5 / 0 / 1 | 5 / 0 / 1 |
-| std_andb_assoc | 36 → 36 | 3838 → 3838 | 0.06 | 29 / 0 / 7 | 29 / 0 / 7 |
-| std_negb_andb | 16 → 16 | 1785 → 1785 | 0.03 | 13 / 0 / 3 | 13 / 0 / 3 |
-| std_and_comm | 11 → 11 | 1055 → 1091 | 0.02 | 7 / 0 / 4 | 7 / 0 / 4 |
-| std_or_comm | 21 → 21 | 1536 → 1572 | 0.02 | 13 / 0 / 8 | 13 / 0 / 8 |
-| std_and_assoc | 21 → 21 | 1898 → 1946 | 0.05 | 15 / 0 / 6 | 15 / 0 / 6 |
-| std_or_assoc | 39 → 39 | 3063 → 3111 | 0.05 | 25 / 0 / 14 | 22 / 3 / 14 |
-| std_eq_sym | 2 → 2 | 425 → 425 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
-| std_eq_trans | 2 → 2 | 399 → 399 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
-| std_f_equal | 2 → 2 | 464 → 464 | 0.01 | 2 / 0 / 0 | 2 / 0 / 0 |
+| example | items none → all | chars none → all | time all (s) |
+|---|---|---|---|
+| identity | 1 → 1 | 272 → 272 | 0.04 |
+| S_proof | 6 → 6 | 484 → 484 | 0.01 |
+| or_intro_example | 2 → 2 | 475 → 475 | 0.01 |
+| or_commut | 8 → 8 | 805 → 805 | 0.01 |
+| le_0_m | 8 → 8 | 882 → 882 | 0.01 |
+| praeclarum | 11 → 11 | 942 → 942 | 0.02 |
+| nearly_reflexive | 11 → 9 | 1075 → 960 | 0.02 |
+| drinker | 26 → 25 | 2387 → 2338 | 0.06 |
+| and_swap | 3 → 3 | 525 → 525 | 0.04 |
+| or_swap | 8 → 8 | 747 → 747 | 0.01 |
+| imp_trans | 5 → 5 | 444 → 444 | 0.01 |
+| not_not_intro | 4 → 4 | 375 → 404 | 0.01 |
+| ex_forall | 7 → 7 | 881 → 881 | 0.03 |
+| forall_and | 5 → 5 | 585 → 585 | 0.02 |
+| add_0_r | 11 → 11 | 1110 → 1110 | 0.04 |
+| le_add_r | 15 → 15 | 1594 → 1594 | 0.08 |
+| double_neg_em | 9 → 9 | 715 → 787 | 0.01 |
+| plus_n_Sm | 11 → 11 | 1295 → 1295 | 0.07 |
+| app_nil_r | 12 → 12 | 1224 → 1236 | 0.05 |
+| eq_trans | 3 → 3 | 437 → 437 | 0.02 |
+| le_n_S | 8 → 8 | 992 → 992 | 0.07 |
+| le_0_n_fix | 11 → 11 | 1048 → 1048 | 0.01 |
+| length_app_fix | 15 → 14 | 1676 → 1552 | 0.04 |
+| bool_cases | 8 → 8 | 977 → 977 | 0.01 |
+| Tauto | 4 → 4 | 417 → 417 | 0.09 |
+| Trans_Inv | 5 → 4 | 567 → 661 | 0.01 |
+| ABCD | 12 → 12 | 720 → 720 | 0.01 |
+| or_com | 8 → 8 | 807 → 807 | 0.01 |
+| or_sym_nd | 8 → 8 | 755 → 755 | 0.01 |
+| praeclarum_nd | 17 → 13 | 1296 → 1082 | 0.01 |
+| ADD0 | 12 → 11 | 1182 → 1114 | 0.02 |
+| std_app_assoc | 38 → 36 | 3632 → 3469 | 0.29 |
+| std_app_nil_r | 30 → 28 | 2741 → 2633 | 0.11 |
+| std_app_comm_cons | 1 → 1 | 380 → 426 | 0.01 |
+| std_rev_involutive | 15 → 15 | 1651 → 1661 | 0.04 |
+| std_rev_app_distr | 18 → 18 | 2222 → 2222 | 0.06 |
+| std_length_rev | 18 → 18 | 2276 → 2286 | 0.07 |
+| std_map_app | 15 → 15 | 1945 → 1945 | 0.05 |
+| std_map_map | 12 → 12 | 1788 → 1793 | 0.04 |
+| std_length_app | 16 → 15 | 1988 → 1908 | 0.04 |
+| std_in_app_or | 31 → 31 | 3278 → 3278 | 0.21 |
+| std_in_or_app | 69 → 18 | 5983 → 1755 | 0.08 |
+| std_in_map | 36 → 36 | 3149 → 3149 | 0.08 |
+| std_in_eq | 4 → 4 | 465 → 465 | 0.01 |
+| std_in_cons | 4 → 4 | 453 → 453 | 0.01 |
+| std_Nat_add_comm | 196 → 85 | 25194 → 11659 | 0.41 |
+| std_Nat_add_assoc | 265 → 105 | 35634 → 15181 | 0.42 |
+| std_Nat_mul_comm | 196 → 85 | 25202 → 11657 | 0.37 |
+| std_Nat_le_trans | 484 → 112 | 80900 → 21247 | 0.51 |
+| std_Nat_add_0_r | 138 → 104 | 16997 → 14066 | 0.45 |
+| std_Nat_add_succ_r | 202 → 87 | 26069 → 12046 | 0.47 |
+| std_Nat_le_refl | 19 → 16 | 1981 → 1784 | 0.04 |
+| std_Nat_lt_irrefl | 42 → 35 | 5707 → 4457 | 0.12 |
+| std_Nat_mul_1_r | 118 → 89 | 14492 → 12345 | 0.37 |
+| std_Nat_pred_succ | 1 → 1 | 301 → 338 | 0.01 |
+| std_plus_n_O | 12 → 11 | 1161 → 1093 | 0.02 |
+| std_plus_n_Sm | 12 → 11 | 1312 → 1222 | 0.03 |
+| std_andb_comm | 16 → 16 | 1568 → 1568 | 0.02 |
+| std_orb_comm | 16 → 16 | 1563 → 1563 | 0.02 |
+| std_negb_involutive | 6 → 6 | 700 → 700 | 0.01 |
+| std_andb_true_r | 6 → 6 | 676 → 676 | 0.04 |
+| std_orb_false_r | 6 → 6 | 681 → 681 | 0.01 |
+| std_andb_assoc | 36 → 36 | 3838 → 3838 | 0.06 |
+| std_negb_andb | 16 → 16 | 1785 → 1785 | 0.03 |
+| std_and_comm | 11 → 11 | 1055 → 1091 | 0.02 |
+| std_or_comm | 21 → 21 | 1536 → 1572 | 0.02 |
+| std_and_assoc | 21 → 21 | 1898 → 1946 | 0.05 |
+| std_or_assoc | 39 → 39 | 3063 → 3111 | 0.05 |
+| std_eq_sym | 2 → 2 | 425 → 425 | 0.01 |
+| std_eq_trans | 2 → 2 | 399 → 399 | 0.01 |
+| std_f_equal | 2 → 2 | 464 → 464 | 0.01 |
 
-
-Over the 65 texts checked both before and after, cyp proves 1084 steps
-(1036 before) and fails on 32 (693 before); 222 are not checked (252).  The
-failures before were mostly formulas that did not type-check again (`length
-[] = 0`, `Equivalence eq`) and the steps after them; after, most of the
-`Nat.*` failures are gone (`Nat.add_comm`: 107 → 1).  What remains:
-
-- `std_or_assoc` (3, was 0): steps whose claim is true but that cyp's
-  default tactics do not prove in their time limit;
-- `length_app_fix` (1): the recursive call, as before.
-
-Also fixed in this round: the `*by exact @T*` of a theorem uses its full
-name (`@Stdlib.Classes.Morphisms.eq_proper_proxy`), which needs only
-that its library be loaded, not imported.
 
 ## Contraction, eliminations by their type, proofs in progress
 
@@ -674,51 +667,78 @@ over the texts; the guard costs it.
 | maximal | 1720 | 267311 | 13.6 |
 | guarded | 1818 | 279926 | 33.5 |
 
-Texts that change, with cyp (proved / not proved / not checked; 300 s
-per text).  "cyp none" is the previous round.  "= guarded" means the
-maximal text has the same structure as the guarded one.
+Texts that change with the strategy:
 
-| example | items none / maximal / guarded | chars none → guarded | cyp none | cyp maximal | cyp guarded |
-|---|---|---|---|---|---|
-| S_proof | 6 / 5 / 5 | 484 → 466 | 6 / 0 / 0 | = guarded | 5 / 0 / 0 |
-| nearly_reflexive | 9 / 8 / 8 | 960 → 936 | 7 / 0 / 2 | = guarded | 5 / 1 / 2 (†) |
-| imp_trans | 5 / 4 / 4 | 444 → 426 | 5 / 0 / 0 | = guarded | 4 / 0 / 0 |
-| length_app_fix | 14 / 13 / 13 | 1552 → 1495 | 8 / 1 / 5 | = guarded | 7 / 1 / 5 |
-| ABCD | 12 / 9 / 9 | 720 → 638 | 12 / 0 / 0 | = guarded | 9 / 0 / 0 |
-| praeclarum_nd | 13 / 11 / 11 | 1082 → 1042 | 13 / 0 / 0 | = guarded | 11 / 0 / 0 |
-| std_app_assoc | 36 / 35 / 35 | 3469 → 3382 | 30 / 0 / 6 | = guarded | 29 / 0 / 6 |
-| std_app_nil_r | 28 / 27 / 27 | 2633 → 2552 | 23 / 0 / 5 | = guarded | 22 / 0 / 5 |
-| std_length_app | 15 / 14 / 14 | 1908 → 1849 | 9 / 0 / 6 | = guarded | 8 / 0 / 6 |
-| std_in_map | 36 / 34 / 34 | 3149 → 3045 | 23 / 0 / 13 | = guarded | 21 / 0 / 13 |
-| std_Nat_add_comm | 85 / 66 / 75 | 11659 → 10948 | 80 / 1 / 4 | 59 / 3 / 4 | 67 / 4 / 4 (†) |
-| std_Nat_add_assoc | 105 / 82 / 93 | 15181 → 14188 | 100 / 1 / 4 | 75 / 3 / 4 | 83 / 6 / 4 (†) |
-| std_Nat_mul_comm | 85 / 66 / 75 | 11657 → 10946 | 80 / 1 / 4 | 59 / 3 / 4 | 67 / 4 / 4 (†) |
-| std_Nat_le_trans | 112 / 73 / 110 | 21247 → 21059 | timeout | = guarded | timeout |
-| std_Nat_add_0_r | 104 / 82 / 91 | 14066 → 13115 | 95 / 3 / 6 | 73 / 3 / 6 | 79 / 6 / 6 (†) |
-| std_Nat_add_succ_r | 87 / 68 / 75 | 12046 → 11167 | 82 / 1 / 4 | 61 / 3 / 4 | 66 / 5 / 4 (†) |
-| std_Nat_le_refl | 16 / 15 / 15 | 1784 → 1730 | 14 / 0 / 2 | = guarded | 13 / 0 / 2 |
-| std_Nat_lt_irrefl | 35 / 28 / 32 | 4457 → 4298 | 32 / 0 / 3 | 25 / 0 / 3 | 28 / 1 / 3 (†) |
-| std_Nat_mul_1_r | 89 / 70 / 80 | 12345 → 11719 | 85 / 0 / 4 | 66 / 0 / 4 | 74 / 2 / 4 (†) |
-| half_le | 36 / 29 / 30 | 6438 → 5345 | not run | = guarded | 19 / 4 / 6 (†) |
-| even_or_odd | 27 / 27 / 27 | 3410 → 3410 | not run | = guarded | 19 / 0 / 8 |
+| example | items none / maximal / guarded | chars none → guarded |
+|---|---|---|
+| S_proof | 6 / 5 / 5 | 484 → 466 |
+| nearly_reflexive | 9 / 8 / 8 | 960 → 936 |
+| imp_trans | 5 / 4 / 4 | 444 → 426 |
+| length_app_fix | 14 / 13 / 13 | 1552 → 1495 |
+| ABCD | 12 / 9 / 9 | 720 → 638 |
+| praeclarum_nd | 13 / 11 / 11 | 1082 → 1042 |
+| std_app_assoc | 36 / 35 / 35 | 3469 → 3382 |
+| std_app_nil_r | 28 / 27 / 27 | 2633 → 2552 |
+| std_length_app | 15 / 14 / 14 | 1908 → 1849 |
+| std_in_map | 36 / 34 / 34 | 3149 → 3045 |
+| std_Nat_add_comm | 85 / 66 / 75 | 11659 → 10948 |
+| std_Nat_add_assoc | 105 / 82 / 93 | 15181 → 14188 |
+| std_Nat_mul_comm | 85 / 66 / 75 | 11657 → 10946 |
+| std_Nat_le_trans | 112 / 73 / 110 | 21247 → 21059 |
+| std_Nat_add_0_r | 104 / 82 / 91 | 14066 → 13115 |
+| std_Nat_add_succ_r | 87 / 68 / 75 | 12046 → 11167 |
+| std_Nat_le_refl | 16 / 15 / 15 | 1784 → 1730 |
+| std_Nat_lt_irrefl | 35 / 28 / 32 | 4457 → 4298 |
+| std_Nat_mul_1_r | 89 / 70 / 80 | 12345 → 11719 |
+| half_le | 36 / 29 / 30 | 6438 → 5345 |
+| even_or_odd | 27 / 27 / 27 | 3410 → 3410 |
 
 
-- Over the 66 texts checked both before and after (guarded): 25 steps not
-  proved before, 21 after, for fewer steps (576 proved before, 563
-  after, since steps were merged).
-- With `maximal`, the 8 `Nat.*` texts and one other lose more steps
-  (561 → 425 proved) and keep slightly more failures (16 → 23): a
-  contracted step that cyp's tactics cannot close becomes one more red
-  step.  This is why `guarded` is the default.
-- (†) These 9 texts changed after a last fix of the guard (the head of a
-  modus ponens claimed the type of the bare function, not of its
-  instance).  They could not be checked again: cyp was being rebuilt in
-  the meantime (the new driver needs its compiled library, `CYP_LIB`),
-  so their guarded results are those of the version before the fix.
-- `Nat.le_trans` times out in cyp, as before.
+- `maximal` contracts more steps of the `Nat.*` texts than `guarded`;
+  a contracted step that cyp's tactics cannot close becomes one more red
+  step, which is why `guarded` is the default.
 
 The texts in progress (`*_partial*.md`) have one `Prove G` step per open
 goal.  They are not counted above.
+
+## Checking the texts with cyp
+
+`sh cyprun.sh LIMIT name...` copies each text to `cyp-check/`, adds a
+`flags:` line to its header (so that `Require Import XText.<file>`
+finds the example files), and runs cyp's driver (`cyp/bin/cyp.ml`, which runs
+`Cyp File` in the switch `elpi4`; `CYP_LIB` the directory where
+`cyp/vernac/Cyp.v` is compiled), one text at a time, under `nice`, with
+at most 8 GB of memory per text.  It prints, per text, the time and the
+list items proved / not proved / not checked (`cyp-check/results.tsv`).
+
+All 82 texts, 300 s per text:
+
+- 73 texts are checked: 933 steps proved, 29 not proved, 220 not checked
+  (lines with no claim: `Let`, `Assume`, the announcement of a proof by
+  cases);
+- 9 time out: the 5 texts of the private case study, `half_le`,
+  `std_in_app_or`, `std_Nat_add_0_r`, `std_Nat_le_trans` (two of the
+  private ones grow to 12-16 GB before the limit);
+- the 29 steps not proved: 14 closing steps of a `match` (no
+  justification: `destruct` is tactic code), 4 closing steps of a
+  `list_ind` elimination, 5 constructor steps `*by ex_intro*` (cyp applies
+  `ex_intro` and cannot find the witness), the recursive call of
+  `length_app_fix` (it states the theorem itself), and 5 steps of a
+  private text (rewritings and `ring` certificates) that cyp's default
+  tactics do not close;
+- 13 texts have every step proved but cyp stops at the end with an
+  anomaly, `Universe CypRules.cyp_check.N undefined` (`app_nil_r`,
+  `std_app_assoc`, `std_rev_involutive`, ...): a formula with `Type` in
+  it (`forall (A0 : Type) ...`, the statement of a theorem used) makes a
+  universe that the proof cyp builds does not declare.  This is in cyp,
+  not in the texts;
+- cyp proves each claim again with its own tactics, so a green step says
+  that the claim follows, not that it follows the way the text says.
+
+The texts in the other languages (12 per language, 9 languages) give the
+same results, step by step, as the English ones (same roles and statuses
+in each `.cyp.json`): 90 steps proved, 4 not proved, 30 not checked per
+language (`cyp-check/results_fr_it.tsv`, `cyp-check/results_langs.tsv`).
 
 ## Not done
 
@@ -732,4 +752,4 @@ goal.  They are not counted above.
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.
 - The `require` line of the header is fixed (Arith, Lia, List and the
-  file of the theorem); the load path for cyp must be given by `CYP_ROCQ`.
+  file of the theorem); the load path for cyp is added by `cyprun.sh`.

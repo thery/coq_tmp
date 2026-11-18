@@ -1,0 +1,104 @@
+% English (lexicon.elpi): the phrases that give a role to the formula after
+% them, [phrase Lang Phrase Role], in lower case.
+phrase "en" "let" rvar.
+phrase "en" "if" rhyp.        phrase "en" "assume" rhyp.  phrase "en" "suppose" rhyp.
+phrase "en" "from" rfact.     phrase "en" "using" rfact.  phrase "en" "since" rfact.
+phrase "en" "because" rfact.  phrase "en" "for" rfact.
+phrase "en" "then" rclaim.    phrase "en" "show" rclaim.  phrase "en" "prove" rclaim.
+phrase "en" "have" rclaim.    phrase "en" "get" rclaim.   phrase "en" "thus" rclaim.
+phrase "en" "hence" rclaim.   phrase "en" "so" rclaim.    phrase "en" "obtain" rclaim.
+phrase "en" "deduce" rclaim.  phrase "en" "is" rclaim.    phrase "en" "that is" rfact.
+% a claim after one of these replaces the goal (a backward step)
+phrase "en" "suffices" rback. phrase "en" "enough" rback.
+phrase "en" "equivalent to prove" rback.  phrase "en" "written as" rback.
+phrase "en" "amounts to" rback.           phrase "en" "reduces to" rback.
+% the full phrases, which end where "prove" or "show" ends
+phrase "en" "suffices to prove" rback.  phrase "en" "suffices to show" rback.
+phrase "en" "enough to prove" rback.    phrase "en" "enough to show" rback.
+phrase "en" "suffices to check" rback.  phrase "en" "enough to check" rback.
+
+% The phrases of a writer, by their use (write-role, write-word), in lower
+% case, as in the middle of a sentence.
+
+write-role "en" "let" "let" rvar.
+write-role "en" "let-plural" "let" rvar.
+write-role "en" "consider" "let us consider an arbitrary" rvar.
+write-role "en" "choose" "let us choose arbitrarily" rvar.
+write-role "en" "assume" "assume" rhyp.
+write-role "en" "we-prove" "we prove" rclaim.
+write-role "en" "prove" "prove" rclaim.
+write-role "en" "proved" "we have proved" rclaim.
+write-role "en" "have" "we have" rclaim.
+write-role "en" "thus-have" "thus we have" rclaim.
+write-role "en" "get" "we get" rclaim.
+write-role "en" "particular" "in particular" rclaim.
+write-role "en" "deduce" "we deduce" rclaim.
+write-role "en" "can-deduce" "we can deduce" rclaim.
+write-role "en" "so" "so" rclaim.
+write-role "en" "from" "from" rfact.
+write-role "en" "since" "since" rfact.
+write-role "en" "using" "using" rfact.
+write-role "en" "that-is" "that is" rfact.
+write-word "en" "and" "and".
+write-word "en" "by" "by".
+write-word "en" "arbitrary" "is arbitrary".
+write-word "en" "ih" "by induction hypothesis".
+write-word "en" "recursive-call" "the recursive call".
+write-word "en" "definition" "by definition of".
+write-role "en" "witness" "with witness" rfact.
+write-word "en" "case" "case".
+write-word "en" "base" "base".
+write-word "en" "inductive" "inductive".
+write-word "en" "contradiction" "by contradiction".
+write-word "en" "back" "going back to the definition of".
+write-word "en" "in" "in".
+write-word "en" "by-induction" "by induction".
+write-word "en" "by-cases" "by case analysis".
+write-role "en" "by-induction-on" "by induction on" rfact.
+write-role "en" "by-cases-on" "by case analysis on" rfact.
+write-word "en" "on" "on".
+write-word "en" "all-cases" "in all cases".
+write-word "en" "no-element" "there is no element of".
+write-word "en" "to-prove" "to prove".
+write-role "en" "generalise" "we generalise it to" rfact.
+write-word "en" "exhaustive" "these cases being exhaustive".
+write-role "en" "recursion" "by recursion on" rfact.
+write-word "en" "fix" "fix".
+write-word "en" "argument" "argument".
+write-role "en" "rewriting" "rewriting with" rfact.
+write-word "en" "left-right" "from left to right".
+write-word "en" "right-left" "from right to left".
+write-role "en" "the-term" "the term" rfact.
+write-word "en" "not-translated" "not translated".
+
+% The capital letters of the language (text.elpi, case folding).
+capital "en" "A" "a".
+capital "en" "B" "b".
+capital "en" "C" "c".
+capital "en" "D" "d".
+capital "en" "E" "e".
+capital "en" "F" "f".
+capital "en" "G" "g".
+capital "en" "H" "h".
+capital "en" "I" "i".
+capital "en" "J" "j".
+capital "en" "K" "k".
+capital "en" "L" "l".
+capital "en" "M" "m".
+capital "en" "N" "n".
+capital "en" "O" "o".
+capital "en" "P" "p".
+capital "en" "Q" "q".
+capital "en" "R" "r".
+capital "en" "S" "s".
+capital "en" "T" "t".
+capital "en" "U" "u".
+capital "en" "V" "v".
+capital "en" "W" "w".
+capital "en" "X" "x".
+capital "en" "Y" "y".
+capital "en" "Z" "z".
+
+% Plural (CLDR): one for 1, other otherwise.
+plural-category "en" 1 "one" :- !.
+plural-category "en" _ "other".

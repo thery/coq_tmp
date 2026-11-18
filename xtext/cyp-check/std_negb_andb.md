@@ -1,5 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -11,15 +12,15 @@ Let `b1 b2 : bool`{.var}. We prove `negb (b1 && b2) = negb b1 || negb b2`{.claim
 - Case 1: we prove `negb (b1 && true) = negb b1 || negb true`{.claim}.
   - We prove `negb (b1 && true) = negb b1 || negb true`{.fact} by case analysis on `b1`{.fact} (bool, match):
   - Case 1.1: we prove `negb (true && true) = negb true || negb true`{.claim}.
-    - By definition of eq (eq_refl), we have `false = false`{.claim} *by eapply @eq_refl; eauto*.
+    - By definition of eq (eq_refl), we have `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
   - Case 1.2: we prove `negb (false && true) = negb false || negb true`{.claim}.
-    - By definition of eq (eq_refl), we have `true = true`{.claim} *by eapply @eq_refl; eauto*.
-  - These cases being exhaustive, we deduce `negb (b1 && true) = negb b1 || negb true`{.claim} *by destruct b1; cbn; eauto*.
+    - By definition of eq (eq_refl), we have `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
+  - These cases being exhaustive, we deduce `negb (b1 && true) = negb b1 || negb true`{.claim}.
 - Case 2: we prove `negb (b1 && false) = negb b1 || negb false`{.claim}.
   - We prove `negb (b1 && false) = negb b1 || negb false`{.fact} by case analysis on `b1`{.fact} (bool, match):
   - Case 2.1: we prove `negb (true && false) = negb true || negb false`{.claim}.
-    - By definition of eq (eq_refl), we have `true = true`{.claim} *by eapply @eq_refl; eauto*.
+    - By definition of eq (eq_refl), we have `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
   - Case 2.2: we prove `negb (false && false) = negb false || negb false`{.claim}.
-    - By definition of eq (eq_refl), we have `true = true`{.claim} *by eapply @eq_refl; eauto*.
-  - These cases being exhaustive, we deduce `negb (b1 && false) = negb b1 || negb false`{.claim} *by destruct b1; cbn; eauto*.
-- These cases being exhaustive, we deduce `negb (b1 && b2) = negb b1 || negb b2`{.claim} *by destruct b2; cbn; eauto*.
+    - By definition of eq (eq_refl), we have `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
+  - These cases being exhaustive, we deduce `negb (b1 && false) = negb b1 || negb false`{.claim}.
+- These cases being exhaustive, we deduce `negb (b1 && b2) = negb b1 || negb b2`{.claim}.

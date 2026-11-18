@@ -1,0 +1,63 @@
+% Latin.  Phrases of the mathematical Latin of Euclid's and Newton's
+% translators ("Sit", "Ponamus", "Ergo", "Quoniam ..., habemus",
+% "Sufficit ostendere", "quod erat demonstrandum"); the writer uses only
+% phrases before the formula.  For review by a speaker.
+phrase "la" "sit" rvar.          phrase "la" "sint" rvar.
+phrase "la" "si" rhyp.           phrase "la" "supponamus" rhyp.
+phrase "la" "tum" rclaim.        phrase "la" "igitur" rclaim.
+phrase "la" "sufficit ostendere" rback.   phrase "la" "quod idem est ac" rback.
+
+write-role "la" "let" "sit" rvar.
+write-role "la" "let-plural" "sint" rvar.
+write-role "la" "consider" "consideremus quodlibet" rvar.
+write-role "la" "choose" "eligamus quaelibet" rvar.
+write-role "la" "assume" "ponamus" rhyp.
+write-role "la" "we-prove" "ostendamus" rclaim.
+write-role "la" "prove" "ostendendum est" rclaim.
+write-role "la" "proved" "ostendimus" rclaim.
+write-role "la" "have" "habemus" rclaim.
+write-role "la" "thus-have" "ergo habemus" rclaim.
+write-role "la" "get" "obtinemus" rclaim.
+write-role "la" "particular" "speciatim" rclaim.
+write-role "la" "deduce" "unde sequitur" rclaim.
+write-role "la" "can-deduce" "deducere possumus" rclaim.
+write-role "la" "so" "ergo" rclaim.
+write-role "la" "from" "ex" rfact.
+write-role "la" "since" "quoniam" rfact.
+write-role "la" "using" "adhibentes" rfact.
+write-role "la" "that-is" "id est" rfact.
+write-role "la" "witness" "cum teste" rfact.
+write-role "la" "by-induction-on" "per inductionem in" rfact.
+write-role "la" "by-cases-on" "per casus in" rfact.
+write-role "la" "generalise" "generalizamus ad" rfact.
+write-role "la" "recursion" "per recursionem in" rfact.
+write-role "la" "rewriting" "rescribentes per" rfact.
+write-role "la" "the-term" "terminus" rfact.
+write-word "la" "and" "et".
+write-word "la" "by" "per".
+write-word "la" "arbitrary" "quodlibet est".
+write-word "la" "ih" "per hypothesim inductionis".
+write-word "la" "recursive-call" "vocatio recursiva".
+write-word "la" "definition" "ex definitione".
+write-word "la" "case" "casus".
+write-word "la" "base" "basis".
+write-word "la" "inductive" "gradus".
+write-word "la" "contradiction" "per absurdum".
+write-word "la" "back" "redeuntes ad definitionem".
+write-word "la" "in" "in".
+write-word "la" "by-induction" "per inductionem".
+write-word "la" "by-cases" "per casus".
+write-word "la" "on" "in".
+write-word "la" "all-cases" "in omnibus casibus".
+write-word "la" "no-element" "nullum elementum est".
+write-word "la" "to-prove" "ut ostendamus".
+write-word "la" "exhaustive" "his casibus exhaustis".
+write-word "la" "fix" "fix".
+write-word "la" "argument" "argumentum".
+write-word "la" "left-right" "a sinistra ad dextram".
+write-word "la" "right-left" "a dextra ad sinistram".
+write-word "la" "not-translated" "non translatum".
+
+% Plural (Latin is not in CLDR; as English): one for 1, other otherwise.
+plural-category "la" 1 "one" :- !.
+plural-category "la" _ "other".

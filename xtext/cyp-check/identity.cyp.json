@@ -1,0 +1,1 @@
+{"steps":[{"first":8,"last":8,"status":"ok","formulas":[{"role":"var","text":"A : Prop"},{"role":"hyp","text":"A"},{"role":"claim","text":"A"}],"message":""},{"first":10,"last":10,"status":"ok","formulas":[{"role":"claim","text":"A"}],"message":""}]}

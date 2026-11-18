@@ -7,5 +7,5 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B C : Prop`{.var}. Assume `A`{.hyp} (h). We prove `B \/ A \/ C`{.claim}.
 
-- By definition of or (or_introl), from `A`{.fact} (h) we deduce `A \/ C`{.claim} *by eapply @or_introl; eauto*.
-- By definition of or (or_intror), we have `B \/ A \/ C`{.claim} *by eapply @or_intror; eauto*.
+- By definition of or (or_introl), from `A`{.fact} (h) we deduce `A \/ C`{.claim} *by Corelib.Init.Logic.or_introl*.
+- By definition of or (or_intror), we have `B \/ A \/ C`{.claim} *by Corelib.Init.Logic.or_intror*.

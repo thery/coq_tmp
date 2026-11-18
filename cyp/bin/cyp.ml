@@ -76,6 +76,13 @@ let cyp_lib () =
   | Some d -> d
   | None -> prerr_endline "cyp: set CYP_LIB to the directory of the cyp library (vernac/)"; exit 2
 
+(* the language data (lexicon/, shared with xtext): CYP_LEXICON, or the
+   directory lexicon/ of the repository that holds CYP_LIB (cyp/vernac) *)
+let lexicon () =
+  match Sys.getenv_opt "CYP_LEXICON" with
+  | Some d -> d
+  | None -> Filename.concat (Filename.dirname (Filename.dirname (cyp_lib ()))) "lexicon"
+
 let main ~json ~conditions md =
   let md = absolute (Sys.getcwd ()) md in
   let dir = Filename.dirname md in
@@ -100,7 +107,8 @@ let main ~json ~conditions md =
   let out = Filename.concat tmp "cyp_check.out" in
   let cmd =
     String.concat " " (List.map Filename.quote
-      ([ "rocq"; "c"; "-Q"; cyp_lib (); "CypV"; "-Q"; tmp; "CypRules" ] @ flags @ [ src ])) in
+      ([ "rocq"; "c"; "-Q"; cyp_lib (); "CypV"; "-Q"; lexicon (); "Lexicon";
+         "-Q"; tmp; "CypRules" ] @ flags @ [ src ])) in
   (* run in the directory of the proof, where the caches of lia and nia
      (.lia.cache, .nia.cache) are kept from one run to the next *)
   let code = Sys.command (Printf.sprintf "cd %s && %s > %s 2>&1"

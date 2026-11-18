@@ -1,0 +1,22 @@
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
+lang: ar
+flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+by: tauto | congruence | lia | firstorder | auto
+---
+
+# plus_n_Sm'
+
+لتكن `n m : nat`{.var}. سنثبت أن `S (n + m) = n + S m`{.claim}.
+
+- لإثبات `S (n + m) = n + S m`{.fact} بالاستقراء (nat, nat_ind), نعممها إلى `forall n0 : nat, S (n0 + m) = n0 + S m`{.fact}:
+- الحالة 1 (الأساس): سنثبت أن `0 + S m = 0 + S m`{.claim}.
+  - حسب تعريف eq (eq_refl), لدينا `0 + S m = 0 + S m`{.claim} *by Corelib.Init.Logic.eq_refl*.
+- الحالة 2 (الاستقرائية): سنثبت أن `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.
+  - لنأخذ عنصرا اختياريا `n0 : nat`{.var}.
+    - لنفرض أن حسب فرضية الاستقراء `S (n0 + m) = n0 + S m`{.hyp} (IH).
+      - حسب تعريف eq (eq_refl), لدينا `S (n0 + S m) = S (n0 + S m)`{.claim} *by Corelib.Init.Logic.eq_refl*.
+      - حسب IH لدينا `S (n0 + m) = n0 + S m`{.claim}.
+      - بإعادة الكتابة باستخدام `S (n0 + m) = n0 + S m`{.fact} من اليمين إلى اليسار (eq_ind_r), نحصل على `S (S (n0 + m)) = S (n0 + S m)`{.claim}.
+- هذه الحالات شاملة, نستنتج أن `forall n0 : nat, S (n0 + m) = n0 + S m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
+- بشكل خاص `S (n + m) = n + S m`{.claim}.

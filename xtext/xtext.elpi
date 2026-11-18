@@ -91,6 +91,93 @@ pred fm-fact i:term, o:string.
 fm-fact T S :- ppf T S0, S is "`" ^ S0 ^ "`{.fact}".
 
 % ------------------------------------------------------------------
+% Words.  The writer takes its phrases from the lexicon
+% (../lexicon/lang_*.elpi): [write-role Lang Use Phrase Role], a
+% phrase that gives the role of the formula after it, which is also a
+% phrase of the reading table [phrase], and [write-word Lang Use Words] for the
+% other words.  A sentence is a list of parts: [wd Use], the phrase of a
+% use in the language of the text, and [tx S], text as it is (formulas,
+% names, punctuation).  The language is xtext-lang (Explain.v), or the
+% variable XTEXT_LANG.
+kind part type.
+type wd string -> part.
+type tx string -> part.
+
+pred writer-lang o:string.
+writer-lang L :- getenv "XTEXT_LANG" (some L), not (L = ""), !.
+writer-lang L :- xtext-lang L, !.
+
+pred word i:string, o:string.
+word U S :- writer-lang L, (write-role L U S _ ; write-word L U S), !.
+word U _ :- writer-lang L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
+
+% [say Parts S]: the parts joined by spaces, none before , . : ; ) nor
+% after (, empty parts left out
+pred say i:list part, o:string.
+say Ps0 S :- place Ps0 Ps, std.map Ps part-text Ss0, std.filter Ss0 (x\ not (x = "")) Ss, join-words Ss S.
+
+% [say-cap Parts S]: the same, at the start of a sentence: capitalised when
+% it starts with a phrase (not with a name or a formula, after the
+% placement of the phrases)
+pred say-cap i:list part, o:string.
+say-cap Ps S :- say Ps S0, place Ps [P | _], !,
+  (if (P = wd _) (cap-first S0 S) (S = S0)).
+say-cap _ "".
+
+% A phrase that stands after its formula (lexicon: phrase-after) is put
+% after the parts that follow it, up to the next phrase of a role, the next
+% punctuation mark , . : ; outside parentheses, or the justification:
+% [wd "assume", tx A, tx "(", tx "h", tx ")", wd "and", tx B] becomes, in
+% Korean, A (h) 그리고 B 라고 가정하자 ("and" is not a phrase that gives a
+% role, so the scope goes on after it; it ends at a phrase of a role).
+pred place i:list part, o:list part.
+place [] [].
+place [wd U | Ps] Out :- after-use U, !,
+  scope Ps 0 In Rest, place In In1, place Rest Rest1,
+  std.append In1 [wd U | Rest1] Out.
+place [P | Ps] [P | Qs] :- place Ps Qs.
+
+pred after-use i:string.
+after-use U :- writer-lang L, word U S, phrase-after L S.
+
+% [scope Parts Depth In Rest]: the parts in the scope of an after-phrase
+pred scope i:list part, i:int, o:list part, o:list part.
+scope [] _ [] [].
+scope [P | Ps] 0 [] [P | Ps] :- scope-end P, !.
+scope [tx "(" | Ps] D [tx "(" | In] Rest :- !, D1 is D + 1, scope Ps D1 In Rest.
+scope [tx ")" | Ps] D [tx ")" | In] Rest :- D > 0, !, D1 is D - 1, scope Ps D1 In Rest.
+scope [P | Ps] D [P | In] Rest :- scope Ps D In Rest.
+
+pred scope-end i:part.
+scope-end (wd U) :- writer-lang L, write-role L U _ _.
+scope-end (tx S) :- std.mem! [",", ".", ":", ";"] S.
+scope-end (tx S) :- rex.match "^[*]by " S.
+
+pred part-text i:part, o:string.
+part-text (wd U) S :- word U S.
+part-text (tx S) S.
+
+pred join-words i:list string, o:string.
+join-words [] "".
+join-words [S] S :- !.
+join-words [A, B | L] S :-
+  (if (rex.match "^[,.:;)]" B ; rex.match ".*($" A) (Sp = "") (Sp = " ")),
+  A1 is A ^ Sp ^ B, join-words [A1 | L] S.
+
+% the first letter in capitals, by the capital letters of the vocabularies
+% ([capital Lang Upper Lower], cyp's vocab_*.elpi)
+pred cap-first i:string, o:string.
+cap-first S C :- std.findall (capital _ _ _) Cs,
+  std.exists Cs (c\ sigma U L Re\ c = capital _ U L, Re is "^" ^ L, rex.match Re S,
+    rex.replace Re U S C), !.
+cap-first S S.
+
+% a justification *by J* as a part ("" for none)
+pred by-part i:string, o:part.
+by-part "" (tx "") :- !.
+by-part J (tx S) :- S is "*by " ^ J ^ "*".
+
+% ------------------------------------------------------------------
 % Options, for measurements: XTEXT_OFF is a comma-separated list of the
 % mechanisms to switch off (explicit, args, tactics, thatis).
 pred off i:string.
@@ -463,7 +550,7 @@ flatten (prf L (some C)) R :- std.append L [C] R.
 pred dashed i:pf, o:line.
 dashed (prfp P _) D :- !, dashed P D.
 dashed (prf L (some (it C Ch))) (it C L1) :- std.append L Ch L1.
-dashed (prf L none) (it "We have" L).
+dashed (prf L none) (it S L) :- say-cap [wd "have"] S.
 
 % a proof whose text is a single conclusion
 pred one i:string, o:pf.
@@ -513,12 +600,13 @@ pred tr-root i:term, i:ctx, i:list int, o:pf.
 tr-root T _ _ P :- open-goal T P, !.
 tr-root T Ctx Path P :- tr.aux T Ctx Path P, !.
 tr-root T _ _ P :- unchanged T P, !.
-tr-root T _ _ P :- pp T S0, S is "The term `" ^ S0 ^ "`{.fact} (not translated)", one S P.
+tr-root T _ _ P :- pp T S0, F is "`" ^ S0 ^ "`{.fact}",
+  say-cap [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, one S P.
 
 % an open goal of a proof in progress (a hole of the partial proof term)
 % is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez")
 pred open-goal i:term, o:pf.
-open-goal T P :- var T, typ T G, fm G F, S is "Prove " ^ F, one S P.
+open-goal T P :- var T, typ T G, fm G F, say-cap [wd "prove", tx F] S, one S P.
 
 % Tactic-built subproofs (thesis 5.4, the "pragmatic method"): a proper
 % subproof whose proof term has at least xtext-threshold nodes is first
@@ -530,7 +618,7 @@ tactic-step T P :- not (off "tactics"),
   xtext-threshold N, size-ge T N,
   typ T Ty, binder-kind Ty K, K = bk-assume,
   xtext-tactic L Txt, try-tactic L Ty, !,
-  fm Ty F, S is "We have " ^ F ^ " *by " ^ Txt ^ "*", one S P.
+  fm Ty F, by-part Txt J, say-cap [wd "have", tx F, J] S, one S P.
 
 pred try-tactic i:string, i:term.
 try-tactic L Ty :-
@@ -576,7 +664,7 @@ tr-other T _ _ P :- unchanged T P.
 pred unchanged i:term, o:pf.
 unchanged T (prf [] (some (it S []))) :-
   typ T Tau, fm-fact T FT, fm Tau F,
-  S is "Using " ^ FT ^ " we get " ^ F.
+  say-cap [wd "using", tx FT, wd "get", tx F] S.
 
 % --- abstraction: iterated abstraction rules
 pred tr-lam i:term, i:ctx, i:list int, o:pf.
@@ -599,28 +687,38 @@ lam-run K Acc Body FT Fl Ctx Path P :-
 pred lam-text i:bk, i:list binder, i:string, i:list line, i:ctx, o:pf.
 lam-text bk-let Bs FT LB Ctx (prf L C) :-
   let-lines Bs Ls, std.append Ls LB L,
-  concl Ctx ("We have proved " ^ FT) C.
+  concl Ctx [wd "proved", tx FT] C.
 lam-text bk-assume Bs FT LB Ctx (prf [it H LB] C) :-
-  std.map Bs assume-text L,
-  std.string.concat " and " L S, H is "Assume " ^ S,
-  concl Ctx ("We have proved " ^ FT) C.
+  std.map Bs assume-text L, and-parts L Ps,
+  say-cap [wd "assume" | Ps] H,
+  concl Ctx [wd "proved", tx FT] C.
 lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
-  H is "Let us consider an arbitrary `" ^ Id ^ " : " ^ FA ^ "`{.var}",
-  concl Ctx ("We have " ^ FT ^ ", since `" ^ Id ^ "`{.fact} is arbitrary") C.
+  V is "`" ^ Id ^ " : " ^ FA ^ "`{.var}", X is "`" ^ Id ^ "`{.fact}",
+  say-cap [wd "consider", tx V] H,
+  concl Ctx [wd "have", tx FT, tx ",", wd "since", tx X, wd "arbitrary"] C.
 lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
   std.map Bs (x\ y\ sigma Id FA\ x = b _ Id FA,
      y is "`" ^ Id ^ " : " ^ FA ^ "`{.var}") L,
-  std.string.concat ", " L S, H is "Let us choose arbitrarily " ^ S,
-  concl Ctx ("Thus we have " ^ FT) C.
+  std.map L (v\ p\ p = [tx v]) L1, sep-parts [tx ","] L1 Ps,
+  say-cap [wd "choose" | Ps] H,
+  concl Ctx [wd "thus-have", tx FT] C.
 
-pred assume-text i:binder, o:string.
-assume-text (b _ Id FA) S :- S is "`" ^ FA ^ "`{.hyp} (" ^ Id ^ ")".
-assume-text (bih Id FA) S :-
-  S is "by induction hypothesis `" ^ FA ^ "`{.hyp} (" ^ Id ^ ")".
+% [sep-parts Sep Ls Ps]: the lists of parts Ls, with Sep between them
+pred sep-parts i:list part, i:list (list part), o:list part.
+sep-parts _ [] [].
+sep-parts _ [L] L :- !.
+sep-parts Sep [L | Ls] Ps :- sep-parts Sep Ls Ps1, std.append L Sep L1, std.append L1 Ps1 Ps.
 
-pred concl i:ctx, i:string, o:option line.
+pred and-parts i:list (list part), o:list part.
+and-parts L Ps :- sep-parts [wd "and"] L Ps.
+
+pred assume-text i:binder, o:list part.
+assume-text (b _ Id FA) [tx F, tx "(", tx Id, tx ")"] :- F is "`" ^ FA ^ "`{.hyp}".
+assume-text (bih Id FA) [wd "ih", tx F, tx "(", tx Id, tx ")"] :- F is "`" ^ FA ^ "`{.hyp}".
+
+pred concl i:ctx, i:list part, o:option line.
 concl star _ none.
-concl nostar S (some (it S1 [])) :- S1 is S.
+concl nostar Ps (some (it S [])) :- say-cap Ps S.
 
 % "Let A B : T" for consecutive binders with the same type
 pred let-lines i:list binder, o:list line.
@@ -628,7 +726,8 @@ let-lines [] [].
 let-lines [b _ Id FA|Bs] [it S []|Ls] :-
   same-type FA Bs Ids Rest,
   std.string.concat " " [Id|Ids] Vs,
-  S is "Let `" ^ Vs ^ " : " ^ FA ^ "`{.var}",
+  V is "`" ^ Vs ^ " : " ^ FA ^ "`{.var}",
+  (if (Ids = []) (U = "let") (U = "let-plural")), say-cap [wd U, tx V] S,
   let-lines Rest Ls.
 
 pred same-type i:string, i:list binder, o:list string, o:list binder.
@@ -646,7 +745,8 @@ tr-let R N Ty V F Ctx Path (prf [L1|LB] C) :-
       (tr V nostar Path PV, dashed PV (it S0 Ch),
        L1 = it {calc (S0 ^ " (" ^ Id ^ ")")} Ch)
       (ppf V FV, ppf Ty FTy,
-       L1 = it {calc ("Let `" ^ Id ^ " : " ^ FTy ^ " := " ^ FV ^ "`{.var}")} [])),
+       LV is "`" ^ Id ^ " : " ^ FTy ^ " := " ^ FV ^ "`{.var}",
+       say-cap [wd "let", tx LV] SL, L1 = it SL [])),
   (pi x\ (def x N1 Ty V, ctx-name Id) =>
      if (R = tt) ((root-term (F x) :- !) => tr-root (F x) Ctx Path PB)
                  (tr (F x) Ctx Path PB)),
@@ -666,12 +766,9 @@ tr-app H Args Path P :-
   std.split-at NC Args Cons Rest,
   coq.mk-app H Cons T0, typ T0 Tau, ind-name I C, head-name H EN,
   branch-infos Ks Fls Cis0,
-  % the theorem applied to its parameters and motive, for the
-  % justification of the closing step
-  coq.env.indt I _ NP _ _ _ _, NP1 is NP + 1, std.take NP1 Cons Lead,
-  std.map Lead (a\ s\ sigma S0\ pp a S0, s is "(" ^ S0 ^ ")") LS,
-  std.string.concat " " LS LeadS, AS is "(@" ^ EN ^ " " ^ LeadS ^ ")",
-  ((elim-app EN AS :- !) =>
+  % the full name of the theorem, for the justification of the closing step
+  gr-of H GRE, qual-name GRE QE,
+  ((elim-app EN QE :- !) =>
   (if (Kind = 1)
       (imp-args Ks Cons Imps, std.last Imps Maj, std.drop-last 1 Imps Ns,
        std.drop-last 1 Cis0 Cis,
@@ -691,22 +788,22 @@ tr-app H Args Path P :-
   % the arguments that are not parameters nor premises are witnesses
   std.drop NP Cons Ws0, std.drop NP Ks KWs,
   witnesses KWs Ws0 Ws,
-  (if (Ws = []) (WS = "")
-      (std.map Ws fm-fact FWs, std.string.concat ", " FWs WS0,
-       WS is " with witness " ^ WS0)),
-  CD is C ^ " (" ^ K ^ ")" ^ WS,
-  tr-intro CD K Tau Ns Es Path P0,
+  (if (Ws = []) (WP = [])
+      (std.map Ws fm-fact FWs, std.map FWs (f\ p\ p = [tx f]) FWs1,
+       sep-parts [tx ","] FWs1 WP0, WP = [wd "witness" | WP0])),
+  CD = [tx C, tx "(", tx K, tx ")" | WP],
+  qual-name (indc KC) QK, tr-intro CD QK Tau Ns Es Path P0,
   apply-rest T0 P0 Rest Path P.
 tr-app H [] _ P :- name H, rec-var H, !,
   var-name H N, typ H Tau, fm Tau F,
-  S is "By induction hypothesis (the recursive call " ^ N ^ ") we have " ^ F,
+  say-cap [wd "ih", tx "(", wd "recursive-call", tx N, tx ")", wd "have", tx F] S,
   one S P.
 tr-app H [] _ P :- name H, !,
   var-name H N, typ H Tau, fm Tau F,
-  S is "By " ^ N ^ " we have " ^ F, one S P.
+  say-cap [wd "by", tx N, wd "have", tx F] S, one S P.
 tr-app H [] _ P :- gr-of H GR, !,
   coq.gref->id GR N, typ H Tau, fm Tau F, qual-name GR Q,
-  S is "Using " ^ N ^ " we get " ^ F ^ " *by exact @" ^ Q ^ "*", one S P.
+  by-part Q BJ, say-cap [wd "using", tx N, wd "get", tx F, BJ] S, one S P.
 
 % the full name of a global reference, usable when its module is loaded
 % but not imported
@@ -764,7 +861,7 @@ inferable T0 Run Run2 T2 :-
 
 pred apply-run i:ak, i:list term, i:list term, i:term, i:pf, i:term, i:list int, o:pf.
 apply-run ak-all _ _ T0 P0 Tau _ (prfp (prf L (some (it S []))) [Ty0]) :-
-  flatten P0 L, fm Tau F, S is "In particular " ^ F, typ T0 Ty0.
+  flatten P0 L, fm Tau F, say-cap [wd "particular", tx F] S, typ T0 Ty0.
 apply-run ak-imp Run Es T0 P0 Tau Path P :- mp-step Run Es T0 P0 Tau Path P.
 
 % --- Contraction (thesis 3.4.2, "contraction gardée", Fig. 3.11-3.13).
@@ -785,8 +882,7 @@ mp-step Run Es T0 P0 Tau Path (prfp (prf L (some (it S []))) Tys) :-
   premise-cands Run Es Path Cs0,
   typ T0 Ty0, cand-of P0 Ty0 C0, std.append Cs0 [C0] Cs,
   contraction Strat, contract Strat Cs Tau L Tys By,
-  fm Tau F, (if (By = "") (J = "") (J is " *by " ^ By ^ "*")),
-  S is "We deduce " ^ F ^ J.
+  fm Tau F, by-part By J, say-cap [wd "deduce", tx F, J] S.
 
 % the candidates of the premises (with their expected types)
 pred premise-cands i:list term, i:list term, i:list int, o:list cand.
@@ -852,29 +948,34 @@ witnesses [ak-all|Ks] [W|Ws] [W|R] :- !, witnesses Ks Ws R.
 witnesses [_|Ks] [_|Ws] R :- !, witnesses Ks Ws R.
 witnesses _ _ [].
 
-% --- introduction theorems (thesis 6.2.1, tactic Constr)
-pred tr-intro i:string, i:string, i:term, i:list term, i:list term, i:list int, o:pf.
-tr-intro C K Tau [] _ _ P :- !,
-  fm Tau F,
-  S is "By definition of " ^ C ^ ", we have " ^ F ^ " *by eapply @" ^ K ^ "; eauto*",
+% --- introduction theorems (thesis 6.2.1, tactic Constr); CD: the words
+% that name the constructor
+pred tr-intro i:list part, i:string, i:term, i:list term, i:list term, i:list int, o:pf.
+tr-intro CD K Tau [] _ _ P :- !,
+  fm Tau F, intro-by K J,
+  say-cap {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S,
   one S P.
 % all premises are hypotheses: "By definition, from H0 we deduce B \/ A"
-tr-intro C K Tau Ns _ _ P :- std.forall Ns name, !,
+tr-intro CD K Tau Ns _ _ P :- std.forall Ns name, !,
   std.map Ns (h\ s\ sigma N T F\ var-name h N, typ h T, fm-fact T F,
-                 s is F ^ " (" ^ N ^ ")") Hs,
-  std.string.concat " and " Hs HS, fm Tau F,
-  S is "By definition of " ^ C ^ ", from " ^ HS ^ " we deduce " ^ F
-       ^ " *by eapply @" ^ K ^ "; eauto*",
+                 s = [tx F, tx "(", tx N, tx ")"]) Hs,
+  and-parts Hs HS, fm Tau F, intro-by K J,
+  say-cap {std.append [wd "definition" | CD] [tx ",", wd "from" | {std.append HS [wd "deduce", tx F, J]}]} S,
   one S P.
-tr-intro C K Tau [N] Es Path (prf L (some (it S []))) :- !,
+tr-intro CD K Tau [N] Es Path (prf L (some (it S []))) :- !,
   tr N nostar Path PN0,
   (if (Es = [E|_], ground_term E) (that-is N E PN0 PN) (PN = PN0)), flatten PN L,
-  fm Tau F,
-  S is "By definition of " ^ C ^ ", we have " ^ F ^ " *by eapply @" ^ K ^ "; eauto*".
-tr-intro C K Tau Ns Es Path (prf Ds (some (it S []))) :-
+  fm Tau F, intro-by K J,
+  say-cap {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
+tr-intro CD K Tau Ns Es Path (prf Ds (some (it S []))) :-
   dashed-exp Ns Es Path Ds,
-  fm Tau F,
-  S is "So by definition of " ^ C ^ ", we have " ^ F ^ " *by eapply @" ^ K ^ "; eauto*".
+  fm Tau F, intro-by K J,
+  say-cap {std.append [wd "so", wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
+
+% the justification of a constructor step: the constructor (cyp applies it
+% and proves its premises)
+pred intro-by i:string, o:part.
+intro-by K J :- by-part K J.
 
 % --- elimination theorems (thesis 6.2.2, tactics ElimOpen, ElimCase,
 % ElimClose, and 6.3)
@@ -888,8 +989,10 @@ cases [] _ _ _ _ [].
 cases [N|Ns] Cis Rec Path J [it H L|Ls] :-
   (if (Cis = [ci Ind Fl|Cr]) true (Ind = ff, Fl = [], Cr = [])),
   std.append Path [J] Path1, dewey Path1 D,
-  (if (Rec = tt) (if (Ind = tt) (Lab = " (inductive)") (Lab = " (base)")) (Lab = "")),
-  typ N TN, fm TN FN, H is "Case " ^ D ^ Lab ^ ": we prove " ^ FN,
+  (if (Rec = tt) (if (Ind = tt) (Lab = [tx "(", wd "inductive", tx ")"])
+                                (Lab = [tx "(", wd "base", tx ")"])) (Lab = [])),
+  typ N TN, fm TN FN,
+  say-cap {std.append [wd "case", tx D | Lab] [tx ":", wd "we-prove", tx FN]} H,
   ((cur-ih Fl :- !) => tr N star Path1 PN), flatten PN L,
   J1 is J + 1, cases Ns Cr Rec Path J1 Ls.
 
@@ -897,74 +1000,85 @@ pred recursive i:list case-info, o:bool.
 recursive Cis tt :- std.mem! Cis (ci tt _), !.
 recursive _ ff.
 
+% how an elimination proves: by induction or by case analysis (on the
+% object eliminated)
+pred how i:bool, o:part.
+how tt (wd "by-induction").
+how ff (wd "by-cases").
+pred how-on i:bool, o:part.
+how-on tt (wd "by-induction-on").
+how-on ff (wd "by-cases-on").
+
+% the words that name an elimination: (C, R)
+pred elim-name i:string, i:string, o:list part.
+elim-name C R [tx "(", tx C, tx ",", tx R, tx ")"].
+
 % the object eliminated: its subproof (if it is not a hypothesis) and
 % the words that name it
-pred major i:term, i:list int, o:list line, o:string.
-major M _ [] S :- name M, !,
-  var-name M N, typ M T, fm-fact T F, S is F ^ " (" ^ N ^ ")".
-major M Path L F :- tr M nostar Path PM, flatten PM L, typ M T, fm-fact T F.
+pred major i:term, i:list int, o:list line, o:list part.
+major M _ [] [tx F, tx "(", tx N, tx ")"] :- name M, !,
+  var-name M N, typ M T, fm-fact T F.
+major M Path L [tx F] :- tr M nostar Path PM, flatten PM L, typ M T, fm-fact T F.
 
 % first kind: the eliminated object is a proof of (C u1 .. uk)
 pred tr-elim1 i:string, i:string, i:term, i:term, i:list term, i:list case-info, i:list int, o:pf.
 % zero case (thesis 6.3.2): a proof by contradiction
 tr-elim1 C R Tau Maj [] _ Path (prf LM (some (it S []))) :- !,
-  major Maj Path LM W, fm Tau F,
-  S is "By contradiction (" ^ C ^ ", " ^ R ^ "), from " ^ W ^ " we can deduce " ^ F.
+  major Maj Path LM W, fm Tau F, elim-name C R CR,
+  say-cap {std.append [wd "contradiction" | CR] [tx ",", wd "from" | {std.append W [wd "can-deduce", tx F]}]} S.
 % one case (thesis 6.3.1): back to the definition
 tr-elim1 C R Tau Maj [N] Cis Path (prf LM (some (it H LN))) :- !,
   major Maj Path LM W, fm Tau F,
   (if (Cis = [ci _ Fl|_]) true (Fl = [])),
   ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-  H is "Going back to the definition of " ^ C ^ " (" ^ R ^ ") in " ^ W ^ ", we prove " ^ F ^ ":".
+  say-cap {std.append [wd "back", tx C, tx "(", tx R, tx ")", wd "in" | W] [tx ",", wd "we-prove", tx F, tx ":"]} H.
 tr-elim1 C R Tau Maj Ns Cis Path (prf L (some (it S []))) :-
   major Maj Path LM W, fm Tau F, fm-fact Tau Ff,
-  recursive Cis Rec,
-  (if (Rec = tt) (How = "by induction") (How = "by case analysis")),
-  H is "We prove " ^ Ff ^ " " ^ How ^ " on " ^ W ^ " (" ^ C ^ ", " ^ R ^ "):",
+  recursive Cis Rec, how-on Rec HowOn, elim-name C R CR,
+  say-cap {std.append [wd "we-prove", tx Ff, HowOn | W] {std.append CR [tx ":"]}} H,
   cases Ns Cis Rec Path 1 LC,
   std.append LM [it H []|LC] L,
-  close-by R Maj J,
-  S is "We have " ^ F ^ " in all cases" ^ J.
+  say-cap [wd "have", tx F, wd "all-cases"] S.
 
 % second kind (dependent elimination, thesis 6.3.3 and 6.3.4): Tau is
 % the generalised statement; Fin, if any, the instance finally proved;
 % On, if any, the object eliminated (for a match)
 pred tr-elim2 i:string, i:string, i:term, i:option term, i:option term, i:list term, i:list case-info, i:list int, o:pf.
 tr-elim2 C R Tau _ _ [] _ _ P :- !,
-  fm Tau F, S is "There is no element of " ^ C ^ " (" ^ R ^ "), so " ^ F, one S P.
+  fm Tau F, say-cap [wd "no-element", tx C, tx "(", tx R, tx ")", tx ",", wd "so", tx F] S, one S P.
 tr-elim2 C R Tau Fin On Ns Cis Path P :-
-  fm Tau F, fm-fact Tau Ff, recursive Cis Rec,
-  (if (Rec = tt) (How = "by induction") (How = "by case analysis")),
-  (if (On = some O) (fm-fact O FO, OnS is " on " ^ FO) (OnS = "")),
+  fm Tau F, fm-fact Tau Ff, recursive Cis Rec, how Rec How, elim-name C R CR,
+  (if (On = some O) (fm-fact O FO, OnS = [wd "on", tx FO]) (OnS = [])),
   (if (Fin = some TF)
       (fm-fact TF FF,
-       H is "To prove " ^ FF ^ " " ^ How ^ " (" ^ C ^ ", " ^ R ^ "), we generalise it to " ^ Ff ^ ":")
-      (H is "We prove " ^ Ff ^ " " ^ How ^ OnS ^ " (" ^ C ^ ", " ^ R ^ "):")),
+       say-cap {std.append [wd "to-prove", tx FF, How | CR] [tx ",", wd "generalise", tx Ff, tx ":"]} H)
+      (if (On = some O) (fm-fact O FO, how-on Rec HowOn, Hw = [HowOn, tx FO]) (Hw = [How]),
+       say-cap {std.append [wd "we-prove", tx Ff | Hw] {std.append CR [tx ":"]}} H)),
   (if (Ns = [N])
       (% one case: no case header, no conclusion
        (if (Cis = [ci _ Fl|_]) true (Fl = [])),
        ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-       H1 is "By definition of " ^ C ^ " (" ^ R ^ ")" ^ OnS ^ ", we prove " ^ F ^ ":",
+       say-cap {std.append [wd "definition", tx C, tx "(", tx R, tx ")" | OnS] [tx ",", wd "we-prove", tx F, tx ":"]} H1,
        P = prf [] (some (it H1 LN)))
       (cases Ns Cis Rec Path 1 LC,
        (if (On = some O) true (O = sort prop)),
        close-by R O J,
-       S is "These cases being exhaustive, we deduce " ^ F ^ J,
+       say-cap [wd "exhaustive", tx ",", wd "deduce", tx F, J] S,
        P = prf [it H []|LC] (some (it S [])))).
 
-% The justification of the closing step of an elimination, built from the
-% elimination itself: the theorem T is applied to the case claims, which
-% are in the context; a match on a variable x is a destruct of x.
+% The justification of the closing step of a dependent elimination (the
+% generalised statement): the elimination theorem T, by its full name
+% (elim-app), which cyp applies, the case claims being in the context.
+% None for a match (its closing would be tactic code, destruct x, which
+% cyp cannot run) and for the first kind (tr-elim1: the motive cannot be
+% found from the goal by unification when the type has indices); cyp's
+% default tactics then close the step from the cases, when they can.
 pred elim-app o:string, o:string.
 
-pred close-by i:string, i:term, o:string.
-% (a hypothesis is not destructed: its name is not kept by a checker)
-close-by "match" O J :- name O, typ O TO, not (is-prop TO), !,
-  var-name O ON, J is " *by destruct " ^ ON ^ "; cbn; eauto*".
-close-by "match" _ "" :- !.
-close-by T _ J :- elim-app T AS, not (rex.match ".*[*].*" AS), !,
-  J is " *by eapply " ^ AS ^ "; cbv beta; eauto*".
-close-by T _ J :- J is " *by eapply @" ^ T ^ "; cbv beta; eauto*".
+pred close-by i:string, i:term, o:part.
+close-by "match" _ (tx "") :- !.
+close-by T _ J :- elim-app T Q, !, by-part Q J.
+close-by _ _ (tx "").
 
 % a match is the primitive form of an elimination; inside a fix, a case
 % that calls the recursive function is an inductive case
@@ -988,29 +1102,29 @@ tr-fix N Rno Ty F Path (prf [] (some (it H LB))) :-
   binder-name N N1 Id, fm Ty FT,
   (pi f\ (decl f N1 Ty, ctx-name Id, rec-var f) =>
     (nth-binder (F f) Rno X, tr (F f) star Path PB, flatten PB LB)),
-  H is "We prove " ^ FT ^ " by recursion on " ^ X ^ " (fix " ^ Id ^ "):".
+  say-cap {std.append [wd "we-prove", tx FT, wd "recursion" | X] [tx "(", wd "fix", tx Id, tx ")", tx ":"]} H.
 
 % the name of the n-th binder of a lambda
-pred nth-binder i:term, i:int, o:string.
-nth-binder (fun N _ _) 0 S :- !, coq.name->id N S0, S is "`" ^ S0 ^ "`{.fact}".
+pred nth-binder i:term, i:int, o:list part.
+nth-binder (fun N _ _) 0 [tx S] :- !, coq.name->id N S0, S is "`" ^ S0 ^ "`{.fact}".
 nth-binder (fun N T F) K S :- !, K1 is K - 1,
   pi x\ decl x N T => nth-binder (F x) K1 S.
-nth-binder _ K S :- S is "argument " ^ {std.any->string K}.
+nth-binder _ K [wd "argument", tx {std.any->string K}].
 
 % --- rewriting (eq_ind and friends): the equality and the proof of the
 % statement before rewriting are shown, then the rewritten statement
 pred rewrite-info i:term, o:string.
 rewrite-info H Dir :- gr-of H (const C), coq.gref->id (const C) S,
-  std.mem! ["eq_ind", "eq_rect", "eq_rec", "eq_sind"] S, !, Dir = "from left to right".
+  std.mem! ["eq_ind", "eq_rect", "eq_rec", "eq_sind"] S, !, Dir = "left-right".
 rewrite-info H Dir :- gr-of H (const C), coq.gref->id (const C) S,
-  std.mem! ["eq_ind_r", "eq_rect_r", "eq_rec_r", "eq_sind_r"] S, Dir = "from right to left".
+  std.mem! ["eq_ind_r", "eq_rect_r", "eq_rec_r", "eq_sind_r"] S, Dir = "right-left".
 
 pred tr-rewrite i:string, i:string, i:term, i:term, i:term, i:list int, o:pf.
 tr-rewrite RN Dir Tau PX E Path (prf [D1, D2] (some (it S []))) :-
   tr PX nostar Path P1, dashed P1 D1,
   tr E nostar Path P2, dashed P2 D2,
   typ E TE, fm-fact TE FE, fm Tau F,
-  S is "Rewriting with " ^ FE ^ " " ^ Dir ^ " (" ^ RN ^ "), we get " ^ F.
+  say-cap [wd "rewriting", tx FE, wd Dir, tx "(", tx RN, tx ")", tx ",", wd "get", tx F] S.
 
 % ------------------------------------------------------------------
 % Top level: the abstractions at the top of the proof make the
@@ -1027,7 +1141,7 @@ top-run Acc (fun N A F) Ty Stmt L :- !,
   pi x\ (decl x N1 A, ctx-name Id) => top-run [b K Id FA|Acc] (F x) (B x) Stmt L.
 top-run Acc Body Ty0 Stmt L :-
   std.rev Acc Bs, beta-ty Ty0 Ty, fm Ty FT,
-  statement Bs Ss, WP is "We prove " ^ FT ^ ".", std.append Ss [WP] Ss1,
+  statement Bs Ss, say-cap [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
   std.string.concat " " Ss1 Stmt,
   ((root-term Body :- !) => tr-root Body star [] P0), that-is Body Ty P0 P, flatten P L.
 
@@ -1041,7 +1155,7 @@ that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-
   not (off "thatis"), typ T Syn, not (Syn = Exp), coq.unify-eq Syn Exp ok, !,
   % the second form is shown, not claimed: Rocq checked the conversion,
   % and the step's justification is about the first form
-  fm-fact Exp F, S1 is S ^ ", that is " ^ F.
+  fm-fact Exp F, say-cap [tx S, tx ",", wd "that-is", tx F] S1.
 that-is _ _ P P.
 
 % the expected types of the arguments As of a term of type Ty
@@ -1064,7 +1178,7 @@ pred statement i:list binder, o:list string.
 statement [] [].
 statement [b bk-assume Id FA|Bs] [S|Ss] :- !,
   assume-run [b bk-assume Id FA|Bs] Hs Rest,
-  std.string.concat " and " Hs H, S is "Assume " ^ H ^ ".",
+  and-parts Hs HP, say-cap {std.append [wd "assume" | HP] [tx "."]} S,
   statement Rest Ss.
 statement Bs [S|Ss] :-
   let-run Bs Ls Rest, let-lines Ls Lines,
@@ -1072,9 +1186,9 @@ statement Bs [S|Ss] :-
   std.string.concat " " L S,
   statement Rest Ss.
 
-pred assume-run i:list binder, o:list string, o:list binder.
+pred assume-run i:list binder, o:list (list part), o:list binder.
 assume-run [b bk-assume Id FA|Bs] [H|Hs] Rest :- !,
-  H is "`" ^ FA ^ "`{.hyp} (" ^ Id ^ ")", assume-run Bs Hs Rest.
+  assume-text (b bk-assume Id FA) H, assume-run Bs Hs Rest.
 assume-run Bs [] Bs.
 
 pred let-run i:list binder, o:list binder, o:list binder.
@@ -1104,10 +1218,10 @@ header-path Path H :-
       (Req = "")
       (std.string.concat "." Path Mod, Req is " Require Import " ^ Mod ^ ".")),
   R is "require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations." ^ Req,
-  std.string.concat "\n" [
-    "---", R,
+  writer-lang Lg, (if (Lg = "en") (Ls = []) (Ls = [{calc ("lang: " ^ Lg)}])),
+  std.string.concat "\n" {std.append ["---", R | Ls] [
     "by: tauto | congruence | lia | firstorder | auto",
-    "---" ] H.
+    "---" ]} H.
 
 % beta-reduction of the redexes (fun i => M) x, x a variable, left by
 % intro patterns: fun h => (fun i => M) h becomes fun i => M, keeping the
@@ -1173,3 +1287,19 @@ explain Name Text :-
   Title is "# " ^ Name,
   std.append [Hd, "", Title, "", Stmt, ""] Lines All,
   std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
+
+% The vocabulary of the writer in language L (the lexicon): every use of
+% English has a phrase in L, and every phrase of a role is in lower case
+% (as the phrases of the lexicon are matched).  The failures are in Bad.
+pred vocab-check i:string, o:list string.
+vocab-check L Bad :-
+  std.findall (write-role L _ _ _) Rs,
+  std.map-filter Rs (r\ m\ sigma U P\ r = write-role L U P _,
+     not (lower P P), m is "phrase \"" ^ P ^ "\" (" ^ U ^ ") not in lower case") B1,
+  std.findall (write-role "en" _ _ _) Re, std.findall (write-word "en" _ _) We,
+  std.map Re (r\ u\ sigma P R\ r = write-role "en" u P R) U1,
+  std.map We (r\ u\ sigma P\ r = write-word "en" u P) U2,
+  std.append U1 U2 Us,
+  std.map-filter Us (u\ m\ not (write-role L u _ _ ; write-word L u _),
+     m is "no phrase for " ^ u) B2,
+  std.append B1 B2 Bad.

@@ -1,16 +1,10 @@
 % The text of a step: words and formulas, and the role of each formula.
 %
 % A formula is written between backticks.  Its role is given by the last
-% phrase of the vocabulary written before it (see vocab_*.elpi), or by a
+% phrase of the vocabulary written before it (the lexicon, lexicon/), or by a
 % tag right after it ({.var}, {.hyp}, {.claim}, {.fact}); a step's
 % justification is written *by X*; a hypothesis may be named by a word in
 % parentheses right after it: `P` (h).
-
-kind role type.
-type rvar, rhyp, rclaim, rfact, rback role.
-
-% [phrase Lang Phrase Role], in the vocabulary files
-pred phrase o:string, o:string, o:role.
 
 % the language of the text being read
 pred current-lang o:string.
@@ -22,35 +16,48 @@ type hname string -> element.           % the name of the hypothesis before it
 type txt string -> element.             % words
 
 % ------------------------------------------------------------------ %
-% Lower case, also for the accented capitals of French and Italian
+% The role given by a text: its last phrase (of those that stand before
+% a formula); on a tie (the same end), the longer phrase ("that is"
+% against "is").  The text and the phrases are compared in lower case,
+% without the clitic prefixes of the language (lexicon: clitic).
 
-pred lower i:string, o:string.
-lower S L :-
-  std.fold [pr "A" "a", pr "B" "b", pr "C" "c", pr "D" "d", pr "E" "e",
-            pr "F" "f", pr "G" "g", pr "H" "h", pr "I" "i", pr "J" "j",
-            pr "K" "k", pr "L" "l", pr "M" "m", pr "N" "n", pr "O" "o",
-            pr "P" "p", pr "Q" "q", pr "R" "r", pr "S" "s", pr "T" "t",
-            pr "U" "u", pr "V" "v", pr "W" "w", pr "X" "x", pr "Y" "y",
-            pr "Z" "z", pr "À" "à", pr "Â" "â", pr "Ç" "ç", pr "É" "é",
-            pr "È" "è", pr "Ê" "ê", pr "Î" "î", pr "Ô" "ô", pr "Ù" "ù",
-            pr "Ì" "ì", pr "Ò" "ò"] S lower-step L.
-
-pred lower-step i:pair string string, i:string, o:string.
-lower-step (pr U L) S S1 :- rex.replace U L S S1.
-
-% ------------------------------------------------------------------ %
-% The role given by a text: its last phrase; on a tie (the same end),
-% the longer phrase ("that is" against "is")
-
-% a word boundary
+% a word boundary: ASCII spaces and punctuation, and the punctuation of
+% the lexicon; none in a language written without spaces (unspaced)
 pred boundary o:string.
-boundary "[] ,.;:()!?'\"*-]".
+boundary "" :- current-lang L, unspaced L, !.
+boundary B :-
+  std.findall (punctuation _ _) Ps, std.map Ps (p\ s\ sigma L\ p = punctuation L s) Ss,
+  std.string.concat "\\|" ["[] ,.;:()!?'\"*-]" | Ss] B0, B is "\\(" ^ B0 ^ "\\)".
+
+% [normal S N]: S in lower case, padded with spaces, without the clitic
+% prefixes at the start of its words
+pred normal i:string, o:string.
+normal S N :- lower S L0, L is " " ^ L0 ^ " ", unclitic L N.
+
+pred unclitic i:string, o:string.
+unclitic S S :- boundary "", !.
+unclitic S N :- current-lang Lang, boundary Bd,
+  std.findall (clitic Lang _) Cs,
+  std.fold Cs S (c\ a\ b\ sigma C Re\ c = clitic _ C, Re is Bd ^ C,
+    rex.replace Re "\\1" a b) N.
+
+% the phrases of the current language on one side of the formula (they
+% are in lower case), each as it is matched: without its clitic prefixes
+pred side-phrases i:bool, o:list prop.
+side-phrases After Ps :-
+  current-lang Lang, std.findall (phrase Lang _ _) Ps0,
+  std.map-filter Ps0 (p\ q\ sigma P R P1\ p = phrase _ P R,
+    (if (phrase-after Lang P) (After = tt) (After = ff)),
+    unclitic-phrase Lang P P1, q = phrase Lang P1 R) Ps.
+
+pred unclitic-phrase i:string, i:string, o:string.
+unclitic-phrase Lang P P :- not (clitic Lang _), !.
+unclitic-phrase _ P P2 :- S is " " ^ P ^ " ", unclitic S P1,
+  rex.replace "^ \\(.*\\) $" "\\1" P1 P2.
 
 pred text-role i:string, o:role.
 text-role S R :-
-  lower S L0, L is " " ^ L0 ^ " ",
-  current-lang Lang,
-  std.findall (phrase Lang _ _) Ps,
+  normal S L, side-phrases ff Ps,
   best-phrase L Ps none (some (triple _ _ R)).
 
 % [best-phrase Text Phrases Acc Best]: Best = (Suffix length, Phrase
@@ -74,6 +81,53 @@ better X none (some X) :- !.
 better (triple N M R) (some (triple N1 _ _)) (some (triple N M R)) :- N < N1, !.
 better (triple N M R) (some (triple N M1 _)) (some (triple N M R)) :- M > M1, !.
 better _ B B.
+
+% The phrases after a formula (lexicon: phrase-after).  The text after a
+% formula gives it a role when the first phrase in that text (of either
+% side) stands after; a text with no phrase passes the role on to the
+% formula before it ("`A` (h) 그리고 `B` (h2)라고 가정하자": both are
+% hypotheses), as a phrase before a formula passes its role on to the
+% formulas after it.
+
+% [first-phrase Text P After Role]: the phrase that starts first in Text
+% (on a tie, the longer one)
+pred first-phrase i:string, o:string, o:bool, o:role.
+first-phrase W P After R :-
+  normal W T, side-phrases ff Bs, side-phrases tt As, boundary Bd,
+  std.map Bs (p\ q\ q = pr ff p) Bs1, std.map As (p\ q\ q = pr tt p) As1,
+  std.append Bs1 As1 Ps,
+  earliest T Bd Ps none (some (triple _ _ (triple P After R))).
+
+pred earliest i:string, i:string, i:list (pair bool prop),
+  i:option (triple int int (triple string bool role)),
+  o:option (triple int int (triple string bool role)).
+earliest _ _ [] B B.
+earliest T Bd [pr A (phrase _ P R) | Ps] Acc B :-
+  Re is Bd ^ P ^ Bd, rex.match {calc (".*" ^ Re)} T, !,
+  rex.replace {calc (Re ^ ".*")} "" T Prefix,
+  N is size Prefix, M is size P,
+  earlier (triple N M (triple P A R)) Acc Acc1,
+  earliest T Bd Ps Acc1 B.
+earliest T Bd [_ | Ps] Acc B :- earliest T Bd Ps Acc B.
+
+pred earlier i:triple int int (triple string bool role),
+  i:option (triple int int (triple string bool role)),
+  o:option (triple int int (triple string bool role)).
+earlier X none (some X) :- !.
+earlier (triple N M X) (some (triple N1 _ _)) (some (triple N M X)) :- N < N1, !.
+earlier (triple N M X) (some (triple N M1 _)) (some (triple N M X)) :- M > M1, !.
+earlier _ B B.
+
+% [after-roles Pieces Rs Pend]: for each formula of Pieces, in order, the
+% role given by the phrases after it, if any; Pend: the role passed on to
+% a formula just before Pieces
+pred after-roles i:list piece, o:list (option role), o:option role.
+after-roles P Rs none :- current-lang L, not (phrase-after L _), !,
+  std.map-filter P (p\ r\ sigma F\ p = pform F, r = none) Rs.
+after-roles [] [] none.
+after-roles [ptext W | P] Rs Pend :- after-roles P Rs Pend1,
+  (first-phrase W _ A R, !, (if (A = tt) (Pend = some R) (Pend = none)) ; Pend = Pend1).
+after-roles [pform _ | P] [Pend | Rs] Pend :- after-roles P Rs Pend.
 
 % ------------------------------------------------------------------ %
 % Cutting a text into words and formulas (between backticks)
@@ -121,19 +175,32 @@ justification S (some X) S1 :-
 justification S none S.
 
 % [elements Pieces Role Elements]: Role is the role before the first
-% formula (claim in a step, the conclusion in a statement)
+% formula (claim in a step, the conclusion in a statement).  A formula
+% takes the role of the phrases before it, or, when no phrase stands
+% right before it, the role of the phrases after it (after-roles)
 pred elements i:list piece, i:role, o:list element.
-elements [] _ [].
-elements [ptext W | P] R [txt W | L] :- !,
-  (text-role W R1, ! ; R1 = R), elements P R1 L.
-elements [pform F, ptext W | P] R [elt R1 F | L] :-
-  tag W R1 W1, !, elements [ptext W1 | P] R L.
-elements [pform F, ptext W | P] rhyp [elt rhyp F, hname H | L] :-
+elements P R L :- after-roles P As _, elements1 P R ff As L.
+
+% [elements1 Pieces Role Explicit Afters Elements]: Explicit: a phrase
+% stands right before the next formula; Afters: the after-roles of the
+% formulas of Pieces
+pred elements1 i:list piece, i:role, i:bool, i:list (option role), o:list element.
+elements1 [] _ _ _ [].
+elements1 [ptext W | P] R _ As [txt W | L] :- !,
+  (text-role W R1, !, E = tt ; R1 = R, E = ff), elements1 P R1 E As L.
+elements1 [pform F, ptext W | P] R _ [_ | As] [elt R1 F | L] :-
+  tag W R1 W1, !, elements1 [ptext W1 | P] R ff As L.
+elements1 [pform F | P] R E [A | As] L :-
+  (A = some R2, E = ff, !, R1 = R2 ; R1 = R), formula F R1 P R As L.
+
+% the formula F with its role R1, then the pieces P (R the role before)
+pred formula i:string, i:role, i:list piece, i:role, i:list (option role), o:list element.
+formula F rhyp [ptext W | P] R As [elt rhyp F, hname H | L] :-
   rex.match "^ *([A-Za-z_][A-Za-z0-9_']*)" W, !,
   rex.replace "^ *(\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" W H,
   rex.replace "^ *([A-Za-z_][A-Za-z0-9_']*)" "" W W1,
-  elements [ptext W1 | P] rhyp L.
-elements [pform F | P] R [elt R F | L] :- elements P R L.
+  elements1 [ptext W1 | P] R ff As L.
+formula F R1 P R As [elt R1 F | L] :- elements1 P R ff As L.
 
 % a tag right after a formula
 pred tag i:string, o:role, o:string.

@@ -1,0 +1,63 @@
+% Dutch.  Phrases of the usual mathematical style ("Laat", "Stel",
+% "Dus geldt", "Omdat ..., hebben we", "Het volstaat te bewijzen dat");
+% for review by a speaker.
+phrase "nl" "zij" rvar.          phrase "nl" "laat" rvar.
+phrase "nl" "als" rhyp.          phrase "nl" "stel" rhyp.
+phrase "nl" "dan" rclaim.        phrase "nl" "hebben we" rclaim.  phrase "nl" "geldt" rclaim.
+phrase "nl" "het volstaat te bewijzen dat" rback.  phrase "nl" "het volstaat te bewijzen" rback.
+phrase "nl" "dit komt neer op" rback.
+
+write-role "nl" "let" "laat" rvar.
+write-role "nl" "let-plural" "laat" rvar.
+write-role "nl" "consider" "beschouw een willekeurige" rvar.
+write-role "nl" "choose" "kies willekeurig" rvar.
+write-role "nl" "assume" "stel" rhyp.
+write-role "nl" "we-prove" "we bewijzen" rclaim.
+write-role "nl" "prove" "te bewijzen" rclaim.
+write-role "nl" "proved" "we hebben bewezen" rclaim.
+write-role "nl" "have" "er geldt" rclaim.
+write-role "nl" "thus-have" "dus geldt" rclaim.
+write-role "nl" "get" "we krijgen" rclaim.
+write-role "nl" "particular" "in het bijzonder" rclaim.
+write-role "nl" "deduce" "hieruit volgt" rclaim.
+write-role "nl" "can-deduce" "kunnen we afleiden" rclaim.
+write-role "nl" "so" "dus" rclaim.
+write-role "nl" "from" "uit" rfact.
+write-role "nl" "since" "omdat" rfact.
+write-role "nl" "using" "met behulp van" rfact.
+write-role "nl" "that-is" "dat wil zeggen" rfact.
+write-role "nl" "witness" "met getuige" rfact.
+write-role "nl" "by-induction-on" "met inductie naar" rfact.
+write-role "nl" "by-cases-on" "met gevalsonderscheiding naar" rfact.
+write-role "nl" "generalise" "veralgemenen we het tot" rfact.
+write-role "nl" "recursion" "met recursie naar" rfact.
+write-role "nl" "rewriting" "herschrijven met" rfact.
+write-role "nl" "the-term" "de term" rfact.
+write-word "nl" "and" "en".
+write-word "nl" "by" "volgens".
+write-word "nl" "arbitrary" "willekeurig is".
+write-word "nl" "ih" "volgens de inductiehypothese".
+write-word "nl" "recursive-call" "de recursieve aanroep".
+write-word "nl" "definition" "volgens de definitie van".
+write-word "nl" "case" "geval".
+write-word "nl" "base" "basis".
+write-word "nl" "inductive" "inductief".
+write-word "nl" "contradiction" "uit het ongerijmde".
+write-word "nl" "back" "terug naar de definitie van".
+write-word "nl" "in" "in".
+write-word "nl" "by-induction" "met inductie".
+write-word "nl" "by-cases" "met gevalsonderscheiding".
+write-word "nl" "on" "naar".
+write-word "nl" "all-cases" "in alle gevallen".
+write-word "nl" "no-element" "er is geen element van".
+write-word "nl" "to-prove" "om te bewijzen".
+write-word "nl" "exhaustive" "deze gevallen zijn uitputtend".
+write-word "nl" "fix" "fix".
+write-word "nl" "argument" "argument".
+write-word "nl" "left-right" "van links naar rechts".
+write-word "nl" "right-left" "van rechts naar links".
+write-word "nl" "not-translated" "niet vertaald".
+
+% Plural (CLDR): one for 1, other otherwise.
+plural-category "nl" 1 "one" :- !.
+plural-category "nl" _ "other".

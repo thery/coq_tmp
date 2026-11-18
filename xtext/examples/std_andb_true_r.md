@@ -9,7 +9,7 @@ Let `b : bool`{.var}. We prove `b && true = b`{.claim}.
 
 - We prove `b && true = b`{.fact} by case analysis on `b`{.fact} (bool, match):
 - Case 1: we prove `true && true = true`{.claim}.
-  - By definition of eq (eq_refl), we have `true = true`{.claim} *by eapply @eq_refl; eauto*.
+  - By definition of eq (eq_refl), we have `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Case 2: we prove `false && true = false`{.claim}.
-  - By definition of eq (eq_refl), we have `false = false`{.claim} *by eapply @eq_refl; eauto*.
-- These cases being exhaustive, we deduce `b && true = b`{.claim} *by destruct b; cbn; eauto*.
+  - By definition of eq (eq_refl), we have `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
+- These cases being exhaustive, we deduce `b && true = b`{.claim}.
