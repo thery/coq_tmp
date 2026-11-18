@@ -21,6 +21,12 @@ papers (in development):
 - [lexicon/](lexicon/README.md) and [prooftext/](prooftext/README.md): the
   libraries the two tools share, the words of proofs in each language and
   the format of proof texts.
+- **The PDF of a proof text**, with Typst: `prooftext/pdf.sh proof.md`, for
+  a text written by xtext (also `Explain foo to "foo.typ".`) or checked by
+  cyp.  Each role of a formula has its own style, the steps are indented as
+  in the list, and cyp's statuses are coloured marks; Arabic is laid out
+  from right to left
+  ([prooftext](prooftext/README.md#the-pdf-of-a-proof-text-typst)).
 
 ## elpi-tools
 

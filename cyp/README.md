@@ -181,6 +181,24 @@ steps; without the rule file, `lra` proves only one.
 A larger case study, a floating-point paper with a library of lemmas and
 shared rules, is kept in a private branch.
 
+## The PDF
+
+```sh
+../prooftext/pdf.sh examples/square_pos.checked.md   # square_pos.checked.typ, then square_pos.checked.pdf
+```
+
+makes the PDF of a checked text with Typst, in the template that
+prooftext shares with xtext
+([../prooftext](../prooftext/README.md#the-pdf-of-a-proof-text-typst)):
+each step has its status as a coloured mark (✔ proved, ✘ not proved, ◆
+left to a Proof block, ▫ nothing to check), cyp's message in a box under
+it, and its number in the margin, the number of its conditions.  The
+formulas have the style of their role when the text gives their class
+(`{.claim}`, as xtext's texts do); a formula without a class is shown
+without a role, since the PDF does not guess roles from the words, as cyp
+does.  The marks of a checked text are prooftext's (`checked.elpi`), so
+that the Typst writer reads back exactly what cyp writes.
+
 ## The editor
 
 [vscode/](vscode) is a VS Code extension (plain JavaScript, nothing to

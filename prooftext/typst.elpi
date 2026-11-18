@@ -23,8 +23,8 @@
 %
 % The text of a statement or of a step is cut into its parts: the
 % formulas with their roles (formulas.elpi; a formula without a class is
-% shown without a role), the name (h) given to a formula right after a
-% formula, the justification *by X*, and the plain text between them, each
+% shown without a role), the name (h) given to a formula, right after
+% it, the justification *by X*, and the plain text between them, each
 % written as a Typst string, so that no character of the text is read as
 % Typst markup.  In a text checked by cyp (checked.elpi), the status of
 % each text, the conditions left and cyp's message become arguments of
@@ -185,8 +185,8 @@ formula-class After Tag Rest :-
   rex.replace "^{[.][A-Za-z]+}" "" After Rest.
 formula-class After "" After.
 
-% [formula-name After Names Rest]: the name (h) right after a formula (a
-% hypothesis, or a claim that a later step names),
+% [formula-name After Names Rest]: the name (h) given to a formula (a
+% hypothesis, or a claim that a later step names), right after it with
 % one space before it, as [plain " ", name-part h] ([] if there is none),
 % and the text after it
 pred formula-name i:string, o:list text-part, o:string.

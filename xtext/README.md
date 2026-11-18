@@ -16,6 +16,7 @@ From XText Require Import Explain.
 Explain foo.                                (* prints the text *)
 Explain foo to "examples/foo.md".           (* writes it to a file *)
 Explain foo to "examples/fr/foo.md" in "fr".   (* in French; also it de nl ru zh ar ko la *)
+Explain foo to "foo.typ".                   (* in Typst, for a PDF: ../prooftext/pdf.sh foo.typ *)
 ```
 
 Proofs ending with `Qed` work too: the body is read with
@@ -76,6 +77,9 @@ Examples and checks:
   those of a private case study, kept in a private branch, 77 here);
 - `multilingual.v`: 12 of them in each of the other languages of the
   lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la`);
+- `typst_examples.v`: ten texts in Typst, for their PDFs (`examples-typst/`,
+  five in English, one each in French, Arabic, Chinese, Russian and Korean;
+  see "The PDF of a text");
 - `vocab_check.v`: the vocabulary of each language, and the tactic names
   that xtext writes (they must be prooftext's);
 - `selection.v`: the selection of type annotations (thesis 4.3.1) on
@@ -158,6 +162,19 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
   the motive is not found from the goal by unification when the type has
   indices, and a `match` would need `destruct`; cyp's default tactics
   close them when they can.
+
+### The PDF of a text
+
+`Explain foo to "foo.typ".` writes the text in Typst instead of Markdown
+(the same document, written by prooftext's `write-typst`), and
+`../prooftext/pdf.sh foo.typ` makes `foo.pdf`.  `../prooftext/pdf.sh
+examples/foo.md` does both steps from a Markdown text.  The PDF shows each
+role of a formula in its own style, the steps indented as in the list, and
+the header as a small title block; a text in Arabic is laid out from right
+to left.  The same template shows the texts that cyp has checked, with
+their statuses (`../prooftext/pdf.sh cyp-check/foo.checked.md`).  The
+design, the fonts and the tests are in
+[prooftext](../prooftext/README.md#the-pdf-of-a-proof-text-typst).
 
 ### The words: the lexicon
 
