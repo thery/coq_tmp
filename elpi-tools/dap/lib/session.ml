@@ -43,6 +43,9 @@ type t = {
   expectations : expectation Queue.t;
   mutable launch : P.request option;  (* answered at the stop Start *)
   mutable stop_on_entry : bool;
+  mutable query_place : (string * int) option;
+      (* where the query is written (launch's queryPath and queryLine): the
+         place of the frames that run no clause yet *)
   mutable lines_start_at_1 : bool;
   mutable errors_text : Buffer.t;  (* what elpi-debug wrote on stderr *)
   clause_breakpoints : (string, int list) Hashtbl.t;  (* file -> the rules with a breakpoint *)
@@ -61,6 +64,7 @@ let create ~write =
     expectations = Queue.create ();
     launch = None;
     stop_on_entry = false;
+    query_place = None;
     lines_start_at_1 = true;
     errors_text = Buffer.create 256;
     clause_breakpoints = Hashtbl.create 7;
@@ -214,7 +218,10 @@ let stack_frame s stop index f =
   match frame_location stop.frames index with
   | Rule_at at -> `Assoc ((("name", `String name) :: common) @ [ ("source", source_of at.file); ("line", `Int (client_line s at.line)) ])
   | Hypothesis origin -> `Assoc ((("name", `String (name ^ "   (" ^ origin ^ ")")) :: common) @ [ ("line", `Int 0) ])
-  | No_clause -> `Assoc ((("name", `String name) :: common) @ [ ("line", `Int 0) ])
+  | No_clause -> (
+      match s.query_place with
+      | Some (file, line) -> `Assoc ((("name", `String name) :: common) @ [ ("source", source_of file); ("line", `Int (client_line s line)) ])
+      | None -> `Assoc ((("name", `String name) :: common) @ [ ("line", `Int 0) ]))
 
 (* The scopes of a frame: references index * 3 + 1, + 2, + 3 (index: its
    place in the stack, from 0); valid while the stop lasts. *)
@@ -313,6 +320,10 @@ let launch s (r : P.request) =
       let options = List.filter_map Yojson.Safe.Util.to_string_option (P.list_argument "args" r) in
       let cwd = P.string_argument "cwd" r in
       s.stop_on_entry <- P.bool_argument "stopOnEntry" ~default:false r;
+      s.query_place <-
+        (match P.string_argument "queryPath" r, P.int_argument "queryLine" r with
+         | Some file, Some line -> Some (file, line)
+         | _ -> None);
       s.launch <- Some r;
       s.debuggee <- Some (Debuggee.start ~exe ~cwd ~options ~program ~goal);
       Queue.add Initial_stop s.expectations

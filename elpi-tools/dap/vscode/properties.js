@@ -266,7 +266,10 @@ class PropertyTests {
     });
     this.log(`debug ${configuration.program}: ${configuration.goal}`);
     const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(result.file));
-    return vscode.debug.startDebugging(folder, configuration);
+    const started = await vscode.debug.startDebugging(folder, configuration);
+    if (started) vscode.debug.activeDebugConsole.append(report.debugHeaderText(result));
+    else vscode.window.showErrorMessage(`The debugger did not start on the counterexample of ${result.name}.`);
+    return started;
   }
 
   // [debugCommand(argument)]: the command "Debug this counterexample", from

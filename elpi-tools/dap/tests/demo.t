@@ -288,33 +288,35 @@ pinned:
   # Debug this counterexample (the Test Explorer, dap/vscode/properties.js): the replay goal of sort-length (demo/lists.elpi), stopped on entry; two steps, then continue: the explanation of the failure.
   -> {"seq":1,"type":"request","command":"initialize","arguments":{"adapterID":"elpi"}}
   <- {"seq":1,"type":"response","request_seq":1,"success":true,"command":"initialize","body":{"supportsConfigurationDoneRequest":true,"supportsFunctionBreakpoints":true,"supportsRestartFrame":true,"supportsTerminateRequest":true,"supportsEvaluateForHovers":false,"supportsStepBack":false}}
-  -> {"seq":2,"type":"request","command":"launch","arguments":{"program":"lists.elpi","goal":"sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M","stopOnEntry":true}}
+  -> {"seq":2,"type":"request","command":"launch","arguments":{"program":"lists.elpi","goal":"sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M","stopOnEntry":true,"queryPath":"lists.elpi","queryLine":44}}
   <- {"seq":2,"type":"response","request_seq":2,"success":true,"command":"launch","body":null}
   <- {"seq":3,"type":"event","event":"initialized","body":null}
   -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
   <- {"seq":5,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
-  -> {"seq":4,"type":"request","command":"stepIn","arguments":{"threadId":1}}
-  <- {"seq":6,"type":"response","request_seq":4,"success":true,"command":"stepIn","body":null}
-  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #1 sort [0, 0] X0\n"}}
-  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #1 sort [0, 0] X0","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":4,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
+  <- {"seq":6,"type":"response","request_seq":4,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Start: (the query)","id":0,"column":1,"source":{"name":"lists.elpi","path":"lists.elpi"},"line":44}],"totalFrames":1}}
   -> {"seq":5,"type":"request","command":"stepIn","arguments":{"threadId":1}}
-  <- {"seq":9,"type":"response","request_seq":5,"success":true,"command":"stepIn","body":null}
-  <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"Unify: #1 with lists.elpi:16: sort [0, 0] X0\n"}}
-  <- {"seq":11,"type":"event","event":"stopped","body":{"reason":"step","description":"Unify step","text":"Unify: #1 with lists.elpi:16: sort [0, 0] X0","threadId":1,"allThreadsStopped":true}}
-  -> {"seq":6,"type":"request","command":"continue","arguments":{"threadId":1}}
-  <- {"seq":12,"type":"response","request_seq":6,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
-  <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
-  <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): 0 < 0\n"}}
-  <- {"seq":15,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
-  <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"    #5 insert 0 [0] [0, 0]\n"}}
-  <- {"seq":17,"type":"event","event":"output","body":{"category":"stdout","output":"    #1 sort [0, 0] [0, 0]\n"}}
-  <- {"seq":18,"type":"event","event":"output","body":{"category":"stdout","output":"  a builtin (not a predicate of the program): it ran natively and failed\n"}}
-  <- {"seq":19,"type":"event","event":"output","body":{"category":"stdout","output":"No solution.\n"}}
-  <- {"seq":20,"type":"event","event":"exited","body":{"exitCode":0}}
-  <- {"seq":21,"type":"event","event":"terminated","body":null}
-  -> {"seq":7,"type":"request","command":"disconnect","arguments":{}}
-  <- {"seq":22,"type":"response","request_seq":7,"success":true,"command":"disconnect","body":null}
+  <- {"seq":7,"type":"response","request_seq":5,"success":true,"command":"stepIn","body":null}
+  <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #1 sort [0, 0] X0\n"}}
+  <- {"seq":9,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #1 sort [0, 0] X0","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":6,"type":"request","command":"stepIn","arguments":{"threadId":1}}
+  <- {"seq":10,"type":"response","request_seq":6,"success":true,"command":"stepIn","body":null}
+  <- {"seq":11,"type":"event","event":"output","body":{"category":"stdout","output":"Unify: #1 with lists.elpi:16: sort [0, 0] X0\n"}}
+  <- {"seq":12,"type":"event","event":"stopped","body":{"reason":"step","description":"Unify step","text":"Unify: #1 with lists.elpi:16: sort [0, 0] X0","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":7,"type":"request","command":"continue","arguments":{"threadId":1}}
+  <- {"seq":13,"type":"response","request_seq":7,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
+  <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
+  <- {"seq":15,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): 0 < 0\n"}}
+  <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
+  <- {"seq":17,"type":"event","event":"output","body":{"category":"stdout","output":"    #5 insert 0 [0] [0, 0]\n"}}
+  <- {"seq":18,"type":"event","event":"output","body":{"category":"stdout","output":"    #1 sort [0, 0] [0, 0]\n"}}
+  <- {"seq":19,"type":"event","event":"output","body":{"category":"stdout","output":"  a builtin (not a predicate of the program): it ran natively and failed\n"}}
+  <- {"seq":20,"type":"event","event":"output","body":{"category":"stdout","output":"No solution.\n"}}
+  <- {"seq":21,"type":"event","event":"exited","body":{"exitCode":0}}
+  <- {"seq":22,"type":"event","event":"terminated","body":null}
+  -> {"seq":8,"type":"request","command":"disconnect","arguments":{}}
+  <- {"seq":23,"type":"response","request_seq":8,"success":true,"command":"disconnect","body":null}
 
   $ replay demo-counterexample-pinned.dap
   # Debug this counterexample: the replay goal of preservation (demo/lambda.elpi), where N is pinned to the value of the counterexample (step has a right answer first).  Stopped on entry; Step Into, then Step Over 7 times: the right reduction, rejected by the pin, the wrong one, the conclusion that fails; continue: the explanation.

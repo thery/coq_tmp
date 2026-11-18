@@ -100,7 +100,9 @@ test('the debug configuration of a counterexample: the replay goal on the file',
     goal: 'sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M',
     args: ['-I', '/elpi-tools/check/lib', '-I', 'lib'],
     cwd: '/demo',
-    stopOnEntry: true
+    stopOnEntry: true,
+    queryPath: lists,
+    queryLine: 44
   });
   const withoutLibrary = report.replayConfiguration(report.parseReportLine(sortLengthResult), { checkLibrary: undefined, includeDirectories: [] });
   assert.deepStrictEqual(withoutLibrary.args, []);
