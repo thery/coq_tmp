@@ -5,14 +5,23 @@
 % ===== Builtins ====================================================================
 
 % [native Ctx G]: the builtin goal G, run natively, with its call, exit and
-% fail ports (shown with option builtins).  Only a builtin that fails
-% without ever succeeding is a candidate for the failure explanation.
+% fail ports (shown with option builtins; none on the fast path, where no
+% event is shown or recorded).  Only a builtin that fails without ever
+% succeeding is a candidate for the failure explanation.
 :nooc
 pred native o:ctx, i:(pred).
+native Ctx G :- quiet, !,
+  new_safe Exited,
+  unseen-native Exited Ctx G.
 native Ctx G :-
   native-port call-port Ctx G,
   new_safe Exited,
   native-ports Exited Ctx G.
+
+:nooc
+pred unseen-native i:safe, o:ctx, i:(pred).
+unseen-native Exited Ctx G :- run-native Ctx G, stash_in_safe Exited "exited".
+unseen-native Exited Ctx G :- note-native-failure-if-first Exited Ctx G, fail.
 
 % (alternatives as clauses, not ;, as for [box-ports])
 :nooc

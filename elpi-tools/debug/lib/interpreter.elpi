@@ -102,8 +102,11 @@ compile Ctx Ns (A ; B) (CA ; CB) Ns2 :- !, compile Ctx Ns A CA Ns1, compile Ctx 
 compile Ctx Ns (declare_constraint G Keys) (debug.delay Ctx G Keys) Ns1 :- !, drop-names G Ns Ns1.
 % an atomic goal of a declared predicate of the program: a call
 compile Ctx Ns G (debug.call Ctx P G debug.called) Ns1 :- constant G P _, declared P _, !, drop-names G Ns Ns1.
-% any other atomic goal: a builtin, or a predicate with hypothetical
-% clauses only, dispatched by [goal] when it runs
+% an atomic goal of a constant the program does not declare: a builtin, or
+% a predicate with hypothetical clauses only, told apart when it runs
+compile Ctx Ns G (debug.undeclared-goal Ctx P G) Ns1 :- constant G P _, !, drop-names G Ns Ns1.
+% any other goal (headed by an eigenvariable, an application of a builtin
+% written in OCaml): dispatched by [goal] when it runs
 compile Ctx Ns G (debug.goal Ctx G) Ns1 :- drop-names G Ns Ns1.
 
 :nooc
@@ -173,6 +176,14 @@ goal Ctx G :- program-goal G P, !, call Ctx P G called.
 % anything else: a builtin, run natively
 goal Ctx G :- native Ctx G.
 
+% [undeclared-goal Ctx P G]: the goal G of the constant P, which the program
+% does not declare: a call when hypothetical clauses of P are in scope,
+% otherwise a builtin (as [goal] tells them apart).
+:nooc
+pred undeclared-goal o:ctx, i:any, i:(pred).
+undeclared-goal Ctx P G :- hyp P _ _, !, call Ctx P G called.
+undeclared-goal Ctx _ G :- native Ctx G.
+
 % [program-goal G P]: G is a goal of the predicate P of the program
 % (declared, or with hypothetical clauses in scope).
 pred program-goal i:(pred), o:any.
@@ -197,7 +208,20 @@ pred call o:ctx, i:any, i:(pred), i:entry.
 call (ctx D Above) P G Entry :-
   new_int Id,
   new_safe Exited,
-  attempt Exited (box (frame Id D P G) Above Entry).
+  run-box Exited (box (frame Id D P G) Above Entry).
+
+% [run-box Exited Box]: the call, with its ports ([attempt]); on the fast
+% path, where no event is shown or recorded (so no stop, and no retry), it
+% is only its solutions and the note of its failure ([unseen-box]).
+:nooc
+pred run-box i:safe, o:box.
+run-box Exited Box :- quiet, !, unseen-box Exited Box.
+run-box Exited Box :- attempt Exited Box.
+
+:nooc
+pred unseen-box i:safe, o:box.
+unseen-box Exited Box :- solutions Box, stash_in_safe Exited "exited".
+unseen-box Exited Box :- note-failure-if-first Exited Box, fail.
 
 % [attempt Exited Box]: the call; its second clause is the choice point to
 % which a retry or fail command of the stepper unwinds (stepper.elpi).
