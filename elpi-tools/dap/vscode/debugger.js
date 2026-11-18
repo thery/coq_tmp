@@ -5,29 +5,17 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
+const tools = require('./tools');
 
-// The bin directory of a build of elpi-tools that holds this extension
-// (elpi-tools/dap/vscode -> elpi-tools/_build/install/default/bin).
-const builtBin = path.join(__dirname, '..', '..', '_build', 'install', 'default', 'bin');
-
-// [setting(name)]: a setting of the extension, '' when not set.
-function setting(name) {
-  return vscode.workspace.getConfiguration('elpiTools').get(name) || '';
-}
-
-// [adapterPath()]: elpi-dap: the setting, else the one built next to the
-// extension, else the one of the PATH.
+// [adapterPath()]: elpi-dap (see tools.programPath).
 function adapterPath() {
-  const configured = setting('adapterPath');
-  if (configured) return configured;
-  const built = path.join(builtBin, 'elpi-dap');
-  return fs.existsSync(built) ? built : 'elpi-dap';
+  return tools.programPath('elpi-dap', 'adapterPath');
 }
 
 // [elpiDebugPath(adapter)]: elpi-debug: the setting, else the one next to
 // elpi-dap (undefined: elpi-dap looks for it itself).
 function elpiDebugPath(adapter) {
-  const configured = setting('elpiDebugPath');
+  const configured = tools.setting('elpiDebugPath');
   if (configured) return configured;
   const sibling = path.join(path.dirname(adapter), 'elpi-debug');
   return path.isAbsolute(sibling) && fs.existsSync(sibling) ? sibling : undefined;

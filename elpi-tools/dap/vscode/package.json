@@ -1,19 +1,28 @@
 {
   "name": "elpi-tools",
   "displayName": "Elpi tools",
-  "description": "Debugging of standalone Elpi programs (elpi-debug, through the debug adapter elpi-dap)",
+  "description": "Debugging (elpi-debug, through the debug adapter elpi-dap) and property checking (elpi-check, in the Test Explorer) of standalone Elpi programs",
   "version": "0.1.0",
   "publisher": "elpi-tools",
   "license": "MIT",
-  "engines": { "vscode": "^1.82.0" },
-  "categories": ["Debuggers"],
+  "engines": { "vscode": "^1.88.0" },
+  "categories": ["Debuggers", "Testing"],
   "main": "./extension.js",
-  "activationEvents": ["onDebugResolve:elpi", "onDebugDynamicConfigurations:elpi"],
+  "activationEvents": ["onDebugResolve:elpi", "onDebugDynamicConfigurations:elpi", "onLanguage:elpi", "workspaceContains:**/*.elpi"],
   "contributes": {
     "languages": [
       { "id": "elpi", "extensions": [".elpi"], "aliases": ["Elpi"] }
     ],
     "breakpoints": [{ "language": "elpi" }],
+    "commands": [
+      { "command": "elpiTools.debugCounterexample", "title": "Debug this counterexample", "category": "Elpi", "icon": "$(debug-alt)" }
+    ],
+    "menus": {
+      "testing/message/content": [{ "command": "elpiTools.debugCounterexample", "when": "testMessage == elpiCounterexample" }],
+      "testing/message/context": [{ "command": "elpiTools.debugCounterexample", "when": "testMessage == elpiCounterexample" }],
+      "testing/item/context": [{ "command": "elpiTools.debugCounterexample", "when": "controllerId == elpiProperties" }],
+      "commandPalette": [{ "command": "elpiTools.debugCounterexample", "when": "false" }]
+    },
     "debuggers": [
       {
         "type": "elpi",
@@ -63,6 +72,22 @@
           "type": "string",
           "default": "",
           "description": "The path of elpi-debug. Empty: the one next to elpi-dap."
+        },
+        "elpiTools.checkPath": {
+          "type": "string",
+          "default": "",
+          "description": "The path of elpi-check. Empty: the one built next to this extension (../../_build/install/default/bin/elpi-check), else elpi-check from the PATH."
+        },
+        "elpiTools.checkArgs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "More options of elpi-check, e.g. [\"-n\", \"1000\"] or [\"-I\", \"dir\"] (the -I are also given to the debugger of a counterexample). elpi-check runs in the directory of the file."
+        },
+        "elpiTools.checkLibraryPath": {
+          "type": "string",
+          "default": "",
+          "description": "The directory of property.elpi (accumulated by the programs with properties), given with -I to the debugger of a counterexample. Empty: elpi-tools/check/lib next to this extension."
         }
       }
     }
