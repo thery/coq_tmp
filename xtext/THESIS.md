@@ -67,7 +67,7 @@ the contraction of Fig. 3.11.
 | 6.3.1, 6.3.2 | eliminations with one case, with zero cases | `inductive-text.elpi` |
 | 6.3.3, 6.3.4 | dependent eliminations, eliminations with recursion (base and inductive cases) | `inductive-text.elpi` (`recursive`) |
 | 6.4.2 | elimination theorems recognised by their type, whatever their name | `elim-info` in `inductive.elpi` |
-| (end of 6.4.2) | rewriting: the thesis asks for a specific rule but gives none | `tr-rewrite` in `inductive-text.elpi` (by the name of the theorem: to be generalised) |
+| (end of 6.4.2) | rewriting: the thesis asks for a specific rule but gives none | `tr-rewrite` in `inductive-text.elpi`; the rewriting principles recognised by their type, `rewrite-info` in `inductive.elpi` |
 
 ## Not implemented
 

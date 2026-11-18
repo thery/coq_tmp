@@ -29,9 +29,6 @@ pred tr-match i:term, i:term, i:list term, i:list int, o:pf.
 pred tr-fix i:name, i:int, i:term, i:(term -> term), i:list int, o:pf.
 
 % defined in inductive-text.elpi, used in applications.elpi
-pred rewrite-info i:term, o:string.
-
-% defined in inductive-text.elpi, used in applications.elpi
 pred tr-rewrite i:string, i:string, i:term, i:term, i:term, i:list int, o:pf.
 
 % defined in type-expressions.elpi, used in document.elpi: the type the

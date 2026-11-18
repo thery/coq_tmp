@@ -170,12 +170,6 @@ nth-binder _ K [wd "argument", tx {std.any->string K}].
 % --- rewriting (eq_ind and friends): the equality and the proof of the
 % statement before rewriting are shown, then the rewritten statement
 
-rewrite-info H Dir :- gr-of H (const C), coq.gref->id (const C) S,
-  std.mem! ["eq_ind", "eq_rect", "eq_rec", "eq_sind"] S, !, Dir = "left-right".
-rewrite-info H Dir :- gr-of H (const C), coq.gref->id (const C) S,
-  std.mem! ["eq_ind_r", "eq_rect_r", "eq_rec_r", "eq_sind_r"] S, Dir = "right-left".
-
-
 tr-rewrite RN Dir Tau PX E Path (prf [D1, D2] (some (it S []))) :-
   tr PX nostar Path P1, dashed P1 D1,
   tr E nostar Path P2, dashed P2 D2,

@@ -119,3 +119,33 @@ pred imp-args i:list ak, i:list term, o:list term.
 imp-args [] _ [].
 imp-args [ak-imp|Ks] [A|As] [A|R] :- !, imp-args Ks As R.
 imp-args [_|Ks] [_|As] R :- imp-args Ks As R.
+
+% H is a rewriting principle, recognised by its type as the elimination
+% principles are (thesis 6.4.2; the end of 6.4.2 asks for a rule of its
+% own, tr-rewrite), whatever its name (eq_ind, eq_rect_r, ...):
+%   forall (A : _) (x : A) (P : A -> _), P x -> forall y : A, E -> P y
+% where E is an equality of an equality type (is-equality) between x and
+% y: x = y, the proof of P x rewritten from left to right, or y = x, from
+% right to left (Dir)
+pred rewrite-info i:term, o:string.
+rewrite-info H Dir :-
+  gr-of H (const C), coq.env.const C _ Ty,
+  Ty = prod _ _ (a\ prod _ a (x\ prod _ (MotiveType_ a x) (p\
+         prod _ (app [p, x]) (_\ prod _ a (y\ prod _ (E a x p y) (_\ app [p, y])))))),
+  pi a x p y\ equality-direction (E a x p y) a x y Dir.
+
+% [equality-direction E A X Y Dir]: E is X = Y (left-right) or Y = X
+% (right-left), in an equality type, on the type A
+pred equality-direction i:term, i:term, i:term, i:term, o:string.
+equality-direction (app [Eq, A, X, Y]) A X Y "left-right" :- is-equality Eq, !.
+equality-direction (app [Eq, A, Y, X]) A X Y "right-left" :- is-equality Eq.
+
+% Eq is an equality type: an inductive proposition with two parameters, a
+% type A and x : A, and one constructor, of type Eq A x x (as eq, whose
+% constructor is eq_refl)
+pred is-equality i:term.
+is-equality Eq :-
+  gr-of Eq (indt I), ind-in-prop I,
+  coq.env.indt I _ 2 _ _ [_] [KTy],
+  KTy = prod _ _ (a\ prod _ a (x\ app [Self, a, x, x])),
+  gr-of Self (indt I).

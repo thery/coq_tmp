@@ -255,7 +255,11 @@ They replace the paper's rules for introduction and elimination theorems.
   (end of 6.4.2) that the generic text is poor and that a specific rule is
   needed, but gives none.  Here the proof of `P x` and the proof of the
   equation come first, as dashed subproofs, then `Rewriting with y = x
-  from right to left (eq_ind_r), we get P y`.
+  from right to left (eq_ind_r), we get P y`.  A rewriting principle is
+  recognised by its type, `forall A (x : A) (P : A -> _), P x -> forall y,
+  x = y -> P y` (or `y = x`, from right to left), where `=` is an
+  equality type (an inductive proposition with parameters `A`, `x : A` and
+  one constructor of type `x = x`), whatever its name.
 - **`fix`** (not treated by the thesis; 6.3.4 studies only the types of
   elimination theorems): `We prove τ by recursion on n (fix f):` with the
   body below it.  A recursive call reads `By induction hypothesis (the
