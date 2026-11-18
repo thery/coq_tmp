@@ -78,3 +78,8 @@ prove Tac T P :-
   coq.typecheck P T ok,
   coq.ltac.collect-goals P [SG] _,
   coq.ltac.open (solve-step Tac) SG [].
+% else the coarse gap tactic (gaps.elpi)
+prove Tac T P :-
+  coq.typecheck P T ok,
+  coq.ltac.collect-goals P [SG] _,
+  coq.ltac.open (close-gap Tac) SG [].
