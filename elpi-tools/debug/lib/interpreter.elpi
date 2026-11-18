@@ -48,7 +48,7 @@ shows-events profile.
 
 % [run-query Goal]: the query, with its outcome reported.
 pred run-query o:(pred).
-run-query Goal :- compile (ctx 0 []) [] Goal Code _, Code, report-solution.
+run-query Goal :- start-session, compile (ctx 0 []) [] Goal Code _, Code, report-solution.
 run-query _ :- report-final-failure, fail.
 
 % ===== Clause bodies, and the cut ==============================================
@@ -259,7 +259,17 @@ backchain Box :-
   match-with-port Modes Box Origin G Head,
   D1 is D + 1,
   compile (ctx D1 [frame Id D P G | Above]) Names Body Code _,
-  Code.
+  body-goal Id Origin Code Goal,
+  Goal.
+
+% [body-goal Id Origin Code Goal]: the goal that runs the compiled body
+% Code of the rule from Origin for call Id.  With option machine, Code runs
+% under [runs Id Origin], so that a stop inside knows the clause each call
+% of the stack runs (machine.elpi); the cut goes through =>.
+:nooc
+pred body-goal i:int, i:origin, o:(pred), o:(pred).
+body-goal Id Origin Code (runs Id Origin => Code) :- opt machine, !.
+body-goal _ _ Code Code.
 
 % [binder-names-of-body Origin Head Body Names]: the source names of the
 % binders of the body of a rule, for the names of its eigenvariables (none

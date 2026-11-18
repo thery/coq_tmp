@@ -1,0 +1,5 @@
+# A program that does not exist: launch fails, the session ends.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"missing.elpi","goal":"main"}}
+{"await":"terminated"}
+{"command":"disconnect"}

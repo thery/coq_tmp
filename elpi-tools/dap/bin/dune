@@ -1,0 +1,6 @@
+; elpi-dap: the debug adapter (DAP on stdin and stdout), see ../README.md.
+(executable
+ (name elpi_dap_main)
+ (public_name elpi-dap)
+ (package elpi-tools)
+ (libraries elpi_dap unix))

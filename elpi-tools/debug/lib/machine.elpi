@@ -1,0 +1,223 @@
+% machine.elpi: the machine-readable channel (option machine), for a
+% front end such as the debug adapter elpi-dap (../../dap/README.md).
+%
+% With option machine (which comes with option interactive), the
+% interpreter prints, besides its usual text, lines of the form
+%
+%   @@elpi-debug {JSON}
+%
+% one JSON object per line, flushed at once:
+% - at the start, {"event":"program", ...}: the rules of the program,
+%   numbered (the numbers of the commands + clause N, - clause N), and the
+%   lines of its declarations, so that a front end can tell which clause a
+%   line of a file belongs to; then a stop "Start", before the first event,
+%   where breakpoints can be set before the run (c: stop at the first
+%   event, l: run to the first breakpoint);
+% - at each stop, in place of the prompt "   ? ", {"event":"stop", ...}:
+%   its number (a command that only shows something prompts again with the
+%   same number), why it stops, the event, the stack of calls (each with
+%   the clause it runs, its arguments and the scope of its variables), the
+%   bindings of a unify step, the local program, the eigenvariables.
+% Everything else (the events shown, the output of commands such as p or
+% e, the prints of the program, the solutions) is text for a person.
+
+
+% ===== JSON values ==================================================================
+
+data json.
+symb json-string string -> json.
+symb json-int int -> json.
+symb json-null json.
+symb json-list list json -> json.
+symb json-object list (pair string json) -> json.
+
+% [json-text J S]: J written as JSON, on one line.
+func json-text json -> string.
+json-text (json-string S) T :- json-quote S T.
+json-text (json-int N) T :- T is int_to_string N.
+json-text json-null "null".
+json-text (json-list Js) T :-
+  std.map Js json-text Ts, std.string.concat "," Ts Inner,
+  T is "[" ^ Inner ^ "]".
+json-text (json-object Fields) T :-
+  std.map Fields json-field Ts, std.string.concat "," Ts Inner,
+  T is "{" ^ Inner ^ "}".
+
+func json-field pair string json -> string.
+json-field (pr Key Value) T :- T is {json-quote Key} ^ ":" ^ {json-text Value}.
+
+% [json-quote S T]: S as a JSON string: quoted, with its backslashes,
+% quotes, line breaks and tabs escaped.
+func json-quote string -> string.
+json-quote S T :-
+  rex.replace "\\\\" "\\\\\\\\" S S1,
+  rex.replace "\"" "\\\\\"" S1 S2,
+  rex.replace "\n" "\\\\n" S2 S3,
+  rex.replace "\t" "\\\\t" S3 S4,
+  T is "\"" ^ S4 ^ "\"".
+
+% [emit J]: the machine line of the message J.
+func emit json.
+emit J :- output std_out "@@elpi-debug ", output std_out {json-text J}, output std_out "\n", flush std_out.
+
+% ===== The start of a session ========================================================
+
+% [start-session]: with option machine, the listing of the program, then
+% the stop "Start" (at the level of the query, before any event).
+pred start-session.
+start-session :- opt machine, !,
+  emit-program,
+  stop started start-step (focus (frame 0 0 query true) []) ["the run is about to start"].
+start-session.
+
+% [emit-program]: the message "program": the rules, numbered from 1, and
+% the lines of the declarations.
+pred emit-program.
+emit-program :-
+  numbered-rules Rules,
+  numbered-rules-json 1 Rules RulesJson,
+  std.findall (declaration-at _) Declarations,
+  std.map Declarations declaration-json DeclarationsJson,
+  emit (json-object [pr "event" (json-string "program"),
+                     pr "clauses" (json-list RulesJson),
+                     pr "declarations" (json-list DeclarationsJson)]).
+
+% [numbered-rules-json N Rules Js]: {"clause":N, "predicate", "file", "line"}
+% for each rule, numbered from N.
+func numbered-rules-json int, list (pred) -> list json.
+numbered-rules-json _ [] [].
+numbered-rules-json N [reflect.clause P _ Loc _ _ _ | Rules] [J | Js] :-
+  location-fields Loc Fields,
+  J = json-object [pr "clause" (json-int N), pr "predicate" (json-string {term_to_string P}) | Fields],
+  N1 is N + 1,
+  numbered-rules-json N1 Rules Js.
+
+% [declaration-at Loc]: Loc is the location of a declaration of the
+% program (a type, a constructor, a signature, an abbreviation, a CHR rule).
+pred declaration-at o:reflect.srcloc.
+declaration-at Loc :- reflect.data-type _ _ Loc.
+declaration-at Loc :- reflect.constructor _ _ _ Loc.
+declaration-at Loc :- reflect.signature _ _ _ _ _ Loc.
+declaration-at Loc :- reflect.type-abbrev _ _ Loc.
+declaration-at Loc :- reflect.chr-rule _ Loc _ _ _ _ _ _.
+
+func declaration-json (pred) -> json.
+declaration-json (declaration-at Loc) (json-object Fields) :- location-fields Loc Fields.
+
+% [location-fields Loc Fields]: "file" and "line" of a location.
+func location-fields reflect.srcloc -> list (pair string json).
+location-fields (reflect.srcloc File Line _) [pr "file" (json-string File), pr "line" (json-int Line)].
+
+% ===== The description of a stop =======================================================
+
+% [emit-stop F]: the message "stop" of the stop in progress
+% ([current-stop], stepper.elpi), about the focus F.
+:nooc
+pred emit-stop o:focus.
+emit-stop (focus Frame Above) :-
+  current-stop N Reason Kind Text,
+  std.string.concat "" [{event-label Kind}, " " | Text] EventText,
+  std.map [Frame | Above] frame-json Frames,
+  bindings-json Bindings,
+  std.findall (hyp-json _) HypMessages, std.map HypMessages hyp-json-value Hyps,
+  names Es, eigen-names Es EigenNames, std.map EigenNames string-json Eigens,
+  emit (json-object [
+    pr "event" (json-string "stop"),
+    pr "stop" (json-int N),
+    pr "reason" (json-string {reason-name Reason}),
+    pr "port" (json-string {port-name Kind}),
+    pr "text" (json-string EventText),
+    pr "frames" (json-list Frames),
+    pr "bindings" (json-list Bindings),
+    pr "hyps" (json-list Hyps),
+    pr "eigenvariables" (json-list Eigens)]).
+
+func reason-name stop-reason -> string.
+reason-name at-breakpoint "breakpoint".
+reason-name stepped "step".
+reason-name paused "pause".
+reason-name started "start".
+
+% [port-name Kind Name]: the label of the event without its colon ("Call").
+func port-name event-kind -> string.
+port-name Kind Name :- rex.replace ":$" "" {event-label Kind} Name.
+
+func string-json string -> json.
+string-json S (json-string S).
+
+% [frame-json Frame J]: a call of the stack: its number, its goal, the
+% clause it runs (null at the ports of the call itself, where it runs no
+% clause), its arguments with their modes, and for each logic variable of
+% the goal the eigenvariables it may depend on.  The frame 0 is the query.
+:nooc
+pred frame-json i:frame, o:json.
+frame-json (frame 0 _ _ _) (json-object [pr "id" (json-int 0), pr "goal" (json-string "(the query)"),
+                                          pr "clause" json-null, pr "args" (json-list []),
+                                          pr "scope" (json-list [])]) :- !.
+frame-json (frame Id _ P G) (json-object [pr "id" (json-int Id), pr "goal" (json-string {show-term G}),
+                                           pr "clause" Clause, pr "args" (json-list Args),
+                                           pr "scope" (json-list Scope)]) :-
+  clause-run-by Id Clause,
+  args-json P G Args,
+  logic-vars G Vs, std.map Vs var-scope-json Scope.
+
+% [clause-run-by Id J]: the clause call Id runs, if any ([runs], in force
+% in its body).
+func clause-run-by int -> json.
+clause-run-by Id J :- runs Id Origin, !, origin-json Origin J.
+clause-run-by _ json-null.
+
+% [origin-json Origin J]: {"file", "line"} of a rule, {"hypothesis"} of a
+% hypothetical clause ("hypothesis added by #N").
+func origin-json origin -> json.
+origin-json (at Loc _) (json-object Fields) :- location-fields Loc Fields.
+origin-json (added-by S _) (json-object [pr "hypothesis" (json-string S)]).
+
+% [args-json P G Js]: {"mode":"input"|"output", "value"} per argument of G.
+:nooc
+pred args-json i:any, i:(pred), o:list json.
+args-json P G Js :- modes-of P G Modes, constant G _ Args, !, args-with-modes Modes Args Js.
+args-json _ _ [].
+
+pred args-with-modes i:list mode, i:list any, o:list json.
+args-with-modes _ [] [].
+args-with-modes Ms [A | As] [J | Js] :-
+  first-mode Ms M Ms1,
+  J = json-object [pr "mode" (json-string {mode-word M}), pr "value" (json-string {show-term A})],
+  args-with-modes Ms1 As Js.
+
+func mode-word mode -> string.
+mode-word i "input".
+mode-word o "output".
+
+% [var-scope-json V J]: {"var", "depends"}: the eigenvariables in scope
+% that the logic variable V may depend on.
+pred var-scope-json i:any, o:json.
+var-scope-json V (json-object [pr "var" (json-string {show-term V}), pr "depends" (json-list Names)]) :-
+  visible-eigens V Es, eigen-names Es Ns, std.map Ns string-json Names.
+
+% [bindings-json Js]: {"var", "value", "pruning"} per binding made by the
+% unify step in progress ([made-bindings], ports.elpi); none at other events.
+func bindings-json -> list json.
+bindings-json Js :- made-bindings Bs, !, std.map Bs binding-json Js.
+bindings-json [].
+
+func binding-json binding -> json.
+binding-json (binding Var Value Pruned)
+  (json-object [pr "var" (json-string Var), pr "value" (json-string Value), pr "pruning" (json-string Pruned)]).
+
+% [hyp-json J]: by backtracking, {"clause", "origin"} per clause of the
+% local program, most recent first (strings only: std.findall copies).
+pred hyp-json o:json.
+hyp-json (json-object [pr "clause" (json-string Text), pr "origin" (json-string OriginText)]) :-
+  hyp _ Origin C, show-term C Text, origin-string Origin OriginText.
+
+func hyp-json-value (pred) -> json.
+hyp-json-value (hyp-json J) J.
+
+% ===== Pause ===============================================================================
+
+% [pause-requested]: a front end asked for a pause since the last stop.
+% It has no clause here; the driver elpi-debug (../bin) adds one on its
+% builtin signal-received (the signal SIGUSR1).
+pred pause-requested.

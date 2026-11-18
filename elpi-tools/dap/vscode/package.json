@@ -1,0 +1,70 @@
+{
+  "name": "elpi-tools",
+  "displayName": "Elpi tools",
+  "description": "Debugging of standalone Elpi programs (elpi-debug, through the debug adapter elpi-dap)",
+  "version": "0.1.0",
+  "publisher": "elpi-tools",
+  "license": "MIT",
+  "engines": { "vscode": "^1.82.0" },
+  "categories": ["Debuggers"],
+  "main": "./extension.js",
+  "activationEvents": ["onDebugResolve:elpi", "onDebugDynamicConfigurations:elpi"],
+  "contributes": {
+    "languages": [
+      { "id": "elpi", "extensions": [".elpi"], "aliases": ["Elpi"] }
+    ],
+    "breakpoints": [{ "language": "elpi" }],
+    "debuggers": [
+      {
+        "type": "elpi",
+        "label": "Elpi (elpi-debug)",
+        "languages": ["elpi"],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program", "goal"],
+            "properties": {
+              "program": { "type": "string", "description": "The Elpi file of the program.", "default": "${file}" },
+              "goal": { "type": "string", "description": "The goal to run, as for elpi-debug (e.g. main, or append [1] [2] L)." },
+              "args": { "type": "array", "items": { "type": "string" }, "description": "More options of elpi-debug, e.g. [\"-I\", \"dir\"] or [\"-all\"].", "default": [] },
+              "cwd": { "type": "string", "description": "The directory where elpi-debug runs.", "default": "${workspaceFolder}" },
+              "stopOnEntry": { "type": "boolean", "description": "Stop before the first event of the run.", "default": false },
+              "elpiDebug": { "type": "string", "description": "The path of elpi-debug (default: the setting elpiTools.elpiDebugPath, else next to elpi-dap)." }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "elpi",
+            "request": "launch",
+            "name": "Debug an Elpi goal",
+            "program": "${file}",
+            "goal": "main",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Elpi: debug a goal",
+            "description": "Run a goal of an Elpi file under elpi-debug",
+            "body": { "type": "elpi", "request": "launch", "name": "Debug an Elpi goal", "program": "^\"\\${file}\"", "goal": "main", "stopOnEntry": true }
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Elpi tools",
+      "properties": {
+        "elpiTools.adapterPath": {
+          "type": "string",
+          "default": "",
+          "description": "The path of elpi-dap. Empty: the one built next to this extension (../../_build/install/default/bin/elpi-dap), else elpi-dap from the PATH."
+        },
+        "elpiTools.elpiDebugPath": {
+          "type": "string",
+          "default": "",
+          "description": "The path of elpi-debug. Empty: the one next to elpi-dap."
+        }
+      }
+    }
+  }
+}

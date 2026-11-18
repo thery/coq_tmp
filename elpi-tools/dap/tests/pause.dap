@@ -1,0 +1,8 @@
+# Pause a long run, then end the session.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"count.elpi","goal":"count 100000000"}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"command":"pause","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"disconnect"}

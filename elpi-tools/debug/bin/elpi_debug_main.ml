@@ -12,7 +12,9 @@
    4. the rules of FILE as reflect facts, printed by elpi-reflect;
    5. the bridges: one native rule per predicate of FILE, which sends a
       native call of that predicate back to the interpreter (written by
-      debug.write-bridges, run on units 1-4). *)
+      debug.write-bridges, run on units 1-4);
+   6. the clause of debug.pause-requested, on the builtin of this driver
+      that tells whether a front end asked for a pause (-machine). *)
 
 open Elpi
 module PAst = Elpi_parser.Ast
@@ -28,6 +30,7 @@ let max_solutions = ref 100
 let show_time = ref false
 let show_warnings = ref false
 let paths = ref []
+let machine = ref false            (* -machine: a front end drives the session *)
 let args = ref []
 
 let add_option o = elpi_options := !elpi_options @ [ o ]
@@ -47,6 +50,9 @@ let spec =
         "PRED stop at each call of PRED (repeatable)" );
       ("-i", Arg.Unit (fun () -> add_option "debug.interactive"), " interactive stepping: stop at each event, read commands from stdin");
       ("-echo", Arg.Unit (fun () -> add_option "debug.echo"), " print each command read (for scripted sessions)");
+      ( "-machine",
+        Arg.Unit (fun () -> add_option "debug.interactive"; add_option "debug.machine"; machine := true),
+        " interactive stepping for a front end: a machine-readable line at each stop (see lib/machine.elpi)" );
       ("-profile", Arg.Unit (fun () -> add_option "debug.profile"), " count ports and time per predicate");
       ("-no-explain", Arg.Unit (fun () -> add_option "debug.no-explain"), " do not explain a failure");
       ( "-random",
@@ -65,6 +71,27 @@ let spec =
       ("-warnings", Arg.Set show_warnings, " print the compiler's warnings");
       ("-I", Arg.String (fun d -> paths := !paths @ [ d ]), "DIR search accumulated files in DIR");
     ]
+
+(* ---- Pause, for a front end (-machine) ------------------------------------ *)
+
+(* A front end asks for a pause by sending the signal SIGUSR1 to elpi-debug
+   while the goal runs: the interpreter stops at the next event (it asks
+   debug.pause-requested at each event, see ../lib/machine.elpi). *)
+let pause_asked = ref false
+
+let listen_for_pause () = Sys.set_signal Sys.sigusr1 (Sys.Signal_handle (fun _ -> pause_asked := true))
+
+(* [pause_builtins]: the builtin debug.signal-received, which succeeds when
+   a pause was asked since its last success *)
+let pause_builtins =
+  let open API.BuiltIn in
+  let open API.BuiltInPredicate in
+  let signal_received ~depth:_ = if !pause_asked then pause_asked := false else raise No_clause in
+  declare ~file_name:"elpi-debug-pause.elpi"
+    [ MLCode (Pred ("debug.signal-received", Easy "a pause was asked (signal SIGUSR1) since the last success", signal_received), DocAbove) ]
+
+(* [pause_clause]: the clause that ties the interpreter to the builtin *)
+let pause_clause = "debug.pause-requested :- debug.signal-received.\n"
 
 (* ---- Elpi setup and errors ---------------------------------------------- *)
 
@@ -89,7 +116,7 @@ let query_or_exit (q, warnings) =
 let setup ~det =
   let flags = { API.Compile.default_flags with API.Compile.skip_det_checking = not det } in
   let elpi =
-    API.Setup.init ~builtins:[ Builtin.std_builtins ]
+    API.Setup.init ~builtins:[ Builtin.std_builtins; pause_builtins ]
       ~flags:(API.Compile.to_setup_flags flags)
       ~file_resolver:(API.Parse.std_resolver ~paths:!paths ())
       ()
@@ -172,7 +199,7 @@ let interpreted_units ~elpi ~flags file =
    | _ -> fail "could not write the bridges");
   let bridges = In_channel.with_open_text bridges_file In_channel.input_all in
   Sys.remove bridges_file;
-  first @ [ parse_text "(bridges)" bridges ]
+  first @ [ parse_text "(bridges)" bridges; parse_text "(pause)" pause_clause ]
 
 (* ---- Running ------------------------------------------------------------- *)
 
@@ -250,6 +277,7 @@ let () =
   Arg.parse spec (fun a -> args := !args @ [ a ]) usage;
   let file, goal = match !args with [ f; g ] -> (f, g) | _ -> Arg.usage spec usage; exit 2 in
   if not (Sys.file_exists file) then fail "no file %s" file;
+  if !machine then listen_for_pause ();
   paths := !paths @ [ Filename.dirname file ];
   let limit = if !all_solutions then !max_solutions else 1 in
   match !mode with

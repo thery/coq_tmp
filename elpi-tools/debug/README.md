@@ -76,6 +76,7 @@ Solution 1:
 | `-break PRED` | stop at each call of PRED (repeatable); without `-i` the context is printed and the run goes on |
 | `-i` | interactive stepping: stop at each event and read a command on stdin (below) |
 | `-echo` | print each command read (for scripted sessions) |
+| `-machine` | interactive stepping driven by a front end (the debug adapter [`../dap`](../dap/README.md)): a machine-readable line at each stop ([`lib/machine.elpi`](lib/machine.elpi)) |
 | `-profile` | ports and self time per predicate |
 | `-no-explain` | no explanation of a failure |
 | `-all`, `-n N` | all the solutions (at most N), not only the first |
@@ -119,16 +120,19 @@ Unify: #1 with lambda.elpi:14: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
 |---|---|
 | `c`, return | creep: go to the next event |
 | `s` | skip: run this call to its exit or fail without stopping inside |
+| `o` | out: run to the exit or fail of the call whose body runs this event (at a port of a call: the call above) |
 | `l` | leap: run to the next breakpoint |
 | `t` | trace: show every event, stop only at breakpoints |
 | `n` | nodebug: run to the end (also at the end of stdin) |
 | `r` | retry this call from its call port |
+| `r N` | retry the call #N of the stack |
 | `f` | make this call fail |
 | `p` | print the goal, the local program and the scope |
 | `g` | the calls above |
 | `scope` | the eigenvariables in force and, for each logic variable of the goal, those it may depend on |
 | `hyps` | the local program (the clauses added by `=>`, with the call that added each) |
 | `+ P`, `- P` | set, remove a breakpoint on the predicate P |
+| `+ clause N`, `- clause N` | set, remove a breakpoint on the clause numbered N in the listing of `-machine`: the run stops at the unify step of that clause |
 | `e` | the deepest failure so far |
 | `a` | abort |
 | `h`, `?` | help |
@@ -143,7 +147,8 @@ backtracking, and fails.  While a request is pending, every event fails at
 once, so backtracking goes quickly through the choice points inside call
 N, Elpi undoing their bindings as usual, and reaches the second clause of
 `attempt` for N, which takes the request and runs call N again from its
-call port (or shows its fail port and fails).  The **local program and the
+call port, where it stops (or shows its fail port and fails); `r N` does
+the same for any call #N of the stack.  The **local program and the
 scope** are restored with the bindings: the clauses added by `=>` and the
 eigenvariables of `pi` are Elpi's own (the interpreter keeps `=>` and `pi`
 native), so going back to the choice point before the call port leaves
@@ -159,13 +164,28 @@ the alternatives of builtins with several solutions are still tried.)
 no event is shown or stops until the exit or fail port of call N
 (breakpoints still stop).  Nothing in the run is undone or changed, the
 local program and the scope included: the call runs as without the
-debugger, unseen.
+debugger, unseen.  `o` (out) is a skip of the call whose body runs the event.
+
+**For a front end** (`-machine`, [`lib/machine.elpi`](lib/machine.elpi)): besides the
+usual text, elpi-debug prints lines `@@elpi-debug {JSON}`: first the
+listing of the rules (numbered, with file and line) and of the lines of
+the declarations; then, at each stop and in place of the prompt, the
+description of the stop (its number, why it stops: `start`, `step`,
+`breakpoint`, `pause`; the event; the stack of calls, each with the clause
+it runs, its arguments and what each of its logic variables may depend on;
+the bindings of a unify step; the local program; the eigenvariables).  The
+run waits at a stop `Start` before its first event, where breakpoints can
+be set.  The signal SIGUSR1 asks for a pause: the run stops at the next
+event.  Only with `-machine`, the body of each clause runs under a local
+clause `runs Id Origin` (the clause call #Id runs), which `=>` keeps
+transparent to the cut; without it nothing changes.
 
 Build and test: `cd elpi-tools && dune build && dune test`.  The tests
 ([`tests/*.t`](tests), dune cram tests) record traces, explanations,
 breakpoints and stepping on five small programs (lists, cut, a typed
 λ-calculus, CHR, a predicate defined nowhere) and check with `-compare`
-that the interpreter gives the answers of the real engine.
+that the interpreter gives the answers of the real engine;
+[`tests/machine.t`](tests/machine.t) records a session of `-machine`.
 
 ## How the interpreter works
 
@@ -248,12 +268,14 @@ resolves names block by block).  Read them in this order:
 8. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
    stepping modes, the requests of retry and fail, the breakpoints, the
    command loop (how retry and skip work: above, and in the file).
-9. **[`explain.elpi`](lib/explain.elpi): the explanation of a failure.**
+9. **[`machine.elpi`](lib/machine.elpi): the machine-readable channel** of
+   `-machine` (above, "For a front end"), with a small JSON writer.
+10. **[`explain.elpi`](lib/explain.elpi): the explanation of a failure.**
    At the fail port of a call that never exited, where the goal is back as
    it was called: each candidate retried, the first argument that does not
    match and the smallest clashing subterms (`subterm-clash`), the occurs
    check and the scope of eigenvariables (`flex-clash`).
-10. **[`profile.elpi`](lib/profile.elpi): the outcome and the profile.**
+11. **[`profile.elpi`](lib/profile.elpi): the outcome and the profile.**
 
 ## Cost
 

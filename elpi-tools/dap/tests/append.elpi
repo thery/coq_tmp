@@ -1,0 +1,15 @@
+% Lists: append in two modes, naive reverse.
+
+% append as a function: the first two arguments are inputs.
+func append list A, list A -> list A.
+append [] L L.
+append [X|L] M [X|R] :- append L M R.
+
+% append as a relation: every argument is an output.
+pred app -> list A, list A, list A.
+app [] L L.
+app [X|L] M [X|R] :- app L M R.
+
+func rev list A -> list A.
+rev [] [].
+rev [X|L] R :- rev L RL, append RL [X] R.

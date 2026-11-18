@@ -29,6 +29,18 @@ origin-string (at (reflect.srcloc File Line _) _) S :-
   rex.replace "^.*/" "" File Base,
   S is Base ^ ":" ^ {std.any->string Line}.
 
+% [numbered-rules Rules]: the rules of the program, in the order of
+% reflect's facts; the rule numbered N (from 1) is the N-th (the numbers of
+% the commands + clause N, - clause N and of machine.elpi's listing).
+pred numbered-rules o:list (pred).
+numbered-rules Rules :- std.findall (reflect.clause _ _ _ _ _ _) Rules.
+
+% [clause-location N Loc]: the location of the rule numbered N.
+pred clause-location i:int, o:reflect.srcloc.
+clause-location N Loc :-
+  numbered-rules Rules, std.length Rules Count, N >= 1, N =< Count,
+  I is N - 1, std.nth I Rules Rule, Rule = reflect.clause _ _ Loc _ _ _.
+
 % ---- Declarations and modes -------------------------------------------------
 
 % The mode of an argument: [i] (input: the goal argument is matched, its
