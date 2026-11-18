@@ -1,0 +1,102 @@
+% strategy.elpi: how a call is solved (the type [strategy], state.elpi):
+% the order of its candidate clauses, how many of its solutions are kept,
+% how deep calls may go, what a cut does.
+
+
+% [strategy-of Options S]: the strategy asked by the options (by default
+% Elpi's own).
+func strategy-of list option -> strategy.
+strategy-of Options (strategy Order Solutions Depth Cut) :-
+  option-choice Options random-order shuffled in-order Order,
+  option-choice Options first-solution first-only all-solutions Solutions,
+  depth-of Options Depth,
+  option-choice Options ignore-cut cut-ignored honour-cut Cut.
+
+% [option-choice Options O IfOn IfOff X]: X is IfOn if O is in Options.
+func option-choice list option, option, A, A -> A.
+option-choice Options O IfOn _ IfOn :- std.mem! Options O, !.
+option-choice _ _ _ IfOff IfOff.
+
+func depth-of list option -> depth-bound.
+depth-of Options (bounded N) :- std.mem Options (max-depth N), !.
+depth-of _ unbounded.
+
+% [seed-random Options]: with option seed N, initialise the random
+% generator; otherwise leave it as it is (a caller, such as the property
+% checker, may seed it itself).
+pred seed-random i:list option.
+seed-random Options :- std.mem Options (seed N), !, random.init N.
+seed-random _.
+
+% ---- The candidates of a call ----------------------------------------------
+
+% [candidate P Origin Head Body]: by backtracking, the clauses that may
+% apply to a goal of P, in Elpi's order: the hypothetical clauses in scope,
+% most recent first, then the rules of the program.
+pred candidate i:any, o:origin, o:(pred), o:(pred).
+candidate P Origin Head Body :- hyp P Origin C, clause-parts C Head Body.
+candidate P Origin Head Body :- program-rule P _ Head Body Origin.
+
+% [ordered-candidate P Origin Head Body]: the candidates in the order of
+% the strategy.
+pred ordered-candidate i:any, o:origin, o:(pred), o:(pred).
+ordered-candidate P Origin Head Body :- the-strategy (strategy shuffled _ _ _), !,
+  candidate-refs P Refs, shuffle Refs Shuffled,
+  std.mem Shuffled Ref, candidate-of-ref P Ref Origin Head Body.
+ordered-candidate P Origin Head Body :- candidate P Origin Head Body.
+
+% A reference to a candidate: a hypothetical clause by its number, or a
+% rule by its index.  (References, since std.findall would copy the
+% hypothetical clauses and cut them off from the variables they share.)
+data candidate-ref.
+symb hyp-ref int -> candidate-ref.
+symb rule-ref int -> candidate-ref.
+
+pred candidate-refs i:any, o:list candidate-ref.
+candidate-refs P Refs :-
+  std.findall (hyp P (added-by _ _) _) Hyps, std.map Hyps hyp-ref-of HRefs,
+  std.findall (program-rule P _ _ _ _) Rules, std.map Rules rule-ref-of RRefs,
+  std.append HRefs RRefs Refs.
+
+func hyp-ref-of (pred) -> candidate-ref.
+hyp-ref-of (hyp _ (added-by _ K) _) (hyp-ref K).
+
+func rule-ref-of (pred) -> candidate-ref.
+rule-ref-of (program-rule _ I _ _ _) (rule-ref I).
+
+pred candidate-of-ref i:any, i:candidate-ref, o:origin, o:(pred), o:(pred).
+candidate-of-ref P (hyp-ref K) (added-by S K) Head Body :- hyp P (added-by S K) C, !, clause-parts C Head Body.
+candidate-of-ref P (rule-ref I) Origin Head Body :- program-rule P I Head Body Origin, !.
+
+% [shuffle L S]: S is L in a random order.
+pred shuffle i:list A, o:list A.
+shuffle [] [] :- !.
+shuffle L [X|S] :- std.length L N, random.int N K, take-nth K L X Rest, shuffle Rest S.
+
+% [take-nth K L X Rest]: X is the K-th element of L (from 0), Rest the others.
+pred take-nth i:int, i:list A, o:A, o:list A.
+take-nth 0 [X|L] X L :- !.
+take-nth K [Y|L] X [Y|R] :- K1 is K - 1, take-nth K1 L X R.
+
+% [hyp-number K]: the number of a new hypothetical clause, for its
+% reference in a random order (0 otherwise, so that the invocation numbers
+% of the calls stay consecutive).
+func hyp-number -> int.
+hyp-number K :- the-strategy (strategy shuffled _ _ _), !, new_int K.
+hyp-number 0.
+
+% ---- Depth, solutions, cut ----------------------------------------------------
+
+% [within-depth D]: a call at depth D may run.
+pred within-depth i:int.
+within-depth D :- the-strategy (strategy _ _ (bounded N) _), !, D =< N.
+within-depth _.
+
+% [keeps-first-solution]: a call keeps its first solution only.
+pred keeps-first-solution.
+keeps-first-solution :- the-strategy (strategy _ first-only _ _).
+
+% [cut-ignored-here]: a cut does nothing.
+pred cut-ignored-here.
+cut-ignored-here :- the-strategy (strategy _ _ _ cut-ignored).
+

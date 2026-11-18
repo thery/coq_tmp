@@ -98,27 +98,32 @@ let setup ~det =
 
 (* ---- Building the interpreted program ----------------------------------- *)
 
+module type Parser = Elpi_parser.Parse.Parser_w_Internals
+
 (* the parser, made once the options (the search paths) are known *)
-let parser () =
+let parser () : (module Parser) =
   let module P = Elpi_parser.Parse.Make (struct
     let versions = Elpi_util.Util.StrMap.empty
     let resolver = API.Parse.std_resolver ~paths:!paths ()
   end) in
-  (module P : Elpi_parser.Parse.Parser_w_Internals)
+  (module P : Parser)
 
-(* [parsed]: the result of the parser, or its errors and exit *)
-let parsed (p, errors, _warnings) =
+(* [parse_or_fail read]: the program read by the parser, or its errors and exit *)
+let parse_or_fail read : PAst.Program.t =
   let show (e : Elpi_util.Util.error) =
     (match e.loc with Some l -> Elpi_util.Util.Loc.show l ^ ": " | None -> "") ^ e.message in
-  if errors <> [] then fail "%s" (String.concat "\n" (List.map show errors));
-  p
+  match read (parser ()) with
+  | p, [], _ -> p
+  | _, errors, _ -> fail "%s" (String.concat "\n" (List.map show errors))
+  | exception Elpi_parser.Parse.ParseError (loc, msg) -> fail "%s: %s" (Elpi_util.Util.Loc.show loc) msg
 
 (* [parse_text name text]: a unit from Elpi source text *)
-let parse_text name text : PAst.Program.t =
+let parse_text name text =
   let loc = Elpi_util.Util.Loc.initial name in
-  let module P = (val parser ()) in
-  try parsed (P.program_from ~loc ~digest:(Digest.string text) (Lexing.from_string text))
-  with Elpi_parser.Parse.ParseError (loc, msg) -> fail "%s: %s" (Elpi_util.Util.Loc.show loc) msg
+  parse_or_fail (fun (module P : Parser) -> P.program_from ~loc ~digest:(Digest.string text) (Lexing.from_string text))
+
+(* [parse_file file]: a unit from a file, with the files it accumulates *)
+let parse_file file = parse_or_fail (fun (module P : Parser) -> P.program file)
 
 (* [without_rules p]: the program p (and the files it accumulates) without
    its rules; they are given to the interpreter as reflect facts instead. *)
@@ -136,9 +141,12 @@ let program_of (units : PAst.Program.t list) : PAst.Program.t =
   let loc = Elpi_util.Util.Loc.initial "(elpi-debug)" in
   { PAst.file_name = "(elpi-debug)"; digest = Digest.string "elpi-debug"; deps = []; ast = [ PAst.Program.Accumulated (loc, units) ] }
 
-(* The public API does not offer to compile a program built from parsed
-   units, but its type of parsed programs is the parser's own
-   ([type program = Ast.Program.t] in elpi's API.ml, elpi 4.0.0). *)
+(* [to_api p]: the parsed program p as the API's parsed program.  The one
+   hack of the driver, isolated here: the API offers no way to compile a
+   program built from parsed units (we need FILE without its rules), but
+   its type of parsed programs is the parser's own: [type program =
+   Ast.Program.t] in elpi 4.0.0's API.ml, so the conversion is the
+   identity.  To check again with each new version of Elpi. *)
 let to_api (p : PAst.Program.t) : API.Ast.program = Obj.magic p
 
 let compile ~elpi ~flags units text =
@@ -153,14 +161,9 @@ let interpreted_units ~elpi ~flags file =
     try Elpi_reflect.Reflect.reflect_files ~paths:!paths [ file ]
     with Elpi_reflect.Reflect.Error msg -> fail "%s" msg
   in
-  let program =
-    let module P = (val parser ()) in
-    try parsed (P.program file)
-    with Elpi_parser.Parse.ParseError (loc, msg) -> fail "%s: %s" (Elpi_util.Util.Loc.show loc) msg
-  in
   let first =
     [ parse_text "reflect.elpi" Embedded.reflect_elpi; parse_text "debug.elpi" Embedded.debug_elpi;
-      without_rules program; parse_text "(facts)" facts ]
+      without_rules (parse_file file); parse_text "(facts)" facts ]
   in
   let bridges_file = Filename.temp_file "elpi-debug-bridges" ".elpi" in
   let exe = compile ~elpi ~flags first (Printf.sprintf "debug.write-bridges %S." bridges_file) in

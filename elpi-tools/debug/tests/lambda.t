@@ -31,13 +31,13 @@ hypothesis added for x and why it does not apply:
 
   $ elpi-debug lambda.elpi 'of (lam x\ app x x) T'
   debug: no (more) solution.
-  Deepest failure (depth 2): #4 of c0 X1
+  Deepest failure (depth 2): #4 of c0 X0
     called from:
-      #2 of (app c0 c0) X0
-      #1 of (lam c1 \ app c1 c1) (arr (arr X1 X0) X0)
+      #2 of (app c0 c0) X1
+      #1 of (lam c1 \ app c1 c1) (arr (arr X0 X1) X1)
     clauses tried:
-      hypothesis added by #1: of c0 (arr X1 X0)
-          does not match: argument 2 (output): X1 vs arr X1 X0 (occurs check: X1 occurs in arr X1 X0)
+      hypothesis added by #1: of c0 (arr X0 X1)
+          does not match: argument 2 (output): X0 vs arr X0 X1 (occurs check: X0 occurs in arr X0 X1)
       lambda.elpi:13: of (app X2^1 X3^1) X4^1
           does not match: argument 1 (input): c0 vs app X2^1 X3^1
       lambda.elpi:14: of (lam X5^1) (arr X6^1 X7^1)

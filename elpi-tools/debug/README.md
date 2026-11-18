@@ -2,7 +2,7 @@
 
 A debugger for Elpi 4 programs (standalone Elpi, opam switch `elpi5`; not
 Rocq-Elpi), written as a **meta-interpreter in Elpi**
-([`debug.elpi`](debug.elpi)).  It runs a goal by interpreting the rules of
+([`lib/*.elpi`](lib), assembled into `debug.elpi`).  It runs a goal by interpreting the rules of
 the program, which [`../reflect`](../reflect/README.md) gives as Elpi data,
 and shows what the real engine does not:
 
@@ -54,12 +54,16 @@ No solution.
 
 $ elpi-debug -trace tests/chr.elpi 'double 3 Y'
 Call: #1 double 3 X0
+Unify: #1 with chr.elpi:18: double 3 X0
   Call: #2 even X0
-  Cut:  #2 commits to its current clause
-    (builtin) delay: even X0
+  Unify: #2 with chr.elpi:10: even X0
+  Cut: #2 commits to its current clause
+    Delay: [S1] even X0 on [X0]
   Exit: #2 even X0
-    Wake: #3 even 6
-    Exit: #3 even 6
+    Resume: [S1] #3 even 6
+    Unify: #3 with chr.elpi:10: even 6
+    Unify: #3 with chr.elpi:11: even 6
+    Exit: [S1] #3 even 6
 Exit: #1 double 3 6
 Solution 1:
   Y = 6
@@ -163,66 +167,93 @@ breakpoints and stepping on five small programs (lists, cut, a typed
 λ-calculus, CHR, a predicate defined nowhere) and check with `-compare`
 that the interpreter gives the answers of the real engine.
 
-## How it works
+## How the interpreter works
 
-**The program as data.**  The driver ([`bin/`](bin), OCaml on the `elpi`
-library) runs elpi-reflect on FILE and compiles, in this order:
-`reflect.elpi`; `debug.elpi`; FILE **without its rules** (its
-declarations, so that the terms of the program type check, and its CHR
-rules, which run natively); the rules as facts
-`reflect.clause P Index Loc Attrs Head Body`; and one **bridge** per
-predicate, `P X1..Xn :- !, debug.bridge (P X1..Xn)`, its only native rule.
-The bridges are static rules, written by `debug.write-bridges`, and not
-local clauses `pi x1..xn\ ...` installed by the interpreter: with those,
-Elpi crashes when a CHR rule fires
-([LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505)).
-The query is `debug.run Options (GOAL)`.
+The interpreter is [`lib/`](lib), one file per concern; dune concatenates
+them into `debug.elpi`, inside one `namespace debug { }` block (Elpi
+resolves names block by block).  Read them in this order:
 
-**Goals.**  Conjunction, `pi`, `sigma`, `=>`, `;` and the cut keep Elpi's
-own meaning; a goal of a program predicate gets a box with its ports and is
-solved by backchaining on its candidate clauses: the hypothetical clauses
-in scope (most recent first), then the rules of the program in Elpi's order.
-Head matching follows the declared modes: an input argument is matched
-(`pattern_match`, the goal's variables are not assigned), an output one is
-unified.  Builtins run natively.  Native code that calls a program
-predicate back (`not`, `std.map`, `std.findall`, a woken constraint) reaches
-the interpreter through the bridge, so these calls have their ports too.
-
-**Hypothetical clauses as data.**  `H => G` adds `debug.hyp P Origin C` for
-each clause C of H, with the real `=>`: the hypotheses get Elpi's scope and
-order, keep their variables shared and their `pi`-bound variables fresh.
-
-**The cut** (the classic difficulty of a meta-interpreter: Elpi has no "cut
-to here").  A clause body is not interpreted goal by goal: it is
-*compiled* into a native goal in which each atomic goal G becomes
-`debug.goal Ctx G` and the connectives and the cut stay native.  The
-compiled body is the last goal of the interpreter's clause that selects
-the candidate clauses, so a native cut there discards exactly the other
-candidates and the choice points of the goals before it: Elpi's semantics.
-Since Elpi's cut goes through `pi`, `sigma` and `=>` and is local to `;`
-(checked on elpi 4.0.0), keeping these connectives native keeps that too.
-
-**CHR at depth 1.**  `declare_constraint G Keys` is the real one, so the
-CHR rules see the same constraints and fire natively; when G is woken, its
-bridge brings it back into the interpreter, through a `Wake` port (the
-RESUME port of ECLiPSe).  The design said `declare_constraint (solve G)`:
-changed, because the CHR rules would then not match the constraint.
-
-**Ports and state.**  Byrd's box: the redo port is a clause tried when
-backtracking reaches a box that has exited.  What must survive
-backtracking (the deepest failure, the stepping mode, the profile events)
-is kept in Elpi safes.  The explanation is computed at the fail port, where
-the goal is back as it was called, by retrying every candidate's head; only
-goals that fail at their first try count (a fail after a redo is the normal
-end of an enumeration).
-
-**The strategy.**  By default Elpi's: candidates in order, with
-backtracking.  Options change it: `random-order` (with `seed N`),
-`first-solution` (each call keeps its first solution), `max-depth N`,
-`ignore-cut`.  With all four it is the random derivation used by
-[`../check`](../check/README.md) to solve `generated-by` premises, which
-now calls `debug.run` (it had its own solver, `check/lib/solve.elpi`,
-removed; the checker's reports are unchanged).
+1. **[`state.elpi`](lib/state.elpi): the data.**  The options of `run`;
+   the strategy, one value `strategy Order Solutions Depth Cut` (Elpi's
+   own is `strategy in-order all-solutions unbounded honour-cut`); a
+   `frame` per call (`#Id`, depth, predicate, goal), a `box` (a frame,
+   the frames above it, how it was entered), a context `ctx` (where a goal
+   runs); the safes that keep what must survive backtracking.
+2. **[`program.elpi`](lib/program.elpi): the program as data.**  The
+   driver ([`bin/`](bin)) runs elpi-reflect on FILE and compiles, in this
+   order: `reflect.elpi`; `debug.elpi`; FILE **without its rules** (its
+   declarations, so that the terms of the program type check, and its CHR
+   rules, which run natively); the rules, as facts
+   `reflect.clause P Index Loc Attrs Head Body`; and one **bridge** per
+   predicate, `P X1..Xn :- !, debug.bridge (P X1..Xn)`, its only native
+   rule, written by `write-bridges`.  They are static rules, not local
+   clauses `pi x1..xn\ ...`: with those, Elpi crashes when a CHR rule fires
+   ([LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505)).
+   `program-rule` gives the rules of a predicate, `modes-of` its modes.
+3. **[`strategy.elpi`](lib/strategy.elpi): how a call is solved.**
+   `candidate` gives the candidate clauses in Elpi's order (the hypothetical
+   clauses in scope, most recent first, then the rules); `ordered-candidate`
+   in the order of the strategy (or shuffled); `within-depth`,
+   `keeps-first-solution`, `cut-ignored-here` read the rest of it.  With
+   `random-order`, `first-solution`, `max-depth N`, `ignore-cut`, it is the
+   random derivation of [`../check`](../check/README.md), which solves its
+   `generated-by` premises with `debug.run` (its own solver,
+   `check/lib/solve.elpi`, is gone; its reports are unchanged).
+4. **[`interpreter.elpi`](lib/interpreter.elpi): the meta-interpreter.**
+   - `run` installs the options, the strategy, the safes and the
+     declarations as local clauses, and runs the query.
+   - `compile` turns a clause body into a native goal, one clause per
+     construct: a conjunction is compiled goal by goal; `pi`, `sigma`,
+     `=>`, `;` stay native (with their ports); each atomic goal becomes
+     `debug.goal Ctx G`.  **The cut** (the classic difficulty: a cut must
+     discard the other clauses of the goal and the choice points before
+     it, which belong to the interpreter, and Elpi has no "cut to here")
+     stays a native cut: the compiled body runs as the last goal of
+     `backchain`, so the cut discards exactly the remaining candidates of
+     `backchain` and the choice points before it in the body, which is
+     Elpi's semantics.  Elpi's cut goes through `pi`, `sigma`, `=>` and is
+     local to `;` (checked on elpi 4.0.0); native connectives keep that.
+   - `goal` dispatches a goal: a call of the program (`call`) or a builtin
+     (`native`).
+   - `call` builds the box and runs `attempt`, whose second clause is the
+     choice point a retry or fail unwinds to; `box-ports` is Byrd's box
+     (call, exit, redo, fail; the redo port is a clause tried when
+     backtracking comes back into a call that exited).
+   - `backchain` tries the candidates: head matching by the modes
+     (`arg-match`: an input argument is matched with `pattern_match`, an
+     output one unified), then the compiled body.
+   - `assume` gives `H => G` its hypothetical clauses as data, facts
+     `hyp P Origin C` added by the real `=>`: they have Elpi's scope and
+     order, share their variables, get fresh ones for their `pi`.
+5. **[`natives.elpi`](lib/natives.elpi): builtins, CHR, the way back.**
+   `native` runs a builtin natively, with its ports; `delay` is the real
+   `declare_constraint` (**CHR at depth 1**: the rules see the same
+   constraints and fire natively), numbered; `bridge` brings a program
+   goal called by native code (`not`, `std.map`, a woken constraint) back
+   into the interpreter, where a woken goal enters through its resume port.
+   (The design said `declare_constraint (solve G)`: changed, because the
+   CHR rules would then not match the constraint.)
+6. **[`lprolog.elpi`](lib/lprolog.elpi): λProlog in view.**  `shape-of`
+   takes any term apart (Elpi has no builtin for λ-terms and connectives),
+   for every walk: binders, logic variables, the clash of the explanation.
+   `show-term` prints a term with the names of its eigenvariables (`x#3`,
+   from the `eigen` clause in force in the scope of each `pi`);
+   `can-depend` and `show-scope` tell which eigenvariables a logic variable
+   may depend on.
+7. **[`ports.elpi`](lib/ports.elpi): the events.**  `event` shows an event
+   and stops there if needed; `port` for the ports of calls,
+   `match-with-port` for the unify step (with the bindings and the pruning
+   it made), `pi-port`, `assume-port`, `delay-port`, `cut-port`,
+   `native-port`.
+8. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
+   stepping modes, the requests of retry and fail, the breakpoints, the
+   command loop (how retry and skip work: above, and in the file).
+9. **[`explain.elpi`](lib/explain.elpi): the explanation of a failure.**
+   At the fail port of a call that never exited, where the goal is back as
+   it was called: each candidate retried, the first argument that does not
+   match and the smallest clashing subterms (`subterm-clash`), the occurs
+   check and the scope of eigenvariables (`flex-clash`).
+10. **[`profile.elpi`](lib/profile.elpi): the outcome and the profile.**
 
 ## Cost
 

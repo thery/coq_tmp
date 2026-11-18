@@ -1,0 +1,76 @@
+% natives.elpi: builtins, suspended goals (CHR at depth 1) and the way
+% back from native code into the interpreter.
+
+
+% ===== Builtins ====================================================================
+
+% [native Ctx G]: the builtin goal G, run natively, with its call, exit and
+% fail ports (shown with option builtins).  Only a builtin that fails
+% without ever succeeding is a candidate for the failure explanation.
+:nooc
+pred native o:ctx, i:(pred).
+native Ctx G :-
+  native-port call-port Ctx G,
+  new_safe Exited,
+  native-ports Exited Ctx G.
+
+% (alternatives as clauses, not ;, as for [box-ports])
+:nooc
+pred native-ports i:safe, o:ctx, i:(pred).
+native-ports Exited Ctx G :-
+  run-native Ctx G, native-port exit-port Ctx G, stash_in_safe Exited "exited".
+native-ports Exited Ctx G :-
+  native-port fail-port Ctx G, note-native-failure-if-first Exited Ctx G, fail.
+
+% [run-native Ctx G]: run G, with Ctx as the context of the program goals
+% it may call back.  Elpi copies a local clause, and Ctx holds the goals of
+% the calls above, so it is installed only when G may call back.
+:nooc
+pred run-native o:ctx, i:(pred).
+run-native Ctx G :- may-call-back G, !, (current-ctx called Ctx => G).
+run-native _ G :- G.
+
+% [may-call-back T]: T mentions a program predicate or holds a λ-term (such
+% as x\ y\ rev x y, given to std.map), which native code may call.
+pred may-call-back i:any.
+may-call-back T :- shape-of T S, shape-may-call-back S.
+
+pred shape-may-call-back i:shape.
+shape-may-call-back (node H _) :- program-predicate H, !.
+shape-may-call-back (node _ Ts) :- std.exists Ts may-call-back.
+shape-may-call-back (binder _).
+
+% ===== Suspended goals: CHR at depth 1 ==================================================
+%
+% [delay Ctx G Keys]: G suspended on Keys by the real declare_constraint,
+% so that the CHR rules see the same constraints and fire natively.  The
+% suspension gets a number; when G is woken, its bridge brings it back
+% into the interpreter, where it enters through the resume port with that
+% number (ECLiPSe's DELAY and RESUME ports).
+:nooc
+pred delay o:ctx, i:(func), i:any.
+delay Ctx G Keys :-
+  suspension-number K,
+  delay-port Ctx G Keys K,
+  delay-or-explain Ctx G Keys K.
+
+:nooc
+pred delay-or-explain o:ctx, i:(func), i:any, i:int.
+delay-or-explain Ctx G Keys K :- (current-ctx (woken K) Ctx => declare_constraint G Keys).
+delay-or-explain Ctx G _ _ :-
+  note-goal-failure Ctx G ["declare_constraint failed: adding this constraint fired a CHR rule that failed"],
+  fail.
+
+% [suspension-number K]: the number of a new suspension (0 on the fast path).
+pred suspension-number o:int.
+suspension-number 0 :- quiet, !.
+suspension-number K :- new-number "suspension" K.
+
+% ===== The way back: bridges ==============================================================
+
+% [bridge G]: a goal of a program predicate called natively (by a builtin
+% or by CHR) through its bridge (program.elpi): a call, in the context of
+% the innermost builtin.
+pred bridge i:(pred).
+bridge G :- current-ctx Entry Ctx, !, program-goal G P, call Ctx P G Entry.
+
