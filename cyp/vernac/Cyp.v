@@ -26,6 +26,8 @@
 
 From Stdlib Require Import PrimString List Lia Lra Ring Field.
 From elpi Require Import elpi.
+(* the coarse gap tactic cyp_gap, tried on a condition nothing else closes *)
+From CypV Require Export Gaps.
 
 (* a claim C of the text, proved by p, is a hypothesis of the rest k *)
 Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
@@ -102,6 +104,7 @@ From Lexicon Extra Dependency "lang_ko.elpi" as lexicon_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lexicon_la.
 From CypV Extra Dependency "elpi/text.elpi" as cyp_text.
 From CypV Extra Dependency "elpi/check.elpi" as cyp_check.
+From CypV Extra Dependency "elpi/gaps.elpi" as cyp_gaps.
 From CypV Extra Dependency "elpi/proof.elpi" as cyp_proof.
 From CypV Extra Dependency "elpi/markdown.elpi" as cyp_markdown.
 From CypV Extra Dependency "elpi/command.elpi" as cyp_command.
@@ -132,6 +135,7 @@ Elpi Accumulate File cyp_timing.
 Elpi Accumulate File cyp_messages_en.
 Elpi Accumulate File cyp_messages_fr.
 Elpi Accumulate File cyp_messages_it.
+Elpi Accumulate File cyp_gaps.
 Elpi Accumulate File cyp_check.
 Elpi Accumulate File cyp_proof.
 Elpi Accumulate File cyp_markdown.
@@ -179,6 +183,7 @@ Elpi Accumulate File cyp_timing.
 Elpi Accumulate File cyp_messages_en.
 Elpi Accumulate File cyp_messages_fr.
 Elpi Accumulate File cyp_messages_it.
+Elpi Accumulate File cyp_gaps.
 Elpi Accumulate File cyp_check.
 Elpi Accumulate File cyp_proof.
 Elpi Accumulate File cyp_markdown.
