@@ -13,11 +13,23 @@
 namespace debug {
 
 % ===== 1. The debugged program, as data ==================================
+%
+% The program is read by elpi-tools/reflect (../reflect/README.md): its
+% rules are the facts [reflect.clause P Index Loc Attributes Head Body] and
+% its declarations the facts [reflect.signature Name P F Args Variadic Loc].
 
-% [clause Head Body Origin]: one clause of the program; Origin says where
-% it comes from (for example "append.elpi:3").  Its variables are renamed
-% by Elpi each time the fact is used, as for a real clause.
-pred clause o:(pred), o:(pred), o:string.
+% [program-clause P Head Body Origin]: by backtracking, the rules of P in
+% Elpi's order, with fresh variables; Origin is "file:line".
+pred program-clause i:any, o:(pred), o:(pred), o:string.
+program-clause P Head Body Origin :-
+  reflect.clause P _ Loc _ Head Body,
+  constant Head Q _, same_term Q P,     % (overloaded rules have no index)
+  loc-origin Loc Origin.
+
+func loc-origin reflect.srcloc -> string.
+loc-origin (reflect.srcloc File Line _) S :-
+  rex.replace "^.*/" "" File Base,
+  S is Base ^ ":" ^ {std.any->string Line}.
 
 % The mode of an argument: [i] (input: the goal argument is matched, its
 % variables are not assigned) or [o] (output: it is unified).
@@ -26,9 +38,45 @@ symb i mode.
 symb o mode.
 
 % [declared P Modes]: P is a predicate of the program, declared with these
-% modes.  A predicate that is only declared, with no clause, is reported as
-% such when it is called.
+% modes.  [run] installs one such local clause per signature, indexed by P.
+% A predicate that is declared with no rule is reported as such when called.
 pred declared o:any, o:list mode.
+
+% [declarations Ds]: the [declared] clauses of the program's signatures.
+pred declarations o:list (pred).
+declarations Ds :-
+  std.findall (reflect.signature _ _ _ _ _ _) Sigs,
+  std.fold Sigs [] add-declaration Ds.
+
+func add-declaration (pred), list (pred) -> list (pred).
+add-declaration (reflect.signature _ P _ Args _ _) Ds [declared P Modes | Ds] :-
+  not (var P), !, std.map Args arg-mode Modes.
+add-declaration _ Ds Ds.
+
+func arg-mode reflect.arg -> mode.
+arg-mode (reflect.arg reflect.in _) i.
+arg-mode (reflect.arg reflect.out _) o.
+
+% [write-bridges File]: write to File the bridge of each declared predicate
+% (see section 6); the driver accumulates File before the program.
+pred write-bridges i:string.
+write-bridges File :-
+  open_out File Out,
+  output Out "% Bridges: the first native clause of each program predicate (see debug.elpi).\n",
+  std.findall (reflect.signature _ _ _ _ ff _) Sigs,
+  std.fold Sigs [] (write-bridge Out) _,
+  close_out Out.
+
+% [write-bridge Out Sig Done Done1]: one bridge per predicate name.
+func write-bridge out_stream, (pred), list string -> list string.
+write-bridge _ (reflect.signature Name _ _ _ _ _) Done Done :- std.mem! Done Name, !.
+write-bridge Out (reflect.signature Name P _ Args _ _) Done [Name|Done] :- not (var P), !,
+  std.length Args N, std.iota N Is,
+  std.map Is (i\ s\ s is " X" ^ {std.any->string i}) Vars,
+  std.string.concat "" Vars Xs,
+  Goal is "(" ^ Name ^ Xs ^ ")",
+  output Out {calc (Goal ^ " :- !, debug.bridge " ^ Goal ^ ".\n")}.
+write-bridge _ _ Done Done.
 
 % ===== 2. Options and state ===============================================
 
@@ -71,12 +119,13 @@ pred current-ctx o:string, o:ctx.
 % solution; on final failure it explains the deepest failing goal.
 pred run i:list option, o:(pred).
 run Options Goal :-
+  declarations Decls,
   new_safe Deepest, new_safe Mode, new_safe Prof, new_safe Warned,
   stash_in_safe Mode "leap",
   std.map Options (o\ c\ c = opt o) OptClauses,
   std.append OptClauses
     [state "deepest" Deepest, state "mode" Mode, state "profile" Prof,
-     state "warned" Warned, current-ctx "call" (ctx 0 [])]
+     state "warned" Warned, current-ctx "call" (ctx 0 []) | Decls]
     Local,
   Local => run-top Goal.
 
@@ -192,13 +241,14 @@ delay Ctx G Keys :-
 % ===== 6. Bridges from native code back to the interpreter ===============
 %
 % Native code (std.map, not, findall, a woken constraint...) calls program
-% predicates natively.  Each program predicate P has one native clause, its
-% bridge  [P X1..XN :- debug.bridge (P X1..XN)],  which sends such a call
-% back to the interpreter.  The program's own clauses are not loaded
-% natively, so the bridge is the only native clause of P.
+% predicates natively.  Each program predicate P gets, as its first native
+% clause, the bridge  [P X1..XN :- !, debug.bridge (P X1..XN)],  which
+% sends such a call back to the interpreter; the cut makes the program's
+% own native clauses (loaded for their declarations) dead code.
 %
-% The bridges of the declared predicates are static clauses, written in
-% the program's data file (by the driver).  They could be built here as
+% The bridges of the declared predicates are static clauses, written by
+% [write-bridges] (section 1) and accumulated by the driver before the
+% program.  They could be built here as
 % local clauses [pi x1..xN\ ...], and they are for the predicates that only
 % have hypothetical clauses, but elpi 4.0.0 crashes ("index out of bounds")
 % when a CHR rule fires on a constraint whose predicate has such a local
@@ -261,16 +311,7 @@ backchain (box _ D P _ Above _ as Box) G :-
 % apply to G (a goal of P), with fresh variables.
 pred candidate i:any, i:(pred), o:string, o:(pred), o:(pred).
 candidate P _ Origin Head Body :- hyp P Origin C, clause-parts C Head Body.
-candidate _ G Origin Head Body :- fresh-goal G Head, clause Head Body Origin.
-
-% [fresh-goal G H]: H is G with all its arguments replaced by fresh
-% variables (so that [clause H _ _] lists every clause of the predicate).
-pred fresh-goal i:(pred), o:(pred).
-fresh-goal G H :- constant G P Args, fresh-list Args Fresh, constant H P Fresh.
-
-pred fresh-list i:list any, o:list any.
-fresh-list [] [].
-fresh-list [_|L] [_|F] :- fresh-list L F.
+candidate P _ Origin Head Body :- program-clause P Head Body Origin.
 
 % [clause-parts C Head Body]: the head and body of the clause C, with
 % fresh variables for its pi-bound variables.
@@ -310,8 +351,12 @@ first-mode [] o [].
 first-mode [M|Ms] M Ms.
 
 % [arg-match M A B]: the goal argument A and the head argument B agree in
-% mode M; for an input only the variables of the head are assigned.
+% mode M; for an input only the variables of the head are assigned.  The
+% head patterns uvar and (P as X) come from reflect as uvar-pattern and
+% as-pattern (only at the top of an argument).
 pred arg-match i:mode, i:any, i:any.
+arg-match _ A reflect.uvar-pattern :- !, var A.
+arg-match M A (reflect.as-pattern P X) :- !, arg-match M A P, X = A.
 arg-match i A B :- pattern_match A B.
 arg-match o A B :- A = B.
 
@@ -640,8 +685,7 @@ report-solution :- if (opt profile) show-profile true.
 
 pred report-final-failure.
 report-final-failure :-
-  print "debug: no (more) solution.",
-  if (opt no-explain) true show-deepest-failure,
+  if (opt no-explain) true (print "debug: no (more) solution.", show-deepest-failure),
   if (opt profile) show-profile true.
 
 data event.
