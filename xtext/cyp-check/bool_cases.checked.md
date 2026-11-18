@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -15,7 +15,4 @@ by: tauto | congruence | lia | firstorder | auto
 - ✅ Case 2: we prove `false = true \/ false = false`{.claim}.
   - ✅ By definition of eq (eq_refl), we have `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
   - ✅ By definition of or (or_intror), we have `false = true \/ false = false`{.claim} *by Corelib.Init.Logic.or_intror*.
-- ❌ These cases being exhaustive, we deduce `b = true \/ b = false`{.claim}.
-
-  <details><summary>not proved: b = true \/ b = false</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `b = true \/ b = false`{.claim}.

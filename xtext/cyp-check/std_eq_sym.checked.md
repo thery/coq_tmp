@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 

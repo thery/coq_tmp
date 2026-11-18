@@ -1,1 +1,1 @@
-{"steps":[{"first":8,"last":8,"status":"ok","formulas":[{"role":"var","text":"n : nat"},{"role":"claim","text":"Nat.pred (S n) = n"}],"message":""},{"first":10,"last":10,"status":"ok","formulas":[{"role":"claim","text":"n = n"},{"role":"fact","text":"Nat.pred (S n) = n"}],"message":""}]}
+{"steps":[{"id":"0","first":8,"last":8,"status":"ok","formulas":[{"role":"var","text":"n : nat"},{"role":"claim","text":"Nat.pred (S n) = n"}],"message":""},{"id":"1","first":10,"last":10,"status":"ok","formulas":[{"role":"claim","text":"n = n"}],"message":""}]}

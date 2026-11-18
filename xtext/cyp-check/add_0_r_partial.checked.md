@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.partial.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -12,8 +12,7 @@ by: tauto | congruence | lia | firstorder | auto
 - ✅ Case 1 (base): we prove `0 = 0`{.claim}.
   - ✅ By definition of eq (eq_refl), we have `0 = 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - ✅ Case 2 (inductive): we prove `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.
-  - ▫️ Let us consider an arbitrary `m : nat`{.var}.
-    - ▫️ Assume by induction hypothesis `m + 0 = m`{.hyp} (IH).
-      - ✅ Prove `S m + 0 = S m`{.claim}.
+  - ▫️ Let us choose arbitrarily `m : nat`{.var}; assume by induction hypothesis `m + 0 = m`{.hyp} (IH).
+    - ✅ Prove `S m + 0 = S m`{.claim}.
 - ✅ These cases being exhaustive, we deduce `forall n0 : nat, n0 + 0 = n0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
 - ✅ In particular `n + 0 = n`{.claim}.

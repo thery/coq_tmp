@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -13,7 +13,4 @@ by: tauto | congruence | lia | firstorder | auto
   - ✅ By definition of eq (eq_refl), we have `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - ✅ Case 2: we prove `negb (negb false) = false`{.claim}.
   - ✅ By definition of eq (eq_refl), we have `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
-- ❌ These cases being exhaustive, we deduce `negb (negb b) = b`{.claim}.
-
-  <details><summary>not proved: negb (negb b) = b</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `negb (negb b) = b`{.claim}.

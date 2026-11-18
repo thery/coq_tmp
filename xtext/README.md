@@ -791,32 +791,32 @@ finds the example files), and runs cyp's driver (`cyp/bin/cyp.ml`, which runs
 at most 8 GB of memory per text.  It prints, per text, the time and the
 list items proved / not proved / not checked (`cyp-check/results.tsv`).
 
-All 82 texts, 300 s per text:
+The 77 English texts written by default (staged translation), 300 s per
+text (2026-11-18, `cyp-check/results.tsv`):
 
-- 73 texts are checked: 933 steps proved, 29 not proved, 220 not checked
-  (lines with no claim: `Let`, `Assume`, the announcement of a proof by
-  cases);
-- 9 time out: the 5 texts of the private case study, `half_le`,
-  `std_in_app_or`, `std_Nat_add_0_r`, `std_Nat_le_trans` (two of the
-  private ones grow to 12-16 GB before the limit);
-- the 29 steps not proved: 14 closing steps of a `match` (no
-  justification: `destruct` is tactic code), 4 closing steps of a
-  `list_ind` elimination, 5 constructor steps `*by ex_intro*` (cyp applies
-  `ex_intro` and cannot find the witness), the recursive call of
-  `length_app_fix` (it states the theorem itself), and 5 steps of a
-  private text (rewritings and `ring` certificates) that cyp's default
-  tactics do not close;
-- 13 texts have every step proved but cyp stops at the end with an
-  anomaly, `Universe CypRules.cyp_check.N undefined` (`app_nil_r`,
-  `std_app_assoc`, `std_rev_involutive`, ...): a formula with `Type` in
-  it (`forall (A0 : Type) ...`, the statement of a theorem used) makes a
-  universe that the proof cyp builds does not declare.  This is in cyp,
-  not in the texts;
+- 76 texts are checked, in 170 s in all: 650 steps proved, 17 not proved,
+  488 not checked (lines with no claim: `Let`, `Assume`, the
+  announcement of an induction, and the staged texts' "The element x
+  belongs to T");
+- 1 times out: `std_or_assoc`;
+- the 17 steps not proved are in 7 texts (`std_Nat_le_trans` 6,
+  `half_le` 3, `std_Nat_lt_irrefl` 3, `std_rev_app_distr` 2, `drinker`,
+  `std_length_rev`, `std_rev_involutive` 1 each); e.g. in `drinker`,
+  "Applying not_all_ex_not to A, P and H, we have `exists n : A, ~ P n`";
+- no text stops on the universe anomaly reported before.
+
+With the direct translation (`examples-direct/`, the default before;
+`cyp-check/results_direct.tsv`): 72 texts checked in 595 s, 923 steps
+proved, 23 not proved, 213 not checked, 5 timeouts (`half_le`,
+`std_in_app_or`, `std_Nat_add_0_r`, `std_Nat_le_trans`, `std_or_assoc`).
+The staged texts have fewer steps with a claim, more lines with no
+claim, and fewer timeouts.
+
 - cyp proves each claim again with its own tactics, so a green step says
   that the claim follows, not that it follows the way the text says.
 
-The texts in the other languages (12 per language, 9 languages) give the
-same results, step by step, as the English ones (same roles and statuses
+Measured on the direct texts, not rerun yet: the texts in the other
+languages (12 per language, 9 languages) give the same results, step by step, as the English ones (same roles and statuses
 in each `.cyp.json`): 90 steps proved, 4 not proved, 30 not checked per
 language (`cyp-check/results_fr_it.tsv`, `cyp-check/results_langs.tsv`).
 

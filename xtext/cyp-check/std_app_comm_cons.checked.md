@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,4 +8,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `A : Type`{.var}. Let `x y : list A`{.var}. Let `a : A`{.var}. We prove `a :: x ++ y = (a :: x) ++ y`{.claim}.
 
-- ✅ By definition of eq (eq_refl), we have `(a :: x) ++ y = (a :: x) ++ y`{.claim} *by Corelib.Init.Logic.eq_refl*, that is `a :: x ++ y = (a :: x) ++ y`{.fact}.
+- ✅ By definition of eq (eq_refl), we have `(a :: x) ++ y = (a :: x) ++ y`{.claim} *by Corelib.Init.Logic.eq_refl*.

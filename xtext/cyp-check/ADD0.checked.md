@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.thesis.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -12,10 +12,13 @@ by: tauto | congruence | lia | firstorder | auto
 - ✅ Case 1 (base): we prove `0 + 0 = 0 + 0`{.claim}.
   - ✅ By definition of eq (eq_refl), we have `0 + 0 = 0 + 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - ✅ Case 2 (inductive): we prove `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.
-  - ▫️ Let us consider an arbitrary `m0 : nat`{.var}.
-    - ▫️ Assume by induction hypothesis `m0 + 0 = m0`{.hyp} (IH).
-      - ✅ By IH we have `m0 + 0 = m0`{.claim}.
-      - ✅ Using f_equal we get `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y`{.claim} *by Corelib.Init.Logic.f_equal*.
-      - ✅ We deduce `S (m0 + 0) = S m0`{.claim}.
+  - ▫️ Let us choose arbitrarily `m0 : nat`{.var}; assume by induction hypothesis `m0 + 0 = m0`{.hyp} (IH).
+    - ▫️ The element `nat`{.fact} belongs to `Type`{.fact}.
+    - ▫️ The element `nat`{.fact} belongs to `Type`{.fact}.
+    - ▫️ The element `S`{.fact} belongs to `nat -> nat`{.fact}.
+    - ▫️ The element `m0 + 0`{.fact} belongs to `nat`{.fact}.
+    - ▫️ The element `m0`{.fact} belongs to `nat`{.fact}.
+    - ✅ By IH we have `m0 + 0 = m0`{.claim}.
+    - ✅ Applying f_equal, we have `S (m0 + 0) = S m0`{.claim}.
 - ✅ These cases being exhaustive, we deduce `forall n : nat, n + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
 - ✅ In particular `m + 0 = m`{.claim}.

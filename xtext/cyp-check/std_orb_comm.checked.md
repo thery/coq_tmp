@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -22,11 +22,5 @@ by: tauto | congruence | lia | firstorder | auto
     - ✅ By definition of eq (eq_refl), we have `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
   - ✅ Case 2.2: we prove `false || false = false || false`{.claim}.
     - ✅ By definition of eq (eq_refl), we have `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
-  - ❌ These cases being exhaustive, we deduce `b1 || false = false || b1`{.claim}.
-
-    <details><summary>not proved: b1 || false = false || b1</summary></details>
-
-- ❌ These cases being exhaustive, we deduce `b1 || b2 = b2 || b1`{.claim}.
-
-  <details><summary>not proved: b1 || b2 = b2 || b1</summary></details>
-
+  - ✅ These cases being exhaustive, we deduce `b1 || false = false || b1`{.claim}.
+- ✅ These cases being exhaustive, we deduce `b1 || b2 = b2 || b1`{.claim}.

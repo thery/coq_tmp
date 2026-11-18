@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -46,4 +46,4 @@ Let `A B C : Prop`{.var}. We prove `(A \/ B) \/ C <-> A \/ B \/ C`{.claim}.
             - By definition of or (or_intror), from `C`{.fact} (H1) we deduce `(A \/ B) \/ C`{.claim} *by Corelib.Init.Logic.or_intror*.
         - We have `(A \/ B) \/ C`{.claim} in all cases.
     - We have `(A \/ B) \/ C`{.claim} in all cases.
-- So by definition of and (conj), we have `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)`{.claim} *by Corelib.Init.Logic.conj*, that is `(A \/ B) \/ C <-> A \/ B \/ C`{.fact}.
+- So by definition of and (conj), we have `((A \/ B) \/ C -> A \/ B \/ C) /\ (A \/ B \/ C -> (A \/ B) \/ C)`{.claim} *by Corelib.Init.Logic.conj*.

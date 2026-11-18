@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -13,9 +13,7 @@ Let `A : Type`{.var}. Let `l m : list A`{.var}. Let `a : A`{.var}. We prove `In 
   - Assume `In a m`{.hyp} (H).
     - By definition of or (or_intror), from `In a m`{.fact} (H) we deduce `False \/ In a m`{.claim} *by Corelib.Init.Logic.or_intror*.
 - Case 2 (inductive): we prove `forall (a0 : A) (l0 : list A), (In a (l0 ++ m) -> In a l0 \/ In a m) -> In a ((a0 :: l0) ++ m) -> In a (a0 :: l0) \/ In a m`{.claim}.
-  - Let `a0 : A`{.var}.
-  - Let `l0 : list A`{.var}.
-  - Assume by induction hypothesis `In a (l0 ++ m) -> In a l0 \/ In a m`{.hyp} (IHl).
+  - Let `a0 : A`{.var} and `l0 : list A`{.var}; assume by induction hypothesis `In a (l0 ++ m) -> In a l0 \/ In a m`{.hyp} (IHl).
     - Assume `a0 = a \/ In a (l0 ++ m)`{.hyp} (H).
       - We prove `(a0 = a \/ In a l0) \/ In a m`{.fact} by case analysis on `a0 = a \/ In a (l0 ++ m)`{.fact} (H) (or, or_ind):
       - Case 2.1: we prove `a0 = a -> (a0 = a \/ In a l0) \/ In a m`{.claim}.
@@ -24,9 +22,7 @@ Let `A : Type`{.var}. Let `l m : list A`{.var}. Let `a : A`{.var}. We prove `In 
           - By definition of or (or_introl), we have `(a0 = a \/ In a l0) \/ In a m`{.claim} *by Corelib.Init.Logic.or_introl*.
       - Case 2.2: we prove `In a (l0 ++ m) -> (a0 = a \/ In a l0) \/ In a m`{.claim}.
         - Assume `In a (l0 ++ m)`{.hyp} (H0).
-          - We deduce `In a l0 \/ In a m`{.claim} (H1).
-            - By H0 we have `In a (l0 ++ m)`{.claim}.
-            - By IHl we have `In a (l0 ++ m) -> In a l0 \/ In a m`{.claim}.
+          - Applying IHl to H0, we have `In a l0 \/ In a m`{.claim} (H1).
           - We prove `(a0 = a \/ In a l0) \/ In a m`{.fact} by case analysis on `In a l0 \/ In a m`{.fact} (H1) (or, or_ind):
           - Case 2.2.1: we prove `In a l0 -> (a0 = a \/ In a l0) \/ In a m`{.claim}.
             - Assume `In a l0`{.hyp} (H10).

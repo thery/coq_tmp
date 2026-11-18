@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -12,9 +12,7 @@ by: tauto | congruence | lia | firstorder | auto
 - ✅ Case 1 (base): we prove `map g (map f nil) = map (fun x : A => g (f x)) nil`{.claim}.
   - ✅ By definition of eq (eq_refl), we have `nil = (@nil C)`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - ✅ Case 2 (inductive): we prove `forall (a : A) (l0 : list A), map g (map f l0) = map (fun x : A => g (f x)) l0 -> map g (map f (a :: l0)) = map (fun x : A => g (f x)) (a :: l0)`{.claim}.
-  - ▫️ Let `a : A`{.var}.
-  - ▫️ Let `l0 : list A`{.var}.
-  - ▫️ Assume by induction hypothesis `map g (map f l0) = map (fun x : A => g (f x)) l0`{.hyp} (IHl).
+  - ▫️ Let `a : A`{.var} and `l0 : list A`{.var}; assume by induction hypothesis `map g (map f l0) = map (fun x : A => g (f x)) l0`{.hyp} (IHl).
     - ✅ By definition of eq (eq_refl), we have `g (f a) :: map (fun x : A => g (f x)) l0 = g (f a) :: map (fun x : A => g (f x)) l0`{.claim} *by Corelib.Init.Logic.eq_refl*.
     - ✅ By IHl we have `map g (map f l0) = map (fun x : A => g (f x)) l0`{.claim}.
     - ✅ Rewriting with `map g (map f l0) = map (fun x : A => g (f x)) l0`{.fact} from right to left (eq_ind_r), we get `g (f a) :: map g (map f l0) = g (f a) :: map (fun x : A => g (f x)) l0`{.claim}.
