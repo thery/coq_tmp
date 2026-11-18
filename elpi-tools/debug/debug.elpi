@@ -236,7 +236,10 @@ native Ctx G :-
 pred delay i:ctx, i:(func), i:any.
 delay Ctx G Keys :-
   native-port "delay" Ctx G,
-  (current-ctx "wake" Ctx => declare_constraint G Keys).
+  ( (current-ctx "wake" Ctx => declare_constraint G Keys)
+  ; note-goal-failure Ctx G
+      ["declare_constraint failed: adding this constraint fired a CHR rule that failed"],
+    fail ).
 
 % ===== 6. Bridges from native code back to the interpreter ===============
 %
@@ -564,14 +567,18 @@ note-failure (box Id D P G Above _) :-
   stash_in_safe Safe (failure D S AboveS Reasons).
 
 pred note-native-failure i:ctx, i:(pred).
-note-native-failure (ctx D _) _ :- deepest-depth M, D =< M, !.
-note-native-failure (ctx D Above) G :-
+note-native-failure Ctx G :-
+  note-goal-failure Ctx G ["a builtin (not a predicate of the program): it ran natively and failed"].
+
+% [note-goal-failure Ctx G Reasons]: record the failure of the non-program
+% goal G, if it is the deepest so far.
+pred note-goal-failure i:ctx, i:(pred), i:list string.
+note-goal-failure (ctx D _) _ _ :- deepest-depth M, D =< M, !.
+note-goal-failure (ctx D Above) G Reasons :-
   std.map Above ancestor-string AboveS,
   term_to_string G S,
   state "deepest" Safe,
-  stash_in_safe Safe (failure D S AboveS
-    ["it is not a predicate of the program given to the debugger:",
-     "it ran natively (as a builtin) and failed"]).
+  stash_in_safe Safe (failure D S AboveS Reasons).
 
 func ancestor-string box -> string.
 ancestor-string (box Id _ _ G _ _) S :- std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S.

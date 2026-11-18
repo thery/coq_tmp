@@ -227,6 +227,7 @@ let print_time what t = if !show_time then Format.printf "%s time: %.3f s\n%!" w
 let () =
   Arg.parse spec (fun a -> args := !args @ [ a ]) usage;
   let file, goal = match !args with [ f; g ] -> (f, g) | _ -> Arg.usage spec usage; exit 2 in
+  if not (Sys.file_exists file) then fail "no file %s" file;
   paths := !paths @ [ Filename.dirname file ];
   let limit = if !all_solutions then !max_solutions else 1 in
   match !mode with

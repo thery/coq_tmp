@@ -1,0 +1,5 @@
+; Cram tests: each .t file runs elpi-debug on the programs of this
+; directory and records its output (traces, explanations, answers).
+; `dune test` checks them; `dune promote` accepts a new output.
+(cram
+ (deps %{bin:elpi-debug} (glob_files *.elpi)))
