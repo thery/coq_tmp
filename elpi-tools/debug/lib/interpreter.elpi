@@ -21,7 +21,7 @@ run Options Goal :-
   std.map Options (o\ c\ c = opt o) OptionClauses,
   quiet-clauses Options Quiet,
   strategy-of Options Strategy,
-  std.flatten [OptionClauses, Quiet, States, Decls,
+  std.flatten [OptionClauses, Quiet, States, Decls, {strategy-clauses Strategy},
                [the-strategy Strategy, current-ctx called (ctx 0 [])]] Local,
   Local => (rule-clauses Rules, Rules => run-query Goal).
 
@@ -34,10 +34,11 @@ pred stash-initial-mode i:list option, i:list (pred).
 stash-initial-mode Options States :-
   std.mem States (state "mode" S), !, stash_in_safe S {initial-mode Options}.
 
-% [quiet-clauses Options Cs]: [quiet] when no option shows or records events.
+% [quiet-clauses Options Cs]: [quiet] when no option shows or records events
+% (the fast path), and the clause of [run-box] for it.
 func quiet-clauses list option -> list (pred).
-quiet-clauses Options [] :- std.exists! Options shows-events, !.
-quiet-clauses _ [quiet].
+quiet-clauses Options [(pi e\ pi b\ run-box e b :- attempt e b)] :- std.exists! Options shows-events, !.
+quiet-clauses _ [quiet, (pi e\ pi b\ run-box e b :- unseen-box e b)].
 
 pred shows-events i:option.
 shows-events trace.
@@ -212,11 +213,9 @@ call (ctx D Above) P G Entry :-
 
 % [run-box Exited Box]: the call, with its ports ([attempt]); on the fast
 % path, where no event is shown or recorded (so no stop, and no retry), it
-% is only its solutions and the note of its failure ([unseen-box]).
-:nooc
+% is only its solutions and the note of its failure ([unseen-box]).  Its
+% clause is installed by [run] ([quiet-clauses]).
 pred run-box i:safe, o:box.
-run-box Exited Box :- quiet, !, unseen-box Exited Box.
-run-box Exited Box :- attempt Exited Box.
 
 :nooc
 pred unseen-box i:safe, o:box.
@@ -259,13 +258,6 @@ box-ports Exited Box :-
   port call-port Box, solutions Box, stash_in_safe Exited "exited", exit-or-redo Box.
 box-ports Exited Box :-
   port fail-port Box, note-failure-if-first Exited Box, fail.
-
-% [solutions Box]: the solutions of the call, all or the first only (a cut
-% here discards the choice points of backchaining).
-:nooc
-pred solutions o:box.
-solutions Box :- keeps-first-solution, !, backchain Box, !.
-solutions Box :- backchain Box.
 
 :nooc
 pred exit-or-redo o:box.

@@ -37,15 +37,13 @@ pred candidate i:any, o:origin, o:(pred), o:(pred).
 candidate P Origin Head Body :- hyp P Origin C, clause-parts C Head Body.
 candidate P Origin Head Body :- program-rule P _ Head Body Origin.
 
-% [ordered-clause G Id Ctx]: the goal G of the call Id, solved by its
-% compiled clauses (compiled.elpi) in the order of the strategy, their
-% bodies running in the context Ctx.
+% [shuffled-clauses Cut G Id Ctx]: the goal G of the call Id solved by its
+% compiled clauses in a random order (ordered-clause, with that order).
 :nooc
-pred ordered-clause i:(pred), i:int, i:ctx.
-ordered-clause G Id Ctx :- the-strategy (strategy shuffled _ _ Cut), !,
+pred shuffled-clauses i:cut-policy, i:(pred), i:int, i:ctx.
+shuffled-clauses Cut G Id Ctx :-
   constant G P _, candidate-refs P Refs, shuffle Refs Shuffled,
   shuffled-clause Cut P G Shuffled Id Ctx.
-ordered-clause G Id Ctx :- compiled G (by-ref _) Id Ctx.
 
 % [shuffled-clause Cut P G Refs Id Ctx]: the candidates of reference Refs,
 % in that order.  When the cut is ignored, no compiled clause has one:
@@ -94,16 +92,44 @@ func hyp-number -> int.
 hyp-number K :- the-strategy (strategy shuffled _ _ _), !, new_int K.
 hyp-number 0.
 
-% ---- Depth, solutions, cut ----------------------------------------------------
+% ---- The strategy as clauses --------------------------------------------------
+%
+% The predicates of a call that depend on the strategy have no clause of
+% their own: [run] installs, as local clauses, the ones of its strategy
+% ([strategy-clauses]), so that a call runs them without looking the
+% strategy up.  (All their variables are bound by pi, since the variables
+% of a local clause are shared by its uses.)
+
+% [solutions Box]: the solutions of the call (backchain), all or the first
+% only.
+pred solutions o:box.
 
 % [within-depth D]: a call at depth D may run.
 pred within-depth i:int.
-within-depth D :- the-strategy (strategy _ _ (bounded N) _), !, D =< N.
-within-depth _.
 
-% [keeps-first-solution]: a call keeps its first solution only.
-pred keeps-first-solution.
-keeps-first-solution :- the-strategy (strategy _ first-only _ _).
+% [ordered-clause G Id Ctx]: the goal G of the call Id, solved by its
+% compiled clauses (compiled.elpi) in the order of the strategy, their
+% bodies running in the context Ctx.
+pred ordered-clause i:(pred), i:int, i:ctx.
+
+% [strategy-clauses S Cs]: the clauses of solutions, within-depth and
+% ordered-clause for the strategy S.
+func strategy-clauses strategy -> list (pred).
+strategy-clauses (strategy Order Solutions Depth Cut) [S, D, O] :-
+  solutions-clause Solutions S, depth-clause Depth D, order-clause Order Cut O.
+
+% (the first solution only: the cut discards the choice points of backchain)
+func solutions-clause solution-policy -> (pred).
+solutions-clause all-solutions (pi b\ solutions b :- backchain b).
+solutions-clause first-only (pi b\ solutions b :- backchain b, !).
+
+func depth-clause depth-bound -> (pred).
+depth-clause unbounded (pi d\ within-depth d).
+depth-clause (bounded N) (pi d\ within-depth d :- d =< N).
+
+func order-clause candidate-order, cut-policy -> (pred).
+order-clause in-order _ (pi g\ pi id\ pi ctx\ pi r\ ordered-clause g id ctx :- compiled g (by-ref r) id ctx).
+order-clause shuffled Cut (pi g\ pi id\ pi ctx\ ordered-clause g id ctx :- shuffled-clauses Cut g id ctx).
 
 % [cut-ignored-here]: a cut does nothing.
 pred cut-ignored-here.
