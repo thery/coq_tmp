@@ -71,9 +71,11 @@ let temp_dir () =
   let f = Filename.temp_file "cyp-" "" in
   Sys.remove f; Unix.mkdir f 0o755; f
 
+(* the directory of the cyp library, resolved (no "..", no link), so that
+   the directories next to it are found from it by name *)
 let cyp_lib () =
   match Sys.getenv_opt "CYP_LIB" with
-  | Some d -> d
+  | Some d -> (try Unix.realpath d with Unix.Unix_error _ -> d)
   | None -> prerr_endline "cyp: set CYP_LIB to the directory of the cyp library (vernac/)"; exit 2
 
 (* the language data (lexicon/, shared with xtext): CYP_LEXICON, or the

@@ -17,11 +17,11 @@ pred proof-default o:string.
 
 pred close i:goal.
 close (goal _ _ {{ _ /\ _ }} _ _ as G) :-
-  coq.ltac.call-ltac1 "cyp_split" G GL, premises GL.
+  coq.ltac.call-ltac1 "cyp_split" G GL, subgoals GL.
 close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
-  coq.ltac.call-ltac1 "cyp_left" G GL, premises GL.
+  coq.ltac.call-ltac1 "cyp_left" G GL, subgoals GL.
 close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
-  coq.ltac.call-ltac1 "cyp_right" G GL, premises GL.
+  coq.ltac.call-ltac1 "cyp_right" G GL, subgoals GL.
 close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
 close (goal _ _ Ty _ _ as G) :- named _ Ty Tac, run Tac G.
 close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
@@ -31,9 +31,22 @@ run (ltac N) G :- coq.ltac.call-ltac1 N G [].
 run (lemma T) G :- refine T G GL, premises GL.
 run (apply T) G :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL.
 
-% the premises of a lemma: the rules, else the default tactics
+% the premises of a lemma: the rules, else the default tactics.  A premise
+% may be closed by another lemma, whose premises are closed the same way:
+% the search goes at most premise-depth-max lemmas deep (cyp.db), so that
+% it ends.  [premise-depth D]: D lemmas are being applied above this goal
+pred premise-depth o:int.
+premise-depth 0.
+
+% [subgoals GL]: the goals of a conjunction or of one side of a
+% disjunction, closed like premises at the same depth
+pred subgoals i:list sealed-goal.
+subgoals GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
+
 pred premises i:list sealed-goal.
-premises GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
+premises GL :-
+  premise-depth D, !, premise-depth-max Max, D < Max, D1 is D + 1,
+  premise-depth D1 => subgoals GL.
 
 pred close-tac i:goal, o:list sealed-goal.
 close-tac G [] :- close-default G.

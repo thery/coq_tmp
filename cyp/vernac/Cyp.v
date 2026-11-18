@@ -78,6 +78,14 @@ Elpi Db cyp.db lp:{{
   % those of prooftext (elpi/check.elpi)
   pred tactic-name o:string, o:string.
 
+  % [premise-depth-max N]: when a lemma is applied, its premises are
+  % closed by the rules, which may apply lemmas in turn: at most N
+  % lemmas deep (elpi/check.elpi).  A proof may change it with
+  %   Elpi Accumulate cyp.db lp:{{ :before "premise-depth-max" premise-depth-max 8 :- !. }}.
+  pred premise-depth-max o:int.
+  :name "premise-depth-max"
+  premise-depth-max 4.
+
   % the tactics tried when no rule closes a step, after the proof's own
   pred default-ltac o:string.
   default-ltac "cyp_tauto".
