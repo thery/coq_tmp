@@ -1,0 +1,61 @@
+% Writing JSON, for the machine-readable report of elpi-check (-json).
+%
+% A JSON value is built as its text: [of-string] quotes a string, [object]
+% and [array] put texts together.  Only what the report needs: strings,
+% integers, objects, arrays.
+
+namespace check.json {
+
+% [quoted S Q]: Q is the string S between double quotes, with the
+% backslash, the double quote, the newline and the tab escaped.  JSON and
+% Elpi share these escapes, so Q is also an Elpi string literal.
+func quoted string -> string.
+quoted S Q :-
+  rex.replace "\\\\" "\\\\\\\\" S S1,
+  rex.replace "\"" "\\\\\"" S1 S2,
+  rex.replace "\n" "\\\\n" S2 S3,
+  rex.replace "\t" "\\\\t" S3 S4,
+  Q is "\"" ^ S4 ^ "\"".
+
+% [of-string S J]: J is the JSON string S
+func of-string string -> string.
+of-string S J :- quoted S J.
+
+% [of-int N J]: J is the JSON number N
+func of-int int -> string.
+of-int N J :- J is int_to_string N.
+
+% A member of an object: its name and its value
+data field.
+symb string-field string -> string -> field.   % a string
+symb int-field string -> int -> field.         % an integer
+symb json-field string -> string -> field.     % a value already in JSON
+
+% [object Fields J]: J is the JSON object of Fields, in their order
+func object list field -> string.
+object Fields J :-
+  std.map Fields field-text Texts,
+  std.string.concat ", " Texts Inside,
+  J is "{" ^ Inside ^ "}".
+
+func field-text field -> string.
+field-text F T :- field-value F Name Value, of-string Name N, T is N ^ ": " ^ Value.
+
+% [field-value F Name Value]: the name of F and its value in JSON
+func field-value field -> string, string.
+field-value (string-field Name S) Name Value :- of-string S Value.
+field-value (int-field Name N) Name Value :- of-int N Value.
+field-value (json-field Name Value) Name Value.
+
+% [array Values J]: J is the JSON array of Values (JSON texts)
+func array list string -> string.
+array Values J :-
+  std.string.concat ", " Values Inside,
+  J is "[" ^ Inside ^ "]".
+
+% [print-object Fields]: print the object on one line (the report is one
+% object per line)
+func print-object list field.
+print-object Fields :- object Fields J, print J.
+
+}

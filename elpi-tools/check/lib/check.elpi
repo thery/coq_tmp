@@ -3,4 +3,5 @@
 % The checker is accumulated after reflect.elpi, the user's program and the
 % facts printed by elpi-reflect; its entry point is check.main.
 
-accumulate property, goals, random, types, generate, analyse, debug, shrink, run.
+accumulate property, goals, random, types, generate, analyse, debug, shrink, run,
+  json, syntax, replay, machine.

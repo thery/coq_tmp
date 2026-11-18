@@ -22,4 +22,4 @@
  (public_name elpi-check)
  (package elpi-tools)
  (modules embedded elpi_check_main)
- (libraries elpi elpi_reflect unix))
+ (libraries elpi elpi_reflect unix yojson))

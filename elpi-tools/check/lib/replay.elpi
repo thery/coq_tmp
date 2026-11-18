@@ -1,0 +1,89 @@
+% The goal that replays a counterexample, for the debugger.
+%
+% A property  pi X1 .. Xn\ P1 ==> .. ==> Pk ==> C  fails on values when a
+% solution of the premises falsifies the conclusion.  The goal that
+% replays it is the conjunction
+%
+%     P1', .., Pk', C'
+%
+% where the generated variables (from their type or by generated-by) are
+% replaced by their values, the computed ones stay variables with their
+% names, and a premise generated-by G becomes G (its values are given, G
+% only checks them).  Run, it computes the outputs as the test did and
+% fails on the conclusion; the debugger shows the steps and the failure.
+%
+% When the premises have several solutions, some of which satisfy the
+% conclusion, this goal would succeed.  Then the computed variables are
+% pinned to the values of the counterexample, after the premises:
+%
+%     P1', .., Pk', Y1 = v1, .., Ym = vm, C'
+%
+% so that the run backtracks into the premises until it reaches the
+% solution of the counterexample, and fails there.
+%
+% Example (demo/lists.elpi):
+%   pi L S N M\ sort L S ==> std.length L N ==> std.length S M ==> N = M
+% with L = [0, 0] gives
+%   sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M
+% and (demo/lambda.elpi, step has a correct solution N = c first)
+%   pi M T N\ generated-by (of M T) ==> step M N ==> of N T
+% with M = app (lam x\ c) c, T = base gives
+%   of (app (lam (c0 \ c)) c) base, step (app (lam (c0 \ c)) c) N,
+%   N = lam (c0 \ c), of N base
+
+namespace check.replay {
+
+% [goal I Vars Values Goal]: the goal text that replays the test of the
+% I-th property with Values (some V for a generated variable, none for a
+% computed one)
+pred goal i:int, i:list check.variable, i:list (option any), o:string.
+goal I Vars Values Goal :-
+  check.formula I F,
+  std.map Values check.value-or-variable Xs,
+  check.instantiate F Xs Body,
+  premises-and-conclusion Body Premises Conclusion,
+  if (fails-on-every-solution Premises Conclusion)
+     (Pins = [])
+     (pins I Values Xs Pins),
+  std.append Premises Pins BeforeConclusion,
+  std.append BeforeConclusion [Conclusion] Goals,
+  with-names Vars Xs (std.map Goals check.syntax.conjunct Texts),
+  std.string.concat ", " Texts Goal.
+
+% [premises-and-conclusion Body Premises Conclusion]: generated-by G is
+% taken as G
+pred premises-and-conclusion i:(pred), o:list (pred), o:(pred).
+premises-and-conclusion (generated-by G ==> B) [G | Ps] C :- !, premises-and-conclusion B Ps C.
+premises-and-conclusion (P ==> B) [P | Ps] C :- !, premises-and-conclusion B Ps C.
+premises-and-conclusion C [] C.
+
+% [fails-on-every-solution Premises Conclusion]: no solution of the
+% premises satisfies the conclusion (nothing is bound)
+pred fails-on-every-solution i:list (pred), i:(pred).
+fails-on-every-solution Premises Conclusion :-
+  not (std.forall Premises run-goal, Conclusion).
+
+% [run-goal G]: G, as a goal
+pred run-goal i:(pred).
+run-goal G :- G.
+
+% [pins I Values Xs Pins]: Y = v for each computed variable Y of Xs, v its
+% value in the counterexample
+pred pins i:int, i:list (option any), i:list any, o:list (pred).
+pins I Values Xs Pins :-
+  check.counterexample-values I Values Vs,
+  pins.of Values Xs Vs Pins.
+
+pred pins.of i:list (option any), i:list any, i:list any, o:list (pred).
+pins.of [] [] [] [].
+pins.of [none | Values] [X | Xs] [V | Vs] [(X = V) | Pins] :- !, pins.of Values Xs Vs Pins.
+pins.of [some _ | Values] [_ | Xs] [_ | Vs] Pins :- pins.of Values Xs Vs Pins.
+
+% [with-names Vars Xs G]: G, where each of Xs is printed with the name of
+% its variable
+pred with-names i:list check.variable, i:list any, i:(pred).
+with-names [check.variable Name _ _ | Vars] [X | Xs] G :- !,
+  check.syntax.named X Name => with-names Vars Xs G.
+with-names _ _ G :- G.
+
+}

@@ -1,0 +1,160 @@
+% Terms in Elpi's source syntax, on one line, so that Elpi (elpi-debug)
+% reads them back: the values of a counterexample in the report of -json,
+% and the goal that replays a counterexample (replay.elpi).
+%
+% term_to_string is made for people: it prints a string without its
+% quotes, breaks long lines, and writes a binder that ends an element of a
+% list or a conjunction without parentheses ([lam c0 \ c, c] reads back as
+% [lam (c0 \ (c, c))]).  This printer quotes the strings, never breaks a
+% line, and puts parentheses around every argument that is not atomic, so
+% that no precedence is relied upon.  The variables of the property are
+% printed with their names ([named]); a binder is printed c0, c1 ..
+% after its depth, as term_to_string does.
+%
+% It knows the terms built by the constructors of a program (constants
+% applied, lists, literals, binders) and the connectives of a goal (, ;
+% = pi sigma ==> => not, infix and prefix operators); a builtin of the
+% FFI (print, var, the cut ..) is printed by term_to_string.
+
+namespace check.syntax {
+
+% [named X Name]: X is a variable of the property, printed Name
+pred named o:any, o:string.
+
+% [bound X Name]: X is the variable of a binder being printed
+pred bound o:any, o:string.
+
+% [term X S]: S is X in source syntax
+func term any -> string.
+term X S :- var X, !, variable X S.
+term X S :- name X, !, eigenvariable X S.
+term X S :- is_cdata X "string", !, check.json.quoted X S.
+term X S :- is_cdata X _, !, term_to_string X S.
+term [] "[]" :- !.
+term [H | T] S :- !, list-text [H | T] S.
+term G S :- check.goals.conjuncts G Gs, !,
+  std.map Gs conjunct Ss, std.string.concat ", " Ss S.
+term (A = B) S :- !, binary "=" A B S.
+term (A ==> B) S :- !, binary "==>" A B S.
+term (pi x\ F x) S :- !, quantifier "pi" F S.
+term (sigma x\ F x) S :- !, quantifier "sigma" F S.
+term X S :- constant X K Args, !, term_to_string K Name, application Name Args S.
+term X S :- name X K Args, !, eigenvariable K Name, application Name Args S.
+term (x\ B x) S :- !, binder B S.
+term X S :- term_to_string X S.     % a builtin of the FFI
+
+% [variable X S]: a property's variable by its name, another one as
+% term_to_string names it (X0, X1 ..)
+func variable any -> string.
+variable X Name :- named Y Name, same_var X Y, !.
+variable X S :- term_to_string X S.
+
+% [eigenvariable X S]: the variable of a binder being printed, or another
+% eigenvariable as term_to_string names it
+func eigenvariable any -> string.
+eigenvariable X Name :- bound X Name, !.
+eigenvariable X S :- term_to_string X S.
+
+% [application Name Args S]: a constant or an eigenvariable applied to
+% Args; an infix operator with two arguments is written between them
+func application string, list any -> string.
+application Name [] Name :- !.
+application Name [A, B] S :- operator Name, !, binary Name A B S.
+application Name Args S :-
+  std.map Args argument As, std.string.concat " " [Name | As] S.
+
+% [operator Name]: Name is an infix operator of Elpi: written with symbols
+% (+, <, ; ..), or one of the words is, div, mod
+func operator string.
+operator "is" :- !.
+operator "div" :- !.
+operator "mod" :- !.
+operator Name :- not (rex.match "^[A-Za-z_]" Name).
+
+% [binary Op A B S]: A Op B, the two operands in parentheses when needed
+func binary string, any, any -> string.
+binary Op A B S :- operand A SA, operand B SB, S is SA ^ " " ^ Op ^ " " ^ SB.
+
+% [operand X S]: X as an operand of an infix operator: an application
+% binds tighter than any operator, so only an operation, a connective or a
+% binder is put in parentheses (an operation inside another one too: the
+% precedences of the operators are not relied upon)
+func operand any -> string.
+operand X S :- term X S0, if (tighter-than-operators X) (S = S0) (S is "(" ^ S0 ^ ")").
+
+% [quantifier Q F S]: pi x\ F x (or sigma), its variable named by depth
+func quantifier string, (any -> any) -> string.
+quantifier Q F S :- binder F B, S is Q ^ " " ^ B.
+
+% [binder B S]: x\ B x as c<depth> \ body
+func binder (any -> any) -> string.
+binder B S :-
+  binder-depth D, Name is "c" ^ int_to_string D,
+  (pi x\ bound x Name => term (B x) Body),
+  S is Name ^ " \\ " ^ Body.
+
+% [binder-depth D]: the number of binders around the term being printed
+func binder-depth -> int.
+binder-depth D :- std.findall (bound _ _) Bs, std.length Bs D.
+
+% [list-text L S]: [a, b] or, for a list whose tail is not [], [a, b | T]
+func list-text any -> string.
+list-text L S :- list-items L Items Tail,
+  std.map Items element Ss, std.string.concat ", " Ss Inside,
+  if (Tail == [])
+     (S is "[" ^ Inside ^ "]")
+     (term Tail T, S is "[" ^ Inside ^ " | " ^ T ^ "]").
+
+% [list-items L Items Tail]: L is Items followed by Tail ([] or not a list)
+func list-items any -> list any, any.
+list-items L [] L :- var L, !.
+list-items [X | L] [X | Items] Tail :- !, list-items L Items Tail.
+list-items L [] L.
+
+% [argument X S]: X as the argument of an application or an operator:
+% in parentheses unless atomic
+func argument any -> string.
+argument X S :- term X S0, if (atomic X) (S = S0) (S is "(" ^ S0 ^ ")").
+
+% [element X S]: an element of a list, separated by commas
+func element any -> string.
+element X S :- conjunct X S.
+
+% [conjunct G S]: a goal of a conjunction (or an element of a list): in
+% parentheses when it is a connective looser than the comma (; => ==>,
+% a conjunction, a quantifier, a binder)
+func conjunct any -> string.
+conjunct G S :- term G S0, if (looser-than-comma G) (S is "(" ^ S0 ^ ")") (S = S0).
+
+% [atomic X]: X needs no parentheses as an argument
+func atomic any.
+atomic X :- var X, !.
+atomic X :- name X, !.
+atomic X :- is_cdata X _, !.
+atomic [] :- !.
+atomic [_ | _] :- !.
+atomic X :- constant X _ [], !.
+
+% [tighter-than-operators X]: X is atomic or the application of a constant
+% (or an eigenvariable) that is not an operator
+func tighter-than-operators any.
+tighter-than-operators X :- atomic X, !.
+tighter-than-operators X :- constant X K _, !, term_to_string K Name, not (operator Name).
+tighter-than-operators X :- name X _ _.
+
+% [looser-than-comma G]: G is a conjunction, a disjunction, an
+% implication, a quantifier or a binder.  (The binder is tested last: the
+% pattern x\ B x also matches any constant applied, by eta.)
+func looser-than-comma any.
+looser-than-comma G :- var G, !, fail.
+looser-than-comma G :- check.goals.conjuncts G Gs_, !.
+looser-than-comma (A_ ==> B_) :- !.
+looser-than-comma (pi x\ F_ x) :- !.
+looser-than-comma (sigma x\ F_ x) :- !.
+looser-than-comma G :- constant G K [_, _], term_to_string K ";", !.
+looser-than-comma G :- atomic G, !, fail.
+looser-than-comma G :- constant G _ _, !, fail.
+looser-than-comma G :- name G _ _, !, fail.
+looser-than-comma (x\ B_ x).
+
+}

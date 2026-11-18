@@ -18,10 +18,20 @@ namespace check {
 data outcome.
 symb passed, discarded, failed : outcome.
 
+% How the report is written: for people, or one JSON object per line
+% (machine.elpi)
+data output.
+symb human-output, json-output : output.
+
+% What elpi-check does: run the tests, or only list the properties with
+% their variables
+data action.
+symb run-tests, list-properties : action.
+
 data settings.
-% [settings Tests MaxSize Seed Only]: Only is the name of the property to
-% check, or "" for all
-symb settings int -> int -> int -> string -> settings.
+% [settings Tests MaxSize Seed Only Output Action]: Only is the name of the
+% property to check, or "" for all
+symb settings int -> int -> int -> string -> output -> action -> settings.
 
 % A property of the program: its rule index, name, location, binder names
 data prop.
@@ -30,21 +40,26 @@ symb prop int -> string -> reflect.srcloc -> list reflect.binder -> prop.
 % [main Args]: check the properties of the program; fails if one fails
 pred main i:list string.
 main Args :-
-  parse-arguments Args (settings 100 20 1 "") Settings,
-  Settings = settings _ _ Seed Only,
+  parse-arguments Args (settings 100 20 1 "" human-output run-tests) Settings,
+  Settings = settings _ _ Seed Only Output Action,
   random.init Seed,
   properties Only Props,
-  if (Props = []) (print "elpi-check: no property found") true,
-  std.map Props (check-property Settings) Results,
-  summary Props Results.
+  if (Props = [], Output = human-output) (print "elpi-check: no property found") true,
+  if (Action = list-properties)
+     (std.forall Props (list-property Output))
+     (std.map Props (check-property Settings) Results,
+      summary Output Props Results).
 
-% [parse-arguments Args Default Settings]: -n N, -size S, -seed K, -p NAME
+% [parse-arguments Args Default Settings]: -n N, -size S, -seed K, -p NAME,
+% -json, -list
 pred parse-arguments i:list string, i:settings, o:settings.
 parse-arguments [] S S.
-parse-arguments ["-n", N | Rest] (settings _ Z K P) S :- !, parse-arguments Rest (settings {calc (string_to_int N)} Z K P) S.
-parse-arguments ["-size", Z | Rest] (settings N _ K P) S :- !, parse-arguments Rest (settings N {calc (string_to_int Z)} K P) S.
-parse-arguments ["-seed", K | Rest] (settings N Z _ P) S :- !, parse-arguments Rest (settings N Z {calc (string_to_int K)} P) S.
-parse-arguments ["-p", P | Rest] (settings N Z K _) S :- !, parse-arguments Rest (settings N Z K P) S.
+parse-arguments ["-n", N | Rest] (settings _ Z K P O A) S :- !, parse-arguments Rest (settings {calc (string_to_int N)} Z K P O A) S.
+parse-arguments ["-size", Z | Rest] (settings N _ K P O A) S :- !, parse-arguments Rest (settings N {calc (string_to_int Z)} K P O A) S.
+parse-arguments ["-seed", K | Rest] (settings N Z _ P O A) S :- !, parse-arguments Rest (settings N Z {calc (string_to_int K)} P O A) S.
+parse-arguments ["-p", P | Rest] (settings N Z K _ O A) S :- !, parse-arguments Rest (settings N Z K P O A) S.
+parse-arguments ["-json" | Rest] (settings N Z K P _ A) S :- !, parse-arguments Rest (settings N Z K P json-output A) S.
+parse-arguments ["-list" | Rest] (settings N Z K P O _) S :- !, parse-arguments Rest (settings N Z K P O list-properties) S.
 parse-arguments [A | _] _ _ :- std.fatal-error {calc ("elpi-check: unknown option " ^ A)}.
 
 % [properties Only Props]: the property rules of the program, in order
@@ -73,15 +88,28 @@ data result.
 % of the passed tests, or, for a failure, the number of the failing test
 symb result outcome -> int -> int -> int -> result.
 
+% [check-property Settings Prop Result]: the tests of Prop, reported
 pred check-property i:settings, i:prop, o:result.
-check-property Settings (prop I Name Loc Binders) Result :-
-  say ["property ", Name, " (", {location Loc}, ")"],
+check-property Settings Prop Result :-
+  Settings = settings Tests MaxSize _ _ Output _,
+  describe-property Output Prop Vars,
+  Prop = prop I _ _ _,
+  tests I Vars Tests MaxSize 1 0 0 0 Result,
+  report Output Prop Vars Result.
+
+% [list-property Output Prop]: Prop and its variables, without tests
+pred list-property i:output, i:prop.
+list-property Output Prop :- describe-property Output Prop _.
+
+% [describe-property Output Prop Vars]: Vars are the variables of Prop
+% (their types and origins), announced with the property
+pred describe-property i:output, i:prop, o:list check.variable.
+describe-property Output Prop Vars :-
+  Prop = prop I _ _ Binders,
+  announce-name Output Prop,
   formula I F,
   check.analyse.variables F Binders Vars,
-  Settings = settings Tests MaxSize _ _,
-  print-variables Vars,
-  tests I Vars Tests MaxSize 1 0 0 0 Result,
-  report I Vars Result.
+  announce-variables Output Prop Vars.
 
 % [tests I Vars Tests MaxSize T Passed Discarded SizeSum Result]: tests
 % number T to Tests
@@ -203,6 +231,80 @@ smaller-values [check.variable _ T _ | _] [some X | Vs] [some Y | Vs] :- check.s
 smaller-values [_ | Vars] [V | Vs] [V | Ws] :- smaller-values Vars Vs Ws.
 
 % -- Report ----------------------------------------------------------------
+%
+% Three moments, for each output (human here, json in machine.elpi):
+% [announce-name] before the analysis of the property, [announce-variables]
+% after it, [report-result] after the tests; then [print-summary].
+
+% [report Output Prop Vars Result]: the result of the tests; a failure is
+% shrunk first
+pred report i:output, i:prop, i:list check.variable, i:result.
+report Output Prop Vars (result (failed-with Values) P D T) :- !,
+  Prop = prop I _ _ _,
+  shrink I Vars Values 0 Small Steps,
+  report-result Output Prop Vars (failure Values Small Steps P D T).
+report Output Prop Vars (result passed 0 D _) :- !,
+  report-result Output Prop Vars (gave-up D).
+report Output Prop Vars (result passed P D Avg) :-
+  report-result Output Prop Vars (holds P D Avg).
+
+% What the report says of a property
+data verdict.
+% [holds Passed Discarded AverageSize]
+symb holds int -> int -> int -> verdict.
+% [gave-up Discarded]: no test satisfied the premises
+symb gave-up int -> verdict.
+% [failure First Shrunk Steps Passed Discarded Test]: the values of the
+% first counterexample, found at test number Test, and of the shrunk one
+symb failure list (option any) -> list (option any) -> int -> int -> int -> int -> verdict.
+
+pred announce-name i:output, i:prop.
+pred announce-variables i:output, i:prop, i:list check.variable.
+pred report-result i:output, i:prop, i:list check.variable, i:verdict.
+pred print-summary i:output, i:int, i:int.
+
+% [counterexample-values I Values Xs]: Xs are the values of all the
+% variables, the computed ones from a solution of the premises that
+% falsifies the conclusion
+pred counterexample-values i:int, i:list (option any), o:list any.
+counterexample-values I Values Xs :-
+  formula I F,
+  std.map Values value-or-variable Xs,
+  instantiate F Xs Body,
+  counterexample Body, !.
+
+% [summary Output Props Results]: fails when a property failed or gave up
+pred summary i:output, i:list prop, i:list result.
+summary Output Props Results :-
+  std.length Props N,
+  std.filter Results is-ok Oks, std.length Oks K,
+  print-summary Output K N,
+  K = N.
+
+func is-ok result.
+is-ok (result passed P _ _) :- P > 0.
+
+% -- The report for people -------------------------------------------------
+
+announce-name human-output (prop _ Name Loc _) :-
+  say ["property ", Name, " (", {location Loc}, ")"].
+
+announce-variables human-output _ Vars :-
+  std.map Vars describe Ds, std.string.concat ", " Ds D,
+  say ["  variables: ", {text D}].
+
+report-result human-output _ _ (gave-up D) :-
+  say ["  GAVE UP: no test satisfied the premises (", {text D}, " discarded)"].
+report-result human-output _ _ (holds P D Avg) :-
+  say ["  OK: passed ", {text P}, " tests, ", {text D}, " discarded; average size of the values ", {text Avg}].
+report-result human-output (prop I _ _ _) Vars (failure Values Small Steps P D T) :-
+  say ["  FAILED at test ", {text T}, " (", {text P}, " passed, ", {text D}, " discarded); first counterexample:"],
+  show-counterexample I Vars Values,
+  say ["  shrunk in ", {text Steps}, " steps to:"],
+  show-counterexample I Vars Small.
+
+print-summary human-output K N :-
+  say ["elpi-check: ", {text K}, " of ", {text N}, " properties hold"].
 
 func location reflect.srcloc -> string.
 location (reflect.srcloc File Line _) S :-
@@ -219,54 +321,23 @@ func text any -> string.
 text S S :- is_cdata S "string", !.
 text X S :- term_to_string X S.
 
-pred print-variables i:list check.variable.
-print-variables Vars :-
-  std.map Vars describe Ds, std.string.concat ", " Ds D,
-  say ["  variables: ", {text D}].
-
 func describe check.variable -> string.
 describe (check.variable Name T O) S :-
-  check.types.show T TS, origin-name O ON, S is Name ^ " : " ^ TS ^ " " ^ ON.
+  check.types.show T TS, origin-name O ON, S is Name ^ " : " ^ TS ^ " (" ^ ON ^ ")".
 
+% [origin-name O Name]: how a variable is obtained, as both reports say it
 func origin-name check.origin -> string.
-origin-name check.from-type "(generated)".
-origin-name check.from-premise "(computed)".
-origin-name check.from-generator "(generated-by)".
-
-pred report i:int, i:list check.variable, i:result.
-report _ _ (result passed P D _) :- P = 0, !,
-  say ["  GAVE UP: no test satisfied the premises (", {text D}, " discarded)"].
-report _ _ (result passed P D Avg) :- !,
-  say ["  OK: passed ", {text P}, " tests, ", {text D}, " discarded; average size of the values ", {text Avg}].
-report I Vars (result (failed-with Values) P D T) :-
-  say ["  FAILED at test ", {text T}, " (", {text P}, " passed, ", {text D}, " discarded); first counterexample:"],
-  show-counterexample I Vars Values,
-  shrink I Vars Values 0 Small Steps,
-  say ["  shrunk in ", {text Steps}, " steps to:"],
-  show-counterexample I Vars Small.
+origin-name check.from-type "generated".
+origin-name check.from-premise "computed".
+origin-name check.from-generator "generated-by".
 
 % [show-counterexample I Vars Values]: the values, with the computed ones
-% of one solution of the premises that falsifies the conclusion
 pred show-counterexample i:int, i:list check.variable, i:list (option any).
 show-counterexample I Vars Values :-
-  formula I F,
-  std.map Values value-or-variable Xs,
-  instantiate F Xs Body,
-  counterexample Body, !,
+  counterexample-values I Values Xs,
   std.forall2 Vars Xs show-value.
 
 pred show-value i:check.variable, i:any.
 show-value (check.variable Name _ _) X :- say ["    ", Name, " = ", {text X}].
-
-% [summary Props Results]: fails when a property failed or gave up
-pred summary i:list prop, i:list result.
-summary Props Results :-
-  std.length Props N,
-  std.filter Results is-ok Oks, std.length Oks K,
-  say ["elpi-check: ", {text K}, " of ", {text N}, " properties hold"],
-  K = N.
-
-func is-ok result.
-is-ok (result passed P _ _) :- P > 0.
 
 }

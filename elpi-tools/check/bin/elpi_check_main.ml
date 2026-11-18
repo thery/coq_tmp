@@ -6,12 +6,14 @@
       checker (check.elpi, written in Elpi), all written in a temporary
       directory with the embedded Elpi files;
    3. the query check.main [options] runs the tests and prints the report.
-   The exit code is 0 when every property holds, 1 otherwise. *)
+   The exit code is 0 when every property holds, 1 otherwise, 2 for an
+   error.  With -json the report is one JSON object per line
+   (lib/machine.elpi). *)
 
 open Elpi
 
 let usage =
-  "elpi-check [-n TESTS] [-size SIZE] [-seed SEED] [-p PROPERTY] [-I DIR].. [-D VAR].. [-v] FILE\n\
+  "elpi-check [-n TESTS] [-size SIZE] [-seed SEED] [-p PROPERTY] [-json] [-list] [-I DIR].. [-D VAR].. [-v] FILE\n\
    Checks the properties (property \"name\" Formula) of an Elpi program by random testing."
 
 (* -- Options ------------------------------------------------------------ *)
@@ -21,17 +23,22 @@ type options = {
   mutable paths : string list;         (* -I *)
   mutable defines : string list;       (* -D *)
   mutable verbose : bool;              (* -v: print the warnings *)
+  mutable json : bool;                 (* -json: the report as JSON lines *)
   mutable file : string option;
 }
 
 let parse_options () =
-  let o = { checker_args = []; paths = []; defines = []; verbose = false; file = None } in
+  let o = { checker_args = []; paths = []; defines = []; verbose = false; json = false; file = None } in
   let pass name = Arg.String (fun v -> o.checker_args <- o.checker_args @ [ name; v ]) in
   let spec = [
     ("-n", pass "-n", "TESTS  number of tests per property (default 100)");
     ("-size", pass "-size", "SIZE  maximal size of the generated values (default 20)");
     ("-seed", pass "-seed", "SEED  seed of the random generator (default 1)");
     ("-p", pass "-p", "PROPERTY  check only this property");
+    ("-json", Arg.Unit (fun () -> o.json <- true; o.checker_args <- o.checker_args @ [ "-json" ]),
+     " the report as one JSON object per line (see lib/machine.elpi)");
+    ("-list", Arg.Unit (fun () -> o.checker_args <- o.checker_args @ [ "-list" ]),
+     " list the properties and their variables, without testing them");
     ("-I", Arg.String (fun d -> o.paths <- o.paths @ [ d ]), "DIR  search accumulated files in DIR");
     ("-D", Arg.String (fun v -> o.defines <- v :: o.defines), "VAR  define VAR (for :if \"VAR\")");
     ("-v", Arg.Unit (fun () -> o.verbose <- true), " print the warnings of the compiler");
@@ -61,7 +68,12 @@ let driver ~program ~facts =
   let unit f = Printf.sprintf "accumulate %S.\n" (Filename.remove_extension f) in
   String.concat "" [ unit "reflect.elpi"; unit program; unit facts; unit "check.elpi" ]
 
-(* -- Running ------------------------------------------------------------- *)
+(* -- Errors -------------------------------------------------------------- *)
+
+(* An error that stops elpi-check (exit code 2): its messages. *)
+exception Stop of string list
+
+let error_text (e : API.Error.t) = Format.asprintf "%a" API.Error.pp e
 
 (* An error in the program shows twice: in the program and in its facts,
    which mention the same constants.  The errors located in the generated
@@ -72,8 +84,19 @@ let fail_with_errors ?(generated = "") errors =
   in
   let others = List.filter (fun e -> not (in_generated e)) errors in
   let shown = if others = [] then errors else others in
-  List.iter (fun e -> Format.eprintf "%a@." API.Error.pp e) shown;
-  exit 2
+  raise (Stop (List.map error_text shown))
+
+(* [report_stop ~json messages]: the messages on stderr; with -json, also
+   one object {"event": "error", "message"} on stdout, after the report
+   of the properties already checked (see lib/machine.elpi) *)
+let report_stop ~json messages =
+  List.iter prerr_endline messages;
+  if json then begin
+    let message = String.concat "\n" messages in
+    print_endline (Yojson.Safe.to_string (`Assoc [ ("event", `String "error"); ("message", `String message) ]))
+  end
+
+(* -- Running ------------------------------------------------------------- *)
 
 let run o file =
   let file = if Filename.is_relative file then Filename.concat (Sys.getcwd ()) file else file in
@@ -84,7 +107,7 @@ let run o file =
   let paths = dir :: o.paths in
   let facts =
     try Elpi_reflect.Reflect.reflect_files ~paths ~defines:o.defines ~builtins:true [ file ]
-    with Elpi_reflect.Reflect.Error msg -> prerr_endline msg; exit 2
+    with Elpi_reflect.Reflect.Error msg -> raise (Stop [ msg ])
   in
   let facts_file = Filename.concat dir "program.reflect.elpi" in
   write facts_file facts;
@@ -101,7 +124,7 @@ let run o file =
   in
   let ast, errors, warnings =
     try API.Parse.program ~flags ~elpi driver_file
-    with API.Parse.ParseError (loc, msg) -> Format.eprintf "%a: %s@." API.Ast.Loc.pp loc msg; exit 2
+    with API.Parse.ParseError (loc, msg) -> raise (Stop [ Format.asprintf "%a: %s" API.Ast.Loc.pp loc msg ])
   in
   show_warnings warnings;
   if errors <> [] then fail_with_errors errors;
@@ -124,7 +147,8 @@ let run o file =
 let () =
   let o, file = parse_options () in
   let code =
-    try run o file
-    with API.Error.ElpiError e -> Format.eprintf "%a@." API.Error.pp e; 2
+    try run o file with
+    | Stop messages -> report_stop ~json:o.json messages; 2
+    | API.Error.ElpiError e -> report_stop ~json:o.json [ error_text e ]; 2
   in
   exit code

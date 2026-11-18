@@ -32,11 +32,12 @@ property rev-identity (rev.elpi:20)
 elpi-check: 2 of 3 properties hold
 ```
 
-    elpi-check [-n TESTS] [-size SIZE] [-seed SEED] [-p PROPERTY] [-I DIR].. [-D VAR].. [-v] FILE
+    elpi-check [-n TESTS] [-size SIZE] [-seed SEED] [-p PROPERTY] [-json] [-list] [-I DIR].. [-D VAR].. [-v] FILE
 
 `-n` tests per property (100), `-size` largest size (20), `-seed` (1: the
 runs are reproducible), `-p` one property only, `-v` the compiler's
-warnings.  The exit code is 0 when every property holds, 1 otherwise, 2 for
+warnings, `-json` the report as JSON lines for tools (below), `-list` the
+properties and their variables only, without tests.  The exit code is 0 when every property holds, 1 otherwise, 2 for
 an error in the program.
 
 ## The syntax of properties, and why
@@ -101,6 +102,9 @@ signatures of `std.*`).  Everything else is Elpi, in [`lib/`](lib):
 | [`generate.elpi`](lib/generate.elpi) | random terms of a type, size-controlled, binders included |
 | [`shrink.elpi`](lib/shrink.elpi) | smaller candidates of a value |
 | [`run.elpi`](lib/run.elpi) | tests, shrinking, report |
+| [`machine.elpi`](lib/machine.elpi), [`json.elpi`](lib/json.elpi) | the report as JSON lines (`-json`) |
+| [`replay.elpi`](lib/replay.elpi) | the goal that replays a counterexample |
+| [`syntax.elpi`](lib/syntax.elpi) | terms in source syntax, on one line, read back by Elpi |
 | [`goals.elpi`](lib/goals.elpi), [`types.elpi`](lib/types.elpi), [`random.elpi`](lib/random.elpi) | helpers |
 
 A test at size S: the generated variables get random values; the
@@ -137,6 +141,89 @@ shrunk in 7 steps to `[0, 0, 0, 0, 0, 0, 0, 0]`.  It changes one variable at
 a time, so it can stop at a local minimum (`X = -1, L = [-1]` where
 `X = 0, L = [0]` also fails).
 
+## The report for tools (`-json`)
+
+With `-json` the report is one JSON object per line (for the VS Code
+extension, [`../dap/vscode`](../dap/README.md)); the human report is
+unchanged without it.
+
+```
+$ elpi-check -json lists.elpi        # demo/lists.elpi, the lines shortened
+{"event": "property", "name": "sort-length", "file": "/…/demo/lists.elpi", "line": 44,
+ "variables": [{"name": "L", "type": "list int", "kind": "generated"},
+               {"name": "S", "type": "list int", "kind": "computed"}, …]}
+{"event": "result", "name": "sort-length", "file": "/…/demo/lists.elpi", "line": 44,
+ "status": "failed", "passed": 22, "discarded": 0, "failed-at-test": 23,
+ "first":  [{"name": "L", "value": "[-4, 0, 0]"}, {"name": "S", "value": "[-4, 0]"}, …],
+ "shrunk": [{"name": "L", "value": "[0, 0]"}, {"name": "S", "value": "[0]"}, …],
+ "shrink-steps": 1,
+ "replay": "sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M"}
+{"event": "summary", "holds": 2, "properties": 3}
+```
+
+- `property`: before the tests of a property (with `-list`, the only line
+  of each property, no test is run): its name, file (absolute path), line,
+  and variables with their type and kind (`generated`, `generated-by`,
+  `computed`, as in the human report).
+- `result`: after its tests.  `status` is `ok` (with `average-size`),
+  `gave-up` (no test satisfied the premises) or `failed`, with the number of
+  the failing test, the first and the shrunk counterexamples (every
+  variable, the computed ones included, `name` and `value`), the steps of
+  the shrinking and `replay`, the goal that replays the shrunk
+  counterexample (below).
+- `summary`: at the end.
+- `error`: an error that stops the run (a compile error, or a runtime
+  error in a test, see Limits), `{"event": "error", "message": ..}`, written
+  by the driver; it belongs to the last property announced, the properties
+  after it are not checked.  The exit code is 2 as without `-json`.
+
+The values are in Elpi's source syntax, on one line, so that Elpi reads
+them back ([`lib/syntax.elpi`](lib/syntax.elpi)): strings in quotes, a
+binder in parentheses (`lam (c0 \ c)`), every non-atomic argument in
+parentheses.  (The human report prints them with Elpi's `term_to_string`,
+which writes a string without its quotes.)  A line that is not a JSON
+object is a print of the program under test, to be skipped.
+
+## Replaying a counterexample (the goal for the debugger)
+
+A property `pi X1 .. Xn\ P1 ==> .. ==> Pk ==> C` fails on some values when
+a solution of its premises falsifies its conclusion.  The goal that
+replays the shrunk counterexample is the conjunction of the premises and
+the conclusion,
+
+    P1', .., Pk', C'
+
+where the generated variables (from their type or by `generated-by`) are
+replaced by their values, the computed ones stay variables with their
+names, and a premise `generated-by G` becomes `G` (its values are given,
+`G` only checks them).  Run under [`elpi-debug`](../debug/README.md), it
+computes the outputs as the test did and fails on the conclusion, and the
+debugger shows the steps and explains the failure.  In
+[`../demo/lists.elpi`](../demo/lists.elpi), `sort-length` with `L = [0, 0]`:
+
+    sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M
+
+When the premises have several solutions, one of which satisfies the
+conclusion, that goal would succeed on it.  elpi-check runs the goal
+natively first; if it has a solution, the computed variables are pinned to
+their values in the counterexample, after the premises:
+
+    P1', .., Pk', Y1 = v1, .., Ym = vm, C'
+
+so that the run backtracks into the premises until it reaches the
+counterexample, and fails there.  In [`../demo/lambda.elpi`](../demo/lambda.elpi)
+the first reduction of `(λx. c) c` is the right one (`c`, well typed), so
+`preservation` replays as
+
+    of (app (lam (c0 \ c)) c) base, step (app (lam (c0 \ c)) c) N, N = lam (c0 \ c), of N base
+
+The goal is built from the formula as a term ([`lib/replay.elpi`](lib/replay.elpi)),
+not from its text, so it does not depend on how the property was written
+(layout, comments); it is printed by [`lib/syntax.elpi`](lib/syntax.elpi).
+Every replay goal of the tests fails under elpi-debug
+([`tests/json.t`](tests/json.t)).  The program needs `-I
+elpi-tools/check/lib` there (for `accumulate property`).
+
 ## Examples and tests
 
 [`tests/`](tests): `dune build @runtest` checks the reports against
@@ -153,6 +240,12 @@ a time, so it can stop at a local minimum (`X = -1, L = [-1]` where
   shrunk to `app (lam x\ c) c`; substitution with a generated binder
   `F : tm -> tm`; `copy` on terms generated from their type; a `pi` in the
   conclusion; a false property on all closed terms.
+- [`strings.elpi`](tests/strings.elpi): values that are strings (quoted in
+  the JSON report and the replay goal); [`crash.elpi`](tests/crash.elpi): a
+  runtime error in a property.
+- [`json.t`](tests/json.t): the `-json` and `-list` reports of these
+  programs, the error event, and every replay goal run under elpi-debug
+  (each fails).
 
 Measured on this (shared) laptop, two runs each: 0.3 s to read and compile
 the program and the checker; with 100 tests per property rev 1.3-1.5 s (3
@@ -179,3 +272,14 @@ properties), sort 1.2 s (4), stlc 2.9-3.8 s (6) with the checker's former solver
 - No exhaustive enumeration of small values (SmallCheck style), no
   checking of the properties at run time on a real execution (that needs
   the meta-interpreter of the debugger, section 6 of the design notes).
+- The human report prints values with Elpi's `term_to_string`: a string
+  without its quotes (`L = [, ]` for a list of two empty strings); the
+  `-json` report quotes them.
+- The source-syntax printer of `-json` and of the replay goal knows the
+  constructors, lists, literals, binders, the connectives (`,` `;` `=` `pi`
+  `sigma` `=>` `==>`) and the operators; a builtin of the FFI inside a
+  formula (`print`, `var`, the cut ..) is printed by `term_to_string` (its
+  strings without quotes).  A variable that is not one of the property
+  (an `_` of the formula, an unbound part of a computed value) is named as
+  `term_to_string` names it (`X0` ..), which could clash with a variable of
+  the property named so.
