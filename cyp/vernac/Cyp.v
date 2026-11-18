@@ -42,7 +42,8 @@ Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
 Ltac cyp_ring := ring.          Ltac cyp_field := field.
 Ltac cyp_tauto := tauto.        Ltac cyp_auto := auto.
 Ltac cyp_easy := easy.          Ltac cyp_reflexivity := reflexivity.
-Ltac cyp_assumption := assumption.
+Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
+Ltac cyp_firstorder := firstorder.
 (* used by cyp itself *)
 Ltac cyp_intros := progress intros.
 Ltac cyp_eapply t := eapply t.
@@ -76,6 +77,8 @@ Elpi Db cyp.db lp:{{
   tactic-name "tauto" "cyp_tauto".    tactic-name "auto" "cyp_auto".
   tactic-name "easy" "cyp_easy".      tactic-name "reflexivity" "cyp_reflexivity".
   tactic-name "assumption" "cyp_assumption".
+  tactic-name "congruence" "cyp_congruence".
+  tactic-name "firstorder" "cyp_firstorder".
 
   % the tactics tried when no rule closes a step, after the proof's own
   pred default-ltac o:string.

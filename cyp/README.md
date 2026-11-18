@@ -89,7 +89,8 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   name (see `named` below) if there are any, and only them; else the lemma
   X, applied, its premises closed by the rules or the default tactics;
   else the tactic X (an Ltac name, or `lia`, `lra`, `nia`, `nra`, `ring`,
-  `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`).  X
+  `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
+  `congruence`, `firstorder`).  X
   cannot be tactic code (`interval with (i_prec 100)`): Rocq-Elpi cannot
   yet turn a string into a tactic; name an Ltac definition instead.  A
   step with no `*by*` is closed by all the rules, then the tactics of
