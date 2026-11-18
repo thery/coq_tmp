@@ -1,0 +1,759 @@
+% debug.elpi: a debugger for standalone Elpi, written as a meta-interpreter
+% in Elpi.
+%
+% [debug.run Options Goal] runs Goal (a goal, a term of type (pred)) by
+% interpreting the clauses of the debugged program, which are given as data
+% (section 1).  Along the way it shows the four ports of each call (call,
+% exit, redo, fail), stops at breakpoints, counts calls and time per
+% predicate, and when Goal fails it explains the deepest failing goal: the
+% clauses tried and why each one did not apply.
+%
+% The design and its limits are described in README.md.
+
+namespace debug {
+
+% ===== 1. The debugged program, as data ==================================
+
+% [clause Head Body Origin]: one clause of the program; Origin says where
+% it comes from (for example "append.elpi:3").  Its variables are renamed
+% by Elpi each time the fact is used, as for a real clause.
+pred clause o:(pred), o:(pred), o:string.
+
+% The mode of an argument: [i] (input: the goal argument is matched, its
+% variables are not assigned) or [o] (output: it is unified).
+data mode.
+symb i mode.
+symb o mode.
+
+% [declared P Modes]: P is a predicate of the program, declared with these
+% modes.  A predicate that is only declared, with no clause, is reported as
+% such when it is called.
+pred declared o:any, o:list mode.
+
+% ===== 2. Options and state ===============================================
+
+data option.
+symb trace option.             % show every port of every call
+symb builtins option.          % also show the calls to builtins
+symb break string -> option.   % breakpoint on the predicate of this name
+symb interactive option.       % at a stop, read commands from stdin
+symb profile option.           % counts and time per predicate
+symb no-explain option.        % do not explain the final failure
+
+% [opt O]: option O is on (a local clause installed by [run]).
+pred opt o:option.
+
+% [state Name S]: the safes holding what must survive backtracking:
+% "deepest" (the deepest failure so far), "mode" (the stepping mode chosen
+% at a stop), "profile" (the port events), "warned" (the predicates
+% already reported as having no clause).
+pred state o:string, o:safe.
+
+% A box is one call of a predicate: its invocation number, its depth, its
+% predicate, the goal, the boxes it is called from (the nearest first) and
+% how it was entered ("call", or "wake" for a goal resumed by CHR).
+data box.
+symb box int -> int -> any -> (pred) -> list box -> string -> box.
+
+% A context is where a goal runs: its depth and the boxes above it.
+data ctx.
+symb ctx int -> list box -> ctx.
+
+% [current-ctx K Ctx]: the context of the innermost builtin call, so that a
+% program predicate called back from native code (from [std.map], [not], a
+% woken constraint...) gets a box at the right place; K is "call", or
+% "wake" for a goal suspended by declare_constraint.
+pred current-ctx o:string, o:ctx.
+
+% ===== 3. Entry point =====================================================
+
+% [run Options Goal] interprets Goal under Options.  It succeeds once per
+% solution; on final failure it explains the deepest failing goal.
+pred run i:list option, o:(pred).
+run Options Goal :-
+  new_safe Deepest, new_safe Mode, new_safe Prof, new_safe Warned,
+  stash_in_safe Mode "leap",
+  std.map Options (o\ c\ c = opt o) OptClauses,
+  std.append OptClauses
+    [state "deepest" Deepest, state "mode" Mode, state "profile" Prof,
+     state "warned" Warned, current-ctx "call" (ctx 0 [])]
+    Local,
+  Local => run-top Goal.
+
+% [run-top Goal]: the query, with its outcome reported.
+pred run-top o:(pred).
+run-top Goal :- compile (ctx 0 []) Goal Code, Code, report-solution.
+run-top _ :- report-final-failure, fail.
+
+% ===== 4. Clause bodies, and the cut ======================================
+%
+% The cut is the classic difficulty of a meta-interpreter: a cut in the
+% body of a clause must discard the remaining clauses of the goal being
+% solved and the choice points of the goals before it, but those choice
+% points belong to the interpreter, and Elpi has no "cut to here".
+%
+% Our solution: a body is not interpreted goal by goal, it is *compiled*
+% into a native Elpi goal in which each atomic goal G becomes
+% [debug.goal Ctx G] while the connectives (conjunction, pi, sigma, =>, ;)
+% and the cut itself stay native.  [backchain] calls the compiled body as
+% the last goal of its own clause: there, the native cut discards exactly
+% the remaining candidate clauses of [backchain] (the other clauses of the
+% user's goal) and the choice points of the goals before it in the body,
+% which is Elpi's semantics.  Elpi's cut is transparent through pi, sigma
+% and => and local to ; (checked on elpi 4.0.0), and keeping these
+% connectives native keeps that behaviour too.
+
+% [compile Ctx Body Code]: Code runs Body in context Ctx.
+pred compile i:ctx, i:(pred), o:(pred).
+compile Ctx G (debug.goal Ctx G) :- var G, !.
+compile Ctx ! (debug.cut-port Ctx, !) :- !.
+compile _ true true :- !.
+compile Ctx G Code :- conjuncts G Gs, !, compile-all Ctx Gs Codes, mk-conj Codes Code.
+compile Ctx (pi x\ F x) (pi x\ Code x) :- !, pi x\ compile Ctx (F x) (Code x).
+compile Ctx (sigma x\ F x) Code :- !, compile Ctx (F _) Code.
+compile Ctx (H => B) (debug.assume Ctx H Hyps, Hyps => Code) :- !, compile Ctx B Code.
+compile Ctx (A ; B) (CA ; CB) :- !, compile Ctx A CA, compile Ctx B CB.
+compile Ctx (declare_constraint G Keys) (debug.delay Ctx G Keys) :- !.
+compile Ctx G (debug.goal Ctx G).
+
+pred compile-all i:ctx, i:list (pred), o:list (pred).
+compile-all _ [] [].
+compile-all Ctx [G|Gs] [C|Cs] :- compile Ctx G C, compile-all Ctx Gs Cs.
+
+% [mk-conj Goals G]: G is the conjunction of Goals.
+pred mk-conj i:list (pred), o:(pred).
+mk-conj [] true.
+mk-conj [G] G :- !.
+mk-conj [G|Gs] (G, C) :- mk-conj Gs C.
+
+% [conjuncts G Gs]: G is a conjunction of the goals Gs.  Elpi represents
+% (A, B, C) as one n-ary node and has no builtin to take it apart, so each
+% arity needs its own pattern; up to 16 goals at the same level.
+pred conjuncts i:(pred), o:list (pred).
+conjuncts (A1,A2) [A1,A2].
+conjuncts (A1,A2,A3) [A1,A2,A3].
+conjuncts (A1,A2,A3,A4) [A1,A2,A3,A4].
+conjuncts (A1,A2,A3,A4,A5) [A1,A2,A3,A4,A5].
+conjuncts (A1,A2,A3,A4,A5,A6) [A1,A2,A3,A4,A5,A6].
+conjuncts (A1,A2,A3,A4,A5,A6,A7) [A1,A2,A3,A4,A5,A6,A7].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8) [A1,A2,A3,A4,A5,A6,A7,A8].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9) [A1,A2,A3,A4,A5,A6,A7,A8,A9].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16].
+
+% [structural G]: G is a connective, handled by [compile].
+pred structural i:(pred).
+structural ! :- !.
+structural G :- conjuncts G _, !.
+structural (pi x\ F_ x) :- !.
+structural (sigma x\ F_ x) :- !.
+structural (H_ => B_) :- !.
+structural (A_ ; B_) :- !.
+
+% ===== 5. Goals: program predicates and builtins ==========================
+
+% [goal Ctx G]: run the atomic goal G (or a goal only known at run time).
+pred goal i:ctx, i:(pred).
+goal _ G :- var G, !, std.fatal-error "debug: the goal is a variable".
+% A connective known only at run time (a goal passed in a variable) is
+% compiled now; a cut in it is local to this goal (see README).
+goal Ctx G :- structural G, !, compile Ctx G Code, Code.
+goal Ctx G :- program-goal G P, !, call Ctx P G "call".
+goal Ctx G :- native Ctx G.
+
+% [program-goal G P]: G is a call to the predicate P of the program (it
+% has clauses, a declaration, or hypothetical clauses in scope).
+pred program-goal i:(pred), o:any.
+program-goal G P :- constant G P _, bridged P.
+
+% [native Ctx G]: run the builtin (or external) goal G natively.  Program
+% predicates it calls back reach [bridge] with context Ctx.
+pred native i:ctx, i:(pred).
+native Ctx G :-
+  native-port "call" Ctx G,
+  new_safe Exited,
+  ( (current-ctx "call" Ctx => G), native-port "exit" Ctx G, stash_in_safe Exited "exited"
+  ; native-port "fail" Ctx G, if (never Exited) (note-native-failure Ctx G) true, fail ).
+
+% [delay Ctx G Keys]: suspend G on Keys with the real declare_constraint,
+% so that the CHR rules and the resumption are the engine's own; when G is
+% woken, its program predicate reaches [bridge], which gives it a box
+% entered through the "wake" port.
+pred delay i:ctx, i:(func), i:any.
+delay Ctx G Keys :-
+  native-port "delay" Ctx G,
+  (current-ctx "wake" Ctx => declare_constraint G Keys).
+
+% ===== 6. Bridges from native code back to the interpreter ===============
+%
+% Native code (std.map, not, findall, a woken constraint...) calls program
+% predicates natively.  Each program predicate P has one native clause, its
+% bridge  [P X1..XN :- debug.bridge (P X1..XN)],  which sends such a call
+% back to the interpreter.  The program's own clauses are not loaded
+% natively, so the bridge is the only native clause of P.
+%
+% The bridges of the declared predicates are static clauses, written in
+% the program's data file (by the driver).  They could be built here as
+% local clauses [pi x1..xN\ ...], and they are for the predicates that only
+% have hypothetical clauses, but elpi 4.0.0 crashes ("index out of bounds")
+% when a CHR rule fires on a constraint whose predicate has such a local
+% clause in scope (tests/elpi-bugs/chr-pi-local-clause.elpi).
+
+% [bridged P]: P is a predicate of the program (it has a bridge): a
+% declared predicate, or one given a bridge by [assume].
+pred bridged o:any.
+bridged P :- declared P _.
+
+pred bridge i:(pred).
+bridge G :- current-ctx Kind Ctx, !, program-goal G P, call Ctx P G Kind.
+
+% [bridge-clause P Args N C]: C is the local bridge of P applied to Args
+% and to N more arguments.
+func bridge-clause any, list any, int -> (pred).
+bridge-clause P Acc 0 (G :- debug.bridge G) :- !, std.rev Acc Args, constant G P Args.
+bridge-clause P Acc N (pi x\ C x) :- M is N - 1, pi x\ bridge-clause P [x|Acc] M (C x).
+
+% ===== 7. Calls: the box and backchaining =================================
+
+% [never S]: nothing was stashed in S.
+pred never i:safe.
+never S :- open_safe S [].
+
+% [call Ctx P G Kind]: the box of a call of the program predicate P, with
+% its four ports.  The redo port is the classic trick: once the box has
+% exited, backtracking into it first runs [port "redo"] and then fails into
+% the choice points left inside.  Only a call that fails without ever
+% exiting is a candidate for the failure explanation: a fail after a redo
+% is the normal end of an enumeration.  The safe Exited remembers the
+% exits across backtracking.
+pred call i:ctx, i:any, i:(pred), i:string.
+call (ctx D Above) P G Kind :-
+  new_int Id,
+  Box = box Id D P G Above Kind,
+  new_safe Exited,
+  ( port "call" Box,
+    backchain Box G,
+    stash_in_safe Exited "exited",
+    ( port "exit" Box ; port "redo" Box, fail )
+  ; port "fail" Box, if (never Exited) (note-failure Box) true, fail ).
+
+% [backchain Box G]: try the candidate clauses of G in Elpi's order (the
+% hypothetical clauses, most recent first, then the program clauses) and
+% run the body of each one whose head applies.  The compiled body is the
+% last goal, so that a cut in it is the native cut of this clause.
+pred backchain i:box, i:(pred).
+backchain (box _ D P _ Above _ as Box) G :-
+  modes-of P G Modes,
+  warn-if-no-clause P G,
+  candidate P G Origin Head Body,
+  try-port Box Origin Head,
+  head-matches Modes G Head,
+  D1 is D + 1,
+  compile (ctx D1 [Box|Above]) Body Code,
+  Code.
+
+% [candidate P G Origin Head Body]: by backtracking, the clauses that may
+% apply to G (a goal of P), with fresh variables.
+pred candidate i:any, i:(pred), o:string, o:(pred), o:(pred).
+candidate P _ Origin Head Body :- hyp P Origin C, clause-parts C Head Body.
+candidate _ G Origin Head Body :- fresh-goal G Head, clause Head Body Origin.
+
+% [fresh-goal G H]: H is G with all its arguments replaced by fresh
+% variables (so that [clause H _ _] lists every clause of the predicate).
+pred fresh-goal i:(pred), o:(pred).
+fresh-goal G H :- constant G P Args, fresh-list Args Fresh, constant H P Fresh.
+
+pred fresh-list i:list any, o:list any.
+fresh-list [] [].
+fresh-list [_|L] [_|F] :- fresh-list L F.
+
+% [clause-parts C Head Body]: the head and body of the clause C, with
+% fresh variables for its pi-bound variables.
+pred clause-parts i:(pred), o:(pred), o:(pred).
+clause-parts (pi x\ F x) H B :- !, clause-parts (F _) H B.
+clause-parts (H :- B) H B :- !.
+clause-parts H H true.
+
+% [warn-if-no-clause P G]: say once per predicate that P has no clause at
+% all; in Elpi such a call just fails, silently.
+pred warn-if-no-clause i:any, i:(pred).
+warn-if-no-clause P G :- candidate P G _ _ _, !.
+warn-if-no-clause P _ :- term_to_string P Name, state "warned" S, open_safe S L, std.mem! L Name, !.
+warn-if-no-clause P _ :-
+  term_to_string P Name, state "warned" S, stash_in_safe S Name,
+  say 0 ["debug warning: ", Name, " has no clause at all (in the program or in the hypotheses in scope); its calls fail"].
+
+% ===== 8. Head matching, with modes =======================================
+
+% [modes-of P G Modes]: the modes of P (all outputs when undeclared).
+pred modes-of i:any, i:(pred), o:list mode.
+modes-of P _ Modes :- declared P Modes, !.
+modes-of _ G Modes :- constant G _ Args, std.map Args (_\ m\ m = o) Modes.
+
+% [head-matches Modes G H]: the clause head H applies to the goal G.
+pred head-matches i:list mode, i:(pred), i:(pred).
+head-matches Modes G H :- constant G _ GArgs, constant H _ HArgs, args-match Modes GArgs HArgs.
+
+pred args-match i:list mode, i:list any, i:list any.
+args-match _ [] [].
+args-match Ms [A|As] [B|Bs] :- first-mode Ms M Ms1, arg-match M A B, args-match Ms1 As Bs.
+
+% [first-mode Ms M Rest]: the mode of the next argument (an output when the
+% declaration has no more modes).
+pred first-mode i:list mode, o:mode, o:list mode.
+first-mode [] o [].
+first-mode [M|Ms] M Ms.
+
+% [arg-match M A B]: the goal argument A and the head argument B agree in
+% mode M; for an input only the variables of the head are assigned.
+pred arg-match i:mode, i:any, i:any.
+arg-match i A B :- pattern_match A B.
+arg-match o A B :- A = B.
+
+% ===== 9. Hypothetical clauses ============================================
+
+% [hyp P Origin C]: the hypothetical clause C of the predicate P, added by
+% [=>]; Origin says which box added it.  The real [=>] installs these
+% facts, so they have Elpi's own scope and order.
+pred hyp o:any, o:string, o:(pred).
+
+% [assume Ctx H Hyps]: Hyps are the local clauses that represent the
+% hypothesis H (a clause or a list of clauses): one [hyp] fact per clause,
+% and a bridge for a predicate that had none.
+pred assume i:ctx, i:any, o:list (pred).
+assume Ctx H Hyps :-
+  hyp-list H Cs, hyp-origin Ctx Origin,
+  std.fold Cs [] (hyp-facts Origin) Hyps.
+
+pred hyp-list i:any, o:list (pred).
+hyp-list [] [] :- !.
+hyp-list [C|Cs] [C|Cs] :- !.
+hyp-list C [C].
+
+func hyp-origin ctx -> string.
+hyp-origin (ctx _ [box Id _ _ _ _ _|_]) S :- !, std.any->string Id I, S is "hypothesis added by #" ^ I.
+hyp-origin _ "hypothesis added by the query".
+
+func hyp-facts string, (pred), list (pred) -> list (pred).
+hyp-facts Origin C Hs Hs2 :-
+  clause-parts C H _, constant H P Args, !,
+  std.length Args N,
+  hyp-facts-of P N [hyp P Origin C | Hs] Hs2.
+hyp-facts _ C _ _ :- std.fatal-error-w-data "debug: unsupported hypothetical clause" C.
+
+% [hyp-facts-of P N Hs Hs1]: adds the bridge of P when it has none yet.
+func hyp-facts-of any, int, list (pred) -> list (pred).
+hyp-facts-of P _ Hs Hs :- bridged P, !.
+hyp-facts-of P N Hs [bridged P, B | Hs] :- bridge-clause P [] N B.
+
+% ===== 10. Ports: trace, breakpoints, stepping ============================
+
+% [say Depth Parts]: print the concatenation of Parts, indented by Depth.
+func say int, list string.
+say D Parts :- indent D Ind, std.string.concat "" [Ind|Parts] S, print S.
+
+func indent int -> string.
+indent N "" :- N =< 0, !.
+indent N S :- M is N - 1, indent M S1, S is S1 ^ "  ".
+
+func box-name int -> string.
+box-name Id S :- std.any->string Id I, S is "#" ^ I.
+
+% [port Kind Box]: Box passes the port Kind ("call", "exit", "redo",
+% "fail").  It is recorded for the profile, shown when tracing (or when the
+% predicate has a breakpoint), and stops at a breakpoint or in step mode.
+pred port i:string, i:box.
+port Kind Box :-
+  record-event Kind Box,
+  if (shown Box) (show-port Kind Box) true,
+  if (stops-at Kind Box) (stop Kind Box) true.
+
+% [shown Box]: the ports of Box are printed.
+pred shown i:box.
+shown _ :- opt trace, !.
+shown _ :- current-mode "creep", !.
+shown _ :- current-mode "trace", !.
+shown Box :- has-breakpoint Box.
+
+pred stops-at i:string, i:box.
+stops-at "call" Box :- has-breakpoint Box, !.
+stops-at _ _ :- opt interactive, current-mode "creep".
+
+pred has-breakpoint i:box.
+has-breakpoint (box _ _ P _ _ _) :- opt (break Name), term_to_string P Name, !.
+
+pred show-port i:string, i:box.
+show-port Kind (box Id D _ G _ Entry) :-
+  port-label Kind Entry Label,
+  say D [Label, " ", {box-name Id}, " ", {term_to_string G}].
+
+% [port-label Kind Entry Label]: a woken goal enters through "Wake", as the
+% RESUME port of ECLiPSe.
+func port-label string, string -> string.
+port-label "call" "wake" "Wake:" :- !.
+port-label "call" _ "Call:" :- !.
+port-label "exit" _ "Exit:" :- !.
+port-label "redo" _ "Redo:" :- !.
+port-label "fail" _ "Fail:" :- !.
+port-label K _ L :- L is K ^ ":".
+
+% [try-port Box Origin Head]: a candidate clause is tried (recorded for the
+% profile; shown in step mode only).
+pred try-port i:box, i:string, i:(pred).
+try-port Box Origin Head :-
+  record-event "try" Box,
+  if (current-mode "creep") (show-try Box Origin Head) true.
+
+pred show-try i:box, i:string, i:(pred).
+show-try (box Id D _ _ _ _) Origin Head :-
+  say D ["  try ", {box-name Id}, " ", Origin, ": ", {term_to_string Head}].
+
+% [cut-port Ctx]: a cut commits the box above Ctx to its current clause.
+pred cut-port i:ctx.
+cut-port (ctx _ [Box|_]) :- !, if (shown Box) (show-cut Box) true.
+cut-port _.
+
+pred show-cut i:box.
+show-cut (box Id D _ _ _ _) :- say D ["Cut:  ", {box-name Id}, " commits to its current clause"].
+
+% [native-port Kind Ctx G]: ports of builtins, shown with option builtins
+% (and delays with option trace).
+pred native-port i:string, i:ctx, i:(pred).
+native-port Kind Ctx G :-
+  record-native-event Kind Ctx G,
+  if (native-shown Kind) (show-native Kind Ctx G) true.
+
+pred native-shown i:string.
+native-shown _ :- opt builtins, !.
+native-shown "delay" :- opt trace.
+
+pred show-native i:string, i:ctx, i:(pred).
+show-native Kind (ctx D _) G :- say D ["(builtin) ", Kind, ": ", {term_to_string G}].
+
+% --- stepping modes and stops ---
+
+% [current-mode M]: the stepping mode chosen at the last stop: "leap"
+% (run to the next breakpoint), "creep" (stop at every port) or "trace"
+% (show every port, stop only at breakpoints).
+pred current-mode o:string.
+current-mode M :- state "mode" S, open_safe S L, last-of L M1, !, M = M1.
+
+% [last-of L X]: X is the last element of L (fails on the empty list, unlike
+% std.last).
+pred last-of i:list A, o:A.
+last-of [X] X :- !.
+last-of [_|L] X :- last-of L X.
+
+pred set-mode i:string.
+set-mode M :- state "mode" S, stash_in_safe S M.
+
+% [stop Kind Box]: show where we are; in interactive mode, read commands.
+pred stop i:string, i:box.
+stop Kind (box Id _ _ G _ _ as Box) :-
+  say 0 ["--- stop at ", Kind, " ", {box-name Id}, ": ", {term_to_string G}],
+  if (opt interactive) (command-loop Box) (show-context Box).
+
+pred show-context i:box.
+show-context Box :- show-backtrace Box, show-hyps, show-eigenvariables.
+
+pred command-loop i:box.
+command-loop Box :-
+  print "debug> (c)ontinue (s)tep (t)race (b)acktrace (h)yps (e)xplain (a)bort",
+  flush std_out,
+  read-command C,
+  run-command C Box.
+
+pred read-command o:string.
+read-command "c" :- eof std_in, !.
+read-command C :- input_line std_in C.
+
+pred run-command i:string, i:box.
+run-command "c" _ :- !, set-mode "leap".
+run-command "" _ :- !, set-mode "leap".
+run-command "s" _ :- !, set-mode "creep".
+run-command "t" _ :- !, set-mode "trace".
+run-command "b" Box :- !, show-backtrace Box, command-loop Box.
+run-command "h" Box :- !, show-hyps, show-eigenvariables, command-loop Box.
+run-command "e" Box :- !, show-deepest-failure, command-loop Box.
+run-command "a" _ :- !, halt "debug: aborted".
+run-command C Box :- print "unknown command" C, command-loop Box.
+
+pred show-backtrace i:box.
+show-backtrace (box _ _ _ _ Above _) :-
+  print "  called from:",
+  std.forall Above show-ancestor.
+
+func show-ancestor box.
+show-ancestor B :- say 2 [{ancestor-string B}].
+
+pred show-hyps.
+show-hyps :- print "  hypothetical clauses in scope (most recent first):", fail.
+show-hyps :- hyp _ Origin C, say 2 [{term_to_string C}, "    (", Origin, ")"], fail.
+show-hyps.
+
+pred show-eigenvariables.
+show-eigenvariables :- names L, say 1 ["eigenvariables in scope: ", {term_to_string L}].
+
+% ===== 11. Explaining failures ============================================
+%
+% Each failing box deeper than all the failures seen so far is recorded
+% with its explanation, computed at the fail port, where the goal is back
+% as it was called.  The safe keeps the record across backtracking.
+
+data failure.
+% [failure Depth Goal Above Reasons]: strings only (a safe keeps closed terms).
+symb failure int -> string -> list string -> list string -> failure.
+
+pred note-failure i:box.
+note-failure (box _ D _ _ _ _) :- deepest-depth M, D =< M, !.
+note-failure (box Id D P G Above _) :-
+  std.map Above ancestor-string AboveS,
+  explain-candidates P G Reasons,
+  std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S,
+  state "deepest" Safe,
+  stash_in_safe Safe (failure D S AboveS Reasons).
+
+pred note-native-failure i:ctx, i:(pred).
+note-native-failure (ctx D _) _ :- deepest-depth M, D =< M, !.
+note-native-failure (ctx D Above) G :-
+  std.map Above ancestor-string AboveS,
+  term_to_string G S,
+  state "deepest" Safe,
+  stash_in_safe Safe (failure D S AboveS
+    ["it is not a predicate of the program given to the debugger:",
+     "it ran natively (as a builtin) and failed"]).
+
+func ancestor-string box -> string.
+ancestor-string (box Id _ _ G _ _) S :- std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S.
+
+pred deepest-depth o:int.
+deepest-depth D :- state "deepest" S, open_safe S L, last-of L (failure D1 _ _ _), !, D = D1.
+deepest-depth -1.
+
+% [explain-candidates P G Reasons]: for each candidate clause of G, why it
+% does not apply, or that its body failed.  The reasons are gathered by
+% backtracking into a safe, not with std.findall, which would copy G and
+% so cut its variables off from the hypothetical clauses that share them.
+pred explain-candidates i:any, i:(pred), o:list string.
+explain-candidates P G Reasons :-
+  new_safe S,
+  std.ignore-failure! (explain-candidate P G R, stash_in_safe S R, fail),
+  open_safe S Rs,
+  explain-list P Rs Reasons.
+
+pred explain-list i:any, i:list string, o:list string.
+explain-list P [] Reasons :- !, no-clause-reason P Reasons.
+explain-list _ Rs ["clauses tried:" | Rs].
+
+pred explain-candidate i:any, i:(pred), o:string.
+explain-candidate P G Reason :-
+  modes-of P G Modes,
+  candidate P G Origin Head Body,
+  term_to_string Head HS,
+  candidate-verdict Modes G Head Body Verdict,
+  std.string.concat "" ["  ", Origin, ": ", HS, "\n        ", Verdict] Reason.
+
+pred candidate-verdict i:list mode, i:(pred), i:(pred), i:(pred), o:string.
+candidate-verdict Modes G Head _ V :- head-mismatch Modes G Head Why, !, V is "does not match: " ^ Why.
+candidate-verdict _ _ _ Body V :- term_to_string Body BS, V is "head matches; then its body failed: " ^ BS.
+
+pred no-clause-reason i:any, o:list string.
+no-clause-reason P [R] :- declared P _, !, term_to_string P S,
+  R is S ^ " is declared but has no clause at all (in the program or in the hypotheses in scope)".
+no-clause-reason P [R] :- term_to_string P S, R is S ^ " has no clause at all in scope".
+
+% [head-mismatch Modes G H Why]: the head H does not apply to G; Why names
+% the first argument that clashes and the smallest clashing subterms.
+pred head-mismatch i:list mode, i:(pred), i:(pred), o:string.
+head-mismatch Modes G H Why :-
+  constant G _ GArgs, constant H _ HArgs,
+  args-mismatch 1 Modes GArgs HArgs Why.
+
+pred args-mismatch i:int, i:list mode, i:list any, i:list any, o:string.
+args-mismatch N Ms [A|As] [B|Bs] Why :-
+  first-mode Ms M Ms1, arg-match M A B, !, N1 is N + 1, args-mismatch N1 Ms1 As Bs Why.
+args-mismatch N Ms [A|_] [B|_] Why :-
+  first-mode Ms M _,
+  clash M A B Clash,
+  std.string.concat "" ["argument ", {std.any->string N}, " (", {mode-name M}, "): ",
+    {term_to_string A}, " vs ", {term_to_string B}, Clash] Why.
+
+func mode-name mode -> string.
+mode-name i "input".
+mode-name o "output".
+
+% [clash M A B S]: S describes the smallest subterms of A and B that do not
+% agree in mode M (only the reason when they are A and B themselves).
+pred clash i:mode, i:any, i:any, o:string.
+clash M A B S :-
+  subterm-clash M A B A1 B1 Why, not (same_term A A1, same_term B B1), !,
+  std.string.concat "" [", at ", {term_to_string A1}, " vs ", {term_to_string B1}, Why] S.
+clash M A B Why :- subterm-clash M A B _ _ Why, !.
+clash _ _ _ "".
+
+% [subterm-clash M A B A1 B1 Why]: A1 and B1 are the clashing subterms.
+pred subterm-clash i:mode, i:any, i:any, o:any, o:any, o:string.
+subterm-clash i A B A B " (the goal has a variable where the clause expects a term: an input argument is only matched)" :-
+  var A, not (var B), !.
+subterm-clash _ A B A B " (occurs check, or an eigenvariable out of scope)" :- (var A ; var B), !.
+subterm-clash M A B A1 B1 Why :-
+  rigid-parts A HA AArgs, rigid-parts B HB BArgs,
+  same_term HA HB, std.length AArgs N, std.length BArgs N, !,
+  args-clash M AArgs BArgs A1 B1 Why.
+subterm-clash _ A B A B "".
+
+pred args-clash i:mode, i:list any, i:list any, o:any, o:any, o:string.
+args-clash M [A|As] [B|Bs] A1 B1 Why :- arg-match M A B, !, args-clash M As Bs A1 B1 Why.
+args-clash M [A|_] [B|_] A1 B1 Why :- subterm-clash M A B A1 B1 Why.
+
+% [rigid-parts T Head Args]: the head and arguments of a rigid term
+% (constant, eigenvariable or list cell).
+pred rigid-parts i:any, o:any, o:list any.
+rigid-parts T H Args :- constant T H Args, !.
+rigid-parts T H Args :- name T H Args, !.
+rigid-parts T list-cell [X, L1] :- not (var T), T = [X|L], !, std.unsafe-cast L L1.
+
+% the head that [rigid-parts] gives to list cells
+symb list-cell any.
+
+pred show-deepest-failure.
+show-deepest-failure :-
+  state "deepest" S, open_safe S L, last-of L (failure D G Above Reasons), !,
+  say 0 ["Deepest failure (depth ", {std.any->string D}, "): ", G],
+  show-above Above,
+  std.forall Reasons (r\ say 1 [r]).
+show-deepest-failure :- print "No goal failed at its first try: the query ran out of solutions by backtracking.".
+
+pred show-above i:list string.
+show-above [] :- !.
+show-above Above :- say 1 ["called from:"], std.forall Above (a\ say 2 [a]).
+
+% ===== 12. Outcome and profile ============================================
+
+pred report-solution.
+report-solution :- if (opt profile) show-profile true.
+
+pred report-final-failure.
+report-final-failure :-
+  print "debug: no (more) solution.",
+  if (opt no-explain) true show-deepest-failure,
+  if (opt profile) show-profile true.
+
+data event.
+% [event Kind Id Name Parent Time]: port Kind of box Id, of predicate Name,
+% whose caller is of predicate Parent, at Time.
+symb event string -> int -> string -> string -> float -> event.
+
+pred record-event i:string, i:box.
+record-event Kind (box Id _ P _ Above _) :- opt profile, !,
+  term_to_string P Name, parent-name Above Parent,
+  gettimeofday T, state "profile" S, stash_in_safe S (event Kind Id Name Parent T).
+record-event _ _.
+
+pred record-native-event i:string, i:ctx, i:(pred).
+record-native-event Kind (ctx _ Above) G :- opt profile, not (Kind = "delay"), !,
+  native-name G Name, parent-name Above Parent,
+  gettimeofday T, state "profile" S, stash_in_safe S (event Kind -1 Name Parent T).
+record-native-event _ _ _.
+
+% [native-name G Name]: the name of a builtin goal, for the profile.
+func native-name (pred) -> string.
+native-name G Name :- constant G P _, !, term_to_string P N, Name is N ^ " (builtin)".
+native-name (_ = _) "= (builtin)" :- !.
+native-name _ "other builtins".
+
+func parent-name list box -> string.
+parent-name [box _ _ P _ _ _|_] Name :- !, term_to_string P Name.
+parent-name [] "(query)".
+
+% Statistics of one predicate: calls, exits, redos, fails, clauses tried,
+% self time (seconds).
+data stats.
+symb stats int -> int -> int -> int -> int -> float -> stats.
+
+% [show-profile]: a flat profile.  Self time: the time between two
+% consecutive events goes to the predicate running then, which is the one
+% just called, redone or trying a clause, or the caller of the one that
+% just exited or failed.
+pred show-profile.
+show-profile :-
+  state "profile" S, open_safe S Events,
+  std.string.map.empty M0,
+  aggregate Events "(query)" -1.0 M0 M,
+  std.string.map.bindings M Rows,
+  print "Profile (ports per predicate; tries = clauses tried; self time):",
+  say 1 [{pad 30 "predicate"}, {padl 8 "calls"}, {padl 8 "exits"}, {padl 8 "redos"},
+         {padl 8 "fails"}, {padl 8 "tries"}, {padl 12 "time (ms)"}],
+  std.forall Rows show-row.
+
+pred aggregate i:list event, i:string, i:float, i:std.string.map stats, o:std.string.map stats.
+aggregate [] _ _ M M.
+aggregate [event Kind _ Name Parent T|Es] Running T0 M0 M :-
+  DT is T - T0,
+  elapsed T0 Running DT M0 M1,
+  count Kind Name M1 M2,
+  running-after Kind Name Parent Running1,
+  aggregate Es Running1 T M2 M.
+
+% [elapsed T0 Name DT M M1]: DT seconds go to Name (none before the first event).
+func elapsed float, string, float, std.string.map stats -> std.string.map stats.
+elapsed T0 _ _ M M :- T0 < 0.0, !.
+elapsed _ Name DT M M1 :- add-time Name DT M M1.
+
+func running-after string, string, string -> string.
+running-after "call" N _ N :- !.
+running-after "redo" N _ N :- !.
+running-after "try" N _ N :- !.
+running-after _ _ P P.
+
+func add-time string, float, std.string.map stats -> std.string.map stats.
+add-time Name DT M M1 :- get-stats Name M (stats C E R F Tr T), T1 is T + DT,
+  std.string.map.add Name (stats C E R F Tr T1) M M1.
+
+func count string, string, std.string.map stats -> std.string.map stats.
+count Kind Name M M1 :- get-stats Name M St, bump Kind St St1, std.string.map.add Name St1 M M1.
+
+func get-stats string, std.string.map stats -> stats.
+get-stats Name M St :- std.string.map.find Name M St, !.
+get-stats _ _ (stats 0 0 0 0 0 0.0).
+
+func bump string, stats -> stats.
+bump "call" (stats C E R F Tr T) (stats C1 E R F Tr T) :- !, C1 is C + 1.
+bump "exit" (stats C E R F Tr T) (stats C E1 R F Tr T) :- !, E1 is E + 1.
+bump "redo" (stats C E R F Tr T) (stats C E R1 F Tr T) :- !, R1 is R + 1.
+bump "fail" (stats C E R F Tr T) (stats C E R F1 Tr T) :- !, F1 is F + 1.
+bump "try"  (stats C E R F Tr T) (stats C E R F Tr1 T) :- !, Tr1 is Tr + 1.
+bump _ S S.
+
+func show-row pair string stats.
+show-row (pr Name (stats C E R F Tr T)) :-
+  Ms is T * 1000.0,
+  say 1 [{pad 30 Name}, {padl 8 {std.any->string C}}, {padl 8 {std.any->string E}},
+         {padl 8 {std.any->string R}}, {padl 8 {std.any->string F}},
+         {padl 8 {std.any->string Tr}}, {padl 12 {ms-string Ms}}].
+
+% [ms-string X S]: X with two decimals.
+func ms-string float -> string.
+ms-string X S :- N is truncate (X * 100.0), I is N div 100, F is N mod 100,
+  std.any->string F FD, two-digits FD FS,
+  S is {std.any->string I} ^ "." ^ FS.
+
+func two-digits string -> string.
+two-digits D S :- 1 is size D, !, S is "0" ^ D.
+two-digits D D.
+
+% [pad N S P]: S padded on the right to N characters; [padl] on the left.
+func pad int, string -> string.
+pad N S S :- L is size S, L >= N, !.
+pad N S P :- S1 is S ^ " ", pad N S1 P.
+
+func padl int, string -> string.
+padl N S S :- L is size S, L >= N, !.
+padl N S P :- S1 is " " ^ S, padl N S1 P.
+
+}

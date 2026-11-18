@@ -1,0 +1,23 @@
+% append.elpi as data for the debugger (written by hand until
+% elpi-tools/reflect produces it).  The declarations are kept: the terms of
+% the clauses need them.
+
+func append list A, list A -> list A.
+pred app -> list A, list A, list A.
+func rev list A -> list A.
+
+debug.declared append [debug.i, debug.i, debug.o].
+debug.declared app [debug.o, debug.o, debug.o].
+debug.declared rev [debug.i, debug.o].
+
+debug.clause (append [] L L) true "append.elpi:5".
+debug.clause (append [X|L] M [X|R]) (append L M R) "append.elpi:6".
+debug.clause (app [] L L) true "append.elpi:10".
+debug.clause (app [X|L] M [X|R]) (app L M R) "append.elpi:11".
+debug.clause (rev [] []) true "append.elpi:14".
+debug.clause (rev [X|L] R) (rev L RL, append RL [X] R) "append.elpi:15".
+
+% bridges: the only native clause of each predicate (see debug.elpi, section 6)
+append A B C :- debug.bridge (append A B C).
+app A B C :- debug.bridge (app A B C).
+rev A B :- debug.bridge (rev A B).

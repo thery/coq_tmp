@@ -1,0 +1,15 @@
+% lambda.elpi as data for the debugger (by hand until elpi-tools/reflect).
+data tm.
+symb app tm -> tm -> tm.
+symb lam (tm -> tm) -> tm.
+data ty.
+symb base ty.
+symb arr ty -> ty -> ty.
+pred of i:tm, o:ty.
+
+debug.declared of [debug.i, debug.o].
+debug.clause (of (app M N) T) (of M (arr S T), of N S) "lambda.elpi:13".
+debug.clause (of (lam F) (arr S T)) (pi x\ of x S => of (F x) T) "lambda.elpi:14".
+
+% bridges: the only native clause of each predicate (see debug.elpi, section 6)
+of A B :- debug.bridge (of A B).

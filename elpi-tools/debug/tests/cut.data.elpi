@@ -1,0 +1,41 @@
+% cut.elpi as data for the debugger (by hand until elpi-tools/reflect).
+pred mem o:int, o:list int.
+pred first i:int, i:list int, o:int.
+pred max-of i:int, i:int, o:int.
+pred under-pi o:int.
+pred hyp-fact o:int.
+pred under-impl o:int.
+pred in-or o:int.
+pred not-mem i:int, i:list int.
+
+debug.declared mem [debug.o, debug.o].
+debug.declared first [debug.i, debug.i, debug.o].
+debug.declared max-of [debug.i, debug.i, debug.o].
+debug.declared under-pi [debug.o].
+debug.declared hyp-fact [debug.o].
+debug.declared under-impl [debug.o].
+debug.declared in-or [debug.o].
+debug.declared not-mem [debug.i, debug.i].
+
+debug.clause (mem X [X|_]) true "cut.elpi:4".
+debug.clause (mem X [_|L]) (mem X L) "cut.elpi:5".
+debug.clause (first N L X) (mem X L, X > N, !) "cut.elpi:9".
+debug.clause (max-of X Y X) (X >= Y, !) "cut.elpi:13".
+debug.clause (max-of _ Y Y) true "cut.elpi:14".
+debug.clause (under-pi X) (pi y\ (mem X [1,2,3], !)) "cut.elpi:18".
+debug.clause (under-pi 7) true "cut.elpi:19".
+debug.clause (under-impl X) (hyp-fact 0 => (mem X [1,2,3], !)) "cut.elpi:23".
+debug.clause (under-impl 7) true "cut.elpi:24".
+debug.clause (in-or X) (mem X [1,2,3], ! ; X = 10) "cut.elpi:28".
+debug.clause (in-or 20) true "cut.elpi:29".
+debug.clause (not-mem X L) (not (mem X L)) "cut.elpi:33".
+
+% bridges: the only native clause of each predicate (see debug.elpi, section 6)
+mem A B :- debug.bridge (mem A B).
+first A B C :- debug.bridge (first A B C).
+max-of A B C :- debug.bridge (max-of A B C).
+under-pi A :- debug.bridge (under-pi A).
+hyp-fact A :- debug.bridge (hyp-fact A).
+under-impl A :- debug.bridge (under-impl A).
+in-or A :- debug.bridge (in-or A).
+not-mem A B :- debug.bridge (not-mem A B).

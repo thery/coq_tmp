@@ -1,0 +1,22 @@
+% chr.elpi as data for the debugger (by hand until elpi-tools/reflect).
+% The CHR rules stay native: at depth 1 the engine runs them.
+constraint even odd {
+  rule (even X) (odd X) <=> (print "CHR: both even and odd", fail).
+}
+func even int.
+func odd int.
+pred double o:int, o:int.
+
+debug.declared even [debug.i].
+debug.declared odd [debug.i].
+debug.declared double [debug.o, debug.o].
+debug.clause (even X) (var X, !, declare_constraint (even X) [X]) "chr.elpi:10".
+debug.clause (even X) (0 is X mod 2) "chr.elpi:11".
+debug.clause (odd X) (var X, !, declare_constraint (odd X) [X]) "chr.elpi:14".
+debug.clause (odd X) (1 is X mod 2) "chr.elpi:15".
+debug.clause (double X Y) (even Y, Y is 2 * X) "chr.elpi:18".
+
+% bridges: the only native clause of each predicate (see debug.elpi, section 6)
+even A :- debug.bridge (even A).
+odd A :- debug.bridge (odd A).
+double A B :- debug.bridge (double A B).

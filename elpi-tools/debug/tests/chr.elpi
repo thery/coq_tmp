@@ -1,0 +1,18 @@
+% CHR: parity constraints on unknown integers.  even X and odd X on an
+% unassigned X are suspended; a rule rejects a variable that is both; an
+% assignment wakes the suspended goals.
+
+constraint even odd {
+  rule (even X) (odd X) <=> (print "CHR: both even and odd", fail).
+}
+
+func even int.
+even X :- var X, !, declare_constraint (even X) [X].
+even X :- 0 is X mod 2.
+
+func odd int.
+odd X :- var X, !, declare_constraint (odd X) [X].
+odd X :- 1 is X mod 2.
+
+pred double o:int, o:int.
+double X Y :- even Y, Y is 2 * X.
