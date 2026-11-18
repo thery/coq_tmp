@@ -33,6 +33,9 @@ eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4)"
 make          # builds Explain.vo, then the example files, which write examples/*.md
 ```
 
+[THESIS.md](THESIS.md) maps each rule and figure of Coscoy's thesis to the
+predicate that implements it, and to the example that reproduces it.
+
 Files: `Explain.v` (the command) and the writer in `elpi/`, one file per
 subject, loaded in this order:
 
