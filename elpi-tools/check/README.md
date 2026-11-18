@@ -154,9 +154,10 @@ a time, so it can stop at a local minimum (`X = -1, L = [-1]` where
   `F : tm -> tm`; `copy` on terms generated from their type; a `pi` in the
   conclusion; a false property on all closed terms.
 
-Measured on this laptop (100 tests per property, 0.3 s of it to read and
-compile the program and the checker): rev 1.3 s (3 properties), sort 1.2 s
-(4), stlc 2.9 s (6); with 1000 tests: rev 9.8 s, stlc 16.5 s, 93 MB.
+Measured on this (shared) laptop, two runs each: 0.3 s to read and compile
+the program and the checker; with 100 tests per property rev 1.3-1.5 s (3
+properties), sort 1.2 s (4), stlc 2.9-3.8 s (6); with 1000 tests rev
+9.8-10.4 s, sort 7.4 s, stlc 15-16.5 s, at most 95 MB of memory.
 
 ## Limits (said plainly)
 

@@ -69,7 +69,8 @@ formula I F :- reflect.clause property I _ _ (property _ F) _, !.
 % -- One property ----------------------------------------------------------
 
 data result.
-% [result Outcome Passed Discarded AverageSize]
+% [result Outcome Passed Discarded N]: N is the average size of the values
+% of the passed tests, or, for a failure, the number of the failing test
 symb result outcome -> int -> int -> int -> result.
 
 pred check-property i:settings, i:prop, o:result.
