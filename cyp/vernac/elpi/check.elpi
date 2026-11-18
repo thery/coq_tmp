@@ -51,8 +51,14 @@ premises GL :-
 pred close-tac i:goal, o:list sealed-goal.
 close-tac G [] :- close-default G.
 
-% the rules, else the default tactics, first those of the proof
+% a hypothesis that is the goal (cyp_hypothesis, Cyp.v; cheap, and it often happens: the claims of
+% the steps before are hypotheses), else the rules, else the default
+% tactics, first those of the proof.  The check comes first because a
+% default tactic may take very long on a goal it would close: tauto runs
+% for minutes on ((A \/ B) \/ C -> A \/ B -> A \/ B \/ C) ->
+% ((A \/ B) \/ C -> A \/ B \/ C) -> (A \/ B) \/ C -> A \/ B \/ C
 pred close-default i:goal.
+close-default G :- coq.ltac.call-ltac1 "cyp_hypothesis" G [], !.
 close-default G :- close G, !.
 close-default G :- proof-default N, run-name N G, !.
 close-default G :- default-ltac N, coq.ltac.call-ltac1 N G [], !.

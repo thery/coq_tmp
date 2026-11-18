@@ -47,6 +47,10 @@ Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
    of xtext's half_le it ran over 30 s and took up to 7 GB) *)
 Ltac cyp_firstorder := bounded_firstorder.
 (* used by cyp itself *)
+(* a hypothesis that is the goal, when the goal has no existential variable
+   (on a premise of a lemma still to be found, a hypothesis would fix it) *)
+Ltac cyp_hypothesis :=
+  lazymatch goal with |- ?g => tryif has_evar g then fail else assumption end.
 Ltac cyp_intros := progress intros.
 Ltac cyp_eapply t := eapply t.
 Ltac cyp_split := split.
