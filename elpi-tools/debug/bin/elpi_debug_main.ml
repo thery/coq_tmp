@@ -48,6 +48,12 @@ let spec =
       ("-i", Arg.Unit (fun () -> add_option "debug.interactive"), " at a stop, read commands from stdin");
       ("-profile", Arg.Unit (fun () -> add_option "debug.profile"), " count ports and time per predicate");
       ("-no-explain", Arg.Unit (fun () -> add_option "debug.no-explain"), " do not explain a failure");
+      ( "-random",
+        Arg.Int (fun s -> add_option "debug.random-order"; add_option (Printf.sprintf "debug.seed %d" s)),
+        "SEED try the candidate clauses in a random order (strategy for generation)" );
+      ("-first", Arg.Unit (fun () -> add_option "debug.first-solution"), " keep the first solution of each call");
+      ("-max-depth", Arg.Int (fun n -> add_option (Printf.sprintf "debug.max-depth %d" n)), "N calls deeper than N fail");
+      ("-ignore-cut", Arg.Unit (fun () -> add_option "debug.ignore-cut"), " a cut does nothing");
       ("-all", Arg.Set all_solutions, " print all the solutions (default: the first)");
       ("-n", Arg.Set_int max_solutions, "N at most N solutions with -all or -compare (default 100)");
       ("-native", Arg.Unit (fun () -> mode := Native), " run with the real engine instead");

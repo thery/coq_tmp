@@ -31,10 +31,10 @@ program-clause P Head Body Origin :-
 % only when shown.
 data origin.
 symb at reflect.srcloc -> origin.
-symb added-by string -> origin.
+symb added-by string -> int -> origin.   % its text, a number of its own
 
 func origin-string origin -> string.
-origin-string (added-by S) S.
+origin-string (added-by S _) S.
 origin-string (at (reflect.srcloc File Line _)) S :-
   rex.replace "^.*/" "" File Base,
   S is Base ^ ":" ^ {std.any->string Line}.
@@ -95,6 +95,12 @@ symb break string -> option.   % breakpoint on the predicate of this name
 symb interactive option.       % at a stop, read commands from stdin
 symb profile option.           % counts and time per predicate
 symb no-explain option.        % do not explain the final failure
+% The strategy (the defaults are Elpi's: rules in order, with backtracking):
+symb random-order option.      % try the candidate clauses in a random order
+symb seed int -> option.       % seed of the random order
+symb first-solution option.    % keep the first solution of each call (no redo)
+symb max-depth int -> option.  % calls deeper than this fail
+symb ignore-cut option.        % a cut does nothing (every clause is a candidate)
 
 % [opt O]: option O is on (a local clause installed by [run]).
 pred opt o:option.
@@ -102,6 +108,13 @@ pred opt o:option.
 % [quiet]: no option shows or records ports (installed by [run]), so the
 % ports do nothing: the fast path.
 pred quiet.
+
+% [seed-random Options]: initialise the random generator with option seed N;
+% without it the generator is left as it is (a caller such as a property
+% checker seeds it itself).
+pred seed-random i:list option.
+seed-random Options :- std.mem Options (seed N), !, random.init N.
+seed-random _.
 
 pred quiet-flag i:list option, o:list (pred).
 quiet-flag Options [] :- std.exists! Options noisy, !.
@@ -151,6 +164,7 @@ pred current-ctx o:string, o:ctx.
 pred run i:list option, o:(pred).
 run Options Goal :-
   declarations Decls,
+  seed-random Options,
   new_safe Deepest, new_safe Mode, new_safe Prof, new_safe Warned,
   stash_in_safe Mode "leap",
   std.map Options (o\ c\ c = opt o) OptClauses,
@@ -188,6 +202,7 @@ run-top _ :- report-final-failure, fail.
 :nooc
 pred compile o:ctx, i:(pred), o:(pred).
 compile Ctx G (debug.goal Ctx G) :- var G, !.
+compile _ ! true :- opt ignore-cut, !.
 compile Ctx ! (debug.cut-port Ctx, !) :- !.
 compile _ true true :- !.
 compile Ctx G Code :- conjuncts G Gs, !, compile-all Ctx Gs Codes, mk-conj Codes Code.
@@ -380,7 +395,14 @@ run-box Box G :-
 :nooc
 pred box-ports i:safe, o:box, i:(pred).
 box-ports Exited Box G :-
-  port "call" Box, backchain Box G, stash_in_safe Exited "exited", exit-or-redo Box.
+  port "call" Box, solutions Box G, stash_in_safe Exited "exited", exit-or-redo Box.
+
+% [solutions Box G]: the solutions of G by backchaining, or only the first
+% one with option first-solution (a cut here discards those choice points).
+:nooc
+pred solutions o:box, i:(pred).
+solutions Box G :- opt first-solution, !, backchain Box G, !.
+solutions Box G :- backchain Box G.
 box-ports Exited Box _ :- port "fail" Box, note-failure-if-first Exited Box, fail.
 
 :nooc
@@ -397,7 +419,8 @@ pred backchain o:box, i:(pred).
 backchain Box G :-
   box-parts Box Id D P Above,
   modes-of P G Modes,
-  candidate P G Origin Head Body,
+  within-depth D,
+  strategy-candidate P G Origin Head Body,
   try-port Box Origin Head,
   head-matches Modes G Head,
   D1 is D + 1,
@@ -417,6 +440,49 @@ box-id-goal (box Id _ _ G _ _) Id G.
 :nooc
 pred box-parts o:box, o:int, o:int, o:any, o:list frame.
 box-parts (box Id D P _ Above _) Id D P Above.
+
+% [within-depth D]: a call at depth D may run (option max-depth).
+pred within-depth i:int.
+within-depth D :- opt (max-depth N), !, D =< N.
+within-depth _.
+
+% [strategy-candidate P G Origin Head Body]: the candidates of G in the
+% order of the strategy: Elpi's, or random (option random-order).
+pred strategy-candidate i:any, i:(pred), o:origin, o:(pred), o:(pred).
+strategy-candidate P G Origin Head Body :- opt random-order, !,
+  candidate-refs P Refs, shuffle Refs Shuffled,
+  std.mem Shuffled Ref, candidate-of-ref P Ref Origin Head Body.
+strategy-candidate P G Origin Head Body :- candidate P G Origin Head Body.
+
+% A reference to a candidate: a hypothetical clause by its number, or a
+% rule of the program by its index.  (References, since std.findall would
+% copy the hypothetical clauses and cut their variables off.)
+data candidate-ref.
+symb hyp-ref int -> candidate-ref.
+symb rule-ref int -> candidate-ref.
+
+pred candidate-refs i:any, o:list candidate-ref.
+candidate-refs P Refs :-
+  std.findall (hyp P (added-by _ _) _) Hs,
+  std.map Hs (h\ r\ sigma K\ h = hyp _ (added-by _ K) _, r = hyp-ref K) HRefs,
+  std.findall (reflect.clause P _ _ _ _ _) Rs,
+  std.map Rs (c\ r\ sigma I\ c = reflect.clause _ I _ _ _ _, r = rule-ref I) RRefs,
+  std.append HRefs RRefs Refs.
+
+pred candidate-of-ref i:any, i:candidate-ref, o:origin, o:(pred), o:(pred).
+candidate-of-ref P (hyp-ref K) (added-by S K) Head Body :-
+  hyp P (added-by S K) C, !, clause-parts C Head Body.
+candidate-of-ref P (rule-ref I) (at Loc) Head Body :-
+  reflect.clause P I Loc _ Head Body, constant Head Q _, same_term Q P, !.
+
+% [shuffle L S]: S is L in a random order.
+pred shuffle i:list A, o:list A.
+shuffle [] [] :- !.
+shuffle L [X|S] :- std.length L N, random.int N K, take-nth K L X Rest, shuffle Rest S.
+
+pred take-nth i:int, i:list A, o:A, o:list A.
+take-nth 0 [X|L] X L :- !.
+take-nth K [Y|L] X [Y|R] :- K1 is K - 1, take-nth K1 L X R.
 
 % [candidate P G Origin Head Body]: by backtracking, the clauses that may
 % apply to G (a goal of P), with fresh variables.
@@ -501,8 +567,16 @@ func hyp-facts string, (pred), list (pred) -> list (pred).
 hyp-facts Origin C Hs Hs2 :-
   clause-parts C H _, constant H P Args, !,
   std.length Args N,
-  hyp-facts-of P N [hyp P (added-by Origin) C | Hs] Hs2.
+  hyp-number K,
+  hyp-facts-of P N [hyp P (added-by Origin K) C | Hs] Hs2.
 hyp-facts _ C _ _ :- std.fatal-error-w-data "debug: unsupported hypothetical clause" C.
+
+% [hyp-number K]: a number of its own for a hypothetical clause, used by
+% the random order only (elsewhere 0, so that the boxes keep consecutive
+% numbers).
+pred hyp-number o:int.
+hyp-number K :- opt random-order, !, new_int K.
+hyp-number 0.
 
 % [hyp-facts-of P N Hs Hs1]: adds the bridge of P when it has none yet.
 func hyp-facts-of any, int, list (pred) -> list (pred).
@@ -722,7 +796,7 @@ pred note-failure o:box.
 note-failure (box _ D _ _ _ _) :- deepest-depth M, D =< M, !.
 note-failure (box Id D P G Above _) :-
   std.map Above ancestor-string AboveS,
-  explain-candidates P G Reasons,
+  failure-reasons D P G Reasons,
   std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S,
   state "deepest" Safe,
   stash_in_safe Safe (failure D S AboveS Reasons).
@@ -750,6 +824,12 @@ ancestor-string (frame Id _ _ G) S :- std.string.concat "" [{box-name Id}, " ", 
 pred deepest-depth o:int.
 deepest-depth D :- state "deepest" S, open_safe S L, last-of L (failure D1 _ _ _), !, D = D1.
 deepest-depth -1.
+
+% [failure-reasons D P G Reasons]: why the call G at depth D failed.
+pred failure-reasons i:int, i:any, i:(pred), o:list string.
+failure-reasons D _ _ [R] :- not (within-depth D), !, opt (max-depth N),
+  R is "the depth bound stops it: calls deeper than " ^ {std.any->string N} ^ " fail (option max-depth)".
+failure-reasons _ P G Reasons :- explain-candidates P G Reasons.
 
 % [explain-candidates P G Reasons]: for each candidate clause of G, why it
 % does not apply, or that its body failed.  The reasons are gathered by

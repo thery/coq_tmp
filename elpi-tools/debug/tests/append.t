@@ -119,3 +119,27 @@ The profile (times masked, they vary):
     rev                                  9       9       0       0      17 T
   Solution 1:
     R = [8, 7, 6, 5, 4, 3, 2, 1]
+
+The strategy can change: random order of the candidate clauses (seeded),
+first solution of each call only, a depth bound (the strategy of a
+generator, as in elpi-tools/check):
+
+  $ for s in 1 2 3; do elpi-debug -random $s -first append.elpi 'app X Y [1,2,3]'; done
+  Solution 1:
+    X = []
+    Y = [1, 2, 3]
+  Solution 1:
+    X = [1, 2, 3]
+    Y = []
+  Solution 1:
+    X = []
+    Y = [1, 2, 3]
+
+  $ elpi-debug -max-depth 1 append.elpi 'app [1,2] Y Z'
+  debug: no (more) solution.
+  Deepest failure (depth 2): #3 app [] X0 X1
+    called from:
+      #2 app [2] X0 [2 | X1]
+      #1 app [1, 2] X0 [1, 2 | X1]
+    the depth bound stops it: calls deeper than 1 fail (option max-depth)
+  No solution.
