@@ -12,6 +12,9 @@
 % The size grows from 1 to the maximum along the tests.  A failing test is
 % shrunk: its values are replaced, greedily, by smaller candidates for as
 % long as the test still fails.
+% Each property draws its values from its own random stream, started from
+% the seed and its name (check.random.start): it gets the same values when
+% it is run alone (-p) as in its file.
 
 namespace check {
 
@@ -42,13 +45,12 @@ pred main i:list string.
 main Args :-
   parse-arguments Args (settings 100 20 1 "" human-output run-tests) Settings,
   Settings = settings _ _ Seed Only Output Action,
-  random.init Seed,
   properties Only Props,
   if (Props = [], Output = human-output) (print "elpi-check: no property found") true,
   if (Action = list-properties)
      (std.forall Props (list-property Output))
      (std.map Props (check-property Settings) Results,
-      summary Output Props Results).
+      summary Output Seed Props Results).
 
 % [parse-arguments Args Default Settings]: -n N, -size S, -seed K, -p NAME,
 % -json, -list
@@ -91,9 +93,10 @@ symb result outcome -> int -> int -> int -> result.
 % [check-property Settings Prop Result]: the tests of Prop, reported
 pred check-property i:settings, i:prop, o:result.
 check-property Settings Prop Result :-
-  Settings = settings Tests MaxSize _ _ Output _,
+  Settings = settings Tests MaxSize Seed _ Output _,
   describe-property Output Prop Vars,
-  Prop = prop I _ _ _,
+  Prop = prop I Name _ _,
+  check.random.start Seed Name,
   tests I Vars Tests MaxSize 1 0 0 0 Result,
   report Output Prop Vars Result.
 
@@ -219,11 +222,18 @@ value-or-variable none _.
 pred shrink i:int, i:list check.variable, i:list (option any), i:int, o:list (option any), o:int.
 shrink I Vars Values Steps Out StepsOut :-
   Steps < 1000,
-  smaller-values Vars Values Candidate,
+  smaller-candidate Vars Values Candidate,
   test-values I Vars Candidate failed, !,
   Steps1 is Steps + 1,
   shrink I Vars Candidate Steps1 Out StepsOut.
 shrink _ _ Values Steps Values Steps.
+
+% [smaller-candidate Vars Values Values1]: smaller values, the first ones
+% tried first: one value replaced by a candidate, then the repeated
+% literals of all the values shrunk together
+pred smaller-candidate i:list check.variable, i:list (option any), o:list (option any).
+smaller-candidate Vars Values Values1 :- smaller-values Vars Values Values1.
+smaller-candidate _ Values Values1 :- check.shrink.together Values Values1.
 
 % [smaller-values Vars Values Values1]: one value replaced by a candidate
 pred smaller-values i:list check.variable, i:list (option any), o:list (option any).
@@ -261,7 +271,7 @@ symb failure list (option any) -> list (option any) -> int -> int -> int -> int 
 pred announce-name i:output, i:prop.
 pred announce-variables i:output, i:prop, i:list check.variable.
 pred report-result i:output, i:prop, i:list check.variable, i:verdict.
-pred print-summary i:output, i:int, i:int.
+pred print-summary i:output, i:int, i:int, i:int.
 
 % [counterexample-values I Values Xs]: Xs are the values of all the
 % variables, the computed ones from a solution of the premises that
@@ -273,12 +283,13 @@ counterexample-values I Values Xs :-
   instantiate F Xs Body,
   counterexample Body, !.
 
-% [summary Output Props Results]: fails when a property failed or gave up
-pred summary i:output, i:list prop, i:list result.
-summary Output Props Results :-
+% [summary Output Seed Props Results]: fails when a property failed or gave
+% up; the seed is reported, so that the run can be replayed
+pred summary i:output, i:int, i:list prop, i:list result.
+summary Output Seed Props Results :-
   std.length Props N,
   std.filter Results is-ok Oks, std.length Oks K,
-  print-summary Output K N,
+  print-summary Output Seed K N,
   K = N.
 
 func is-ok result.
@@ -303,8 +314,8 @@ report-result human-output (prop I _ _ _) Vars (failure Values Small Steps P D T
   say ["  shrunk in ", {text Steps}, " steps to:"],
   show-counterexample I Vars Small.
 
-print-summary human-output K N :-
-  say ["elpi-check: ", {text K}, " of ", {text N}, " properties hold"].
+print-summary human-output Seed K N :-
+  say ["elpi-check: ", {text K}, " of ", {text N}, " properties hold (seed ", {text Seed}, ")"].
 
 func location reflect.srcloc -> string.
 location (reflect.srcloc File Line _) S :-
@@ -337,7 +348,9 @@ show-counterexample I Vars Values :-
   counterexample-values I Values Xs,
   std.forall2 Vars Xs show-value.
 
+% [show-value Var X]: Name = X, the value in source syntax (syntax.elpi), as
+% Elpi reads it back: strings in quotes, binders in parentheses
 pred show-value i:check.variable, i:any.
-show-value (check.variable Name _ _) X :- say ["    ", Name, " = ", {text X}].
+show-value (check.variable Name _ _) X :- say ["    ", Name, " = ", {check.syntax.term X}].
 
 }

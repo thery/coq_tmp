@@ -1,0 +1,17 @@
+property shout-identity (strings.elpi:10)
+  variables: S : string (generated), T : string (computed)
+  FAILED at test 1 (0 passed, 0 discarded); first counterexample:
+    S = ""
+    T = "!"
+  shrunk in 0 steps to:
+    S = ""
+    T = "!"
+property short-string-lists (strings.elpi:13)
+  variables: L : list string (generated), N : int (computed)
+  FAILED at test 12 (11 passed, 0 discarded); first counterexample:
+    L = ["", ""]
+    N = 2
+  shrunk in 0 steps to:
+    L = ["", ""]
+    N = 2
+elpi-check: 0 of 2 properties hold (seed 1)

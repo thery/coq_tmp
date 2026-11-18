@@ -2,6 +2,21 @@
 
 namespace check.random {
 
+% [start Seed Name]: restart the random stream for the property Name, so
+% that its values depend only on the seed and the name (the same alone with
+% -p, in its file, or from VS Code)
+func start int, string.
+start Seed Name :- string-hash Name H, random.init {calc ((Seed * 1000003 + H) mod 1073741789)}.
+
+% [string-hash S H]: a polynomial hash of the characters of S
+func string-hash string -> int.
+string-hash S H :- string-hash.from S 0 {calc (size S)} 0 H.
+func string-hash.from string, int, int, int -> int.
+string-hash.from _ I N H H :- I >= N, !.
+string-hash.from S I N Acc H :-
+  C is rhc (substring S I 1), Acc1 is (Acc * 31 + C) mod 1073741789,
+  I1 is I + 1, string-hash.from S I1 N Acc1 H.
+
 % [below N R]: R is a random integer in [0, N[ (N > 0)
 func below int -> int.
 below N R :- random.int N R.

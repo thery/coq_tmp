@@ -92,7 +92,7 @@ test('run all: one elpi-check on the file; passed, failed with the shrunk counte
   assert.strictEqual(run.finalState(items.get('rev-agree').id).state, 'passed');
   const failure = run.finalState(items.get('sort-length').id);
   assert.strictEqual(failure.state, 'failed');
-  assert.match(failure.message.message, /^FAILED at test 23 \(22 passed, 0 discarded\); counterexample, shrunk in 1 steps:\n  L = \[0, 0\]\n  S = \[0\]/);
+  assert.match(failure.message.message, /^FAILED at test 22 \(21 passed, 0 discarded\); counterexample, shrunk in 2 steps:\n  L = \[0, 0\]\n  S = \[0\]/);
   assert.strictEqual(failure.message.contextValue, 'elpiCounterexample');
   assert.strictEqual(failure.message.location.range.start.line, 43);
   assert.match(run.output, /sort-sorted: passed 100 tests, 0 discarded/);
@@ -108,9 +108,8 @@ test('run one property: elpi-check -p', async () => {
 });
 
 test('Debug this counterexample, from the failure message: the replay goal under the debugger', async () => {
-  // the last run was -p sort-length: its random values differ from those of
-  // the run of the whole file, and the shrinking stops at [2, 2] (a local
-  // minimum: each element alone cannot shrink)
+  // the last run was -p sort-length: the same random values as the run of
+  // the whole file (the stream of a property depends on the seed and its name)
   const item = children(lists).get('sort-length');
   const message = lastRun().finalState(item.id).message;
   await recorded.commands.get('elpiTools.debugCounterexample')({ test: item, message });
@@ -120,7 +119,7 @@ test('Debug this counterexample, from the failure message: the replay goal under
     request: 'launch',
     name: 'Counterexample of sort-length',
     program: lists,
-    goal: 'sort [2, 2] S, std.length [2, 2] N, std.length S M, N = M',
+    goal: 'sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M',
     args: ['-I', checkLibrary],
     cwd: demo,
     stopOnEntry: true

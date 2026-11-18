@@ -1,15 +1,15 @@
 property rev-involutive (rev.elpi:15)
   variables: L : list int (generated), R : list int (computed), L2 : list int (computed)
-  OK: passed 100 tests, 0 discarded; average size of the values 11
+  OK: passed 100 tests, 0 discarded; average size of the values 10
 property rev-append (rev.elpi:16)
   variables: L1 : list int (generated), L2 : list int (generated), L : list int (computed), R : list int (computed), R1 : list int (computed), R2 : list int (computed), R3 : list int (computed)
   OK: passed 100 tests, 0 discarded; average size of the values 21
 property rev-identity (rev.elpi:20)
   variables: L : list int (generated), R : list int (computed)
-  FAILED at test 14 (13 passed, 0 discarded); first counterexample:
-    L = [0, -1]
-    R = [-1, 0]
-  shrunk in 0 steps to:
-    L = [0, -1]
-    R = [-1, 0]
-elpi-check: 2 of 3 properties hold
+  FAILED at test 12 (11 passed, 0 discarded); first counterexample:
+    L = [-1, 1]
+    R = [1, -1]
+  shrunk in 1 steps to:
+    L = [0, 1]
+    R = [1, 0]
+elpi-check: 2 of 3 properties hold (seed 1)

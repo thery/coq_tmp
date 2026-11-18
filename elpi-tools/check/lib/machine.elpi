@@ -9,8 +9,8 @@
 %       average size of the values, for "failed" the number of the failing
 %       test, the first and the shrunk counterexamples, the steps of the
 %       shrinking and the goal that replays the shrunk one (replay.elpi)
-%   {"event": "summary", "holds", "properties"}
-%       at the end
+%   {"event": "summary", "holds", "properties", "seed"}
+%       at the end (the seed replays the run)
 %
 % A variable is {"name", "type", "kind"}, kind "generated", "generated-by"
 % or "computed"; a counterexample is a list of {"name", "value"}, the
@@ -100,10 +100,11 @@ report-result check.json-output Prop Vars Verdict :-
   std.append [check.json.string-field "event" "result" | Where] Details Fields,
   check.json.print-object Fields.
 
-print-summary check.json-output K N :-
+print-summary check.json-output Seed K N :-
   check.json.print-object [
     check.json.string-field "event" "summary",
     check.json.int-field "holds" K,
-    check.json.int-field "properties" N].
+    check.json.int-field "properties" N,
+    check.json.int-field "seed" Seed].
 
 }

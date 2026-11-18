@@ -43,8 +43,11 @@ development), in [elpi-tools/](elpi-tools):
   rev L R ==> rev R L2 ==> L2 = L).`, checked by `elpi-check file.elpi` on
   random values generated from the declared types (inputs and outputs from
   the modes), or by a random derivation of a generator predicate; failing
-  cases are shrunk.  With `-json`, a report for tools, with the goal that
-  replays the shrunk counterexample in the debugger.
+  cases are shrunk (each part, and equal values together).  The random
+  values of a property depend only on the seed and its name: the same
+  counterexample alone (`-p`), in its file and in VS Code.  With `-json`,
+  a report for tools, with the goal that replays the shrunk counterexample
+  in the debugger.
 - [debug/](elpi-tools/debug/README.md): **a debugger**.  `elpi-debug
   file.elpi 'goal'` runs the goal through a meta-interpreter written in
   Elpi: ports (call, exit, redo, fail, cut, CHR wake-up), breakpoints and
