@@ -19,15 +19,23 @@ namespace debug {
 % its declarations the facts [reflect.signature Name P F Args Variadic Loc].
 
 % [program-clause P Head Body Origin]: by backtracking, the rules of P in
-% Elpi's order, with fresh variables; Origin is "file:line".
-pred program-clause i:any, o:(pred), o:(pred), o:string.
+% Elpi's order, with fresh variables, and where each one comes from.
+pred program-clause i:any, o:(pred), o:(pred), o:origin.
 program-clause P Head Body Origin :-
   reflect.clause P _ Loc _ Head Body,
   constant Head Q _, same_term Q P,     % (overloaded rules have no index)
-  loc-origin Loc Origin.
+  Origin = at Loc.
 
-func loc-origin reflect.srcloc -> string.
-loc-origin (reflect.srcloc File Line _) S :-
+% Where a candidate clause comes from: a rule of the program, at a source
+% location, or a hypothetical clause, added by a call.  Turned into text
+% only when shown.
+data origin.
+symb at reflect.srcloc -> origin.
+symb added-by string -> origin.
+
+func origin-string origin -> string.
+origin-string (added-by S) S.
+origin-string (at (reflect.srcloc File Line _)) S :-
   rex.replace "^.*/" "" File Base,
   S is Base ^ ":" ^ {std.any->string Line}.
 
@@ -91,6 +99,21 @@ symb no-explain option.        % do not explain the final failure
 % [opt O]: option O is on (a local clause installed by [run]).
 pred opt o:option.
 
+% [quiet]: no option shows or records ports (installed by [run]), so the
+% ports do nothing: the fast path.
+pred quiet.
+
+pred quiet-flag i:list option, o:list (pred).
+quiet-flag Options [] :- std.exists! Options noisy, !.
+quiet-flag _ [quiet].
+
+pred noisy i:option.
+noisy trace.
+noisy builtins.
+noisy (break _).
+noisy interactive.
+noisy profile.
+
 % [state Name S]: the safes holding what must survive backtracking:
 % "deepest" (the deepest failure so far), "mode" (the stepping mode chosen
 % at a stop), "profile" (the port events), "warned" (the predicates
@@ -101,16 +124,24 @@ pred state o:string, o:safe.
 % predicate, the goal, the boxes it is called from (the nearest first) and
 % how it was entered ("call", or "wake" for a goal resumed by CHR).
 data box.
-symb box int -> int -> any -> (pred) -> list box -> string -> box.
+symb box int -> int -> any -> (pred) -> list frame -> string -> box.
 
-% A context is where a goal runs: its depth and the boxes above it.
+% A frame is what a box leaves on the stack of the calls below it: its
+% invocation number, depth, predicate and goal.  A frame does not hold the
+% frames above it, so a stack is a flat list (a stack of boxes holding
+% their own ancestors would be a DAG, which Elpi copies as a tree).
+data frame.
+symb frame int -> int -> any -> (pred) -> frame.
+
+% A context is where a goal runs: its depth and the frames above it.
 data ctx.
-symb ctx int -> list box -> ctx.
+symb ctx int -> list frame -> ctx.
 
 % [current-ctx K Ctx]: the context of the innermost builtin call, so that a
 % program predicate called back from native code (from [std.map], [not], a
 % woken constraint...) gets a box at the right place; K is "call", or
 % "wake" for a goal suspended by declare_constraint.
+:nooc
 pred current-ctx o:string, o:ctx.
 
 % ===== 3. Entry point =====================================================
@@ -123,9 +154,10 @@ run Options Goal :-
   new_safe Deepest, new_safe Mode, new_safe Prof, new_safe Warned,
   stash_in_safe Mode "leap",
   std.map Options (o\ c\ c = opt o) OptClauses,
+  quiet-flag Options Quiet,
   std.append OptClauses
     [state "deepest" Deepest, state "mode" Mode, state "profile" Prof,
-     state "warned" Warned, current-ctx "call" (ctx 0 []) | Decls]
+     state "warned" Warned, current-ctx "call" (ctx 0 []) | {std.append Quiet Decls}]
     Local,
   Local => run-top Goal.
 
@@ -153,7 +185,8 @@ run-top _ :- report-final-failure, fail.
 % connectives native keeps that behaviour too.
 
 % [compile Ctx Body Code]: Code runs Body in context Ctx.
-pred compile i:ctx, i:(pred), o:(pred).
+:nooc
+pred compile o:ctx, i:(pred), o:(pred).
 compile Ctx G (debug.goal Ctx G) :- var G, !.
 compile Ctx ! (debug.cut-port Ctx, !) :- !.
 compile _ true true :- !.
@@ -165,11 +198,13 @@ compile Ctx (A ; B) (CA ; CB) :- !, compile Ctx A CA, compile Ctx B CB.
 compile Ctx (declare_constraint G Keys) (debug.delay Ctx G Keys) :- !.
 compile Ctx G (debug.goal Ctx G).
 
-pred compile-all i:ctx, i:list (pred), o:list (pred).
+:nooc
+pred compile-all o:ctx, i:list (pred), o:list (pred).
 compile-all _ [] [].
 compile-all Ctx [G|Gs] [C|Cs] :- compile Ctx G C, compile-all Ctx Gs Cs.
 
 % [mk-conj Goals G]: G is the conjunction of Goals.
+:nooc
 pred mk-conj i:list (pred), o:(pred).
 mk-conj [] true.
 mk-conj [G] G :- !.
@@ -207,7 +242,8 @@ structural (A_ ; B_) :- !.
 % ===== 5. Goals: program predicates and builtins ==========================
 
 % [goal Ctx G]: run the atomic goal G (or a goal only known at run time).
-pred goal i:ctx, i:(pred).
+:nooc
+pred goal o:ctx, i:(pred).
 goal _ G :- var G, !, std.fatal-error "debug: the goal is a variable".
 % A connective known only at run time (a goal passed in a variable) is
 % compiled now; a cut in it is local to this goal (see README).
@@ -222,18 +258,45 @@ program-goal G P :- constant G P _, bridged P.
 
 % [native Ctx G]: run the builtin (or external) goal G natively.  Program
 % predicates it calls back reach [bridge] with context Ctx.
-pred native i:ctx, i:(pred).
+:nooc
+pred native o:ctx, i:(pred).
 native Ctx G :-
   native-port "call" Ctx G,
   new_safe Exited,
-  ( (current-ctx "call" Ctx => G), native-port "exit" Ctx G, stash_in_safe Exited "exited"
-  ; native-port "fail" Ctx G, if (never Exited) (note-native-failure Ctx G) true, fail ).
+  native-ports Exited Ctx G.
+
+% (The alternatives of a box are clauses, not ; whose arguments are inputs
+% that Elpi would match, walking the whole stack of frames at each call.)
+:nooc
+pred native-ports i:safe, o:ctx, i:(pred).
+native-ports Exited Ctx G :- run-native Ctx G, native-port "exit" Ctx G, stash_in_safe Exited "exited".
+native-ports Exited Ctx G :- native-port "fail" Ctx G, note-native-failure-if-first Exited Ctx G, fail.
+
+% [run-native Ctx G]: run G, with Ctx as the context of the program goals
+% it may call back.  Elpi copies a local clause, and Ctx holds the goals of
+% all the calls above, so Ctx is installed only when G may call back.
+:nooc
+pred run-native o:ctx, i:(pred).
+run-native Ctx G :- may-call-back G, !, (current-ctx "call" Ctx => G).
+run-native _ G :- G.
+
+% [may-call-back T]: T mentions a program predicate or a λ-term (a
+% predicate argument such as x\ y\ rev x y), which native code may call.
+pred may-call-back i:any.
+may-call-back T :- var T, !, fail.
+may-call-back T :- is_cdata T _, !, fail.
+may-call-back T :- constant T P Args, !, (bridged P ; std.exists Args may-call-back).
+may-call-back T :- name T _ Args, !, std.exists Args may-call-back.
+may-call-back T :- T = [], !, fail.
+may-call-back T :- T = [X|L], !, (may-call-back X ; may-call-back L).
+may-call-back _.      % a λ-term, or a connective (,), =, pi...: assume it may
 
 % [delay Ctx G Keys]: suspend G on Keys with the real declare_constraint,
 % so that the CHR rules and the resumption are the engine's own; when G is
 % woken, its program predicate reaches [bridge], which gives it a box
 % entered through the "wake" port.
-pred delay i:ctx, i:(func), i:any.
+:nooc
+pred delay o:ctx, i:(func), i:any.
 delay Ctx G Keys :-
   native-port "delay" Ctx G,
   ( (current-ctx "wake" Ctx => declare_constraint G Keys)
@@ -273,6 +336,19 @@ bridge-clause P Acc N (pi x\ C x) :- M is N - 1, pi x\ bridge-clause P [x|Acc] M
 
 % ===== 7. Calls: the box and backchaining =================================
 
+% [note-failure-if-first Exited Box]: record the failure of Box if it never
+% exited (and likewise for a builtin goal).
+:nooc
+pred note-failure-if-first i:safe, o:box.
+note-failure-if-first Exited Box :- never Exited, !,
+  box-goal Box P G, warn-if-no-clause P G, note-failure Box.
+note-failure-if-first _ _.
+
+:nooc
+pred note-native-failure-if-first i:safe, o:ctx, i:(pred).
+note-native-failure-if-first Exited Ctx G :- never Exited, !, note-native-failure Ctx G.
+note-native-failure-if-first _ _ _.
+
 % [never S]: nothing was stashed in S.
 pred never i:safe.
 never S :- open_safe S [].
@@ -284,35 +360,67 @@ never S :- open_safe S [].
 % exiting is a candidate for the failure explanation: a fail after a redo
 % is the normal end of an enumeration.  The safe Exited remembers the
 % exits across backtracking.
-pred call i:ctx, i:any, i:(pred), i:string.
+:nooc
+pred call o:ctx, i:any, i:(pred), i:string.
 call (ctx D Above) P G Kind :-
   new_int Id,
-  Box = box Id D P G Above Kind,
+  run-box (box Id D P G Above Kind) G.
+
+% [run-box Box G]: the ports around backchaining.  (The box is built as an
+% argument, not with =, which would run the occurs check on it.)
+:nooc
+pred run-box o:box, i:(pred).
+run-box Box G :-
   new_safe Exited,
-  ( port "call" Box,
-    backchain Box G,
-    stash_in_safe Exited "exited",
-    ( port "exit" Box ; port "redo" Box, fail )
-  ; port "fail" Box, if (never Exited) (note-failure Box) true, fail ).
+  box-ports Exited Box G.
+
+% [box-ports Exited Box G]: the call port, backchaining and then the exit
+% port; on backtracking, the redo port; when all is exhausted, the fail
+% port.  (Alternatives as clauses, not ;, see [native-ports].)
+:nooc
+pred box-ports i:safe, o:box, i:(pred).
+box-ports Exited Box G :-
+  port "call" Box, backchain Box G, stash_in_safe Exited "exited", exit-or-redo Box.
+box-ports Exited Box _ :- port "fail" Box, note-failure-if-first Exited Box, fail.
+
+:nooc
+pred exit-or-redo o:box.
+exit-or-redo Box :- port "exit" Box.
+exit-or-redo Box :- port "redo" Box, fail.
 
 % [backchain Box G]: try the candidate clauses of G in Elpi's order (the
 % hypothetical clauses, most recent first, then the program clauses) and
 % run the body of each one whose head applies.  The compiled body is the
 % last goal, so that a cut in it is the native cut of this clause.
-pred backchain i:box, i:(pred).
-backchain (box _ D P _ Above _ as Box) G :-
+:nooc
+pred backchain o:box, i:(pred).
+backchain Box G :-
+  box-parts Box Id D P Above,
   modes-of P G Modes,
-  warn-if-no-clause P G,
   candidate P G Origin Head Body,
   try-port Box Origin Head,
   head-matches Modes G Head,
   D1 is D + 1,
-  compile (ctx D1 [Box|Above]) Body Code,
+  compile (ctx D1 [frame Id D P G | Above]) Body Code,
   Code.
+
+% [box-parts Box Id Depth P Above]: the parts of a box (by head
+% unification: an as-pattern would be an equation, with an occurs check).
+:nooc
+pred box-goal o:box, o:any, o:(pred).
+box-goal (box _ _ P G _ _) P G.
+
+:nooc
+pred box-id-goal o:box, o:int, o:(pred).
+box-id-goal (box Id _ _ G _ _) Id G.
+
+:nooc
+pred box-parts o:box, o:int, o:int, o:any, o:list frame.
+box-parts (box Id D P _ Above _) Id D P Above.
 
 % [candidate P G Origin Head Body]: by backtracking, the clauses that may
 % apply to G (a goal of P), with fresh variables.
-pred candidate i:any, i:(pred), o:string, o:(pred), o:(pred).
+pred candidate i:any, i:(pred), o:origin, o:(pred), o:(pred).
 candidate P _ Origin Head Body :- hyp P Origin C, clause-parts C Head Body.
 candidate P _ Origin Head Body :- program-clause P Head Body Origin.
 
@@ -368,12 +476,13 @@ arg-match o A B :- A = B.
 % [hyp P Origin C]: the hypothetical clause C of the predicate P, added by
 % [=>]; Origin says which box added it.  The real [=>] installs these
 % facts, so they have Elpi's own scope and order.
-pred hyp o:any, o:string, o:(pred).
+pred hyp o:any, o:origin, o:(pred).
 
 % [assume Ctx H Hyps]: Hyps are the local clauses that represent the
 % hypothesis H (a clause or a list of clauses): one [hyp] fact per clause,
 % and a bridge for a predicate that had none.
-pred assume i:ctx, i:any, o:list (pred).
+:nooc
+pred assume o:ctx, i:any, o:list (pred).
 assume Ctx H Hyps :-
   hyp-list H Cs, hyp-origin Ctx Origin,
   std.fold Cs [] (hyp-facts Origin) Hyps.
@@ -383,15 +492,16 @@ hyp-list [] [] :- !.
 hyp-list [C|Cs] [C|Cs] :- !.
 hyp-list C [C].
 
+:nooc
 func hyp-origin ctx -> string.
-hyp-origin (ctx _ [box Id _ _ _ _ _|_]) S :- !, std.any->string Id I, S is "hypothesis added by #" ^ I.
+hyp-origin (ctx _ [frame Id _ _ _|_]) S :- !, std.any->string Id I, S is "hypothesis added by #" ^ I.
 hyp-origin _ "hypothesis added by the query".
 
 func hyp-facts string, (pred), list (pred) -> list (pred).
 hyp-facts Origin C Hs Hs2 :-
   clause-parts C H _, constant H P Args, !,
   std.length Args N,
-  hyp-facts-of P N [hyp P Origin C | Hs] Hs2.
+  hyp-facts-of P N [hyp P (added-by Origin) C | Hs] Hs2.
 hyp-facts _ C _ _ :- std.fatal-error-w-data "debug: unsupported hypothetical clause" C.
 
 % [hyp-facts-of P N Hs Hs1]: adds the bridge of P when it has none yet.
@@ -409,33 +519,59 @@ func indent int -> string.
 indent N "" :- N =< 0, !.
 indent N S :- M is N - 1, indent M S1, S is S1 ^ "  ".
 
+:nooc
 func box-name int -> string.
 box-name Id S :- std.any->string Id I, S is "#" ^ I.
 
 % [port Kind Box]: Box passes the port Kind ("call", "exit", "redo",
 % "fail").  It is recorded for the profile, shown when tracing (or when the
 % predicate has a breakpoint), and stops at a breakpoint or in step mode.
-pred port i:string, i:box.
+:nooc
+pred port i:string, o:box.
+port _ _ :- quiet, !.
 port Kind Box :-
   record-event Kind Box,
-  if (shown Box) (show-port Kind Box) true,
-  if (stops-at Kind Box) (stop Kind Box) true.
+  show-port-if-shown Kind Box,
+  stop-if-stopping Kind Box.
+
+% (The hot paths use clauses rather than std.if: its arguments are inputs,
+% and the goals passed to it hold the whole stack of frames.)
+:nooc
+pred show-port-if-shown i:string, o:box.
+show-port-if-shown Kind Box :- shown Box, !, show-port Kind Box.
+show-port-if-shown _ _.
+
+:nooc
+pred stop-if-stopping i:string, o:box.
+stop-if-stopping Kind Box :- stops-at Kind Box, !, stop Kind Box.
+stop-if-stopping _ _.
 
 % [shown Box]: the ports of Box are printed.
-pred shown i:box.
-shown _ :- opt trace, !.
-shown _ :- current-mode "creep", !.
-shown _ :- current-mode "trace", !.
-shown Box :- has-breakpoint Box.
+:nooc
+pred shown o:box.
+shown (box _ _ P _ _ _) :- shown-pred P.
 
-pred stops-at i:string, i:box.
+% [shown-pred P]: the ports of the calls of P are printed.
+pred shown-pred i:any.
+shown-pred _ :- opt trace, !.
+shown-pred _ :- current-mode "creep", !.
+shown-pred _ :- current-mode "trace", !.
+shown-pred P :- breakpoint-on P.
+
+:nooc
+pred stops-at i:string, o:box.
 stops-at "call" Box :- has-breakpoint Box, !.
 stops-at _ _ :- opt interactive, current-mode "creep".
 
-pred has-breakpoint i:box.
-has-breakpoint (box _ _ P _ _ _) :- opt (break Name), term_to_string P Name, !.
+:nooc
+pred has-breakpoint o:box.
+has-breakpoint (box _ _ P _ _ _) :- breakpoint-on P.
 
-pred show-port i:string, i:box.
+pred breakpoint-on i:any.
+breakpoint-on P :- opt (break Name), term_to_string P Name, !.
+
+:nooc
+pred show-port i:string, o:box.
 show-port Kind (box Id D _ G _ Entry) :-
   port-label Kind Entry Label,
   say D [Label, " ", {box-name Id}, " ", {term_to_string G}].
@@ -452,35 +588,52 @@ port-label K _ L :- L is K ^ ":".
 
 % [try-port Box Origin Head]: a candidate clause is tried (recorded for the
 % profile; shown in step mode only).
-pred try-port i:box, i:string, i:(pred).
+:nooc
+pred try-port o:box, i:origin, i:(pred).
+try-port _ _ _ :- quiet, !.
 try-port Box Origin Head :-
   record-event "try" Box,
-  if (current-mode "creep") (show-try Box Origin Head) true.
+  show-try-if-creeping Box Origin Head.
 
-pred show-try i:box, i:string, i:(pred).
+:nooc
+pred show-try-if-creeping o:box, i:origin, i:(pred).
+show-try-if-creeping Box Origin Head :- current-mode "creep", !, show-try Box Origin Head.
+show-try-if-creeping _ _ _.
+
+:nooc
+pred show-try o:box, i:origin, i:(pred).
 show-try (box Id D _ _ _ _) Origin Head :-
-  say D ["  try ", {box-name Id}, " ", Origin, ": ", {term_to_string Head}].
+  say D ["  try ", {box-name Id}, " ", {origin-string Origin}, ": ", {term_to_string Head}].
 
 % [cut-port Ctx]: a cut commits the box above Ctx to its current clause.
-pred cut-port i:ctx.
-cut-port (ctx _ [Box|_]) :- !, if (shown Box) (show-cut Box) true.
+:nooc
+pred cut-port o:ctx.
+cut-port (ctx _ [frame Id D P _|_]) :- !, if (shown-pred P) (show-cut Id D) true.
 cut-port _.
 
-pred show-cut i:box.
-show-cut (box Id D _ _ _ _) :- say D ["Cut:  ", {box-name Id}, " commits to its current clause"].
+pred show-cut i:int, i:int.
+show-cut Id D :- say D ["Cut:  ", {box-name Id}, " commits to its current clause"].
 
 % [native-port Kind Ctx G]: ports of builtins, shown with option builtins
 % (and delays with option trace).
-pred native-port i:string, i:ctx, i:(pred).
+:nooc
+pred native-port i:string, o:ctx, i:(pred).
+native-port _ _ _ :- quiet, !.
 native-port Kind Ctx G :-
   record-native-event Kind Ctx G,
-  if (native-shown Kind) (show-native Kind Ctx G) true.
+  show-native-if-shown Kind Ctx G.
+
+:nooc
+pred show-native-if-shown i:string, o:ctx, i:(pred).
+show-native-if-shown Kind Ctx G :- native-shown Kind, !, show-native Kind Ctx G.
+show-native-if-shown _ _ _.
 
 pred native-shown i:string.
 native-shown _ :- opt builtins, !.
 native-shown "delay" :- opt trace.
 
-pred show-native i:string, i:ctx, i:(pred).
+:nooc
+pred show-native i:string, o:ctx, i:(pred).
 show-native Kind (ctx D _) G :- say D ["(builtin) ", Kind, ": ", {term_to_string G}].
 
 % --- stepping modes and stops ---
@@ -501,15 +654,19 @@ pred set-mode i:string.
 set-mode M :- state "mode" S, stash_in_safe S M.
 
 % [stop Kind Box]: show where we are; in interactive mode, read commands.
-pred stop i:string, i:box.
-stop Kind (box Id _ _ G _ _ as Box) :-
+:nooc
+pred stop i:string, o:box.
+stop Kind Box :-
+  box-id-goal Box Id G,
   say 0 ["--- stop at ", Kind, " ", {box-name Id}, ": ", {term_to_string G}],
   if (opt interactive) (command-loop Box) (show-context Box).
 
-pred show-context i:box.
+:nooc
+pred show-context o:box.
 show-context Box :- show-backtrace Box, show-hyps, show-eigenvariables.
 
-pred command-loop i:box.
+:nooc
+pred command-loop o:box.
 command-loop Box :-
   print "debug> (c)ontinue (s)tep (t)race (b)acktrace (h)yps (e)xplain (a)bort",
   flush std_out,
@@ -520,7 +677,8 @@ pred read-command o:string.
 read-command "c" :- eof std_in, !.
 read-command C :- input_line std_in C.
 
-pred run-command i:string, i:box.
+:nooc
+pred run-command i:string, o:box.
 run-command "c" _ :- !, set-mode "leap".
 run-command "" _ :- !, set-mode "leap".
 run-command "s" _ :- !, set-mode "creep".
@@ -531,17 +689,19 @@ run-command "e" Box :- !, show-deepest-failure, command-loop Box.
 run-command "a" _ :- !, halt "debug: aborted".
 run-command C Box :- print "unknown command" C, command-loop Box.
 
-pred show-backtrace i:box.
+:nooc
+pred show-backtrace o:box.
 show-backtrace (box _ _ _ _ Above _) :-
   print "  called from:",
   std.forall Above show-ancestor.
 
-func show-ancestor box.
+:nooc
+func show-ancestor frame.
 show-ancestor B :- say 2 [{ancestor-string B}].
 
 pred show-hyps.
 show-hyps :- print "  hypothetical clauses in scope (most recent first):", fail.
-show-hyps :- hyp _ Origin C, say 2 [{term_to_string C}, "    (", Origin, ")"], fail.
+show-hyps :- hyp _ Origin C, say 2 [{term_to_string C}, "    (", {origin-string Origin}, ")"], fail.
 show-hyps.
 
 pred show-eigenvariables.
@@ -557,7 +717,8 @@ data failure.
 % [failure Depth Goal Above Reasons]: strings only (a safe keeps closed terms).
 symb failure int -> string -> list string -> list string -> failure.
 
-pred note-failure i:box.
+:nooc
+pred note-failure o:box.
 note-failure (box _ D _ _ _ _) :- deepest-depth M, D =< M, !.
 note-failure (box Id D P G Above _) :-
   std.map Above ancestor-string AboveS,
@@ -566,13 +727,15 @@ note-failure (box Id D P G Above _) :-
   state "deepest" Safe,
   stash_in_safe Safe (failure D S AboveS Reasons).
 
-pred note-native-failure i:ctx, i:(pred).
+:nooc
+pred note-native-failure o:ctx, i:(pred).
 note-native-failure Ctx G :-
   note-goal-failure Ctx G ["a builtin (not a predicate of the program): it ran natively and failed"].
 
 % [note-goal-failure Ctx G Reasons]: record the failure of the non-program
 % goal G, if it is the deepest so far.
-pred note-goal-failure i:ctx, i:(pred), i:list string.
+:nooc
+pred note-goal-failure o:ctx, i:(pred), i:list string.
 note-goal-failure (ctx D _) _ _ :- deepest-depth M, D =< M, !.
 note-goal-failure (ctx D Above) G Reasons :-
   std.map Above ancestor-string AboveS,
@@ -580,8 +743,9 @@ note-goal-failure (ctx D Above) G Reasons :-
   state "deepest" Safe,
   stash_in_safe Safe (failure D S AboveS Reasons).
 
-func ancestor-string box -> string.
-ancestor-string (box Id _ _ G _ _) S :- std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S.
+:nooc
+func ancestor-string frame -> string.
+ancestor-string (frame Id _ _ G) S :- std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S.
 
 pred deepest-depth o:int.
 deepest-depth D :- state "deepest" S, open_safe S L, last-of L (failure D1 _ _ _), !, D = D1.
@@ -608,7 +772,7 @@ explain-candidate P G Reason :-
   candidate P G Origin Head Body,
   term_to_string Head HS,
   candidate-verdict Modes G Head Body Verdict,
-  std.string.concat "" ["  ", Origin, ": ", HS, "\n        ", Verdict] Reason.
+  std.string.concat "" ["  ", {origin-string Origin}, ": ", HS, "\n        ", Verdict] Reason.
 
 pred candidate-verdict i:list mode, i:(pred), i:(pred), i:(pred), o:string.
 candidate-verdict Modes G Head _ V :- head-mismatch Modes G Head Why, !, V is "does not match: " ^ Why.
@@ -700,13 +864,15 @@ data event.
 % whose caller is of predicate Parent, at Time.
 symb event string -> int -> string -> string -> float -> event.
 
-pred record-event i:string, i:box.
+:nooc
+pred record-event i:string, o:box.
 record-event Kind (box Id _ P _ Above _) :- opt profile, !,
   term_to_string P Name, parent-name Above Parent,
   gettimeofday T, state "profile" S, stash_in_safe S (event Kind Id Name Parent T).
 record-event _ _.
 
-pred record-native-event i:string, i:ctx, i:(pred).
+:nooc
+pred record-native-event i:string, o:ctx, i:(pred).
 record-native-event Kind (ctx _ Above) G :- opt profile, not (Kind = "delay"), !,
   native-name G Name, parent-name Above Parent,
   gettimeofday T, state "profile" S, stash_in_safe S (event Kind -1 Name Parent T).
@@ -718,8 +884,9 @@ native-name G Name :- constant G P _, !, term_to_string P N, Name is N ^ " (buil
 native-name (_ = _) "= (builtin)" :- !.
 native-name _ "other builtins".
 
-func parent-name list box -> string.
-parent-name [box _ _ P _ _ _|_] Name :- !, term_to_string P Name.
+:nooc
+func parent-name list frame -> string.
+parent-name [frame _ _ P _|_] Name :- !, term_to_string P Name.
 parent-name [] "(query)".
 
 % Statistics of one predicate: calls, exits, redos, fails, clauses tried,

@@ -112,10 +112,10 @@ A breakpoint on append (without -i: the context is printed at each stop):
 
 The profile (times masked, they vary):
 
-  $ elpi-debug -profile append.elpi 'rev [1,2,3,4,5,6,7,8] R' | sed 's/ [0-9]*\.[0-9][0-9]$/ T/'
+  $ elpi-debug -profile append.elpi 'rev [1,2,3,4,5,6,7,8] R' | sed 's/  *[0-9]*\.[0-9][0-9]$/ T/'
   Profile (ports per predicate; tries = clauses tried; self time):
     predicate                        calls   exits   redos   fails   tries   time (ms)
-    append                              36      36       0       0      64       T
-    rev                                  9       9       0       0      17        T
+    append                              36      36       0       0      64 T
+    rev                                  9       9       0       0      17 T
   Solution 1:
     R = [8, 7, 6, 5, 4, 3, 2, 1]

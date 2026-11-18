@@ -216,7 +216,9 @@ let interpreted file goal ~limit ~print =
 
 let native file goal ~limit ~print =
   let elpi, flags = setup ~det:true in
-  let program = or_exit (API.Parse.program ~flags ~elpi file) in
+  let program =
+    try or_exit (API.Parse.program ~flags ~elpi file)
+    with API.Parse.ParseError (loc, msg) -> fail "%s: %s" (API.Ast.Loc.show loc) msg in
   let prog = or_exit (API.Compile.program ~flags ~elpi program) in
   let q = query_or_exit (API.Parse.query ~elpi ~loc:(API.Ast.Loc.initial "(goal)") ~text:(goal ^ ".")) in
   let exe = API.Compile.optimize (query_or_exit (API.Compile.query prog q)) in
@@ -225,6 +227,10 @@ let native file goal ~limit ~print =
 let print_time what t = if !show_time then Format.printf "%s time: %.3f s\n%!" what t
 
 let () =
+  (* Elpi's own tracer, to debug the debugger: ELPI_DEBUG_TRACE="-trace-on ..." *)
+  (match Sys.getenv_opt "ELPI_DEBUG_TRACE" with
+   | Some s -> ignore (API.Setup.trace (String.split_on_char ' ' s))
+   | None -> ());
   Arg.parse spec (fun a -> args := !args @ [ a ]) usage;
   let file, goal = match !args with [ f; g ] -> (f, g) | _ -> Arg.usage spec usage; exit 2 in
   if not (Sys.file_exists file) then fail "no file %s" file;
