@@ -9,19 +9,14 @@
 % phrase of the reading table [phrase], and [write-word Lang Use Words] for the
 % other words.  A sentence is a list of parts: [wd Use], the phrase of a
 % use in the language of the text, and [tx S], text as it is (formulas,
-% names, punctuation).  The language is xtext-lang (Explain.v), or the
-% variable XTEXT_LANG.
+% names, punctuation).  The language is the switch "lang" (switches.elpi).
 kind part type.
 type wd string -> part.
 type tx string -> part.
 
-pred writer-lang o:string.
-writer-lang L :- getenv "XTEXT_LANG" (some L), not (L = ""), !.
-writer-lang L :- xtext-lang L, !.
-
 pred word i:string, o:string.
-word U S :- writer-lang L, (write-role L U S _ ; write-word L U S), !.
-word U _ :- writer-lang L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
+word U S :- switch "lang" L, (write-role L U S _ ; write-word L U S), !.
+word U _ :- switch "lang" L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
 
 % [say Parts S]: the parts joined by spaces, none before , . : ; ) nor
 % after (, empty parts left out
@@ -50,7 +45,7 @@ place [wd U | Ps] Out :- after-use U, !,
 place [P | Ps] [P | Qs] :- place Ps Qs.
 
 pred after-use i:string.
-after-use U :- writer-lang L, word U S, phrase-after L S.
+after-use U :- switch "lang" L, word U S, phrase-after L S.
 
 % [scope Parts Depth In Rest]: the parts in the scope of an after-phrase
 pred scope i:list part, i:int, o:list part, o:list part.
@@ -61,7 +56,7 @@ scope [tx ")" | Ps] D [tx ")" | In] Rest :- D > 0, !, D1 is D - 1, scope Ps D1 I
 scope [P | Ps] D [P | In] Rest :- scope Ps D In Rest.
 
 pred scope-end i:part.
-scope-end (wd U) :- writer-lang L, write-role L U _ _.
+scope-end (wd U) :- switch "lang" L, write-role L U _ _.
 scope-end (tx S) :- std.mem! [",", ".", ":", ";"] S.
 scope-end (tx S) :- rex.match "^[*]by " S.
 
@@ -88,9 +83,3 @@ cap-first S S.
 pred by-part i:string, o:part.
 by-part "" (tx "") :- !.
 by-part J (tx S) :- S is "*by " ^ J ^ "*".
-
-% ------------------------------------------------------------------
-% Options, for measurements: XTEXT_OFF is a comma-separated list of the
-% mechanisms to switch off (explicit, args, tactics, thatis).
-pred off i:string.
-off M :- getenv "XTEXT_OFF" (some S), rex.split "," S L, std.mem! L M.

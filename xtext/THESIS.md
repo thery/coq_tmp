@@ -7,8 +7,8 @@ where it is in `elpi/` and which example reproduces its figure.  The names
 in the code say what a predicate is for; the reference to the thesis is in
 this file and in the comments.
 
-Two translations exist, chosen by the switch `xtext-translation`
-(`Explain.v`; variable `XTEXT_TRANSLATION`):
+Two translations exist, chosen by the switch `translation`
+(`elpi/switches.elpi`; variable `XTEXT_TRANSLATION`):
 
 - **direct** (default): term to text in one walk (`transducer.elpi` and
   the files of its forms);

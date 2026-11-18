@@ -99,7 +99,7 @@ header-path Path H :-
       (Req = "")
       (std.string.concat "." Path Mod, Req is " Require Import " ^ Mod ^ ".")),
   R is "require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations." ^ Req,
-  writer-lang Lg, (if (Lg = "en") (Ls = []) (Ls = [{calc ("lang: " ^ Lg)}])),
+  switch "lang" Lg, (if (Lg = "en") (Ls = []) (Ls = [{calc ("lang: " ^ Lg)}])),
   std.string.concat "\n" {std.append ["---", R | Ls] [
     "by: tauto | congruence | lia | firstorder | auto",
     "---" ]} H.

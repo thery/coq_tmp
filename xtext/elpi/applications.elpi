@@ -118,8 +118,8 @@ apply-run ak-imp Run Es T0 P0 Tau Path P :- mp-step Run Es T0 P0 Tau Path P.
 % A modus ponens step: premises N1 .. Nk and the function (text P0),
 % conclusion Tau.  A premise that is itself an application step, used
 % here only, can be contracted: its own premises take its place, and its
-% conclusion disappears.  Strategy (xtext-contraction, or the variable
-% XTEXT_CONTRACTION): none; maximal (every such premise); guarded (a
+% conclusion disappears.  Strategy (the switch
+% "contraction", switches.elpi): none; maximal (every such premise); guarded (a
 % premise is contracted only if Tau still follows from the premises, as
 % checked by one of the tactics of xtext-guard-tactic, and if its line
 % does not say "that is", i.e. no conversion step is hidden).
@@ -131,7 +131,7 @@ pred mp-step i:list term, i:list term, i:term, i:pf, i:term, i:list int, o:pf.
 mp-step Run Es T0 P0 Tau Path (prfp (prf L (some (it S []))) Tys) :-
   premise-cands Run Es Path Cs0,
   typ T0 Ty0, cand-of P0 Ty0 C0, std.append Cs0 [C0] Cs,
-  contraction Strat, contract Strat Cs Tau L Tys By,
+  switch "contraction" Strat, contract Strat Cs Tau L Tys By,
   fm Tau F, by-part By J, say-cap [wd "deduce", tx F, J] S.
 
 % the candidates of the premises (with their expected types)
@@ -147,10 +147,6 @@ pred cand-of i:pf, i:term, o:cand.
 cand-of (prfp (prf L (some (it S Ch))) Tys) Ty (cand D Lift Tys Ty tt) :- !,
   dashed (prf L (some (it S Ch))) D, std.append L Ch Lift.
 cand-of P Ty (cand D [] [] Ty ff) :- dashed P D.
-
-pred contraction o:string.
-contraction S :- getenv "XTEXT_CONTRACTION" (some S), !.
-contraction S :- xtext-contraction S, !.
 
 % [contract Strat Cs Tau L Tys]: the lines L of the step and the types
 % Tys they prove, after contracting some of the candidates Cs

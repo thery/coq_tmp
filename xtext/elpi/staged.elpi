@@ -12,11 +12,10 @@
 %
 % Each stage is a separate predicate on a separate data type, so that each
 % can be read against its figure.  The stages are used when the switch
-% xtext-translation is "staged" (Explain.v; the variable XTEXT_TRANSLATION
-% overrides it).  The forms the thesis does not treat in chapters 2-3
-% (let, match, fix, casts, and the introduction, elimination and
-% rewriting theorems of chapter 6) are written by the direct writer of
-% the writer; their subproofs come back here.
+% "translation" is "staged" (switches.elpi).  The forms the thesis does
+% not treat in chapters 2-3 (let, match, fix, casts, and the
+% introduction, elimination and rewriting theorems of chapter 6) are
+% written by the direct writer; their subproofs come back here.
 
 % ------------------------------------------------------------------
 % The annotated term
@@ -49,14 +48,9 @@ type aproof aterm -> aarg.        % a proof (rule App1)
 type aelem  term -> term -> aarg. % a term that is not a proof, and its type (App2)
 
 % ------------------------------------------------------------------
-% The switch
+% The switch "translation" (switches.elpi)
 
-pred translation o:string.
-translation S :- getenv "XTEXT_TRANSLATION" (some S), not (S = ""), !.
-translation S :- xtext-translation S, !.
-translation "direct".
-
-staged-mode :- translation "staged".
+staged-mode :- switch "translation" "staged".
 
 % [direct-only M]: M is being written by the direct writer, which must not
 % send it back to the stages
@@ -69,12 +63,9 @@ is-direct-only M :- direct-only K, K == M, !.
 staged-text M Ctx Path P :-
   required-type M Tr,
   annotate M Tr A,
-  contraction Strategy,
+  switch "contraction" Strategy,
   contract Strategy A C,
-  (contraction-strategy Strategy :- !) => write C Ctx Path P.
-
-% the contraction strategy, for the writing stage
-pred contraction-strategy o:string.
+  write C Ctx Path P.
 
 % the type M is used at: the one required of it (type-expressions.elpi), or else
 % the one it proves
@@ -147,7 +138,7 @@ has-own-writer (app [H | _]) :- name H, rec-var H, !.
 % ------------------------------------------------------------------
 % Stage 2: contraction (thesis 2.3, and 3.4.2, Fig. 3.11)
 %
-% Strategy (xtext-contraction, or the variable XTEXT_CONTRACTION):
+% Strategy (the switch "contraction", switches.elpi):
 %   none     no contraction (only the redundant double annotations go);
 %   maximal  every contraction of section 2.3, the annotations not looked
 %            at;
@@ -286,7 +277,7 @@ term-name M (some N) :- contracted-text, head-name M N, !.
 term-name _ none.
 
 pred contracted-text.
-contracted-text :- contraction-strategy S, not (S = "none").
+contracted-text :- switch "contraction" S, not (S = "none").
 
 % The four rules of Fig. 2.10, the first one that applies (2.3.3: "nous
 % choisissons d'utiliser la première de la liste qui s'applique").

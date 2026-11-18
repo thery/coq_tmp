@@ -12,6 +12,7 @@ From elpi Require Import elpi.
    constructions), the document *)
 From XText Extra Dependency "elpi/text-tree.elpi" as xt_text_tree.
 From XText Extra Dependency "elpi/printing.elpi" as xt_printing.
+From XText Extra Dependency "elpi/switches.elpi" as xt_switches.
 From XText Extra Dependency "elpi/words.elpi" as xt_words.
 From XText Extra Dependency "elpi/reparse.elpi" as xt_reparse.
 From XText Extra Dependency "elpi/kinds.elpi" as xt_kinds.
@@ -64,12 +65,6 @@ Elpi Db xtext.db lp:{{
   pred xtext-threshold o:int.
   :name "xtext-threshold"
   xtext-threshold 300.
-  % [xtext-contraction S]: the contraction of application steps (thesis
-  % 3.4.2): "none", "guarded" (default) or "maximal".  The variable
-  % XTEXT_CONTRACTION overrides it.
-  pred xtext-contraction o:string.
-  :name "xtext-contraction"
-  xtext-contraction "guarded".
   % [xtext-guard-tactic Ltac Text]: the tactics that check a guarded
   % contraction (the step must still follow from its premises); the one
   % that succeeds becomes the step's justification, *by Text*.
@@ -79,20 +74,25 @@ Elpi Db xtext.db lp:{{
   xtext-guard-tactic "xtext_g_lia" "lia".
   xtext-guard-tactic "xtext_g_firstorder" "firstorder".
   xtext-guard-tactic "xtext_g_auto" "auto".
-  % [xtext-lang L]: the language of the texts ("en", "fr", "it"), whose
-  % phrases are those of the lexicon's lang_L.elpi.  The variable XTEXT_LANG
-  % overrides it.
-  pred xtext-lang o:string.
-  :name "xtext-lang"
-  xtext-lang "en".
-  % [xtext-translation S]: how a proof becomes text: "direct" (default,
-  % term to text in one walk, xtext.elpi) or "staged" (annotation, then
-  % contraction, then writing, as in Coscoy's thesis; staged.elpi; the
-  % contraction strategy is xtext-contraction).  The variable
-  % XTEXT_TRANSLATION overrides it.
-  pred xtext-translation o:string.
-  :name "xtext-translation"
-  xtext-translation "direct".
+  % [xtext-switch Name Variable Default]: a switch of the writer, the
+  % environment variable that sets it, and its default value.  The values
+  % the writer knows are in elpi/switches.elpi; any other value, an empty
+  % one included, is an error.  The switches are read when Explain runs
+  % (make does not see the variables: compile the example files again).
+  %   translation: how a proof becomes text, "direct" (in one walk) or
+  %     "staged" (annotation, contraction, writing, as in Coscoy's thesis;
+  %     elpi/staged.elpi);
+  %   contraction: the contraction of application steps (thesis 3.4.2),
+  %     "none", "guarded" or "maximal";
+  %   lang: the language of the texts (those of the lexicon, ../lexicon),
+  %     also given by the command, Explain foo in "fr".
+  % Change a default with
+  % Elpi Accumulate xtext.db lp:{{ :before "xtext-switch" xtext-switch "contraction" "XTEXT_CONTRACTION" "none" :- !. }}.
+  pred xtext-switch o:string, o:string, o:string.
+  :name "xtext-switch"
+  xtext-switch "translation" "XTEXT_TRANSLATION" "direct".
+  xtext-switch "contraction" "XTEXT_CONTRACTION" "guarded".
+  xtext-switch "lang" "XTEXT_LANG" "en".
 }}.
 
 Elpi Command Explain.
@@ -110,6 +110,7 @@ Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
 Elpi Accumulate File xt_text_tree.
 Elpi Accumulate File xt_printing.
+Elpi Accumulate File xt_switches.
 Elpi Accumulate File xt_words.
 Elpi Accumulate File xt_reparse.
 Elpi Accumulate File xt_kinds.
@@ -124,12 +125,15 @@ Elpi Accumulate File xt_type_expressions.
 Elpi Accumulate File sentences.
 Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
-  main [str N] :- !, explain N T, coq.say T.
-  main [str N, str "in", str L] :- !, ((writer-lang L :- !) => explain N T), coq.say T.
-  main [str N, str "to", str F] :- !, explain N T, write-text F T.
+  main [str N] :- !, with-switches (explain N T), coq.say T.
+  main [str N, str "in", str L] :- !, in-language L (explain N T), coq.say T.
+  main [str N, str "to", str F] :- !, with-switches (explain N T), write-text F T.
   main [str N, str "to", str F, str "in", str L] :- !,
-    ((writer-lang L :- !) => explain N T), write-text F T.
+    in-language L (explain N T), write-text F T.
   main _ :- coq.error "usage: Explain name [to \"file.md\"] [in \"lang\"].".
+  % G with the switches, the language being L (the "in" of the command)
+  pred in-language i:string, i:prop.
+  in-language L G :- with-switches (with-switch "lang" "the command" L G).
   pred write-text i:string, i:string.
   write-text F T :- open_out F O, output O T, close_out O, coq.say "Explain: written" F.
 }}.
@@ -154,6 +158,7 @@ Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
 Elpi Accumulate File xt_text_tree.
 Elpi Accumulate File xt_printing.
+Elpi Accumulate File xt_switches.
 Elpi Accumulate File xt_words.
 Elpi Accumulate File xt_reparse.
 Elpi Accumulate File xt_kinds.
@@ -170,11 +175,11 @@ Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
-    explain-partial N P T, open_out F O, output O T, close_out O,
+    with-switches (explain-partial N P T), open_out F O, output O T, close_out O,
     coq.say "Explain_partial: written" F.
   main-interp-qed _ _ P _ Name :-
     (if (var Name) (N = "proof") (N = Name)),
-    explain-partial N P T, coq.say T.
+    with-switches (explain-partial N P T), coq.say T.
 }}.
 #[proof="end"]
 Elpi Export Explain_partial.

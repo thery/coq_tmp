@@ -40,7 +40,7 @@ Files: `Explain.v` (the command) and the writer in `elpi/`, one file per
 subject, loaded in this order:
 
 - `text-tree.elpi` (lines and the text of a proof), `printing.elpi`
-  (terms and formulas), `words.elpi` (words and sentences from the
+  (terms and formulas), `switches.elpi` (the switches, below), `words.elpi` (words and sentences from the
   lexicon), `reparse.elpi` (formulas that type-check again), `kinds.elpi`
   (kinds of binders and arguments), `inductive.elpi` (recognising
   introduction and elimination theorems), `declarations.elpi` (predicates
@@ -66,6 +66,28 @@ languages of the lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`,
 `examples-staged-guarded/`: the texts with other switches, written by
 `sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
 staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`).
+
+## Switches
+
+Three switches change how a text is written (`elpi/switches.elpi`).  Each
+has an environment variable that sets it and a default, in `xtext.db`
+(`xtext-switch Name Variable Default`, `Explain.v`):
+
+| switch | variable | values | default |
+|---|---|---|---|
+| `translation` | `XTEXT_TRANSLATION` | `direct` (one walk), `staged` (the three stages of the thesis, below) | `direct` |
+| `contraction` | `XTEXT_CONTRACTION` | `none`, `guarded`, `maximal` (thesis 3.4.2, below) | `guarded` |
+| `lang` | `XTEXT_LANG` | the languages of the lexicon: `en`, `fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la` | `en` |
+
+The language given to the command (`Explain foo in "fr"`) comes before
+the variable.  A value that is not in the list, an empty one included,
+is an error, so that a misspelt value does not silently give the texts of
+another setting.  The switches are read when `Explain` runs, from the
+environment of the Rocq process that runs it: `make` does not see the
+variables, so after changing one, compile the example files again
+(`make_variant.sh` does it in a copy of the directory).  `XTEXT_OFF`
+(below) switches mechanisms off for measurements; an unknown name in it
+is an error too.
 
 ## The output
 
@@ -131,8 +153,7 @@ has its first letter capitalised, by the capital letters of the lexicon
 (`say-cap`).  The same lists serve every language: only the table changes,
 so a text in another language has the structure, the formulas and the
 justifications of the English one (`Supposons ... (h). Montrons ...`).
-The language is the `in "fr"` of the command, or `xtext-lang` in
-`xtext.db` (default `en`), or the variable `XTEXT_LANG`.  A phrase that the
+The language is the switch `lang` (see "Switches").  A phrase that the
 lexicon puts after its formula (`phrase-after`, Korean) is moved after the
 parts it governs: up to the next phrase of a role, the next `,` `.` `:`
 `;` outside parentheses, or the justification (`` `A`{.hyp} (h) 그리고
@@ -612,8 +633,7 @@ l'application" (Fig. 3.11), applied to the text.  Three strategies:
   no conversion step is hidden (the thesis's guarded contraction keeps the
   type expressions that belong to a conversion, Fig. 3.13).
 
-Parameters, in `xtext.db`: `xtext-contraction "none" | "guarded" |
-"maximal"` (the variable `XTEXT_CONTRACTION` overrides it) and
+Parameters: the switch `contraction` (see "Switches") and, in `xtext.db`,
 `xtext-guard-tactic Ltac Text`.  The decision is greedy, premise by premise,
 in the order of the text.
 
@@ -768,7 +788,7 @@ language (`cyp-check/results_fr_it.tsv`, `cyp-check/results_langs.tsv`).
 
 ## The staged translation (thesis chapters 2 and 3, `elpi/staged.elpi`)
 
-With the switch `xtext-translation` set to `staged` (variable
+With the switch `translation` set to `staged` (variable
 `XTEXT_TRANSLATION=staged`), a proof becomes text in the three stages of
 Coscoy's thesis, each a predicate on its own data type, so that each can
 be read against its figure:
@@ -783,7 +803,7 @@ be read against its figure:
    `whnf` (`elpi/printing.elpi`);
 2. **contraction** (2.3, and its guarded form, 3.4.2, Fig. 3.11,
    `contract`): nested applications and series of abstractions are
-   merged.  Strategy `xtext-contraction` (variable `XTEXT_CONTRACTION`):
+   merged.  The switch `contraction` (variable `XTEXT_CONTRACTION`):
    `none`, `maximal` (every contraction of 2.3) or `guarded` (only the
    contractions that drop a single annotation, so that no conversion step
    disappears);
