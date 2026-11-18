@@ -1,0 +1,179 @@
+% explain.elpi: the explanation of a failure.
+%
+% Each call that fails at its first try deeper than all the failures seen
+% so far is recorded with its explanation, computed at its fail port,
+% where the goal is back as it was called: for each candidate clause, the
+% first argument that does not match and the smallest clashing subterms,
+% or that its body failed; or that the predicate has no clause at all.
+% The safe "deepest" keeps the records across backtracking.
+
+
+data failure.
+% [failure Depth Goal Above Reasons]: strings only (a safe keeps closed terms).
+symb failure int -> string -> list string -> list string -> failure.
+
+% [deepest-depth D]: the depth of the deepest failure so far (-1: none).
+pred deepest-depth o:int.
+deepest-depth D :- latest "deepest" (failure -1 "" [] []) (failure D _ _ _).
+
+% ===== Recording ===========================================================================
+
+% [note-failure-if-first Exited Box]: record the failure of Box if it never
+% exited (and warn when its predicate has no clause at all).
+:nooc
+pred note-failure-if-first i:safe, o:box.
+note-failure-if-first Exited Box :- never Exited, !,
+  box-parts Box _ _ P _ _, warn-if-no-clause P, note-failure Box.
+note-failure-if-first _ _.
+
+:nooc
+pred note-failure o:box.
+note-failure Box :- box-parts Box _ D _ _ _, deepest-depth M, D =< M, !.
+note-failure Box :-
+  box-parts Box Id D P G Above,
+  failure-reasons D P G Reasons,
+  record-failure D {frame-string (frame Id D P G)} Above Reasons.
+
+% [note-native-failure-if-first Exited Ctx G]: likewise for a builtin.
+:nooc
+pred note-native-failure-if-first i:safe, o:ctx, i:(pred).
+note-native-failure-if-first Exited Ctx G :- never Exited, !,
+  note-goal-failure Ctx G ["a builtin (not a predicate of the program): it ran natively and failed"].
+note-native-failure-if-first _ _ _.
+
+% [note-goal-failure Ctx G Reasons]: record the failure of the goal G (not
+% a call of the program), if it is the deepest so far.
+:nooc
+pred note-goal-failure o:ctx, i:(pred), i:list string.
+note-goal-failure (ctx D _) _ _ :- deepest-depth M, D =< M, !.
+note-goal-failure (ctx D Above) G Reasons :- record-failure D {show-term G} Above Reasons.
+
+:nooc
+pred record-failure i:int, i:string, i:list frame, i:list string.
+record-failure D Goal Above Reasons :-
+  std.map Above frame-string AboveS,
+  state "deepest" S, stash_in_safe S (failure D Goal AboveS Reasons).
+
+% ===== Reasons ==============================================================================
+
+% [failure-reasons D P G Reasons]: why the call G of P at depth D failed.
+pred failure-reasons i:int, i:any, i:(pred), o:list string.
+failure-reasons D _ _ [R] :- not (within-depth D), !, the-strategy (strategy _ _ (bounded N) _),
+  R is "the depth bound stops it: calls deeper than " ^ {std.any->string N} ^ " fail (option max-depth)".
+failure-reasons _ P G Reasons :- candidate-reasons P G Reasons.
+
+% [candidate-reasons P G Reasons]: one reason per candidate clause.  They
+% are gathered by backtracking into a safe, not with std.findall, which
+% would copy G and cut its variables off from the hypothetical clauses
+% that share them.
+pred candidate-reasons i:any, i:(pred), o:list string.
+candidate-reasons P G Reasons :-
+  new_safe S,
+  std.ignore-failure! (candidate-reason P G R, stash_in_safe S R, fail),
+  open_safe S Rs,
+  reasons-or-no-clause P Rs Reasons.
+
+pred reasons-or-no-clause i:any, i:list string, o:list string.
+reasons-or-no-clause P [] [R] :- !, no-clause-reason P R.
+reasons-or-no-clause _ Rs ["clauses tried:" | Rs].
+
+pred candidate-reason i:any, i:(pred), o:string.
+candidate-reason P G Reason :-
+  modes-of P G Modes,
+  candidate P Origin Head Body,
+  show-term Head HS,
+  verdict Modes G Head Body Verdict,
+  std.string.concat "" ["  ", {origin-string Origin}, ": ", HS, "\n        ", Verdict] Reason.
+
+% [verdict Modes G Head Body V]: the head does not match, or the body failed.
+pred verdict i:list mode, i:(pred), i:(pred), i:(pred), o:string.
+verdict Modes G Head _ V :- head-mismatch Modes G Head Why, !, V is "does not match: " ^ Why.
+verdict _ _ _ Body V :- V is "head matches; then its body failed: " ^ {show-term Body}.
+
+pred no-clause-reason i:any, o:string.
+no-clause-reason P R :- declared P _, !,
+  R is {term_to_string P} ^ " is declared but has no clause at all (in the program or in the hypotheses in scope)".
+no-clause-reason P R :- R is {term_to_string P} ^ " has no clause at all in scope".
+
+% ===== The smallest clash ======================================================================
+
+% [head-mismatch Modes G H Why]: the head H does not apply to G; Why names
+% the first argument that clashes and the smallest clashing subterms.
+pred head-mismatch i:list mode, i:(pred), i:(pred), o:string.
+head-mismatch Modes G H Why :-
+  constant G _ GArgs, constant H _ HArgs, args-mismatch 1 Modes GArgs HArgs Why.
+
+pred args-mismatch i:int, i:list mode, i:list any, i:list any, o:string.
+args-mismatch N Ms [A|As] [B|Bs] Why :-
+  first-mode Ms M Ms1, arg-match M A B, !, N1 is N + 1, args-mismatch N1 Ms1 As Bs Why.
+args-mismatch N Ms [A|_] [B|_] Why :-
+  first-mode Ms M _,
+  clash M A B Clash,
+  std.string.concat "" ["argument ", {std.any->string N}, " (", {mode-name M}, "): ",
+    {show-term A}, " vs ", {show-term B}, Clash] Why.
+
+func mode-name mode -> string.
+mode-name i "input".
+mode-name o "output".
+
+% [clash M A B S]: the smallest subterms of A and B that do not agree in
+% mode M, and why (only why, when they are A and B themselves).
+pred clash i:mode, i:any, i:any, o:string.
+clash M A B S :-
+  subterm-clash M A B A1 B1 Why, not (same_term A A1, same_term B B1), !,
+  std.string.concat "" [", at ", {show-term A1}, " vs ", {show-term B1}, Why] S.
+clash M A B Why :- subterm-clash M A B _ _ Why, !.
+clash _ _ _ "".
+
+% [subterm-clash M A B A1 B1 Why]: A1 and B1 are the smallest clashing
+% subterms of A and B.
+pred subterm-clash i:mode, i:any, i:any, o:any, o:any, o:string.
+% an input argument: a variable of the goal where the clause has a term
+subterm-clash i A B A B " (the goal has a variable where the clause expects a term: an input argument is only matched)" :-
+  var A, not (var B), !.
+% a variable that cannot take the other term
+subterm-clash _ A B A B Why :- var A, !, flex-clash A B Why.
+subterm-clash _ A B A B Why :- var B, !, flex-clash B A Why.
+% the same head on both sides: the clash is in the arguments
+subterm-clash M A B A1 B1 Why :-
+  shape-of A SA, SA = node HA AArgs, shape-of B SB, SB = node HB BArgs,
+  not (HA = connective-node), same_term HA HB, std.length AArgs N, std.length BArgs N, !,
+  args-clash M AArgs BArgs A1 B1 Why.
+% different heads: A and B themselves
+subterm-clash _ A B A B "".
+
+% [args-clash M As Bs A1 B1 Why]: the first arguments that do not agree.
+pred args-clash i:mode, i:list any, i:list any, o:any, o:any, o:string.
+args-clash M [A|As] [B|Bs] A1 B1 Why :- arg-match M A B, !, args-clash M As Bs A1 B1 Why.
+args-clash M [A|_] [B|_] A1 B1 Why :- subterm-clash M A B A1 B1 Why.
+
+% [flex-clash V T Why]: why the variable V cannot be assigned T: T contains
+% V (occurs check), or an eigenvariable that V may not depend on (one
+% introduced by a pi after V was created).
+pred flex-clash i:any, i:any, o:string.
+flex-clash V T Why :- var V H _, mentions-var T H, !,
+  Why is " (occurs check: " ^ {show-term H} ^ " occurs in " ^ {show-term T} ^ ")".
+flex-clash V T Why :- names Es, out-of-scope V T Es E, !,
+  Why is " (" ^ {show-term V} ^ " cannot depend on the eigenvariable " ^ {show-term E}
+         ^ ", introduced by a pi after " ^ {show-term V} ^ " was created)".
+flex-clash _ _ " (they do not unify)".
+
+% [out-of-scope V T Es E]: E, one of Es, occurs in T and V may not depend on it.
+pred out-of-scope i:any, i:any, i:list any, o:any.
+out-of-scope V T [E|_] E :- occurs E T, not (can-depend V E), !.
+out-of-scope V T [_|Es] E :- out-of-scope V T Es E.
+
+% ===== Showing ===================================================================================
+
+pred show-deepest-failure.
+show-deepest-failure :- deepest-depth D, D >= 0, !,
+  latest "deepest" _ (failure _ G Above Reasons),
+  say 0 ["Deepest failure (depth ", {std.any->string D}, "): ", G],
+  show-above Above,
+  std.forall Reasons (r\ say 1 [r]).
+show-deepest-failure :- print "No goal failed at its first try: the query ran out of solutions by backtracking.".
+
+pred show-above i:list string.
+show-above [] :- !.
+show-above Above :- say 1 ["called from:"], std.forall Above (a\ say 2 [a]).
+

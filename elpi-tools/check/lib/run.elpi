@@ -144,7 +144,13 @@ instantiate Body [] Body.
 
 % [generators Size Body]: solve the premises generated-by G at random
 pred generators i:int, i:(pred).
-generators Size (generated-by G ==> B) :- !, check.solve.solve Size [] G, !, generators Size B.
+% (solved by the interpreter of elpi-tools/debug with the strategy of a
+% generator: random order of the rules, first solution of each call, depth
+% bound Size, cuts ignored)
+generators Size (generated-by G ==> B) :- !,
+  debug.run [debug.random-order, debug.first-solution, debug.max-depth Size,
+             debug.ignore-cut, debug.no-explain] G, !,
+  generators Size B.
 % (:untyped: the determinacy checker rejects a discarded premise in a pattern)
 :untyped
 generators Size (_ ==> B) :- !, generators Size B.

@@ -37,5 +37,12 @@ development), in [elpi-tools/](elpi-tools):
   random values generated from the declared types (inputs and outputs from
   the modes), or by a random derivation of a generator predicate; failing
   cases are shrunk.
+- [debug/](elpi-tools/debug/README.md): **a debugger**.  `elpi-debug
+  file.elpi 'goal'` runs the goal through a meta-interpreter written in
+  Elpi: ports (call, exit, redo, fail, cut, CHR wake-up), breakpoints and
+  stepping, counts and time per predicate, and on failure the deepest
+  failing goal with each clause tried and why it did not apply (or that the
+  predicate has no clause at all).  50 to 150 times slower than the real
+  engine.  Its strategy can be random: elpi-check uses it to generate.
 
 Build and test: `cd elpi-tools && dune build && dune build @runtest`.

@@ -1,0 +1,33 @@
+% The cut: in a clause body, under pi and =>, inside ; and inside not.
+
+pred mem o:int, o:list int.
+mem X [X|_].
+mem X [_|L] :- mem X L.
+
+% first: the first element of the list that is greater than N.
+pred first i:int, i:list int, o:int.
+first N L X :- mem X L, X > N, !.
+
+% max-of: a classic green cut.
+pred max-of i:int, i:int, o:int.
+max-of X Y X :- X >= Y, !.
+max-of _ Y Y.
+
+% the cut under pi and => still cuts the clause.
+pred under-pi o:int.
+under-pi X :- pi y\ (mem X [1,2,3], !).
+under-pi 7.
+
+pred hyp-fact o:int.
+pred under-impl o:int.
+under-impl X :- hyp-fact 0 => (mem X [1,2,3], !).
+under-impl 7.
+
+% the cut inside ; is local to the disjunction.
+pred in-or o:int.
+in-or X :- (mem X [1,2,3], ! ; X = 10).
+in-or 20.
+
+% not, with a program predicate inside (reached through the bridge).
+pred not-mem i:int, i:list int.
+not-mem X L :- not (mem X L).

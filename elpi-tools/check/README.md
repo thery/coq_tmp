@@ -75,7 +75,8 @@ Formula ::= pi X\ Formula          % a variable of the property
   can be written: `pi L : list string \ ...`.
 - **`generated-by G`** (a premise) asks for **guided generation**: the
   variables of `G` are produced by solving `G` with random choices among
-  its rules ([`lib/solve.elpi`](lib/solve.elpi)), so they satisfy `G` by
+  its rules (the interpreter of [`../debug`](../debug/README.md) with a
+  random strategy), so they satisfy `G` by
   construction.  This is for premises that random values rarely satisfy,
   typically a typing relation: `pi M T N\ generated-by (of M T) ==> step M N
   ==> of N T` tests preservation on well-typed terms only.  It is the idea of
@@ -98,7 +99,6 @@ signatures of `std.*`).  Everything else is Elpi, in [`lib/`](lib):
 |---|---|
 | [`analyse.elpi`](lib/analyse.elpi) | variables of a property: type, generated or computed |
 | [`generate.elpi`](lib/generate.elpi) | random terms of a type, size-controlled, binders included |
-| [`solve.elpi`](lib/solve.elpi) | random solver for `generated-by` |
 | [`shrink.elpi`](lib/shrink.elpi) | smaller candidates of a value |
 | [`run.elpi`](lib/run.elpi) | tests, shrinking, report |
 | [`goals.elpi`](lib/goals.elpi), [`types.elpi`](lib/types.elpi), [`random.elpi`](lib/random.elpi) | helpers |
@@ -156,7 +156,9 @@ a time, so it can stop at a local minimum (`X = -1, L = [-1]` where
 
 Measured on this (shared) laptop, two runs each: 0.3 s to read and compile
 the program and the checker; with 100 tests per property rev 1.3-1.5 s (3
-properties), sort 1.2 s (4), stlc 2.9-3.8 s (6); with 1000 tests rev
+properties), sort 1.2 s (4), stlc 2.9-3.8 s (6) with the checker's former solver and
+8.5-13 s with the interpreter of elpi-tools/debug (2-3 times slower, measured
+2026-11-18 on a loaded laptop; same reports); with 1000 tests rev
 9.8-10.4 s, sort 7.4 s, stlc 15-16.5 s, at most 95 MB of memory.
 
 ## Limits (said plainly)
@@ -164,10 +166,11 @@ properties), sort 1.2 s (4), stlc 2.9-3.8 s (6); with 1000 tests rev
 - No time bound per test: a premise or conclusion that loops makes the run
   loop; a runtime error in the program (e.g. `is` on an unbound variable,
   `std.fatal-error`) stops the whole run.
-- The random solver ignores cuts, keeps the first solution of each subgoal,
-  and reuses the variables of a hypothesis (`pi x\ of x A => ..` works;
-  a hypothesis with its own universally quantified variables does not get
-  fresh ones).  A generator predicate whose rules need ground inputs (e.g.
+- The random solver (elpi-tools/debug with options random-order,
+  first-solution, max-depth, ignore-cut) ignores cuts and keeps the first
+  solution of each subgoal; a hypothesis shares its variables (`pi x\ of x
+  A => ..` works) and its own universally quantified variables get fresh
+  ones.  A generator predicate whose rules need ground inputs (e.g.
   `X =< Y` on unbound integers) raises a runtime error.
 - A conjunction has at most 10 conjuncts where the checker looks into it
   (Elpi represents it as one node; there is a pattern per length).

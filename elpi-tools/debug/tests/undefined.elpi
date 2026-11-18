@@ -1,0 +1,8 @@
+% A predicate declared and called but defined nowhere: Elpi accepts it and
+% its calls just fail, silently.
+
+pred positive i:int.          % declared, never defined
+
+pred check i:list int.
+check [].
+check [X|Xs] :- X > 0, positive X, check Xs.

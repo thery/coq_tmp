@@ -1,0 +1,235 @@
+% stepper.elpi: interactive stepping (option interactive), as the
+% box-model tracers of Prolog, and the breakpoints.
+%
+% At a stop the interpreter reads a command on stdin.  A command acts on
+% the focus of the event: the call whose port it is, or whose body runs
+% the pi, => or cut.
+%
+% retry and fail.  Each call is run by [attempt] (interpreter.elpi), whose
+% second clause is a choice point placed just before the call port.  The
+% command records the request (retry N or fail-call N) in a safe, which
+% survives backtracking, and fails.  While a request is pending every event
+% fails at once, so backtracking goes quickly through the choice points
+% inside call N, Elpi undoing their bindings as usual, and reaches the
+% second clause of [attempt] for N, which takes the request and runs call
+% N again from its call port, or shows its fail port and fails.  The local
+% program and the scope go back with the bindings: the clauses added by =>
+% and the eigenvariables of pi are Elpi's own (the interpreter keeps => and
+% pi native), so going back to the choice point before the call port
+% leaves their scopes, as it undoes the bindings.  The cut does not get in
+% the way: a cut in a body is the native cut of [backchain], below
+% [attempt], so it never removes the choice point of [attempt] of its own
+% call or of the calls above.
+%
+% skip.  A stepping mode (skip N), kept in a safe: no event is shown or
+% stops until the exit or fail port of call N (breakpoints still stop).
+% Nothing is undone or changed in the run, the local program and the scope
+% included: the call runs as without the debugger, unseen.
+
+
+% ===== Stepping modes ==================================================================
+
+data stepping.
+symb creep stepping.        % stop at every event
+symb skip int -> stepping.  % stop at nothing until call N exits or fails
+symb leap stepping.         % stop at breakpoints only
+symb tracing stepping.      % show every event, stop at breakpoints only
+symb nodebug stepping.      % show nothing, stop nowhere
+
+pred current-mode o:stepping.
+current-mode M :- latest "mode" leap M.
+
+pred set-mode i:stepping.
+set-mode M :- state "mode" S, stash_in_safe S M.
+
+% [initial-mode Options M]: interactive without breakpoints starts by
+% creeping (as Prolog's trace); otherwise it leaps to the first breakpoint.
+func initial-mode list option -> stepping.
+initial-mode Options creep :- std.mem! Options interactive, not (std.exists Options is-break), !.
+initial-mode _ leap.
+
+pred is-break i:option.
+is-break (break _).
+
+% [shown-in-mode M Kind F]: in mode M, the event is printed.
+:nooc
+pred shown-in-mode i:stepping, i:event-kind, o:focus.
+shown-in-mode creep _ _.
+shown-in-mode tracing _ _.
+shown-in-mode (skip Id) Kind (focus (frame Id _ _ _) _) :- end-event Kind.
+shown-in-mode _ Kind (focus (frame _ _ P _) _) :- box-event Kind, breakpoint-on P.
+
+% [stops-at Kind F]: the interpreter stops at the event: the entry into a
+% call with a breakpoint, or, in interactive mode, as the mode says.
+:nooc
+pred stops-at i:event-kind, o:focus.
+stops-at Kind (focus (frame _ _ P _) _) :- entry-event Kind, breakpoint-on P, not (current-mode nodebug), !.
+stops-at Kind F :- opt interactive, current-mode M, stops-in-mode M Kind F.
+
+:nooc
+pred stops-in-mode i:stepping, i:event-kind, o:focus.
+stops-in-mode creep _ _.
+stops-in-mode (skip Id) Kind (focus (frame Id _ _ _) _) :- end-event Kind.
+
+% ===== Requests: retry and fail ============================================================
+
+data request.
+symb no-request request.
+symb retry int -> request.
+symb fail-call int -> request.
+
+pred current-request o:request.
+current-request R :- latest "request" no-request R.
+
+pred set-request i:request.
+set-request R :- state "request" S, stash_in_safe S R.
+
+% [pending]: a retry or fail is unwinding the run.
+pred pending.
+pending :- current-request R, not (R = no-request).
+
+% [take-request Id R]: the pending request R is about call Id; it is taken.
+pred take-request i:int, o:request.
+take-request Id (retry Id) :- current-request (retry Id), !, set-request no-request.
+take-request Id (fail-call Id) :- current-request (fail-call Id), !, set-request no-request.
+
+% ===== Breakpoints ==========================================================================
+%
+% The breakpoints of option break, then the changes made at the prompt
+% (+ P, - P), kept in the safe "breaks" as pairs (change, name).
+
+pred breakpoint-on i:any.
+breakpoint-on P :- term_to_string P Name, breakpoint-named Name.
+
+pred breakpoint-named i:string.
+breakpoint-named Name :- state "breaks" S, open_safe S L, std.rev L Recent, last-change Recent Name C, !, C = "+".
+breakpoint-named Name :- opt (break Name), !.
+
+% [last-change Changes Name C]: the most recent change C of the breakpoint
+% Name.  (A search, not std.mem!, whose element is an input: it would not
+% bind C.)
+pred last-change i:list (pair string string), i:string, o:string.
+last-change [pr C Name | _] Name C :- !.
+last-change [_ | L] Name C :- last-change L Name C.
+
+pred change-breakpoint i:string, i:string.
+change-breakpoint C Name :- state "breaks" S, stash_in_safe S (pr C Name).
+
+% ===== Stops ====================================================================================
+
+% [stop Kind F]: at the event Kind, in interactive mode, read and run
+% commands; otherwise (a breakpoint) show where we are and go on.
+:nooc
+pred stop i:event-kind, o:focus.
+stop Kind F :- opt interactive, !, command-loop Kind F.
+stop _ F :- show-context F.
+
+:nooc
+pred show-context o:focus.
+show-context (focus (frame Id _ _ G) Above) :-
+  say 0 ["--- breakpoint at ", {box-name Id}, ": ", {show-term G}],
+  show-backtrace Above, show-hyps, show-eigenvariables.
+
+% [command-loop Kind F]: prompt, read a command, run it.
+:nooc
+pred command-loop i:event-kind, o:focus.
+command-loop Kind F :-
+  output std_out "   ? ", flush std_out,
+  read-command C,
+  echo-command C,
+  rex.split " +" C Words,
+  run-command Words Kind F.
+
+% [read-command C]: a line of stdin; at its end, nodebug.
+pred read-command o:string.
+read-command "n" :- eof std_in, !.
+read-command C :- input_line std_in C.
+
+% [echo-command C]: with option echo (scripted sessions), the command read
+% is printed, so that a transcript reads as a session.
+pred echo-command i:string.
+echo-command C :- opt echo, !, print C.
+echo-command _.
+
+% [run-command Words Kind F]: succeeds to go on, fails to unwind (retry, fail),
+% loops back to the prompt after the commands that only show something.
+:nooc
+pred run-command i:list string, i:event-kind, o:focus.
+% creep (return, c): to the next event
+run-command [] _ _ :- !, set-mode creep.
+run-command ["c"] _ _ :- !, set-mode creep.
+% skip: run the call to its exit or fail, unseen (at its exit or fail: creep)
+run-command ["s"] Kind (focus (frame Id _ _ _) _) :- Id > 0, not (end-event Kind), !, set-mode (skip Id).
+run-command ["s"] _ _ :- !, set-mode creep.
+% leap, trace, nodebug: the other modes
+run-command ["l"] _ _ :- !, set-mode leap.
+run-command ["t"] _ _ :- !, set-mode tracing.
+run-command ["n"] _ _ :- !, set-mode nodebug.
+% retry, fail: unwind to the call port of the call in focus
+run-command ["r"] _ (focus (frame Id _ _ _) _) :- Id > 0, !,
+  say 0 ["    retry ", {box-name Id}, ": back to its call port"],
+  set-request (retry Id), fail.
+run-command ["f"] _ (focus (frame Id _ _ _) _) :- Id > 0, !, set-request (fail-call Id), fail.
+run-command [C] Kind F :- (C = "r" ; C = "f"), !,
+  print "    (the query itself cannot be retried or failed)", command-loop Kind F.
+% the commands that show something, then prompt again
+run-command ["p"] Kind F :- !, show-focus F, command-loop Kind F.
+run-command ["g"] Kind (focus _ Above as F) :- !, show-backtrace Above, command-loop Kind F.
+run-command ["scope"] Kind (focus (frame _ _ _ G) _ as F) :- !, show-scope G, command-loop Kind F.
+run-command ["hyps"] Kind F :- !, show-hyps, command-loop Kind F.
+run-command ["e"] Kind F :- !, show-deepest-failure, command-loop Kind F.
+run-command ["h"] Kind F :- !, show-help, command-loop Kind F.
+run-command ["?"] Kind F :- !, show-help, command-loop Kind F.
+% breakpoints
+run-command ["+", Name] Kind F :- !, change-breakpoint "+" Name, say 1 ["breakpoint on ", Name], command-loop Kind F.
+run-command ["-", Name] Kind F :- !, change-breakpoint "-" Name, say 1 ["no breakpoint on ", Name], command-loop Kind F.
+% abort
+run-command ["a"] _ _ :- !, halt "debug: aborted".
+run-command _ Kind F :- print "    unknown command (h for help)", command-loop Kind F.
+
+pred show-help.
+show-help :- std.forall [
+  "    c or return  creep: go to the next event",
+  "    s            skip: run this call to its exit or fail without stopping inside",
+  "    l            leap: run to the next breakpoint",
+  "    t            trace: show every event, stop only at breakpoints",
+  "    n            nodebug: run to the end without stopping",
+  "    r            retry this call from its call port (bindings, local program, scope undone)",
+  "    f            make this call fail",
+  "    p            print the goal, the local program and the scope",
+  "    g            the calls above (goals)",
+  "    scope        the eigenvariables in force and what each logic variable may depend on",
+  "    hyps         the local program: the clauses added by =>",
+  "    + P, - P     set, remove a breakpoint on the predicate P",
+  "    e            the deepest failure so far",
+  "    a            abort"] (s\ print s).
+
+% ===== What a stop shows ============================================================================
+
+:nooc
+pred show-focus o:focus.
+show-focus (focus (frame Id _ _ G) _) :-
+  say 1 [{box-name Id}, " ", {show-term G}],
+  show-hyps, show-scope G.
+
+pred show-backtrace i:list frame.
+show-backtrace Above :- print "  called from:", show-frames Above.
+
+pred show-frames i:list frame.
+show-frames [].
+show-frames [F|Fs] :- say 2 [{frame-string F}], show-frames Fs.
+
+% [frame-string F S]: "#Id goal".
+:nooc
+func frame-string frame -> string.
+frame-string F S :- std.string.concat "" {frame-text F} S.
+
+% [show-hyps]: the local program (command hyps).
+pred show-hyps.
+show-hyps :- print "  local program (clauses added by =>, most recent first):", fail.
+show-hyps :- hyp _ Origin C, say 2 [{show-term C}, "    (", {origin-string Origin}, ")"], fail.
+show-hyps.
+
+pred show-eigenvariables.
+show-eigenvariables :- names Es, eigen-names Es Ns, say 1 ["eigenvariables in scope: ", {names-or-none Ns}].
+

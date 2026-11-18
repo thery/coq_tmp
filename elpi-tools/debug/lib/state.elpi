@@ -1,0 +1,146 @@
+% state.elpi: the data of the debugger: its options, the strategy, the
+% boxes of the calls and the state that survives backtracking.
+%
+% The interpreter is in the files of this directory: fragments of one
+% block [namespace debug { }], which dune's rule (../dune) writes around
+% their concatenation, in the order: state, program, strategy, interpreter,
+% natives, lprolog, ports, stepper, explain, profile.  README.md, section
+% "How the interpreter works", reads them side by side.
+
+
+% ---- Options of [run] ------------------------------------------------------
+
+data option.
+symb trace option.             % show every event
+symb builtins option.          % also show the calls to builtins
+symb break string -> option.   % breakpoint on the predicate of this name
+symb interactive option.       % stop at each event and read commands on stdin
+symb echo option.              % print each command read (scripted sessions)
+symb profile option.           % ports and self time per predicate
+symb no-explain option.        % do not explain the final failure
+symb random-order option.      % strategy: candidate clauses in a random order
+symb seed int -> option.       % seed of the random order
+symb first-solution option.    % strategy: the first solution of each call only
+symb max-depth int -> option.  % strategy: calls deeper than this fail
+symb ignore-cut option.        % strategy: a cut does nothing
+
+% [opt O]: option O is on (one local clause per option, installed by [run]).
+pred opt o:option.
+
+% [quiet]: no option shows or records events: the fast path, where the
+% ports do nothing (a local clause installed by [run]).
+pred quiet.
+
+% ---- The strategy -----------------------------------------------------------
+%
+% How a call is solved, as one value: Elpi's own strategy is
+% [strategy in-order all-solutions unbounded honour-cut]; the random
+% derivations of a property checker use
+% [strategy shuffled first-only (bounded N) cut-ignored].
+
+data strategy.
+symb strategy candidate-order -> solution-policy -> depth-bound -> cut-policy -> strategy.
+
+data candidate-order.
+symb in-order candidate-order.   % the hypothetical clauses, then the rules, in Elpi's order
+symb shuffled candidate-order.   % the same candidates in a random order
+
+data solution-policy.
+symb all-solutions solution-policy.  % backtracking into a call gives its next solution
+symb first-only solution-policy.     % a call keeps its first solution
+
+data depth-bound.
+symb unbounded depth-bound.
+symb bounded int -> depth-bound.     % calls deeper than N fail
+
+data cut-policy.
+symb honour-cut cut-policy.
+symb cut-ignored cut-policy.         % every clause stays a candidate
+
+% [the-strategy S]: the strategy of this run (a local clause of [run]).
+pred the-strategy o:strategy.
+
+% ---- Calls ------------------------------------------------------------------
+
+% A frame is one call: its invocation number (#Id), its depth, its
+% predicate and its goal.  The frames above a call are a flat list, the
+% nearest first (a frame does not hold the frames above it: a stack of
+% calls holding their own ancestors would be a DAG, which Elpi copies or
+% walks as a tree).
+data frame.
+symb frame int -> int -> any -> (pred) -> frame.
+
+% How a call was entered: called, or woken by CHR from its suspension N.
+data entry.
+symb called entry.
+symb woken int -> entry.
+
+% A box is a call while it runs: its frame, the frames above it, its entry.
+data box.
+symb box frame -> list frame -> entry -> box.
+
+% [box-parts Box Id Depth P G Above]: the parts of a box.  (Read by head
+% unification: an as-pattern would be an equation, with an occurs check
+% that walks the whole stack of frames.)
+:nooc
+pred box-parts o:box, o:int, o:int, o:any, o:(pred), o:list frame.
+box-parts (box (frame Id D P G) Above _) Id D P G Above.
+
+:nooc
+pred box-split o:box, o:frame, o:list frame, o:entry.
+box-split (box Frame Above Entry) Frame Above Entry.
+
+% A context is where a goal runs: its depth and the frames above it.
+data ctx.
+symb ctx int -> list frame -> ctx.
+
+% The focus of an event: the frame of the call it is about, and the frames
+% above (the query itself is the frame #0 of the predicate [query]).
+data focus.
+symb focus frame -> list frame -> focus.
+symb query any.
+
+% [current-ctx Entry Ctx]: the context of the innermost builtin call, so
+% that a program predicate called back from native code gets a box at the
+% right place; Entry is [called], or [woken N] for a goal suspended by
+% declare_constraint (a local clause, installed around the builtin).
+:nooc
+pred current-ctx o:entry, o:ctx.
+
+% ---- State that survives backtracking ---------------------------------------
+%
+% [state Name S]: the safe Name, one per kind of state (a local clause of
+% [run]):
+%   "deepest"     the failures recorded for the explanation
+%   "mode"        the stepping mode chosen at a stop
+%   "request"     a retry or fail asked at a stop, while it unwinds
+%   "breaks"      the breakpoints set or removed at a stop
+%   "profile"     the events, for the profile
+%   "warned"      the predicates already reported as having no clause
+%   "eigen", "suspension"   counters, for the names of eigenvariables and
+%                 the numbers of suspended goals
+pred state o:string, o:safe.
+
+% [state-names L]: the safes of [run].
+func state-names -> list string.
+state-names ["deepest", "mode", "request", "breaks", "profile", "warned", "eigen", "suspension"].
+
+% [last-of L X]: X is the last element of L (fails on [], unlike std.last).
+pred last-of i:list A, o:A.
+last-of [X] X :- !.
+last-of [_|L] X :- last-of L X.
+
+% [latest Name Default X]: the last value stashed in the safe Name.
+pred latest i:string, i:A, o:A.
+latest Name _ X :- state Name S, open_safe S L, last-of L X1, !, X = X1.
+latest _ Default Default.
+
+% [new-number Counter K]: the next number of a counter safe (1, 2, ...).
+pred new-number i:string, o:int.
+new-number Counter K :-
+  state Counter S, open_safe S L, std.length L N, K is N + 1, stash_in_safe S K.
+
+% [never S]: nothing was stashed in the safe S.
+pred never i:safe.
+never S :- open_safe S [].
+

@@ -1,0 +1,39 @@
+% Benchmarks for the slowdown of the interpreter (not run by `dune test`).
+
+% naive reverse: quadratic, one clause choice per call.
+func app list A, list A -> list A.
+app [] L L.
+app [X|L] M [X|R] :- app L M R.
+
+func nrev list A -> list A.
+nrev [] [].
+nrev [X|L] R :- nrev L RL, app RL [X] R.
+
+func range int, int -> list int.
+range N N [N] :- !.
+range I N [I|L] :- I1 is I + 1, range I1 N L.
+
+% bench N: naive reverse of the list 1..N.
+pred bench i:int.
+bench N :- range 1 N L, nrev L _.
+
+% queens: backtracking search, with a select relation and arithmetic.
+pred select o:A, o:list A, o:list A.
+select X [X|L] L.
+select X [Y|L] [Y|R] :- select X L R.
+
+pred queens i:int, o:list int.
+queens N Qs :- range 1 N L, place L [] Qs.
+
+pred place i:list int, i:list int, o:list int.
+place [] Qs Qs.
+place L Placed Qs :- select Q L Rest, safe Q 1 Placed, place Rest [Q|Placed] Qs.
+
+pred safe i:int, i:int, i:list int.
+safe _ _ [].
+safe Q D [Q1|Qs] :- A is Q + D, B is Q - D, not (Q1 = A), not (Q1 = B), D1 is D + 1, safe Q D1 Qs.
+
+% count N: N calls, no data structure.
+pred count i:int.
+count 0 :- !.
+count N :- M is N - 1, count M.

@@ -1,0 +1,7 @@
+% Elpi crash, reported upstream as https://github.com/LPCIC/elpi/issues/505
+% (elpi 4.0.0 and master 631d14a): a CHR rule fires on a constraint whose
+% predicate has a pi-quantified local clause in scope, and Elpi stops with
+% Invalid_argument("index out of bounds").  Run: elpi -test chr-pi-local-clause.elpi
+constraint p { rule (p X) <=> true. }
+func p int.
+main :- C = (pi x\ p x), (C => declare_constraint (p X) [X]).

@@ -1,0 +1,256 @@
+% ports.elpi: the events of a run, shown by the trace and where the
+% stepper stops (stepper.elpi).
+%
+% An event is a port of a call (call, exit, redo, fail; resume for a woken
+% goal), or a step of λProlog inside a call: the head unification of the
+% selected clause (unify), the entry into pi (pi) or into H => G (assume),
+% the suspension of a goal (delay), a cut.
+
+
+data event-kind.
+symb call-port event-kind.
+symb exit-port event-kind.
+symb redo-port event-kind.
+symb fail-port event-kind.
+symb resume-port event-kind.   % the call port of a woken goal
+symb unify-step event-kind.
+symb pi-step event-kind.
+symb assume-step event-kind.
+symb delay-step event-kind.
+symb cut-step event-kind.
+symb try-step event-kind.      % a candidate clause tried (recorded for the profile only)
+
+func event-label event-kind -> string.
+event-label call-port "Call:".
+event-label exit-port "Exit:".
+event-label redo-port "Redo:".
+event-label fail-port "Fail:".
+event-label resume-port "Resume:".
+event-label unify-step "Unify:".
+event-label pi-step "Pi:".
+event-label assume-step "Assume:".
+event-label delay-step "Delay:".
+event-label cut-step "Cut:".
+event-label try-step "Try:".
+
+% [box-event K]: K is a port of a call.
+pred box-event i:event-kind.
+box-event call-port. box-event exit-port. box-event redo-port.
+box-event fail-port. box-event resume-port.
+
+% [entry-event K]: K enters a call (where a breakpoint stops).
+pred entry-event i:event-kind.
+entry-event call-port. entry-event resume-port.
+
+% [end-event K]: K leaves a call.
+pred end-event i:event-kind.
+end-event exit-port. end-event fail-port.
+
+% ===== Printing ===================================================================
+
+% [say Depth Parts]: print the concatenation of Parts, indented by Depth.
+func say int, list string.
+say D Parts :- indent D Ind, std.string.concat "" [Ind|Parts] S, print S.
+
+func indent int -> string.
+indent N "" :- N =< 0, !.
+indent N S :- M is N - 1, indent M S1, S is S1 ^ "  ".
+
+% [box-name Id S]: "#Id".
+func box-name int -> string.
+box-name Id S :- S is "#" ^ {std.any->string Id}.
+
+% ===== Events ======================================================================
+
+% [event Kind Indent Focus Text]: the event Kind about Focus, printed at
+% indentation Indent with Text after its label when shown; then the stop,
+% if any.  It fails while a retry or fail is unwinding the run, and when
+% the command at the stop asks for it.
+:nooc
+pred event i:event-kind, i:int, o:focus, i:list string.
+event _ _ _ _ :- pending, !, fail.
+event Kind Ind F Text :-
+  show-event-if-shown Kind Ind F Text,
+  stop-if-stopping Kind F.
+
+% (The hot paths use clauses rather than std.if: its arguments are inputs,
+% and the goals given to it would hold the whole stack of frames.)
+:nooc
+pred show-event-if-shown i:event-kind, i:int, o:focus, i:list string.
+show-event-if-shown Kind Ind F Text :- event-shown Kind F, !, say Ind [{event-label Kind}, " " | Text].
+show-event-if-shown _ _ _ _.
+
+:nooc
+pred stop-if-stopping i:event-kind, o:focus.
+stop-if-stopping Kind F :- stops-at Kind F, !, stop Kind F.
+stop-if-stopping _ _.
+
+% [event-shown Kind F]: the event is printed: with option trace, as the
+% stepping mode says in interactive mode, at the ports of a breakpoint.
+:nooc
+pred event-shown i:event-kind, o:focus.
+event-shown _ _ :- opt trace, !.
+event-shown Kind F :- opt interactive, current-mode M, !, shown-in-mode M Kind F.
+event-shown Kind (focus (frame _ _ P _) _) :- box-event Kind, breakpoint-on P.
+
+% ===== The ports of a call ===========================================================
+
+% [port Kind Box]: Box passes the port Kind (call-port is shown as
+% resume-port for a woken goal, with the number of its suspension).
+:nooc
+pred port i:event-kind, o:box.
+port _ _ :- quiet, !.
+port Kind Box :-
+  record-event Kind Box,
+  box-split Box Frame Above Entry,
+  entry-port Kind Entry Kind1 Tag,
+  frame-depth Frame D,
+  event Kind1 D (focus Frame Above) [Tag | {frame-text Frame}].
+
+% [entry-port Kind Entry Kind1 Tag]: a woken goal enters through
+% resume-port, all its ports tagged [Sn].
+func entry-port event-kind, entry -> event-kind, string.
+entry-port call-port (woken N) resume-port Tag :- !, suspension-tag N Tag.
+entry-port Kind (woken N) Kind Tag :- !, suspension-tag N Tag.
+entry-port Kind called Kind "".
+
+func suspension-tag int -> string.
+suspension-tag N Tag :- Tag is "[S" ^ {std.any->string N} ^ "] ".
+
+% [frame-text Frame Text]: "#Id goal".
+:nooc
+func frame-text frame -> list string.
+frame-text (frame Id _ _ G) [{box-name Id}, " ", {show-term G}].
+
+:nooc
+func frame-depth frame -> int.
+frame-depth (frame _ D _ _) D.
+
+% [try-port Box]: a candidate clause is tried (for the profile).
+:nooc
+pred try-port o:box.
+try-port _ :- quiet, !.
+try-port Box :- record-event try-step Box.
+
+% ===== The steps of λProlog inside a call ===============================================
+
+% [match-with-port Modes Box Origin G Head]: head matching of the clause
+% from Origin, with its unify event when it is shown: the variables of G
+% are looked at before and after, for the bindings it makes.
+:nooc
+pred match-with-port i:list mode, o:box, i:origin, i:(pred), i:(pred).
+match-with-port Modes _ _ G Head :- quiet, !, head-matches Modes G Head.
+match-with-port Modes (box Frame Above _) _ G Head :- not (event-shown unify-step (focus Frame Above)), !,
+  head-matches Modes G Head.
+match-with-port Modes (box (frame Id D P G0) Above _) Origin G Head :-
+  logic-vars G Vs, snapshot Vs Before,
+  head-matches Modes G Head,
+  bindings-text Before Lines,
+  event unify-step D (focus (frame Id D P G0) Above)
+    [{box-name Id}, " with ", {origin-string Origin}, ": ", {show-term Head} | Lines].
+
+% A logic variable before the unification: itself, as printed, and the
+% eigenvariables it may depend on.
+data snap.
+symb snap any -> string -> list any -> snap.
+
+pred snapshot i:list any, o:list snap.
+snapshot [] [].
+snapshot [V|Vs] [snap V Name Vis | Ss] :- show-term V Name, visible-eigens V Vis, snapshot Vs Ss.
+
+% [bindings-text Before Lines]: a line "X := t" per variable assigned,
+% with the pruning Elpi made if any.
+pred bindings-text i:list snap, o:list string.
+bindings-text [] [].
+bindings-text [snap V Name Vis | Ss] [Line | Ls] :-
+  show-term V Now, not (Now = Name), !,
+  pruning V Vis Pruned,
+  std.string.concat "" ["\n      ", Name, " := ", Now, Pruned] Line,
+  bindings-text Ss Ls.
+bindings-text [_ | Ss] Ls :- bindings-text Ss Ls.
+
+% [pruning V Vis S]: what Elpi pruned when it assigned V: V is now
+% x1..xn\ H a1..ak with k < n (H does not get all the arguments), or V is
+% (headed by) a variable that may depend on fewer eigenvariables than Vis.
+pred pruning i:any, i:list any, o:string.
+pruning V _ S :- lambda-prefix V 0 N K H, N > 0, K < N, !,
+  S is "   (pruned: " ^ {show-term H} ^ " gets " ^ {std.any->string K} ^ " of the "
+       ^ {std.any->string N} ^ " arguments)".
+pruning V Vis S :- var V H _, visible-eigens H Now, lost-eigens Vis Now Lost, not (Lost = []), !,
+  eigen-names Lost Ns,
+  S is "   (pruned: may no longer depend on " ^ {std.string.concat ", " Ns} ^ ")".
+pruning _ _ "".
+
+% [lambda-prefix T N0 N K H]: T is N-N0 binders around H a1..ak (H a
+% variable, k = K); the test is made under the binders, where the body
+% lives (H itself is older, so it can be returned).
+pred lambda-prefix i:any, i:int, o:int, o:int, o:any.
+lambda-prefix T N0 N K H :- shape-of T S, S = binder F, !, N1 is N0 + 1,
+  pi x\ sigma B\ binder-body F x B, lambda-prefix B N1 N K H.
+lambda-prefix T N N K H :- var T H Args, std.length Args K.
+
+% [lost-eigens Before Now Lost]: the eigenvariables of Before not in Now.
+pred lost-eigens i:list any, i:list any, o:list any.
+lost-eigens [] _ [].
+lost-eigens [E|Es] Now Lost :- std.exists Now (same_term E), !, lost-eigens Es Now Lost.
+lost-eigens [E|Es] Now [E|Lost] :- lost-eigens Es Now Lost.
+
+% [pi-port Ctx Name X Body N]: entering pi: X is a new eigenvariable, named
+% N (its source name and a number), whose scope is Body.
+:nooc
+pred pi-port o:ctx, i:string, i:any, i:(pred), o:string.
+pi-port _ Name _ _ Name :- quiet, !.
+pi-port (ctx D Above) Name X Body N :-
+  new-number "eigen" K, N is Name ^ "#" ^ {std.any->string K},
+  (eigen X N => (show-term Body BS,
+                 event pi-step D {ctx-focus Above} [N, " is a new eigenvariable; its scope: ", BS])).
+
+% [assume-port Ctx H B]: entering H => B: H is added to the local program,
+% for B only.
+:nooc
+pred assume-port o:ctx, i:any, i:(pred).
+assume-port _ _ _ :- quiet, !.
+assume-port (ctx D Above) H B :-
+  event assume-step D {ctx-focus Above}
+    [{show-term H}, "   (added to the local program, for ", {show-term B}, " only)"].
+
+% [delay-port Ctx G Keys K]: G suspended on Keys, suspension number K.
+:nooc
+pred delay-port o:ctx, i:(pred), i:any, i:int.
+delay-port _ _ _ _ :- quiet, !.
+delay-port (ctx D Above) G Keys K :-
+  event delay-step D {ctx-focus Above} [{suspension-tag K}, {show-term G}, " on ", {show-term Keys}].
+
+% [cut-port Ctx]: a cut commits the call above Ctx to its current clause.
+:nooc
+pred cut-port o:ctx.
+cut-port _ :- quiet, !.
+cut-port (ctx _ [frame Id D P G | Above]) :- !,
+  event cut-step D (focus (frame Id D P G) Above) [{box-name Id}, " commits to its current clause"].
+cut-port _.
+
+% [ctx-focus Above F]: the focus of a step inside the body of the nearest
+% call above (the query itself when there is none).
+:nooc
+func ctx-focus list frame -> focus.
+ctx-focus [Frame | Above] (focus Frame Above) :- !.
+ctx-focus [] (focus (frame 0 0 query true) []).
+
+% ===== Builtins ==========================================================================
+
+% [native-port Kind Ctx G]: a port of the builtin goal G (shown with option
+% builtins; recorded for the profile).
+:nooc
+pred native-port i:event-kind, o:ctx, i:(pred).
+native-port _ _ _ :- quiet, !.
+native-port _ _ _ :- pending, !, fail.
+native-port Kind Ctx G :-
+  record-native-event Kind Ctx G,
+  show-native-if-shown Kind Ctx G.
+
+:nooc
+pred show-native-if-shown i:event-kind, o:ctx, i:(pred).
+show-native-if-shown Kind (ctx D _) G :- opt builtins, !,
+  say D ["(builtin) ", {event-label Kind}, " ", {show-term G}].
+show-native-if-shown _ _ _.
+

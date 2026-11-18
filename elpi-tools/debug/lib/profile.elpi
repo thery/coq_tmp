@@ -1,0 +1,146 @@
+% profile.elpi: the outcome of a run, and the profile (option profile).
+
+
+% ===== Outcome ===============================================================================
+
+pred report-solution.
+report-solution :- opt profile, !, show-profile.
+report-solution.
+
+pred report-final-failure.
+report-final-failure :- explain-if-asked, profile-if-asked.
+
+pred explain-if-asked.
+explain-if-asked :- opt no-explain, !.
+explain-if-asked :- print "debug: no (more) solution.", show-deepest-failure.
+
+pred profile-if-asked.
+profile-if-asked :- opt profile, !, show-profile.
+profile-if-asked.
+
+% ===== Events of the profile ====================================================================
+
+data profile-event.
+% [profile-event Kind Name Parent Time]: event Kind of a call of the
+% predicate Name, whose caller is of predicate Parent, at Time.
+symb profile-event event-kind -> string -> string -> float -> profile-event.
+
+% [record-event Kind Box]: with option profile, the event Kind of Box.
+:nooc
+pred record-event i:event-kind, o:box.
+record-event Kind Box :- opt profile, !,
+  box-parts Box _ _ P _ Above,
+  record-profile-event Kind {term_to_string P} Above.
+record-event _ _.
+
+% [record-native-event Kind Ctx G]: likewise for a builtin.
+:nooc
+pred record-native-event i:event-kind, o:ctx, i:(pred).
+record-native-event Kind (ctx _ Above) G :- opt profile, !,
+  record-profile-event Kind {native-name G} Above.
+record-native-event _ _ _.
+
+pred record-profile-event i:event-kind, i:string, i:list frame.
+record-profile-event Kind Name Above :-
+  gettimeofday T, state "profile" S,
+  stash_in_safe S (profile-event Kind Name {parent-name Above} T).
+
+% [native-name G Name]: the name of a builtin goal, for the profile.
+func native-name (pred) -> string.
+native-name G Name :- constant G P _, !, Name is {term_to_string P} ^ " (builtin)".
+native-name (_ = _) "= (builtin)" :- !.
+native-name _ "other builtins".
+
+:nooc
+func parent-name list frame -> string.
+parent-name [frame _ _ P _ | _] Name :- !, term_to_string P Name.
+parent-name [] "(query)".
+
+% ===== The flat profile ===========================================================================
+
+% Statistics of one predicate: calls, exits, redos, fails, clauses tried,
+% self time (seconds).
+data stats.
+symb stats int -> int -> int -> int -> int -> float -> stats.
+
+% [show-profile]: one row per predicate.  Self time: the time between two
+% consecutive events goes to the predicate running then: the one just
+% called, redone or trying a clause, or the caller of the one that just
+% exited or failed.
+pred show-profile.
+show-profile :-
+  state "profile" S, open_safe S Events,
+  std.string.map.empty M0,
+  aggregate Events "(query)" -1.0 M0 M,
+  std.string.map.bindings M Rows,
+  print "Profile (ports per predicate; tries = clauses tried; self time):",
+  say 1 [{pad 30 "predicate"}, {padl 8 "calls"}, {padl 8 "exits"}, {padl 8 "redos"},
+         {padl 8 "fails"}, {padl 8 "tries"}, {padl 12 "time (ms)"}],
+  std.forall Rows show-row.
+
+% [aggregate Events Running T0 M0 M]: the statistics M of the events, the
+% predicate Running being the one running since time T0.
+pred aggregate i:list profile-event, i:string, i:float, i:std.string.map stats, o:std.string.map stats.
+aggregate [] _ _ M M.
+aggregate [profile-event Kind Name Parent T | Es] Running T0 M0 M :-
+  elapsed T0 Running {calc (T - T0)} M0 M1,
+  count Kind Name M1 M2,
+  running-after Kind Name Parent Running1,
+  aggregate Es Running1 T M2 M.
+
+% [elapsed T0 Name DT M M1]: DT seconds go to Name (none before the first event).
+func elapsed float, string, float, std.string.map stats -> std.string.map stats.
+elapsed T0 _ _ M M :- T0 < 0.0, !.
+elapsed _ Name DT M M1 :- add-time Name DT M M1.
+
+% [running-after Kind Name Parent Running]: the predicate running after the event.
+func running-after event-kind, string, string -> string.
+running-after call-port N _ N :- !.
+running-after redo-port N _ N :- !.
+running-after try-step N _ N :- !.
+running-after _ _ P P.
+
+func add-time string, float, std.string.map stats -> std.string.map stats.
+add-time Name DT M M1 :- get-stats Name M (stats C E R F Tr T), T1 is T + DT,
+  std.string.map.add Name (stats C E R F Tr T1) M M1.
+
+func count event-kind, string, std.string.map stats -> std.string.map stats.
+count Kind Name M M1 :- get-stats Name M St, bump Kind St St1, std.string.map.add Name St1 M M1.
+
+func get-stats string, std.string.map stats -> stats.
+get-stats Name M St :- std.string.map.find Name M St, !.
+get-stats _ _ (stats 0 0 0 0 0 0.0).
+
+% [bump Kind St St1]: the count of the event Kind, plus one.
+func bump event-kind, stats -> stats.
+bump call-port (stats C E R F Tr T) (stats C1 E R F Tr T) :- !, C1 is C + 1.
+bump exit-port (stats C E R F Tr T) (stats C E1 R F Tr T) :- !, E1 is E + 1.
+bump redo-port (stats C E R F Tr T) (stats C E R1 F Tr T) :- !, R1 is R + 1.
+bump fail-port (stats C E R F Tr T) (stats C E R F1 Tr T) :- !, F1 is F + 1.
+bump try-step  (stats C E R F Tr T) (stats C E R F Tr1 T) :- !, Tr1 is Tr + 1.
+bump _ S S.
+
+func show-row pair string stats.
+show-row (pr Name (stats C E R F Tr T)) :-
+  say 1 [{pad 30 Name}, {padl 8 {std.any->string C}}, {padl 8 {std.any->string E}},
+         {padl 8 {std.any->string R}}, {padl 8 {std.any->string F}},
+         {padl 8 {std.any->string Tr}}, {padl 12 {ms-string {calc (T * 1000.0)}}}].
+
+% [ms-string X S]: X with two decimals.
+func ms-string float -> string.
+ms-string X S :- N is truncate (X * 100.0), I is N div 100, F is N mod 100,
+  S is {std.any->string I} ^ "." ^ {two-digits {std.any->string F}}.
+
+func two-digits string -> string.
+two-digits D S :- 1 is size D, !, S is "0" ^ D.
+two-digits D D.
+
+% [pad N S P]: S padded on the right to N characters; [padl] on the left.
+func pad int, string -> string.
+pad N S S :- L is size S, L >= N, !.
+pad N S P :- pad N {calc (S ^ " ")} P.
+
+func padl int, string -> string.
+padl N S S :- L is size S, L >= N, !.
+padl N S P :- padl N {calc (" " ^ S)} P.
+
