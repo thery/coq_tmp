@@ -1,4 +1,4 @@
-# elpi-dap: the Elpi debugger in VS Code
+# elpi-dap: the Elpi debugger in VS Code, and the properties in the Test Explorer
 
 `elpi-dap` is a debug adapter: it speaks the
 [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
@@ -22,8 +22,11 @@ committed ones ([`tests/sessions.t`](tests/sessions.t),
 [`tests/demo.t`](tests/demo.t), run by `dune build @runtest`).  The
 extension was only loaded in Node with a stand-in for the `vscode` module
 (it starts the adapter built next to it and fills in the path of
-elpi-debug).  **Nobody has clicked in VS Code yet**: what VS Code shows
-below is what the protocol says it shows, not something seen.
+elpi-debug); its part for the properties of elpi-check (below, "The
+properties in the Test Explorer") is tested in Node with a stand-in for
+the `vscode` module and the real elpi-check.  **Nobody has clicked in VS
+Code yet**: what VS Code shows below is what the protocol and the API say
+it shows, not something seen.
 
 ## Install
 
@@ -129,6 +132,98 @@ waiting on VS Code and on elpi-debug:
 OCaml, as elpi-debug's driver, with `yojson` (in the switch) for JSON;
 no other dependency.
 
+## The properties in the Test Explorer
+
+The same extension shows the properties of [`elpi-check`](../check/README.md)
+(`property "name" (pi X\ ...)` in a program) as tests of VS Code's Testing
+API, module [`vscode/properties.js`](vscode/properties.js):
+
+- **Discovery.**  When an `.elpi` file is opened, and again when it is
+  saved, the extension runs `elpi-check -json -list FILE` (the checker's
+  own analysis, not a regular expression: a property is found when Elpi
+  compiles it), and the Test Explorer shows the file with one test per
+  property; each property line gets the run buttons in its margin (the
+  green triangle).  The description of a test lists its variables with
+  their kind (`L : list int (generated), S : list int (computed)`).  A file
+  without properties has no entry; a file that does not compile keeps its
+  entries, marked with the error (the output channel "Elpi properties"
+  has the messages and the command lines run).
+- **Run** one property (its button, or its line in the Test Explorer:
+  `elpi-check -json -p NAME FILE`), a file (one `elpi-check -json FILE`), or
+  all (one per file).  A property that holds is green, its counts in the
+  test output (`passed 100 tests, 0 discarded; average size of the values
+  11`).  A failed one is red, with on its line the failure message: the
+  shrunk counterexample with the computed values, the counts, the first
+  counterexample and the replay goal.  `GAVE UP` (no test satisfied the
+  premises) is a failure too.  A runtime error in a property stops
+  elpi-check: that property is marked errored with the message, the ones
+  after it in the file skipped.
+- **Debug this counterexample.**  On a failure message (its button in the
+  peek view, or its context menu), on a property in the Test Explorer (its
+  context menu), or with the Debug profile (the debug button of a property
+  runs it, then debugs its counterexample): VS Code starts the debugger
+  (type `elpi`, as a launch configuration would) on the property's file
+  with the **replay goal** of the shrunk counterexample, stopped on entry.
+  The replay goal is the property's premises and conclusion with the
+  generated values in place, `sort [0, 0] S, std.length [0, 0] N,
+  std.length S M, N = M` for `sort-length` of
+  [`../demo/lists.elpi`](../demo/lists.elpi); it fails, and one steps into
+  why.  How it is made from the formula, generically, and when the
+  computed values are pinned: [`../check/README.md`](../check/README.md),
+  "Replaying a counterexample".  The debugger gets `-I elpi-tools/check/lib`
+  (for `accumulate property`) and the `-I` of the setting
+  `elpiTools.checkArgs`.
+
+Settings: `elpiTools.checkPath` (elpi-check, by default the one built next
+to the extension, else the PATH), `elpiTools.checkArgs` (more options,
+e.g. `["-n", "1000"]`), `elpiTools.checkLibraryPath` (the directory of
+`property.elpi` for the debugger).  elpi-check runs in the directory of
+the file.
+
+The modules: [`vscode/checkReport.js`](vscode/checkReport.js) reads the
+report of `elpi-check -json` (one JSON object per line, see
+[`../check/README.md`](../check/README.md), "The report for tools") and
+computes what is shown and the debug configuration, without VS Code;
+[`vscode/properties.js`](vscode/properties.js) is the Testing API part;
+[`vscode/tools.js`](vscode/tools.js) finds the programs, for both tools.
+
+### Manual check in VS Code (to be done by a person: not done)
+
+**Not tested by clicking.**  What follows is what the code asks VS Code
+to show; it was checked only in Node with a stand-in for the `vscode`
+module ([`vscode/test`](vscode/test)), not in VS Code.
+
+1. Install as above (`dune build`, the symbolic link), restart VS Code,
+   open the folder `elpi-tools/demo`, open `lists.elpi`.
+2. The Testing view (the flask in the activity bar) shows `lists.elpi` with
+   `sort-sorted`, `sort-length`, `rev-agree`; lines 41, 44 and 48 have a run
+   button in the margin.  If not: the output channel "Elpi properties"
+   (View, Output) shows the command run and its error.
+3. Click the run button of line 44 (`sort-length`): after about a second
+   it turns red and the message on the line starts with `FAILED at test`;
+   with `-p` the counterexample differs from the run of the whole file
+   (the random values depend on the properties run before): `L = [2, 2]`,
+   `S = [2]`.  Run the whole file (the button of `lists.elpi` in the Testing
+   view): `sort-sorted` and `rev-agree` green, `sort-length` red with
+   `L = [0, 0]`, `S = [0]`, `N = 2`, `M = 1`, the counts `22 passed, 0
+   discarded` and the replay goal.
+4. In the peek view of the failure, the button "Debug this counterexample"
+   (also in the context menu of the message and of the test): the debugger
+   starts on `sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M`,
+   stopped on entry.  Step Into: `Call: #1 sort [0, 0] X0`; Continue: the
+   debug console shows `Deepest failure (depth 2): 0 < 0`, called from `#5
+   insert 0 [0] [0, 0]`: no clause gives `[0, 0]`, since the clause of the
+   bug (line 10) drops the second 0.
+5. Open `lambda.elpi`: `preservation` and `unique-type`.  Run
+   `preservation` with its debug button (the Debug profile): it fails with
+   `M = app (lam (c0 \ c)) c`, `N = lam (c0 \ c)`, and the debugger starts
+   at once on `of (app (lam (c0 \ c)) c) base, step (app (lam (c0 \ c)) c)
+   N, N = lam (c0 \ c), of N base`, stopped on entry.  Step Into, then Step
+   Over seven times: the last two stops are `Call: #8 of (lam c0 \ c) base`
+   and `Fail: #8 of (lam c0 \ c) base`, the conclusion failing.
+6. Edit a property (e.g. rename it) and save: the Testing view follows.
+   Break the file (a syntax error) and save: its entry shows the error.
+
 ## Tests
 
 `dune build @runtest` plays the scripts [`tests/*.dap`](tests) (one JSON
@@ -144,10 +239,30 @@ request per line, `{"await": E}` to wait for an event) with
   a pause of a long run (only its reason is compared: where it stops
   depends on timing);
 - [`tests/demo.t`](tests/demo.t): the seven configurations of the demo
-  ([`../demo/.vscode/launch.json`](../demo/.vscode/launch.json)), below.
+  ([`../demo/.vscode/launch.json`](../demo/.vscode/launch.json)), below, and
+  the two sessions that "Debug this counterexample" starts on the demo
+  (the replay goals of `sort-length` and `preservation`, stepped).
+
+When `node` is installed, it also runs the tests of the extension in Node
+([`vscode/test`](vscode/test), `node --test`, Node 22 here):
+
+- [`checkReport.test.js`](vscode/test/checkReport.test.js): the reading of
+  the report (lines, chunks, events), the outcome of each property in a run
+  (started, passed, failed, errored on a runtime error, skipped after it),
+  the texts shown, the debug configuration of a counterexample;
+- [`properties.test.js`](vscode/test/properties.test.js): `properties.js`
+  with a stand-in for the module `vscode`
+  ([`vscode-stand-in.js`](vscode/test/vscode-stand-in.js), which records
+  the calls) and the real elpi-check on copies of the demo: the items
+  discovered and their lines, a file without properties, a run of all and
+  of one property, the failure message, "Debug this counterexample" from
+  the message and on a property that holds, the Debug profile (the pinned
+  replay goal of `preservation`), a runtime error.
 
 Not tested: VS Code itself (clicking, what its panels show), the
-extension inside VS Code.
+extension inside VS Code (its real `vscode` module: the stand-in follows
+the API documentation, it may differ in details such as the context keys
+of the menus).
 
 ## The demo in VS Code
 
@@ -204,13 +319,16 @@ of its author.  It would take: the `debuggers` and `breakpoints`
 contributions of [`vscode/package.json`](vscode/package.json) and its
 settings added to elpi-lang's `package.json` (the language `elpi` is
 already declared there); [`vscode/debugger.js`](vscode/debugger.js) (about
-70 lines: a factory that starts `elpi-dap`, a provider that completes the
+55 lines: a factory that starts `elpi-dap`, a provider that completes the
 launch configurations) called from elpi-lang's `activate`; and a way to
 find `elpi-dap` (a setting, as here, or the binaries of an opam package
-`elpi-tools`).  The extension is one entry point
-([`vscode/extension.js`](vscode/extension.js)) and one module per tool, so
-that the properties of [`elpi-check`](../check/README.md) can be added as
-another module.
+`elpi-tools`).  The properties of elpi-check need, in the same way, the
+`commands` and `menus` contributions and the settings `elpiTools.check*`,
+[`vscode/properties.js`](vscode/properties.js) and
+[`vscode/checkReport.js`](vscode/checkReport.js) (with
+[`vscode/tools.js`](vscode/tools.js), shared), registered from `activate`.
+The extension is one entry point ([`vscode/extension.js`](vscode/extension.js))
+and one module per tool.
 
 ## Limits (said plainly)
 
@@ -234,3 +352,13 @@ another module.
 - Inherited from elpi-debug: a cut through a variable, conjunctions of
   more than 16 goals, `=!=>`, CHR at depth 1 only (see
   [`../debug/README.md`](../debug/README.md), Limits).
+- The properties: the Test Explorer lists those of the `.elpi` files
+  opened in this session (and saved), not those of the files of the folder
+  never opened.  Running one property (`-p`) gives other random values than
+  running its file, hence possibly another counterexample.  The replay goal
+  of a pinned counterexample (see [`../check/README.md`](../check/README.md))
+  fails at the conclusion, but the debugger's explanation names the
+  deepest failure, which may be in the backtracking of a premise (for
+  `preservation`: `step c ..` at depth 2); stepping over the premises
+  shows the conclusion failing (Manual check, step 5).  No time limit on elpi-check: a property that loops keeps its
+  run going until it is cancelled (the stop button kills elpi-check).

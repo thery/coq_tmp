@@ -1,0 +1,25 @@
+# Debug this counterexample: the replay goal of preservation (demo/lambda.elpi), where N is pinned to the value of the counterexample (step has a right answer first).  Stopped on entry; Step Into, then Step Over 7 times: the right reduction, rejected by the pin, the wrong one, the conclusion that fails; continue: the explanation.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lambda.elpi","goal":"of (app (lam (c0 \\ c)) c) base, step (app (lam (c0 \\ c)) c) N, N = lam (c0 \\ c), of N base","stopOnEntry":true}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

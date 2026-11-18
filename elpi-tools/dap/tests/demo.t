@@ -279,4 +279,105 @@ exit of insert:
   -> {"seq":4,"type":"request","command":"disconnect","arguments":{}}
   <- {"seq":19,"type":"response","request_seq":4,"success":true,"command":"disconnect","body":null}
 
+8. Debug this counterexample (from the Test Explorer, see README.md): the
+replay goal of a failed property, as the extension launches it (with
+stopOnEntry), then the one of a property whose computed variable is
+pinned:
+
+  $ replay demo-counterexample.dap
+  # Debug this counterexample (the Test Explorer, dap/vscode/properties.js): the replay goal of sort-length (demo/lists.elpi), stopped on entry; two steps, then continue: the explanation of the failure.
+  -> {"seq":1,"type":"request","command":"initialize","arguments":{"adapterID":"elpi"}}
+  <- {"seq":1,"type":"response","request_seq":1,"success":true,"command":"initialize","body":{"supportsConfigurationDoneRequest":true,"supportsFunctionBreakpoints":true,"supportsRestartFrame":true,"supportsTerminateRequest":true,"supportsEvaluateForHovers":false,"supportsStepBack":false}}
+  -> {"seq":2,"type":"request","command":"launch","arguments":{"program":"lists.elpi","goal":"sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M","stopOnEntry":true}}
+  <- {"seq":2,"type":"response","request_seq":2,"success":true,"command":"launch","body":null}
+  <- {"seq":3,"type":"event","event":"initialized","body":null}
+  -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
+  <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
+  <- {"seq":5,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":4,"type":"request","command":"stepIn","arguments":{"threadId":1}}
+  <- {"seq":6,"type":"response","request_seq":4,"success":true,"command":"stepIn","body":null}
+  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #1 sort [0, 0] X0\n"}}
+  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #1 sort [0, 0] X0","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":5,"type":"request","command":"stepIn","arguments":{"threadId":1}}
+  <- {"seq":9,"type":"response","request_seq":5,"success":true,"command":"stepIn","body":null}
+  <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"Unify: #1 with lists.elpi:16: sort [0, 0] X0\n"}}
+  <- {"seq":11,"type":"event","event":"stopped","body":{"reason":"step","description":"Unify step","text":"Unify: #1 with lists.elpi:16: sort [0, 0] X0","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":6,"type":"request","command":"continue","arguments":{"threadId":1}}
+  <- {"seq":12,"type":"response","request_seq":6,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
+  <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
+  <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): 0 < 0\n"}}
+  <- {"seq":15,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
+  <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"    #5 insert 0 [0] [0, 0]\n"}}
+  <- {"seq":17,"type":"event","event":"output","body":{"category":"stdout","output":"    #1 sort [0, 0] [0, 0]\n"}}
+  <- {"seq":18,"type":"event","event":"output","body":{"category":"stdout","output":"  a builtin (not a predicate of the program): it ran natively and failed\n"}}
+  <- {"seq":19,"type":"event","event":"output","body":{"category":"stdout","output":"No solution.\n"}}
+  <- {"seq":20,"type":"event","event":"exited","body":{"exitCode":0}}
+  <- {"seq":21,"type":"event","event":"terminated","body":null}
+  -> {"seq":7,"type":"request","command":"disconnect","arguments":{}}
+  <- {"seq":22,"type":"response","request_seq":7,"success":true,"command":"disconnect","body":null}
+
+  $ replay demo-counterexample-pinned.dap
+  # Debug this counterexample: the replay goal of preservation (demo/lambda.elpi), where N is pinned to the value of the counterexample (step has a right answer first).  Stopped on entry; Step Into, then Step Over 7 times: the right reduction, rejected by the pin, the wrong one, the conclusion that fails; continue: the explanation.
+  -> {"seq":1,"type":"request","command":"initialize","arguments":{"adapterID":"elpi"}}
+  <- {"seq":1,"type":"response","request_seq":1,"success":true,"command":"initialize","body":{"supportsConfigurationDoneRequest":true,"supportsFunctionBreakpoints":true,"supportsRestartFrame":true,"supportsTerminateRequest":true,"supportsEvaluateForHovers":false,"supportsStepBack":false}}
+  -> {"seq":2,"type":"request","command":"launch","arguments":{"program":"lambda.elpi","goal":"of (app (lam (c0 \\ c)) c) base, step (app (lam (c0 \\ c)) c) N, N = lam (c0 \\ c), of N base","stopOnEntry":true}}
+  <- {"seq":2,"type":"response","request_seq":2,"success":true,"command":"launch","body":null}
+  <- {"seq":3,"type":"event","event":"initialized","body":null}
+  -> {"seq":3,"type":"request","command":"configurationDone","arguments":{}}
+  <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"configurationDone","body":null}
+  <- {"seq":5,"type":"event","event":"stopped","body":{"reason":"entry","description":"Start step","text":"Start: the run is about to start","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":4,"type":"request","command":"stepIn","arguments":{"threadId":1}}
+  <- {"seq":6,"type":"response","request_seq":4,"success":true,"command":"stepIn","body":null}
+  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #1 of (app (lam c0 \\ c) c) base\n"}}
+  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #1 of (app (lam c0 \\ c) c) base","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":5,"type":"request","command":"next","arguments":{"threadId":1}}
+  <- {"seq":9,"type":"response","request_seq":5,"success":true,"command":"next","body":null}
+  <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"Exit: #1 of (app (lam c0 \\ c) c) base\n"}}
+  <- {"seq":11,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #1 of (app (lam c0 \\ c) c) base","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":6,"type":"request","command":"next","arguments":{"threadId":1}}
+  <- {"seq":12,"type":"response","request_seq":6,"success":true,"command":"next","body":null}
+  <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #5 step (app (lam c0 \\ c) c) X1\n"}}
+  <- {"seq":14,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #5 step (app (lam c0 \\ c) c) X1","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":7,"type":"request","command":"next","arguments":{"threadId":1}}
+  <- {"seq":15,"type":"response","request_seq":7,"success":true,"command":"next","body":null}
+  <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"Exit: #5 step (app (lam c0 \\ c) c) c\n"}}
+  <- {"seq":17,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #5 step (app (lam c0 \\ c) c) c","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":8,"type":"request","command":"next","arguments":{"threadId":1}}
+  <- {"seq":18,"type":"response","request_seq":8,"success":true,"command":"next","body":null}
+  <- {"seq":19,"type":"event","event":"output","body":{"category":"stdout","output":"Redo: #5 step (app (lam c0 \\ c) c) c\n"}}
+  <- {"seq":20,"type":"event","event":"stopped","body":{"reason":"step","description":"Redo port","text":"Redo: #5 step (app (lam c0 \\ c) c) c","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":9,"type":"request","command":"next","arguments":{"threadId":1}}
+  <- {"seq":21,"type":"response","request_seq":9,"success":true,"command":"next","body":null}
+  <- {"seq":22,"type":"event","event":"output","body":{"category":"stdout","output":"Exit: #5 step (app (lam c0 \\ c) c) (lam c0 \\ c)\n"}}
+  <- {"seq":23,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #5 step (app (lam c0 \\ c) c) (lam c0 \\ c)","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":10,"type":"request","command":"next","arguments":{"threadId":1}}
+  <- {"seq":24,"type":"response","request_seq":10,"success":true,"command":"next","body":null}
+  <- {"seq":25,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #8 of (lam c0 \\ c) base\n"}}
+  <- {"seq":26,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #8 of (lam c0 \\ c) base","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":11,"type":"request","command":"next","arguments":{"threadId":1}}
+  <- {"seq":27,"type":"response","request_seq":11,"success":true,"command":"next","body":null}
+  <- {"seq":28,"type":"event","event":"output","body":{"category":"stdout","output":"Fail: #8 of (lam c0 \\ c) base\n"}}
+  <- {"seq":29,"type":"event","event":"stopped","body":{"reason":"step","description":"Fail port","text":"Fail: #8 of (lam c0 \\ c) base","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":12,"type":"request","command":"continue","arguments":{"threadId":1}}
+  <- {"seq":30,"type":"response","request_seq":12,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
+  <- {"seq":31,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
+  <- {"seq":32,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): #7 step c (X3 x#2)\n"}}
+  <- {"seq":33,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
+  <- {"seq":34,"type":"event","event":"output","body":{"category":"stdout","output":"    #6 step (lam c1 \\ c) (lam c1 \\ X3 c1)\n"}}
+  <- {"seq":35,"type":"event","event":"output","body":{"category":"stdout","output":"    #5 step (app (lam c1 \\ c) c) (app (lam c1 \\ X3 c1) c)\n"}}
+  <- {"seq":36,"type":"event","event":"output","body":{"category":"stdout","output":"  clauses tried:\n"}}
+  <- {"seq":37,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:24: step (app (lam X4^1) X5^1) (X4^1 X5^1)\n"}}
+  <- {"seq":38,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app (lam X4^1) X5^1\n"}}
+  <- {"seq":39,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:25: step (app X6^1 X7^1) (app X8^1 X7^1)\n"}}
+  <- {"seq":40,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X6^1 X7^1\n"}}
+  <- {"seq":41,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:26: step (app X9^1 X10^1) X9^1\n"}}
+  <- {"seq":42,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X9^1 X10^1\n"}}
+  <- {"seq":43,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:27: step (lam X11^1) (lam X12^1)\n"}}
+  <- {"seq":44,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs lam X11^1\n"}}
+  <- {"seq":45,"type":"event","event":"output","body":{"category":"stdout","output":"No solution.\n"}}
+  <- {"seq":46,"type":"event","event":"exited","body":{"exitCode":0}}
+  <- {"seq":47,"type":"event","event":"terminated","body":null}
+  -> {"seq":13,"type":"request","command":"disconnect","arguments":{}}
+  <- {"seq":48,"type":"response","request_seq":13,"success":true,"command":"disconnect","body":null}
+
   $ cd "$here"; rm -r "$work"

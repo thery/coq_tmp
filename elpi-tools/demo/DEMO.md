@@ -353,6 +353,59 @@ What to click and what one should see, step by step:
 ([`../dap/tests/demo.t`](../dap/tests/demo.t)) check what the adapter
 answers at each of these steps, not what VS Code draws.
 
+### The properties in the Test Explorer
+
+The same extension shows the properties as tests (VS Code's Testing view,
+the flask in the activity bar), with a run button in the margin of each
+property line; a failure shows its shrunk counterexample on the line, and
+"Debug this counterexample" starts the debugger on the goal that replays
+it.  **Not tested by clicking** either: this is what the extension asks VS
+Code to show, checked in Node with a stand-in for VS Code
+([`../dap/vscode/test`](../dap/vscode/test)); the debugging sessions it
+starts are scripted in [`../dap/tests/demo.t`](../dap/tests/demo.t).
+
+1. Open `lambda.elpi`: the Testing view lists `preservation` (line 30) and
+   `unique-type` (line 34).  Run the file (its button in the Testing view):
+   `unique-type` is green, `preservation` red, and line 30 shows the
+   message
+
+   ```
+   FAILED at test 6 (0 passed, 5 discarded); counterexample, shrunk in 0 steps:
+     M = app (lam (c0 \ c)) c
+     T = base
+     N = lam (c0 \ c)
+   first counterexample: ...
+   replay goal (Debug this counterexample):
+     of (app (lam (c0 \ c)) c) base, step (app (lam (c0 \ c)) c) N, N = lam (c0 \ c), of N base
+   ```
+
+   The first reduction of `(λx. c) c` is the right one (`N = c`), so the
+   replay goal pins `N` to the value of the counterexample
+   ([`../check/README.md`](../check/README.md), "Replaying a
+   counterexample").
+2. "Debug this counterexample" (the button of the message in the peek
+   view, or the context menu of `preservation`): the debugger stops on
+   entry.  Step Into: `Call: #1 of (app (lam c0 \ c) c) base`; then Step
+   Over, seven times: `Exit: #1`, `Call: #5 step (app (lam c0 \ c) c) X1`,
+   `Exit: #5 .. c` (the right reduction), `Redo: #5` (the pin `N = lam (c0
+   \ c)` rejects it), `Exit: #5 .. (lam c0 \ c)` (the wrong rule, line 26),
+   `Call: #8 of (lam c0 \ c) base` (the conclusion), `Fail: #8`: the
+   reduced term has no type (section 3 above).
+3. Open `lists.elpi`: `sort-sorted`, `sort-length`, `rev-agree` (lines 41,
+   44, 48).  Run the file: `sort-length` fails with `L = [0, 0]`, `S = [0]`,
+   `N = 2`, `M = 1`.  "Debug this counterexample" runs `sort [0, 0] S,
+   std.length [0, 0] N, std.length S M, N = M`; Step Into shows `Call: #1
+   sort [0, 0] X0`, Continue the explanation: `Deepest failure (depth 2): 0
+   < 0`, called from `#5 insert 0 [0] [0, 0]` (as in the second example
+   above).
+4. The debug button of a property (the Debug profile) runs it and, if it
+   fails, debugs its counterexample at once.  Running one property alone
+   draws other random values than running its file: `sort-length` alone
+   fails with `L = [2, 2]`.
+
+Step by step, with what to check: [`../dap/README.md`, "Manual check in VS
+Code"](../dap/README.md#manual-check-in-vs-code-to-be-done-by-a-person-not-done).
+
 ## How it works, in one paragraph
 
 `elpi-reflect` reads a program and gives it as Elpi data (types,
