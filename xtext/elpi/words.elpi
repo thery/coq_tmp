@@ -28,7 +28,7 @@ say Ps0 S :- place Ps0 Ps, std.map Ps part-text Ss0, std.filter Ss0 (x\ not (x =
 % placement of the phrases)
 pred say-cap i:list part, o:string.
 say-cap Ps S :- say Ps S0, place Ps [P | _], !,
-  (if (P = wd _) (cap-first S0 S) (S = S0)).
+  (if (P = wd _) (capitalised S0 S) (S = S0)).
 say-cap _ "".
 
 % A phrase that stands after its formula (lexicon: phrase-after) is put
@@ -70,14 +70,6 @@ join-words [S] S :- !.
 join-words [A, B | L] S :-
   (if (rex.match "^[,.:;)]" B ; rex.match ".*($" A) (Sp = "") (Sp = " ")),
   A1 is A ^ Sp ^ B, join-words [A1 | L] S.
-
-% the first letter in capitals, by the capital letters of the vocabularies
-% ([capital Lang Upper Lower], cyp's vocab_*.elpi)
-pred cap-first i:string, o:string.
-cap-first S C :- std.findall (capital _ _ _) Cs,
-  std.exists Cs (c\ sigma U L Re\ c = capital _ U L, Re is "^" ^ L, rex.match Re S,
-    rex.replace Re U S C), !.
-cap-first S S.
 
 % a justification *by J* as a part ("" for none)
 pred by-part i:string, o:part.

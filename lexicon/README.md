@@ -27,7 +27,8 @@ Elpi Accumulate File lex_en.        (* then the tables, in any order *)
   phrases of a writer, by their use (the same uses in every language); a
   `write-role` phrase is also a `phrase` (one clause);
 - writing systems: `capital Lang Upper Lower` (case folding: `lower S L`
-  uses the capitals of all the languages loaded), `clitic Lang Prefix`
+  uses the capitals of all the languages loaded, `capitalised S C` puts
+  the first letter of `S` in capitals), `clitic Lang Prefix`
   (a prefix glued to the next word), `punctuation Lang P` (punctuation
   other than ASCII), `unspaced Lang` (no spaces between words);
 - plural: `plural-category Lang N Cat` (the categories of the Unicode
