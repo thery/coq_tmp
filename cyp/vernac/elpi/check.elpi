@@ -55,9 +55,12 @@ justify-step none G :- close-default G.
 % the rules named X, and only them, if there are any
 justify-step (some X) (goal _ _ Ty _ _ as G) :-
   std.findall (named X _ _) [_ | _], !, named X Ty T, run T G, !.
-% else the lemma X, applied, its premises closed by the rules
+% else the lemma X (a name, possibly qualified), applied, its premises
+% closed by the rules
 justify-step (some X) G :-
-  coq.locate-all X L, std.mem L (loc-gref GR), !,
+  rex.match "^@?[A-Za-z_][A-Za-z0-9_'.]*$" X,
+  rex.replace "^@" "" X X1,
+  coq.locate-all X1 L, std.mem L (loc-gref GR), !,
   coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, premises GL.
 % else the tactic X
 justify-step (some X) G :- run-name X G.

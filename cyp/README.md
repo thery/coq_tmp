@@ -7,7 +7,7 @@ folded block gives the goal and Rocq's message.  When every step is
 proved, the lemma is defined in Rocq.
 
 cyp is written in Rocq-Elpi ([vernac/](vernac/README.md)): the command
-`Elpi CypFile "proof.md".` reads the Markdown, checks it and writes the
+`CypFile "proof.md".` reads the Markdown, checks it and writes the
 result.  The program `cyp` ([bin/cyp.ml](bin/cyp.ml)) is only a driver:
 it writes the small Rocq file that loads the proof's libraries and rules
 and runs this command.
@@ -20,6 +20,7 @@ dune build
 (cd vernac && rocq c -Q . CypV Cyp.v)                     # the cyp library
 export CYP_LIB=$PWD/vernac
 dune exec cyp -- examples/square_pos.md   # writes square_pos.checked.md and square_pos.cyp.json
+dune exec cyp -- --conditions examples/square_pos.md   # prints the conditions, tries nothing
 ```
 
 ## The format

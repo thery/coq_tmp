@@ -5,7 +5,7 @@
    2a and 2b the two claims of step 2, 0 the statement after the steps).
    cyp discharges them by its rules and default tactics.
 
-     Elpi CypFile "proof.md".
+     CypFile "proof.md".
        reads a cyp proof in Markdown, checks it, writes proof.checked.md
        and proof.cyp.json, and defines the lemma when every condition is
        discharged (used by the program cyp);
@@ -15,7 +15,7 @@
      Proof. tactics. CypQed.
        the same, but the conditions not discharged are the goals of the
        Proof block, in the order of the text; each goal says its number
-       (condition := "2a").  In Cyp Lemma a step is words (strings) and
+       (condition := cyp_condition "2a").  In Cyp Lemma a step is words (strings) and
        formulas (terms), "by X" for its justification.
 
    What a proof means is in the Elpi files of elpi/: text.elpi (words,
@@ -29,6 +29,10 @@ From elpi Require Import elpi.
 
 (* a claim C of the text, proved by p, is a hypothesis of the rest k *)
 Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
+
+(* the label of a goal of the Proof block: condition := cyp_condition "2a";
+   removed from the proof before the lemma is defined *)
+Definition cyp_condition (number : PrimString.string) : unit := tt.
 
 (* The tactics a proof may name in *by X* or in its header's by:, and the
    default tactics.  More with
@@ -103,6 +107,13 @@ Elpi Accumulate File cyp_proof.
 Elpi Accumulate File cyp_markdown.
 Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
+  % #[bare]: the conditions are printed, nothing is tried or defined
+  main [str F] :- attributes A, std.mem A (attribute "bare" _), !,
+    proof-mode => bare-mode => check-file F Name Ty Proof Rs,
+    std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
+    coq.ltac.collect-goals Proof GL _, say-goals GL,
+    count Rs Steps _ Todo, std.length Steps NS, std.length Todo NT,
+    coq.say "cyp:" Name "," NS "steps," NT "conditions".
   main [str F] :-
     check-file F Name Ty Proof Rs,
     count Rs Steps Ko _,
@@ -114,6 +125,7 @@ Elpi Accumulate lp:{{
         Msg is "cyp: " ^ {std.any->string NK} ^ " of " ^ {std.any->string NR} ^ " steps of " ^ Name ^ " not proved (" ^ KoS ^ "), see " ^ OutMd,
         coq.error Msg).
 }}.
+Elpi Export CypFile.
 
 (* ------------------------------------------------------------------ *)
 
@@ -197,12 +209,12 @@ Elpi Accumulate lp:{{
     std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) "cyp: the statement does not type-check",
     coq.say "cyp:" Name,
     (current-lang "en" :- !) => (current-scope "" :- !) => proof-mode =>
-      lemma Ty Body Proof Rs,
+      with-attributes (lemma Ty Body Proof Rs),
     std.forall Rs (r\ sigma I S\ r = rep I S,
       (S = ok, coq.say "  ✅" I ; S = todo _, true ; coq.say "  ❌" I S)),
     open Name Ty Proof Rs GL.
   main-interp-proof [str "File", str F] _ Proof GL (pr Name Ty) :-
-    proof-mode => check-file F Name Ty Proof Rs,
+    proof-mode => with-attributes (check-file F Name Ty Proof Rs),
     open Name Ty Proof Rs GL.
 }}.
 #[proof="begin"] Elpi Export Cyp.

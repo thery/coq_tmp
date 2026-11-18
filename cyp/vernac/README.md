@@ -12,7 +12,7 @@ Build: `rocq c -Q . CypV Cyp.v`.
 From Stdlib Require Import ZArith Lia.
 From CypV Require Import Cyp.
 Open Scope Z_scope.
-Elpi CypFile "square_pos.md".
+CypFile "square_pos.md".
 ```
 
 reads the proof, parses each formula between backticks in the context of
@@ -37,7 +37,7 @@ goal, the claims of the earlier steps are plain hypotheses (`c1a`,
 `c2_1`), whatever their proof.  cyp discharges each condition by its rules
 and default tactics; with a Proof block, the conditions it does not
 discharge are the goals of the block, in the order of the text, each
-labelled with its number:
+labelled with its number (`condition := cyp_condition "1b"`):
 
 ```coq
 Cyp File "vc_file.md".
@@ -54,7 +54,7 @@ The goal of condition 1b reads
   H : 0 <= a
   Hb : 0 <= b
   c1a : 0 <= Z.sqrt a
-  condition := "1b" : string
+  condition := cyp_condition "1b" : unit
   ============================
   0 <= Z.sqrt b
 ```
@@ -67,8 +67,21 @@ command).  The goals cannot yet be selected by their number (`[c1b]:
 tac`): Rocq-Elpi does not keep the name of a hole it creates.  The label
 `condition` is removed from the proof term before the lemma is defined.
 
-`Elpi CypFile "proof.md".`, used by the program `cyp`, has no Proof block:
+`CypFile "proof.md".`, used by the program `cyp`, has no Proof block:
 a condition it does not discharge is ❌ and the lemma is not defined.
+
+**Bare mode.**  With `#[bare]` (`#[bare] Cyp File "p.md".`, `#[bare] Cyp
+Lemma ...`), nothing is tried: every condition is a goal of the Proof
+block ([bare_demo.v](bare_demo.v)).  `#[bare] CypFile "p.md".` only
+prints the conditions with their contexts; the program `cyp` does it with
+`cyp --conditions p.md`.
+
+**Timing.**  With the environment variable `CYP_TIME` set, cyp prints the
+time spent on each condition (`cyp: time 2a 1234 ms`).
+
+**Justifications.**  A justification that is neither a rule name, a lemma
+name nor a tactic name (for instance tactic code) is not run: its
+condition is left open.
 
 ## Cyp Lemma: the same proof as a Rocq command
 

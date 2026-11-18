@@ -41,6 +41,9 @@ type rep string -> status -> report.    % the number of a condition
 
 % proof mode: the conditions not discharged are left to the Proof block
 pred proof-mode.
+% bare mode: no condition is tried; each is printed with its context and
+% left as a hole (implies proof mode)
+pred bare-mode.
 
 % the condition I of step S: S itself if it is the only one, else S
 % followed by a letter
@@ -114,18 +117,33 @@ claim-terms [E | L] Ts Bad :-
 % ------------------------------------------------------------------ %
 % Proving a step
 
+% [step-proof Tac I T P R]: the condition I, of type T, proved by P or
+% else left to the Proof block or not proved; with CYP_TIME set, the time
+% spent on it is printed
 pred step-proof i:option string, i:string, i:term, o:term, o:report.
-step-proof Tac I T P (rep I ok) :- prove Tac T P, !.
-step-proof _ I T P (rep I (todo S)) :- proof-mode, !,
+step-proof Tac I T P R :-
+  gettimeofday T0, condition-proof Tac I T P R, gettimeofday T1,
+  say-time I {calc (T1 - T0)}.
+
+pred condition-proof i:option string, i:string, i:term, o:term, o:report.
+condition-proof _ I T P (rep I (todo S)) :- bare-mode, !,
   condition-hole I T P, coq.term->string T S.
-step-proof _ I T _ (rep I (ko S)) :- coq.term->string T S.
+condition-proof Tac I T P (rep I ok) :- prove Tac T P, !.
+condition-proof _ I T P (rep I (todo S)) :- proof-mode, !,
+  condition-hole I T P, coq.term->string T S.
+condition-proof _ I T _ (rep I (ko S)) :- coq.term->string T S.
+
+pred say-time i:string, i:float.
+say-time I D :- getenv "CYP_TIME" (some _), !,
+  Ms is floor (D * 1000.0), coq.say "cyp: time" I Ms "ms".
+say-time _ _.
 
 % a hole for the condition I, of type T, under a definition
-% condition := "I" that names it in its goal
+% condition := cyp_condition "I" that names it in its goal
 pred condition-hole i:string, i:term, o:term.
-condition-hole I T (let `condition` {{ PrimString.string }} Lab H) :-
-  Lab = primitive (pstring {coq.string->pstring I}),
-  pi x\ def x `condition` {{ PrimString.string }} Lab => coq.typecheck (H x) T ok.
+condition-hole I T (let `condition` {{ unit }} Lab H) :-
+  Lab = {{ cyp_condition lp:{{ primitive (pstring {coq.string->pstring I}) }} }},
+  pi x\ def x `condition` {{ unit }} Lab => coq.typecheck (H x) T ok.
 
 % the hypothesis of claim Id: c followed by its number, dots as _
 pred claim-name i:string, o:name.

@@ -1,4 +1,6 @@
 ---
+require: From Stdlib Require Import ZArith Lia.
+scope: Z_scope
 by: lia
 ---
 

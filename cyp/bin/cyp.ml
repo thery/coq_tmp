@@ -1,9 +1,11 @@
-(* cyp [--json] proof.md: check a cyp proof with Cyp File.
+(* cyp [--json | --conditions] proof.md: check a cyp proof with Cyp File.
 
    The driver of cyp.  It keeps no semantics: from the header of the proof
    it writes a small .v file (the header's require: line, its rule files,
-   then  Elpi CypFile "proof.md".), runs rocq c on it, and prints cyp's
-   messages (with --json: the file proof.cyp.json, for the editor).  Cyp
+   then  CypFile "proof.md".), runs rocq c on it, and prints cyp's
+   messages (with --json: the file proof.cyp.json, for the editor; with
+   --conditions: every condition of the text with its context, nothing
+   tried, as #[bare] CypFile prints them).  Cyp
    File writes proof.checked.md and proof.cyp.json next to the proof.
 
    Header fields used here: require: (Rocq text), rules: (files .elpi,
@@ -74,7 +76,7 @@ let cyp_lib () =
   | Some d -> d
   | None -> prerr_endline "cyp: set CYP_LIB to the directory of the cyp library (vernac/)"; exit 2
 
-let main ~json md =
+let main ~json ~conditions md =
   let md = absolute (Sys.getcwd ()) md in
   let dir = Filename.dirname md in
   let h = header (read_file md) in
@@ -91,7 +93,7 @@ let main ~json md =
   let scope = match field h "scope" with "" -> [] | s -> [ "Open Scope " ^ s ^ "." ] in
   let v =
     [ field h "require"; "From CypV Require Import Cyp." ] @ scope @ rule_lines
-    @ [ Printf.sprintf "Elpi CypFile %S." md ] in
+    @ [ Printf.sprintf "%sCypFile %S." (if conditions then "#[bare] " else "") md ] in
   let src = Filename.concat tmp "cyp_check.v" in
   write_file src (String.concat "\n" v ^ "\n");
   let flags = relative_flags dir (words (expand (field h "flags"))) in
@@ -105,6 +107,12 @@ let main ~json md =
                             (Filename.quote dir) cmd (Filename.quote out)) in
   let js = Filename.remove_extension md ^ ".cyp.json" in
   if json && Sys.file_exists js then print_string (read_file js)
+  else if conditions then
+    (* Rocq's output, without its locations and warnings *)
+    List.iter (fun l ->
+        if not (Str.string_match (Str.regexp "^File \\|^Warning\\|^\\[") l 0)
+        then print_endline l)
+      (String.split_on_char '\n' (read_file out))
   else
     List.iter (fun l ->
         if Str.string_match (Str.regexp ".*\\(cyp:\\|Error\\)") l 0 then print_endline l)
@@ -113,6 +121,7 @@ let main ~json md =
 
 let () =
   match List.tl (Array.to_list Sys.argv) with
-  | [ "--json"; md ] -> exit (main ~json:true md)
-  | [ md ] -> exit (main ~json:false md)
-  | _ -> prerr_endline "usage: cyp [--json] proof.md"; exit 2
+  | [ "--json"; md ] -> exit (main ~json:true ~conditions:false md)
+  | [ "--conditions"; md ] -> exit (main ~json:false ~conditions:true md)
+  | [ md ] -> exit (main ~json:false ~conditions:false md)
+  | _ -> prerr_endline "usage: cyp [--json | --conditions] proof.md"; exit 2
