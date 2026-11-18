@@ -7,6 +7,15 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "0. A goal of the current file (asked when it starts)",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${file}",
+      "args": ["-I", "${workspaceFolder}/../check/lib"],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": true
+    },
+    {
       "name": "1. The wrong reduction (breakpoint on line 26)",
       "type": "elpi",
       "request": "launch",

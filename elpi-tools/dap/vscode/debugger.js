@@ -28,16 +28,21 @@ const adapterFactory = {
   }
 };
 
+// [askGoal(program)]: the goal to debug, typed by the user (undefined if
+// the question is dismissed).
+function askGoal(program) {
+  return vscode.window.showInputBox({ prompt: `The goal to debug in ${path.basename(program)}`, placeHolder: 'main' });
+}
+
 // Completes a launch configuration: F5 on an .elpi file without
-// launch.json asks for a goal; elpi-debug's path is filled in.
+// launch.json debugs a goal of that file; a configuration with no goal
+// asks for it; elpi-debug's path is filled in.
 const configurationProvider = {
   async resolveDebugConfiguration(_folder, config) {
     if (!config.type && !config.request && !config.name) {
       const editor = vscode.window.activeTextEditor;
       if (!editor || editor.document.languageId !== 'elpi') return config;
-      const goal = await vscode.window.showInputBox({ prompt: 'The goal to debug', placeHolder: 'main' });
-      if (!goal) return undefined;
-      Object.assign(config, { type: 'elpi', request: 'launch', name: 'Debug an Elpi goal', program: editor.document.fileName, goal: goal, stopOnEntry: true });
+      Object.assign(config, { type: 'elpi', request: 'launch', name: 'Debug an Elpi goal', program: editor.document.fileName, stopOnEntry: true });
     }
     if (!config.elpiDebug) {
       const found = elpiDebugPath(adapterPath());
@@ -48,6 +53,16 @@ const configurationProvider = {
     // configuration says otherwise
     if (config.internalConsoleOptions === undefined) {
       config.internalConsoleOptions = 'openOnSessionStart';
+    }
+    return config;
+  },
+  // after ${file} and the other variables are replaced: a configuration
+  // with no goal asks for it
+  async resolveDebugConfigurationWithSubstitutedVariables(_folder, config) {
+    if (!config.goal && config.program) {
+      const goal = await askGoal(config.program);
+      if (!goal) return undefined;
+      config.goal = goal;
     }
     return config;
   }

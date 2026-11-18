@@ -60,8 +60,10 @@ A launch configuration (`.vscode/launch.json` of the folder):
 ```
 
 `args` are more options of elpi-debug (`-I DIR`, `-all` for all the
-solutions, `-profile`...).  Without a launch.json, F5 on an `.elpi` file
-asks for the goal.
+solutions, `-profile`...).  A configuration with no `goal` asks for it
+when it starts (with `"program": "${file}"`, a goal of the file being
+edited: the demo's configuration 0); without a launch.json, F5 on an
+`.elpi` file does the same.
 
 **What one should see** (from the protocol, not seen): with a breakpoint
 on line 6 of [`tests/append.elpi`](tests/append.elpi) (its second clause),
