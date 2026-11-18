@@ -142,6 +142,7 @@ let rec term (t : Term.t) : string =
   | Term.Parens u -> term u
   | Term.Cast (u, ty) -> "(" ^ term u ^ " : " ^ type_expr ty ^ ")"
   | Term.Lam (x, _, ty, body) -> "(" ^ binder x ty ^ " " ^ term body ^ ")"
+  | Term.App ({ it = Term.Const c; _ }, [ g ]) when Func.equal c Func.spillf -> "{" ^ term g ^ "}"
   | Term.App ({ it = Term.Const c; _ }, [ _; _ ]) when Func.equal c Func.consf ->
       let elems, tail = list_elements t in
       let elems = String.concat ", " (List.map term elems) in

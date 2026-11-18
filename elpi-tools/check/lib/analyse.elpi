@@ -1,0 +1,158 @@
+% The variables of a property: their type and how a test obtains them.
+%
+% The variables are the leading pi X\ of the formula.  Each one gets:
+% - a type, from its annotation (pi X : T \) or inferred from the
+%   signatures of the predicates it is given to and the types of the
+%   constructors around it; a type parameter left open becomes int;
+% - an origin, from the modes of the predicates (Elpi 4 declares them):
+%   reading the premises left to right, a variable first met in an output
+%   argument is computed by that premise; a variable first met in an input
+%   argument, or in the conclusion, is generated from its type; every
+%   variable of a premise generated-by G is computed by G, solved at random.
+
+namespace check {
+
+data origin.
+symb from-type origin.      % generated from its type
+symb from-premise origin.   % computed by a premise
+symb from-generator origin. % computed by a premise generated-by G
+
+data variable.
+% [variable Name Type Origin]
+symb variable string -> reflect.ty -> origin -> variable.
+
+}
+
+namespace check.analyse {
+
+% The variables of the property, while the formula is analysed
+pred quantified o:any, o:reflect.ty, o:check.origin.
+% The variables bound inside the formula (pi in a goal, lambdas)
+pred bound-locally o:any, o:reflect.ty.
+
+% [variables F Binders Vars]: the variables of the property formula F;
+% Binders are the source names of the lambdas of the rule (reflect.binders)
+pred variables i:(pred), i:list reflect.binder, o:list check.variable.
+variables F Binders Vars :- leading-pis F Binders 1 Vars, !, std.forall Vars complete.
+
+pred leading-pis i:(pred), i:list reflect.binder, i:int, o:list check.variable.
+leading-pis (pi x\ F x) Binders I [check.variable Name T Origin | Vars] :- !,
+  binder-name Binders I Name Annotation Rest,
+  if (Annotation = some T1) (T = T1) true,
+  I1 is I + 1,
+  pi x\ quantified x T Origin => leading-pis (F x) Rest I1 Vars.
+leading-pis Body _ _ [] :- body Body.
+
+% [binder-name Binders I Name Annotation Rest]: the source name of the I-th
+% variable, X1, X2 .. when unknown
+pred binder-name i:list reflect.binder, i:int, o:string, o:option reflect.ty, o:list reflect.binder.
+binder-name [reflect.binder Name Ann | Rest] _ Name Ann Rest :- !.
+binder-name [] I Name none [] :- Name is "X" ^ int_to_string I.
+
+% A variable never met is generated from its type; its type defaults to int
+func complete check.variable.
+complete (check.variable _ T Origin) :-
+  if (var Origin) (Origin = check.from-type) true,
+  check.types.default T.
+
+% -- The formula ---------------------------------------------------------
+
+pred body i:(pred).
+body (A ==> B) :- !, premise A, body B.
+body C :- goal C conclusion.
+
+data position.
+symb premise-position, conclusion : position.
+
+pred premise i:(pred).
+premise (generated-by G) :- !, mark-term G check.from-generator, goal G premise-position.
+premise G :- goal G premise-position.
+
+% [goal G P]: types and origins of the variables of the goal G at position P
+pred goal i:(pred), i:position.
+goal G P :- check.goals.conjuncts G Gs, !, std.forall Gs (g\ goal g P).
+goal (A ; B) P :- !, goal A P, goal B P.
+goal (pi x\ F x) P :- !, pi x\ bound-locally x _ => goal (F x) P.
+goal (sigma x\ F x) P :- !, pi x\ bound-locally x _ => goal (F x) P.
+goal (H => G) P :- !, mark-term H check.from-type, goal G P.   % a hypothesis is an input
+goal (H ==> G) P :- !, mark-term H check.from-type, goal G P.
+goal (not G) _ :- !, goal G conclusion.      % not computes nothing
+goal (A = B) P :- !, infer A T, infer B T, origin-at P O, mark-term A O, mark-term B O.
+goal G P :- check.goals.atom G Name _ Args, reflect.signature Name _ _ Sig _ _, !,
+  arguments Args Sig P.
+goal G _ :- mark-term G check.from-type.     % no signature: everything is an input
+
+% where = may compute: in a premise, (X = f Y) computes X
+func origin-at position -> check.origin.
+origin-at premise-position check.from-premise.
+origin-at conclusion check.from-type.
+
+% [arguments Args Sig P]: inputs first, then outputs
+pred arguments i:list any, i:list reflect.arg, i:position.
+arguments Args Sig P :-
+  types Args Sig,
+  zip-forall Args Sig (a\ s\ mark-argument a s reflect.in P),
+  zip-forall Args Sig (a\ s\ mark-argument a s reflect.out P).
+
+% [types Args Sig]: unify the types of the arguments with the signature (a
+% variadic predicate may have more arguments than its signature)
+pred types i:list any, i:list reflect.arg.
+types [A | As] [reflect.arg _ T | Sig] :- !, infer A T, types As Sig.
+types _ _.
+
+pred mark-argument i:any, i:reflect.arg, i:reflect.argmode, i:position.
+mark-argument A (reflect.arg reflect.in _) reflect.in _ :- !, mark-term A check.from-type.
+mark-argument A (reflect.arg reflect.out _) reflect.out premise-position :- !, mark-term A check.from-premise.
+mark-argument A (reflect.arg reflect.out _) reflect.out conclusion :- !, mark-term A check.from-type.
+mark-argument _ _ _ _.
+
+% [zip-forall Xs Ys P]: P on the pairs of Xs and Ys, up to the shorter
+% list (a variadic predicate has more arguments than its signature)
+pred zip-forall i:list A, i:list B, i:(pred A, B).
+zip-forall [X | Xs] [Y | Ys] P :- !, P X Y, zip-forall Xs Ys P.
+zip-forall _ _ _.
+
+% [mark-term X O]: the variables of the property in X that have no origin
+% yet get O
+pred mark-term i:any, i:check.origin.
+mark-term X _ :- var X, !.
+mark-term X O :- name X, quantified X _ Origin, !, if (var Origin) (Origin = O) true.
+mark-term X _ :- name X, !.
+mark-term [] _ :- !.
+mark-term [H | T] O :- !, mark-term H O, mark-term T O.
+mark-term X O :- constant X _ Args, !, std.forall Args (a\ mark-term a O).
+mark-term X O :- name X _ Args, !, std.forall Args (a\ mark-term a O).
+mark-term X _ :- is_cdata X _, !.
+mark-term G O :- check.goals.conjuncts G Gs, !, std.forall Gs (g\ mark-term g O).
+mark-term (A = B) O :- !, mark-term A O, mark-term B O.
+mark-term (pi x\ F x) O :- !, pi x\ mark-term (F x) O.
+mark-term (x\ B x) O :- pi y\ mark-term (B y) O.
+
+% -- Types of terms --------------------------------------------------------
+
+% [infer X T]: unify T with the type of X, as far as it is known; an
+% inconsistency (from an approximation here) is ignored
+pred infer i:any, o:reflect.ty.
+infer X T :- infer.term X T, !.
+infer _ _.
+
+pred infer.term i:any, o:reflect.ty.
+infer.term X _ :- var X, !.
+infer.term X T :- name X, quantified X T1 _, !, T = T1.
+infer.term X T :- name X, bound-locally X T1, !, T = T1.
+infer.term X _ :- name X, !.
+infer.term N (reflect.tcon "int" []) :- is_cdata N "int", !.
+infer.term S (reflect.tcon "string" []) :- is_cdata S "string", !.
+infer.term F (reflect.tcon "float" []) :- is_cdata F "float", !.
+infer.term [] (reflect.tcon "list" [_]) :- !.
+infer.term [H | L] (reflect.tcon "list" [A]) :- !, infer H A, infer L (reflect.tcon "list" [A]).
+infer.term X T :- constant X K Args, !, term_to_string K Name,
+  reflect.constructor Name _ KT _, !, applied KT Args T.
+infer.term (x\ B x) (reflect.tarrow A T) :- pi y\ bound-locally y A => infer (B y) T.
+
+% [applied KT Args T]: a constant of type KT applied to Args has type T
+pred applied i:reflect.ty, i:list any, o:reflect.ty.
+applied KT [] T :- !, check.types.expand KT T1, T = T1.
+applied KT [A | As] T :- check.types.expand KT (reflect.tarrow TA TR), !, infer A TA, applied TR As T.
+
+}

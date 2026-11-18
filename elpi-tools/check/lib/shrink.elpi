@@ -1,0 +1,79 @@
+% Smaller candidates for a value, to shrink a counterexample.
+%
+% For a term of a data type, in this order (the smallest first):
+% 1. the leaves of its type ([] for a list, leaf for a tree ...);
+% 2. its arguments of the same type (the tail of a list, the subtrees; the
+%    body of a binder when it does not use the bound variable);
+% 3. the term with one argument replaced by one of its candidates.
+% For an int N: 0, N/2, N-1 towards 0; for a string: ""; a float: 0.0.
+% Every candidate is strictly smaller (check.gen.size), so the greedy
+% loop in run.elpi stops.
+
+namespace check.shrink {
+
+% [candidate T X Y]: Y is a smaller term than X, both of type T
+pred candidate i:reflect.ty, i:any, o:any.
+candidate T X Y :- check.types.expand T T1, candidate.of T1 X Y, smaller Y X.
+
+pred smaller i:any, i:any.
+smaller Y X :- check.gen.size Y NY, check.gen.size X NX, NY < NX, !.
+smaller Y X :- is_cdata X "int", int-abs Y AY, int-abs X AX, AY < AX, !.   % same size: closer to 0
+
+func int-abs any -> int.
+:untyped
+int-abs N M :- if (N < 0) (M is 0 - N) (M = N).
+
+pred candidate.of i:reflect.ty, i:any, o:any.
+candidate.of _ X _ :- var X, !, fail.
+candidate.of (reflect.tcon "int" []) N M :- !, int-candidate N M.
+candidate.of (reflect.tcon "string" []) S "" :- !, not (S = "").
+candidate.of (reflect.tcon "float" []) F 0.0 :- !, not (F = 0.0).
+candidate.of (reflect.tarrow A B) F G :- !, pi x\ check.gen.bound-var x A => candidate B (F x) (G x).
+candidate.of T X Y :- leaf-candidate T X Y.
+candidate.of T X Y :- decompose X K Args, constructor-arguments K T ArgTypes,
+  same-type-argument T Args ArgTypes Y.
+candidate.of T X Y :- decompose X K Args, constructor-arguments K T ArgTypes,
+  one-argument-smaller Args ArgTypes Args1, check.gen.apply K Args1 Y.
+
+pred int-candidate i:int, o:int.
+int-candidate N 0 :- not (N = 0).
+int-candidate N M :- M is N div 2, not (M = 0), not (M = N).
+int-candidate N M :- N > 0, M is N - 1, not (M = 0).
+int-candidate N M :- N < 0, M is N + 1, not (M = 0).
+
+% [leaf-candidate T X Y]: Y is a leaf of type T other than X
+pred leaf-candidate i:reflect.ty, i:any, o:any.
+leaf-candidate T X Y :-
+  check.gen.choices T Leaves _, std.mem Leaves (check.gen.choice Y []), not (Y = X).
+
+% [decompose X K Args]: X is the constructor (or bound variable) K applied
+% to Args
+pred decompose i:any, o:any, o:list any.
+:untyped
+decompose [H | T] (::) [H, T] :- !.
+decompose X K Args :- constant X K Args, !.
+decompose X K Args :- name X K Args, not (Args = []).
+
+% [constructor-arguments K T ArgTypes]: the types of the arguments of K in a
+% term of type T
+pred constructor-arguments i:any, i:reflect.ty, o:list reflect.ty.
+constructor-arguments K T ArgTypes :-
+  term_to_string K Name, reflect.constructor Name _ KT _, !,
+  check.types.split-arrows KT ArgTypes R, R = T.
+constructor-arguments K T ArgTypes :-
+  check.gen.bound-var K KT, !, check.types.split-arrows KT ArgTypes R, R = T.
+
+% [same-type-argument T Args ArgTypes Y]: Y is an argument of type T; under a
+% binder, a body that does not use its variable
+pred same-type-argument i:reflect.ty, i:list any, i:list reflect.ty, o:any.
+same-type-argument T [A | _] [AT | _] A :- AT = T.
+same-type-argument T [A | _] [reflect.tarrow _ B | _] Y :- B = T, A = (_\ Y).
+same-type-argument T [_ | As] [_ | ATs] Y :- same-type-argument T As ATs Y.
+
+% [one-argument-smaller Args ArgTypes Args1]: one argument replaced by a
+% candidate
+pred one-argument-smaller i:list any, i:list reflect.ty, o:list any.
+one-argument-smaller [A | As] [AT | _] [B | As] :- candidate AT A B.
+one-argument-smaller [A | As] [_ | ATs] [A | Bs] :- one-argument-smaller As ATs Bs.
+
+}

@@ -1,0 +1,258 @@
+% Running the properties of a program: tests, shrinking, report.
+%
+% A test of a property, at a size S:
+% 1. a fresh copy of the formula (the property's rule, looked up again);
+% 2. each variable generated from its type gets a random value of size at
+%    most S; the others are left as variables;
+% 3. the premises generated-by G are solved at random (depth S), in order;
+%    if one has no solution the test is discarded;
+% 4. the test is discarded if the premises have no solution; it fails if
+%    some solution of the premises falsifies the conclusion; it passes
+%    otherwise.
+% The size grows from 1 to the maximum along the tests.  A failing test is
+% shrunk: its values are replaced, greedily, by smaller candidates for as
+% long as the test still fails.
+
+namespace check {
+
+data outcome.
+symb passed, discarded, failed : outcome.
+
+data settings.
+% [settings Tests MaxSize Seed Only]: Only is the name of the property to
+% check, or "" for all
+symb settings int -> int -> int -> string -> settings.
+
+% A property of the program: its rule index, name, location, binder names
+data prop.
+symb prop int -> string -> reflect.srcloc -> list reflect.binder -> prop.
+
+% [main Args]: check the properties of the program; fails if one fails
+pred main i:list string.
+main Args :-
+  parse-arguments Args (settings 100 20 1 "") Settings,
+  Settings = settings _ _ Seed Only,
+  random.init Seed,
+  properties Only Props,
+  if (Props = []) (print "elpi-check: no property found") true,
+  std.map Props (check-property Settings) Results,
+  summary Props Results.
+
+% [parse-arguments Args Default Settings]: -n N, -size S, -seed K, -p NAME
+pred parse-arguments i:list string, i:settings, o:settings.
+parse-arguments [] S S.
+parse-arguments ["-n", N | Rest] (settings _ Z K P) S :- !, parse-arguments Rest (settings {calc (string_to_int N)} Z K P) S.
+parse-arguments ["-size", Z | Rest] (settings N _ K P) S :- !, parse-arguments Rest (settings N {calc (string_to_int Z)} K P) S.
+parse-arguments ["-seed", K | Rest] (settings N Z _ P) S :- !, parse-arguments Rest (settings N Z {calc (string_to_int K)} P) S.
+parse-arguments ["-p", P | Rest] (settings N Z K _) S :- !, parse-arguments Rest (settings N Z K P) S.
+parse-arguments [A | _] _ _ :- std.fatal-error {calc ("elpi-check: unknown option " ^ A)}.
+
+% [properties Only Props]: the property rules of the program, in order
+pred properties i:string, o:list prop.
+properties Only Props :- properties.from 1 Only Props.
+pred properties.from i:int, i:string, o:list prop.
+properties.from I Only Props :-
+  reflect.clause property I Loc Attrs (property Name _) _, !,
+  binders-of Attrs Binders,
+  I1 is I + 1, properties.from I1 Only Rest,
+  if (Only = "" ; Only = Name) (Props = [prop I Name Loc Binders | Rest]) (Props = Rest).
+properties.from _ _ [].
+
+pred binders-of i:list reflect.attribute, o:list reflect.binder.
+binders-of Attrs Bs :- std.mem Attrs (reflect.binders Bs), !.
+binders-of _ [].
+
+% [formula I F]: a fresh copy of the formula of the I-th property
+pred formula i:int, o:(pred).
+formula I F :- reflect.clause property I _ _ (property _ F) _, !.
+
+% -- One property ----------------------------------------------------------
+
+data result.
+% [result Outcome Passed Discarded AverageSize]
+symb result outcome -> int -> int -> int -> result.
+
+pred check-property i:settings, i:prop, o:result.
+check-property Settings (prop I Name Loc Binders) Result :-
+  formula I F,
+  check.analyse.variables F Binders Vars,
+  Settings = settings Tests MaxSize _ _,
+  print-header Name Loc Vars,
+  tests I Vars Tests MaxSize 1 0 0 0 Result,
+  report I Vars Result.
+
+% [tests I Vars Tests MaxSize T Passed Discarded SizeSum Result]: tests
+% number T to Tests
+pred tests i:int, i:list check.variable, i:int, i:int, i:int, i:int, i:int, i:int, o:result.
+tests _ _ Tests _ T P D Sum (result passed P D Avg) :- T > Tests, !, average Sum P Avg.
+tests I Vars Tests MaxSize T P D Sum Result :-
+  Size is 1 + ((T - 1) * MaxSize) div Tests,
+  one-test I Vars Size Values Outcome,
+  T1 is T + 1,
+  if (Outcome = failed)
+     (Result = result (failed-with Values) P D T)
+     (if (Outcome = passed)
+         (P1 is P + 1, values-size Values VS, Sum1 is Sum + VS,
+          tests I Vars Tests MaxSize T1 P1 D Sum1 Result)
+         (D1 is D + 1, tests I Vars Tests MaxSize T1 P D1 Sum Result)).
+
+% A failing test carries the values of its variables
+symb failed-with list (option any) -> outcome.
+
+func average int, int -> int.
+average _ 0 0 :- !.
+average Sum N Avg :- Avg is Sum div N.
+
+func values-size list (option any) -> int.
+values-size [] 0.
+values-size [none | Vs] N :- values-size Vs N.
+values-size [some V | Vs] N :- values-size Vs M, check.gen.size V S, N is M + S.
+
+% [one-test I Vars Size Values Outcome]
+pred one-test i:int, i:list check.variable, i:int, o:list (option any), o:outcome.
+one-test I Vars Size Values Outcome :-
+  formula I F,
+  std.map Vars (generate-value Size) Xs,
+  instantiate F Xs Body,
+  if (generators Size Body)
+     (std.map Xs read-value Values, evaluate Body Outcome)
+     (Values = [], Outcome = discarded).
+
+% [generate-value Size Var X]: a random value, or a fresh variable for a
+% computed one
+pred generate-value i:int, i:check.variable, o:any.
+generate-value Size (check.variable _ T check.from-type) X :- !, check.gen.some-term T Size X.
+generate-value _ _ _.
+
+pred read-value i:any, o:option any.
+read-value X none :- var X, !.
+read-value X (some X).
+
+% [instantiate F Xs Body]: the body of the formula F for the values Xs
+pred instantiate i:(pred), i:list any, o:(pred).
+instantiate (pi x\ F x) [X | Xs] Body :- !, instantiate (F X) Xs Body.
+instantiate Body [] Body.
+
+% [generators Size Body]: solve the premises generated-by G at random
+pred generators i:int, i:(pred).
+generators Size (generated-by G ==> B) :- !, check.solve.solve Size [] G, !, generators Size B.
+% (:untyped: the determinacy checker rejects a discarded premise in a pattern)
+:untyped
+generators Size (_ ==> B) :- !, generators Size B.
+generators _ _.
+
+% [evaluate Body Outcome]
+pred evaluate i:(pred), o:outcome.
+evaluate Body discarded :- not (premises Body), !.
+evaluate Body failed :- not (not (counterexample Body)), !.
+evaluate _ passed.
+
+% [premises Body]: the premises have a solution
+pred premises i:(pred).
+premises (A ==> B) :- !, A, premises B.
+premises _.
+
+% [counterexample Body]: a solution of the premises falsifies the conclusion
+pred counterexample i:(pred).
+counterexample (A ==> B) :- !, A, counterexample B.
+counterexample C :- not C.
+
+% [test-values I Vars Values Outcome]: the test with given values (all the
+% values that the variables had in a test, the computed ones excepted)
+pred test-values i:int, i:list check.variable, i:list (option any), o:outcome.
+test-values I _ Values Outcome :-
+  formula I F,
+  std.map Values value-or-variable Xs,
+  instantiate F Xs Body,
+  evaluate Body Outcome.
+
+pred value-or-variable i:option any, o:any.
+value-or-variable (some X) X.
+value-or-variable none _.
+
+% -- Shrinking -------------------------------------------------------------
+
+% [shrink I Vars Values Steps ValuesOut StepsOut]: at most 1000 steps
+pred shrink i:int, i:list check.variable, i:list (option any), i:int, o:list (option any), o:int.
+shrink I Vars Values Steps Out StepsOut :-
+  Steps < 1000,
+  smaller-values Vars Values Candidate,
+  test-values I Vars Candidate failed, !,
+  Steps1 is Steps + 1,
+  shrink I Vars Candidate Steps1 Out StepsOut.
+shrink _ _ Values Steps Values Steps.
+
+% [smaller-values Vars Values Values1]: one value replaced by a candidate
+pred smaller-values i:list check.variable, i:list (option any), o:list (option any).
+smaller-values [check.variable _ T _ | _] [some X | Vs] [some Y | Vs] :- check.shrink.candidate T X Y.
+smaller-values [_ | Vars] [V | Vs] [V | Ws] :- smaller-values Vars Vs Ws.
+
+% -- Report ----------------------------------------------------------------
+
+func location reflect.srcloc -> string.
+location (reflect.srcloc File Line _) S :-
+  rex.replace "^.*/" "" File Base,
+  S is Base ^ ":" ^ int_to_string Line.
+
+% [say Items]: one line made of the strings Items
+func say list string.
+say Items :- std.string.concat "" Items Line, print Line.
+
+% [text X S]: S is X printed: a string as it is, other terms in Elpi syntax
+func text any -> string.
+:untyped
+text S S :- is_cdata S "string", !.
+text X S :- term_to_string X S.
+
+pred print-header i:string, i:reflect.srcloc, i:list check.variable.
+print-header Name Loc Vars :-
+  std.map Vars describe Ds, std.string.concat ", " Ds D,
+  say ["property ", Name, " (", {location Loc}, ")"],
+  say ["  variables: ", {text D}].
+
+func describe check.variable -> string.
+describe (check.variable Name T O) S :-
+  check.types.show T TS, origin-name O ON, S is Name ^ " : " ^ TS ^ " " ^ ON.
+
+func origin-name check.origin -> string.
+origin-name check.from-type "(generated)".
+origin-name check.from-premise "(computed)".
+origin-name check.from-generator "(generated-by)".
+
+pred report i:int, i:list check.variable, i:result.
+report _ _ (result passed P D _) :- P = 0, !,
+  say ["  GAVE UP: no test satisfied the premises (", {text D}, " discarded)"].
+report _ _ (result passed P D Avg) :- !,
+  say ["  OK: passed ", {text P}, " tests, ", {text D}, " discarded; average size of the values ", {text Avg}].
+report I Vars (result (failed-with Values) P D T) :-
+  say ["  FAILED at test ", {text T}, " (", {text P}, " passed, ", {text D}, " discarded); first counterexample:"],
+  show-counterexample I Vars Values,
+  shrink I Vars Values 0 Small Steps,
+  say ["  shrunk in ", {text Steps}, " steps to:"],
+  show-counterexample I Vars Small.
+
+% [show-counterexample I Vars Values]: the values, with the computed ones
+% of one solution of the premises that falsifies the conclusion
+pred show-counterexample i:int, i:list check.variable, i:list (option any).
+show-counterexample I Vars Values :-
+  formula I F,
+  std.map Values value-or-variable Xs,
+  instantiate F Xs Body,
+  counterexample Body, !,
+  std.forall2 Vars Xs show-value.
+
+pred show-value i:check.variable, i:any.
+show-value (check.variable Name _ _) X :- say ["    ", Name, " = ", {text X}].
+
+% [summary Props Results]: fails when a property failed or gave up
+pred summary i:list prop, i:list result.
+summary Props Results :-
+  std.length Props N,
+  std.filter Results is-ok Oks, std.length Oks K,
+  say ["elpi-check: ", {text K}, " of ", {text N}, " properties hold"],
+  K = N.
+
+func is-ok result.
+is-ok (result passed P _ _) :- P > 0.
+
+}

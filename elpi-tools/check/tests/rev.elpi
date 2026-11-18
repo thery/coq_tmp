@@ -1,0 +1,20 @@
+% List reversal: two true properties and a false one.
+accumulate property.
+
+func rev list A -> list A.
+rev L R :- rev.aux L [] R.
+
+func rev.aux list A, list A -> list A.
+rev.aux [] Acc Acc.
+rev.aux [X | Xs] Acc R :- rev.aux Xs [X | Acc] R.
+
+func append list A, list A -> list A.
+append [] L L.
+append [X | Xs] L [X | R] :- append Xs L R.
+
+property "rev-involutive" (pi L R L2\ rev L R ==> rev R L2 ==> L2 = L).
+property "rev-append"
+  (pi L1 L2 L R R1 R2 R3\ append L1 L2 L ==> rev L R ==> rev L1 R1 ==> rev L2 R2 ==>
+     append R2 R1 R3 ==> R = R3).
+% false: reversing does not change a list
+property "rev-identity" (pi L R\ rev L R ==> R = L).
