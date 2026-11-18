@@ -53,7 +53,7 @@ The direct writer also has a contraction of application steps
 `maximal`), guarded by tactics rather than by the annotations: it is not
 the contraction of Fig. 3.11.
 
-## Chapter 4: the selection of type annotations
+## Chapter 4: the selection of type annotations, the subproofs
 
 | thesis | what | code |
 |---|---|---|
@@ -63,6 +63,12 @@ the contraction of Fig. 3.11.
 | 4.3.1, Fig. 4.11 | one term per rule, before and after | `selection.v` (`rule_redundant`, `rule_abstractions`, `rule_applications`, `rule_argument`, `rule_head`) |
 | 4.4.1, Fig. 4.23-4.24 | ABCD with all its annotations, then with its selected annotations | `selection.v` (`check-selection "ABCD"`; the term is printed by `aterm-string`); its text `examples-staged-selection/ABCD.md` |
 | 4.4.1, Fig. 4.30 ("Nous appliquons h2 à h4 et P1") | an argument with no annotation is named in the sentence of its application | rules (2) and (4) of `application-text` in `staged.elpi` (`named-only`, `texts-and-names`) |
+| 4.3.2, Fig. 4.12 | translatable occurrences: the head of a type annotation, the body of an abstraction, the function of an application, and an argument whose function has the type T ⇒ T' (T a proposition, T' not depending on it); a proof argument that is not translatable is written as a term; switch `naming` = `all` or `shared` (variable `XTEXT_NAMING`), after the selection | `translatable` in `subproofs.elpi` (`arg-kind` in `kinds.elpi` for T ⇒ T') |
+| 4.3.2, Fig. 4.13 | argument of an abstraction: a binder of a proposition is a hypothesis only when the rest of the type does not depend on it, else a variable ("Let b : B") | `abstraction-binder-kind` in `kinds.elpi`, used by the statement (`top-run`, `document.elpi`) and the series of abstractions (`series-binder-kind`, `staged.elpi`) |
+| 4.3.3, Fig. 4.14 | β-expansion: each translatable subproof that is the function or an argument of an application and keeps a type expression becomes a local definition, let P : T = M, in postfix order; Dewey names under a named abstraction (rules Cast, App♡♡, App♡◇, App◇♡, App◇◇, Abs, Ident, Défaut) | `name-subproofs`, `name-in-scope`, `name-node`, `name-part`, `name-subproof` in `subproofs.elpi`; the types `alet`, `aresult`, `named` in `staged.elpi` |
+| 4.3.3, Fig. 4.16, 4.27 | ABCD with its intermediate results, let P1 : C = (h3 h4) in let P2 : B = (h2 h4 P1) in let P3 : C = (h3 h4) in ((h1 h4 P2 P3) : D) | `subproofs.v` (`check-naming "ABCD" "all"`), exactly |
+| 4.3.3, Fig. 4.17 | suppression of doublets: a subproof whose type a result in scope proves is not proved again (P3 is P1); switch `naming` = `shared` | first clause of `name-subproof`; `subproofs.v` (`check-naming "ABCD" "shared"`), exactly |
+| 4.4.1, Fig. 4.30 ("Preuve P1 : montrons C. Nous appliquons h3 à h4. Fin de P1. ...") | the text of a named result: a step whose claim is followed by its name, used by name afterwards | `write (alet ...)` and `conclusion-parts (named ...)` in `staged.elpi`; `subproofs.v` (`check-text "ABCD"`, in French and English), `examples-staged-naming/ABCD.md`, `examples-staged-shared/ABCD.md` |
 
 Where the code departs from the thesis:
 
@@ -78,10 +84,52 @@ Where the code departs from the thesis:
   identifiers with no annotation: rules (2) and (4) name them after "to"
   ("Applying h2 to h4, we have B") or "with" ("By application, with z, y
   and x, we have ..."), as Fig. 4.30 does ("Nous appliquons h2 à h4 et
-  P1"); the arguments that keep a text are written above, unnamed (the
-  names P1, P2, P3 come from 4.3.3, not implemented).
+  P1"); without the switch `naming`, the arguments that keep a text are
+  written above, unnamed; with it, they are the named results of 4.3.3.
 - A term argument is named as formulas print it (`BinInt.Z.le`, not
   `le`), so that two constants with the same short name differ.
+- 4.3.2-4.3.3 run only after the selection (switch `naming` with
+  `selection` = `thesis`; another selection is an error), as in the
+  thesis, where they come after it.  They are one switch, `naming`, not
+  values of `selection`: they are further steps with their own variant
+  (doublets suppressed or not), and the thesis keeps P3 in Fig. 4.27 but
+  removes it in Fig. 4.17, so both are values (`all`, `shared`).
+- Fig. 4.12 marks occurrences; here the stage keeps the proofs that are
+  translatable as they are and turns the others into terms (`aelem`,
+  written "The element g b belongs to A").  `subproofs.v` prints the marks
+  M♡ (not on abstractions, whose bodies are always translatable).
+- Fig. 4.14 is written for an application of one argument.  The term
+  here has applications of several arguments (after the selection,
+  Fig. 4.24): the function, then the arguments from left to right, each
+  by the rule of Fig. 4.14 that fits it; this gives Fig. 4.27's order
+  (P1 inside P2, then P3), which the binary rules alone do not (App◇♡ does
+  not look into its function).
+- Rule Abs numbers the results under an abstraction under the index
+  of the abstraction (P_{i.1}), for every abstraction.  Here only a named
+  abstraction does (its results are P2.1, P2.2, ...); the abstractions of
+  the proof itself, and those joined in one series, continue the
+  numbering of their scope.  Fig. 4.27 needs this: by Abs taken
+  literally, the results of ABCD, under eight abstractions, would be
+  P1.1.1.1.1.1.1.1.1, not P1, P2, P3.
+- The forms of chapter 6 (eliminations, `match`, ...) are written by the
+  direct writer, and their subproofs come back to the stages later.  Their
+  results are numbered like those of an abstraction, under the next index
+  (P1.1 in a case of an argument), or continue the scope when the form is
+  the whole proof of the scope.  Each case is its own scope (two cases
+  may both have a P1.1).  With `shared`, a result of an enclosing scope
+  can serve inside a case.
+- Doublets (Fig. 4.17) are found among the named results in scope, by
+  their types (as the thesis says: the proofs are not compared), not
+  among the hypotheses.
+- The text of a named result (Fig. 4.30, "Preuve P1 : montrons C. Nous
+  appliquons h3 à h4. Fin de P1.") is one step whose claim is followed by
+  the name, "Applying h3 to h4, we have `C` (P1)" ("En appliquant h3 à
+  h4, nous avons `C` (P1)"), the way a text names a hypothesis: the
+  format of the texts (cyp's) has no "Proof P1 ... End of P1" block.  A
+  named result proved by several lines has them below its claim, as any
+  subproof.  The definitions come before the step that uses them; when
+  that step is itself a subproof written below its claim, they are below
+  it too.
 
 ## Chapter 5: tactics, scripts and implicit information
 
@@ -107,10 +155,13 @@ Where the code departs from the thesis:
 
 - Chapter 4, the reversible translation: a script language whose concrete
   syntax is natural language, so that a text can be read back into a proof.
-  Of chapter 4, only the selection of type annotations (4.3.1) is
-  implemented: not the characterisation of subproofs (4.3.2) nor the
-  naming of intermediate results by η-expansion (4.3.3, the P1, P2, P3
-  of Fig. 4.27-4.30).
+  Of chapter 4, the selection of type annotations (4.3.1), the
+  characterisation of subproofs (4.3.2) and the naming of intermediate
+  results (4.3.3) are implemented, as stages of the translation; not the
+  script language (4.2, 4.3.4: Fig. 4.18-4.21, 4.28-4.29), so a text
+  cannot be read back into a term.  Fig. 4.15 (a β-expansion that keeps
+  the tree, P1.1 inside P1) is not produced: the thesis shows it to
+  motivate the postfix one, Fig. 4.16, which is the algorithm.
 - 6.4.1, leaving out implicit arguments in eliminations.
 
 ## From L. Théry's thesis (1994)

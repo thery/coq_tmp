@@ -17,7 +17,8 @@ papers (in development):
   `Explain foo.`, that writes the proof term of `foo` as a coarse but
   faithful text in cyp's format.  After Coscoy, Kahn and Théry,
   *Extracting Text from Proofs* (TLCA 1995), and Yann Coscoy's thesis
-  (2000) for inductive types.
+  (2000): its staged translation (chapters 2-4, up to the named
+  intermediate results) and inductive types ([THESIS.md](xtext/THESIS.md)).
 - [lexicon/](lexicon/README.md) and [prooftext/](prooftext/README.md): the
   libraries the two tools share, the words of proofs in each language and
   the format of proof texts.

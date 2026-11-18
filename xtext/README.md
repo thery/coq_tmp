@@ -52,7 +52,7 @@ writer is in `elpi/`, one file per subject, loaded in this order:
 | `switches.elpi` | the switches (`switch`, see "Switches"), and `XTEXT_OFF` |
 | `words.elpi` | sentences: a sentence is a list of parts (phrases of the lexicon, text, formulas, enumerations "A, B and C"), `sentence` writes it in the language of the text |
 | `reparse.elpi` | formulas that type-check again (the implicit arguments to print); the type of a term (`typ`) |
-| `kinds.elpi` | the kind of a binder (`Let`, `Assume`, arbitrary element) and of an argument (specialisation, modus ponens) |
+| `kinds.elpi` | the kind of a binder (`Let`, `Assume`, arbitrary element) and of an argument (specialisation, modus ponens); with the switch `naming`, a binder the rest of the type depends on is a variable (thesis Fig. 4.13) |
 | `inductive.elpi` | introduction, elimination and rewriting theorems, recognised by their type |
 | `declarations.elpi` | the predicates that a file uses and a later one defines |
 | `transducer.elpi` | the text of a proof term, by its form; open goals; subproofs closed by a tactic |
@@ -63,6 +63,7 @@ writer is in `elpi/`, one file per subject, loaded in this order:
 | `document.elpi` | the statement, the document and its header (written by prooftext), the check of the vocabulary |
 | `type-expressions.elpi` | type expressions after chapter 3 of the thesis: synthesis, equality, the type required of the proof |
 | `staged.elpi` | the translation in three stages of the thesis, and the selection of type annotations (see "The staged translation") |
+| `subproofs.elpi` | after the selection, the subproofs of the thesis (4.3.2, 4.3.3): which proofs the text translates, and a name P1, P2, ... for each intermediate result (switch `naming`, see "The subproofs") |
 
 [THESIS.md](THESIS.md) maps each rule and figure of Coscoy's thesis to the
 predicate that implements it, and to the example that reproduces it.
@@ -85,8 +86,14 @@ Examples and checks:
 - `selection.v`: the selection of type annotations (thesis 4.3.1) on
   ABCD (Fig. 4.24), Trans_Inv and one term per rule (Fig. 4.11): each
   selected term is checked against the expected one;
+- `subproofs.v`: the subproofs (thesis 4.3.2-4.3.3) on ABCD (Fig. 4.27,
+  Fig. 4.17, the text of Fig. 4.30 in French and English) and on terms
+  with a dependent argument, a named abstraction and a case analysis
+  inside an application;
 - `examples-staged-none/`, `examples-staged-maximal/`,
   `examples-staged-selection/` (with `XTEXT_SELECTION=thesis`),
+  `examples-staged-naming/` and `examples-staged-shared/` (with
+  `XTEXT_SELECTION=thesis` and `XTEXT_NAMING=all` or `shared`),
   `examples-direct/` (with `XTEXT_TRANSLATION=direct`): the texts with
   other switches, written by `sh make_variant.sh NAME VAR=VALUE...` (e.g.
   `sh make_variant.sh direct XTEXT_TRANSLATION=direct`);
@@ -96,7 +103,7 @@ Examples and checks:
 
 ## Switches
 
-Four switches change how a text is written (`elpi/switches.elpi`).  Each
+Five switches change how a text is written (`elpi/switches.elpi`).  Each
 has an environment variable that sets it and a default, in `xtext.db`
 (`xtext-switch Name Variable Default`, `Explain.v`):
 
@@ -105,6 +112,7 @@ has an environment variable that sets it and a default, in `xtext.db`
 | `translation` | `XTEXT_TRANSLATION` | `staged` (the three stages of the thesis, below), `direct` (one walk; its contraction is checked by tactics, not the thesis's) | `staged` |
 | `contraction` | `XTEXT_CONTRACTION` | `none`, `guarded`, `maximal` (thesis 3.4.2, below) | `guarded` |
 | `selection` | `XTEXT_SELECTION` | `none` (the contraction decides), `thesis` (the selection of thesis 4.3.1, in place of the contraction; staged translation only, below) | `none` |
+| `naming` | `XTEXT_NAMING` | `none`, `all` (after the selection, each subproof used in an application is named, P1, P2, ..., and proved before the step that uses it; thesis 4.3.2-4.3.3), `shared` (the same, a result proved once for each type in scope); needs `selection` = `thesis` (below) | `none` |
 | `lang` | `XTEXT_LANG` | the languages of the lexicon: `en`, `fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la` | `en` |
 
 The language given to the command (`Explain foo in "fr"`) comes before
@@ -857,7 +865,8 @@ be read against its figure:
    `none`, `maximal` (every contraction of 2.3) or `guarded` (only the
    contractions that drop a single annotation, so that no conversion step
    disappears); or, with the switch `selection`, the selection of
-   type annotations (4.3.1, below);
+   type annotations (4.3.1, below), then, with the switch `naming`, the
+   subproofs and their names (4.3.2-4.3.3, below);
 3. **writing** (2.3.3, Fig. 2.10 for applications; 3.4.1, `write`): a
    conclusion says Tc, then `, that is` Tr when they differ (the thesis's
    "ce qui est équivalent à").
@@ -956,6 +965,69 @@ staged translation does not leave out inferable arguments (thesis 5.4,
 result that is not an identifier, and the conclusion of each series of
 abstractions.
 
+### The subproofs (thesis 4.3.2-4.3.3, `elpi/subproofs.elpi`)
+
+With the switch `naming` set to `all` (variable `XTEXT_NAMING=all`) and
+the selection (`XTEXT_SELECTION=thesis`; with another selection `naming`
+is an error), the selected term goes through the two next steps of the
+thesis before it is written:
+
+1. **translatable occurrences** (4.3.2, Fig. 4.12, `translatable`): the
+   proofs the text translates are the root, the term under a type
+   annotation, the body of an abstraction, the function of an
+   application, and an argument whose function has the type T ⇒ T' (T a
+   proposition, T' not depending on the argument).  A proof argument that
+   a type depends on is written as a term ("The element `g b` belongs to
+   `A`"): naming it would make the term ill-typed.  Likewise (Fig. 4.13)
+   a binder of a proposition the rest of the type depends on is
+   introduced as a variable (`Let b : B`), not as a hypothesis;
+2. **intermediate results** (4.3.3, Fig. 4.14, `name-subproofs`): each
+   translatable subproof that is the function or an argument of an
+   application and keeps a type expression becomes a local definition,
+   `let P1 : C = (h3 h4) in ...`, its own results first (postfix order),
+   so that the proof reads as a list of facts.  The results under a named
+   abstraction stay under it and are numbered after its name (P1.1); so
+   are those of a case analysis or an induction inside an application.
+   With `shared` (`XTEXT_NAMING=shared`, Fig. 4.17) a subproof whose type
+   a result in scope already proves is not proved again: that result is
+   used.
+
+A named result is a step whose claim is followed by its name, the way a
+hypothesis is named, and the steps after it use the name.  ABCD
+(`examples-staged-naming/ABCD.md`, Fig. 4.30: "Preuve P1 : montrons C.
+Nous appliquons h3 à h4. Fin de P1. ..."):
+
+```markdown
+- Applying h3 to h4, we have `C`{.claim} (P1).
+- Applying h2 to h4 and P1, we have `B`{.claim} (P2).
+- Applying h3 to h4, we have `C`{.claim} (P3).
+- Applying h1 to h4, P2 and P3, we have `D`{.claim}.
+```
+
+and with `shared` (`examples-staged-shared/ABCD.md`) the third step goes
+and the last one says "P2 and P1".  `subproofs.v` checks the terms of
+Fig. 4.27 and 4.17 (exactly the thesis's), the French text of Fig. 4.30
+("En appliquant h2 à h4 et P1, nous avons `B` (P2)."), and the cases above
+(a dependent argument, a named abstraction, a case analysis inside an
+application).  An argument that keeps a text is named, so its place among
+the arguments, which the selection alone loses, is kept.  A conversion
+is named too: in Trans_Inv, `By h we have Trans E R, that is forall x0
+y0 z0 : E, ... (P1)`, then `Applying P1 to z, y, x, P2 and P3, we have R
+z x, that is Inv E R x z`.
+
+18 of the 73 staged texts change (the others have no subproof that keeps
+a type in an application); the number of list items stays 981 (each
+named result was already a step of its own: it moves before the step
+that uses it), 112682 characters against 112964; `shared` makes 4 texts
+shorter (968 items).  cyp reads the 18 texts with names as it reads them without:
+the same steps proved, not proved and not checked, text by text
+(2026-11-18; the names are read as the names of claims, and each step is
+proved from the claims before it, as before); the 4 texts of `shared`
+lose only the steps they drop (the same steps not proved).  The departures from the thesis (the rules of
+Fig. 4.14 for applications of several arguments, Dewey numbers only
+under a named abstraction, the text of a named result) are listed in
+[THESIS.md](THESIS.md).
+
 An earlier version computed the same double annotation in one pass, as
 hooks in the direct writer (switch `xtext-annotation`, texts
 `examples-double/`); it was removed in favour of the stages, which give
@@ -969,8 +1041,9 @@ the same annotations (it is in the history, commit 56a84ef).
   and classical reasoning (`Altogether`, `Obviously`, `If we have ...
   Otherwise`).
 - From the thesis: leaving out the generalised predicate (6.4.1), and
-  its chapter 4 except the selection of type annotations (the reversible
-  scripts, the naming of intermediate results).
+  the scripts of its chapter 4 (4.2, 4.3.4: a text that can be read back
+  into a proof term); the selection of type annotations and the
+  subproofs (4.3.1-4.3.3) are done.
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.
 - The `require` line of the header is the same for every text (the
