@@ -53,7 +53,7 @@ For example, for
 data tm.
 symb lam (tm -> tm) -> tm.
 func rev list A -> list A.
-rev L R :- rev.aux L [] R.
+rev L R :- std.rev L R.
 ```
 
 `elpi-reflect` prints
@@ -61,8 +61,8 @@ rev L R :- rev.aux L [] R.
 ```elpi
 reflect.data-type "tm" 0 (reflect.srcloc "f.elpi" 1 0).
 reflect.constructor "lam" lam (reflect.tarrow (reflect.tarrow (reflect.tcon "tm" []) (reflect.tcon "tm" [])) (reflect.tcon "tm" [])) (reflect.srcloc "f.elpi" 2 0).
-reflect.signature "rev" rev reflect.functional [reflect.arg reflect.in (reflect.tcon "list" [A]), reflect.arg reflect.out (reflect.tcon "list" [A])] ff (reflect.srcloc "f.elpi" 3 0).
-reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [reflect.binders []] (rev L R) (rev.aux L [] R).
+reflect.signature "rev" rev reflect.functional [(reflect.arg reflect.in (reflect.tcon "list" [Ty_A])), (reflect.arg reflect.out (reflect.tcon "list" [Ty_A]))] ff (reflect.srcloc "f.elpi" 3 0).
+reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [(reflect.binders [])] (rev L R) (std.rev L R).
 ```
 
 ### Conventions
@@ -74,8 +74,8 @@ reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [reflect.binders []] (rev L R
   itself (type `any`): it builds terms (`F = app, T = F X Y`) and it indexes
   the rules (`reflect.clause rev _ _ _ H B` only looks at the rules of
   `rev`).  The string is the same name, for printing.
-- **Type parameters** are Elpi unification variables: every lookup of a
-  fact gives fresh ones, so `reflect.constructor "::" _ T _, T = reflect.tarrow
+- **Type parameters** are Elpi unification variables (`Ty_A` in the facts,
+  `_Ty_A` when used once): every lookup of a fact gives fresh ones, so `reflect.constructor "::" _ T _, T = reflect.tarrow
   (reflect.tcon "int" []) _` instantiates `list A` at `list int`.
 - **Rule variables** are the variables of the fact: each lookup of a
   `clause` fact gives a fresh copy of the rule, as `clause/2` does.  Bound
@@ -108,10 +108,27 @@ reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [reflect.binders []] (rev L R
   their own file in the locations.  Elpi's builtins and standard library
   (`std.*`) are not reflected: their rules are compiled into Elpi.
 
+### Hints for a tool reading the rules (found while writing elpi-check)
+
+- A conjunction `(A, B, C)` is one node with all its conjuncts (the parser
+  flattens nested ones): the pattern `(X , Y)` matches only two conjuncts,
+  so a pattern per length is needed (see `check/lib/goals.elpi`).
+- The builtin `constant T Hd Args` takes apart an applied constant, but not
+  a list (`[H | T]` is a node of its own) nor a connective or an FFI builtin
+  (`,`, `=`, `pi`, `print` ...), which have no head.  With `T` unbound it
+  builds `Hd` applied to `Args`; for a list, build `[H | T]` instead.
+- In a rule head, `pi F` is not a pattern: write `(pi x\ F x)`.
+- Many words are keywords of Elpi 4 and cannot name a predicate:
+  `local`, `closed`, `prefix`, `before`, `name`, `mode`, `kind`, `type` ...
+
 ### Not supported (said plainly)
 
-- macros (`macro @m …`) are printed unexpanded, so a reflected rule that
-  uses one does not type check: the tool stops with an error naming it;
+- a rule that uses a macro (`macro @m …`) is not reflected (a warning on
+  stderr names it): the macro is not visible from the facts file;
+- a spill under a lambda inside an atom (`std.map L (x\ y\ y = {f x})`) or
+  in the hypothesis of an implication is left as written (warning);
+- a spill `{f X}` is given one output (a function with two outputs is not
+  spilled correctly);
 - quotations (`{{ }}`) are printed back verbatim (only meaningful when the
   host declares a quotation, which standalone Elpi does not);
 - `:autospill` rules are reflected without their spills.

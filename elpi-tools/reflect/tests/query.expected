@@ -1,0 +1,24 @@
+arith.succ 1 line 9 : arith.succ X0 X1 :- X1 is X0 + 1
+arith.plus2 1 line 15 : arith.plus2 0 2 :- !
+arith.plus2 2 line 12 : arith.plus2 X2 X3 :- 
+ arith.succ X2 X4 , arith.succ X4 X3
+three 1 line 22 : three X5 :- arith.succ 2 X5
+wait 1 line 26 : wait X6 (reflect.as-pattern reflect.uvar-pattern X7) :- 
+ ! , declare_constraint (wait X6 X7) [X7]
+wait 2 line 27 : wait X8 X9 :- true
+is-closed 1 line 31 : is-closed (lam X10) :- 
+ pi c0 \ (is-closed c0) ==> is-closed (X10 c0)
+is-closed 2 line 32 : is-closed (app X11 X12) :- is-closed X11 , is-closed X12
+-- the rules of arith.plus2, run from the facts:
+plus2 5 = 7
+-- constructors of tm:
+lam 
+ reflect.tarrow (reflect.tarrow (reflect.tcon tm []) (reflect.tcon tm [])) 
+  (reflect.tcon tm [])
+app 
+ reflect.tarrow (reflect.tcon tm []) 
+  (reflect.tarrow (reflect.tcon tm []) (reflect.tcon tm []))
+-- CHR:
+rule 1 [] [wait] [reflect.sequent X13 X14 (wait X15 X16)] 
+ [reflect.sequent X17 X18 (wait X19 X20)] some (X15 < X19) 
+ some (reflect.sequent X21 X22 (X23 is X19 - X15 , wait X23 X20))

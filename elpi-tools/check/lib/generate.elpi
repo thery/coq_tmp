@@ -1,0 +1,159 @@
+% Random terms of a type, built from the constructors that the program
+% declares (reflect.constructor), with a size budget S.
+%
+% - a leaf (a constant, a bound variable of the type) costs 1;
+% - a node c A1 .. An costs 1 plus its arguments: the remaining budget
+%   S - 1 is split at random among the recursive arguments (those whose
+%   type is the type being built), so the recursive structure (the spine of
+%   a list, the nodes of a tree) has at most S constructors; each other
+%   argument (an element of a list) gets S - 1 for itself;
+% - with budget S the leaves are tried first with probability 1/S, the
+%   nodes first otherwise.  For lists this gives a length uniform in
+%   [0, S - 1], as QuickCheck does.
+% - an int is uniform in [-S, S], a string has at most 3 letters.
+% The budget strictly decreases along every path, so generation terminates.
+% A choice that cannot be completed within its budget is dropped and the
+% next one is tried.
+%
+% A binder (an argument of type A -> B) is built under pi x\, with x
+% available as a leaf of type A: lam (x\ app x x) and the like.
+
+namespace check.gen {
+
+% The variables bound by the binders being built, with their types
+pred bound-var o:any, o:reflect.ty.
+
+% A way to build a term: the head (a constructor or a bound variable) and
+% the types of its arguments
+data choice.
+symb choice any -> list reflect.ty -> choice.
+
+% [term T S X]: X is a random term of type T, of size at most S
+pred term i:reflect.ty, i:int, o:any.
+term T S X :- check.types.expand T T1, term.of T1 S X.
+
+% [some-term T S X]: a term of type T of size at most S, or at most S+1 ..
+% when none fits (a closed lambda term needs size 2): up to S+10
+pred some-term i:reflect.ty, i:int, o:any.
+some-term T S X :- some-term.from T S S X.
+pred some-term.from i:reflect.ty, i:int, i:int, o:any.
+some-term.from T S0 S X :- S =< S0 + 10, term T S X, !.
+some-term.from T S0 S X :- S =< S0 + 10, S1 is S + 1, some-term.from T S0 S1 X.
+
+pred term.of i:reflect.ty, i:int, o:any.
+term.of _ S _ :- S < 1, !, fail.
+term.of (reflect.tcon "int" []) S N :- !, random-int S N.
+term.of (reflect.tcon "string" []) S X :- !, random-string S X.
+term.of (reflect.tcon "float" []) S F :- !, random-float S F.
+term.of (reflect.tarrow A B) S F :- !, pi x\ bound-var x A => term B S (F x).
+term.of (reflect.tpred _ _) _ _ :- !,
+  std.fatal-error "elpi-check: cannot generate a predicate (a value of type (pred ..))".
+term.of T S X :-
+  choices T Leaves Nodes,
+  order S Leaves Nodes Ordered,
+  first-built Ordered T S X.
+
+% [random-int S N]: N uniform in [-S, S]
+func random-int int -> int.
+random-int S N :- M is 2 * S + 1, check.random.below M R, N is R - S.
+
+% [random-string S X]: a string of length below min(S, 4) over "a" "b" "c"
+func random-string int -> string.
+random-string S X :- Max is min S 4, check.random.below Max L, letters L X.
+func letters int -> string.
+letters 0 "" :- !.
+letters L X :- check.random.pick ["a", "b", "c"] C, L1 is L - 1, letters L1 Y, X is C ^ Y.
+
+% [random-float S F]: a multiple of 1/4 in [-S, S]
+func random-float int -> float.
+random-float S F :- M is 8 * S + 1, check.random.below M R, F is (int_to_real (R - 4 * S)) / 4.0.
+
+% [choices T Leaves Nodes]: the ways to build a term of type T, without and
+% with arguments
+pred choices i:reflect.ty, o:list choice, o:list choice.
+choices T Leaves Nodes :-
+  std.findall (choice-for T _) Found,
+  std.map Found choice-of All,
+  std.filter All is-leaf Leaves,
+  std.filter All (c\ not (is-leaf c)) Nodes.
+
+func choice-of (pred) -> choice.
+choice-of (choice-for _ C) C.
+
+func is-leaf choice.
+is-leaf (choice _ []).
+
+% [choice-for T C]: C builds a term of type T: a constructor of the program
+% or a bound variable, whose result type unifies with T
+pred choice-for i:reflect.ty, o:choice.
+choice-for T (choice K Args) :-
+  reflect.constructor _ K KT _, not (var K),
+  check.types.split-arrows KT Args R, not (var R), R = T.
+choice-for T (choice X Args) :-
+  bound-var X XT,
+  check.types.split-arrows XT Args R, not (var R), R = T.
+
+% [order S Leaves Nodes Ordered]: leaves first with probability 1/S
+func order int, list choice, list choice -> list choice.
+order S Leaves Nodes Ordered :-
+  check.random.shuffle Leaves L, check.random.shuffle Nodes N,
+  if (check.random.chance S) (std.append L N Ordered) (std.append N L Ordered).
+
+% [first-built Choices T S X]: X is built by the first choice that fits in S
+pred first-built i:list choice, i:reflect.ty, i:int, o:any.
+first-built [C | _] T S X :- build C T S X, !.
+first-built [_ | Cs] T S X :- first-built Cs T S X.
+
+% [build C T S X]: X is built with C, within the budget S
+pred build i:choice, i:reflect.ty, i:int, o:any.
+build (choice K []) _ _ K :- !.
+build (choice K Args) T S X :-
+  Rest is S - 1,
+  check.types.head-name T Name,
+  std.filter Args (is-recursive Name) Recursive,
+  std.length Recursive NR,
+  Rest >= 1, Rest >= NR,
+  budgets NR Rest Shares,
+  arguments Args Name Rest Shares Values,
+  apply K Values X.
+
+% [apply K Values X]: X is K applied to Values; lists are built with [ | ]
+% (the runtime has a node of its own for them)
+pred apply i:any, i:list any, o:any.
+:untyped
+apply K [H, T] [H | T] :- K = (::), !.
+apply K Values X :- constant K, !, constant X K Values.
+apply K Values X :- name X K Values.
+% [is-recursive Name A]: an argument of type A is recursive when its result
+% type is again Name (lam (tm -> tm) is recursive for tm)
+func is-recursive string, reflect.ty.
+is-recursive "" _ :- !, fail.
+is-recursive Name A :- check.types.result-name A Name.
+
+func budgets int, int -> list int.
+budgets 0 _ [] :- !.
+budgets N Rest Shares :- check.random.composition Rest N Shares.
+
+% [arguments Args Name Rest Shares Values]: one value per argument, the
+% recursive ones with their share of the budget, the others with Rest
+pred arguments i:list reflect.ty, i:string, i:int, i:list int, o:list any.
+arguments [] _ _ _ [].
+arguments [A | As] Name Rest [Share | Shares] [V | Vs] :- is-recursive Name A, !,
+  term A Share V, !, arguments As Name Rest Shares Vs.
+arguments [A | As] Name Rest Shares [V | Vs] :-
+  term A Rest V, !, arguments As Name Rest Shares Vs.
+
+% [size X N]: the number of constructors, variables and literals of X
+func size any -> int.
+size X 1 :- var X, !.
+size [] 1 :- !.
+size [H | T] N :- !, size H NH, size T NT, N is 1 + NH + NT.
+size X N :- constant X _ Args, !, sizes Args 1 N.
+size X N :- name X _ Args, !, sizes Args 1 N.
+size X 1 :- is_cdata X _, !.
+size (x\ B x) N :- pi y\ size (B y) N.
+func sizes list any, int -> int.
+sizes [] N N.
+sizes [X | Xs] Acc N :- size X M, Acc1 is Acc + M, sizes Xs Acc1 N.
+
+}

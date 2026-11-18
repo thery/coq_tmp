@@ -1,0 +1,38 @@
+% Insertion into a sorted list: a premise that random lists rarely satisfy,
+% and a bug that needs shrinking.
+accumulate property.
+
+% [sorted L]: L is in increasing order
+func sorted list int.
+sorted [].
+sorted [_].
+sorted [X, Y | L] :- X =< Y, sorted [Y | L].
+
+% [insert X L R]: X inserted in the sorted list L
+func insert int, list int -> list int.
+insert X [] [X].
+insert X [Y | L] [X, Y | L] :- X =< Y, !.
+insert X [Y | L] [Y | R] :- insert X L R.
+
+% [insert-wrong X L R]: the same, but an element already there is dropped
+func insert-wrong int, list int -> list int.
+insert-wrong X [] [X].
+insert-wrong X [X | L] [X | L] :- !.
+insert-wrong X [Y | L] [X, Y | L] :- X =< Y, !.
+insert-wrong X [Y | L] [Y | R] :- insert-wrong X L R.
+
+% True, but the premise discards most random lists (see the report).
+property "insert-sorted"
+  (pi X L R\ sorted L ==> insert X L R ==> sorted R).
+
+% False: insert-wrong loses an element when X is already in L.
+property "insert-length"
+  (pi X L R N M\ insert-wrong X L R ==> std.length L N ==> std.length R M ==> M is N + 1).
+
+% The same property without the premise sorted: insert works on any list.
+property "insert-length-right"
+  (pi X L R N M\ insert X L R ==> std.length L N ==> std.length R M ==> M is N + 1).
+
+% False for the lists of 8 elements or more: the first counterexample is
+% long, shrinking makes it 8 zeros.
+property "short-lists" (pi L N\ std.length L N ==> N < 8).

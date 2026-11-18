@@ -1,0 +1,29 @@
+property preservation (stlc.elpi:48)
+  variables: M : tm (generated-by), T : ty (generated-by), N : tm (computed)
+  OK: passed 45 tests, 55 discarded; average size of the values 58
+property preservation-wrong (stlc.elpi:52)
+  variables: M : tm (generated-by), T : ty (generated-by), N : tm (computed)
+  FAILED at test 6 (0 passed, 5 discarded); first counterexample:
+    M = app (lam c0 \ c) (lam c0 \ c)
+    T = base
+    N = lam c0 \ c
+  shrunk in 1 steps to:
+    M = app (lam c0 \ c) c
+    T = base
+    N = lam c0 \ c
+property substitution (stlc.elpi:56)
+  variables: F : tm -> tm (generated-by), A : ty (generated-by), B : ty (generated-by), N : tm (generated-by)
+  OK: passed 100 tests, 0 discarded; average size of the values 59
+property copy-identity (stlc.elpi:61)
+  variables: M : tm (generated), N : tm (computed)
+  OK: passed 100 tests, 0 discarded; average size of the values 6
+property weakening (stlc.elpi:65)
+  variables: M : tm (generated-by), T : ty (generated-by)
+  OK: passed 100 tests, 0 discarded; average size of the values 25
+property all-typable (stlc.elpi:69)
+  variables: M : tm (generated)
+  FAILED at test 11 (10 passed, 0 discarded); first counterexample:
+    M = app c c
+  shrunk in 0 steps to:
+    M = app c c
+elpi-check: 4 of 6 properties hold

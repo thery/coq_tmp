@@ -1,0 +1,39 @@
+% Random choices, on top of the builtin random.int.
+
+namespace check.random {
+
+% [below N R]: R is a random integer in [0, N[ (N > 0)
+func below int -> int.
+below N R :- random.int N R.
+
+% [chance N]: succeeds with probability 1/N (N > 0)
+func chance int.
+chance N :- random.int N 0.
+
+% [pick L X]: X is a random element of the non-empty list L
+func pick list A -> A.
+pick L X :- std.length L N, N > 0, random.int N I, std.nth I L X.
+
+% [shuffle L S]: S is a random permutation of L
+func shuffle list A -> list A.
+shuffle [] [] :- !.
+shuffle L [X | S] :-
+  std.length L N, random.int N I,
+  remove-nth I L X Rest,
+  shuffle Rest S.
+
+% [remove-nth I L X Rest]: X is the I-th element of L (from 0), Rest the others
+func remove-nth int, list A -> A, list A.
+remove-nth 0 [X | Rest] X Rest :- !.
+remove-nth I [Y | L] X [Y | Rest] :- I1 is I - 1, remove-nth I1 L X Rest.
+
+% [composition N K Parts]: K positive integers summing to N (N >= K >= 1),
+% drawn one after the other: the first is uniform in [1, N-K+1], and so on.
+func composition int, int -> list int.
+composition N 1 [N] :- !.
+composition N K [P | Ps] :-
+  K1 is K - 1, Room is N - K1,
+  random.int Room R, P is R + 1,
+  N1 is N - P, composition N1 K1 Ps.
+
+}

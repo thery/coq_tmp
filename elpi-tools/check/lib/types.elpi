@@ -1,0 +1,54 @@
+% The types of the reflected program (reflect.ty), as used by the checker.
+
+namespace check.types {
+
+% [expand T T1]: T with its type abbreviations expanded at the head
+func expand reflect.ty -> reflect.ty.
+expand T T :- var T, !.
+expand T T1 :- reflect.type-abbrev Lhs Rhs _, Lhs = T, !, expand Rhs T1.
+expand T T.
+
+% [split-arrows T Args Result]: T is Args1 -> .. -> ArgsN -> Result
+func split-arrows reflect.ty -> list reflect.ty, reflect.ty.
+split-arrows T [] T :- var T, !.
+split-arrows (reflect.tarrow A B) [A | As] R :- !, split-arrows B As R.
+split-arrows T [] T.
+
+% [head-name T Name]: the type constructor of T (after expansion), or "" for
+% a type variable or an arrow
+func head-name reflect.ty -> string.
+head-name T Name :- expand T T1, head-name.of T1 Name.
+func head-name.of reflect.ty -> string.
+head-name.of T "" :- var T, !.
+head-name.of (reflect.tcon Name _) Name :- !.
+head-name.of _ "".
+
+% [result-name T Name]: the type constructor of the result of T
+% (T = A1 -> .. -> R gives the constructor of R)
+func result-name reflect.ty -> string.
+result-name T Name :- split-arrows T _ R, head-name R Name.
+
+% [default T]: the type variables left in T become int, as QuickCheck
+% defaults the type of a polymorphic property
+func default reflect.ty.
+default T :- var T, !, T = reflect.tcon "int" [].
+default (reflect.tcon _ Args) :- !, std.forall Args default.
+default (reflect.tarrow A B) :- !, default A, default B.
+default (reflect.tpred _ Args) :- !, std.forall Args default.arg.
+default _.
+func default.arg reflect.arg.
+default.arg (reflect.arg _ T) :- default T.
+
+% [show T S]: T in Elpi syntax
+func show reflect.ty -> string.
+show T "?" :- var T, !.
+show (reflect.tcon Name []) Name :- !.
+show (reflect.tcon Name Args) S :- !,
+  std.map Args show.atomic Ss, std.string.concat " " [Name | Ss] S.
+show (reflect.tarrow A B) S :- !, show.atomic A SA, show B SB, S is SA ^ " -> " ^ SB.
+show (reflect.tpred _ _) "(pred ..)" :- !.
+show reflect.tany "any".
+func show.atomic reflect.ty -> string.
+show.atomic T S :- show T S0, if (rex.match " " S0) (S is "(" ^ S0 ^ ")") (S = S0).
+
+}

@@ -1,0 +1,40 @@
+% Looking into goals and terms at run time.
+%
+% Elpi represents a conjunction (A, B, C) as one node with all its
+% conjuncts (the parser flattens nested conjunctions), and the connectives
+% and builtins (,  =  pi  =>  print ...) are not constants for the builtin
+% [constant]; lists are not constants either.  These helpers hide that.
+
+namespace check.goals {
+
+% [conjuncts G Gs]: G is the conjunction of Gs (two or more).  A pattern
+% per arity, since a conjunction has no head to take apart; longer
+% conjunctions are reported.
+pred conjuncts i:(pred), o:list (pred).
+conjuncts (A, B) [A, B] :- !.
+conjuncts (A, B, C) [A, B, C] :- !.
+conjuncts (A, B, C, D) [A, B, C, D] :- !.
+conjuncts (A, B, C, D, E) [A, B, C, D, E] :- !.
+conjuncts (A, B, C, D, E, F) [A, B, C, D, E, F] :- !.
+conjuncts (A, B, C, D, E, F, G) [A, B, C, D, E, F, G] :- !.
+conjuncts (A, B, C, D, E, F, G, H) [A, B, C, D, E, F, G, H] :- !.
+conjuncts (A, B, C, D, E, F, G, H, I) [A, B, C, D, E, F, G, H, I] :- !.
+conjuncts (A, B, C, D, E, F, G, H, I, J) [A, B, C, D, E, F, G, H, I, J] :- !.
+
+% [atom G Name Pred Args]: G is a predicate Pred (its name: Name) applied to
+% Args; fails for connectives and FFI builtins, which have no head.
+pred atom i:(pred), o:string, o:any, o:list any.
+atom G Name Pred Args :- constant G Pred Args, term_to_string Pred Name.
+
+% [has-rules Pred]: Pred has rules in the reflected program
+pred has-rules i:any.
+has-rules Pred :- reflect.clause Pred 1 _ _ _ _, !.
+
+% [rules-count Pred N]: the number of reflected rules of Pred
+pred rules-count i:any, o:int.
+rules-count Pred N :- rules-count.from Pred 1 N.
+pred rules-count.from i:any, i:int, o:int.
+rules-count.from Pred I N :- reflect.clause Pred I _ _ _ _, !, I1 is I + 1, rules-count.from Pred I1 N.
+rules-count.from _ I N :- N is I - 1.
+
+}

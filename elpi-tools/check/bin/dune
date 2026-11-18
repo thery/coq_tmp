@@ -1,0 +1,24 @@
+; elpi-check: the property checker.  The Elpi library (../lib/*.elpi) and
+; the declarations of the reflected data (../../reflect/reflect.elpi) are
+; embedded in the executable by embed.exe.
+
+(executable
+ (name embed)
+ (modules embed))
+
+(rule
+ (targets embedded.ml)
+ (deps
+  (glob_files %{project_root}/check/lib/*.elpi)
+  %{project_root}/reflect/reflect.elpi)
+ (action
+  (with-stdout-to
+   embedded.ml
+   (run ./embed.exe %{deps}))))
+
+(executable
+ (name elpi_check_main)
+ (public_name elpi-check)
+ (package elpi-tools)
+ (modules embedded elpi_check_main)
+ (libraries elpi elpi_reflect unix))
