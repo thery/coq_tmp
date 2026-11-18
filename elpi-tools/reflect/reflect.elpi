@@ -1,0 +1,110 @@
+% The program of an Elpi file, as Elpi data.
+%
+% `elpi-reflect file.elpi` prints facts of the predicates declared here, one
+% per declaration of the file (and of the files it accumulates).  A tool that
+% wants to look at a program accumulates this file, the user's file and the
+% printed facts, then queries the facts.  The format is described in
+% README.md, next to this file.
+
+namespace reflect {
+
+% -- Source locations --------------------------------------------------------
+
+data srcloc.
+% [srcloc File Line Column]: the line counts from 1, the column from 0.
+symb srcloc string -> int -> int -> srcloc.
+
+% -- Types -------------------------------------------------------------------
+%
+% A type parameter (an uppercase name in the source, as A in `list A`) is
+% an Elpi unification variable of type [ty]: each lookup of a fact gives
+% fresh ones, so instantiating a polymorphic type is a unification.
+
+data ty.
+% [tcon Name Args]: a type constructor applied to its arguments,
+% e.g. int is [tcon "int" []], list A is [tcon "list" [A]].
+symb tcon string -> list ty -> ty.
+% [tarrow A B]: the type A -> B (a binder when A is a data type).
+symb tarrow ty -> ty -> ty.
+% [tpred F Args]: the type of a goal, (pred i:A, o:B) or (func A -> B).
+symb tpred functionality -> list arg -> ty.
+% [tany]: the type any.
+symb tany ty.
+
+data functionality.
+symb functional functionality.   % declared with func: no choice points left
+symb relational functionality.   % declared with pred
+
+data argmode.
+symb in, out : argmode.
+
+data arg.
+% [arg Mode Type]: one argument of a predicate signature.
+symb arg argmode -> ty -> arg.
+
+% -- Rule attributes ---------------------------------------------------------
+
+data attribute.
+% (attribute keywords such as name or before cannot be constants, hence
+% the longer names)
+symb named string -> attribute.          % :name "n"
+symb insert-before string -> attribute.  % :before "n" (already applied to the order)
+symb insert-after string -> attribute.   % :after "n" (already applied to the order)
+symb replaces string -> attribute.       % :replace "n" (already applied)
+symb if-defined string -> attribute.     % :if "VAR" (kept: VAR was defined)
+symb no-typecheck attribute.             % :untyped
+symb auto-spill attribute.               % :autospill (not desugared, see README)
+% [binders Bs]: the names (and type annotations) of the lambdas of the rule,
+% in textual order: pi x\ ... and x\ ...  give their source name x.
+symb binders list binder -> attribute.
+
+data binder.
+symb binder string -> option ty -> binder.
+
+% -- Head patterns -----------------------------------------------------------
+%
+% Two constructs of rule heads cannot be data (in a fact they would match
+% instead of being returned): they are replaced by these constants.
+
+% [uvar-pattern]: the head pattern uvar (an unassigned variable), also
+% applied as uvar K L.
+symb uvar-pattern A.
+% [as-pattern P X]: the head pattern P as X.
+symb as-pattern A -> A -> A.
+
+% -- CHR ---------------------------------------------------------------------
+
+data sequent.
+% [sequent Eigen Context Goal]: the pattern (Eigen :> Context ?- Goal);
+% a part absent in the source is a fresh variable.
+symb sequent any -> any -> (pred) -> sequent.
+
+% -- The facts ---------------------------------------------------------------
+
+% [data-type Name Arity Loc]: data tm. / data list A. / kind t type -> type.
+pred data-type o:string, o:int, o:srcloc.
+
+% [constructor Name Constant Type Loc]: symb app tm -> tm -> tm.
+% Constant is the constructor itself, usable to build terms.
+pred constructor o:string, o:any, o:ty, o:srcloc.
+
+% [signature Name Predicate Functionality Args Variadic Loc]:
+% pred p i:A, o:B. / func f A -> B.  (overloaded predicates have several)
+pred signature o:string, o:any, o:functionality, o:list arg, o:bool, o:srcloc.
+
+% [type-abbrev Lhs Rhs Loc]: typeabbrev (assoc A) (list (pair string A)).
+% The parameters are shared unification variables: unify Lhs to expand.
+pred type-abbrev o:ty, o:ty, o:srcloc.
+
+% [clause Predicate Index Loc Attributes Head Body]: the rule Head :- Body
+% (Body is true for a fact), the Index-th rule of Predicate (from 1) in the
+% order Elpi tries them.  The variables of the rule are the variables of the
+% fact: each lookup gives a fresh copy of the rule.
+pred clause o:any, o:int, o:srcloc, o:list attribute, o:(pred), o:(pred).
+
+% [chr-rule Index Loc Attributes Clique ToMatch ToRemove Guard NewGoal]:
+% rule ToMatch \ ToRemove | Guard <=> NewGoal, inside constraint Clique {..}.
+pred chr-rule o:int, o:srcloc, o:list attribute, o:list any,
+              o:list sequent, o:list sequent, o:option (pred), o:option sequent.
+
+}
