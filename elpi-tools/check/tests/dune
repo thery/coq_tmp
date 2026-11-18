@@ -19,3 +19,8 @@
   (with-accepted-exit-codes (or 0 1)
    (run %{exe:../bin/elpi_check_main.exe} %{dep:stlc.elpi}))))
 (rule (alias runtest) (action (diff stlc.expected stlc.out)))
+
+; The machine-readable report (-json): json.t runs elpi-check and checks
+; the replay goals with elpi-debug.
+(cram
+ (deps %{bin:elpi-check} %{bin:elpi-debug} (glob_files *.elpi) %{project_root}/check/lib/property.elpi))

@@ -1,0 +1,109 @@
+% The machine-readable report of elpi-check (-json): one JSON object per
+% line, for tools such as the VS Code extension (elpi-tools/dap/vscode).
+%
+%   {"event": "property", "name", "file", "line", "variables"}
+%       before the tests of a property (with -list: the only line of each)
+%   {"event": "result", "name", "file", "line", "status", "passed",
+%    "discarded", ..}
+%       after its tests; status "ok", "gave-up" or "failed"; for "ok" the
+%       average size of the values, for "failed" the number of the failing
+%       test, the first and the shrunk counterexamples, the steps of the
+%       shrinking and the goal that replays the shrunk one (replay.elpi)
+%   {"event": "summary", "holds", "properties"}
+%       at the end
+%
+% A variable is {"name", "type", "kind"}, kind "generated", "generated-by"
+% or "computed"; a counterexample is a list of {"name", "value"}, the
+% values in Elpi's source syntax (syntax.elpi).  An error that stops the
+% run is reported by the driver (elpi_check_main.ml) as {"event":
+% "error", "message"}: it belongs to the last property announced.  Lines
+% that are not JSON objects (the prints of the program) are to be skipped.
+
+namespace check.machine {
+
+% [location-fields Prop Fields]: the name, file and line of Prop
+func location-fields prop -> list check.json.field.
+location-fields (check.prop _ Name (reflect.srcloc File Line _) _) [
+    check.json.string-field "name" Name,
+    check.json.string-field "file" File,
+    check.json.int-field "line" Line].
+
+% [variable-object Var J]: {"name", "type", "kind"}
+func variable-object check.variable -> string.
+variable-object (check.variable Name T Origin) J :-
+  check.types.show T Type,
+  check.origin-name Origin Kind,
+  check.json.object [
+    check.json.string-field "name" Name,
+    check.json.string-field "type" Type,
+    check.json.string-field "kind" Kind] J.
+
+% [verdict-fields Prop Vars Verdict Fields]: the status and its details
+pred verdict-fields i:prop, i:list check.variable, i:check.verdict, o:list check.json.field.
+verdict-fields _ _ (check.holds P D Avg) [
+    check.json.string-field "status" "ok",
+    check.json.int-field "passed" P,
+    check.json.int-field "discarded" D,
+    check.json.int-field "average-size" Avg].
+verdict-fields _ _ (check.gave-up D) [
+    check.json.string-field "status" "gave-up",
+    check.json.int-field "passed" 0,
+    check.json.int-field "discarded" D].
+verdict-fields (check.prop I _ _ _) Vars (check.failure Values Small Steps P D T) Fields :-
+  counterexample-object I Vars Values First,
+  counterexample-object I Vars Small Shrunk,
+  check.replay.goal I Vars Small Replay,
+  Fields = [
+    check.json.string-field "status" "failed",
+    check.json.int-field "passed" P,
+    check.json.int-field "discarded" D,
+    check.json.int-field "failed-at-test" T,
+    check.json.json-field "first" First,
+    check.json.json-field "shrunk" Shrunk,
+    check.json.int-field "shrink-steps" Steps,
+    check.json.string-field "replay" Replay].
+
+% [counterexample-object I Vars Values J]: the list of {"name", "value"},
+% the computed values included
+pred counterexample-object i:int, i:list check.variable, i:list (option any), o:string.
+counterexample-object I Vars Values J :-
+  check.counterexample-values I Values Xs,
+  std.map2 Vars Xs binding-object Bs,
+  check.json.array Bs J.
+
+% [binding-object Var X J]: {"name", "value"}, the value in source syntax
+func binding-object check.variable, any -> string.
+binding-object (check.variable Name _ _) X J :-
+  check.syntax.term X Value,
+  check.json.object [
+    check.json.string-field "name" Name,
+    check.json.string-field "value" Value] J.
+
+}
+
+namespace check {
+
+announce-name check.json-output _.
+
+announce-variables check.json-output Prop Vars :-
+  std.map Vars check.machine.variable-object Vs,
+  check.json.array Vs Variables,
+  check.machine.location-fields Prop Where,
+  std.append [check.json.string-field "event" "property" | Where]
+             [check.json.json-field "variables" Variables]
+             Fields,
+  check.json.print-object Fields.
+
+report-result check.json-output Prop Vars Verdict :-
+  check.machine.location-fields Prop Where,
+  check.machine.verdict-fields Prop Vars Verdict Details,
+  std.append [check.json.string-field "event" "result" | Where] Details Fields,
+  check.json.print-object Fields.
+
+print-summary check.json-output K N :-
+  check.json.print-object [
+    check.json.string-field "event" "summary",
+    check.json.int-field "holds" K,
+    check.json.int-field "properties" N].
+
+}

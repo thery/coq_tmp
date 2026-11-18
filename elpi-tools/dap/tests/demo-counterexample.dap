@@ -1,0 +1,13 @@
+# Debug this counterexample (the Test Explorer, dap/vscode/properties.js): the replay goal of sort-length (demo/lists.elpi), stopped on entry; two steps, then continue: the explanation of the failure.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lists.elpi","goal":"sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M","stopOnEntry":true}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

@@ -1,0 +1,18 @@
+; The parts of the extension that do not need VS Code, tested in Node
+; (node --test): checkReport.js alone, and properties.js with a stand-in
+; for the module vscode and the real elpi-check.  Skipped when node is not
+; installed.
+(rule
+ (alias runtest)
+ (enabled_if %{bin-available:node})
+ (deps
+  (glob_files ../*.js)
+  (glob_files *.js)
+  %{bin:elpi-check}
+  (glob_files %{project_root}/demo/*.elpi)
+  %{project_root}/check/tests/crash.elpi
+  %{project_root}/dap/tests/append.elpi
+  %{project_root}/check/lib/property.elpi)
+ (action
+  (setenv ELPI_CHECK %{bin:elpi-check}
+   (run node --test --test-reporter=dot checkReport.test.js properties.test.js))))

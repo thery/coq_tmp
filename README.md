@@ -36,7 +36,8 @@ development), in [elpi-tools/](elpi-tools):
   rev L R ==> rev R L2 ==> L2 = L).`, checked by `elpi-check file.elpi` on
   random values generated from the declared types (inputs and outputs from
   the modes), or by a random derivation of a generator predicate; failing
-  cases are shrunk.
+  cases are shrunk.  With `-json`, a report for tools, with the goal that
+  replays the shrunk counterexample in the debugger.
 - [debug/](elpi-tools/debug/README.md): **a debugger**.  `elpi-debug
   file.elpi 'goal'` runs the goal through a meta-interpreter written in
   Elpi: ports (call, exit, redo, fail, cut, CHR wake-up), breakpoints and
@@ -49,7 +50,11 @@ development), in [elpi-tools/](elpi-tools):
   small VS Code extension: breakpoints on clause lines and on predicates,
   step in, over, out, continue, pause, restart a call, the stack of calls
   at their clauses, and three scopes (the goal, the local program, the
-  eigenvariables).  Tested by scripted DAP sessions, not by clicking.
+  eigenvariables).  The same extension shows the properties of elpi-check
+  in the Test Explorer (run buttons on their lines, the shrunk
+  counterexample on failure, "Debug this counterexample").  Tested by
+  scripted DAP sessions and in Node with a stand-in for VS Code, not by
+  clicking.
 - [demo/](elpi-tools/demo/DEMO.md): **a demo** of the tools, also in VS Code
   ([`demo/.vscode/launch.json`](elpi-tools/demo/.vscode/launch.json)).
 

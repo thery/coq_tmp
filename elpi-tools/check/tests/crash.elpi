@@ -1,0 +1,11 @@
+% A runtime error in a property stops the run: with -json, the report ends
+% with an error event, after the property being checked was announced.
+accumulate property.
+
+% [bad X Y]: Y is X plus a variable never bound (a runtime error)
+pred bad i:int, o:int.
+bad X Y :- Y is X + Z_.
+
+property "fine" (pi X\ X = X).
+property "crash" (pi X Y\ bad X Y ==> Y = X).
+property "never-reached" (pi X\ X = X).

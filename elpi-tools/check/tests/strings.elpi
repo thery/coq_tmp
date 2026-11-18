@@ -1,0 +1,14 @@
+% Values that are strings: the machine-readable report (-json) and the
+% replay goal write them in quotes, as Elpi reads them.
+accumulate property.
+
+% [shout S T]: T is S followed by an exclamation mark
+func shout string -> string.
+shout S T :- T is S ^ "!".
+
+% False: shouting changes the string.
+property "shout-identity" (pi S T\ shout S T ==> T = S).
+
+% False: a list of strings (typed in the formula) can have two elements.
+property "short-string-lists"
+  (pi L : list string \ pi N\ std.length L N ==> N < 2).
