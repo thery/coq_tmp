@@ -125,7 +125,12 @@ The Elpi files of [elpi/](elpi):
 - `proof.elpi`: the conditions of the steps and the proof of the statement;
   a forward claim is `cyp_have C G P (fun c : C => ...)`, a backward step a proof of `C -> Goal` applied
   to a proof of `C`, a local scope a proof of its claims generalised over
-  its variables and hypotheses;
+  its variables and hypotheses; the proof of several claims (of a scope,
+  or of a step with sub-steps) is given once to `cyp_have` and each claim
+  is a projection of it, so that the proof term grows linearly with the
+  nesting of the steps ([nest_demo.md](nest_demo.md): 12 nested steps of
+  two claims, type-check and definition 31.7 s and 12.1 s before, 37 ms
+  and 35 ms after);
 - `markdown.elpi`: reading the Markdown, writing the checked Markdown and
   the JSON for the editor.
 
