@@ -69,7 +69,24 @@ Solution 1:
   N = c
 Solution 2:
   N = lam c0 \ c
+debug: no (more) solution.
+Deepest failure (depth 2): #3 step c (X9 c0)
+  called from:
+    #2 step (lam c1 \ c) (lam c1 \ X9 c1)
+    #1 step (app (lam c1 \ c) c) (app (lam c1 \ X9 c1) c)
+  clauses tried:
+    lambda.elpi:24: step (app (lam X0^1) X1^1) (X0^1 X1^1)
+        does not match: argument 1 (input): c vs app (lam X0^1) X1^1
+    lambda.elpi:25: step (app X2^1 X3^1) (app X4^1 X3^1)
+        does not match: argument 1 (input): c vs app X2^1 X3^1
+    lambda.elpi:26: step (app X5^1 X6^1) X5^1
+        does not match: argument 1 (input): c vs app X5^1 X6^1
+    lambda.elpi:27: step (lam X7^1) (lam X8^1)
+        does not match: argument 1 (input): c vs lam X7^1
 ```
+
+After the last answer, the debugger says why there is no other: the
+reduction under the binder (line 27) finds no rule for `c`.
 
 The trace, at depth 0 only, says which clause produced each answer:
 
