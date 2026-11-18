@@ -3,6 +3,8 @@
    [Explain foo to "foo.md".] writes the text to the file foo.md.
    [Explain foo to "foo.md" in "fr".]: the same in French (the languages of
    the lexicon: en, fr, it, de, nl, ru, zh, ar, ko, la).
+   [Explain foo to "foo.typ".]: the text in Typst, for its PDF
+   (../prooftext/pdf.sh foo.typ).
    [Explain_partial.], inside a proof, prints the proof so far. *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
@@ -22,12 +24,15 @@ From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
 (* the format of proof texts (../prooftext), shared with cyp: the document,
-   its header, formulas and justifications, fresh names, tactic names *)
+   its header, formulas and justifications, fresh names, tactic names, and
+   the Typst writer with the marks of a checked text that it reads *)
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
+From ProofText Extra Dependency "checked.elpi" as pt_checked.
+From ProofText Extra Dependency "typst.elpi" as pt_typst.
 (* xtext's writer, in elpi/, one file per subject, in the order they are
    loaded (README.md, "Files") *)
 From XText Extra Dependency "elpi/text-tree.elpi" as xt_text_tree.
@@ -128,23 +133,30 @@ Elpi Command Explain.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
+  pt_checked pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
   xt_abstractions xt_applications xt_inductive_text xt_document
   xt_type_expressions xt_staged.
 Elpi Accumulate lp:{{
-  main [str N] :- !, with-switches (explain N T), coq.say T.
-  main [str N, str "in", str L] :- !, in-language L (explain N T), coq.say T.
-  main [str N, str "to", str F] :- !, with-switches (explain N T), write-text F T.
+  main [str N] :- !, with-switches (explain N D), say-document D.
+  main [str N, str "in", str L] :- !, in-language L (explain N D), say-document D.
+  main [str N, str "to", str F] :- !, with-switches (explain N D), write-text F D.
   main [str N, str "to", str F, str "in", str L] :- !,
-    in-language L (explain N T), write-text F T.
-  main _ :- coq.error "usage: Explain name [to \"file.md\"] [in \"lang\"].".
+    in-language L (explain N D), write-text F D.
+  main _ :- coq.error "usage: Explain name [to \"file.md\" | to \"file.typ\"] [in \"lang\"].".
   % G with the switches, the language being L (the "in" of the command)
   pred in-language i:string, i:prop.
   in-language L G :- with-switches (with-switch "lang" "the command" L G).
-  pred write-text i:string, i:string.
-  write-text F T :- open_out F O, output O T, close_out O, coq.say "Explain: written" F.
+  % the document D printed in Markdown
+  pred say-document i:prooftext.document.
+  say-document D :- prooftext.write-document D T, coq.say T.
+  % the document D written to the file F: in Typst if F ends with .typ,
+  % else in Markdown (prooftext.write-as)
+  pred write-text i:string, i:prooftext.document.
+  write-text F D :- prooftext.write-as F D T,
+    open_out F O, output O T, close_out O, coq.say "Explain: written" F.
 }}.
 Elpi Export Explain.
 
@@ -156,7 +168,8 @@ Elpi Command Explain_partial.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
+  pt_checked pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
   xt_abstractions xt_applications xt_inductive_text xt_document
@@ -164,11 +177,12 @@ Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
-    with-switches (explain-partial N P T), open_out F O, output O T, close_out O,
+    with-switches (explain-partial N P D), prooftext.write-as F D T,
+    open_out F O, output O T, close_out O,
     coq.say "Explain_partial: written" F.
   main-interp-qed _ _ P _ Name :-
     (if (var Name) (N = "proof") (N = Name)),
-    with-switches (explain-partial N P T), coq.say T.
+    with-switches (explain-partial N P D), prooftext.write-document D T, coq.say T.
 }}.
 #[proof="end"]
 Elpi Export Explain_partial.

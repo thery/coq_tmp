@@ -53,15 +53,16 @@ let-run [] [] [].
 % ------------------------------------------------------------------
 % The document (../prooftext/document.elpi)
 
-% [proof-text Title Path Body Type Text]: the text of the proof Body of
-% type Type, under the title Title; Path is the module of the theorem
-pred proof-text i:string, i:list string, i:term, i:term, o:string.
-proof-text Title Path Body Type Text :-
+% [proof-text Title Path Body Type D]: the document of the proof Body of
+% type Type, under the title Title; Path is the module of the theorem.
+% It is written in Markdown by prooftext.write-document, or in Typst by
+% prooftext.write-typst (prooftext.write-as chooses by the file).
+pred proof-text i:string, i:list string, i:term, i:term, o:prooftext.document.
+proof-text Title Path Body Type
+    (prooftext.document Fields Title prooftext.unplaced Statement Steps) :-
   top-run [] Body Type Statement Lines,
   std.map Lines document-step Steps,
-  header-fields Path Fields,
-  prooftext.write-document
-    (prooftext.document Fields Title prooftext.unplaced Statement Steps) Text.
+  header-fields Path Fields.
 
 % a line of the proof is a step of the document; its text ends with a
 % punctuation mark
@@ -92,16 +93,17 @@ header-fields Path Fields :-
   prooftext.by-field Tactics By,
   std.append [prooftext.field "require" Require | LangFields] [By] Fields.
 
-% the text of a proof in progress (Explain_partial): its partial proof
-% term P, where the open goals are holes (thesis of L. Théry, 3.3.3)
-pred explain-partial i:string, i:term, o:string.
-explain-partial Name P Text :-
+% the document of a proof in progress (Explain_partial): its partial
+% proof term P, where the open goals are holes (thesis of L. Théry, 3.3.3)
+pred explain-partial i:string, i:term, o:prooftext.document.
+explain-partial Name P D :-
   beta P P1, coq.typecheck P Ty0 ok, beta-ty Ty0 Ty,
   coq.env.current-path Path,
-  proof-text {calc (Name ^ " (proof in progress)")} Path P1 Ty Text.
+  proof-text {calc (Name ^ " (proof in progress)")} Path P1 Ty D.
 
-pred explain i:string, o:string.
-explain Name Text :-
+% the document of the proof of the constant Name
+pred explain i:string, o:prooftext.document.
+explain Name D :-
   coq.locate Name GR,
   ((GR = const C, coq.env.const-body C (some Bo)), !
    ; coq.error "xtext:" Name "is not a constant with a body"),
@@ -109,7 +111,7 @@ explain Name Text :-
   beta Bo Bo1,
   coq.env.const C _ CTy,
   coq.gref->path GR Path,
-  proof-text Name Path Bo1 CTy Text.
+  proof-text Name Path Bo1 CTy D.
 
 % The vocabulary of the writer in language L (the lexicon): every use of
 % English has a phrase in L, and every phrase of a role is in lower case
