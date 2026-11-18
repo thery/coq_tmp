@@ -39,9 +39,9 @@ check-file F Lang Name Ty Proof Rs :-
   rex.replace "[.]md$" ".checked.md" F OutMd,
   rex.replace "[.]md$" ".cyp.json" F OutJs,
   read-proof F H Name Stmt SF SL Ns,
-  field H "scope" Sc, field H "by" By, field H "lang" Lang0,
+  field H "scope" Sc, field H "by" By, field H "lang" Lang0, field H "gaps" Gaps,
   (Lang0 = "", Lang = "en" ; Lang = Lang0), !,
-  by-clauses By Cl,
+  by-clauses By Cl0, gaps-clauses Gaps Off, std.append Off Cl0 Cl,
   coq.say "cyp:" Name,
   (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
     justification Stmt _ Stmt1, pieces Stmt1 P, elements P rclaim SEs,

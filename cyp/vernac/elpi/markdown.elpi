@@ -4,6 +4,7 @@
 %   scope: Z            the notation scope of the formulas (name or key)
 %   by: lia | nia       the default tactics of the proof
 %   lang: en            the language of the text (en, fr, it)
+%   gaps: off           no gap tactic (gaps.elpi)
 %   ---
 %   # name
 %   The statement: Let `x : T`. If `A` (h) then `C`.

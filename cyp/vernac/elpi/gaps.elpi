@@ -1,0 +1,33 @@
+% The coarse gap tactic: a last try on a condition that its justification,
+% the rules and the default tactics leave open.
+%
+% A short text skips intermediate formulas, so that the claim of a step no
+% longer follows from the step before it by one rule.  The gap tactic is
+% the Ltac tactic cyp_gap of Gaps.v: a few bounded searches (no time
+% limit), so that a condition it cannot close costs a bounded number of
+% steps.
+%
+% A proof turns it off with the header line  gaps: off  (Cyp File), or the
+% attribute #[gaps="off"] (Cyp File, Cyp Lemma).
+
+% [gaps-off]: the gap tactic is not tried
+pred gaps-off.
+gaps-off :- attributes A, std.mem A (attribute "gaps" (leaf-str "off")), !.
+
+% the header line gaps: off, as a clause of gaps-off
+pred gaps-clauses i:string, o:list prop.
+gaps-clauses "off" [gaps-off] :- !.
+gaps-clauses _ [].
+
+% [gap-justification Tac]: the conditions the gap tactic may close: those
+% with no justification, and those justified by a lemma or a tactic; a
+% step justified by named rules (*by monotonicity*) is closed by them only
+pred gap-justification i:option string.
+gap-justification none.
+gap-justification (some X) :- not (named X _ _).
+
+% [close-gap Tac G]: the condition G, justified by Tac, closed by the gap
+% tactic
+pred close-gap i:option string, i:goal, o:list sealed-goal.
+close-gap Tac G [] :-
+  not gaps-off, gap-justification Tac, coq.ltac.call-ltac1 "cyp_gap" G [].
