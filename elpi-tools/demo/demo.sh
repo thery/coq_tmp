@@ -35,3 +35,9 @@ run "$debug nowhere.elpi 'check [1,2]'"
 
 echo; echo "== 8. The same answers as the real engine"
 run "$debug -compare -all lambda.elpi 'step (app (lam x\\ c) c) N' | tail -1"
+
+echo; echo "== 9. Lists: insertion sort with a wrong clause, and two reversals"
+run "$check lists.elpi"
+run "$debug -trace lists.elpi 'sort [0,0] S'"
+run "$debug lists.elpi 'sort [0,0] [0,0]'"
+run "$debug -profile lists.elpi 'std.iota 200 L, naive-rev L R1, rev L R2' | grep -v '^  [LR][12]* ='"

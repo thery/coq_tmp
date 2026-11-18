@@ -1,0 +1,48 @@
+% A second demo: lists, as in Prolog.  Insertion sort with one wrong
+% clause (an element equal to the head is dropped), and two reversals for
+% the profile.
+accumulate property.
+
+% [insert X L R]: R is the sorted list L with X inserted
+pred insert i:int, i:list int, o:list int.
+insert X [] [X].
+insert X [Y | L] [X, Y | L] :- X < Y.
+insert X [Y | L] [Y | L] :- X = Y.            % the bug: X is lost
+insert X [Y | L] [Y | R] :- X > Y, insert X L R.
+
+% [sort L S]: S is L sorted
+pred sort i:list int, o:list int.
+sort [] [].
+sort [X | L] S :- sort L S1, insert X S1 S.
+
+% [sorted L]: L is in increasing order
+pred sorted i:list int.
+sorted [].
+sorted [_].
+sorted [X, Y | L] :- X =< Y, sorted [Y | L].
+
+% [append L1 L2 L]: L is L1 followed by L2
+pred append i:list int, i:list int, o:list int.
+append [] L L.
+append [X | L1] L2 [X | L] :- append L1 L2 L.
+
+% [naive-rev L R] and [rev L R]: R is L reversed
+pred naive-rev i:list int, o:list int.
+naive-rev [] [].
+naive-rev [X | L] R :- naive-rev L R1, append R1 [X] R.
+
+pred rev i:list int, o:list int.
+rev L R :- rev-onto L [] R.
+pred rev-onto i:list int, i:list int, o:list int.
+rev-onto [] A A.
+rev-onto [X | L] A R :- rev-onto L [X | A] R.
+
+% The result of sort is sorted.
+property "sort-sorted" (pi L S\ sort L S ==> sorted S).
+
+% sort keeps every element: the same length.
+property "sort-length"
+  (pi L S N M\ sort L S ==> std.length L N ==> std.length S M ==> N = M).
+
+% The two reversals agree.
+property "rev-agree" (pi L R1 R2\ naive-rev L R1 ==> rev L R2 ==> R1 = R2).
