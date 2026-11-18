@@ -1,0 +1,34 @@
+% prooftext: formulas and justifications inside the text of a step.
+% (load after lexicon/lexicon.elpi, which defines the roles)
+%
+% A formula is written between backticks, in Rocq syntax, with its role
+% as a Pandoc class right after it: `n + 0 = n`{.claim}.  A step names
+% what justifies it in italics, *by X*: a lemma, a constructor, a rule or
+% a tactic (tactics.elpi).
+
+namespace prooftext {
+
+% [role-tag Role Tag]: the class of a formula of role Role.  A backward
+% claim (it replaces the goal) has the class of a claim: reading the
+% class claim gives rclaim, the first role with that class.
+pred role-tag o:role, o:string.
+role-tag rvar "var".
+role-tag rhyp "hyp".
+role-tag rclaim "claim".
+role-tag rfact "fact".
+role-tag rback "claim".
+
+% [formula Role F S]: the formula F (its text in Rocq syntax) with the
+% class of Role
+pred formula i:role, i:string, o:string.
+formula Role F S :- role-tag Role Tag, !, S is "`" ^ F ^ "`{." ^ Tag ^ "}".
+
+% [justification J S]: the justification J of a step, *by J*
+pred justification i:string, o:string.
+justification J S :- S is "*by " ^ J ^ "*".
+
+% [is-justification S]: S is a justification, *by J*
+pred is-justification i:string.
+is-justification S :- rex.match "^[*]by .*[*]$" S.
+
+}

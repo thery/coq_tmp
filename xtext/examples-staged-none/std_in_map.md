@@ -37,7 +37,7 @@ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove
                       - By H0 we have `In x l0`{.claim}.
                     - By application, we have `In (f x) (map f l0)`{.claim}.
                 - By application, we have `In x l0 -> In (f x) (map f l0)`{.claim}.
-                  - By IHl we have `forall elpi_ctx_entry_10_ : A, In elpi_ctx_entry_10_ l0 -> In (f elpi_ctx_entry_10_) (map f l0)`{.claim}.
+                  - By IHl we have `forall x0 : A, In x0 l0 -> In (f x0) (map f l0)`{.claim}.
                   - The element `x`{.fact} belongs to `A`{.fact}.
                 - By application, we have `In (f x) (map f l0)`{.claim}.
                 - By definition of or (or_intror), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by Corelib.Init.Logic.or_intror*.

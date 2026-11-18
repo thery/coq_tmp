@@ -1,0 +1,80 @@
+% xtext: the switches, the choices that change how a text is written.
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+%
+% A switch has a name, an environment variable that sets it, a default
+% value (xtext-switch in xtext.db, Explain.v, where the default can be
+% changed) and the values the writer knows (switch-values, below).  Its
+% value is the variable's, if the variable is set, else the default.  A
+% value the writer does not know, an empty one included, is an error: a
+% misspelt XTEXT_CONTRACTION=gaurded must not give the texts of another
+% strategy without a word.
+%
+% The switches are read when the command Explain runs, from the
+% environment of the Rocq process that runs it.  make does not see the
+% environment: after changing a variable, the example files must be
+% compiled again (make_variant.sh does it in a copy of the directory).
+
+% [switch Name Value]: the value of the switch Name
+pred switch i:string, o:string.
+switch Name V :- read-switch Name V.
+
+% the values the writer knows
+pred switch-values o:string, o:list string.
+% how a proof becomes text: in one walk, or in the three stages of the
+% thesis (staged.elpi)
+switch-values "translation" ["direct", "staged"].
+% the contraction of application steps (thesis 3.4.2)
+switch-values "contraction" ["none", "guarded", "maximal"].
+% the language of the text: those of the lexicon that have the writer's
+% phrases
+switch-values "lang" Ls :-
+  std.findall (write-role _ "let" _ _) Rs,
+  std.map Rs (r\ l\ r = write-role l _ _ _) Ls.
+
+% [read-switch Name Value]: the value of the switch, from the environment
+% or the default
+pred read-switch i:string, o:string.
+read-switch Name V :- xtext-switch Name Var Default, !,
+  (if (getenv Var (some S)) (known-value Name Var S, V = S)
+                            (known-value Name "its default" Default, V = Default)).
+read-switch Name _ :- coq.error "xtext: there is no switch" Name.
+
+% [known-value Name Origin V]: V is a value of the switch Name; Origin says
+% where V comes from, for the error message
+pred known-value i:string, i:string, i:string.
+known-value Name _ V :- switch-values Name Vs, std.mem! Vs V, !.
+known-value Name Origin V :- switch-values Name Vs,
+  std.string.concat ", " Vs Known,
+  coq.error {calc ("xtext: the switch " ^ Name ^ " is set by " ^ Origin ^ " to \"" ^ V ^
+    "\"; its values are " ^ Known)}.
+
+% [with-switches G]: G, with every switch read and checked once (the
+% words of a text look up the language thousands of times)
+pred with-switches i:prop.
+with-switches G :-
+  std.findall (switch-values _ _) Ss,
+  std.map Ss (s\ n\ sigma Vs\ s = switch-values n Vs) Names,
+  with-values-of Names G.
+
+pred with-values-of i:list string, i:prop.
+with-values-of [] G :- G.
+with-values-of [Name | Names] G :-
+  read-switch Name V, (switch Name V :- !) => with-values-of Names G.
+
+% [with-switch Name Origin V G]: G, with the switch Name set to V (the
+% language given to the command: Explain foo in "fr")
+pred with-switch i:string, i:string, i:string, i:prop.
+with-switch Name Origin V G :- known-value Name Origin V, (switch Name V :- !) => G.
+
+% ------------------------------------------------------------------
+% Mechanisms switched off, for measurements: XTEXT_OFF is a
+% comma-separated list of explicit, args, tactics, thatis (README,
+% "Inferable arguments, tactics, unfolding").  An unknown name is an error.
+pred off i:string.
+off M :- getenv "XTEXT_OFF" (some S), rex.split "," S L,
+  std.forall L known-mechanism, std.mem! L M.
+
+pred known-mechanism i:string.
+known-mechanism M :- std.mem! ["explicit", "args", "tactics", "thatis"] M, !.
+known-mechanism M :- coq.error {calc ("xtext: XTEXT_OFF names \"" ^ M ^
+  "\"; the mechanisms are explicit, args, tactics, thatis")}.

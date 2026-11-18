@@ -7,8 +7,8 @@ where it is in `elpi/` and which example reproduces its figure.  The names
 in the code say what a predicate is for; the reference to the thesis is in
 this file and in the comments.
 
-Two translations exist, chosen by the switch `xtext-translation`
-(`Explain.v`; variable `XTEXT_TRANSLATION`):
+Two translations exist, chosen by the switch `translation`
+(`elpi/switches.elpi`; variable `XTEXT_TRANSLATION`):
 
 - **direct** (default): term to text in one walk (`transducer.elpi` and
   the files of its forms);
@@ -33,19 +33,19 @@ Two translations exist, chosen by the switch `xtext-translation`
 
 | thesis | what | code |
 |---|---|---|
-| 3.1.2 | the double annotation ((M : Tc) : Tr) | the type `annot` (`one`, `two`) in `staged.elpi` |
-| 3.2.4, Fig. 3.3 | weak head normal form | `whnf` in `annotation.elpi` |
-| 3.3.1, Fig. 3.4 | synthesis of types (Var, Const, Abs, App) | `synth` in `annotation.elpi` |
-| 3.3.2 | inheritance of types, from the statement | `required`, `req`; the statement in `document.elpi` (`top-run`) |
-| 3.3.4, Fig. 3.9 | the double computation Γ; Tr ⊢ M ↪ ((M:Tc):Tr), rules Var, Const, App1, App2, Abs | stage 1, `annotate` in `staged.elpi` (one clause per rule); in one pass: `d-annot`, `d-abs` in `annotation.elpi` |
-| 3.3.4, Fig. 3.10 | Trans_Inv, doubly annotated, not contracted (L1–L5) | `examples-double/Trans_Inv.md` |
-| 3.4.1 | a conclusion says Tc, then "that is" Tr when they differ | `conclusion-parts` in `staged.elpi`; `add-equiv`, `equiv-text` in `annotation.elpi` |
-| 3.4.2, Fig. 3.11 | guarded contraction: redundant double annotation, weak and strong contraction of the abstraction, contraction of the application | stage 2 in `staged.elpi`: `redundant-annotation`, `contract-body`, `variable-parts` (strong), `merge-application`, `merges` |
+| 3.1.2 | the double annotation ((M : Tc) : Tr) | the type `annot` (`single`, `double`) in `staged.elpi` |
+| 3.2.4, Fig. 3.3 | weak head normal form | `whnf` in `printing.elpi` |
+| 3.3.1, Fig. 3.4 | synthesis of types (Var, Const, Abs, App) | `synth` in `type-expressions.elpi` |
+| 3.3.2 | inheritance of types, from the statement | `required`, `req` in `type-expressions.elpi`; the statement in `document.elpi` (`top-run`) |
+| 3.3.4, Fig. 3.9 | the double computation Γ; Tr ⊢ M ↪ ((M:Tc):Tr), rules Var, Const, App1, App2, Abs | stage 1, `annotate` in `staged.elpi` (one clause per rule) |
+| 3.3.4, Fig. 3.10 | Trans_Inv, doubly annotated, not contracted (L1–L5) | `examples-staged-none/Trans_Inv.md` |
+| 3.4.1 | a conclusion says Tc, then "that is" Tr when they differ | `conclusion-parts` in `staged.elpi` |
+| 3.4.2, Fig. 3.11 | guarded contraction: redundant double annotation, weak and strong contraction of the abstraction, contraction of the application | stage 2 in `staged.elpi`: `redundant-annotation`, `contract-body`, `variable-parts` (strong), `merge-application`, `merges`; the statement stops at the first abstraction whose annotation is double (`statement-stops-at`, `single-annotation`) |
 | 3.4.2, Fig. 3.12 | Trans_Inv, maximal contraction | `examples-staged-maximal/Trans_Inv.md` |
 | 3.4.2, Fig. 3.13 | Trans_Inv, guarded contraction | `examples-staged-guarded/Trans_Inv.md` |
 
 The direct writer also has a contraction of application steps
-(`applications.elpi`, `contract`, strategies `none`, `guarded`,
+(`applications.elpi`, `contract-premises`, strategies `none`, `guarded`,
 `maximal`), guarded by tactics rather than by the annotations: it is not
 the contraction of Fig. 3.11.
 
@@ -53,7 +53,7 @@ the contraction of Fig. 3.11.
 
 | thesis | what | code |
 |---|---|---|
-| 5.2.2 (Cast') | "that is" for a conversion | `that-is` (`document.elpi`) |
+| 5.2.2 (Cast') | "that is" for a conversion | `that-is` (`expected-types.elpi`) |
 | 5.4 (pragmatic method) | a subproof built by a tactic, written as one step "by T" | `tactic-step` in `transducer.elpi` |
 | 5.4 (extended App) | arguments that can be inferred are left out | `apply-rest`, `inferable` in `applications.elpi` |
 | 5.4, applied to formulas | formulas that type-check again (the implicit arguments printed when needed) | `reparse.elpi` |
@@ -67,7 +67,7 @@ the contraction of Fig. 3.11.
 | 6.3.1, 6.3.2 | eliminations with one case, with zero cases | `inductive-text.elpi` |
 | 6.3.3, 6.3.4 | dependent eliminations, eliminations with recursion (base and inductive cases) | `inductive-text.elpi` (`recursive`) |
 | 6.4.2 | elimination theorems recognised by their type, whatever their name | `elim-info` in `inductive.elpi` |
-| (end of 6.4.2) | rewriting: the thesis asks for a specific rule but gives none | `tr-rewrite` in `inductive-text.elpi` (by the name of the theorem: to be generalised) |
+| (end of 6.4.2) | rewriting: the thesis asks for a specific rule but gives none | `tr-rewrite` in `inductive-text.elpi`; the rewriting principles recognised by their type, `rewrite-info` in `inductive.elpi` |
 
 ## Not implemented
 

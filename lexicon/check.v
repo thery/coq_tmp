@@ -31,6 +31,9 @@ Elpi Accumulate lp:{{
     expect "zh" [0, 1, 2] ["other", "other", "other"],
     plural "ru" 3 [pr "one" "шаг", pr "few" "шага", pr "many" "шагов"] W, coq.say W,
     lower "ПУСТЬ Über À" Lw, coq.say Lw,
-    if (Lw = "пусть über à") (coq.say "lower: ok") (coq.error "lower gives" Lw).
+    if (Lw = "пусть über à") (coq.say "lower: ok") (coq.error "lower gives" Lw),
+    capitalised "пусть" C1, capitalised "élément" C2, capitalised "`x`" C3,
+    if ([C1, C2, C3] = ["Пусть", "Élément", "`x`"]) (coq.say "capitalised: ok")
+       (coq.error "capitalised gives" C1 C2 C3).
 }}.
 Elpi lexicon_check.

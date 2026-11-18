@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # ABCD
 
-Sint `A B C D : Prop`{.var}. Ponamus `A -> B -> C -> D`{.hyp} (h1) et `A -> C -> B`{.hyp} (h2) et `A -> C`{.hyp} (h3) et `A`{.hyp} (h4). Ostendamus `D`{.claim}.
+Sint `A B C D : Prop`{.var}. Ponamus `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) et `A`{.hyp} (h4). Ostendamus `D`{.claim}.
 
 - Per h4 habemus `A`{.claim}.
 - Per h4 habemus `A`{.claim}.

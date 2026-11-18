@@ -1,0 +1,44 @@
+% xtext: The type expected at the place of a subproof, and "that is".
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+
+% "that is" (the Cast' of the thesis, 5.2.2): when the type that a proof
+% proves (synthesised) differs from the type expected at its place
+% (inherited) but Rocq finds them convertible, its conclusion says both
+pred that-is i:term, i:term, i:pf, o:pf.
+that-is T Exp (prfp P Ps) Q :- !, that-is T Exp P P1,
+  (if (P1 = P) (Q = prfp P Ps) (Q = P1)).
+that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-
+  not (off "thatis"), typ T Syn, not (Syn = Exp), coq.unify-eq Syn Exp ok, !,
+  % the second form is shown, not claimed: Rocq checked the conversion,
+  % and the step's justification is about the first form
+  formula rfact Exp F, sentence [tx S, tx ",", wd "that-is", tx F] S1.
+that-is _ _ P P.
+
+% [at-expected T E P0 P]: the text P0 of the subproof T, at a place where
+% the type E is expected: "that is" E, if E is known (not a hole)
+pred at-expected i:term, i:term, i:pf, o:pf.
+at-expected T E P0 P :- ground_term E, !, that-is T E P0 P.
+at-expected _ _ P P.
+
+% [domains Ty As Es]: the expected types of the arguments As of a term of
+% type Ty (holes where the type is not a product)
+pred domains i:term, i:list term, o:list term.
+domains _ [] [] :- !.
+domains (prod _ D B) [A|As] [D1|Ds] :- !, beta-ty D D1, domains (B A) As Ds.
+domains Ty As Ds :- whnf Ty (prod N D B), !, domains (prod N D B) As Ds.
+domains _ As Ds :- std.map As (_\ d\ true) Ds.
+
+% [next-expected Es E Rest]: the expected type E of the next subproof (a
+% hole when there is none) and those of the subproofs after it
+pred next-expected i:list term, o:term, o:list term.
+next-expected [E|Es] E Es :- !.
+next-expected [] _ [].
+
+% [dashed-exp Ts Es Path Ds]: the subproofs Ts as dashed lines, each at its
+% expected type
+pred dashed-exp i:list term, i:list term, i:list int, o:list line.
+dashed-exp [] _ _ [].
+dashed-exp [T|Ts] Es Path [D|Ds] :-
+  next-expected Es E Er,
+  tr T nostar Path P0, at-expected T E P0 P,
+  dashed P D, dashed-exp Ts Er Path Ds.

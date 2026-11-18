@@ -52,10 +52,10 @@ Let `x : nat`{.var}. We prove `~ x < x`{.claim}.
       - By application, we have `x < x <-> (x ?= x) = Lt`{.claim}.
         - By application, we have `(x ?= x) = Lt <-> x < x -> x < x <-> (x ?= x) = Lt`{.claim}.
           - By application, we have `forall y : Prop, (x ?= x) = Lt <-> y -> y <-> (x ?= x) = Lt`{.claim}.
-            - By application, we have `forall elpi_ctx_entry_2_ y : Prop, elpi_ctx_entry_2_ <-> y -> y <-> elpi_ctx_entry_2_`{.claim}.
-              - By application, we have `RelationClasses.Symmetric iff -> forall elpi_ctx_entry_3_ y : Prop, elpi_ctx_entry_3_ <-> y -> y <-> elpi_ctx_entry_3_`{.claim}.
-                - By application, we have `forall R : Relation_Definitions.relation Prop, RelationClasses.Symmetric R -> forall elpi_ctx_entry_4_ y : Prop, R elpi_ctx_entry_4_ y -> R y elpi_ctx_entry_4_`{.claim}.
-                  - By symmetry we have `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Symmetric R -> forall elpi_ctx_entry_5_ y : A, R elpi_ctx_entry_5_ y -> R y elpi_ctx_entry_5_`{.claim}.
+            - By application, we have `forall x0 y : Prop, x0 <-> y -> y <-> x0`{.claim}.
+              - By application, we have `RelationClasses.Symmetric iff -> forall x0 y : Prop, x0 <-> y -> y <-> x0`{.claim}.
+                - By application, we have `forall R : Relation_Definitions.relation Prop, RelationClasses.Symmetric R -> forall x0 y : Prop, R x0 y -> R y x0`{.claim}.
+                  - By symmetry we have `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Symmetric R -> forall x0 y : A, R x0 y -> R y x0`{.claim}.
                   - The element `Prop`{.fact} belongs to `Type`{.fact}.
                 - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
               - By iff_Symmetric we have `RelationClasses.Symmetric iff`{.claim}.
@@ -81,6 +81,6 @@ Let `x : nat`{.var}. We prove `~ x < x`{.claim}.
       - By definition of eq (eq_refl), we have `Lt = Lt`{.claim} *by Corelib.Init.Logic.eq_refl*.
       - By application, we have `False`{.claim}.
   - By application, we have `(x ?= x) = Eq`{.claim}.
-    - By compare_refl we have `forall elpi_ctx_entry_1_ : nat, (elpi_ctx_entry_1_ ?= elpi_ctx_entry_1_) = Eq`{.claim}.
+    - By compare_refl we have `forall x0 : nat, (x0 ?= x0) = Eq`{.claim}.
     - The element `x`{.fact} belongs to `nat`{.fact}.
 - By application, we have `~ x < x`{.claim}.

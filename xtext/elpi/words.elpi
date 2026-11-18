@@ -1,5 +1,4 @@
-% xtext: Words and sentences in the language of the text (from the lexicon), and
-% the options for measurements.
+% xtext: Words and sentences in the language of the text (from the lexicon).
 % (part of xtext's writer; the files are loaded in the order of Explain.v)
 
 % ------------------------------------------------------------------
@@ -9,32 +8,33 @@
 % phrase of the reading table [phrase], and [write-word Lang Use Words] for the
 % other words.  A sentence is a list of parts: [wd Use], the phrase of a
 % use in the language of the text, and [tx S], text as it is (formulas,
-% names, punctuation).  The language is xtext-lang (Explain.v), or the
-% variable XTEXT_LANG.
+% names, punctuation).  The language is the switch "lang" (switches.elpi).
 kind part type.
 type wd string -> part.
 type tx string -> part.
-
-pred writer-lang o:string.
-writer-lang L :- getenv "XTEXT_LANG" (some L), not (L = ""), !.
-writer-lang L :- xtext-lang L, !.
+% a formula, from its term, with its role for cyp: `F`{.claim}
+type fml role -> term -> part.
+% a name (of a hypothesis, a constant, ...), as it is
+type nm string -> part.
+% an enumeration, "A, B and C", each element a list of parts
+type enum list (list part) -> part.
 
 pred word i:string, o:string.
-word U S :- writer-lang L, (write-role L U S _ ; write-word L U S), !.
-word U _ :- writer-lang L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
+word U S :- switch "lang" L, (write-role L U S _ ; write-word L U S), !.
+word U _ :- switch "lang" L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
 
-% [say Parts S]: the parts joined by spaces, none before , . : ; ) nor
+% [text-of-parts Parts S]: the parts joined by spaces, none before , . : ; ) nor
 % after (, empty parts left out
-pred say i:list part, o:string.
-say Ps0 S :- place Ps0 Ps, std.map Ps part-text Ss0, std.filter Ss0 (x\ not (x = "")) Ss, join-words Ss S.
+pred text-of-parts i:list part, o:string.
+text-of-parts Ps0 S :- place Ps0 Ps, std.map Ps part-text Ss0, std.filter Ss0 (x\ not (x = "")) Ss, join-words Ss S.
 
-% [say-cap Parts S]: the same, at the start of a sentence: capitalised when
+% [sentence Parts S]: the same, at the start of a sentence: capitalised when
 % it starts with a phrase (not with a name or a formula, after the
 % placement of the phrases)
-pred say-cap i:list part, o:string.
-say-cap Ps S :- say Ps S0, place Ps [P | _], !,
-  (if (P = wd _) (cap-first S0 S) (S = S0)).
-say-cap _ "".
+pred sentence i:list part, o:string.
+sentence Ps S :- text-of-parts Ps S0, place Ps [P | _], !,
+  (if (P = wd _) (capitalised S0 S) (S = S0)).
+sentence _ "".
 
 % A phrase that stands after its formula (lexicon: phrase-after) is put
 % after the parts that follow it, up to the next phrase of a role, the next
@@ -50,7 +50,7 @@ place [wd U | Ps] Out :- after-use U, !,
 place [P | Ps] [P | Qs] :- place Ps Qs.
 
 pred after-use i:string.
-after-use U :- writer-lang L, word U S, phrase-after L S.
+after-use U :- switch "lang" L, word U S, phrase-after L S.
 
 % [scope Parts Depth In Rest]: the parts in the scope of an after-phrase
 pred scope i:list part, i:int, o:list part, o:list part.
@@ -61,13 +61,16 @@ scope [tx ")" | Ps] D [tx ")" | In] Rest :- D > 0, !, D1 is D - 1, scope Ps D1 I
 scope [P | Ps] D [P | In] Rest :- scope Ps D In Rest.
 
 pred scope-end i:part.
-scope-end (wd U) :- writer-lang L, write-role L U _ _.
+scope-end (wd U) :- switch "lang" L, write-role L U _ _.
 scope-end (tx S) :- std.mem! [",", ".", ":", ";"] S.
-scope-end (tx S) :- rex.match "^[*]by " S.
+scope-end (tx S) :- prooftext.is-justification S.
 
 pred part-text i:part, o:string.
 part-text (wd U) S :- word U S.
 part-text (tx S) S.
+part-text (fml R T) S :- formula R T S.
+part-text (nm N) N.
+part-text (enum Ls) S :- enumeration Ls Ps, text-of-parts Ps S.
 
 pred join-words i:list string, o:string.
 join-words [] "".
@@ -76,21 +79,28 @@ join-words [A, B | L] S :-
   (if (rex.match "^[,.:;)]" B ; rex.match ".*($" A) (Sp = "") (Sp = " ")),
   A1 is A ^ Sp ^ B, join-words [A1 | L] S.
 
-% the first letter in capitals, by the capital letters of the vocabularies
-% ([capital Lang Upper Lower], cyp's vocab_*.elpi)
-pred cap-first i:string, o:string.
-cap-first S C :- std.findall (capital _ _ _) Cs,
-  std.exists Cs (c\ sigma U L Re\ c = capital _ U L, Re is "^" ^ L, rex.match Re S,
-    rex.replace Re U S C), !.
-cap-first S S.
+% [with-name X N Ps]: the text X followed by the name N in parentheses: a
+% hypothesis and its name, `A`{.hyp} (h), an inductive type and its rule,
+% or (or_ind)
+pred with-name i:string, i:string, o:list part.
+with-name X N [tx X, tx "(", tx N, tx ")"].
+
+% [enumeration Ls Ps]: the lists of parts Ls as an enumeration: "A", "A and
+% B", "A, B and C"
+pred enumeration i:list (list part), o:list part.
+enumeration [] [].
+enumeration [L] L :- !.
+enumeration [L1, L2] Ps :- !, std.append L1 [wd "and" | L2] Ps.
+enumeration [L | Ls] Ps :- enumeration Ls Ps1, std.append L [tx "," | Ps1] Ps.
+
+% [separated Sep Ls Ps]: the lists of parts Ls, with the parts Sep between
+% two of them
+pred separated i:list part, i:list (list part), o:list part.
+separated _ [] [].
+separated _ [L] L :- !.
+separated Sep [L | Ls] Ps :- separated Sep Ls Ps1, std.append L Sep L1, std.append L1 Ps1 Ps.
 
 % a justification *by J* as a part ("" for none)
 pred by-part i:string, o:part.
 by-part "" (tx "") :- !.
-by-part J (tx S) :- S is "*by " ^ J ^ "*".
-
-% ------------------------------------------------------------------
-% Options, for measurements: XTEXT_OFF is a comma-separated list of the
-% mechanisms to switch off (explicit, args, tactics, thatis).
-pred off i:string.
-off M :- getenv "XTEXT_OFF" (some S), rex.split "," S L, std.mem! L M.
+by-part J (tx S) :- prooftext.justification J S.

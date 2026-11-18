@@ -58,6 +58,14 @@ lower S L :- std.findall (capital _ _ _) Cs, std.fold Cs S lower-step L.
 pred lower-step i:prop, i:string, o:string.
 lower-step (capital _ U L) S S1 :- rex.replace U L S S1.
 
+% [capitalised S C]: S with its first letter in capitals (S as it is when
+% it does not start with a lower-case letter of a language loaded)
+pred capitalised i:string, o:string.
+capitalised S C :- std.findall (capital _ _ _) Cs,
+  std.exists Cs (c\ sigma U L Re\ c = capital _ U L, Re is "^" ^ L, rex.match Re S,
+    rex.replace Re U S C), !.
+capitalised S S.
+
 % ------------------------------------------------------------------ %
 % Plural (the categories of the Unicode CLDR plural rules, for integers:
 % "zero", "one", "two", "few", "many", "other")

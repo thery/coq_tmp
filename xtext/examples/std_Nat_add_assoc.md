@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 Let `n m p : nat`{.var}. We prove `n + (m + p) = n + m + p`{.claim}.
 
 - Thus we have `forall x y : nat, x = y -> x + (m + p) = x + m + p <-> y + (m + p) = y + m + p`{.claim}.
-  - Let us choose arbitrarily `x : nat`{.var}, `y : nat`{.var}.
+  - Let us choose arbitrarily `x : nat`{.var} and `y : nat`{.var}.
     - Assume `x = y`{.hyp} (H).
       - In particular `Morphisms.ProperProxy eq (y + (m + p) = y + m + p)`{.claim}, that is `(y + (m + p) = y + m + p) = (y + (m + p) = y + m + p)`{.fact}.
         - Using eq_proper_proxy we get `forall (A : Type) (x0 : A), Morphisms.ProperProxy eq x0`{.claim} *by Corelib.Classes.Morphisms.eq_proper_proxy*.

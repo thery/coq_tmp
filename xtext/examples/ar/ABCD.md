@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # ABCD
 
-لتكن `A B C D : Prop`{.var}. لنفرض أن `A -> B -> C -> D`{.hyp} (h1) و `A -> C -> B`{.hyp} (h2) و `A -> C`{.hyp} (h3) و `A`{.hyp} (h4). سنثبت أن `D`{.claim}.
+لتكن `A B C D : Prop`{.var}. لنفرض أن `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) و `A`{.hyp} (h4). سنثبت أن `D`{.claim}.
 
 - حسب h4 لدينا `A`{.claim}.
 - حسب h4 لدينا `A`{.claim}.

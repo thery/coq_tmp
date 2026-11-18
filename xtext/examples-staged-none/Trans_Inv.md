@@ -14,8 +14,8 @@ Let `E : Set`{.var}. Let `R : Rel E`{.var}. Assume `Trans E R`{.hyp} (h). We pro
         - Assume `Inv E R y z`{.hyp} (h2).
           - By application, we have `R y x -> R z x`{.claim}.
             - By application, we have `R z y -> R y x -> R z x`{.claim}.
-              - By application, we have `forall elpi_ctx_entry_8_ : E, R z y -> R y elpi_ctx_entry_8_ -> R z elpi_ctx_entry_8_`{.claim}.
-                - By application, we have `forall elpi_ctx_entry_8_ elpi_ctx_entry_9_ : E, R z elpi_ctx_entry_8_ -> R elpi_ctx_entry_8_ elpi_ctx_entry_9_ -> R z elpi_ctx_entry_9_`{.claim}.
+              - By application, we have `forall z0 : E, R z y -> R y z0 -> R z z0`{.claim}.
+                - By application, we have `forall y0 z0 : E, R z y0 -> R y0 z0 -> R z z0`{.claim}.
                   - By h we have `Trans E R`{.claim}, that is `forall x0 y0 z0 : E, R x0 y0 -> R y0 z0 -> R x0 z0`{.fact}.
                   - The element `z`{.fact} belongs to `E`{.fact}.
                 - The element `y`{.fact} belongs to `E`{.fact}.

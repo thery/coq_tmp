@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # ABCD
 
-Laat `A B C D : Prop`{.var}. Stel `A -> B -> C -> D`{.hyp} (h1) en `A -> C -> B`{.hyp} (h2) en `A -> C`{.hyp} (h3) en `A`{.hyp} (h4). We bewijzen `D`{.claim}.
+Laat `A B C D : Prop`{.var}. Stel `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) en `A`{.hyp} (h4). We bewijzen `D`{.claim}.
 
 - Volgens h4 er geldt `A`{.claim}.
 - Volgens h4 er geldt `A`{.claim}.

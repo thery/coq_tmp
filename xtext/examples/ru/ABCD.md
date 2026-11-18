@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # ABCD
 
-Пусть `A B C D : Prop`{.var}. Предположим, что `A -> B -> C -> D`{.hyp} (h1) и `A -> C -> B`{.hyp} (h2) и `A -> C`{.hyp} (h3) и `A`{.hyp} (h4). Докажем, что `D`{.claim}.
+Пусть `A B C D : Prop`{.var}. Предположим, что `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) и `A`{.hyp} (h4). Докажем, что `D`{.claim}.
 
 - По h4 имеем `A`{.claim}.
 - По h4 имеем `A`{.claim}.

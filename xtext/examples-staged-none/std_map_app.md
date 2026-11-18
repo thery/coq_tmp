@@ -18,7 +18,7 @@ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove
         - Let `l' : list A`{.var}.
           - By definition of eq (eq_refl), we have `f a :: map f l0 ++ map f l' = f a :: map f l0 ++ map f l'`{.claim} *by Corelib.Init.Logic.eq_refl*.
           - By application, we have `map f (l0 ++ l') = map f l0 ++ map f l'`{.claim}.
-            - By IHl we have `forall elpi_ctx_entry_8_ : list A, map f (l0 ++ elpi_ctx_entry_8_) = map f l0 ++ map f elpi_ctx_entry_8_`{.claim}.
+            - By IHl we have `forall l'0 : list A, map f (l0 ++ l'0) = map f l0 ++ map f l'0`{.claim}.
             - The element `l'`{.fact} belongs to `list A`{.fact}.
           - Rewriting with `map f (l0 ++ l') = map f l0 ++ map f l'`{.fact} from right to left (eq_ind_r), we get `f a :: map f (l0 ++ l') = f a :: map f l0 ++ map f l'`{.claim}.
 - These cases being exhaustive, we deduce `forall l0 l' : list A, map f (l0 ++ l') = map f l0 ++ map f l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.

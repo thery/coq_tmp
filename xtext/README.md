@@ -25,47 +25,88 @@ constants.
 ## Build
 
 Rocq 9.1.1, Elpi 4.0.0 and rocq-elpi 3.5.1 (opam switch `elpi4`, the
-switch of cyp).  xtext needs the lexicon, `../lexicon` (logical name
-`Lexicon`), and nothing of cyp:
+switch of cyp).  xtext needs two libraries that it shares with cyp, and
+nothing of cyp itself: the lexicon, `../lexicon` (logical name `Lexicon`,
+the words of each language), and prooftext, `../prooftext` (logical name
+`ProofText`, [the format of proof texts](../prooftext/README.md): the
+document and its writer, the header, formulas with their roles, the
+justification `*by X*`, fresh names, the tactics a text may name):
 
 ```sh
 eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4)"
 make          # builds Explain.vo, then the example files, which write examples/*.md
 ```
 
+## Files
+
+`Explain.v` defines the commands `Explain` and `Explain_partial`, the
+database `xtext.db` (the parameters: tactics, thresholds, switches, the
+header's libraries) and loads the lexicon, prooftext and the writer.  The
+writer is in `elpi/`, one file per subject, loaded in this order:
+
+| file | what it does |
+|---|---|
+| `text-tree.elpi` | the data of a text: lines with sub-lines, the text of a proof (its lines and its conclusion), kinds of binders and of arguments, the \* context |
+| `printing.elpi` | terms: the names of the context, the terms sent to Rocq (`away-from-context`, `whnf`), printing (`pp`, bound names renamed, fresh names of binders), formulas with their roles (`formula`), beta-reduction |
+| `switches.elpi` | the switches (`switch`, see "Switches"), and `XTEXT_OFF` |
+| `words.elpi` | sentences: a sentence is a list of parts (phrases of the lexicon, text, formulas, enumerations "A, B and C"), `sentence` writes it in the language of the text |
+| `reparse.elpi` | formulas that type-check again (the implicit arguments to print); the type of a term (`typ`) |
+| `kinds.elpi` | the kind of a binder (`Let`, `Assume`, arbitrary element) and of an argument (specialisation, modus ponens) |
+| `inductive.elpi` | introduction, elimination and rewriting theorems, recognised by their type |
+| `declarations.elpi` | the predicates that a file uses and a later one defines |
+| `transducer.elpi` | the text of a proof term, by its form; open goals; subproofs closed by a tactic |
+| `expected-types.elpi` | the type expected at the place of a subproof, and "that is" |
+| `abstractions.elpi` | series of abstractions, local definitions |
+| `applications.elpi` | specialisations and modus ponens, inferable arguments, the contraction of application steps |
+| `inductive-text.elpi` | the text of introductions, eliminations (cases), `match`, `fix`, rewriting |
+| `document.elpi` | the statement, the document and its header (written by prooftext), the check of the vocabulary |
+| `type-expressions.elpi` | type expressions after chapter 3 of the thesis: synthesis, equality, the type required of the proof |
+| `staged.elpi` | the translation in three stages of the thesis (see "The staged translation") |
+
 [THESIS.md](THESIS.md) maps each rule and figure of Coscoy's thesis to the
 predicate that implements it, and to the example that reproduces it.
 
-Files: `Explain.v` (the command) and the writer in `elpi/`, one file per
-subject, loaded in this order:
+Examples and checks:
 
-- `text-tree.elpi` (lines and the text of a proof), `printing.elpi`
-  (terms and formulas), `words.elpi` (words and sentences from the
-  lexicon), `reparse.elpi` (formulas that type-check again), `kinds.elpi`
-  (kinds of binders and arguments), `inductive.elpi` (recognising
-  introduction and elimination theorems), `declarations.elpi` (predicates
-  used by a file before the one that defines them);
-- `transducer.elpi` (the text of a proof term, by its form),
-  `abstractions.elpi`, `applications.elpi` (with the contraction of their
-  steps), `inductive-text.elpi` (introductions, eliminations, fix,
-  rewriting), `document.elpi` (the statement, the header, the document);
-- `annotation.elpi` (the double annotation of the thesis, chapter 3, in one
-  pass), `sentences.elpi` and `staged.elpi` (the translation in three
-  stages, below).
+- `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
+  `inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`
+  (the theses' examples), `stdlib.v` (lemmas of Rocq's Stdlib),
+  `elim_type.v` (elimination principles recognised by their type),
+  `partial.v` (proofs in progress): the texts in `examples/` (82 with
+  those of a private case study, kept in a private branch, 77 here);
+- `multilingual.v`: 12 of them in each of the other languages of the
+  lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la`);
+- `vocab_check.v`: the vocabulary of each language, and the tactic names
+  that xtext writes (they must be prooftext's);
+- `examples-staged-none/`, `examples-staged-maximal/`,
+  `examples-staged-guarded/`: the texts with other switches, written by
+  `sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
+  staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`);
+- `measure.sh`, `measure_all.sh`: times and sizes of the texts;
+- optional checks with cyp: `cyprun.sh`, `cyp-check/` (cyp's results,
+  below), `cyp-check/roles_check.sh`.
 
-Examples: 
-`paper.v` (the paper's examples), `lemmas.v` (small lemmas),
-`inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`,
-`stdlib.v`, `elim_type.v`, `partial.v` (see below): the texts in
-`examples/` (82 with those of a private case study, kept in a private
-branch); `multilingual.v`: 12 of them in each of the other
-languages of the lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`,
-`ko`, `la`); `vocab_check.v` (the vocabulary, below); the optional checks with cyp:
-`cyprun.sh`, `cyp-check/` (cyp's results, below), and
-`cyp-check/roles_check.sh`; `examples-double/`, `examples-staged-maximal/`,
-`examples-staged-guarded/`: the texts with other switches, written by
-`sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
-staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`).
+## Switches
+
+Three switches change how a text is written (`elpi/switches.elpi`).  Each
+has an environment variable that sets it and a default, in `xtext.db`
+(`xtext-switch Name Variable Default`, `Explain.v`):
+
+| switch | variable | values | default |
+|---|---|---|---|
+| `translation` | `XTEXT_TRANSLATION` | `direct` (one walk), `staged` (the three stages of the thesis, below) | `direct` |
+| `contraction` | `XTEXT_CONTRACTION` | `none`, `guarded`, `maximal` (thesis 3.4.2, below) | `guarded` |
+| `lang` | `XTEXT_LANG` | the languages of the lexicon: `en`, `fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la` | `en` |
+
+The language given to the command (`Explain foo in "fr"`) comes before
+the variable.  A value that is not in the list, an empty one included,
+is an error, so that a misspelt value does not silently give the texts of
+another setting.  The switches are read when `Explain` runs, from the
+environment of the Rocq process that runs it: `make` does not see the
+variables, so after changing one, compile the example files again
+(`make_variant.sh` does it in a copy of the directory).  `XTEXT_OFF`
+(below) switches mechanisms off for measurements; an unknown name in it
+is an error too.
 
 ## The output
 
@@ -88,8 +129,13 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 - We have `B \/ A`{.claim} in all cases.
 ```
 
-- the header is cyp's; `require` loads the file that defines the theorem;
-  a text in another language has `lang: fr`, `lang: ko`, ...;
+- the text is in the format of proof texts ([prooftext](../prooftext/README.md)),
+  which cyp reads;
+- the header: `require` loads the libraries (`xtext-header-require` in
+  `xtext.db`) and the file that defines the theorem; a text in another
+  language has `lang: fr`, `lang: ko`, ...; `by` lists the tactics that
+  check a guarded contraction (`xtext-guard-tactic`), which cyp then tries
+  on the steps that name none;
 - the abstractions at the top of the proof make the statement (`Let`,
   `Assume`, `We prove`);
 - each formula carries its cyp role (`{.var}`, `{.hyp}`, `{.claim}`,
@@ -126,13 +172,12 @@ writer's phrases:
 
 A sentence is written as a list of parts, `wd Use` (the phrase of a use in
 the language of the text) and `tx S` (formulas, names, punctuation), joined
-by spaces (`say` in `elpi/words.elpi`); a sentence that starts with a phrase
+by spaces (`text-of-parts` in `elpi/words.elpi`); a sentence that starts with a phrase
 has its first letter capitalised, by the capital letters of the lexicon
-(`say-cap`).  The same lists serve every language: only the table changes,
+(`sentence`).  The same lists serve every language: only the table changes,
 so a text in another language has the structure, the formulas and the
 justifications of the English one (`Supposons ... (h). Montrons ...`).
-The language is the `in "fr"` of the command, or `xtext-lang` in
-`xtext.db` (default `en`), or the variable `XTEXT_LANG`.  A phrase that the
+The language is the switch `lang` (see "Switches").  A phrase that the
 lexicon puts after its formula (`phrase-after`, Korean) is moved after the
 parts it governs: up to the next phrase of a role, the next `,` `.` `:`
 `;` outside parentheses, or the justification (`` `A`{.hyp} (h) 그리고
@@ -228,7 +273,11 @@ They replace the paper's rules for introduction and elimination theorems.
   (end of 6.4.2) that the generic text is poor and that a specific rule is
   needed, but gives none.  Here the proof of `P x` and the proof of the
   equation come first, as dashed subproofs, then `Rewriting with y = x
-  from right to left (eq_ind_r), we get P y`.
+  from right to left (eq_ind_r), we get P y`.  A rewriting principle is
+  recognised by its type, `forall A (x : A) (P : A -> _), P x -> forall y,
+  x = y -> P y` (or `y = x`, from right to left), where `=` is an
+  equality type (an inductive proposition with parameters `A`, `x : A` and
+  one constructor of type `x = x`), whatever its name.
 - **`fix`** (not treated by the thesis; 6.3.4 studies only the types of
   elimination theorems): `We prove τ by recursion on n (fix f):` with the
   body below it.  A recursive call reads `By induction hypothesis (the
@@ -276,7 +325,7 @@ The proof terms are written as close as possible to the λ-terms of the
 theses.
 
 **Tauto** (Coscoy, Fig. 1.5, 2.6, 2.8, 2.11): `fun A B C h1 h2 h3 => h3 h1 h2`.
-- Same: the statement (`Let A B C`, `Assume A (h1) and B (h2) and A -> B -> C (h3)`).
+- Same: the statement (`Let A B C`, `Assume A (h1), B (h2) and A -> B -> C (h3)`).
 - Different: the thesis writes one step, `En appliquant l'hypothèse h3 à
   h1 et h2 nous avons C` (its application-to-variables rule).  xtext
   writes the three hypotheses as dashed lines, then `We deduce C`, so
@@ -301,8 +350,9 @@ in the thesis.
   announced with its unfolding before the binders `x y z` (`Montrons
   (Trans E (Inv E R)), ce qui est équivalent à ∀x, y, z ...`): the
   statement is `Let x y z : E`, `Assume ...`, as the λ-term gives it.
-  With `xtext-annotation` `double` it is: see "The double annotation of
-  the thesis" below.
+  With the staged translation, the statement is `We prove Trans E (Inv E
+  R)`, the binders are a step, and its conclusion says the unfolding
+  (`that is Trans E (Inv E R)`): see "The staged translation" below.
 
 **ABCD** (Coscoy, Fig. 4.28, 5.5, 5.6):
 `fun A B C D h1 h2 h3 h4 => h1 h4 (h2 h4 (h3 h4)) (h3 h4)`.
@@ -426,7 +476,8 @@ full.  The kept applications are printed `@f a1 .. an`, for example
 - Limits: a kept application under a binder cannot be put back into the
   printed text by the placeholder method used here, so the whole formula
   is printed with `Printing All` (`@eq nat (@length A ...)`).  A formula
-  with more than 60 such applications is printed in full when the fast
+  with more than 60 such applications (`xtext-implicit-choice-limit`)
+  is printed in full when the fast
   test fails.  The test is up to conversion and assumes that Rocq parses
   the printed text back to the skeleton (notations, scopes).
 - Binder types (`Let`, `Assume`) and the local definitions get the same
@@ -611,8 +662,7 @@ l'application" (Fig. 3.11), applied to the text.  Three strategies:
   no conversion step is hidden (the thesis's guarded contraction keeps the
   type expressions that belong to a conversion, Fig. 3.13).
 
-Parameters, in `xtext.db`: `xtext-contraction "none" | "guarded" |
-"maximal"` (the variable `XTEXT_CONTRACTION` overrides it) and
+Parameters: the switch `contraction` (see "Switches") and, in `xtext.db`,
 `xtext-guard-tactic Ltac Text`.  The decision is greedy, premise by premise,
 in the order of the text.
 
@@ -765,117 +815,58 @@ same results, step by step, as the English ones (same roles and statuses
 in each `.cyp.json`): 90 steps proved, 4 not proved, 30 not checked per
 language (`cyp-check/results_fr_it.tsv`, `cyp-check/results_langs.tsv`).
 
-## The double annotation of the thesis (chapter 3, `types.elpi`)
+## The staged translation (thesis chapters 2 and 3, `elpi/staged.elpi`)
 
-Coscoy's thesis gives each subproof two type expressions: the *required*
-type (what is left to prove, inherited from the statement, 3.3.2) and the
-*constrained* type (what the subproof proves, partly synthesised, 3.3.1).
-Its definitive algorithm (3.3.4, Fig. 3.9) computes both, one rule per
-form of term:
+With the switch `translation` set to `staged` (variable
+`XTEXT_TRANSLATION=staged`), a proof becomes text in the three stages of
+Coscoy's thesis, each a predicate on its own data type, so that each can
+be read against its figure:
 
-- **Var**, **Const**: the constrained type is the declared one;
-- **Abs** `λx:T0. M`, required `Tr`: `Tr` is put in weak head normal
-  form `Πx:T0'. T1` (Fig. 3.3); the constrained type is `Πx:T0. T1`, and
-  the body gets `T1` as required type;
-- **App1** `(M0 M1)`, `M1` a proof: the synthesised type of `M0` in weak
-  head normal form, `Πx:T1. T2`, is required of `M0`, `T1` of `M1`; the
-  constrained type is `T2{x/M1}`;
-- **App2**: the same when `M1` is not a proof (it is not annotated).
+1. **annotation** (3.3.4, Fig. 3.9, `annotate`): each node of the proof
+   term gets its *constrained* type Tc (what it proves, partly
+   synthesised, 3.3.1) and its *required* type Tr (what is left to prove,
+   inherited from the statement, 3.3.2), one clause per rule (Var, Const,
+   Abs, App1, App2).  The helpers (synthesis of types, Fig. 3.4; equality
+   of type expressions; the required type of the whole proof) are in
+   `elpi/type-expressions.elpi`, the weak head normal form (Fig. 3.3) is
+   `whnf` (`elpi/printing.elpi`);
+2. **contraction** (2.3, and its guarded form, 3.4.2, Fig. 3.11,
+   `contract`): nested applications and series of abstractions are
+   merged.  The switch `contraction` (variable `XTEXT_CONTRACTION`):
+   `none`, `maximal` (every contraction of 2.3) or `guarded` (only the
+   contractions that drop a single annotation, so that no conversion step
+   disappears);
+3. **writing** (2.3.3, Fig. 2.10 for applications; 3.4.1, `write`): a
+   conclusion says Tc, then `, that is` Tr when they differ (the thesis's
+   "ce qui est équivalent à").
 
-The text says the constrained type, and `, that is` the required type when
-the two differ (3.4.1; the thesis writes "ce qui est équivalent à").  When
-they are the same, only one is written (Fig. 3.11, redundant double
-annotations).
+The forms that the thesis treats only in chapter 6 (eliminations,
+introductions, rewriting, `fix`) and `let`, `match`, casts are written by
+the direct writer; their subproofs come back to the stages.
 
-The strategy is `xtext-annotation` in `xtext.db`, or the variable
-`XTEXT_ANNOTATION`:
-
-- `all` (default): the texts of the earlier rounds, with "that is" at the
-  places of mechanism (4) above.  The 82 texts are the same, byte for byte;
-- `double`: the algorithm of Fig. 3.9.  `sh make_variant.sh double
-  XTEXT_ANNOTATION=double` writes all the
-  texts with it to `examples-double/`.
-
-`types.elpi` holds the rules (`d-annot`, `d-abs`, one clause per rule,
-with the figure in a comment).  The writer calls it at five places
-(`tr-p`, `tr-lam`, `lam-run`, `head-unfold`, `top-run`).  Synthesis is
-xtext's `typ` (Fig. 3.4), the weak head normal form Rocq's lazy head
-reduction.
-
-How the rules meet xtext's writer:
-
-- abstractions are written in series (the paper's iterated rules).  A
-  series stops at an abstraction whose two types differ, so that its
-  conversion is said: this is the guarded weak contraction of Fig. 3.11.
-  At the top, the statement stops there too, and the rest is a step;
-- the arguments of an elimination, a constructor or a rewriting are
-  applications (App1), so the cases and premises get their required types;
-- `let`, `match`, `fix` and casts have no rule in Fig. 3.9.  Below them, the
-  required type starts again from the synthesised one;
-- "the same" is: equal up to bound names and beta-reduction, or printed the
-  same (the terms can differ in what the printer hides, e.g. universe
-  instances);
-- the wording is cyp's `that is` (the phrase `that-is` of the vocabulary
-  files), not "which is equivalent to".
-
-**Trans_Inv** (Fig. 3.10), with `double`:
+**Trans_Inv**, Fig. 3.10 of the thesis (doubly annotated, not
+contracted), is `examples-staged-none/Trans_Inv.md`: the five double
+annotations L1-L5 of the figure are at the same steps,
 
 ```markdown
-Let `E : Set`. Let `R : Rel E`. Assume `Trans E R` (h). We prove `Trans E (Inv E R)`.
-
-- Let us choose arbitrarily `x : E`, `y : E`, `z : E`.
-  - Assume `Inv E R x y` (h1) and `Inv E R y z` (h2).
-    - By h2 we have `Inv E R y z`, that is `R z y`.                          [L2]
-    - By h1 we have `Inv E R x y`, that is `R y x`.                          [L3]
-    - By h we have `Trans E R`, that is `forall x0 y0 z0 : E, R x0 y0 -> R y0 z0 -> R x0 z0`.  [L1]
-    - We deduce `R z x`, that is `Inv E R x z`.                              [L4]
-  - We have proved `Inv E R x y -> Inv E R y z -> Inv E R x z`.
-- Thus we have `forall x y z : E, Inv E R x y -> Inv E R y z -> Inv E R x z`, that is `Trans E (Inv E R)`.  [L5]
+- By h we have `Trans E R`, that is `forall x0 y0 z0 : E, R x0 y0 -> R y0 z0 -> R x0 z0`.  [L1]
+- By h2 we have `Inv E R y z`, that is `R z y`.                                          [L2]
+- By h1 we have `Inv E R x y`, that is `R y x`.                                          [L3]
+- By application, we have `R z x`, that is `Inv E R x z`.                                [L4]
+- We have proved `forall x0 y z : E, ...`, that is `Trans E (Inv E R)`.                 [L5]
 ```
 
-All five double annotations of Fig. 3.10 (L1-L5) are there, at the same
-steps.  The differences come from xtext's writer, not from the types:
+with, as in the figure, one sentence per abstraction and per application
+(`By application, we have R z y -> R y x -> R z x`) and one for each
+element that is not a proof (`The element z belongs to E`).  Fig. 3.12
+(maximal contraction) is `examples-staged-maximal/Trans_Inv.md`
+(`Applying h to z, y, x, h2 and h1, we have R z x, that is Inv E R x
+z`), Fig. 3.13 (guarded contraction) `examples-staged-guarded/Trans_Inv.md`.
 
-- the abstractions are written in series, not one by one;
-- `E`, `R`, `h` are in the statement;
-- the arguments `z`, `y`, `x` are inferred, with no "L'élément z
-  appartient à E";
-- the function `h` comes after its premises.
-
-In `all`, the statement is `We prove Inv E R x z` and the line L5 is
-missing.
-
-**Measurements** (82 texts, including the 4 proofs in progress; generation
-time is the sum of Rocq's `Time`, without `partial.v`):
-
-| strategy | list items | lines | characters | "that is" | generation time (s) |
-|---|---|---|---|---|---|
-| all | 1851 | 2589 | 283193 | 149 | 34.6 |
-| thesis | 1845 | 2583 | 283972 | 155 | 41.2 |
-
-23 texts differ.  New double annotations show conversions that `all` did
-not show:
-
-- the cases of an elimination: `we have 0 + 0 = 0 + 0, that is 0 + 0 = 0`
-  in `ADD0`;
-- constructors: `True, that is match Eq with ...` in `Nat.lt_irrefl`;
-- abstractions: L5 above.
-
-In the other direction, "that is" disappears where both formulas printed
-the same.  Such a line is no longer kept out of the guarded contraction,
-which then merges it: 10 items fewer in 8 texts (`Nat.add_*`, `Nat.mul_*`,
-`app_assoc`, `app_nil_r`).  `Trans_Inv` has 4 items more (its
-abstractions, with L5).  The times are of one run each on a shared
-machine.
-
-The algorithm does not leave out the formula of any step: it chooses
-which formula each conclusion shows and where the conversion is said.
-
-cyp reads the `double` texts: `Trans_Inv` is read and all its steps are
-proved.  `ADD0`, `std_app_nil_r` and `std_Nat_add_comm` stop on a
-justification (`*by eapply @eq_refl; eauto*`, `*by exact @...*`).  The
-same happens with their `all` texts, so this comes from cyp's current
-reading of justifications, not from the annotation.
+An earlier version computed the same double annotation in one pass, as
+hooks in the direct writer (switch `xtext-annotation`, texts
+`examples-double/`); it was removed in favour of the stages, which give
+the same annotations (it is in the history, commit 56a84ef).
 
 ## Not done
 
@@ -888,5 +879,7 @@ reading of justifications, not from the annotation.
   its other chapters (type annotations, reversible scripts).
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.
-- The `require` line of the header is fixed (Arith, Lia, List and the
-  file of the theorem); the load path for cyp is added by `cyprun.sh`.
+- The `require` line of the header is the same for every text (the
+  parameter `xtext-header-require`, and the file of the theorem): it does
+  not list what a proof uses; the load path for cyp is added by
+  `cyprun.sh`.

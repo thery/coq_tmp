@@ -5,7 +5,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # ABCD
 
-Let `A B C D : Prop`{.var}. Assume `A -> B -> C -> D`{.hyp} (h1) and `A -> C -> B`{.hyp} (h2) and `A -> C`{.hyp} (h3) and `A`{.hyp} (h4). We prove `D`{.claim}.
+Let `A B C D : Prop`{.var}. Assume `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) and `A`{.hyp} (h4). We prove `D`{.claim}.
 
 - By application, we have `C -> D`{.claim}.
   - By application, we have `B -> C -> D`{.claim}.

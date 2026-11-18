@@ -12,7 +12,7 @@ Let `A : Type`{.var}. Let `x y : list A`{.var}. We prove `rev (x ++ y) = rev y +
   - By definition of eq (eq_refl), we have `rev y = rev y`{.claim} *by Corelib.Init.Logic.eq_refl*.
   - By application, we have `rev y ++ nil = rev y`{.claim}.
     - By application, we have `forall l : list A, l ++ nil = l`{.claim}.
-      - By app_nil_r we have `forall (elpi_ctx_entry_3_ : Type) (l : list elpi_ctx_entry_3_), l ++ nil = l`{.claim}.
+      - By app_nil_r we have `forall (A0 : Type) (l : list A0), l ++ nil = l`{.claim}.
       - The element `A`{.fact} belongs to `Type`{.fact}.
     - The element `rev y`{.fact} belongs to `list A`{.fact}.
   - Rewriting with `rev y ++ nil = rev y`{.fact} from right to left (eq_ind_r), we get `rev y = rev y ++ nil`{.claim}.
@@ -25,8 +25,8 @@ Let `A : Type`{.var}. Let `x y : list A`{.var}. We prove `rev (x ++ y) = rev y +
           - By application, we have `rev y ++ rev l ++ a :: nil = (rev y ++ rev l) ++ a :: nil`{.claim}.
             - By application, we have `forall n : list A, rev y ++ rev l ++ n = (rev y ++ rev l) ++ n`{.claim}.
               - By application, we have `forall m n : list A, rev y ++ m ++ n = (rev y ++ m) ++ n`{.claim}.
-                - By application, we have `forall elpi_ctx_entry_6_ m n : list A, elpi_ctx_entry_6_ ++ m ++ n = (elpi_ctx_entry_6_ ++ m) ++ n`{.claim}.
-                  - By app_assoc we have `forall (elpi_ctx_entry_6_ : Type) (elpi_ctx_entry_7_ m n : list elpi_ctx_entry_6_), elpi_ctx_entry_7_ ++ m ++ n = (elpi_ctx_entry_7_ ++ m) ++ n`{.claim}.
+                - By application, we have `forall l0 m n : list A, l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
+                  - By app_assoc we have `forall (A0 : Type) (l0 m n : list A0), l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
                   - The element `A`{.fact} belongs to `Type`{.fact}.
                 - The element `rev y`{.fact} belongs to `list A`{.fact}.
               - The element `rev l`{.fact} belongs to `list A`{.fact}.

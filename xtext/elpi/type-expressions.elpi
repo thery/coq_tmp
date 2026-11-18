@@ -1,0 +1,48 @@
+% xtext: Type expressions (Y. Coscoy's thesis, chapter 3, "Calcul des
+% expressions de type"): the type a proof proves, the type it is required
+% to prove, and when two type expressions are the same.  Used by the staged
+% translation (staged.elpi), whose stage 1 is the double annotation of
+% Fig. 3.9.  The weak head normal form of Fig. 3.3 is whnf (printing.elpi:
+% every term sent to Rocq goes through it or through away-from-context).
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+
+% ------------------------------------------------------------------
+% Fig. 3.4, the synthesis of types: xtext's typ follows its rules (Var
+% and Const: the declared type; Abs: the product of the binder over the
+% type of the body; App: the head's type in whnf, instantiated), then
+% beta-normalises for printing (end of 3.2.4).
+pred synth i:term, o:term.
+synth M T :- typ M T.
+
+% ------------------------------------------------------------------
+% Syntactic equality of type expressions (the condition Tr = T of Fig.
+% 3.11), up to the names of bound variables and beta-reduction (the
+% thesis presents types beta-normalised, 3.2.4).
+pred same-ty i:term, i:term.
+same-ty A B :- norm-ty A A1, norm-ty B B1, A1 = B1, !.
+% (terms that differ only in what the printer does not show, e.g. universe
+% instances, print the same: the reader sees one formula)
+same-ty A B :- beta-ty A A1, beta-ty B B1, ppf A1 S, ppf B1 S.
+
+pred norm-ty i:term, o:term.
+norm-ty A B :- beta-ty A A1, flat-app A1 B.
+
+% nested applications (app [app L1 | L2]), left by substitution, flattened
+pred flat-app i:term, o:term.
+flat-app A B :-
+  (pi L1 L2 R\ copy (app [app L1 | L2]) R :- !,
+     std.append L1 L2 L3, copy (app L3) R) => copy A B.
+
+% ------------------------------------------------------------------
+% The application (M0 M1) of the rules App1 and App2 (Fig. 3.9): the
+% application L, its last argument taken apart
+pred app-split i:list term, o:term, o:term.
+app-split L M0 M1 :- std.last L M1, std.drop-last 1 L L0,
+  (if (L0 = [M0]) true (M0 = app L0)).
+
+% ------------------------------------------------------------------
+% Inheritance of types (3.3.2): the type the whole proof is required to
+% prove is the statement.  [req M Tr] is assumed (by top-run, document.elpi)
+% for the body M of the proof; [required M Tr] finds it.
+pred required i:term, o:term.
+required T Tr :- req K Tr0, K == T, !, Tr = Tr0.

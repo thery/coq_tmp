@@ -13,7 +13,7 @@ Let `A B C : Prop`{.var}. We prove `(A /\ B) /\ C <-> A /\ B /\ C`{.claim}.
       - Assume `A /\ B`{.hyp} (H0) and `C`{.hyp} (h).
         - By h we have `C`{.claim}.
         - Going back to the definition of and (match) in `A /\ B`{.fact} (H0), we prove `C -> A /\ B /\ C`{.claim}:
-          - Assume `A`{.hyp} (H1) and `B`{.hyp} (H00) and `C`{.hyp} (H10).
+          - Assume `A`{.hyp} (H1), `B`{.hyp} (H00) and `C`{.hyp} (H10).
             - By H1 we have `A`{.claim}.
             - By definition of and (conj), from `B`{.fact} (H00) and `C`{.fact} (H10) we deduce `B /\ C`{.claim} *by Corelib.Init.Logic.conj*.
             - So by definition of and (conj), we have `A /\ B /\ C`{.claim} *by Corelib.Init.Logic.conj*.

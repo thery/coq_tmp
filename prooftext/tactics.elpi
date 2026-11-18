@@ -1,0 +1,24 @@
+% prooftext: the tactics a proof text may name, in a justification *by X*
+% or in the by field of its header.  The reader runs the tactic of that
+% name (cyp: tactic-name Name Ltac, cyp/vernac/Cyp.v, the Ltac it calls);
+% the writer writes only these names (xtext: the second argument of
+% xtext-tactic and xtext-guard-tactic, xtext/Explain.v, checked by
+% xtext/vocab_check.v).  A tool may run a tactic its own way (a time
+% limit, options): the name is what the text says.
+
+namespace prooftext {
+
+pred tactic o:string.
+tactic "lia".          tactic "nia".
+tactic "lra".          tactic "nra".
+tactic "ring".         tactic "field".
+tactic "tauto".        tactic "auto".
+tactic "easy".         tactic "reflexivity".
+tactic "assumption".   tactic "congruence".
+tactic "firstorder".
+
+% [unknown-tactics Names Unknown]: the names of Names that are not tactics
+pred unknown-tactics i:list string, o:list string.
+unknown-tactics Names Unknown :- std.filter Names (n\ not (tactic n)) Unknown.
+
+}

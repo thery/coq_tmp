@@ -21,7 +21,7 @@ Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
         - The element `le`{.fact} belongs to `nat -> nat -> Prop`{.fact}.
         - The element `BinInt.Z.of_nat`{.fact} belongs to `nat -> BinNums.Z`{.fact}.
         - The element `BinInt.Z.le`{.fact} belongs to `BinNums.Z -> BinNums.Z -> Prop`{.fact}.
-        - By inj_le we have `forall elpi_ctx_entry_3_ m : nat, elpi_ctx_entry_3_ <= m <-> BinInt.Z.le (BinInt.Z.of_nat elpi_ctx_entry_3_) (BinInt.Z.of_nat m)`{.claim}.
+        - By inj_le we have `forall n00 m : nat, n00 <= m <-> BinInt.Z.le (BinInt.Z.of_nat n00) (BinInt.Z.of_nat m)`{.claim}.
         - The element `n0`{.fact} belongs to `nat`{.fact}.
         - The element `BinInt.Z.of_nat n0`{.fact} belongs to `BinNums.Z`{.fact}.
         - By definition of eq (eq_refl), we have `BinInt.Z.of_nat n0 = BinInt.Z.of_nat n0`{.claim} *by Corelib.Init.Logic.eq_refl*.
@@ -39,7 +39,7 @@ Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
           - The element `BinInt.Z.of_nat`{.fact} belongs to `nat -> BinNums.Z`{.fact}.
           - The element `BinInt.Z.of_nat`{.fact} belongs to `nat -> BinNums.Z`{.fact}.
           - The element `BinInt.Z.mul`{.fact} belongs to `BinNums.Z -> BinNums.Z -> BinNums.Z`{.fact}.
-          - By inj_mul we have `forall elpi_ctx_entry_3_ m : nat, BinInt.Z.of_nat (elpi_ctx_entry_3_ * m) = BinInt.Z.mul (BinInt.Z.of_nat elpi_ctx_entry_3_) (BinInt.Z.of_nat m)`{.claim}.
+          - By inj_mul we have `forall n00 m : nat, BinInt.Z.of_nat (n00 * m) = BinInt.Z.mul (BinInt.Z.of_nat n00) (BinInt.Z.of_nat m)`{.claim}.
           - The element `2`{.fact} belongs to `nat`{.fact}.
           - The element `BinNums.Zpos (BinNums.xO BinNums.xH)`{.fact} belongs to `BinNums.Z`{.fact}.
           - By definition of eq (eq_refl), we have `BinNums.Zpos (BinNums.xO BinNums.xH) = BinNums.Zpos (BinNums.xO BinNums.xH)`{.claim} *by Corelib.Init.Logic.eq_refl*.

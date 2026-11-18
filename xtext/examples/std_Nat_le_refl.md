@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 Let `n : nat`{.var}. We prove `n <= n`{.claim}.
 
 - Thus we have `forall n0 m : nat, n0 < m \/ n0 = m -> n0 <= m`{.claim} (H).
-  - Let us choose arbitrarily `n0 : nat`{.var}, `m : nat`{.var}.
+  - Let us choose arbitrarily `n0 : nat`{.var} and `m : nat`{.var}.
     - Using lt_eq_cases we get `forall n1 m0 : nat, n1 <= m0 <-> n1 < m0 \/ n1 = m0`{.claim} *by Stdlib.Arith.PeanoNat.Nat.lt_eq_cases*.
     - In particular `n0 <= m <-> n0 < m \/ n0 = m`{.claim}.
     - Going back to the definition of and (match) in `n0 <= m <-> n0 < m \/ n0 = m`{.fact}, we prove `n0 < m \/ n0 = m -> n0 <= m`{.claim}:

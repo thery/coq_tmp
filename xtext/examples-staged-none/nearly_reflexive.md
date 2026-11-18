@@ -14,7 +14,7 @@ Let `A : Set`{.var}. Let `R : A -> A -> Prop`{.var}. Assume `forall x y : A, R x
         - By application, we have `R x y0 -> R y0 x -> R x x`{.claim}.
           - By application, we have `forall z : A, R x y0 -> R y0 z -> R x z`{.claim}.
             - By application, we have `forall y z : A, R x y -> R y z -> R x z`{.claim}.
-              - By transitivity we have `forall elpi_ctx_entry_8_ y z : A, R elpi_ctx_entry_8_ y -> R y z -> R elpi_ctx_entry_8_ z`{.claim}.
+              - By transitivity we have `forall x0 y z : A, R x0 y -> R y z -> R x0 z`{.claim}.
               - The element `x`{.fact} belongs to `A`{.fact}.
             - The element `y0`{.fact} belongs to `A`{.fact}.
           - The element `x`{.fact} belongs to `A`{.fact}.
@@ -22,7 +22,7 @@ Let `A : Set`{.var}. Let `R : A -> A -> Prop`{.var}. Assume `forall x y : A, R x
       - By application, we have `R y0 x`{.claim}.
         - By application, we have `R x y0 -> R y0 x`{.claim}.
           - By application, we have `forall y : A, R x y -> R y x`{.claim}.
-            - By symmetry we have `forall elpi_ctx_entry_8_ y : A, R elpi_ctx_entry_8_ y -> R y elpi_ctx_entry_8_`{.claim}.
+            - By symmetry we have `forall x0 y : A, R x0 y -> R y x0`{.claim}.
             - The element `x`{.fact} belongs to `A`{.fact}.
           - The element `y0`{.fact} belongs to `A`{.fact}.
         - By i we have `R x y0`{.claim}.

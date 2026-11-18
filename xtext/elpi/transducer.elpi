@@ -15,14 +15,11 @@ flatten (prf L (some C)) R :- std.append L [C] R.
 pred dashed i:pf, o:line.
 dashed (prfp P _) D :- !, dashed P D.
 dashed (prf L (some (it C Ch))) (it C L1) :- std.append L Ch L1.
-dashed (prf L none) (it S L) :- say-cap [wd "have"] S.
+dashed (prf L none) (it S L) :- sentence [wd "have"] S.
 
 % a proof whose text is a single conclusion
-pred one i:string, o:pf.
-one S (prf [] (some (it S []))).
-
-pred join-names i:list string, o:string.
-join-names L S :- std.string.concat ", " L S.
+pred conclusion-only i:string, o:pf.
+conclusion-only S (prf [] (some (it S []))).
 
 pred dewey i:list int, o:string.
 dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S.
@@ -35,6 +32,10 @@ dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S
 % cur-ih Fl: the induction-hypothesis flags of the binders of the branch
 % being translated (set by the elimination rules)
 pred cur-ih o:list bool.
+% [induction-flags Fl]: those flags, none outside a branch
+pred induction-flags o:list bool.
+induction-flags F :- cur-ih F, !.
+induction-flags [].
 % rec-var F: F is the recursive function of an enclosing fix
 pred rec-var o:term.
 
@@ -49,15 +50,7 @@ pred unwrap i:pf, o:pf.
 unwrap (prfp P _) P :- !.
 unwrap P P.
 
-% the staged translation (staged.elpi): whether it is on, the terms the
-% direct writer keeps, and the text it gives
-pred staged-mode.
-pred is-direct-only i:term.
-pred staged-text i:term, i:ctx, i:list int, o:pf.
-
 pred tr-p i:term, i:ctx, i:list int, o:pf.
-% (thesis 3.3.4: the double annotation of the subproof, annotation.elpi)
-tr-p T Ctx Path P :- annotation-hook T (tr-p T Ctx Path) P, !.
 tr-p T _ _ P :- open-goal T P, !.
 tr-p T _ _ P :- tactic-step T P, !.
 % (the staged translation, staged.elpi)
@@ -76,13 +69,13 @@ tr-root T _ _ P :- open-goal T P, !.
 tr-root T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ctx Path P.
 tr-root T Ctx Path P :- tr.aux T Ctx Path P, !.
 tr-root T _ _ P :- unchanged T P, !.
-tr-root T _ _ P :- pp T S0, F is "`" ^ S0 ^ "`{.fact}",
-  say-cap [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, one S P.
+tr-root T _ _ P :- pp T S0, prooftext.formula rfact S0 F,
+  sentence [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, conclusion-only S P.
 
 % an open goal of a proof in progress (a hole of the partial proof term)
 % is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez")
 pred open-goal i:term, o:pf.
-open-goal T P :- var T, typ T G, fm G F, say-cap [wd "prove", tx F] S, one S P.
+open-goal T P :- var T, type-formula rclaim T F, sentence [wd "prove", tx F] S, conclusion-only S P.
 
 % Tactic-built subproofs (thesis 5.4, the "pragmatic method"): a proper
 % subproof whose proof term has at least xtext-threshold nodes is first
@@ -94,7 +87,7 @@ tactic-step T P :- not (off "tactics"),
   xtext-threshold N, size-ge T N,
   typ T Ty, binder-kind Ty K, K = bk-assume,
   xtext-tactic L Txt, try-tactic L Ty, !,
-  fm Ty F, by-part Txt J, say-cap [wd "have", tx F, J] S, one S P.
+  formula rclaim Ty F, by-part Txt J, sentence [wd "have", tx F, J] S, conclusion-only S P.
 
 pred try-tactic i:string, i:term.
 try-tactic L Ty :-
@@ -139,5 +132,5 @@ tr-other T _ _ P :- unchanged T P.
 % expressions that match no rule are left unchanged
 pred unchanged i:term, o:pf.
 unchanged T (prf [] (some (it S []))) :-
-  typ T Tau, fm-fact T FT, fm Tau F,
-  say-cap [wd "using", tx FT, wd "get", tx F] S.
+  formula rfact T FT, type-formula rclaim T F,
+  sentence [wd "using", tx FT, wd "get", tx F] S.

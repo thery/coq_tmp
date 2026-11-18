@@ -18,6 +18,9 @@ papers (in development):
   faithful text in cyp's format.  After Coscoy, Kahn and Théry,
   *Extracting Text from Proofs* (TLCA 1995), and Yann Coscoy's thesis
   (2000) for inductive types.
+- [lexicon/](lexicon/README.md) and [prooftext/](prooftext/README.md): the
+  libraries the two tools share, the words of proofs in each language and
+  the format of proof texts.
 
 ## elpi-tools
 

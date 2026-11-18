@@ -1,0 +1,65 @@
+% prooftext: the document tree of a proof text, and its writer.
+%
+% A proof text is a Markdown file:
+%
+%   ---                           the header: one field "key: value" per
+%   require: From Stdlib ...      line (header.elpi), between two lines ---
+%   by: tauto | lia
+%   ---
+%                                 (an empty line)
+%   # name                        the title: the name of the theorem
+%
+%   Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
+%                                 the statement: the text before the steps
+%   - a step                      the steps: a nested list, two spaces of
+%     - a sub-step                indentation per level, each item one line
+%
+% (load after header.elpi)
+%
+% The writer (xtext) builds a [document] and writes it with
+% [write-document].  The reader (cyp) reads a file into the same
+% [document]; its contract is in README.md ("Reading a proof text").
+% The formulas and justifications inside the texts are in formulas.elpi.
+
+namespace prooftext {
+
+% where a text stands in its file: its first and last lines, numbered
+% from 0 (a reader gives them, so that its messages point to the lines);
+% a text being written has none
+kind place type.
+type lines int -> int -> place.
+type unplaced place.
+
+% a step: its place, its text (the text of a list item, its continuation
+% lines joined by spaces) and its sub-steps
+kind step type.
+type step place -> string -> list step -> step.
+
+% a proof text: the fields of its header, the name of the theorem (its
+% title), the place and the text of its statement, its steps
+kind document type.
+type document list prooftext.field -> string -> place -> string -> list step -> document.
+
+% ------------------------------------------------------------------
+% Writing
+
+% [write-document D Text]: the Markdown text of D, ending with a newline
+pred write-document i:document, o:string.
+write-document (document Fields Name _ Statement Steps) Text :-
+  prooftext.header-lines Fields Header,
+  step-lines "" Steps Lines,
+  std.append Header ["", {calc ("# " ^ Name)}, "", Statement, "" | Lines] All,
+  std.string.concat "\n" All Text0,
+  Text is Text0 ^ "\n".
+
+% [step-lines Indent Steps Lines]: the list items of Steps, the sub-steps
+% of a step below it, indented by two more spaces
+pred step-lines i:string, i:list step, o:list string.
+step-lines _ [] [].
+step-lines Indent [step _ Text Sub | Steps] [Line | Lines] :-
+  Line is Indent ^ "- " ^ Text,
+  step-lines {calc (Indent ^ "  ")} Sub SubLines,
+  step-lines Indent Steps Next,
+  std.append SubLines Next Lines.
+
+}

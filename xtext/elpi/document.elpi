@@ -1,4 +1,4 @@
-% xtext: The top level: the statement, the header, the document.
+% xtext: The top level: the statement, the document and its header.
 % (part of xtext's writer; the files are loaded in the order of Explain.v)
 
 % ------------------------------------------------------------------
@@ -12,69 +12,27 @@ pred top-run i:list binder, i:term, i:term, o:string, o:list line.
 top-run Acc (fun N A F) Ty Stmt L :- not (statement-stops-at Ty N A), !,
   binder-kind A K, binder-name N N1 Id,
   ppf A FA,
-  (if (Ty = prod _ _ B) true (coq.reduction.lazy.whd Ty (prod _ _ B) ; B = (_\ Ty))),
+  (if (Ty = prod _ _ B) true (whnf Ty (prod _ _ B) ; B = (_\ Ty))),
   pi x\ (decl x N1 A, ctx-name Id) => top-run [b K Id FA|Acc] (F x) (B x) Stmt L.
 top-run Acc Body Ty0 Stmt L :-
-  std.rev Acc Bs, beta-ty Ty0 Ty, fm Ty FT,
-  statement Bs Ss, say-cap [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
+  std.rev Acc Bs, beta-ty Ty0 Ty, formula rclaim Ty FT,
+  statement Bs Ss, sentence [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
   std.string.concat " " Ss1 Stmt,
-  (if (annotating-mode)
+  (if (staged-mode)
      % (thesis 3.3.4: the body has the statement as required type; an
      % abstraction left out of the statement says its conversion)
      ((if (Body = fun _ _ _) (Ctx = nostar) (Ctx = star)),
-      (req Body Ty => (root-term Body :- !) => annotated-root Body Ctx P))
+      (req Body Ty => (root-term Body :- !) => tr-root Body Ctx [] P))
      (((root-term Body :- !) => tr-root Body star [] P0), that-is Body Ty P0 P)),
   flatten P L.
 
-% the modes that annotate a proof with the types it proves and the types
-% it is used at: the one-pass annotation (annotation.elpi) and the staged
-% translation (staged.elpi)
-pred annotating-mode.
-annotating-mode :- double-annotation-mode, !.
-annotating-mode :- staged-mode.
-
-% the text of the body of a proof whose required type is known
-pred annotated-root i:term, i:ctx, o:pf.
-annotated-root Body Ctx P :- double-annotation-mode, !,
-  annotation-hook Body (tr-root Body Ctx []) P.
-annotated-root Body Ctx P :- tr-root Body Ctx [] P.
-
-% "that is" (the Cast' of the thesis, 5.2.2): when the type that a proof
-% proves (synthesised) differs from the type expected at its place
-% (inherited) but Rocq finds them convertible, its conclusion says both
-
-% (double annotation: the annotations are those of annotation-hook, annotation.elpi)
-that-is _ _ P P :- double-annotation-mode, !.
-that-is T Exp (prfp P Ps) Q :- !, that-is T Exp P P1,
-  (if (P1 = P) (Q = prfp P Ps) (Q = P1)).
-that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-
-  not (off "thatis"), typ T Syn, not (Syn = Exp), coq.unify-eq Syn Exp ok, !,
-  % the second form is shown, not claimed: Rocq checked the conversion,
-  % and the step's justification is about the first form
-  fm-fact Exp F, say-cap [tx S, tx ",", wd "that-is", tx F] S1.
-that-is _ _ P P.
-
-% the expected types of the arguments As of a term of type Ty
-
-domains _ [] [] :- !.
-domains (prod _ D B) [A|As] [D1|Ds] :- !, beta-ty D D1, domains (B A) As Ds.
-domains Ty As Ds :- coq.reduction.lazy.whd Ty (prod N D B), !, domains (prod N D B) As Ds.
-domains _ As Ds :- std.map As (_\ d\ true) Ds.
-
-% subproofs as dashed lines, each with its expected type
-
-dashed-exp [] _ _ [].
-dashed-exp [T|Ts] Es Path [D|Ds] :-
-  (if (Es = [E|Er]) true (Er = [])),
-  tr T nostar Path P0,
-  (if (ground_term E) (that-is T E P0 P) (P = P0)),
-  dashed P D, dashed-exp Ts Er Path Ds.
-
-
+% [statement Binders Sentences]: the sentences of the statement that
+% introduce the binders at the top of the proof
+pred statement i:list binder, o:list string.
 statement [] [].
 statement [b bk-assume Id FA|Bs] [S|Ss] :- !,
   assume-run [b bk-assume Id FA|Bs] Hs Rest,
-  and-parts Hs HP, say-cap {std.append [wd "assume" | HP] [tx "."]} S,
+  sentence [wd "assume", enum Hs, tx "."] S,
   statement Rest Ss.
 statement Bs [S|Ss] :-
   let-run Bs Ls Rest, let-lines Ls Lines,
@@ -92,84 +50,55 @@ let-run [b bk-assume Id FA|Bs] [] [b bk-assume Id FA|Bs] :- !.
 let-run [B|Bs] [B|Ls] Rest :- !, let-run Bs Ls Rest.
 let-run [] [] [].
 
-pred render i:string, i:list line, o:list string.
-render _ [] [].
-render I [it S Ch|L] Out :-
-  end-dot S S1, Line is I ^ "- " ^ S1,
-  I2 is I ^ "  ", render I2 Ch O1, render I L O2,
-  std.append [Line|O1] O2 Out.
+% ------------------------------------------------------------------
+% The document (../prooftext/document.elpi)
+
+% [proof-text Title Path Body Type Text]: the text of the proof Body of
+% type Type, under the title Title; Path is the module of the theorem
+pred proof-text i:string, i:list string, i:term, i:term, o:string.
+proof-text Title Path Body Type Text :-
+  top-run [] Body Type Statement Lines,
+  std.map Lines document-step Steps,
+  header-fields Path Fields,
+  prooftext.write-document
+    (prooftext.document Fields Title prooftext.unplaced Statement Steps) Text.
+
+% a line of the proof is a step of the document; its text ends with a
+% punctuation mark
+pred document-step i:line, o:prooftext.step.
+document-step (it S Ch) (prooftext.step prooftext.unplaced S1 Steps) :-
+  end-dot S S1, std.map Ch document-step Steps.
 
 pred end-dot i:string, o:string.
 end-dot S S :- rex.match "^.*[:.,]$" S, !.
 end-dot S S1 :- S1 is S ^ ".".
 
-% the cyp header; the file that defines the theorem is required too, so
-% that the lemmas it uses are known to cyp
-
-header GR H :- coq.gref->path GR Path, header-path Path H.
-
-pred header-path i:list string, o:string.
-header-path Path H :-
+% The fields of the header, for cyp: the libraries (xtext-header-require)
+% and the module of the theorem, so that the lemmas it uses are known
+% (none for a theorem of the standard library, which the libraries load);
+% the language; the default tactics, those that check a guarded
+% contraction (xtext-guard-tactic), so that cyp closes the contracted
+% steps with the tactics that checked them.
+pred header-fields i:list string, o:list prooftext.field.
+header-fields Path Fields :-
+  xtext-header-require Libraries,
   (if (Path = [Lib|_], (Lib = "Stdlib" ; Lib = "Corelib"))
-      (Req = "")
-      (std.string.concat "." Path Mod, Req is " Require Import " ^ Mod ^ ".")),
-  R is "require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations." ^ Req,
-  writer-lang Lg, (if (Lg = "en") (Ls = []) (Ls = [{calc ("lang: " ^ Lg)}])),
-  std.string.concat "\n" {std.append ["---", R | Ls] [
-    "by: tauto | congruence | lia | firstorder | auto",
-    "---" ]} H.
-
-% beta-reduction of the redexes (fun i => M) x, x a variable, left by
-% intro patterns: fun h => (fun i => M) h becomes fun i => M, keeping the
-% name chosen by the user.  Other redexes are cuts and are kept.
-pred beta i:term, o:term.
-beta T R :- beta.aux ff T R.
-
-% full beta-reduction, for the types that are printed
-
-pred beta-ty i:term, o:term.
-beta-ty T R :- beta.aux tt T R.
-
-% fun x => .. => (fun y1 .. yk => M) a1 .. x .. : the name of the binder yi
-% that receives x
-pred redex-name i:(term -> term), o:name.
-redex-name F M :- pi x\ find-redex (F x) x M.
-pred find-redex i:term, i:term, o:name.
-find-redex (app [Hd|As]) X M :- nth-fun-name Hd As X M.
-find-redex (fun _ _ G) X M :- pi z\ find-redex (G z) X M.
-pred nth-fun-name i:term, i:list term, i:term, o:name.
-nth-fun-name (fun M _ _) [X|_] Y M :- X == Y, !.
-nth-fun-name (fun _ _ G) [_|As] Y M :- pi z\ nth-fun-name (G z) As Y M.
-
-% beta.aux All T R: All = tt reduces every redex, All = ff only those
-% whose argument is a variable
-pred beta.aux i:bool, i:term, o:term.
-beta.aux All (fun N T F) (fun N1 T1 F1) :- !,
-  (if (redex-name F M) (N1 = M) (N1 = N)),
-  beta.aux All T T1, pi x\ beta.aux All (F x) (F1 x).
-beta.aux All (app [fun _ _ F, A|Rest]) R :- (All = tt ; name A), !,
-  coq.mk-app (F A) Rest T1, beta.aux All T1 R.
-beta.aux All (app L) R :- !, std.map L (beta.aux All) L1,
-  (if (L1 = [fun _ _ _, A|_], (All = tt ; name A))
-      (beta.aux All (app L1) R) (R = app L1)).
-beta.aux All (prod N T F) (prod N T1 F1) :- !,
-  beta.aux All T T1, pi x\ beta.aux All (F x) (F1 x).
-beta.aux All (let N T B F) (let N T1 B1 F1) :- !,
-  beta.aux All T T1, beta.aux All B B1, pi x\ beta.aux All (F x) (F1 x).
-beta.aux All (match T R B) (match T1 R1 B1) :- !,
-  beta.aux All T T1, beta.aux All R R1, std.map B (beta.aux All) B1.
-beta.aux _ X Y :- copy X Y.
+      (Require = Libraries)
+      (std.string.concat "." Path Module,
+       Require is Libraries ^ " Require Import " ^ Module ^ ".")),
+  switch "lang" Lang, prooftext.lang-fields Lang LangFields,
+  std.findall (xtext-guard-tactic _ _) Guards,
+  std.map Guards (g\ t\ sigma L\ g = xtext-guard-tactic L t) Tactics,
+  prooftext.by-field Tactics By,
+  std.append [prooftext.field "require" Require | LangFields] [By] Fields.
 
 % the text of a proof in progress (Explain_partial): its partial proof
 % term P, where the open goals are holes (thesis of L. Théry, 3.3.3)
 pred explain-partial i:string, i:term, o:string.
 explain-partial Name P Text :-
   beta P P1, coq.typecheck P Ty0 ok, beta-ty Ty0 Ty,
-  top-run [] P1 Ty Stmt L, render "" L Lines,
-  coq.env.current-path Path, header-path Path Hd,
-  Title is "# " ^ Name ^ " (proof in progress)",
-  std.append [Hd, "", Title, "", Stmt, ""] Lines All,
-  std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
+  coq.env.current-path Path,
+  proof-text {calc (Name ^ " (proof in progress)")} Path P1 Ty Text.
 
 pred explain i:string, o:string.
 explain Name Text :-
@@ -179,11 +108,8 @@ explain Name Text :-
   % the beta-redexes left by tactics (intro patterns) are reduced first
   beta Bo Bo1,
   coq.env.const C _ CTy,
-  top-run [] Bo1 CTy Stmt L, render "" L Lines,
-  header GR Hd,
-  Title is "# " ^ Name,
-  std.append [Hd, "", Title, "", Stmt, ""] Lines All,
-  std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
+  coq.gref->path GR Path,
+  proof-text Name Path Bo1 CTy Text.
 
 % The vocabulary of the writer in language L (the lexicon): every use of
 % English has a phrase in L, and every phrase of a role is in lower case
