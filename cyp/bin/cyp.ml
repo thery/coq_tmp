@@ -8,7 +8,8 @@
 
    Header fields used here: require: (Rocq text), rules: (files .elpi,
    added to cyp.db, or .v, copied in), flags: (options of rocq c; the
-   directories of -Q, -R and -I are relative to the proof), scope: (opened).
+   directories of -Q, -R and -I are relative to the proof, ${NAME} is the
+   environment variable NAME), scope: (opened).
    The cyp library (vernac/, compiled) is found in the directory given by
    CYP_LIB. *)
 
@@ -46,6 +47,17 @@ let field h k = Option.value (List.assoc_opt k h) ~default:""
 
 let words s = List.filter (( <> ) "") (String.split_on_char ' ' s)
 
+(* ${NAME} in a header field: the environment variable NAME, so that a
+   proof does not name the directories of one machine *)
+let expand s =
+  Str.global_substitute (Str.regexp "\\${\\([A-Za-z_][A-Za-z0-9_]*\\)}")
+    (fun s ->
+      let v = Str.matched_group 1 s in
+      match Sys.getenv_opt v with
+      | Some x -> x
+      | None -> prerr_endline ("cyp: the variable " ^ v ^ " of the header is not set"); exit 2)
+    s
+
 (* -Q, -R and -I directories relative to the directory of the proof *)
 let rec relative_flags d = function
   | ("-Q" | "-R" | "-I" as o) :: dir :: r -> o :: absolute d dir :: relative_flags d r
@@ -82,7 +94,7 @@ let main ~json md =
     @ [ Printf.sprintf "Elpi CypFile %S." md ] in
   let src = Filename.concat tmp "cyp_check.v" in
   write_file src (String.concat "\n" v ^ "\n");
-  let flags = relative_flags dir (words (field h "flags")) in
+  let flags = relative_flags dir (words (expand (field h "flags"))) in
   let out = Filename.concat tmp "cyp_check.out" in
   let cmd =
     String.concat " " (List.map Filename.quote
