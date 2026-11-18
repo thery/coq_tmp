@@ -1,19 +1,37 @@
-(* The coarse gap tactic of cyp, cyp_gap: a last try on a condition that
-   its justification, the rules and the default tactics leave open
-   (elpi/gaps.elpi says when it is tried, and how a proof turns it off).
+(* Bounded searches of cyp: the coarse gap tactic cyp_gap, and the bounded
+   first-order search that cyp runs for firstorder (Cyp.v).
 
-   A short text leaves gaps: a step whose claim follows from the steps
-   before it, but not by one rule.  cyp_gap tries a few ways to bridge
-   them, each under a time limit of one second, so that a condition it
-   cannot close costs at most a few seconds.  The ways and their order
-   come from measurement on the conditions that cyp leaves open in
-   xtext's texts (xtext/gaps/). *)
+   cyp_gap is a last try on a condition that its justification, the rules
+   and the default tactics leave open (elpi/gaps.elpi says when it is
+   tried, and how a proof turns it off).  A short text leaves gaps: a step
+   whose claim follows from the steps before it, but not by one rule.
+   cyp_gap tries a few ways to bridge them.  Each way is a bounded search
+   (a proof search of bounded depth, case analyses on the variables there
+   are), with no time limit: it fails after a bounded number of steps.  The
+   ways and their order come from measurement on the conditions that cyp
+   leaves open in xtext's texts (xtext/gaps/README.md). *)
 
-From Stdlib Require Import Lia.
+(* the goal unfolded and introduced, its conjunctions split, and the
+   connectives of the hypotheses taken apart; each step removes a binder
+   or a connective, so that it ends *)
+Ltac decompose_all :=
+  repeat (intro || split || match goal with
+    | H : _ /\ _ |- _ => destruct H
+    | H : _ <-> _ |- _ => destruct H
+    | H : _ \/ _ |- _ => destruct H
+    | H : exists _, _ |- _ => destruct H
+    | H : False |- _ => destruct H
+    end).
 
-(* the closing tactic after a preparation: proof search with the
-   hypotheses, or equational reasoning *)
-Ltac gap_close := solve [ eauto | congruence ].
+(* the closing tactic: a proof search of depth 4 with the hypotheses, or
+   equational reasoning *)
+Ltac gap_close := solve [ eauto 4 | congruence ].
+
+(* first-order reasoning, bounded: what cyp runs for firstorder; the
+   second time after a simplification (a function on a constructor) *)
+Ltac bounded_firstorder :=
+  solve [ decompose_all; gap_close
+        | decompose_all; simpl in *; decompose_all; gap_close ].
 
 (* a case analysis on every boolean of the context *)
 Ltac bool_cases :=
@@ -39,9 +57,11 @@ Ltac case_on_variable :=
       solve [ destruct x; simpl in *; intros; gap_close ]
   end.
 
-(* each way must close the goal within one second *)
+(* the ways, the most useful first *)
 Ltac cyp_gap :=
-  first [ timeout 1 (solve [ intros; eauto ])
-        | timeout 1 (solve [ intros; bool_cases ])
-        | timeout 1 induction_on_binder
-        | timeout 1 (solve [ intros; case_on_variable ]) ].
+  first [ bounded_firstorder
+        | solve [ intros; bool_cases ]
+        | induction_on_binder
+        | solve [ intros; case_on_variable ]
+        (* a constructor whose arguments the search finds (a witness) *)
+        | solve [ intros; econstructor; gap_close ] ].

@@ -20,7 +20,8 @@
 
    What a proof means is in the Elpi files of elpi/: text.elpi (words,
    formulas and their roles), lexicon/ (the vocabulary of each
-   language), check.elpi (closing a goal), proof.elpi (the proof of a
+   language), check.elpi (closing a goal), gaps.elpi (the gap tactic, a last
+   try on a condition left open, cyp_gap of Gaps.v), proof.elpi (the proof of a
    statement from its steps), markdown.elpi (the Markdown).  The rules of a
    field are added to the database cyp.db (justify, justify_first, named). *)
 
@@ -45,7 +46,9 @@ Ltac cyp_ring := ring.          Ltac cyp_field := field.
 Ltac cyp_tauto := tauto.        Ltac cyp_auto := auto.
 Ltac cyp_easy := easy.          Ltac cyp_reflexivity := reflexivity.
 Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
-Ltac cyp_firstorder := firstorder.
+(* firstorder, bounded (Gaps.v): firstorder has no bound (on a condition
+   of xtext's half_le it ran over 30 s and took up to 7 GB) *)
+Ltac cyp_firstorder := bounded_firstorder.
 (* used by cyp itself *)
 Ltac cyp_intros := progress intros.
 Ltac cyp_eapply t := eapply t.

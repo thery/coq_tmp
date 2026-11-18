@@ -3,8 +3,9 @@
 %
 % A short text skips intermediate formulas, so that the claim of a step no
 % longer follows from the step before it by one rule.  The gap tactic is
-% the Ltac tactic cyp_gap of Gaps.v: a few cheap tactics, each under a time
-% limit, so that a condition it cannot close costs a bounded time.
+% the Ltac tactic cyp_gap of Gaps.v: a few bounded searches (no time
+% limit), so that a condition it cannot close costs a bounded number of
+% steps.
 %
 % A proof turns it off with the header line  gaps: off  (Cyp File), or the
 % attribute #[gaps="off"] (Cyp File, Cyp Lemma).

@@ -76,6 +76,11 @@ block ([bare_demo.v](bare_demo.v)).  `#[bare] CypFile "p.md".` only
 prints the conditions with their contexts; the program `cyp` does it with
 `cyp --conditions p.md`.
 
+**The gap tactic.**  A condition that the rules and the default tactics
+leave open is tried with `cyp_gap` ([Gaps.v](Gaps.v)) before it is left
+to the Proof block; `#[gaps="off"]` (`#[gaps="off"] Cyp Lemma ...`, or
+the header line `gaps: off` of a Markdown proof) turns it off.
+
 **Timing.**  With the environment variable `CYP_TIME` set, cyp prints the
 time spent on each condition (`cyp: time 2a 1234 ms`).
 
@@ -119,6 +124,8 @@ The Elpi files of [elpi/](elpi):
   language and the role they give;
 - `check.elpi`: closing a goal by the step's justification, the rules of
   the database `cyp.db`, or the default tactics;
+- `gaps.elpi`: the gap tactic, a last try on a condition left open
+  (`cyp_gap` of [Gaps.v](Gaps.v), a bounded search), and its switch;
 - `command.elpi`: what the commands share (reading a file, counting,
   defining the lemma);
 - `proof.elpi`: the conditions of the steps and the proof of the statement;

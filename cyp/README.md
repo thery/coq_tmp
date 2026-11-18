@@ -49,8 +49,8 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   the rule files are relative to the directory of the proof, and
   `${NAME}` is the environment variable NAME, so that a proof does not
   name the directories of one machine); `lang`, the language of the text,
-  `en` (default), `fr` or `it`, which gives the role words below.  There
-  is no time limit per step.
+  `en` (default), `fr` or `it`, which gives the role words below; `gaps:
+  off`, no gap tactic (below).  There is no time limit per step.
 - **A proposition** starts with `# name`.  Its statement is the text that
   follows, up to the first list item.
 - **Formulas** are written between backticks, in Rocq syntax.  The word
@@ -90,11 +90,28 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   X, applied, its premises closed by the rules or the default tactics;
   else the tactic X (an Ltac name, or `lia`, `lra`, `nia`, `nra`, `ring`,
   `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
-  `congruence`, `firstorder`).  X
+  `congruence`, `firstorder`; `firstorder` is run bounded, as
+  `bounded_firstorder` of [vernac/Gaps.v](vernac/Gaps.v): the tactic
+  itself has no bound: more than 30 s and 7 GB on one step of a text).  X
   cannot be tactic code (`interval with (i_prec 100)`): Rocq-Elpi cannot
   yet turn a string into a tactic; name an Ltac definition instead.  A
   step with no `*by*` is closed by all the rules, then the tactics of
   `by`.
+- **The gap tactic.**  A condition that its justification, the rules and
+  the default tactics leave open gets a last, coarse try: `cyp_gap`
+  ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (the goal and
+  the hypotheses taken apart, then a proof search of depth 4 or
+  `congruence`; a case analysis on the booleans; an induction on a binder
+  of the goal; a case analysis on a variable; a constructor whose arguments
+  the search finds), with no time limit: a condition it cannot close costs
+  a bounded search (at most 0.06 s measured).  On the conditions cyp leaves
+  open in xtext's texts (closing steps of case analyses and inductions,
+  steps that follow from earlier claims by a few applications) it closes
+  99% ([../xtext/gaps/](../xtext/gaps/README.md)).  It
+  is not tried on a step justified by named rules (*by monotonicity*:
+  those rules only).  The header line `gaps: off` turns it off
+  ([examples/gaps_demo.md](examples/gaps_demo.md) is proved with it, not
+  without).
 - **A local definition**: *Let `u := e`* introduces `u`, equal to `e`, for
   the steps that follow (a `let` in their goals).
 - **A local scope**: a step that only introduces variables or hypotheses
