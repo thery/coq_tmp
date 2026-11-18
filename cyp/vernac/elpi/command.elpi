@@ -10,7 +10,7 @@ pred by-clauses i:string, o:list prop.
 by-clauses "" [] :- !.
 by-clauses S Cl :- rex.split " *| *" S Ns, std.map Ns by-clause Cl.
 pred by-clause i:string, o:prop.
-by-clause N (proof-default T) :- trim N T.
+by-clause N (proof-default T) :- prooftext.trim N T.
 
 % [with-attributes P]: P, in bare mode if the command has #[bare]
 pred with-attributes i:prop.
@@ -29,7 +29,7 @@ pred check-file i:string, o:string, o:string, o:term, o:term, o:list report.
 check-file F Lang Name Ty Proof Rs :-
   rex.replace "[.]md$" ".checked.md" F OutMd,
   rex.replace "[.]md$" ".cyp.json" F OutJs,
-  read-proof F H Name Stmt SF SL Ns,
+  prooftext.read-document F (prooftext.document H Name (prooftext.lines SF SL) Stmt Ns),
   field H "scope" Sc, field H "by" By, field H "lang" Lang0, field H "gaps" Gaps,
   (Lang0 = "", Lang = "en" ; Lang = Lang0), !,
   by-clauses By Cl0, gaps-clauses Gaps Off, std.append Off Cl0 Cl,

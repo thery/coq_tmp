@@ -147,8 +147,9 @@ The Elpi files of [elpi/](elpi):
   nesting of the steps ([nest_demo.md](nest_demo.md): 12 nested steps of
   two claims, type-check and definition 31.7 s and 12.1 s before, 37 ms
   and 35 ms after);
-- `markdown.elpi`: reading the Markdown, writing the checked Markdown and
-  the JSON for the editor.
+- `markdown.elpi`: the steps of a text (read by prooftext's reader,
+  `read-document`, `prooftext/document.elpi`), numbered; writing the
+  checked Markdown and the JSON for the editor.
 
 The default tactics (`lia`, `lra`, ...) are called through a table of Ltac
 definitions in [Cyp.v](Cyp.v): Rocq-Elpi cannot yet run a tactic given by

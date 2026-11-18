@@ -12,92 +12,18 @@
 %     - a sub-step
 %
 % The other fields of the header (require:, rules:, flags:) are for the
-% driver: the libraries and the rules are loaded by the .v file.
+% driver: the libraries and the rules are loaded by the .v file.  The keys
+% are those of prooftext/header.elpi.
 
-pred read-lines i:string, o:list string.
-read-lines F L :- open_in F I, read-all I L, close_in I.
+% The text is read by prooftext's reader (prooftext/document.elpi,
+% read-document), into its document: the fields of the header, the name,
+% the statement, the tree of steps (prooftext.step), with their lines.
 
-pred read-all i:in_stream, o:list string.
-read-all I [] :- eof I, !.
-read-all I [X | L] :- input_line I X, read-all I L.
-
-pred trim i:string, o:string.
-trim S T :- rex.replace "^[ \t]+" "" S S1, rex.replace "[ \t]+$" "" S1 T.
-
-% the lines of a file, numbered from 0
-kind line type.
-type ln int -> string -> line.
-
-pred number i:int, i:list string, o:list line.
-number _ [] [].
-number I [S | L] [ln I S | N] :- I1 is I + 1, number I1 L N.
-
-% the header: the lines between the first two lines "---"
-pred header i:list line, o:list string, o:list line.
-header [ln _ L | R] H B :- trim L "---", !, take-header R H B.
-header L [] L.
-pred take-header i:list line, o:list string, o:list line.
-take-header [ln _ L | R] [] R :- trim L "---", !.
-take-header [ln _ L | R] [L | H] B :- take-header R H B.
-take-header [] [] [].
-
-pred field i:list string, i:string, o:string.
-field H K V :-
-  Re is "^ *" ^ K ^ ":", Re1 is "^ *" ^ K ^ ": *",
-  std.mem H L, rex.match Re L, !,
-  rex.replace Re1 "" L V0, trim V0 V.
+% [field Fields Key Value]: the value of the field Key of the header, ""
+% when there is none
+pred field i:list prooftext.field, i:string, o:string.
+field Fields Key Value :- std.mem Fields (prooftext.field Key Value), !.
 field _ _ "".
-
-pred title-line i:line.
-title-line (ln _ L) :- rex.match "^# " L.
-pred item-line i:line.
-item-line (ln _ L) :- rex.match "^ *[-*] " L.
-
-pred from-title i:list line, o:list line.
-from-title [] [].
-from-title [X | L] [X | L] :- title-line X, !.
-from-title [_ | L] R :- from-title L R.
-
-pred until-item i:list line, o:list line, o:list line.
-until-item [] [] [].
-until-item [X | L] [] [X | L] :- item-line X, !.
-until-item [X | L] [X | A] B :- until-item L A B.
-
-% a list item: its indentation, its text (continuation lines joined), its
-% first and last lines
-kind item-md type.
-type it int -> string -> int -> int -> item-md.
-
-pred items-md i:list line, o:list item-md.
-items-md [] [].
-items-md [ln F L | R] [it Ind Txt F La | Its] :-
-  rex.replace "[^ ].*" "" L Sp, Ind is size Sp,
-  rex.replace "^ *[-*] +" "" L L1,
-  until-item R Cont R1,
-  std.map Cont line-text Cont0, std.filter Cont0 (s\ not (s = "")) Cont1,
-  std.string.concat " " [L1 | Cont1] T0, trim T0 Txt,
-  last-line F Cont La,
-  items-md R1 Its.
-
-pred line-text i:line, o:string.
-line-text (ln _ S) T :- trim S T.
-pred last-line i:int, i:list line, o:int.
-last-line F [] F.
-last-line _ L La :- std.last L (ln La _).
-
-% the tree of the items, by indentation
-kind node type.
-type node item-md -> list node -> node.
-
-pred tree i:list item-md, o:list node.
-tree [] [].
-tree [it I T F La | R] [node (it I T F La) Ch | Ns] :-
-  deeper I R Sub Rest, tree Sub Ch, tree Rest Ns.
-
-pred deeper i:int, i:list item-md, o:list item-md, o:list item-md.
-deeper _ [] [] [].
-deeper I [it J T F La | R] [it J T F La | A] B :- J > I, !, deeper I R A B.
-deeper _ L [] L.
 
 % [dewey Prefix K Id]: the number of the K-th item of a list whose parent
 % has the number Prefix ("" at the top): 2.1 is the first sub-step of 2
@@ -106,9 +32,9 @@ dewey "" K Id :- !, Id is {std.any->string K}.
 dewey P K Id :- Id is P ^ "." ^ {std.any->string K}.
 
 % the steps of a tree, numbered in Dewey notation
-pred steps-of i:string, i:int, i:list node, o:list step.
+pred steps-of i:string, i:int, i:list prooftext.step, o:list step.
 steps-of _ _ [] [].
-steps-of P K [node (it _ T _ _) Ch | Ns] [step Id Es Tac Sub | Ss] :-
+steps-of P K [prooftext.step _ T Ch | Ns] [step Id Es Tac Sub | Ss] :-
   justification T Tac T1, pieces T1 Pc, elements Pc rclaim Es,
   dewey P K Id, steps-of Id 1 Ch Sub, K1 is K + 1, steps-of P K1 Ns Ss.
 
@@ -133,11 +59,12 @@ todo-ids Rs S Ts :-
   std.filter Rs (r\ sigma I G\ r = rep I (todo G), step-of I S) L,
   std.map L (r\ i\ sigma G\ r = rep i G) Ts.
 
-pred write-md i:string, i:list string, i:string, i:string, i:list node,
-  i:list report.
+pred write-md i:string, i:list prooftext.field, i:string, i:string,
+  i:list prooftext.step, i:list report.
 write-md Out H Name Stmt Ns Rs :-
   open_out Out O,
-  output O "---\n", std.forall H (l\ output O {calc (l ^ "\n")}), output O "---\n\n",
+  prooftext.header-lines H HeaderLines,
+  std.forall HeaderLines (l\ output O {calc (l ^ "\n")}), output O "\n",
   output O {calc ("# " ^ Name ^ "\n\n")},
   status-of Rs "0" S M, prooftext.status-mark S Mk,
   output O {calc (Mk ^ " " ^ Stmt ^ "\n")}, details O "" M,
@@ -152,9 +79,9 @@ details O Pad M :-
 
 % [write-nodes O Pad P K Ns Rs]: the nodes, numbered as in steps-of; a step
 % with a condition left shows its number
-pred write-nodes i:out_stream, i:string, i:string, i:int, i:list node, i:list report.
+pred write-nodes i:out_stream, i:string, i:string, i:int, i:list prooftext.step, i:list report.
 write-nodes _ _ _ _ [] _.
-write-nodes O Pad P K [node (it _ T _ _) Ch | Ns] Rs :-
+write-nodes O Pad P K [prooftext.step _ T Ch | Ns] Rs :-
   dewey P K Id, status-of Rs Id S M, prooftext.status-mark S Mk,
   (S = "todo", todo-ids Rs Id Ts, std.string.concat ", " Ts TS,
    Num is " " ^ {prooftext.conditions-mark TS} ; Num = ""), !,
@@ -169,7 +96,7 @@ json-string S J :-
   rex.replace "\\\\" "\\\\\\\\" S S1, rex.replace "\"" "\\\\\"" S1 S2,
   rex.replace "\n" "\\\\n" S2 S3, J is "\"" ^ S3 ^ "\"".
 
-pred write-json i:string, i:int, i:int, i:list element, i:list node, i:list report.
+pred write-json i:string, i:int, i:int, i:list element, i:list prooftext.step, i:list report.
 write-json Out F La SEs Ns Rs :-
   open_out Out O,
   output O "{\"steps\":[",
@@ -192,25 +119,9 @@ pred json-formula i:element, o:string.
 json-formula (elt R X) J :-
   prooftext.role-tag R N, !, J is "{\"role\":\"" ^ N ^ "\",\"text\":" ^ {json-string X} ^ "}".
 
-pred json-nodes i:out_stream, i:string, i:int, i:list node, i:list report.
+pred json-nodes i:out_stream, i:string, i:int, i:list prooftext.step, i:list report.
 json-nodes _ _ _ [] _.
-json-nodes O P K [node (it _ T F La) Ch | Ns] Rs :-
+json-nodes O P K [prooftext.step (prooftext.lines F La) T Ch | Ns] Rs :-
   justification T _ T1, pieces T1 Pc, elements Pc rclaim Es,
   dewey P K Id, json-step O Id F La Es Rs,
   json-nodes O Id 1 Ch Rs, K1 is K + 1, json-nodes O P K1 Ns Rs.
-
-% ------------------------------------------------------------------ %
-% Reading a proof
-
-% [read-proof F Header Name Stmt StmtFirst StmtLast Nodes]
-pred read-proof i:string, o:list string, o:string, o:string, o:int, o:int, o:list node.
-read-proof F H Name Stmt SF SL Ns :-
-  read-lines F Ls0, number 0 Ls0 Ls,
-  header Ls H B,
-  from-title B [ln _ T | R],
-  rex.replace "^# *" "" T Name0, trim Name0 Name,
-  until-item R S Items,
-  std.filter S (l\ sigma X\ line-text l X, not (X = "")) S1,
-  std.map S1 line-text S2, std.string.concat " " S2 Stmt,
-  (S1 = [ln SF _ | _], last-line SF S1 SL, ! ; SF = 0, SL = 0),
-  items-md Items Its, tree Its Ns.

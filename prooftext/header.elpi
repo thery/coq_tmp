@@ -23,6 +23,8 @@ header-key "lang".
 % the default tactics of the proof, tried on a step that names none,
 % separated by " | " (the names of tactics.elpi)
 header-key "by".
+% "off": the reader tries no gap tactic on the conditions left open (cyp)
+header-key "gaps".
 
 % the language of a text whose header has no lang field
 pred default-lang o:string.

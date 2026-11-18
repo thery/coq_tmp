@@ -74,6 +74,7 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   | `scope` | the notation scope in which the formulas are read |
   | `lang` | the language of the text (`default-lang`, `en`, when there is none) |
   | `by` | the default tactics of the proof, tried on a step that names none, separated by `|` |
+  | `gaps` | `off`: the reader tries no gap tactic on the conditions left open (cyp) |
 
   and the writing of a header: `header-lines Fields Lines` (a key that
   is not a `header-key` is an error), `lang-fields Lang Fields` (no field
@@ -127,8 +128,8 @@ one line; xtext also ends each with a punctuation mark.
 ## Reading a proof text (the reader's contract)
 
 A reader gives, from the lines of a file (numbered from 0), the same
-`document`, with places (`read-document` in `document.elpi`; cyp's reader
-is `cyp/vernac/elpi/markdown.elpi`, the predicate is the reader's):
+`document`, with places (`read-document` in `document.elpi`, the reader
+of cyp and of the Typst back end):
 
 - **header**: if the first line is `---` (spaces around it ignored), the
   lines up to the next line `---` are fields; a field line is `key:

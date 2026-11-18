@@ -19,7 +19,7 @@
 % The writer (xtext) builds a [document] and writes it with
 % [write-document].  A reader reads a file into the same [document]; its
 % contract is in README.md ("Reading a proof text"), and [read-document]
-% below follows it (cyp has its own reader, cyp/vernac/elpi/markdown.elpi).
+% below follows it (cyp reads its texts with it).
 % The Typst writer, for a PDF, is in typst.elpi.
 % The formulas and justifications inside the texts are in formulas.elpi.
 
