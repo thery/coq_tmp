@@ -25,7 +25,8 @@ Markdown format is described in [../README.md](../README.md).
 
 Tests here: [since_demo.md](since_demo.md) (a claim used by the next claim
 of the same step), [scope_demo.md](scope_demo.md) (nested local scopes),
-[square_pos_fr.md](square_pos_fr.md) and [square_pos_it.md](square_pos_it.md)
+[type_demo.md](type_demo.md) (variables of type `Type`, in the statement
+and in a scope), [square_pos_fr.md](square_pos_fr.md) and [square_pos_it.md](square_pos_it.md)
 (French and Italian).
 
 ## The text as a verification condition generator

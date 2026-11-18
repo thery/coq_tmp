@@ -69,6 +69,37 @@ parse (elt _ S) T D :-
   coq.parse.argument P ff Sc A D, (D = ok, A = trm T ; true), !.
 parse (eltt _ T0) T D :- coq.elaborate-skeleton T0 _ T D.
 
+% [variables S C D]: the variables S of a Let (e.g. "a b : Z"), as a
+% context C, in the current context; D the diagnostic.  The declaration
+% "Context (S)" is parsed raw and its types elaborated here: elaborated by
+% coq.parse.argument, a Context keeps only its own universes in the
+% universe state (Rocq's interp_context restricts the state to them), so
+% the universes of the formulas parsed before it would be lost and the
+% lemma could not be defined ("Universe ... undefined").
+pred variables i:string, o:context-decl, o:diagnostic.
+variables S C D :-
+  P is "Context (" ^ S ^ ")",
+  coq.parse.argument P tt "" A D0,
+  if (D0 = ok, A = ctx-decl R) (elaborate-context R C D) (D = D0).
+
+% [elaborate-context R C D]: the raw context R elaborated, each variable
+% known to the types after it
+pred elaborate-context i:context-decl, o:context-decl, o:diagnostic.
+elaborate-context context-end context-end ok.
+elaborate-context (context-item Id Imp T0 none R) (context-item Id Imp T none C) D :-
+  coq.elaborate-ty-skeleton T0 _ T D0,
+  if (D0 = ok)
+     (coq.id->name Id N,
+      pi x\ decl x N T => elaborate-context (R x) (C x) D)
+     (D = D0).
+elaborate-context (context-item Id Imp T0 (some B0) R) (context-item Id Imp T (some B) C) D :-
+  coq.elaborate-ty-skeleton T0 _ T D0,
+  if (D0 = ok) (coq.elaborate-skeleton B0 T B D1) (D1 = D0),
+  if (D1 = ok)
+     (coq.id->name Id N,
+      pi x\ def x N T B => elaborate-context (R x) (C x) D)
+     (D = D1).
+
 pred is-prop i:term.
 is-prop T :- coq.typecheck T Ty ok, coq.unify-eq Ty (sort prop) ok.
 
@@ -211,9 +242,7 @@ scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :- rex.match ".*:=" S, !,
   Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
   pi x\ def x Nm T Bo => scope Vs Hs Body (TyR x) (PfR x) N Rs.
 scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :-
-  P is "Context (" ^ S ^ ")",
-  std.assert-ok! (coq.parse.argument P ff "" (ctx-decl C))
-    {msg "variables-not-parsed" [S]},
+  std.assert-ok! (variables S C) {msg "variables-not-parsed" [S]},
   scope-ctx C Vs Hs Body Ty Pf N Rs.
 scope [] [pr E Nm0 | Hs] Body (prod Nm A TyR) (fun Nm A PfR) N Rs :-
   std.assert-ok! (parse E A) {msg "hypothesis-not-parsed" []},
@@ -337,9 +366,7 @@ open-exports S Acc ExTy ExPf I N0 Rest Ty {{ cyp_have lp:T lp:Ty lp:Pi lp:K }} N
 pred statement i:list element, i:list (pair element (option string)),
   i:list element, i:list step, o:term, o:term, o:list report.
 statement [elt rvar S | Vs] Hs Gs Steps Ty Pf Rs :-
-  P is "Context (" ^ S ^ ")",
-  std.assert-ok! (coq.parse.argument P ff "" (ctx-decl C))
-    {msg "statement-variables-not-parsed" [S]},
+  std.assert-ok! (variables S C) {msg "statement-variables-not-parsed" [S]},
   statement-ctx C Vs Hs Gs Steps Ty Pf Rs.
 statement [] Hs Gs Steps Ty Pf Rs :- statement-hyps 1 Hs Gs Steps Ty Pf Rs.
 
