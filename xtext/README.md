@@ -307,7 +307,7 @@ The proof terms are written as close as possible to the λ-terms of the
 theses.
 
 **Tauto** (Coscoy, Fig. 1.5, 2.6, 2.8, 2.11): `fun A B C h1 h2 h3 => h3 h1 h2`.
-- Same: the statement (`Let A B C`, `Assume A (h1) and B (h2) and A -> B -> C (h3)`).
+- Same: the statement (`Let A B C`, `Assume A (h1), B (h2) and A -> B -> C (h3)`).
 - Different: the thesis writes one step, `En appliquant l'hypothèse h3 à
   h1 et h2 nous avons C` (its application-to-variables rule).  xtext
   writes the three hypotheses as dashed lines, then `We deduce C`, so

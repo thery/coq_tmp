@@ -24,8 +24,8 @@ lam-text bk-let Bs FT LB Ctx (prf L C) :-
   let-lines Bs Ls, std.append Ls LB L,
   concl Ctx [wd "proved", tx FT] C.
 lam-text bk-assume Bs FT LB Ctx (prf [it H LB] C) :-
-  std.map Bs assume-text L, and-parts L Ps,
-  sentence [wd "assume" | Ps] H,
+  std.map Bs assume-text L,
+  sentence [wd "assume", enum L] H,
   concl Ctx [wd "proved", tx FT] C.
 lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
   declaration-formula [Id] FA V, prooftext.formula rfact Id X,
@@ -34,12 +34,9 @@ lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
 lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
   std.map Bs (x\ y\ sigma Id FA\ x = b _ Id FA,
      declaration-formula [Id] FA y) L,
-  std.map L (v\ p\ p = [tx v]) L1, separated [tx ","] L1 Ps,
-  sentence [wd "choose" | Ps] H,
+  std.map L (v\ p\ p = [tx v]) L1,
+  sentence [wd "choose", enum L1] H,
   concl Ctx [wd "thus-have", tx FT] C.
-
-pred and-parts i:list (list part), o:list part.
-and-parts L Ps :- separated [wd "and"] L Ps.
 
 pred assume-text i:binder, o:list part.
 assume-text (b _ Id FA) Ps :- prooftext.formula rhyp FA F, with-name F Id Ps.

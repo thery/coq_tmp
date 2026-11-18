@@ -5,7 +5,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # Tauto
 
-Let `A B C : Prop`{.var}. Assume `A`{.hyp} (h1) and `B`{.hyp} (h2) and `A -> B -> C`{.hyp} (h3). We prove `C`{.claim}.
+Let `A B C : Prop`{.var}. Assume `A`{.hyp} (h1), `B`{.hyp} (h2) and `A -> B -> C`{.hyp} (h3). We prove `C`{.claim}.
 
 - By application, we have `B -> C`{.claim}.
   - By h3 we have `A -> B -> C`{.claim}.

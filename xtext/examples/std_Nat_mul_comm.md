@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 Let `n m : nat`{.var}. We prove `n * m = m * n`{.claim}.
 
 - Thus we have `forall x y : nat, x = y -> x * m = m * x <-> y * m = m * y`{.claim}.
-  - Let us choose arbitrarily `x : nat`{.var}, `y : nat`{.var}.
+  - Let us choose arbitrarily `x : nat`{.var} and `y : nat`{.var}.
     - Assume `x = y`{.hyp} (H).
       - In particular `Morphisms.ProperProxy eq (y * m = m * y)`{.claim}, that is `(y * m = m * y) = (y * m = m * y)`{.fact}.
         - Using eq_proper_proxy we get `forall (A : Type) (x0 : A), Morphisms.ProperProxy eq x0`{.claim} *by Corelib.Classes.Morphisms.eq_proper_proxy*.

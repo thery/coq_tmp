@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 Let `n m : nat`{.var}. We prove `n + S m = S (n + m)`{.claim}.
 
 - Thus we have `forall x y : nat, x = y -> x + S m = S (x + m) <-> y + S m = S (y + m)`{.claim}.
-  - Let us choose arbitrarily `x : nat`{.var}, `y : nat`{.var}.
+  - Let us choose arbitrarily `x : nat`{.var} and `y : nat`{.var}.
     - Assume `x = y`{.hyp} (H).
       - In particular `Morphisms.ProperProxy eq (y + S m = S (y + m))`{.claim}, that is `(y + S m = S (y + m)) = (y + S m = S (y + m))`{.fact}.
         - Using eq_proper_proxy we get `forall (A : Type) (x0 : A), Morphisms.ProperProxy eq x0`{.claim} *by Corelib.Classes.Morphisms.eq_proper_proxy*.

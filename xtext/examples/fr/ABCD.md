@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # ABCD
 
-Soient `A B C D : Prop`{.var}. Supposons `A -> B -> C -> D`{.hyp} (h1) et `A -> C -> B`{.hyp} (h2) et `A -> C`{.hyp} (h3) et `A`{.hyp} (h4). Montrons `D`{.claim}.
+Soient `A B C D : Prop`{.var}. Supposons `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) et `A`{.hyp} (h4). Montrons `D`{.claim}.
 
 - Par h4 nous avons `A`{.claim}.
 - Par h4 nous avons `A`{.claim}.

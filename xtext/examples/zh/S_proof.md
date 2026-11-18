@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # S_proof
 
-设 `A B C : Prop`{.var}. 假设 `A -> B -> C`{.hyp} (h) 且 `A -> B`{.hyp} (h0) 且 `A`{.hyp} (h1). 我们证明 `C`{.claim}.
+设 `A B C : Prop`{.var}. 假设 `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) 且 `A`{.hyp} (h1). 我们证明 `C`{.claim}.
 
 - 根据 h1 我们有 `A`{.claim}.
 - 根据 h1 我们有 `A`{.claim}.

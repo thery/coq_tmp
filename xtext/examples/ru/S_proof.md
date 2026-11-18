@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # S_proof
 
-Пусть `A B C : Prop`{.var}. Предположим, что `A -> B -> C`{.hyp} (h) и `A -> B`{.hyp} (h0) и `A`{.hyp} (h1). Докажем, что `C`{.claim}.
+Пусть `A B C : Prop`{.var}. Предположим, что `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) и `A`{.hyp} (h1). Докажем, что `C`{.claim}.
 
 - По h1 имеем `A`{.claim}.
 - По h1 имеем `A`{.claim}.

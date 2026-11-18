@@ -5,7 +5,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # imp_trans
 
-Let `A B C : Prop`{.var}. Assume `A -> B`{.hyp} (f) and `B -> C`{.hyp} (g) and `A`{.hyp} (a). We prove `C`{.claim}.
+Let `A B C : Prop`{.var}. Assume `A -> B`{.hyp} (f), `B -> C`{.hyp} (g) and `A`{.hyp} (a). We prove `C`{.claim}.
 
 - By a we have `A`{.claim}.
 - By f we have `A -> B`{.claim}.

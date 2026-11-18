@@ -6,7 +6,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 # S_proof
 
-Sint `A B C : Prop`{.var}. Ponamus `A -> B -> C`{.hyp} (h) et `A -> B`{.hyp} (h0) et `A`{.hyp} (h1). Ostendamus `C`{.claim}.
+Sint `A B C : Prop`{.var}. Ponamus `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) et `A`{.hyp} (h1). Ostendamus `C`{.claim}.
 
 - Per h1 habemus `A`{.claim}.
 - Per h1 habemus `A`{.claim}.

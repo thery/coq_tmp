@@ -32,7 +32,7 @@ pred statement i:list binder, o:list string.
 statement [] [].
 statement [b bk-assume Id FA|Bs] [S|Ss] :- !,
   assume-run [b bk-assume Id FA|Bs] Hs Rest,
-  and-parts Hs HP, sentence {std.append [wd "assume" | HP] [tx "."]} S,
+  sentence [wd "assume", enum Hs, tx "."] S,
   statement Rest Ss.
 statement Bs [S|Ss] :-
   let-run Bs Ls Rest, let-lines Ls Lines,

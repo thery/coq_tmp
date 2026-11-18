@@ -12,8 +12,8 @@ tr-intro CD K Tau [] _ _ P :- !,
 % all premises are hypotheses: "By definition, from H0 we deduce B \/ A"
 tr-intro CD K Tau Ns _ _ P :- std.forall Ns name, !,
   std.map Ns (h\ s\ sigma N F\ var-name h N, type-formula rfact h F, with-name F N s) Hs,
-  and-parts Hs HS, formula rclaim Tau F, by-part K J,
-  sentence {std.append [wd "definition" | CD] [tx ",", wd "from" | {std.append HS [wd "deduce", tx F, J]}]} S,
+  formula rclaim Tau F, by-part K J,
+  sentence {std.append [wd "definition" | CD] [tx ",", wd "from", enum Hs, wd "deduce", tx F, J]} S,
   conclusion-only S P.
 tr-intro CD K Tau [N] Es Path (prf L (some (it S []))) :- !,
   tr N nostar Path PN0,

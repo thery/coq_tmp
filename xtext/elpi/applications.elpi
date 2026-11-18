@@ -40,7 +40,7 @@ tr-app H Args Path P :-
   witnesses KWs Ws0 Ws,
   (if (Ws = []) (WP = [])
       (std.map Ws (formula rfact) FWs, std.map FWs (f\ p\ p = [tx f]) FWs1,
-       separated [tx ","] FWs1 WP0, WP = [wd "witness" | WP0])),
+       WP = [wd "witness", enum FWs1])),
   with-name C K CN, std.append CN WP CD,
   qual-name (indc KC) QK, tr-intro CD QK Tau Ns Es Path P0,
   apply-rest T0 P0 Rest Path P.

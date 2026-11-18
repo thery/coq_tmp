@@ -377,10 +377,9 @@ binder-kind-of (b K _ _) K.
 binder-kind-of (bih _ _) bk-assume.
 
 pred group-phrase i:list binder, o:list part.
-group-phrase [B | Bs] [wd "assume" | Ps] :-
+group-phrase [B | Bs] [wd "assume", enum Hs] :-
   binder-kind-of B bk-assume, !,
-  std.map [B | Bs] hypothesis-parts Hs,
-  enumeration Hs Ps.
+  std.map [B | Bs] hypothesis-parts Hs.
 group-phrase [b bk-set Id FT | Bs] [wd "choose" | Ps] :- !,
   variable-parts [b bk-set Id FT | Bs] Ps.
 group-phrase Bs [wd "let" | Ps] :-
@@ -395,10 +394,9 @@ hypothesis-parts (bih Id FT) [wd "ih" | Ps] :- prooftext.formula rhyp FT F, with
 % abstraction, Fig. 3.11: λx1:T1, x2:T1.M → λx1, x2 : T1.M):
 % `x y z : E`{.var}
 pred variable-parts i:list binder, o:list part.
-variable-parts Bs Ps :-
+variable-parts Bs [enum Fs] :-
   type-runs Bs Runs,
-  std.map Runs run-formula Fs,
-  enumeration Fs Ps.
+  std.map Runs run-formula Fs.
 
 pred type-runs i:list binder, o:list (pair (list string) string).
 type-runs [] [].
