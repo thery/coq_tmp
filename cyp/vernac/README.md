@@ -28,6 +28,48 @@ of the same step), [scope_demo.md](scope_demo.md) (nested local scopes),
 [square_pos_fr.md](square_pos_fr.md) and [square_pos_it.md](square_pos_it.md)
 (French and Italian).
 
+## The text as a verification condition generator
+
+Each step gives conditions, goals in their own context, numbered after the
+step in Dewey notation: `2.1` is the first sub-step of step 2, `2a` and
+`2b` the two claims of step 2, `0` the statement after the steps.  In a
+goal, the claims of the earlier steps are plain hypotheses (`c1a`,
+`c2_1`), whatever their proof.  cyp discharges each condition by its rules
+and default tactics; with a Proof block, the conditions it does not
+discharge are the goals of the block, in the order of the text, each
+labelled with its number:
+
+```coq
+Cyp File "vc_file.md".
+Proof.
+  - apply Z.sqrt_nonneg.      (* condition 1a *)
+  - apply Z.sqrt_nonneg.      (* condition 1b *)
+CypQed.
+```
+
+The goal of condition 1b reads
+
+```
+  a, b : Z
+  H : 0 <= a
+  Hb : 0 <= b
+  c1a : 0 <= Z.sqrt a
+  condition := "1b" : string
+  ============================
+  0 <= Z.sqrt b
+```
+
+and the checked Markdown marks the step 🔶 **[1a, 1b]**
+([vc_file.md](vc_file.md), [vc_file.v](vc_file.v); the same with Cyp
+Lemma: [vc_demo.v](vc_demo.v)).  The proof is closed by `CypQed.`, not
+`Qed.` (Rocq-Elpi does not let `Qed` close a proof opened by an Elpi
+command).  The goals cannot yet be selected by their number (`[c1b]:
+tac`): Rocq-Elpi does not keep the name of a hole it creates.  The label
+`condition` is removed from the proof term before the lemma is defined.
+
+`Elpi CypFile "proof.md".`, used by the program `cyp`, has no Proof block:
+a condition it does not discharge is ❌ and the lemma is not defined.
+
 ## Cyp Lemma: the same proof as a Rocq command
 
 The statement is an ordinary lemma statement, the body a list of steps
@@ -44,12 +86,13 @@ Cyp Lemma square_pos (a b : Z) (H : 0 < a < b) : a * a < b * b :=
   [ "It is equivalent to prove" (0 < b * b - a * a) ;
     "That can also be written as" (0 < (b + a) * (b - a)) ;
     "From" (0 < a < b) "we have" (0 < b + a) "and" (0 < b - a) ].
+Proof. CypQed.
 ```
 
-prints one ✅ or ❌ per step and defines `square_pos` when every step is
-proved ([square_pos.v](square_pos.v)); a word `"by X"` in a step is its
-justification ([named_v.v](named_v.v)).  If a step is not proved, the
-command fails, says which, and defines nothing ([wrong.v](wrong.v)).
+defines `square_pos`
+([square_pos.v](square_pos.v)); a word `"by X"` in a step is its
+justification ([named_v.v](named_v.v)).  A false step leaves a condition
+that the Proof block cannot prove ([wrong.v](wrong.v)).
 [lemma1.v](lemma1.v) is Lemma 1 of the exp paper written this way, with
 the same rules as [../exp/lemma1.md](../exp/lemma1.md).
 
@@ -64,8 +107,10 @@ The Elpi files of [elpi/](elpi):
   language and the role they give;
 - `check.elpi`: closing a goal by the step's justification, the rules of
   the database `cyp.db`, or the default tactics;
-- `proof.elpi`: the proof of a statement from its steps; a forward claim is
-  `let c : C := P in ...`, a backward step a proof of `C -> Goal` applied
+- `command.elpi`: what the commands share (reading a file, counting,
+  defining the lemma);
+- `proof.elpi`: the conditions of the steps and the proof of the statement;
+  a forward claim is `cyp_have C G P (fun c : C => ...)`, a backward step a proof of `C -> Goal` applied
   to a proof of `C`, a local scope a proof of its claims generalised over
   its variables and hypotheses;
 - `markdown.elpi`: reading the Markdown, writing the checked Markdown and

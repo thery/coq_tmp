@@ -1,12 +1,22 @@
 (* cyp: a proof written as text, checked step by step, inside Rocq.
 
+   A text is a verification condition generator: each step gives
+   conditions, numbered after the step (2.1 the first sub-step of step 2,
+   2a and 2b the two claims of step 2, 0 the statement after the steps).
+   cyp discharges them by its rules and default tactics.
+
      Elpi CypFile "proof.md".
        reads a cyp proof in Markdown, checks it, writes proof.checked.md
-       and proof.cyp.json, and defines the lemma when every step is proved;
+       and proof.cyp.json, and defines the lemma when every condition is
+       discharged (used by the program cyp);
 
+     Cyp File "proof.md".  Proof. tactics. CypQed.
      Cyp Lemma name binders : statement := [ step ; step ; ... ].
-       the same with the steps written in Rocq: a step is words (strings)
-       and formulas (terms), "by X" for its justification.
+     Proof. tactics. CypQed.
+       the same, but the conditions not discharged are the goals of the
+       Proof block, in the order of the text; each goal says its number
+       (condition := "2a").  In Cyp Lemma a step is words (strings) and
+       formulas (terms), "by X" for its justification.
 
    What a proof means is in the Elpi files of elpi/: text.elpi (words,
    formulas and their roles), vocab_*.elpi (the vocabulary of each
@@ -16,6 +26,9 @@
 
 From Stdlib Require Import PrimString List Lia Lra Ring Field.
 From elpi Require Import elpi.
+
+(* a claim C of the text, proved by p, is a hypothesis of the rest k *)
+Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
 
 (* The tactics a proof may name in *by X* or in its header's by:, and the
    default tactics.  More with
@@ -75,6 +88,7 @@ From CypV Extra Dependency "elpi/vocab_it.elpi" as cyp_vocab_it.
 From CypV Extra Dependency "elpi/check.elpi" as cyp_check.
 From CypV Extra Dependency "elpi/proof.elpi" as cyp_proof.
 From CypV Extra Dependency "elpi/markdown.elpi" as cyp_markdown.
+From CypV Extra Dependency "elpi/command.elpi" as cyp_command.
 
 (* ------------------------------------------------------------------ *)
 
@@ -87,45 +101,18 @@ Elpi Accumulate File cyp_vocab_it.
 Elpi Accumulate File cyp_check.
 Elpi Accumulate File cyp_proof.
 Elpi Accumulate File cyp_markdown.
+Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
-  % the default tactics of the header's by: field, e.g. "lra | assumption"
-  pred by-clauses i:string, o:list prop.
-  by-clauses "" [] :- !.
-  by-clauses S Cl :- rex.split " *| *" S Ns, std.map Ns by-clause Cl.
-  pred by-clause i:string, o:prop.
-  by-clause N (proof-default T) :- trim N T.
-
-  % a list without its repetitions
-  pred undup i:list int, o:list int.
-  undup [] [].
-  undup [X | L] R :- std.mem L X, !, undup L R.
-  undup [X | L] [X | R] :- undup L R.
-
   main [str F] :-
-    rex.replace "[.]md$" ".checked.md" F OutMd,
-    rex.replace "[.]md$" ".cyp.json" F OutJs,
-    read-proof F H Name Stmt SF SL Ns,
-    field H "scope" Sc, field H "by" By, field H "lang" Lang0,
-    (Lang0 = "", Lang = "en" ; Lang = Lang0), !,
-    by-clauses By Cl,
-    coq.say "cyp:" Name,
-    (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
-      justification Stmt _ Stmt1, pieces Stmt1 P, elements P rclaim SEs,
-      binders SEs Vs, hyps SEs Hs, claims SEs Gs,
-      steps-of 1 Ns _ Steps,
-      statement Vs Hs Gs Steps Ty Proof Rs,
-      write-md OutMd H Name Stmt Ns Rs,
-      write-json OutJs SF SL SEs Ns Rs),
-    % counted by step: a step is not proved if one of its obligations is not
-    std.map Rs (r\ i\ sigma S\ r = rep i S) Ids0, undup Ids0 Ids,
-    std.filter Rs (r\ sigma I S\ r = rep I S, not (S = ok)) Ko0,
-    std.map Ko0 (r\ i\ sigma S\ r = rep i S) KoIds0, undup KoIds0 Ko,
-    std.length Ids NR, std.length Ko NK, NP is NR - NK,
+    check-file F Name Ty Proof Rs,
+    count Rs Steps Ko _,
+    std.length Steps NR, std.length Ko NK, NP is NR - NK,
     if (Ko = [])
-       (std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
-        coq.env.add-const Name Proof Ty @opaque! _,
-        coq.say "cyp:" Name "proved," NP "steps")
-       (Msg is "cyp: " ^ {std.any->string NK} ^ " of " ^ {std.any->string NR} ^ " steps of " ^ Name ^ " not proved, see " ^ OutMd, coq.error Msg).
+       (define Name Ty Proof, coq.say "cyp:" Name "proved," NP "steps")
+       (rex.replace "[.]md$" ".checked.md" F OutMd,
+        std.string.concat ", " Ko KoS,
+        Msg is "cyp: " ^ {std.any->string NK} ^ " of " ^ {std.any->string NR} ^ " steps of " ^ Name ^ " not proved (" ^ KoS ^ "), see " ^ OutMd,
+        coq.error Msg).
 }}.
 
 (* ------------------------------------------------------------------ *)
@@ -134,11 +121,15 @@ Elpi Accumulate lp:{{
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_vocab_en.
+Elpi Accumulate File cyp_vocab_fr.
+Elpi Accumulate File cyp_vocab_it.
 Elpi Accumulate File cyp_check.
 Elpi Accumulate File cyp_proof.
+Elpi Accumulate File cyp_markdown.
+Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
   % a step written in Rocq: words (primitive strings) and terms
-  pred raw-step i:int, i:term, o:step.
+  pred raw-step i:string, i:term, o:step.
   raw-step I T (step I Es Tac []) :-
     raw-items T Is, raw-elements Is rclaim Es0,
     (std.mem Es0 (txt W), rex.match "^by " W, !,
@@ -174,25 +165,53 @@ Elpi Accumulate lp:{{
 
   pred numbered i:int, i:list term, o:list step.
   numbered _ [] [].
-  numbered I [T | L] [S | Ss] :- raw-step I T S, I1 is I + 1, numbered I1 L Ss.
+  numbered I [T | L] [S | Ss] :-
+    raw-step {std.any->string I} T S, I1 is I + 1, numbered I1 L Ss.
 
   % the binders of the statement and of the body, in parallel
   pred lemma i:term, i:term, o:term, o:list report.
   lemma (prod N T A) (fun _ _ B) (fun N T S) Rs :- !,
     pi x\ decl x N T => lemma (A x) (B x) (S x) Rs.
   lemma G Body P Rs :-
-    list-of Body Ts, numbered 1 Ts Steps, level 0 0 none Steps G P Rs.
+    list-of Body Ts, numbered 1 Ts Steps, level "0" none Steps G P Rs.
 
-  main [const-decl Name (some Body) Arity] :-
+  % the proof is opened with the conditions left as its goals; the data for
+  % CypQed: the name and the statement
+  pred open i:string, i:term, i:term, i:list report, o:list sealed-goal.
+  open Name Ty Proof Rs GL :-
+    count Rs Steps Ko Todo,
+    if (Ko = []) true
+       (std.string.concat ", " Ko KoS,
+        coq.error "cyp: steps of" Name "that do not parse:" KoS),
+    std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
+    coq.ltac.collect-goals Proof GL _,
+    std.length Steps NS, std.length Todo NT,
+    if (Todo = [])
+       (coq.say "cyp:" Name "," NS "steps, every condition discharged")
+       (std.string.concat ", " Todo TS,
+        coq.say "cyp:" Name "," NS "steps," NT "condition(s) left for the Proof block:" TS,
+        say-todo Rs).
+
+  main-interp-proof [const-decl Name (some Body) Arity] _ Proof GL (pr Name Ty) :-
     coq.arity->term Arity Ty0,
     std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) "cyp: the statement does not type-check",
     coq.say "cyp:" Name,
-    (current-lang "en" :- !) => (current-scope "" :- !) => lemma Ty Body Proof Rs,
-    std.forall Rs (r\ sigma I S\ r = rep I S, (S = ok, coq.say "  ✅ step" I ; coq.say "  ❌ step" I S)),
-    std.filter Rs (r\ sigma I S\ r = rep I S, not (S = ok)) Ko,
-    if (Ko = [])
-       (std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
-        coq.env.add-const Name Proof Ty @opaque! _, coq.say "cyp:" Name "proved")
-       (std.length Ko N, coq.error "cyp:" N "step(s) of" Name "not proved").
+    (current-lang "en" :- !) => (current-scope "" :- !) => proof-mode =>
+      lemma Ty Body Proof Rs,
+    std.forall Rs (r\ sigma I S\ r = rep I S,
+      (S = ok, coq.say "  ✅" I ; S = todo _, true ; coq.say "  ❌" I S)),
+    open Name Ty Proof Rs GL.
+  main-interp-proof [str "File", str F] _ Proof GL (pr Name Ty) :-
+    proof-mode => check-file F Name Ty Proof Rs,
+    open Name Ty Proof Rs GL.
 }}.
-Elpi Export Cyp.
+#[proof="begin"] Elpi Export Cyp.
+
+(* the end of the Proof block of Cyp File or Cyp Lemma *)
+Elpi Command CypQed.
+Elpi Accumulate File cyp_command.
+Elpi Accumulate lp:{{
+  main-interp-qed _ _ Proof _ (pr Name Ty) :-
+    define Name Ty Proof, coq.say "cyp:" Name "proved".
+}}.
+#[proof="end"] Elpi Export CypQed.

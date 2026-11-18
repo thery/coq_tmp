@@ -98,25 +98,44 @@ deeper _ [] [] [].
 deeper I [it J T F La | R] [it J T F La | A] B :- J > I, !, deeper I R A B.
 deeper _ L [] L.
 
-% the steps of a tree, numbered in order from 1
-pred steps-of i:int, i:list node, o:int, o:list step.
-steps-of K [] K [].
-steps-of K [node (it _ T _ _) Ch | Ns] K2 [step K Es Tac Sub | Ss] :-
-  justification T Tac T1, pieces T1 P, elements P rclaim Es,
-  K0 is K + 1, steps-of K0 Ch K1 Sub, steps-of K1 Ns K2 Ss.
+% [dewey Prefix K Id]: the number of the K-th item of a list whose parent
+% has the number Prefix ("" at the top): 2.1 is the first sub-step of 2
+pred dewey i:string, i:int, o:string.
+dewey "" K Id :- !, Id is {std.any->string K}.
+dewey P K Id :- Id is P ^ "." ^ {std.any->string K}.
+
+% the steps of a tree, numbered in Dewey notation
+pred steps-of i:string, i:int, i:list node, o:list step.
+steps-of _ _ [] [].
+steps-of P K [node (it _ T _ _) Ch | Ns] [step Id Es Tac Sub | Ss] :-
+  justification T Tac T1, pieces T1 Pc, elements Pc rclaim Es,
+  dewey P K Id, steps-of Id 1 Ch Sub, K1 is K + 1, steps-of P K1 Ns Ss.
 
 % ------------------------------------------------------------------ %
 % The checked Markdown and the JSON
 
-pred status-of i:list report, i:int, o:string, o:string.
-status-of Rs I "ko" M :- std.mem Rs (rep I (ko G)), !, M is "not proved: " ^ G.
-status-of Rs I "ko" M :- std.mem Rs (rep I (bad E)), !, M is "does not parse: " ^ E.
-status-of Rs I "ok" "" :- std.mem Rs (rep I ok), !.
+% the status of step S: of its conditions (S, or S with a letter), the worst
+pred status-of i:list report, i:string, o:string, o:string.
+status-of Rs S "ko" M :- std.mem Rs (rep I (ko G)), step-of I S, !, M is "not proved: " ^ G.
+status-of Rs S "ko" M :- std.mem Rs (rep I (bad E)), step-of I S, !, M is "does not parse: " ^ E.
+status-of Rs S "todo" M :-
+  std.findall (std.mem Rs (rep I (todo _)), step-of I S) L, L = [_ | _], !,
+  std.map L (x\ m\ sigma I G\ x = (std.mem Rs (rep I (todo G)), step-of I S),
+    m is "condition " ^ I ^ ", to prove in the Proof block: " ^ G) Ms,
+  std.string.concat "; " Ms M.
+status-of Rs S "ok" "" :- std.mem Rs (rep I ok), step-of I S, !.
 status-of _ _ "none" "".
+
+% the conditions of step S left to the Proof block
+pred todo-ids i:list report, i:string, o:list string.
+todo-ids Rs S Ts :-
+  std.filter Rs (r\ sigma I G\ r = rep I (todo G), step-of I S) L,
+  std.map L (r\ i\ sigma G\ r = rep i G) Ts.
 
 pred mark i:string, o:string.
 mark "ok" "✅".
 mark "ko" "❌".
+mark "todo" "🔶".
 mark "none" "▫️".
 
 pred write-md i:string, i:list string, i:string, i:string, i:list node,
@@ -125,10 +144,10 @@ write-md Out H Name Stmt Ns Rs :-
   open_out Out O,
   output O "---\n", std.forall H (l\ output O {calc (l ^ "\n")}), output O "---\n\n",
   output O {calc ("# " ^ Name ^ "\n\n")},
-  status-of Rs 0 S M, mark S Mk,
+  status-of Rs "0" S M, mark S Mk,
   output O {calc (Mk ^ " " ^ Stmt ^ "\n")}, details O "" M,
   output O "\n",
-  write-nodes O "" 1 Ns Rs _,
+  write-nodes O "" "" 1 Ns Rs,
   close_out O.
 
 pred details i:out_stream, i:string, i:string.
@@ -136,15 +155,18 @@ details _ _ "" :- !.
 details O Pad M :-
   output O {calc ("\n" ^ Pad ^ "<details><summary>" ^ M ^ "</summary></details>\n\n")}.
 
-% [write-nodes O Pad K Ns Rs K1]: the nodes, numbered from K as in steps-of
-pred write-nodes i:out_stream, i:string, i:int, i:list node, i:list report, o:int.
-write-nodes _ _ K [] _ K.
-write-nodes O Pad K [node (it _ T _ _) Ch | Ns] Rs K2 :-
-  status-of Rs K S M, mark S Mk,
-  output O {calc (Pad ^ "- " ^ Mk ^ " " ^ T ^ "\n")},
+% [write-nodes O Pad P K Ns Rs]: the nodes, numbered as in steps-of; a step
+% with a condition left shows its number
+pred write-nodes i:out_stream, i:string, i:string, i:int, i:list node, i:list report.
+write-nodes _ _ _ _ [] _.
+write-nodes O Pad P K [node (it _ T _ _) Ch | Ns] Rs :-
+  dewey P K Id, status-of Rs Id S M, mark S Mk,
+  (S = "todo", todo-ids Rs Id Ts, std.string.concat ", " Ts TS,
+   Num is " **[" ^ TS ^ "]**" ; Num = ""), !,
+  output O {calc (Pad ^ "- " ^ Mk ^ Num ^ " " ^ T ^ "\n")},
   details O {calc (Pad ^ "  ")} M,
-  K0 is K + 1, write-nodes O {calc (Pad ^ "  ")} K0 Ch Rs K1,
-  write-nodes O Pad K1 Ns Rs K2.
+  write-nodes O {calc (Pad ^ "  ")} Id 1 Ch Rs,
+  K1 is K + 1, write-nodes O Pad P K1 Ns Rs.
 
 % the JSON for the editor: per step its lines, status, formulas, message
 pred json-string i:string, o:string.
@@ -156,18 +178,18 @@ pred write-json i:string, i:int, i:int, i:list element, i:list node, i:list repo
 write-json Out F La SEs Ns Rs :-
   open_out Out O,
   output O "{\"steps\":[",
-  json-step O 0 F La SEs Rs,
-  json-nodes O 1 Ns Rs _,
+  json-step O "0" F La SEs Rs,
+  json-nodes O "" 1 Ns Rs,
   output O "]}\n",
   close_out O.
 
-pred json-step i:out_stream, i:int, i:int, i:int, i:list element, i:list report.
+pred json-step i:out_stream, i:string, i:int, i:int, i:list element, i:list report.
 json-step O K F La Es Rs :-
   status-of Rs K S M,
   std.filter Es (e\ sigma R X\ e = elt R X) Fs,
   std.map Fs json-formula Js, std.string.concat "," Js J,
-  (K = 0, Sep = "" ; Sep = ","), !,
-  output O {calc (Sep ^ "{\"first\":" ^ {std.any->string F} ^ ",\"last\":" ^
+  (K = "0", Sep = "" ; Sep = ","), !,
+  output O {calc (Sep ^ "{\"id\":\"" ^ K ^ "\",\"first\":" ^ {std.any->string F} ^ ",\"last\":" ^
      {std.any->string La} ^ ",\"status\":\"" ^ S ^ "\",\"formulas\":[" ^ J ^
      "],\"message\":" ^ {json-string M} ^ "}")}.
 
@@ -182,12 +204,12 @@ role-name rclaim "claim".
 role-name rback "claim".
 role-name rfact "fact".
 
-pred json-nodes i:out_stream, i:int, i:list node, i:list report, o:int.
-json-nodes _ K [] _ K.
-json-nodes O K [node (it _ T F La) Ch | Ns] Rs K2 :-
-  justification T _ T1, pieces T1 P, elements P rclaim Es,
-  json-step O K F La Es Rs,
-  K0 is K + 1, json-nodes O K0 Ch Rs K1, json-nodes O K1 Ns Rs K2.
+pred json-nodes i:out_stream, i:string, i:int, i:list node, i:list report.
+json-nodes _ _ _ [] _.
+json-nodes O P K [node (it _ T F La) Ch | Ns] Rs :-
+  justification T _ T1, pieces T1 Pc, elements Pc rclaim Es,
+  dewey P K Id, json-step O Id F La Es Rs,
+  json-nodes O Id 1 Ch Rs, K1 is K + 1, json-nodes O P K1 Ns Rs.
 
 % ------------------------------------------------------------------ %
 % Reading a proof

@@ -1,0 +1,60 @@
+% What the commands of Cyp.v share: reading a Markdown proof and checking
+% it, counting and printing the result.
+
+% the default tactics of the header's by: field, e.g. "lra | assumption"
+pred by-clauses i:string, o:list prop.
+by-clauses "" [] :- !.
+by-clauses S Cl :- rex.split " *| *" S Ns, std.map Ns by-clause Cl.
+pred by-clause i:string, o:prop.
+by-clause N (proof-default T) :- trim N T.
+
+% a list without its repetitions
+pred undup i:list string, o:list string.
+undup [] [].
+undup [X | L] R :- std.mem L X, !, undup L R.
+undup [X | L] [X | R] :- undup L R.
+
+% [check-file F Name Ty Proof Rs]: the proof in the Markdown file F, checked;
+% writes F.checked.md and F.cyp.json next to it
+pred check-file i:string, o:string, o:term, o:term, o:list report.
+check-file F Name Ty Proof Rs :-
+  rex.replace "[.]md$" ".checked.md" F OutMd,
+  rex.replace "[.]md$" ".cyp.json" F OutJs,
+  read-proof F H Name Stmt SF SL Ns,
+  field H "scope" Sc, field H "by" By, field H "lang" Lang0,
+  (Lang0 = "", Lang = "en" ; Lang = Lang0), !,
+  by-clauses By Cl,
+  coq.say "cyp:" Name,
+  (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
+    justification Stmt _ Stmt1, pieces Stmt1 P, elements P rclaim SEs,
+    binders SEs Vs, hyps SEs Hs, claims SEs Gs,
+    steps-of "" 1 Ns Steps,
+    statement Vs Hs Gs Steps Ty Proof Rs,
+    write-md OutMd H Name Stmt Ns Rs,
+    write-json OutJs SF SL SEs Ns Rs).
+
+% the steps of the reports, and those with a condition not proved (Ko) or
+% left to the Proof block (Todo)
+pred count i:list report, o:list string, o:list string, o:list string.
+count Rs Steps Ko Todo :-
+  std.map Rs (r\ s\ sigma I St\ r = rep I St, step-of I s) S0, undup S0 Steps,
+  std.filter Rs (r\ sigma I S\ r = rep I S, (S = ko _ ; S = bad _)) Ko0,
+  std.map Ko0 (r\ s\ sigma I St\ r = rep I St, step-of I s) K0, undup K0 Ko,
+  std.filter Rs (r\ sigma I G\ r = rep I (todo G)) T0,
+  std.map T0 (r\ i\ sigma St\ r = rep i St) Todo.
+
+% the conditions left, one line each
+pred say-todo i:list report.
+say-todo Rs :- std.forall Rs (r\ (sigma I G\ r = rep I (todo G), !,
+  coq.say "  🔶 condition" I ":" G) ; true).
+
+% [define Name Ty Proof]: the lemma, once its proof has no hole; the
+% labels condition := "2a" of the goals are removed first
+pred define i:string, i:term, i:term.
+define Name Ty Proof0 :-
+  std.assert! (ground_term Proof0) "cyp: some conditions are not proved",
+  (pi T V B R\ copy (let _ T (primitive (pstring V)) B) R :-
+     coq.unify-eq T {{ PrimString.string }} ok, !,
+     copy (B (primitive (pstring V))) R) => copy Proof0 Proof,
+  std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
+  coq.env.add-const Name Proof Ty @opaque! _.

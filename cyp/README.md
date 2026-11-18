@@ -106,6 +106,13 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
 A claim that does not hold makes the following steps easier to prove, as
 on paper: a red step is the one to look at first.
 
+**Conditions.**  The text is a verification condition generator: each
+step gives conditions (its claims, numbered `2`, or `2a`, `2b` for several,
+`2.1` for a sub-step), which cyp discharges by its rules and default
+tactics.  Inside Rocq, the conditions it does not discharge can be left to
+a Proof block of ordinary tactics, `Cyp File "proof.md". Proof. ...
+CypQed.` (marked 🔶 with their numbers), see [vernac/](vernac/README.md).
+
 ## Rules: choosing the justification with Elpi
 
 A field has its own way of proving things: products of nonnegative reals
