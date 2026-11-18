@@ -21,10 +21,10 @@ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove
       - We prove `In (f x) (map f (a :: l0))`{.fact} by case analysis on `In x (a :: l0)`{.fact} (H) (or, or_ind):
       - Case 2.1: we prove `a = x -> f a = f x \/ In (f x) (map f l0)`{.claim}.
         - Assume `a = x`{.hyp} (H0).
-          - By definition of eq (eq_refl), we have `f x = f x`{.claim} *by eapply @eq_refl; eauto*.
+          - By definition of eq (eq_refl), we have `f x = f x`{.claim} *by Corelib.Init.Logic.eq_refl*.
           - By H0 we have `a = x`{.claim}.
           - Rewriting with `a = x`{.fact} from right to left (eq_ind_r), we get `f a = f x`{.claim}.
-          - By definition of or (or_introl), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by eapply @or_introl; eauto*, that is `In (f x) (map f (a :: l0))`{.fact}.
+          - By definition of or (or_introl), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by Corelib.Init.Logic.or_introl*, that is `In (f x) (map f (a :: l0))`{.fact}.
       - Case 2.2: we prove `In x l0 -> f a = f x \/ In (f x) (map f l0)`{.claim}.
         - Assume `In x l0`{.hyp} (H0).
           - By IHl we have `forall x0 : A, In x0 l0 -> In (f x0) (map f l0)`{.claim}.
@@ -37,7 +37,7 @@ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove
                   - By H01 we have `In (f x) (map f l0)`{.claim}.
               - We deduce `In (f x) (map f l0)`{.claim} *by tauto*.
           - We deduce `In (f x) (map f l0)`{.claim} *by firstorder*.
-          - By definition of or (or_intror), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by eapply @or_intror; eauto*, that is `In (f x) (map f (a :: l0))`{.fact}.
-      - We have `In (f x) (map f (a :: l0))`{.claim} in all cases *by eapply (@or_ind (a = x) (In x l0) (In (f x) (map f (a :: l0)))); cbv beta; eauto*.
-- These cases being exhaustive, we deduce `forall (l0 : list A) (x : A), In x l0 -> In (f x) (map f l0)`{.claim} *by eapply (@list_ind (A) (fun l0 : list A => forall x : A, In x l0 -> In (f x) (map f l0))); cbv beta; eauto*.
+          - By definition of or (or_intror), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by Corelib.Init.Logic.or_intror*, that is `In (f x) (map f (a :: l0))`{.fact}.
+      - We have `In (f x) (map f (a :: l0))`{.claim} in all cases.
+- These cases being exhaustive, we deduce `forall (l0 : list A) (x : A), In x l0 -> In (f x) (map f l0)`{.claim} *by Corelib.Init.Datatypes.list_ind*.
 - In particular `forall x : A, In x l -> In (f x) (map f l)`{.claim}.

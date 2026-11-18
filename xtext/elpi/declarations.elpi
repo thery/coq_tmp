@@ -1,0 +1,56 @@
+% xtext: the declarations of the predicates that one file of the writer
+% uses and a later file defines (Elpi checks the files in order).
+
+% defined in abstractions.elpi, used in transducer.elpi
+pred tr-lam i:term, i:ctx, i:list int, o:pf.
+
+% defined in abstractions.elpi, used in transducer.elpi
+pred tr-let i:bool, i:name, i:term, i:term, i:(term -> term), i:ctx, i:list int, o:pf.
+
+% defined in applications.elpi, used in transducer.elpi
+pred tr-app i:term, i:list term, i:list int, o:pf.
+
+% defined in inductive-text.elpi, used in applications.elpi
+pred tr-intro i:list part, i:string, i:term, i:list term, i:list term, i:list int, o:pf.
+
+% defined in inductive-text.elpi, used in inductive.elpi
+pred cases i:list term, i:list case-info, i:bool, i:list int, i:int, o:list line.
+
+% defined in inductive-text.elpi, used in transducer.elpi
+pred recursive i:list case-info, o:bool.
+
+% defined in inductive-text.elpi, used in applications.elpi
+pred tr-elim1 i:string, i:string, i:term, i:term, i:list term, i:list case-info, i:list int, o:pf.
+
+% defined in inductive-text.elpi, used in applications.elpi
+pred tr-elim2 i:string, i:string, i:term, i:option term, i:option term, i:list term, i:list case-info, i:list int, o:pf.
+
+% defined in inductive-text.elpi, used in applications.elpi
+pred elim-app o:string, o:string.
+
+% defined in inductive-text.elpi, used in transducer.elpi
+pred tr-match i:term, i:term, i:list term, i:list int, o:pf.
+
+% defined in inductive-text.elpi, used in transducer.elpi
+pred tr-fix i:name, i:int, i:term, i:(term -> term), i:list int, o:pf.
+
+% defined in inductive-text.elpi, used in applications.elpi
+pred rewrite-info i:term, o:string.
+
+% defined in inductive-text.elpi, used in applications.elpi
+pred tr-rewrite i:string, i:string, i:term, i:term, i:term, i:list int, o:pf.
+
+% defined in document.elpi, used in applications.elpi, inductive-text.elpi
+pred that-is i:term, i:term, i:pf, o:pf.
+
+% defined in document.elpi, used in applications.elpi
+pred domains i:term, i:list term, o:list term.
+
+% defined in document.elpi, used in inductive-text.elpi
+pred dashed-exp i:list term, i:list term, i:list int, o:list line.
+
+% defined in document.elpi, used in transducer.elpi, inductive-text.elpi
+pred statement i:list binder, o:list string.
+
+% defined in document.elpi, used in inductive-text.elpi
+pred header i:gref, o:string.

@@ -1,0 +1,44 @@
+% xtext: Kinds of binders and of arguments.
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+
+% ------------------------------------------------------------------
+% Kinds of binders and arguments
+
+pred is-set-sort i:term.
+is-set-sort S :- pp S "Set".
+
+pred binder-kind i:term, o:bk.  % call it with a fresh output
+binder-kind A K :-
+  typ A S0, coq.reduction.lazy.whd S0 S, !, sort-kind S K.
+binder-kind _ bk-let.
+
+pred sort-kind i:term, o:bk.
+sort-kind (sort prop) bk-assume :- !.
+sort-kind (sort sprop) bk-assume :- !.
+sort-kind S bk-set :- is-set-sort S, !.
+sort-kind _ bk-let.
+
+pred is-prop i:term.
+is-prop D :- typ D S0, coq.reduction.lazy.whd S0 (sort prop).
+
+% kind of the argument of a product: => if non-dependent with a
+% domain in Prop, forall otherwise
+pred arg-kind i:term, i:(term -> term), o:ak.
+arg-kind D B ak-imp :- (B = (_\ _)), is-prop D, !.
+arg-kind _ _ ak-all.
+
+% the kinds of the arguments Args of a term of type Ty
+
+pred kinds i:term, i:list term, o:list ak.
+kinds _ [] [] :- !.
+kinds Ty [A|As] [K|Ks] :-
+  coq.reduction.lazy.whd Ty (prod _ D B), !,
+  arg-kind D B K, kinds (B A) As Ks.
+kinds _ As Ks :- std.map As (_\ k\ k = ak-all) Ks.
+
+% the maximal prefix of arguments with the same kind
+pred run i:list ak, i:list term, o:ak, o:list term, o:list term.
+run [K|Ks] [A|As] K [A|R] Rest :- run-same K Ks As R Rest.
+pred run-same i:ak, i:list ak, i:list term, o:list term, o:list term.
+run-same K [K|Ks] [A|As] [A|R] Rest :- !, run-same K Ks As R Rest.
+run-same _ _ As [] As.

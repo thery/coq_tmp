@@ -8,4 +8,4 @@ by: tauto | congruence | lia | firstorder | auto
 Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `x y : A`{.var}. Assume `x = y`{.hyp} (H). We prove `f x = f y`{.claim}.
 
 - Going back to the definition of eq (match) in `x = y`{.fact} (H), we prove `f x = f y`{.claim}:
-  - By definition of eq (eq_refl), we have `f x = f x`{.claim} *by eapply @eq_refl; eauto*.
+  - By definition of eq (eq_refl), we have `f x = f x`{.claim} *by Corelib.Init.Logic.eq_refl*.

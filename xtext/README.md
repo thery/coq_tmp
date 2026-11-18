@@ -33,8 +33,24 @@ eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4)"
 make          # builds Explain.vo, then the example files, which write examples/*.md
 ```
 
-Files: `xtext.elpi` (the transducer), `types.elpi` (the double
-annotation of the thesis, chapter 3, below), `Explain.v` (the command),
+Files: `Explain.v` (the command) and the writer in `elpi/`, one file per
+subject, loaded in this order:
+
+- `text-tree.elpi` (lines and the text of a proof), `printing.elpi`
+  (terms and formulas), `words.elpi` (words and sentences from the
+  lexicon), `reparse.elpi` (formulas that type-check again), `kinds.elpi`
+  (kinds of binders and arguments), `inductive.elpi` (recognising
+  introduction and elimination theorems), `declarations.elpi` (predicates
+  used by a file before the one that defines them);
+- `transducer.elpi` (the text of a proof term, by its form),
+  `abstractions.elpi`, `applications.elpi` (with the contraction of their
+  steps), `inductive-text.elpi` (introductions, eliminations, fix,
+  rewriting), `document.elpi` (the statement, the header, the document);
+- `annotation.elpi` (the double annotation of the thesis, chapter 3, in one
+  pass), `sentences.elpi` and `staged.elpi` (the translation in three
+  stages, below).
+
+Examples: 
 `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
 `inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`,
 `stdlib.v`, `elim_type.v`, `partial.v` (see below): the texts in
@@ -43,8 +59,10 @@ branch); `multilingual.v`: 12 of them in each of the other
 languages of the lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`,
 `ko`, `la`); `vocab_check.v` (the vocabulary, below); the optional checks with cyp:
 `cyprun.sh`, `cyp-check/` (cyp's results, below), and
-`cyp-check/roles_check.sh`; `examples-double/` (the texts with
-`xtext-annotation` `double`, written by `make_double.sh`).
+`cyp-check/roles_check.sh`; `examples-double/`, `examples-staged-maximal/`,
+`examples-staged-guarded/`: the texts with other switches, written by
+`sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
+staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`).
 
 ## The output
 
@@ -105,7 +123,7 @@ writer's phrases:
 
 A sentence is written as a list of parts, `wd Use` (the phrase of a use in
 the language of the text) and `tx S` (formulas, names, punctuation), joined
-by spaces (`say` in `xtext.elpi`); a sentence that starts with a phrase
+by spaces (`say` in `elpi/words.elpi`); a sentence that starts with a phrase
 has its first letter capitalised, by the capital letters of the lexicon
 (`say-cap`).  The same lists serve every language: only the table changes,
 so a text in another language has the structure, the formulas and the
@@ -771,7 +789,8 @@ The strategy is `xtext-annotation` in `xtext.db`, or the variable
 
 - `all` (default): the texts of the earlier rounds, with "that is" at the
   places of mechanism (4) above.  The 82 texts are the same, byte for byte;
-- `double`: the algorithm of Fig. 3.9.  `sh make_double.sh` writes all the
+- `double`: the algorithm of Fig. 3.9.  `sh make_variant.sh double
+  XTEXT_ANNOTATION=double` writes all the
   texts with it to `examples-double/`.
 
 `types.elpi` holds the rules (`d-annot`, `d-abs`, one clause per rule,

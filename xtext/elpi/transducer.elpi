@@ -1,0 +1,143 @@
+% xtext: Assembling text, and the transducer: the text of a proof term, by the
+% form of the term (the dispatch; the forms are in the files below).
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+
+% ------------------------------------------------------------------
+% Assembling text
+
+pred flatten i:pf, o:list line.
+flatten (prfp P _) L :- !, flatten P L.
+flatten (prf L none) L.
+flatten (prf L (some C)) R :- std.append L [C] R.
+
+% a subproof written with a dash in front of its conclusion: the
+% lines above it are indented below it
+pred dashed i:pf, o:line.
+dashed (prfp P _) D :- !, dashed P D.
+dashed (prf L (some (it C Ch))) (it C L1) :- std.append L Ch L1.
+dashed (prf L none) (it S L) :- say-cap [wd "have"] S.
+
+% a proof whose text is a single conclusion
+pred one i:string, o:pf.
+one S (prf [] (some (it S []))).
+
+pred join-names i:list string, o:string.
+join-names L S :- std.string.concat ", " L S.
+
+pred dewey i:list int, o:string.
+dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S.
+
+% ------------------------------------------------------------------
+% The transducer.  tr T Ctx Path P: the text P of the proof T, in the
+% context Ctx (star or nostar), Path being the number of the current
+% case (Dewey notation).
+
+% cur-ih Fl: the induction-hypothesis flags of the binders of the branch
+% being translated (set by the elimination rules)
+pred cur-ih o:list bool.
+% rec-var F: F is the recursive function of an enclosing fix
+pred rec-var o:term.
+
+% tr is deterministic: its first answer is kept, and a subterm that no
+% rule can translate (one whose type cannot be computed) is shown as it
+% is, so that a failure deep inside does not make the whole translation
+% backtrack.
+pred tr i:term, i:ctx, i:list int, o:pf.
+tr T Ctx Path P :- tr-p T Ctx Path P0, unwrap P0 P.
+
+pred unwrap i:pf, o:pf.
+unwrap (prfp P _) P :- !.
+unwrap P P.
+
+% the staged translation (staged.elpi): whether it is on, the terms the
+% direct writer keeps, and the text it gives
+pred staged-mode.
+pred is-direct-only i:term.
+pred staged-text i:term, i:ctx, i:list int, o:pf.
+
+pred tr-p i:term, i:ctx, i:list int, o:pf.
+% (thesis 3.3.4: the double annotation of the subproof, annotation.elpi)
+tr-p T Ctx Path P :- annotation-hook T (tr-p T Ctx Path) P, !.
+tr-p T _ _ P :- open-goal T P, !.
+tr-p T _ _ P :- tactic-step T P, !.
+% (the staged translation, staged.elpi)
+tr-p T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ctx Path P.
+tr-p T Ctx Path P :- tr-root T Ctx Path P.
+
+% the whole proof (no tactic is tried on it): the body of the theorem,
+% and the body of a cast or a let that is the whole proof
+pred root-term o:term.
+pred is-root i:term.
+is-root T :- root-term R, R == T, !.
+
+% the same, without trying the tactics (for the whole proof)
+pred tr-root i:term, i:ctx, i:list int, o:pf.
+tr-root T _ _ P :- open-goal T P, !.
+tr-root T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ctx Path P.
+tr-root T Ctx Path P :- tr.aux T Ctx Path P, !.
+tr-root T _ _ P :- unchanged T P, !.
+tr-root T _ _ P :- pp T S0, F is "`" ^ S0 ^ "`{.fact}",
+  say-cap [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, one S P.
+
+% an open goal of a proof in progress (a hole of the partial proof term)
+% is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez")
+pred open-goal i:term, o:pf.
+open-goal T P :- var T, typ T G, fm G F, say-cap [wd "prove", tx F] S, one S P.
+
+% Tactic-built subproofs (thesis 5.4, the "pragmatic method"): a proper
+% subproof whose proof term has at least xtext-threshold nodes is first
+% tried with the tactics of xtext-tactic, in order, on its statement in
+% its context; the first one that closes it gives a one-step text.  The
+% success of the tactic is the guarantee.
+pred tactic-step i:term, o:pf.
+tactic-step T P :- not (off "tactics"),
+  xtext-threshold N, size-ge T N,
+  typ T Ty, binder-kind Ty K, K = bk-assume,
+  xtext-tactic L Txt, try-tactic L Ty, !,
+  fm Ty F, by-part Txt J, say-cap [wd "have", tx F, J] S, one S P.
+
+pred try-tactic i:string, i:term.
+try-tactic L Ty :-
+  coq.elaborate-skeleton _ Ty E ok,
+  coq.ltac.collect-goals E [G] _,
+  coq.ltac.open (coq.ltac.call-ltac1 L) G [].
+
+% the proof term has at least N nodes
+pred size-ge i:term, i:int.
+size-ge T N :- tsize T N 0 S, S >= N.
+pred tsize i:term, i:int, i:int, o:int.
+tsize _ Cap A A :- A >= Cap, !.
+tsize (app L) Cap A R :- !, A1 is A + 1, tsize-list L Cap A1 R.
+tsize (fun _ T F) Cap A R :- !, A1 is A + 1, tsize T Cap A1 A2, pi x\ tsize (F x) Cap A2 R.
+tsize (prod _ T F) Cap A R :- !, A1 is A + 1, tsize T Cap A1 A2, pi x\ tsize (F x) Cap A2 R.
+tsize (let _ T V F) Cap A R :- !, A1 is A + 1, tsize T Cap A1 A2, tsize V Cap A2 A3,
+  pi x\ tsize (F x) Cap A3 R.
+tsize (match T Rt Bs) Cap A R :- !, A1 is A + 1, tsize T Cap A1 A2, tsize Rt Cap A2 A3,
+  tsize-list Bs Cap A3 R.
+tsize (fix _ _ T F) Cap A R :- !, A1 is A + 1, tsize T Cap A1 A2, pi x\ tsize (F x) Cap A2 R.
+tsize _ _ A R :- R is A + 1.
+pred tsize-list i:list term, i:int, i:int, o:int.
+tsize-list [] _ A A.
+tsize-list [T|Ts] Cap A R :- tsize T Cap A A1, tsize-list Ts Cap A1 R.
+
+pred tr.aux i:term, i:ctx, i:list int, o:pf.
+tr.aux (fun _ _ _ as T) Ctx Path P :- !, tr-lam T Ctx Path P.
+tr.aux T Ctx Path P :- (cur-ih [] :- !) => tr-other T Ctx Path P.
+
+pred tr-other i:term, i:ctx, i:list int, o:pf.
+% a cast (T : A) is read by Elpi as let _ : A := T in _
+tr-other (let _ _ V (x\ x) as T) Ctx Path P :- !,
+  if (is-root T) ((root-term V :- !) => tr-root V Ctx Path P) (tr V Ctx Path P).
+tr-other (let N Ty V F as T) Ctx Path P :- !,
+  (if (is-root T) (R = tt) (R = ff)), tr-let R N Ty V F Ctx Path P.
+tr-other (app [H|Args]) _ Path P :- !, tr-app H Args Path P.
+tr-other (match S RT Bs) _ Path P :- !, tr-match (match S RT Bs) S Bs Path P.
+tr-other (fix N Rno Ty F) _ Path P :- !, tr-fix N Rno Ty F Path P.
+tr-other H _ Path P :- is-sym H, !, tr-app H [] Path P.
+tr-other T _ _ P :- unchanged T P.
+
+% expressions that match no rule are left unchanged
+pred unchanged i:term, o:pf.
+unchanged T (prf [] (some (it S []))) :-
+  typ T Tau, fm-fact T FT, fm Tau F,
+  say-cap [wd "using", tx FT, wd "get", tx F] S.

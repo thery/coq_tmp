@@ -1,0 +1,55 @@
+% xtext: Printing terms and formulas (formulas carry their role for cyp).
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+
+% ------------------------------------------------------------------
+% Printing
+
+% the names of the variables of the context (decl cannot be enumerated)
+pred ctx-name o:string.
+
+pred pp i:term, o:string.
+pp T0 S :-
+  std.findall (ctx-name _) Ds,
+  std.map Ds (d\ i\ d = ctx-name i) Used,
+  rename Used T0 T,
+  (@ppwidth! 100000 => coq.term->string T S0),
+  rex.replace "[\n ]+" " " S0 S.
+
+% bound names that clash with the context are renamed (else Rocq-Elpi
+% prints them as elpi_ctx_entry_N_)
+pred rename i:list string, i:term, o:term.
+rename U (prod N T F) (prod N1 T1 F1) :- !, fresh U N N1 Id,
+  rename U T T1, pi x\ rename [Id|U] (F x) (F1 x).
+rename U (fun N T F) (fun N1 T1 F1) :- !, fresh U N N1 Id,
+  rename U T T1, pi x\ rename [Id|U] (F x) (F1 x).
+rename U (let N T B F) (let N1 T1 B1 F1) :- !, fresh U N N1 Id,
+  rename U T T1, rename U B B1, pi x\ rename [Id|U] (F x) (F1 x).
+rename U (app L) (app L1) :- !, std.map L (rename U) L1.
+rename U (match T R B) (match T1 R1 B1) :- !,
+  rename U T T1, rename U R R1, std.map B (rename U) B1.
+rename _ X Y :- copy X Y.
+
+% the name of a new hypothesis or variable: anonymous ones are called h,
+% and a name already in the context gets a number
+pred binder-name i:name, o:name, o:string.
+binder-name N N1 Id :-
+  coq.name->id N Id0, (if (Id0 = "_") (Id1 = "h") (Id1 = Id0)),
+  std.findall (ctx-name _) Ds, std.map Ds (d\ i\ d = ctx-name i) Used,
+  (if (std.mem! Used Id1) (fresh-aux Used Id1 0 Id) (Id = Id1)),
+  coq.id->name Id N1.
+
+pred fresh i:list string, i:name, o:name, o:string.
+fresh U N N1 Id :- coq.name->id N Id0,
+  if (Id0 = "_" ; not (std.mem! U Id0)) (N1 = N, Id = Id0)
+     (fresh-aux U Id0 0 Id, coq.id->name Id N1).
+pred fresh-aux i:list string, i:string, i:int, o:string.
+fresh-aux U B I Id :- Id0 is B ^ {std.any->string I},
+  if (std.mem! U Id0) (I1 is I + 1, fresh-aux U B I1 Id) (Id = Id0).
+
+% a formula, between backticks
+% Each formula carries its role for cyp, as a Pandoc attribute:
+% {.claim} (proved by the step), {.hyp}, {.var}, {.fact} (shown only).
+pred fm i:term, o:string.
+fm T S :- ppf T S0, S is "`" ^ S0 ^ "`{.claim}".
+pred fm-fact i:term, o:string.
+fm-fact T S :- ppf T S0, S is "`" ^ S0 ^ "`{.fact}".

@@ -64,3 +64,10 @@ capital "de" "Ä" "ä".  capital "de" "Ö" "ö".  capital "de" "Ü" "ü".
 % Plural (CLDR): one for 1, other otherwise.
 plural-category "de" 1 "one" :- !.
 plural-category "de" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi); to be reviewed by a native speaker
+write-word "de" "applying" "durch Anwendung von".
+write-word "de" "to" "auf".
+write-word "de" "by-application" "durch Anwendung".
+write-word "de" "with" "mit".
+write-word "de" "the-element" "das Element".
+write-word "de" "belongs-to" "gehört zu".

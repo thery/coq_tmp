@@ -102,3 +102,10 @@ capital "en" "Z" "z".
 % Plural (CLDR): one for 1, other otherwise.
 plural-category "en" 1 "one" :- !.
 plural-category "en" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi)
+write-word "en" "applying" "applying".
+write-word "en" "to" "to".
+write-word "en" "by-application" "by application".
+write-word "en" "with" "with".
+write-word "en" "the-element" "the element".
+write-word "en" "belongs-to" "belongs to".

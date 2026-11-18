@@ -67,3 +67,10 @@ plural-category "ar" 2 "two" :- !.
 plural-category "ar" N "few" :- H is N mod 100, H >= 3, H =< 10, !.
 plural-category "ar" N "many" :- H is N mod 100, H >= 11, !.
 plural-category "ar" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi); to be reviewed by a native speaker
+write-word "ar" "applying" "بتطبيق".
+write-word "ar" "to" "على".
+write-word "ar" "by-application" "بالتطبيق".
+write-word "ar" "with" "مع".
+write-word "ar" "the-element" "العنصر".
+write-word "ar" "belongs-to" "ينتمي إلى".

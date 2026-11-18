@@ -6,7 +6,22 @@
    [Explain_partial.], inside a proof, prints the proof so far. *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
-From XText Extra Dependency "xtext.elpi" as xtext.
+(* xtext's writer, in elpi/: the structure of texts, printing, words,
+   formulas that type-check again, kinds of binders, inductive types, the
+   transducer and its forms (abstractions, applications, inductive
+   constructions), the document *)
+From XText Extra Dependency "elpi/text-tree.elpi" as xt_text_tree.
+From XText Extra Dependency "elpi/printing.elpi" as xt_printing.
+From XText Extra Dependency "elpi/words.elpi" as xt_words.
+From XText Extra Dependency "elpi/reparse.elpi" as xt_reparse.
+From XText Extra Dependency "elpi/kinds.elpi" as xt_kinds.
+From XText Extra Dependency "elpi/inductive.elpi" as xt_inductive.
+From XText Extra Dependency "elpi/declarations.elpi" as xt_declarations.
+From XText Extra Dependency "elpi/transducer.elpi" as xt_transducer.
+From XText Extra Dependency "elpi/abstractions.elpi" as xt_abstractions.
+From XText Extra Dependency "elpi/applications.elpi" as xt_applications.
+From XText Extra Dependency "elpi/inductive-text.elpi" as xt_inductive_text.
+From XText Extra Dependency "elpi/document.elpi" as xt_document.
 (* the lexicon (../lexicon): the roles and the phrases of each language,
    shared with the reader cyp *)
 From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
@@ -20,9 +35,9 @@ From Lexicon Extra Dependency "lang_zh.elpi" as lex_zh.
 From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
-From XText Extra Dependency "types.elpi" as types.
-From XText Extra Dependency "sentences.elpi" as sentences.
-From XText Extra Dependency "staged.elpi" as staged.
+From XText Extra Dependency "elpi/annotation.elpi" as types.
+From XText Extra Dependency "elpi/sentences.elpi" as sentences.
+From XText Extra Dependency "elpi/staged.elpi" as staged.
 
 (* The tactics tried on long subproofs (see xtext-tactic below).  Each is
    an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
@@ -101,7 +116,18 @@ Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
 Elpi Accumulate File types.
-Elpi Accumulate File xtext.
+Elpi Accumulate File xt_text_tree.
+Elpi Accumulate File xt_printing.
+Elpi Accumulate File xt_words.
+Elpi Accumulate File xt_reparse.
+Elpi Accumulate File xt_kinds.
+Elpi Accumulate File xt_inductive.
+Elpi Accumulate File xt_declarations.
+Elpi Accumulate File xt_transducer.
+Elpi Accumulate File xt_abstractions.
+Elpi Accumulate File xt_applications.
+Elpi Accumulate File xt_inductive_text.
+Elpi Accumulate File xt_document.
 Elpi Accumulate File sentences.
 Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
@@ -134,7 +160,18 @@ Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
 Elpi Accumulate File types.
-Elpi Accumulate File xtext.
+Elpi Accumulate File xt_text_tree.
+Elpi Accumulate File xt_printing.
+Elpi Accumulate File xt_words.
+Elpi Accumulate File xt_reparse.
+Elpi Accumulate File xt_kinds.
+Elpi Accumulate File xt_inductive.
+Elpi Accumulate File xt_declarations.
+Elpi Accumulate File xt_transducer.
+Elpi Accumulate File xt_abstractions.
+Elpi Accumulate File xt_applications.
+Elpi Accumulate File xt_inductive_text.
+Elpi Accumulate File xt_document.
 Elpi Accumulate File sentences.
 Elpi Accumulate File staged.
 Elpi Accumulate lp:{{

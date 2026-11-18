@@ -62,3 +62,10 @@ punctuation "zh" "；".  punctuation "zh" "、".  punctuation "zh" "（".  punct
 
 % Plural (CLDR): no plural forms, the category is always other.
 plural-category "zh" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi); to be reviewed by a native speaker
+write-word "zh" "applying" "将".
+write-word "zh" "to" "应用于".
+write-word "zh" "by-application" "由应用".
+write-word "zh" "with" "以".
+write-word "zh" "the-element" "元素".
+write-word "zh" "belongs-to" "属于".

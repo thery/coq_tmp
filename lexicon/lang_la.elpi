@@ -61,3 +61,10 @@ write-word "la" "not-translated" "non translatum".
 % Plural (Latin is not in CLDR; as English): one for 1, other otherwise.
 plural-category "la" 1 "one" :- !.
 plural-category "la" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi); to be reviewed by a native speaker
+write-word "la" "applying" "applicando".
+write-word "la" "to" "ad".
+write-word "la" "by-application" "per applicationem".
+write-word "la" "with" "cum".
+write-word "la" "the-element" "elementum".
+write-word "la" "belongs-to" "pertinet ad".

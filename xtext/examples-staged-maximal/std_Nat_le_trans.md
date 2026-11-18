@@ -1,0 +1,186 @@
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
+by: tauto | congruence | lia | firstorder | auto
+---
+
+# Nat.le_trans
+
+Let `n m p : nat`{.var}. We prove `n <= m -> m <= p -> n <= p`{.claim}.
+
+- We have proved `n <= m <-> n < m \/ n = m -> Basics.flip Basics.impl (Basics.impl (n <= m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m <= p -> n <= p))`{.claim}.
+  - Assume `n <= m <-> n < m \/ n = m`{.hyp} (lemma).
+    - The element `Prop -> Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+    - The element `Morphisms.respectful iff (Morphisms.respectful iff iff)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop -> Prop)`{.fact}.
+    - The element `Basics.impl`{.fact} belongs to `Prop -> Prop -> Prop`{.fact}.
+    - By iff_iff_iff_impl_morphism we have `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim}.
+    - The element `Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop -> Prop)`{.fact}.
+    - The element `tt`{.fact} belongs to `Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) (Morphisms.respectful iff (Morphisms.respectful iff iff))`{.fact}.
+    - Applying subrelation_respectful, we have `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+      - The element `Prop`{.fact} belongs to `Type`{.fact}.
+      - The element `Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+      - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+      - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+      - Applying subrelation_refl, we have `RelationClasses.subrelation iff iff`{.claim}.
+        - The element `Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+      - The element `Morphisms.respectful iff iff`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+      - The element `Morphisms.respectful iff (Basics.flip Basics.impl)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+      - Applying subrelation_respectful, we have `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+        - The element `Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - Applying subrelation_refl, we have `RelationClasses.subrelation iff iff`{.claim}.
+          - The element `Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - The element `Basics.flip Basics.impl`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - By iff_flip_impl_subrelation we have `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim}.
+    - The element `n <= m`{.fact} belongs to `Prop`{.fact}.
+    - The element `n < m \/ n = m`{.fact} belongs to `Prop`{.fact}.
+    - By lemma we have `n <= m <-> n < m \/ n = m`{.claim}.
+    - The element `m <= p -> n <= p`{.fact} belongs to `Prop`{.fact}.
+    - The element `m <= p -> n <= p`{.fact} belongs to `Prop`{.fact}.
+    - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy iff (m <= p -> n <= p)`{.claim}, that is `(m <= p -> n <= p) <-> (m <= p -> n <= p)`{.fact}.
+      - The element `Prop`{.fact} belongs to `Type`{.fact}.
+      - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+      - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy iff`{.claim}.
+        - The element `Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - By iff_Reflexive we have `RelationClasses.Reflexive iff`{.claim}.
+      - The element `m <= p -> n <= p`{.fact} belongs to `Prop`{.fact}.
+    - Applying subrelation_proper, we have `Basics.flip Basics.impl (Basics.impl (n <= m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m <= p -> n <= p))`{.claim}.
+- Applying lt_eq_cases to n and m, we have `n <= m <-> n < m \/ n = m`{.claim}.
+- By application, we have `Basics.impl (n < m \/ n = m) (m <= p -> n <= p)`{.claim}.
+  - We have proved `m <= p <-> m < p \/ m = p -> Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p))`{.claim}.
+    - Assume `m <= p <-> m < p \/ m = p`{.hyp} (lemma).
+      - The element `Prop`{.fact} belongs to `Type`{.fact}.
+      - The element `Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+      - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+      - The element `Morphisms.respectful iff (Basics.flip Basics.impl)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+      - The element `Basics.impl`{.fact} belongs to `Prop -> Prop -> Prop`{.fact}.
+      - Applying subrelation_proper, we have `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+        - The element `Prop -> Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `Morphisms.respectful iff (Morphisms.respectful iff iff)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop -> Prop)`{.fact}.
+        - The element `Basics.impl`{.fact} belongs to `Prop -> Prop -> Prop`{.fact}.
+        - By iff_iff_iff_impl_morphism we have `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim}.
+        - The element `Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop -> Prop)`{.fact}.
+        - The element `tt`{.fact} belongs to `Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) (Morphisms.respectful iff (Morphisms.respectful iff iff))`{.fact}.
+        - Applying subrelation_respectful, we have `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+          - The element `Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+          - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+          - Applying subrelation_refl, we have `RelationClasses.subrelation iff iff`{.claim}.
+            - The element `Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+          - The element `Morphisms.respectful iff iff`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+          - The element `Morphisms.respectful iff (Basics.flip Basics.impl)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+          - Applying subrelation_respectful, we have `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+            - The element `Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - Applying subrelation_refl, we have `RelationClasses.subrelation iff iff`{.claim}.
+              - The element `Prop`{.fact} belongs to `Type`{.fact}.
+              - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - The element `Basics.flip Basics.impl`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - By iff_flip_impl_subrelation we have `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim}.
+      - The element `n < m \/ n = m`{.fact} belongs to `Prop`{.fact}.
+      - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy iff (n < m \/ n = m)`{.claim}.
+        - The element `Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy iff`{.claim}.
+          - The element `Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+          - By iff_Reflexive we have `RelationClasses.Reflexive iff`{.claim}.
+        - The element `n < m \/ n = m`{.fact} belongs to `Prop`{.fact}.
+      - The element `m <= p -> n <= p`{.fact} belongs to `Prop`{.fact}.
+      - The element `m < p \/ m = p -> n <= p`{.fact} belongs to `Prop`{.fact}.
+      - Applying iff_iff_iff_impl_morphism, we have `Basics.impl (m <= p) (n <= p) <-> Basics.impl (m < p \/ m = p) (n <= p)`{.claim}, that is `(m <= p -> n <= p) <-> (m < p \/ m = p -> n <= p)`{.fact}.
+        - The element `m <= p`{.fact} belongs to `Prop`{.fact}.
+        - The element `m < p \/ m = p`{.fact} belongs to `Prop`{.fact}.
+        - By lemma we have `m <= p <-> m < p \/ m = p`{.claim}.
+        - The element `n <= p`{.fact} belongs to `Prop`{.fact}.
+        - The element `n <= p`{.fact} belongs to `Prop`{.fact}.
+        - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy iff (n <= p)`{.claim}, that is `n <= p <-> n <= p`{.fact}.
+          - The element `Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+          - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy iff`{.claim}.
+            - The element `Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - By iff_Reflexive we have `RelationClasses.Reflexive iff`{.claim}.
+          - The element `n <= p`{.fact} belongs to `Prop`{.fact}.
+      - Applying Reflexive_partial_app_morphism, we have `Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p))`{.claim}.
+  - Applying lt_eq_cases to m and p, we have `m <= p <-> m < p \/ m = p`{.claim}.
+  - By application, we have `Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p)`{.claim}.
+    - We have proved `n <= p <-> n < p \/ n = p -> Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n < p \/ n = p))`{.claim}.
+      - Assume `n <= p <-> n < p \/ n = p`{.hyp} (lemma).
+        - The element `Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+        - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+        - The element `Morphisms.respectful iff (Basics.flip Basics.impl)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+        - The element `Basics.impl`{.fact} belongs to `Prop -> Prop -> Prop`{.fact}.
+        - Applying subrelation_proper, we have `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) Basics.impl`{.claim}.
+          - The element `Prop -> Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `Morphisms.respectful iff (Morphisms.respectful iff iff)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop -> Prop)`{.fact}.
+          - The element `Basics.impl`{.fact} belongs to `Prop -> Prop -> Prop`{.fact}.
+          - By iff_iff_iff_impl_morphism we have `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim}.
+          - The element `Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop -> Prop)`{.fact}.
+          - The element `tt`{.fact} belongs to `Init.Unconvertible (Relation_Definitions.relation (Prop -> Prop -> Prop)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl))) (Morphisms.respectful iff (Morphisms.respectful iff iff))`{.fact}.
+          - Applying subrelation_respectful, we have `RelationClasses.subrelation (Morphisms.respectful iff (Morphisms.respectful iff iff)) (Morphisms.respectful iff (Morphisms.respectful iff (Basics.flip Basics.impl)))`{.claim}.
+            - The element `Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - Applying subrelation_refl, we have `RelationClasses.subrelation iff iff`{.claim}.
+              - The element `Prop`{.fact} belongs to `Type`{.fact}.
+              - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - The element `Morphisms.respectful iff iff`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+            - The element `Morphisms.respectful iff (Basics.flip Basics.impl)`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+            - Applying subrelation_respectful, we have `RelationClasses.subrelation (Morphisms.respectful iff iff) (Morphisms.respectful iff (Basics.flip Basics.impl))`{.claim}.
+              - The element `Prop`{.fact} belongs to `Type`{.fact}.
+              - The element `Prop`{.fact} belongs to `Type`{.fact}.
+              - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+              - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+              - Applying subrelation_refl, we have `RelationClasses.subrelation iff iff`{.claim}.
+                - The element `Prop`{.fact} belongs to `Type`{.fact}.
+                - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+              - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+              - The element `Basics.flip Basics.impl`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+              - By iff_flip_impl_subrelation we have `RelationClasses.subrelation iff (Basics.flip Basics.impl)`{.claim}.
+        - The element `n < m \/ n = m`{.fact} belongs to `Prop`{.fact}.
+        - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy iff (n < m \/ n = m)`{.claim}.
+          - The element `Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+          - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy iff`{.claim}.
+            - The element `Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - By iff_Reflexive we have `RelationClasses.Reflexive iff`{.claim}.
+          - The element `n < m \/ n = m`{.fact} belongs to `Prop`{.fact}.
+        - The element `m < p \/ m = p -> n <= p`{.fact} belongs to `Prop`{.fact}.
+        - The element `m < p \/ m = p -> n < p \/ n = p`{.fact} belongs to `Prop`{.fact}.
+        - Applying Reflexive_partial_app_morphism, we have `Basics.impl (m < p \/ m = p) (n <= p) <-> Basics.impl (m < p \/ m = p) (n < p \/ n = p)`{.claim}, that is `(m < p \/ m = p -> n <= p) <-> (m < p \/ m = p -> n < p \/ n = p)`{.fact}.
+          - The element `Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `Prop -> Prop`{.fact} belongs to `Type`{.fact}.
+          - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+          - The element `Morphisms.respectful iff iff`{.fact} belongs to `Relation_Definitions.relation (Prop -> Prop)`{.fact}.
+          - The element `Basics.impl`{.fact} belongs to `Prop -> Prop -> Prop`{.fact}.
+          - By iff_iff_iff_impl_morphism we have `Morphisms.Proper (Morphisms.respectful iff (Morphisms.respectful iff iff)) Basics.impl`{.claim}.
+          - The element `m < p \/ m = p`{.fact} belongs to `Prop`{.fact}.
+          - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy iff (m < p \/ m = p)`{.claim}.
+            - The element `Prop`{.fact} belongs to `Type`{.fact}.
+            - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+            - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy iff`{.claim}.
+              - The element `Prop`{.fact} belongs to `Type`{.fact}.
+              - The element `iff`{.fact} belongs to `Relation_Definitions.relation Prop`{.fact}.
+              - By iff_Reflexive we have `RelationClasses.Reflexive iff`{.claim}.
+            - The element `m < p \/ m = p`{.fact} belongs to `Prop`{.fact}.
+          - The element `n <= p`{.fact} belongs to `Prop`{.fact}.
+          - The element `n < p \/ n = p`{.fact} belongs to `Prop`{.fact}.
+          - By lemma we have `n <= p <-> n < p \/ n = p`{.claim}.
+        - Applying Reflexive_partial_app_morphism, we have `Basics.flip Basics.impl (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n <= p)) (Basics.impl (n < m \/ n = m) (m < p \/ m = p -> n < p \/ n = p))`{.claim}.
+    - Applying lt_eq_cases to n and p, we have `n <= p <-> n < p \/ n = p`{.claim}.
+    - We have `n < m \/ n = m -> m < p \/ m = p -> n < p \/ n = p`{.claim} *by lia*.
+- By application, we have `Basics.impl (n <= m) (m <= p -> n <= p)`{.claim}, that is `n <= m -> m <= p -> n <= p`{.fact}.

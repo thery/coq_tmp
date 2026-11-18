@@ -1,7 +1,7 @@
-% Building sentences.  A sentence is a list of parts (kind part, xtext.elpi:
+% Building sentences.  A sentence is a list of parts (kind part, the writer:
 % [wd Use] a word of the language of the text, [tx S] text as it is); this
 % file adds the parts that the writer would otherwise build by hand, and
-% [say]/[say-cap] (xtext.elpi) turn a list of parts into a string.
+% [say]/[say-cap] (the writer) turn a list of parts into a string.
 
 % a formula, from its term, with its role for cyp: `F`{.claim}
 type fml role -> term -> part.

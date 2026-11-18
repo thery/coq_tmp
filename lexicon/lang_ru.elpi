@@ -75,3 +75,10 @@ plural-category "ru" N "one" :- M is N mod 10, H is N mod 100, M = 1, not (H = 1
 plural-category "ru" N "few" :- M is N mod 10, H is N mod 100, M >= 2, M =< 4,
   not (H >= 12, H =< 14), !.
 plural-category "ru" _ "many".
+% the words of the staged writer (xtext/elpi/staged.elpi); to be reviewed by a native speaker
+write-word "ru" "applying" "применяя".
+write-word "ru" "to" "к".
+write-word "ru" "by-application" "применением".
+write-word "ru" "with" "с".
+write-word "ru" "the-element" "элемент".
+write-word "ru" "belongs-to" "принадлежит".

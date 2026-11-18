@@ -16,7 +16,7 @@
 % overrides it).  The forms the thesis does not treat in chapters 2-3
 % (let, match, fix, casts, and the introduction, elimination and
 % rewriting theorems of chapter 6) are written by the direct writer of
-% xtext.elpi; their subproofs come back here.
+% the writer; their subproofs come back here.
 
 % ------------------------------------------------------------------
 % The annotated term
@@ -65,7 +65,7 @@ pred direct-only o:term.
 is-direct-only M :- direct-only K, K == M, !.
 
 % [staged-text M Ctx Path P]: the text P of the proof M (declared in
-% xtext.elpi, which calls it)
+% the writer, which calls it)
 staged-text M Ctx Path P :-
   required-type M Tr,
   annotate M Tr A,
@@ -73,7 +73,7 @@ staged-text M Ctx Path P :-
   contract Strategy A C,
   write C Ctx Path P.
 
-% the type M is used at: the one its parent requires (types.elpi), or else
+% the type M is used at: the one its parent requires (annotation.elpi), or else
 % the one it proves
 pred required-type i:term, o:term.
 required-type M Tr :- required M Tr, !.
@@ -85,7 +85,7 @@ required-type M Tr :- synth M Tr.
 pred annotate i:term, i:term, o:aterm.
 
 % an open goal of a proof in progress, and a subproof closed by a tactic
-% (xtext.elpi), are kept with their text
+% (the writer), are kept with their text
 annotate M _ (adone P) :- open-goal M P, !.
 annotate M _ (adone P) :- not (is-root M), tactic-step M P, !.
 
@@ -121,12 +121,12 @@ pred annotate-argument i:term, i:term, o:aarg.
 annotate-argument M1 T1 (aproof A) :- is-prop T1, !, annotate M1 T1 A.
 annotate-argument M1 T1 (aelem M1 T1).
 
-% the applications that have their own writer in xtext.elpi (rewriting,
+% the applications that have their own writer in the writer (rewriting,
 % elimination and introduction theorems, recursive calls)
-% The statement (top-run in xtext.elpi) stops at the first abstraction
+% The statement (top-run in the writer) stops at the first abstraction
 % whose annotation is double: that abstraction is then a step of the proof,
 % whose conclusion says the conversion (3.4.1).  The same rule as for the
-% one-pass annotation (types.elpi).
+% one-pass annotation (annotation.elpi).
 statement-stops-at Ty N A :- staged-mode, not (abs-single Ty N A).
 
 pred has-own-writer i:term.
@@ -317,7 +317,7 @@ element-line (element _ L) L.
 % series.
 
 % the induction-hypothesis flags of the branch being written (set by the
-% elimination rules of xtext.elpi)
+% elimination rules of the writer)
 pred induction-flags o:list bool.
 induction-flags F :- cur-ih F, !.
 induction-flags [].

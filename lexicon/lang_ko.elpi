@@ -61,3 +61,10 @@ write-word "ko" "not-translated" "번역되지 않음".
 
 % Plural (CLDR): no plural forms, the category is always other.
 plural-category "ko" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi); to be reviewed by a native speaker
+write-word "ko" "applying" "적용하여".
+write-word "ko" "to" "에".
+write-word "ko" "by-application" "적용에 의해".
+write-word "ko" "with" "와 함께".
+write-word "ko" "the-element" "원소".
+write-word "ko" "belongs-to" "에 속한다".

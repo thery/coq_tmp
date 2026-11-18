@@ -1,0 +1,96 @@
+% xtext: Words and sentences in the language of the text (from the lexicon), and
+% the options for measurements.
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+
+% ------------------------------------------------------------------
+% Words.  The writer takes its phrases from the lexicon
+% (../lexicon/lang_*.elpi): [write-role Lang Use Phrase Role], a
+% phrase that gives the role of the formula after it, which is also a
+% phrase of the reading table [phrase], and [write-word Lang Use Words] for the
+% other words.  A sentence is a list of parts: [wd Use], the phrase of a
+% use in the language of the text, and [tx S], text as it is (formulas,
+% names, punctuation).  The language is xtext-lang (Explain.v), or the
+% variable XTEXT_LANG.
+kind part type.
+type wd string -> part.
+type tx string -> part.
+
+pred writer-lang o:string.
+writer-lang L :- getenv "XTEXT_LANG" (some L), not (L = ""), !.
+writer-lang L :- xtext-lang L, !.
+
+pred word i:string, o:string.
+word U S :- writer-lang L, (write-role L U S _ ; write-word L U S), !.
+word U _ :- writer-lang L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
+
+% [say Parts S]: the parts joined by spaces, none before , . : ; ) nor
+% after (, empty parts left out
+pred say i:list part, o:string.
+say Ps0 S :- place Ps0 Ps, std.map Ps part-text Ss0, std.filter Ss0 (x\ not (x = "")) Ss, join-words Ss S.
+
+% [say-cap Parts S]: the same, at the start of a sentence: capitalised when
+% it starts with a phrase (not with a name or a formula, after the
+% placement of the phrases)
+pred say-cap i:list part, o:string.
+say-cap Ps S :- say Ps S0, place Ps [P | _], !,
+  (if (P = wd _) (cap-first S0 S) (S = S0)).
+say-cap _ "".
+
+% A phrase that stands after its formula (lexicon: phrase-after) is put
+% after the parts that follow it, up to the next phrase of a role, the next
+% punctuation mark , . : ; outside parentheses, or the justification:
+% [wd "assume", tx A, tx "(", tx "h", tx ")", wd "and", tx B] becomes, in
+% Korean, A (h) 그리고 B 라고 가정하자 ("and" is not a phrase that gives a
+% role, so the scope goes on after it; it ends at a phrase of a role).
+pred place i:list part, o:list part.
+place [] [].
+place [wd U | Ps] Out :- after-use U, !,
+  scope Ps 0 In Rest, place In In1, place Rest Rest1,
+  std.append In1 [wd U | Rest1] Out.
+place [P | Ps] [P | Qs] :- place Ps Qs.
+
+pred after-use i:string.
+after-use U :- writer-lang L, word U S, phrase-after L S.
+
+% [scope Parts Depth In Rest]: the parts in the scope of an after-phrase
+pred scope i:list part, i:int, o:list part, o:list part.
+scope [] _ [] [].
+scope [P | Ps] 0 [] [P | Ps] :- scope-end P, !.
+scope [tx "(" | Ps] D [tx "(" | In] Rest :- !, D1 is D + 1, scope Ps D1 In Rest.
+scope [tx ")" | Ps] D [tx ")" | In] Rest :- D > 0, !, D1 is D - 1, scope Ps D1 In Rest.
+scope [P | Ps] D [P | In] Rest :- scope Ps D In Rest.
+
+pred scope-end i:part.
+scope-end (wd U) :- writer-lang L, write-role L U _ _.
+scope-end (tx S) :- std.mem! [",", ".", ":", ";"] S.
+scope-end (tx S) :- rex.match "^[*]by " S.
+
+pred part-text i:part, o:string.
+part-text (wd U) S :- word U S.
+part-text (tx S) S.
+
+pred join-words i:list string, o:string.
+join-words [] "".
+join-words [S] S :- !.
+join-words [A, B | L] S :-
+  (if (rex.match "^[,.:;)]" B ; rex.match ".*($" A) (Sp = "") (Sp = " ")),
+  A1 is A ^ Sp ^ B, join-words [A1 | L] S.
+
+% the first letter in capitals, by the capital letters of the vocabularies
+% ([capital Lang Upper Lower], cyp's vocab_*.elpi)
+pred cap-first i:string, o:string.
+cap-first S C :- std.findall (capital _ _ _) Cs,
+  std.exists Cs (c\ sigma U L Re\ c = capital _ U L, Re is "^" ^ L, rex.match Re S,
+    rex.replace Re U S C), !.
+cap-first S S.
+
+% a justification *by J* as a part ("" for none)
+pred by-part i:string, o:part.
+by-part "" (tx "") :- !.
+by-part J (tx S) :- S is "*by " ^ J ^ "*".
+
+% ------------------------------------------------------------------
+% Options, for measurements: XTEXT_OFF is a comma-separated list of the
+% mechanisms to switch off (explicit, args, tactics, thatis).
+pred off i:string.
+off M :- getenv "XTEXT_OFF" (some S), rex.split "," S L, std.mem! L M.

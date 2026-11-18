@@ -61,3 +61,10 @@ write-word "nl" "not-translated" "niet vertaald".
 % Plural (CLDR): one for 1, other otherwise.
 plural-category "nl" 1 "one" :- !.
 plural-category "nl" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi); to be reviewed by a native speaker
+write-word "nl" "applying" "door toepassing van".
+write-word "nl" "to" "op".
+write-word "nl" "by-application" "door toepassing".
+write-word "nl" "with" "met".
+write-word "nl" "the-element" "het element".
+write-word "nl" "belongs-to" "behoort tot".

@@ -86,3 +86,10 @@ capital "fr" "Æ" "æ".
 % for 1 000 000 and its multiples, in "un million de", is left out).
 plural-category "fr" N "one" :- N < 2, !.
 plural-category "fr" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi)
+write-word "fr" "applying" "en appliquant".
+write-word "fr" "to" "à".
+write-word "fr" "by-application" "par application".
+write-word "fr" "with" "avec".
+write-word "fr" "the-element" "l'élément".
+write-word "fr" "belongs-to" "appartient à".

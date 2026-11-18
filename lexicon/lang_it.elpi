@@ -75,3 +75,10 @@ capital "it" "Ù" "ù".
 % the multiples of 1 000 000 is left out).
 plural-category "it" 1 "one" :- !.
 plural-category "it" _ "other".
+% the words of the staged writer (xtext/elpi/staged.elpi)
+write-word "it" "applying" "applicando".
+write-word "it" "to" "a".
+write-word "it" "by-application" "per applicazione".
+write-word "it" "with" "con".
+write-word "it" "the-element" "l'elemento".
+write-word "it" "belongs-to" "appartiene a".

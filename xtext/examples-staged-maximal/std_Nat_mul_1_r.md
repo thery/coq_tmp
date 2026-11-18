@@ -1,0 +1,122 @@
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
+by: tauto | congruence | lia | firstorder | auto
+---
+
+# Nat.mul_1_r
+
+Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
+
+- We have proved `1 = 1 -> Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}.
+  - Assume `1 = 1`{.hyp} (lemma).
+    - The element `nat`{.fact} belongs to `Type`{.fact}.
+    - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+    - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+      - The element `nat`{.fact} belongs to `Type`{.fact}.
+      - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+      - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+    - The element `n * 1`{.fact} belongs to `nat`{.fact}.
+    - The element `n * 1`{.fact} belongs to `nat`{.fact}.
+    - Applying Reflexive_partial_app_morphism, we have `n * 1 = n * 1`{.claim}.
+      - The element `nat`{.fact} belongs to `Type`{.fact}.
+      - The element `nat -> nat`{.fact} belongs to `Type`{.fact}.
+      - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+      - The element `Morphisms.respectful eq eq`{.fact} belongs to `Relation_Definitions.relation (nat -> nat)`{.fact}.
+      - The element `Nat.mul`{.fact} belongs to `nat -> nat -> nat`{.fact}.
+      - By mul_wd we have `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Nat.mul`{.claim}.
+      - The element `n`{.fact} belongs to `nat`{.fact}.
+      - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy eq n`{.claim}.
+        - The element `nat`{.fact} belongs to `Type`{.fact}.
+        - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+        - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
+          - The element `nat`{.fact} belongs to `Type`{.fact}.
+          - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+          - Applying Equivalence_Reflexive, we have `RelationClasses.Reflexive (@eq nat)`{.claim}.
+            - The element `nat`{.fact} belongs to `Type`{.fact}.
+            - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+            - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+        - The element `n`{.fact} belongs to `nat`{.fact}.
+      - The element `1`{.fact} belongs to `nat`{.fact}.
+      - The element `1`{.fact} belongs to `nat`{.fact}.
+      - By lemma we have `1 = 1`{.claim}.
+    - The element `n`{.fact} belongs to `nat`{.fact}.
+    - The element `n`{.fact} belongs to `nat`{.fact}.
+    - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+    - Applying trans_co_eq_inv_impl_morphism, we have `Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}.
+- By one_succ we have `1 = 1`{.claim}.
+- By application, we have `n * 1 = n`{.claim}.
+  - We have proved `n * 1 = n * 0 + n -> Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}.
+    - Assume `n * 1 = n * 0 + n`{.hyp} (lemma).
+      - The element `nat`{.fact} belongs to `Type`{.fact}.
+      - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+      - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+        - The element `nat`{.fact} belongs to `Type`{.fact}.
+        - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+        - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+      - The element `n * 1`{.fact} belongs to `nat`{.fact}.
+      - The element `n * 0 + n`{.fact} belongs to `nat`{.fact}.
+      - By lemma we have `n * 1 = n * 0 + n`{.claim}.
+      - The element `n`{.fact} belongs to `nat`{.fact}.
+      - The element `n`{.fact} belongs to `nat`{.fact}.
+      - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+      - Applying trans_co_eq_inv_impl_morphism, we have `Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}.
+  - Applying mul_succ_r to n and O, we have `n * 1 = n * 0 + n`{.claim}.
+  - By application, we have `n * 0 + n = n`{.claim}.
+    - We have proved `n * 0 = 0 -> Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}.
+      - Assume `n * 0 = 0`{.hyp} (lemma).
+        - The element `nat`{.fact} belongs to `Type`{.fact}.
+        - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+        - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+          - The element `nat`{.fact} belongs to `Type`{.fact}.
+          - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+          - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+        - The element `n * 0 + n`{.fact} belongs to `nat`{.fact}.
+        - The element `0 + n`{.fact} belongs to `nat`{.fact}.
+        - Applying add_wd, we have `n * 0 + n = 0 + n`{.claim}.
+          - The element `n * 0`{.fact} belongs to `nat`{.fact}.
+          - The element `0`{.fact} belongs to `nat`{.fact}.
+          - By lemma we have `n * 0 = 0`{.claim}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+          - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+            - The element `nat`{.fact} belongs to `Type`{.fact}.
+            - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+            - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
+              - The element `nat`{.fact} belongs to `Type`{.fact}.
+              - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+              - Applying Equivalence_Reflexive, we have `RelationClasses.Reflexive (@eq nat)`{.claim}.
+                - The element `nat`{.fact} belongs to `Type`{.fact}.
+                - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+            - The element `n`{.fact} belongs to `nat`{.fact}.
+        - The element `n`{.fact} belongs to `nat`{.fact}.
+        - The element `n`{.fact} belongs to `nat`{.fact}.
+        - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+        - Applying trans_co_eq_inv_impl_morphism, we have `Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}.
+    - Applying mul_0_r to n, we have `n * 0 = 0`{.claim}.
+    - By application, we have `0 + n = n`{.claim}.
+      - We have proved `0 + n = n -> Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}.
+        - Assume `0 + n = n`{.hyp} (lemma).
+          - The element `nat`{.fact} belongs to `Type`{.fact}.
+          - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+          - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+            - The element `nat`{.fact} belongs to `Type`{.fact}.
+            - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+            - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+          - The element `0 + n`{.fact} belongs to `nat`{.fact}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+          - By lemma we have `0 + n = n`{.claim}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+          - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+          - Applying trans_co_eq_inv_impl_morphism, we have `Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}.
+      - Applying add_0_l to n, we have `0 + n = n`{.claim}.
+      - Applying reflexivity, we have `n = n`{.claim}.
+        - The element `nat`{.fact} belongs to `Type`{.fact}.
+        - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+        - Applying Equivalence_Reflexive, we have `RelationClasses.Reflexive (@eq nat)`{.claim}.
+          - The element `nat`{.fact} belongs to `Type`{.fact}.
+          - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+          - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+        - The element `n`{.fact} belongs to `nat`{.fact}.
+- By application, we have `n * 1 = n`{.claim}.

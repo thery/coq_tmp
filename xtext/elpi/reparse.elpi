@@ -1,0 +1,198 @@
+% xtext: Formulas that type-check again: the implicit arguments that must be
+% printed so that a formula, read back, means the same.
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+
+% ------------------------------------------------------------------
+% Formulas that type-check again (Coscoy's thesis 5.4, applied to the
+% printing of formulas).  Rocq's printer leaves out the implicit
+% arguments.  A formula is printed that way only if its skeleton, where
+% these arguments are holes, elaborates back to the same term (up to
+% conversion).  Otherwise the applications whose implicit arguments
+% cannot be inferred are printed in full, @f a1 .. an.  The choice is
+% greedy: in the order of the term, an application keeps its arguments
+% only if dropping them (the ones before being decided, the ones after
+% kept) does not elaborate back.
+
+% the implicit arguments of the head of an application (tt = implicit)
+pred imp-mask i:term, o:list bool.
+imp-mask H M :- gr-of H GR, coq.arguments.implicit GR [Is|_],
+  std.map Is (i\ b\ if (i = explicit) (b = ff) (b = tt)) M, std.mem! M tt.
+
+% [skel D I T J S]: S is T where the applications numbered in D (in the
+% order of the term, from I) have their implicit arguments replaced by
+% holes; J is the next number
+pred skel i:list int, i:int, i:term, o:int, o:term.
+skel D I (app [H|As]) J (app [H|As2]) :- imp-mask H M, !,
+  I1 is I + 1, skel-list D I1 As J As1,
+  (if (std.mem! D I) (holes M As1 As2) (As2 = As1)).
+skel D I (app L) J (app L1) :- !, skel-list D I L J L1.
+skel D I (fun N T F) J (fun N T1 F1) :- !,
+  skel D I T I1 T1, pi x\ skel D I1 (F x) J (F1 x).
+skel D I (prod N T F) J (prod N T1 F1) :- !,
+  skel D I T I1 T1, pi x\ skel D I1 (F x) J (F1 x).
+skel D I (let N T B F) J (let N T1 B1 F1) :- !,
+  skel D I T I1 T1, skel D I1 B I2 B1, pi x\ skel D I2 (F x) J (F1 x).
+skel D I (match T R Bs) J (match T1 R1 Bs1) :- !,
+  skel D I T I1 T1, skel D I1 R I2 R1, skel-list D I2 Bs J Bs1.
+skel _ I X I Y :- copy X Y.
+
+pred skel-list i:list int, i:int, i:list term, o:int, o:list term.
+skel-list _ I [] I [].
+skel-list D I [T|Ts] J [S|Ss] :- skel D I T I1 S, skel-list D I1 Ts J Ss.
+
+pred holes i:list bool, i:list term, o:list term.
+holes [tt|M] [_|As] [_|Hs] :- !, holes M As Hs.
+holes [ff|M] [A|As] [A|Hs] :- !, holes M As Hs.
+holes _ As As.
+
+% the skeleton with the applications D dropped elaborates back to T
+pred elab-back i:list int, i:term.
+elab-back D T :-
+  skel D 0 T _ S,
+  (if (typ T TT, coq.reduction.lazy.whd TT (sort _))
+      (coq.elaborate-ty-skeleton S _ T1 ok)
+      (if (typ T TT1) (coq.elaborate-skeleton S TT1 T1 ok) (coq.elaborate-skeleton S _ T1 ok))),
+  ground_term T1, coq.unify-eq T T1 ok, !.
+
+pred ints i:int, i:int, o:list int.
+ints I N [] :- I >= N, !.
+ints I N [I|L] :- I1 is I + 1, ints I1 N L.
+
+% the applications whose implicit arguments can be left out
+pred droppable i:term, o:list int, o:int.
+droppable T D N :-
+  skel [] 0 T N _, ints 0 N All,
+  (if (N = 0 ; elab-back All T) (D = All)
+      (if (N > 60) (D = []) (greedy T 0 N [] D))).
+
+pred greedy i:term, i:int, i:int, i:list int, o:list int.
+greedy _ I N D D :- I >= N, !.
+greedy T I N D0 D :-
+  (if (elab-back [I|D0] T) (D1 = [I|D0]) (D1 = D0)),
+  I1 is I + 1, greedy T I1 N D1 D.
+
+% [subst-kept K I B T J S]: S is T with the applications numbered in K
+% replaced by their placeholders (pairs number - variable); B is tt
+% under a binder, where a kept application cannot be replaced (fails)
+kind kept type.
+type kp int -> term -> term -> kept.  % number, placeholder, application
+pred subst-kept i:list kept, i:int, i:bool, i:term, o:int, o:term.
+subst-kept K I B (app [H|As]) J R :- imp-mask H _, !,
+  I1 is I + 1, subst-list K I1 B As J As1,
+  (if (kept-ph I K C) (B = ff, R = C) (R = app [H|As1])).
+subst-kept K I B (app L) J (app L1) :- !, subst-list K I B L J L1.
+subst-kept K I _ (fun N T F) J (fun N T1 F1) :- !,
+  subst-kept K I tt T I1 T1, pi x\ subst-kept K I1 tt (F x) J (F1 x).
+subst-kept K I _ (prod N T F) J (prod N T1 F1) :- !,
+  subst-kept K I tt T I1 T1, pi x\ subst-kept K I1 tt (F x) J (F1 x).
+subst-kept K I _ (let N T V F) J (let N T1 V1 F1) :- !,
+  subst-kept K I tt T I1 T1, subst-kept K I1 tt V I2 V1,
+  pi x\ subst-kept K I2 tt (F x) J (F1 x).
+subst-kept K I _ (match T R Bs) J (match T1 R1 Bs1) :- !,
+  subst-kept K I tt T I1 T1, subst-kept K I1 tt R I2 R1, subst-list K I2 tt Bs J Bs1.
+subst-kept _ I _ X I Y :- copy X Y.
+
+pred subst-list i:list kept, i:int, i:bool, i:list term, o:int, o:list term.
+subst-list _ I _ [] I [].
+subst-list K I B [T|Ts] J [S|Ss] :- subst-kept K I B T I1 S, subst-list K I1 B Ts J Ss.
+
+% the applications numbered in Ks, collected
+pred nodes i:int, i:term, o:int, o:list (pair int term).
+nodes I (app [H|As] as T) J [pr I T|L] :- imp-mask H _, !,
+  I1 is I + 1, nodes-list I1 As J L.
+nodes I (app L) J R :- !, nodes-list I L J R.
+% (under a binder, the applications are only counted)
+nodes I T J [] :- skel [] I T J _.
+pred nodes-list i:int, i:list term, o:int, o:list (pair int term).
+nodes-list I [] I [].
+nodes-list I [T|Ts] J L :- nodes I T I1 L1, nodes-list I1 Ts J L2, std.append L1 L2 L.
+
+pred kept-ph i:int, i:list kept, o:term.
+kept-ph I [kp I C _|_] C :- !.
+kept-ph I [_|L] C :- kept-ph I L C.
+pred node-at i:int, i:list (pair int term), o:term.
+node-at I [pr I A|_] A :- !.
+node-at I [_|L] A :- node-at I L A.
+
+% the formula T, printed so that it type-checks again
+
+pred ppf i:term, o:string.
+ppf T S :- off "explicit", !, pp T S.
+ppf T S :- droppable T D N, ints 0 N All,
+  std.filter All (i\ not (std.mem! D i)) Keep,
+  if (Keep = []) (pp T S) (pp-keep T Keep S).
+
+% the kept applications are written @f a1 .. an, through placeholders
+pred pp-keep i:term, i:list int, o:string.
+pp-keep T Keep S :- nodes 0 T _ Ns,
+  std.map Keep (k\ p\ sigma A\ node-at k Ns A, p = pr k A) KA,
+  pp-ph KA [] T S, !.
+pp-keep T _ S :- (@ppall! => pp T S).
+
+pred pp-ph i:list (pair int term), i:list kept, i:term, o:string.
+pp-ph [pr K A|KAs] Acc T S :-
+  Nm is "xtxtph" ^ {std.any->string K} ^ "q",
+  coq.id->name Nm N,
+  pi c\ (decl c N (sort prop)) => pp-ph KAs [kp K c A|Acc] T S.
+pp-ph [] Acc T S :-
+  subst-kept Acc 0 ff T _ T1, pp T1 S0,
+  std.fold Acc S0 (k\ s0\ s1\ sigma K A Nm E\ k = kp K _ A,
+     Nm is "xtxtph" ^ {std.any->string K} ^ "q", explicit-app A E,
+     replace-all Nm E s0 s1) S.
+
+% an application written in full
+pred explicit-app i:term, o:string.
+explicit-app (app [H|As]) S :-
+  pp H SH0, (if (rex.match "^@.*" SH0) (SH = SH0) (SH is "@" ^ SH0)),
+  std.map As (a\ s\ sigma Sa\ ppf a Sa,
+    if (rex.match "^[A-Za-z0-9_.']*$" Sa) (s = Sa) (s is "(" ^ Sa ^ ")")) SAs,
+  std.string.concat " " SAs SA, S is "(" ^ SH ^ " " ^ SA ^ ")".
+
+% replace every occurrence of the word W by E in S (no regexp in E)
+pred replace-all i:string, i:string, i:string, o:string.
+replace-all W E S R :- rex.split W {calc ("<" ^ S ^ ">")} Parts,
+  std.string.concat E Parts R0,
+  L is size R0, L2 is L - 2, R is substring R0 1 L2.
+
+% the type of a term, beta-iota normalised for printing
+pred typ i:term, o:term.
+
+% the type of a term applied to arguments
+pred inst i:term, i:list term, o:term.
+inst Ty [] Ty :- !.
+inst (prod _ _ B) [A|As] R :- !, inst (B A) As R.
+inst Ty As R :- coq.reduction.lazy.whd Ty (prod N D B), !, inst (prod N D B) As R.
+inst Ty _ _ :- coq.error "xtext: not a product" {coq.term->string Ty}.
+
+% The type is computed from the types of the head and of the binders,
+% so that it keeps the binder names of the proof term (coq.typecheck may
+% name them elpi_ctx_entry_N_).
+typ (fun N A F) (prod N A B) :- !, pi x\ decl x N A => typ (F x) (B x).
+typ (let _ T _ (x\ x)) Ty :- !, beta-ty T Ty.
+typ (app [H|Args]) Ty :- !, typ H TH, inst TH Args Ty0, beta-ty Ty0 Ty.
+typ (match S RT _) Ty :- typ S TS, coq.reduction.lazy.whd TS W,
+  (W = app [HI|As] ; (W = HI, As = [])), gr-of HI (indt I), !,
+  coq.env.indt I _ NP _ _ _ _, std.drop NP As Idx, std.append Idx [S] L,
+  coq.mk-app RT L Ty0, beta-ty Ty0 Ty.
+typ X Ty :- name X, decl X _ Ty0, !, beta-ty Ty0 Ty.
+typ X Ty :- name X, def X _ Ty0 _, !, beta-ty Ty0 Ty.
+typ (fix _ _ Ty _) Ty :- !.
+typ T Ty :- coq.typecheck T Ty0 ok, !, beta-ty Ty0 Ty.
+
+pred var-name i:term, o:string.
+var-name X S :- decl X N _, coq.name->id N S0, !,
+  if (S0 = "_") (S = "h") (S = S0).
+var-name X S :- def X N _ _, coq.name->id N S, !.
+
+pred gr-of i:term, o:gref.
+gr-of (global GR) GR.
+gr-of (pglobal GR _) GR.
+
+% the name of a variable or of a global constant
+pred head-name i:term, o:string.
+head-name X S :- name X, !, var-name X S.
+head-name H S :- gr-of H GR, coq.gref->id GR S.
+
+pred is-sym i:term.
+is-sym X :- name X, !.
+is-sym H :- gr-of H _.

@@ -17,11 +17,11 @@ Let `A : Type`{.var}. Let `l m : list A`{.var}. Let `a : A`{.var}. We prove `In 
     - Case 1.2: we prove `In a m -> In a m`{.claim}.
       - Assume `In a m`{.hyp} (H0).
         - By H0 we have `In a m`{.claim}.
-    - We have `In a m`{.claim} in all cases *by eapply (@or_ind (False) (In a m) (In a m)); cbv beta; eauto*.
+    - We have `In a m`{.claim} in all cases.
 - Case 2 (inductive): we prove `forall (a0 : A) (l0 : list A), (In a l0 \/ In a m -> In a (l0 ++ m)) -> In a (a0 :: l0) \/ In a m -> In a ((a0 :: l0) ++ m)`{.claim}.
   - Let `a0 : A`{.var}.
   - Let `l0 : list A`{.var}.
   - Assume by induction hypothesis `In a l0 \/ In a m -> In a (l0 ++ m)`{.hyp} (IHl).
     - We have `(a0 = a \/ In a l0) \/ In a m -> a0 = a \/ In a (l0 ++ m)`{.claim} *by tauto*.
-- These cases being exhaustive, we deduce `forall l0 : list A, In a l0 \/ In a m -> In a (l0 ++ m)`{.claim} *by eapply (@list_ind (A) (fun l0 : list A => In a l0 \/ In a m -> In a (l0 ++ m))); cbv beta; eauto*.
+- These cases being exhaustive, we deduce `forall l0 : list A, In a l0 \/ In a m -> In a (l0 ++ m)`{.claim} *by Corelib.Init.Datatypes.list_ind*.
 - In particular `In a l \/ In a m -> In a (l ++ m)`{.claim}.
