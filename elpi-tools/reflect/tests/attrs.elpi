@@ -1,0 +1,18 @@
+% Rule attributes: the order of the reflected rules must be the one Elpi uses.
+pred p o:int.
+:name "one"
+p 1.
+:name "two"
+p 2.
+:name "three"
+p 3.
+:if "DEBUG"
+p 99.
+:replace "one"
+p 10.
+:remove "two"
+p 0.
+:before "three"
+p 11.
+:after "three"
+p 12.

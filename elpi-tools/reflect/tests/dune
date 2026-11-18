@@ -12,3 +12,15 @@
 (rule (copy ../reflect.elpi reflect.elpi))
 
 (rule (alias runtest) (action (diff query.expected query.out)))
+
+; The order of the rules (:before, :after, :replace, :remove, :if) is the
+; one Elpi uses, with and without -D DEBUG.
+(rule
+ (with-stdout-to attrs.reflect.elpi
+  (run %{exe:../bin/elpi_reflect_main.exe} -D DEBUG %{dep:attrs.elpi})))
+
+(rule
+ (deps reflect.elpi attrs.elpi attrs.reflect.elpi)
+ (action (with-stdout-to attrs.out (run elpi -I . -D DEBUG -test %{dep:attrs-query.elpi}))))
+
+(rule (alias runtest) (action (diff attrs.expected attrs.out)))

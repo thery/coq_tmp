@@ -1,0 +1,9 @@
+% The rules of p in the order of the facts, and in the order Elpi tries them.
+accumulate reflect, attrs, attrs.reflect.
+
+main :-
+  std.findall (reflect.clause p I_ L_ A_ H_ B_) Facts,
+  std.map Facts (f\ h\ sigma H\ f = reflect.clause _ _ _ _ H _, h = H) Heads,
+  print "reflected:" Heads,
+  std.findall (p X_) Solutions,
+  print "elpi:     " Solutions.
