@@ -9,8 +9,10 @@ papers (in development):
 - [cyp/](cyp/README.md): **coloured proofs**.  A proof written in Markdown,
   formulas in backticks, is checked step by step with Rocq and written back
   with ✅ / ❌ on each step; Elpi rules choose how each step is proved.
-  First real use: Lemma 1 of the CORE-MATH exp paper
-  ([cyp/exp/lemma1.md](cyp/exp/lemma1.md)).  After *Colouring proofs: a
+  The checker is written in Rocq-Elpi (opam switch `elpi4`), the text may
+  be in English, French or Italian.  Use: four lemmas of the CORE-MATH exp
+  paper, Lemmas 1, 2, 3 and the range reduction
+  ([cyp/exp/](cyp/exp/README.md)).  After *Colouring proofs: a
   lightweight approach to adding formal structure to proofs* (UITP).
 - [xtext/](xtext/README.md): **text from proofs**.  A Rocq-Elpi command,
   `Explain foo.`, that writes the proof term of `foo` as a coarse but

@@ -1,12 +1,41 @@
-# Cyp Lemma: a cyp proof as a Rocq command (prototype)
+# cyp inside Rocq: Cyp File and Cyp Lemma
 
-A proof written as text, checked step by step, entirely inside Rocq: the
-statement is an ordinary lemma statement, the body a list of steps mixing
-words (strings) and formulas (Rocq terms, parsed by Rocq).
+The library [Cyp.v](Cyp.v) (Rocq-Elpi, opam switch `elpi4`) is cyp
+itself: what a proof means, how its steps are checked, and how the
+Markdown is read and written back.  It gives two commands.
+
+Build: `rocq c -Q . CypV Cyp.v`.
+
+## Cyp File: a proof in Markdown
+
+```coq
+From Stdlib Require Import ZArith Lia.
+From CypV Require Import Cyp.
+Open Scope Z_scope.
+Elpi CypFile "square_pos.md".
+```
+
+reads the proof, parses each formula between backticks in the context of
+its step (`coq.parse.argument`, in the scope of the header's `scope:`),
+checks every step, writes `square_pos.checked.md` and `square_pos.cyp.json`
+next to it, and defines the lemma when every step is proved.  The program
+`cyp` ([../bin/cyp.ml](../bin/cyp.ml)) writes this small file from the
+proof's header (its `require:`, `rules:` and `flags:`) and runs it; the
+Markdown format is described in [../README.md](../README.md).
+
+Tests here: [since_demo.md](since_demo.md) (a claim used by the next claim
+of the same step), [scope_demo.md](scope_demo.md) (nested local scopes),
+[square_pos_fr.md](square_pos_fr.md) and [square_pos_it.md](square_pos_it.md)
+(French and Italian).
+
+## Cyp Lemma: the same proof as a Rocq command
+
+The statement is an ordinary lemma statement, the body a list of steps
+mixing words (strings) and formulas (Rocq terms, parsed by Rocq):
 
 ```coq
 From Stdlib Require Import ZArith Lia PrimString List.
-Require Import Cyp.
+From CypV Require Import Cyp.
 Import ListNotations.
 Open Scope Z_scope.
 Open Scope pstring_scope.
@@ -17,69 +46,34 @@ Cyp Lemma square_pos (a b : Z) (H : 0 < a < b) : a * a < b * b :=
     "From" (0 < a < b) "we have" (0 < b + a) "and" (0 < b - a) ].
 ```
 
-prints
+prints one ✅ or ❌ per step and defines `square_pos` when every step is
+proved ([square_pos.v](square_pos.v)); a word `"by X"` in a step is its
+justification ([named_v.v](named_v.v)).  If a step is not proved, the
+command fails, says which, and defines nothing ([wrong.v](wrong.v)).
+[lemma1.v](lemma1.v) is Lemma 1 of the exp paper written this way, with
+the same rules as [../exp/lemma1.md](../exp/lemma1.md).
 
-```
-cyp: square_pos
-  ✅ It is equivalent to prove `0 < b * b - a * a`
-  ✅ That can also be written as `0 < (b + a) * (b - a)`
-  ✅ From `0 < a < b` we have `0 < b + a` and `0 < b - a`
-  ✅ the statement follows
-cyp: square_pos proved
-```
+## How it works
 
-and defines `square_pos` as a theorem (`Print Assumptions`: closed under
-the global context).  If a step is not proved, the command fails, says
-which steps, and defines nothing ([wrong.v](wrong.v)).
+The Elpi files of [elpi/](elpi):
 
-How it works ([Cyp.v](Cyp.v), Rocq-Elpi): the command receives the body
-unchecked (raw arguments) with the lemma's variables bound.  The words
-before a formula give its role, as in the Markdown cyp; a formula that is
-not a proposition is a mention.  Each step is proved when it is read, in
-its own context (the lemma's variables and hypotheses and the claims of the
-steps before it), by the rules of the database `cyp.db` (`justify`
-clauses, as in the Markdown cyp) or by the default tactics; its proof term
-goes into the proof of the lemma: a forward step is `let c : C := P in ...`,
-a backward step a proof of `C -> Goal` applied to the proof of `C`.
+- `text.elpi`: words, formulas, tags `{.role}`, names `(h)`, the
+  justification `*by X*`, and the role of a formula from the last phrase
+  before it;
+- `vocab_en.elpi`, `vocab_fr.elpi`, `vocab_it.elpi`: the phrases of each
+  language and the role they give;
+- `check.elpi`: closing a goal by the step's justification, the rules of
+  the database `cyp.db`, or the default tactics;
+- `proof.elpi`: the proof of a statement from its steps; a forward claim is
+  `let c : C := P in ...`, a backward step a proof of `C -> Goal` applied
+  to a proof of `C`, a local scope a proof of its claims generalised over
+  its variables and hypotheses;
+- `markdown.elpi`: reading the Markdown, writing the checked Markdown and
+  the JSON for the editor.
 
-Build: `rocq c -R . CypV Cyp.v`, then the examples.
+The default tactics (`lia`, `lra`, ...) are called through a table of Ltac
+definitions in [Cyp.v](Cyp.v): Rocq-Elpi cannot yet run a tactic given by
+its name or its code as a string.
 
-## Cyp File: the Markdown proof itself, read inside Rocq
-
-```coq
-From Stdlib Require Import ZArith Lia.
-Require Import CypFile.
-Open Scope Z_scope.
-Elpi CypFile "sq.md".
-```
-
-reads [sq.md](sq.md), a cyp proof in Markdown, parses each formula between
-backticks in the context of its step (`coq.parse.argument`, the scope of
-the header's `scope:` field), checks the steps as above and defines
-`square_pos_md` as a theorem.  The Markdown stays the only source.
-
-[CypFile.v](CypFile.v) needs `coq.parse.argument`, which is in coq-elpi's
-pull request LPCIC/coq-elpi#1133 (Elpi 4.0): it is built in the opam
-switch `elpi4` (Rocq 9.3, Elpi 4.0.0, rocq-elpi pinned to the branch
-coq-parse-argument); the rest of this directory builds in either switch.
-
-Not yet: nested steps and local scopes, the header's `by:` and `rules:`,
-French and Italian words, and writing the checked Markdown back.
-
-### Lemma 1 of the exp paper, from its Markdown
-
-[lemma1_md.v](lemma1_md.v) runs `Cyp File` on [../exp/lemma1.md](../exp/lemma1.md)
-itself: every step is proved, `lemma1` is defined, and `Print Assumptions`
-lists only Rocq's standard axioms (classical logic, functional
-extensionality, classical reals) and the axioms of primitive integers and
-floats (33 s).  In the switch `elpi4`, with libm's model (Common, Rnd,
-Algorithm, Branch1, accpath/Pow2Table/Data) built in a separate copy of
-its sources, so that the .vo files of the repository (built with the
-switch `native`) are not overwritten:
-
-    rocq c -Q <copy>/exp Exp Branch1.v ...         (in the copy, in order)
-    (cd ../exp && rocq c -Q <copy>/exp Exp -Q . CypExp float_lemmas.v)
-    rocq c -Q . CypV Cyp.v && rocq c -Q . CypV CypFile.v
-    rocq c -Q <copy>/exp Exp -Q ../exp CypExp -Q . CypV lemma1_md.v
-
-Role tags `{.fact}` and `{.claim}` after a formula are understood.
+The proof term is built by cyp and type-checked by Rocq before the lemma is
+defined: `Print Assumptions` shows only the axioms of the libraries used.

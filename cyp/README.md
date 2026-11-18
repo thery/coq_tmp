@@ -1,17 +1,26 @@
 # cyp: coloured proofs
 
-A proof is written in Markdown, as on paper.  `cyp` turns each step into a
+A proof is written in Markdown, as on paper.  cyp turns each step into a
 Rocq goal, tries to prove it, and writes the proof back in Markdown, with
 ✅ in front of each proved step and ❌ in front of the others; under a ❌, a
-folded block gives the goal and Rocq's message.
+folded block gives the goal and Rocq's message.  When every step is
+proved, the lemma is defined in Rocq.
+
+cyp is written in Rocq-Elpi ([vernac/](vernac/README.md)): the command
+`Elpi CypFile "proof.md".` reads the Markdown, checks it and writes the
+result.  The program `cyp` ([bin/cyp.ml](bin/cyp.ml)) is only a driver:
+it writes the small Rocq file that loads the proof's libraries and rules
+and runs this command.
+
+It needs the opam switch `elpi4` (Rocq 9.1.1, Elpi 4.0.0, rocq-elpi with
+`coq.parse.argument`, coq-elpi pull request #1133):
 
 ```sh
 dune build
-dune exec cyp -- examples/square_pos.md   # writes square_pos.cyp.v and square_pos.checked.md
+(cd vernac && rocq c -Q . CypV Cyp.v)                     # the cyp library
+export CYP_LIB=$PWD/vernac
+dune exec cyp -- examples/square_pos.md   # writes square_pos.checked.md and square_pos.cyp.json
 ```
-
-`rocq c` must be in `PATH` (or set `CYP_ROCQ`), with the libraries the
-proof needs.
 
 ## The format
 
@@ -36,9 +45,11 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   justification; `rules`, files of rules (below), separated by spaces,
   copied in order after the preamble; `flags`, options given to
   `rocq c` (e.g. `-Q dir Name`; the directories of `-Q`, `-R`, `-I` and
-  the rule files are relative to the directory of the proof); `lang`, the language of the text, `en`
-  (default), `fr` or `it`, which gives the role words below; `timeout`, the seconds
-  allowed per step (10).
+  the rule files are relative to the directory of the proof, and
+  `${NAME}` is the environment variable NAME, so that a proof does not
+  name the directories of one machine); `lang`, the language of the text,
+  `en` (default), `fr` or `it`, which gives the role words below.  There
+  is no time limit per step.
 - **A proposition** starts with `# name`.  Its statement is the text that
   follows, up to the first list item.
 - **Formulas** are written between backticks, in Rocq syntax.  The word
@@ -64,7 +75,9 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
     `{.fact}`).  The tag is the attribute syntax of Pandoc; it does not
     appear in the output.
 - **A step** is a list item.  Its claims are proved from the hypotheses
-  and the claims of the steps before it.  A step that says *suffices*,
+  and the claims of the steps before it, and each claim also from the
+  claims before it in the same step (*we have `0 < b` and hence
+  `0 < b + b`*).  A step that says *suffices*,
   *enough*, *equivalent to prove* or *written as* goes backwards: its
   claim replaces the goal, and the step checks that the new goal implies
   the old one.  It is the last phrase before the claim that counts: in
@@ -75,9 +88,11 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   name (see `named` below) if there are any, and only them; else the lemma
   X, applied, its premises closed by the rules or the default tactics;
   else the tactic X (an Ltac name, or `lia`, `lra`, `nia`, `nra`, `ring`,
-  `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`).  When X
-  is code (`interval with (i_prec 100)`), it is a tactic.  A step with no
-  `*by*` is closed by all the rules, then the tactics of `by`.
+  `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`).  X
+  cannot be tactic code (`interval with (i_prec 100)`): Rocq-Elpi cannot
+  yet turn a string into a tactic; name an Ltac definition instead.  A
+  step with no `*by*` is closed by all the rules, then the tactics of
+  `by`.
 - **A local definition**: *Let `u := e`* introduces `u`, equal to `e`, for
   the steps that follow (a `let` in their goals).
 - **A local scope**: a step that only introduces variables or hypotheses
@@ -101,7 +116,7 @@ header (`rules: float.elpi my_proof.elpi`), not in cyp.
 The proved facts the rules use are ordinary Rocq lemmas, in a library the
 proof loads in its `require:` field.  The rules themselves are Elpi
 clauses, in files `.elpi`, added to the database `cyp.db` (defined in
-[rules/cyp_rules.v](rules/cyp_rules.v)):
+[vernac/Cyp.v](vernac/Cyp.v)):
 
 ```elpi
 % the product of nonnegative reals is monotone
@@ -125,12 +140,14 @@ justify {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat }}).
   and Rocq checks that this reason, and no other, closes the step
   ([examples/named_demo.md](examples/named_demo.md)).
 
-On a step with no `*by ...*`, the rules are tried in order, then the
-default tactics.  Conjunctions and disjunctions are split by cyp itself.
-A rule file may also be a `.v` file of Rocq text, copied into the proof
-as it is.  Rule files are copied, never loaded with `Load`: a lemma
-proved by `interval` in a loaded file keeps its numerical check as an
-assumption (`Print Assumptions` lists it as an axiom).
+A rule is an Elpi clause, so it may have a body, for example to fire only
+when another rule applies.  On a step with no `*by ...*`, the rules are
+tried in order, then the default tactics.  Conjunctions and disjunctions
+are split by cyp itself.  A rule file may also be a `.v` file of Rocq
+text, copied into the proof as it is.  The lemmas of a field go in a
+compiled library, never in a file loaded with `Load`: a lemma proved by
+`interval` in a loaded file keeps its numerical check as an assumption
+(`Print Assumptions` lists it as an axiom).
 
 Example: [examples/rules_demo.md](examples/rules_demo.md) with
 [examples/rules_demo.elpi](examples/rules_demo.elpi) proves its three
@@ -139,11 +156,6 @@ A larger example: [exp/](exp/README.md), proofs of lemmas of the CORE-MATH
 exp paper with a library of float lemmas (`exp/float_lemmas.v`) and
 shared rules (`exp/float.elpi`).
 
-**The cache.**  cyp keeps, next to the proof, a file `*.cyp-cache` of the
-steps it proved; a step whose preamble, goal and tactic have not changed
-since is not checked again.  While a proof is being written, only the
-changed steps and those not yet proved are run.
-
 ## The editor
 
 [vscode/](vscode) is a VS Code extension (plain JavaScript, nothing to
@@ -151,7 +163,8 @@ build): on saving a proof it runs `cyp --json`, colours each formula by
 its role, marks each step with a green ✓ or a red ✗, and shows the goal and
 Rocq's message of a failing step on hover.  Install it by linking the
 directory into `~/.vscode/extensions/`; set `cyp.command` to the command
-that runs cyp.
+that runs cyp (for instance `opam exec --switch=elpi4 -- env
+CYP_LIB=/path/to/cyp/vernac cyp`).
 
 ## Departures from the 2006 paper
 
@@ -167,4 +180,7 @@ changes the rest where there is an obvious improvement:
 - the justification of a step is chosen by Elpi rules from the shape of
   its goal, written per field in a rule file;
 - under a failing step, its goal and Rocq's message, in the Markdown
-  output and in the editor.
+  output and in the editor;
+- the text may be in English, French or Italian;
+- the whole checker runs inside Rocq (Rocq-Elpi), and the same proof can
+  also be written as a Rocq command, `Cyp Lemma` ([vernac/](vernac/README.md)).
