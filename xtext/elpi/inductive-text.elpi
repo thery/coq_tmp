@@ -136,7 +136,7 @@ close-by _ _ (tx "").
 % that calls the recursive function is an inductive case
 
 tr-match M S Bs Path P :-
-  typ S TS, coq.reduction.lazy.whd TS TSw,
+  typ S TS, whnf TS TSw,
   (TSw = app [HI|_] ; TSw = HI), gr-of HI (indt I), !,
   typ M Tau, ind-name I C,
   std.findall (rec-var _) RVs,

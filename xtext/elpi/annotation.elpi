@@ -57,8 +57,7 @@ double-annotation-mode :- annotation "double".
 % reductions that bring a type to a product, if it has one.  Rocq's
 % lazy head reduction does this (it also does iota and zeta, which the
 % calculus of constructions of the thesis does not have).
-pred whnf i:term, o:term.
-whnf T W :- coq.reduction.lazy.whd T W.
+pred whnf i:term, o:term.  % (printing.elpi)
 
 % Fig. 3.4, the synthesis of types: xtext's typ follows its rules (Var
 % and Const: the declared type; Abs: the product of the binder over the

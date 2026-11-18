@@ -18,9 +18,9 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `rev (rev l) = l`{.claim}
           - By definition of eq (eq_refl), we have `a :: l0 = a :: l0`{.claim} *by Corelib.Init.Logic.eq_refl*.
           - By IHl we have `rev (rev l0) = l0`{.claim}.
         - By application, we have `rev (rev l0 ++ a :: nil) = a :: rev (rev l0)`{.claim}.
-          - By application, we have `forall elpi_ctx_entry_5_ : A, rev (rev l0 ++ elpi_ctx_entry_5_ :: nil) = elpi_ctx_entry_5_ :: rev (rev l0)`{.claim}.
-            - By application, we have `forall (elpi_ctx_entry_5_ : list A) (elpi_ctx_entry_6_ : A), rev (elpi_ctx_entry_5_ ++ elpi_ctx_entry_6_ :: nil) = elpi_ctx_entry_6_ :: rev elpi_ctx_entry_5_`{.claim}.
-              - By rev_unit we have `forall (elpi_ctx_entry_5_ : Type) (elpi_ctx_entry_6_ : list elpi_ctx_entry_5_) (elpi_ctx_entry_7_ : elpi_ctx_entry_5_), rev (elpi_ctx_entry_6_ ++ elpi_ctx_entry_7_ :: nil) = elpi_ctx_entry_7_ :: rev elpi_ctx_entry_6_`{.claim}.
+          - By application, we have `forall a0 : A, rev (rev l0 ++ a0 :: nil) = a0 :: rev (rev l0)`{.claim}.
+            - By application, we have `forall (l1 : list A) (a0 : A), rev (l1 ++ a0 :: nil) = a0 :: rev l1`{.claim}.
+              - By rev_unit we have `forall (A0 : Type) (l1 : list A0) (a0 : A0), rev (l1 ++ a0 :: nil) = a0 :: rev l1`{.claim}.
               - The element `A`{.fact} belongs to `Type`{.fact}.
             - The element `rev l0`{.fact} belongs to `list A`{.fact}.
           - The element `a`{.fact} belongs to `A`{.fact}.

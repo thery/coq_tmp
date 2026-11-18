@@ -12,7 +12,7 @@ pred top-run i:list binder, i:term, i:term, o:string, o:list line.
 top-run Acc (fun N A F) Ty Stmt L :- not (statement-stops-at Ty N A), !,
   binder-kind A K, binder-name N N1 Id,
   ppf A FA,
-  (if (Ty = prod _ _ B) true (coq.reduction.lazy.whd Ty (prod _ _ B) ; B = (_\ Ty))),
+  (if (Ty = prod _ _ B) true (whnf Ty (prod _ _ B) ; B = (_\ Ty))),
   pi x\ (decl x N1 A, ctx-name Id) => top-run [b K Id FA|Acc] (F x) (B x) Stmt L.
 top-run Acc Body Ty0 Stmt L :-
   std.rev Acc Bs, beta-ty Ty0 Ty, fm Ty FT,
@@ -58,7 +58,7 @@ that-is _ _ P P.
 
 domains _ [] [] :- !.
 domains (prod _ D B) [A|As] [D1|Ds] :- !, beta-ty D D1, domains (B A) As Ds.
-domains Ty As Ds :- coq.reduction.lazy.whd Ty (prod N D B), !, domains (prod N D B) As Ds.
+domains Ty As Ds :- whnf Ty (prod N D B), !, domains (prod N D B) As Ds.
 domains _ As Ds :- std.map As (_\ d\ true) Ds.
 
 % subproofs as dashed lines, each with its expected type

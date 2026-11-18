@@ -26,7 +26,7 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, leng
               - The element `length (l0 ++ l')`{.fact} belongs to `nat`{.fact}.
             - The element `length l0 + length l'`{.fact} belongs to `nat`{.fact}.
           - By application, we have `length (l0 ++ l') = length l0 + length l'`{.claim}.
-            - By IHl we have `forall elpi_ctx_entry_6_ : list A, length (l0 ++ elpi_ctx_entry_6_) = length l0 + length elpi_ctx_entry_6_`{.claim}.
+            - By IHl we have `forall l'0 : list A, length (l0 ++ l'0) = length l0 + length l'0`{.claim}.
             - The element `l'`{.fact} belongs to `list A`{.fact}.
           - By application, we have `S (length (l0 ++ l')) = S (length l0 + length l')`{.claim}.
 - These cases being exhaustive, we deduce `forall l0 l' : list A, length (l0 ++ l') = length l0 + length l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.

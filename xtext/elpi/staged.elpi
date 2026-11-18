@@ -101,7 +101,8 @@ annotate M Tr (aid M (two Tc Tr)) :-
 %        the constrained type is Πx:T0.T1, the body is required to be T1
 annotate (fun N T0 F) Tr (alam N T0 ff Body (two (prod N T0 T1) Tr)) :-
   whnf Tr (prod _ _ T1), !,
-  pi x\ decl x N T0 => annotate (F x) (T1 x) (Body x).
+  coq.name->id N Id,
+  pi x\ (decl x N T0, ctx-name Id) => annotate (F x) (T1 x) (Body x).
 
 % (App1), (App2): the function M0 is required to be its type in weak head
 % normal form, Πx:T1.T2; the constrained type is T2{x/M1}.  The argument

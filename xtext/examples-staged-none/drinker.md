@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 Let `A : Set`{.var}. Let `P : A -> Prop`{.var}. Let `y : A`{.var}. We prove `exists x : A, P x -> forall z : A, P z`{.claim}.
 
 - By application, we have `(forall z : A, P z) \/ ~ (forall z : A, P z)`{.claim} (o).
-  - By classic we have `forall elpi_ctx_entry_3_ : Prop, elpi_ctx_entry_3_ \/ ~ elpi_ctx_entry_3_`{.claim}.
+  - By classic we have `forall P0 : Prop, P0 \/ ~ P0`{.claim}.
   - The element `forall z : A, P z`{.fact} belongs to `Prop`{.fact}.
 - We prove `exists x : A, P x -> forall z : A, P z`{.fact} by case analysis on `(forall z : A, P z) \/ ~ (forall z : A, P z)`{.fact} (o) (or, match):
 - Case 1: we prove `(forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
@@ -21,8 +21,8 @@ Let `A : Set`{.var}. Let `P : A -> Prop`{.var}. Let `y : A`{.var}. We prove `exi
   - Assume `~ (forall z : A, P z)`{.hyp} (H).
     - By application, we have `exists n : A, ~ P n`{.claim} (e).
       - By application, we have `~ (forall n : A, P n) -> exists n : A, ~ P n`{.claim}.
-        - By application, we have `forall elpi_ctx_entry_5_ : A -> Prop, ~ (forall n : A, elpi_ctx_entry_5_ n) -> exists n : A, ~ elpi_ctx_entry_5_ n`{.claim}.
-          - By not_all_ex_not we have `forall (U : Type) (elpi_ctx_entry_6_ : U -> Prop), ~ (forall n : U, elpi_ctx_entry_6_ n) -> exists n : U, ~ elpi_ctx_entry_6_ n`{.claim}.
+        - By application, we have `forall P0 : A -> Prop, ~ (forall n : A, P0 n) -> exists n : A, ~ P0 n`{.claim}.
+          - By not_all_ex_not we have `forall (U : Type) (P0 : U -> Prop), ~ (forall n : U, P0 n) -> exists n : U, ~ P0 n`{.claim}.
           - The element `A`{.fact} belongs to `Type`{.fact}.
         - The element `P`{.fact} belongs to `A -> Prop`{.fact}.
       - By H we have `~ (forall n : A, P n)`{.claim}.

@@ -27,7 +27,7 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ nil = l`{.claim}.
                     - By application, we have `forall z : list A, a :: l0 ++ nil = a :: l0 ++ nil -> a :: l0 ++ nil = z -> a :: l0 ++ nil = z`{.claim}.
                       - By application, we have `forall y z : list A, a :: l0 ++ nil = y -> y = z -> a :: l0 ++ nil = z`{.claim}.
                         - By application, we have `forall x y z : list A, x = y -> y = z -> x = z`{.claim}.
-                          - By eq_trans we have `forall (elpi_ctx_entry_10_ : Type) (x y z : elpi_ctx_entry_10_), x = y -> y = z -> x = z`{.claim}.
+                          - By eq_trans we have `forall (A0 : Type) (x y z : A0), x = y -> y = z -> x = z`{.claim}.
                           - The element `list A`{.fact} belongs to `Type`{.fact}.
                         - The element `a :: l0 ++ nil`{.fact} belongs to `list A`{.fact}.
                       - The element `a :: l0 ++ nil`{.fact} belongs to `list A`{.fact}.
@@ -38,7 +38,7 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ nil = l`{.claim}.
                         - By application, we have `forall x y : list A -> list A, x = y -> x (l0 ++ nil) = y (l0 ++ nil)`{.claim}.
                           - By application, we have `forall (f : (list A -> list A) -> list A) (x y : list A -> list A), x = y -> f x = f y`{.claim}.
                             - By application, we have `forall (B : Type) (f : (list A -> list A) -> B) (x y : list A -> list A), x = y -> f x = f y`{.claim}.
-                              - By f_equal we have `forall (elpi_ctx_entry_10_ B : Type) (f : elpi_ctx_entry_10_ -> B) (x y : elpi_ctx_entry_10_), x = y -> f x = f y`{.claim}.
+                              - By f_equal we have `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim}.
                               - The element `list A -> list A`{.fact} belongs to `Type`{.fact}.
                             - The element `list A`{.fact} belongs to `Type`{.fact}.
                           - The element `fun f : list A -> list A => f (l0 ++ nil)`{.fact} belongs to `(list A -> list A) -> list A`{.fact}.
@@ -51,7 +51,7 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ nil = l`{.claim}.
                       - By application, we have `forall x y : list A, x = y -> a :: x = a :: y`{.claim}.
                         - By application, we have `forall (f : list A -> list A) (x y : list A), x = y -> f x = f y`{.claim}.
                           - By application, we have `forall (B : Type) (f : list A -> B) (x y : list A), x = y -> f x = f y`{.claim}.
-                            - By f_equal we have `forall (elpi_ctx_entry_10_ B : Type) (f : elpi_ctx_entry_10_ -> B) (x y : elpi_ctx_entry_10_), x = y -> f x = f y`{.claim}.
+                            - By f_equal we have `forall (A0 B : Type) (f : A0 -> B) (x y : A0), x = y -> f x = f y`{.claim}.
                             - The element `list A`{.fact} belongs to `Type`{.fact}.
                           - The element `list A`{.fact} belongs to `Type`{.fact}.
                         - The element `cons a`{.fact} belongs to `list A -> list A`{.fact}.

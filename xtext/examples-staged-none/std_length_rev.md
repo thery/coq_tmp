@@ -25,8 +25,8 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `length (rev l) = length 
           - By IHl we have `length (rev l0) = length l0`{.claim}.
         - By application, we have `length (rev l0 ++ a :: nil) = length (rev l0) + length (a :: nil)`{.claim}.
           - By application, we have `forall l' : list A, length (rev l0 ++ l') = length (rev l0) + length l'`{.claim}.
-            - By application, we have `forall elpi_ctx_entry_5_ l' : list A, length (elpi_ctx_entry_5_ ++ l') = length elpi_ctx_entry_5_ + length l'`{.claim}.
-              - By length_app we have `forall (elpi_ctx_entry_5_ : Type) (elpi_ctx_entry_6_ l' : list elpi_ctx_entry_5_), length (elpi_ctx_entry_6_ ++ l') = length elpi_ctx_entry_6_ + length l'`{.claim}.
+            - By application, we have `forall l1 l' : list A, length (l1 ++ l') = length l1 + length l'`{.claim}.
+              - By length_app we have `forall (A0 : Type) (l1 l' : list A0), length (l1 ++ l') = length l1 + length l'`{.claim}.
               - The element `A`{.fact} belongs to `Type`{.fact}.
             - The element `rev l0`{.fact} belongs to `list A`{.fact}.
           - The element `a :: nil`{.fact} belongs to `list A`{.fact}.

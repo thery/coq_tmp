@@ -19,10 +19,10 @@ We prove `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + le
             - Let `l : list A`{.var}.
               - By application, we have `length (l ++ l2) = length l + length l2 -> S (length (l ++ l2)) = S (length l + length l2)`{.claim}.
                 - By application, we have `forall y : nat, length (l ++ l2) = y -> S (length (l ++ l2)) = S y`{.claim}.
-                  - By application, we have `forall elpi_ctx_entry_6_ y : nat, elpi_ctx_entry_6_ = y -> S elpi_ctx_entry_6_ = S y`{.claim}.
-                    - By application, we have `forall (f : nat -> nat) (elpi_ctx_entry_7_ y : nat), elpi_ctx_entry_7_ = y -> f elpi_ctx_entry_7_ = f y`{.claim}.
-                      - By application, we have `forall (B : Type) (f : nat -> B) (elpi_ctx_entry_8_ y : nat), elpi_ctx_entry_8_ = y -> f elpi_ctx_entry_8_ = f y`{.claim}.
-                        - By f_equal we have `forall (elpi_ctx_entry_6_ B : Type) (f : elpi_ctx_entry_6_ -> B) (elpi_ctx_entry_9_ y : elpi_ctx_entry_6_), elpi_ctx_entry_9_ = y -> f elpi_ctx_entry_9_ = f y`{.claim}.
+                  - By application, we have `forall x0 y : nat, x0 = y -> S x0 = S y`{.claim}.
+                    - By application, we have `forall (f : nat -> nat) (x0 y : nat), x0 = y -> f x0 = f y`{.claim}.
+                      - By application, we have `forall (B : Type) (f : nat -> B) (x0 y : nat), x0 = y -> f x0 = f y`{.claim}.
+                        - By f_equal we have `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y`{.claim}.
                         - The element `nat`{.fact} belongs to `Type`{.fact}.
                       - The element `nat`{.fact} belongs to `Type`{.fact}.
                     - The element `S`{.fact} belongs to `nat -> nat`{.fact}.

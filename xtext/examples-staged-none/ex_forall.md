@@ -11,7 +11,7 @@ Let `P : nat -> nat -> Prop`{.var}. Assume `exists x : nat, forall y : nat, P x 
   - Let us choose arbitrarily `x : nat`{.var}.
     - Assume `forall y : nat, P x y`{.hyp} (H).
       - Let us choose arbitrarily `y : nat`{.var}.
-        - By H we have `forall elpi_ctx_entry_5_ : nat, P x elpi_ctx_entry_5_`{.claim}.
+        - By H we have `forall y0 : nat, P x y0`{.claim}.
         - The element `y`{.fact} belongs to `nat`{.fact}.
         - By application, we have `P x y`{.claim}.
         - By definition of ex (ex_intro) with witness `x`{.fact}, we have `exists x0 : nat, P x0 y`{.claim} *by Corelib.Init.Logic.ex_intro*.

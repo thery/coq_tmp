@@ -7,16 +7,30 @@
 % the names of the variables of the context (decl cannot be enumerated)
 pred ctx-name o:string.
 
+pred context-names o:list string.
+context-names Used :- std.findall (ctx-name _) Ds, std.map Ds (d\ i\ d = ctx-name i) Used.
+
+% ------------------------------------------------------------------
+% Terms sent to Rocq.  When a term goes to Rocq (to be printed, reduced or
+% typed), Rocq-Elpi renames each of its binders whose name is the name of
+% a variable of the context to elpi_ctx_entry_N_, and a term that comes
+% back from Rocq keeps that name (forall x : nat, P x, reduced under a
+% variable x, comes back as forall elpi_ctx_entry_1_ : nat, ...).  So the
+% bound names that clash with the context are renamed (x0) first.
+pred away-from-context i:term, o:term.
+away-from-context T T1 :- context-names Used, rename Used T T1.
+
+% the weak head normal form of a term (Rocq's lazy head reduction)
+pred whnf i:term, o:term.
+whnf T W :- away-from-context T T1, coq.reduction.lazy.whd T1 W.
+
 pred pp i:term, o:string.
 pp T0 S :-
-  std.findall (ctx-name _) Ds,
-  std.map Ds (d\ i\ d = ctx-name i) Used,
-  rename Used T0 T,
+  away-from-context T0 T,
   (@ppwidth! 100000 => coq.term->string T S0),
   rex.replace "[\n ]+" " " S0 S.
 
-% bound names that clash with the context are renamed (else Rocq-Elpi
-% prints them as elpi_ctx_entry_N_)
+% [rename Used T T1]: T with its bound names that are in Used renamed
 pred rename i:list string, i:term, o:term.
 rename U (prod N T F) (prod N1 T1 F1) :- !, fresh U N N1 Id,
   rename U T T1, pi x\ rename [Id|U] (F x) (F1 x).
@@ -34,7 +48,7 @@ rename _ X Y :- copy X Y.
 pred binder-name i:name, o:name, o:string.
 binder-name N N1 Id :-
   coq.name->id N Id0, (if (Id0 = "_") (Id1 = "h") (Id1 = Id0)),
-  std.findall (ctx-name _) Ds, std.map Ds (d\ i\ d = ctx-name i) Used,
+  context-names Used,
   (if (std.mem! Used Id1) (fresh-aux Used Id1 0 Id) (Id = Id1)),
   coq.id->name Id N1.
 

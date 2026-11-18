@@ -117,7 +117,7 @@ Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
         - By application, we have `Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}.
     - By application, we have `n * 1 = n * 0 + n`{.claim}.
       - By application, we have `forall m : nat, n * S m = n * m + n`{.claim}.
-        - By mul_succ_r we have `forall elpi_ctx_entry_1_ m : nat, elpi_ctx_entry_1_ * S m = elpi_ctx_entry_1_ * m + elpi_ctx_entry_1_`{.claim}.
+        - By mul_succ_r we have `forall n0 m : nat, n0 * S m = n0 * m + n0`{.claim}.
         - The element `n`{.fact} belongs to `nat`{.fact}.
       - The element `0`{.fact} belongs to `nat`{.fact}.
   - By application, we have `n * 0 + n = n`{.claim}.
@@ -186,7 +186,7 @@ Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
             - The element `n`{.fact} belongs to `nat`{.fact}.
           - By application, we have `Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}.
       - By application, we have `n * 0 = 0`{.claim}.
-        - By mul_0_r we have `forall elpi_ctx_entry_1_ : nat, elpi_ctx_entry_1_ * 0 = 0`{.claim}.
+        - By mul_0_r we have `forall n0 : nat, n0 * 0 = 0`{.claim}.
         - The element `n`{.fact} belongs to `nat`{.fact}.
     - By application, we have `0 + n = n`{.claim}.
       - By application, we have `Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}, that is `n = n -> 0 + n = n`{.fact}.
@@ -222,7 +222,7 @@ Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
               - The element `n`{.fact} belongs to `nat`{.fact}.
             - By application, we have `Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}.
         - By application, we have `0 + n = n`{.claim}.
-          - By add_0_l we have `forall elpi_ctx_entry_1_ : nat, 0 + elpi_ctx_entry_1_ = elpi_ctx_entry_1_`{.claim}.
+          - By add_0_l we have `forall n0 : nat, 0 + n0 = n0`{.claim}.
           - The element `n`{.fact} belongs to `nat`{.fact}.
       - By application, we have `n = n`{.claim}.
         - By application, we have `forall x : nat, x = x`{.claim}.

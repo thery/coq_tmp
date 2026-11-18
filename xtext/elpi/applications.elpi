@@ -103,7 +103,7 @@ head-unfold T0 Ty0 P0 P :- double-annotation-mode, !,
   (if ((T0 = app _ ; is-sym T0), whnf Ty0 W, W = prod _ _ _)
       (beta-ty W W1, add-equiv Ty0 W1 P0 P) (P = P0)).
 head-unfold _ (prod _ _ _) P P :- !.
-head-unfold T0 Ty0 P0 P :- coq.reduction.lazy.whd Ty0 W, W = prod _ _ _, !,
+head-unfold T0 Ty0 P0 P :- whnf Ty0 W, W = prod _ _ _, !,
   beta-ty W W1, that-is T0 W1 P0 P.
 head-unfold _ _ P P.
 
