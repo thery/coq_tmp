@@ -5,3 +5,6 @@ xtext/exp_examples.v
 xtext/examples/exp_*
 xtext/cyp-check/exp_*
 xtext/cyp-check/**/*.out
+
+# native compilation products
+.coq-native/
