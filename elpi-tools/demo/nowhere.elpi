@@ -1,0 +1,4 @@
+% A predicate declared but defined nowhere: the real engine just fails.
+pred positive i:int.
+pred check i:list int.
+check L :- std.forall L positive.
