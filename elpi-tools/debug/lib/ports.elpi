@@ -19,6 +19,7 @@ symb assume-step event-kind.
 symb delay-step event-kind.
 symb cut-step event-kind.
 symb try-step event-kind.      % a candidate clause tried (recorded for the profile only)
+symb start-step event-kind.    % the start of a run, before its first event (option machine)
 
 func event-label event-kind -> string.
 event-label call-port "Call:".
@@ -32,6 +33,7 @@ event-label assume-step "Assume:".
 event-label delay-step "Delay:".
 event-label cut-step "Cut:".
 event-label try-step "Try:".
+event-label start-step "Start:".
 
 % [box-event K]: K is a port of a call.
 pred box-event i:event-kind.
@@ -71,7 +73,7 @@ pred event i:event-kind, i:int, o:focus, i:list string.
 event _ _ _ _ :- pending, !, fail.
 event Kind Ind F Text :-
   show-event-if-shown Kind Ind F Text,
-  stop-if-stopping Kind F.
+  stop-if-stopping Kind F Text.
 
 % (The hot paths use clauses rather than std.if: its arguments are inputs,
 % and the goals given to it would hold the whole stack of frames.)
@@ -81,9 +83,9 @@ show-event-if-shown Kind Ind F Text :- event-shown Kind F, !, say Ind [{event-la
 show-event-if-shown _ _ _ _.
 
 :nooc
-pred stop-if-stopping i:event-kind, o:focus.
-stop-if-stopping Kind F :- stops-at Kind F, !, stop Kind F.
-stop-if-stopping _ _.
+pred stop-if-stopping i:event-kind, o:focus, i:list string.
+stop-if-stopping Kind F Text :- stop-reason Kind F Reason, !, stop Reason Kind F Text.
+stop-if-stopping _ _ _.
 
 % [event-shown Kind F]: the event is printed: with option trace, as the
 % stepping mode says in interactive mode, at the ports of a breakpoint.
@@ -135,19 +137,33 @@ try-port Box :- record-event try-step Box.
 % ===== The steps of λProlog inside a call ===============================================
 
 % [match-with-port Modes Box Origin G Head]: head matching of the clause
-% from Origin, with its unify event when it is shown: the variables of G
-% are looked at before and after, for the bindings it makes.
+% from Origin, with its unify event when it is shown or when a breakpoint
+% is set on the clause: the variables of G are looked at before and after,
+% for the bindings it makes.  The event runs in the context of the clause:
+% [runs Id Origin] and [made-bindings Bindings] are in force, for the
+% stepper and the machine-readable channel (stepper.elpi, machine.elpi).
 :nooc
 pred match-with-port i:list mode, o:box, i:origin, i:(pred), i:(pred).
 match-with-port Modes _ _ G Head :- quiet, !, head-matches Modes G Head.
-match-with-port Modes (box Frame Above _) _ G Head :- not (event-shown unify-step (focus Frame Above)), !,
+match-with-port Modes (box Frame Above _) Origin G Head :-
+  not (event-shown unify-step (focus Frame Above)), not (clause-breakpoint-on Origin), !,
   head-matches Modes G Head.
 match-with-port Modes (box (frame Id D P G0) Above _) Origin G Head :-
   logic-vars G Vs, snapshot Vs Before,
   head-matches Modes G Head,
-  bindings-text Before Lines,
-  event unify-step D (focus (frame Id D P G0) Above)
-    [{box-name Id}, " with ", {origin-string Origin}, ": ", {show-term Head} | Lines].
+  bindings-made Before Bindings,
+  std.map Bindings binding-line Lines,
+  [runs Id Origin, made-bindings Bindings] =>
+    event unify-step D (focus (frame Id D P G0) Above)
+      [{box-name Id}, " with ", {origin-string Origin}, ": ", {show-term Head} | Lines].
+
+% [runs Id Origin]: the call Id runs the clause from Origin (in force in
+% the body of the clause, with option machine, and at its unify event).
+pred runs o:int, o:origin.
+
+% [made-bindings Bindings]: the bindings made by the head unification of
+% the unify event in progress.
+pred made-bindings o:list binding.
 
 % A logic variable before the unification: itself, as printed, and the
 % eigenvariables it may depend on.
@@ -158,16 +174,25 @@ pred snapshot i:list any, o:list snap.
 snapshot [] [].
 snapshot [V|Vs] [snap V Name Vis | Ss] :- show-term V Name, visible-eigens V Vis, snapshot Vs Ss.
 
-% [bindings-text Before Lines]: a line "X := t" per variable assigned,
-% with the pruning Elpi made if any.
-pred bindings-text i:list snap, o:list string.
-bindings-text [] [].
-bindings-text [snap V Name Vis | Ss] [Line | Ls] :-
+% A binding made by a unification: the variable (as printed before), its
+% value, and the pruning Elpi made ("" if none).
+data binding.
+symb binding string -> string -> string -> binding.
+
+% [bindings-made Before Bindings]: a binding per variable assigned, with
+% the pruning Elpi made if any.
+pred bindings-made i:list snap, o:list binding.
+bindings-made [] [].
+bindings-made [snap V Name Vis | Ss] [binding Name Now Pruned | Bs] :-
   show-term V Now, not (Now = Name), !,
   pruning V Vis Pruned,
-  std.string.concat "" ["\n      ", Name, " := ", Now, Pruned] Line,
-  bindings-text Ss Ls.
-bindings-text [_ | Ss] Ls :- bindings-text Ss Ls.
+  bindings-made Ss Bs.
+bindings-made [_ | Ss] Bs :- bindings-made Ss Bs.
+
+% [binding-line B Line]: "\n      X := t", as the trace shows a binding.
+func binding-line binding -> string.
+binding-line (binding Name Value Pruned) Line :-
+  std.string.concat "" ["\n      ", Name, " := ", Value, Pruned] Line.
 
 % [pruning V Vis S]: what Elpi pruned when it assigned V: V is now
 % x1..xn\ H a1..ak with k < n (H does not get all the arguments), or V is

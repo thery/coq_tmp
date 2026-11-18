@@ -4,7 +4,7 @@
 % The interpreter is in the files of this directory: fragments of one
 % block [namespace debug { }], which dune's rule (../dune) writes around
 % their concatenation, in the order: state, program, strategy, interpreter,
-% natives, lprolog, ports, stepper, explain, profile.  README.md, section
+% natives, lprolog, ports, stepper, machine, explain, profile.  README.md, section
 % "How the interpreter works", reads them side by side.
 
 
@@ -16,6 +16,7 @@ symb builtins option.          % also show the calls to builtins
 symb break string -> option.   % breakpoint on the predicate of this name
 symb interactive option.       % stop at each event and read commands on stdin
 symb echo option.              % print each command read (scripted sessions)
+symb machine option.           % a machine-readable line at each stop, for a front end (machine.elpi)
 symb profile option.           % ports and self time per predicate
 symb no-explain option.        % do not explain the final failure
 symb random-order option.      % strategy: candidate clauses in a random order
@@ -117,13 +118,13 @@ pred current-ctx o:entry, o:ctx.
 %   "breaks"      the breakpoints set or removed at a stop
 %   "profile"     the events, for the profile
 %   "warned"      the predicates already reported as having no clause
-%   "eigen", "suspension"   counters, for the names of eigenvariables and
-%                 the numbers of suspended goals
+%   "eigen", "suspension", "stop"   counters, for the names of
+%                 eigenvariables, the numbers of suspended goals and of stops
 pred state o:string, o:safe.
 
 % [state-names L]: the safes of [run].
 func state-names -> list string.
-state-names ["deepest", "mode", "request", "breaks", "profile", "warned", "eigen", "suspension"].
+state-names ["deepest", "mode", "request", "breaks", "profile", "warned", "eigen", "suspension", "stop"].
 
 % [last-of L X]: X is the last element of L (fails on [], unlike std.last).
 pred last-of i:list A, o:A.

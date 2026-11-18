@@ -82,16 +82,19 @@ Interactive: commands read from stdin (backtrace, hyps, step, continue).
      ?     unknown command (h for help)
      ?     c or return  creep: go to the next event
       s            skip: run this call to its exit or fail without stopping inside
+      o            out: run to the exit or fail of the call whose body runs this event
       l            leap: run to the next breakpoint
       t            trace: show every event, stop only at breakpoints
       n            nodebug: run to the end without stopping
       r            retry this call from its call port (bindings, local program, scope undone)
+      r N          retry the call #N of the stack
       f            make this call fail
       p            print the goal, the local program and the scope
       g            the calls above (goals)
       scope        the eigenvariables in force and what each logic variable may depend on
       hyps         the local program: the clauses added by =>
       + P, - P     set, remove a breakpoint on the predicate P
+      + clause N, - clause N   set, remove a breakpoint on the clause N (option -machine lists them)
       e            the deepest failure so far
       a            abort
      ?   Call: #2 of (lam c1 \ x#1) X2

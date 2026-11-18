@@ -19,12 +19,17 @@
 % leaves their scopes, as it undoes the bindings.  The cut does not get in
 % the way: a cut in a body is the native cut of [backchain], below
 % [attempt], so it never removes the choice point of [attempt] of its own
-% call or of the calls above.
+% call or of the calls above.  (r N retries any call N of the stack the
+% same way.)
 %
 % skip.  A stepping mode (skip N), kept in a safe: no event is shown or
 % stops until the exit or fail port of call N (breakpoints still stop).
 % Nothing is undone or changed in the run, the local program and the scope
-% included: the call runs as without the debugger, unseen.
+% included: the call runs as without the debugger, unseen.  Step out (o)
+% is a skip of the call whose body runs the event.
+%
+% With option machine (machine.elpi), the prompt is a machine-readable
+% description of the stop, for a front end such as a debug adapter.
 
 
 % ===== Stepping modes ==================================================================
@@ -58,18 +63,41 @@ shown-in-mode creep _ _.
 shown-in-mode tracing _ _.
 shown-in-mode (skip Id) Kind (focus (frame Id _ _ _) _) :- end-event Kind.
 shown-in-mode _ Kind (focus (frame _ _ P _) _) :- box-event Kind, breakpoint-on P.
+shown-in-mode _ unify-step (focus (frame Id _ _ _) _) :- runs Id Origin, clause-breakpoint-on Origin.
 
-% [stops-at Kind F]: the interpreter stops at the event: the entry into a
-% call with a breakpoint, or, in interactive mode, as the mode says.
+% Why the interpreter stops at an event.
+data stop-reason.
+symb at-breakpoint stop-reason.  % a breakpoint on the predicate or on the clause
+symb stepped stop-reason.        % the stepping mode stops there
+symb paused stop-reason.         % a front end asked for a pause (option machine)
+symb started stop-reason.        % the start of the run, before its first event (option machine)
+
+% [stop-reason Kind F Reason]: the interpreter stops at the event, for
+% Reason: the entry into a call with a breakpoint, the unify step of a
+% clause with a breakpoint, a pause asked, or, in interactive mode, as the
+% stepping mode says.
 :nooc
-pred stops-at i:event-kind, o:focus.
-stops-at Kind (focus (frame _ _ P _) _) :- entry-event Kind, breakpoint-on P, not (current-mode nodebug), !.
-stops-at Kind F :- opt interactive, current-mode M, stops-in-mode M Kind F.
+pred stop-reason i:event-kind, o:focus, o:stop-reason.
+stop-reason Kind (focus (frame _ _ P _) _) at-breakpoint :-
+  entry-event Kind, breakpoint-on P, not (current-mode nodebug), !.
+stop-reason unify-step (focus (frame Id _ _ _) _) at-breakpoint :-
+  runs Id Origin, clause-breakpoint-on Origin, not (current-mode nodebug), !.
+stop-reason _ _ paused :- opt machine, not (current-mode nodebug), pause-requested, !.
+stop-reason Kind F stepped :- opt interactive, current-mode M, stops-in-mode M Kind F.
 
 :nooc
 pred stops-in-mode i:stepping, i:event-kind, o:focus.
 stops-in-mode creep _ _.
 stops-in-mode (skip Id) Kind (focus (frame Id _ _ _) _) :- end-event Kind.
+
+% [step-out-mode Kind F M]: the mode of step out (o) at the event Kind:
+% skip the call whose body runs the event, the call above at a port of a
+% call; at the level of the query, leap.
+:nooc
+pred step-out-mode i:event-kind, o:focus, o:stepping.
+step-out-mode Kind (focus _ [frame Id _ _ _ | _]) (skip Id) :- box-event Kind, !.
+step-out-mode Kind (focus (frame Id _ _ _) _) (skip Id) :- not (box-event Kind), Id > 0, !.
+step-out-mode _ _ leap.
 
 % ===== Requests: retry and fail ============================================================
 
@@ -93,36 +121,88 @@ pred take-request i:int, o:request.
 take-request Id (retry Id) :- current-request (retry Id), !, set-request no-request.
 take-request Id (fail-call Id) :- current-request (fail-call Id), !, set-request no-request.
 
+% [ask-retry Id]: unwind the run to the call port of call Id, and stop
+% there (creep).
+pred ask-retry i:int.
+ask-retry Id :-
+  say 0 ["    retry ", {box-name Id}, ": back to its call port"],
+  set-mode creep, set-request (retry Id), fail.
+
+% [call-in-stack Id F]: call Id is the call in focus or a call above it.
+:nooc
+pred call-in-stack i:int, o:focus.
+call-in-stack Id (focus Frame Above) :- std.exists [Frame | Above] (frame-has-id Id).
+
+pred frame-has-id i:int, i:frame.
+frame-has-id Id (frame Id _ _ _).
+
 % ===== Breakpoints ==========================================================================
 %
-% The breakpoints of option break, then the changes made at the prompt
-% (+ P, - P), kept in the safe "breaks" as pairs (change, name).
+% A breakpoint is on a predicate (every call of it stops at its call
+% port) or on a clause (the call stops at the unify step of the clause,
+% when the clause is selected).  The breakpoints are those of option
+% break, then the changes made at the prompt (+ P, - P, + clause N,
+% - clause N), kept in the safe "breaks" as pairs (change, breakpoint).
+
+data breakpoint.
+symb on-predicate string -> breakpoint.     % by the name of the predicate
+symb on-clause reflect.srcloc -> breakpoint. % by the location of the clause
 
 pred breakpoint-on i:any.
-breakpoint-on P :- term_to_string P Name, breakpoint-named Name.
+breakpoint-on P :- term_to_string P Name, breakpoint-set (on-predicate Name).
 
-pred breakpoint-named i:string.
-breakpoint-named Name :- state "breaks" S, open_safe S L, std.rev L Recent, last-change Recent Name C, !, C = "+".
-breakpoint-named Name :- opt (break Name), !.
+% [clause-breakpoint-on Origin]: a breakpoint is set on the rule from Origin.
+pred clause-breakpoint-on i:origin.
+clause-breakpoint-on (at Loc _) :- breakpoint-set (on-clause Loc).
 
-% [last-change Changes Name C]: the most recent change C of the breakpoint
-% Name.  (A search, not std.mem!, whose element is an input: it would not
+pred breakpoint-set i:breakpoint.
+breakpoint-set B :- state "breaks" S, open_safe S L, std.rev L Recent, last-change Recent B C, !, C = "+".
+breakpoint-set (on-predicate Name) :- opt (break Name), !.
+
+% [last-change Changes B C]: the most recent change C of the breakpoint
+% B.  (A search, not std.mem!, whose element is an input: it would not
 % bind C.)
-pred last-change i:list (pair string string), i:string, o:string.
-last-change [pr C Name | _] Name C :- !.
-last-change [_ | L] Name C :- last-change L Name C.
+pred last-change i:list (pair string breakpoint), i:breakpoint, o:string.
+last-change [pr C B | _] B C :- !.
+last-change [_ | L] B C :- last-change L B C.
 
-pred change-breakpoint i:string, i:string.
-change-breakpoint C Name :- state "breaks" S, stash_in_safe S (pr C Name).
+pred change-breakpoint i:string, i:breakpoint.
+change-breakpoint C B :- state "breaks" S, stash_in_safe S (pr C B).
+
+% [change-clause-breakpoint C N]: change C ("+" or "-") of the breakpoint
+% on the clause numbered N (numbers of machine.elpi's listing).
+pred change-clause-breakpoint i:string, i:string.
+change-clause-breakpoint C N :- rex.match "^[0-9]+$" N, I is string_to_int N, clause-location I Loc, !,
+  change-breakpoint C (on-clause Loc),
+  say 1 [{breakpoint-verb C}, " on the clause at ", {origin-string (at Loc [])}].
+change-clause-breakpoint _ N :- say 1 ["no clause numbered ", N].
+
+func breakpoint-verb string -> string.
+breakpoint-verb "+" "breakpoint" :- !.
+breakpoint-verb _ "no breakpoint".
 
 % ===== Stops ====================================================================================
 
-% [stop Kind F]: at the event Kind, in interactive mode, read and run
-% commands; otherwise (a breakpoint) show where we are and go on.
+% [stop Reason Kind F Text]: at the event Kind (whose text is Text), in
+% interactive mode, read and run commands; otherwise (a breakpoint) show
+% where we are and go on.  The stop gets a number, and [current-stop] is
+% in force while it lasts (for the machine-readable prompt).
 :nooc
-pred stop i:event-kind, o:focus.
-stop Kind F :- opt interactive, !, command-loop Kind F.
-stop _ F :- show-context F.
+pred stop i:stop-reason, i:event-kind, o:focus, i:list string.
+stop Reason Kind F Text :- opt interactive, !,
+  forget-pause-request,
+  new-number "stop" N,
+  (current-stop N Reason Kind Text => command-loop Kind F).
+stop _ _ F _ :- show-context F.
+
+% [current-stop N Reason Kind Text]: the stop in progress, its number,
+% why it happens, its event and the text of the event.
+pred current-stop o:int, o:stop-reason, o:event-kind, o:list string.
+
+% [forget-pause-request]: a pause asked now is met by this stop.
+pred forget-pause-request.
+forget-pause-request :- pause-requested, !.
+forget-pause-request.
 
 :nooc
 pred show-context o:focus.
@@ -134,11 +214,17 @@ show-context (focus (frame Id _ _ G) Above) :-
 :nooc
 pred command-loop i:event-kind, o:focus.
 command-loop Kind F :-
-  output std_out "   ? ", flush std_out,
+  prompt F,
   read-command C,
   echo-command C,
   rex.split " +" C Words,
   run-command Words Kind F.
+
+% [prompt F]: "   ? ", or with option machine the description of the stop.
+:nooc
+pred prompt o:focus.
+prompt F :- opt machine, !, emit-stop F.
+prompt _ :- output std_out "   ? ", flush std_out.
 
 % [read-command C]: a line of stdin; at its end, nodebug.
 pred read-command o:string.
@@ -161,17 +247,20 @@ run-command ["c"] _ _ :- !, set-mode creep.
 % skip: run the call to its exit or fail, unseen (at its exit or fail: creep)
 run-command ["s"] Kind (focus (frame Id _ _ _) _) :- Id > 0, not (end-event Kind), !, set-mode (skip Id).
 run-command ["s"] _ _ :- !, set-mode creep.
+% out: run to the exit or fail of the call whose body runs this event
+run-command ["o"] Kind F :- !, step-out-mode Kind F M, set-mode M.
 % leap, trace, nodebug: the other modes
 run-command ["l"] _ _ :- !, set-mode leap.
 run-command ["t"] _ _ :- !, set-mode tracing.
 run-command ["n"] _ _ :- !, set-mode nodebug.
-% retry, fail: unwind to the call port of the call in focus
-run-command ["r"] _ (focus (frame Id _ _ _) _) :- Id > 0, !,
-  say 0 ["    retry ", {box-name Id}, ": back to its call port"],
-  set-request (retry Id), fail.
+% retry, fail: unwind to the call port of the call in focus (or of the
+% call N of the stack)
+run-command ["r"] _ (focus (frame Id _ _ _) _) :- Id > 0, !, ask-retry Id.
+run-command ["r", N] _ F :- rex.match "^[1-9][0-9]*$" N, Id is string_to_int N, call-in-stack Id F, !, ask-retry Id.
 run-command ["f"] _ (focus (frame Id _ _ _) _) :- Id > 0, !, set-request (fail-call Id), fail.
 run-command [C] Kind F :- (C = "r" ; C = "f"), !,
   print "    (the query itself cannot be retried or failed)", command-loop Kind F.
+run-command ["r", _] Kind F :- !, print "    (no such call in the stack)", command-loop Kind F.
 % the commands that show something, then prompt again
 run-command ["p"] Kind F :- !, show-focus F, command-loop Kind F.
 run-command ["g"] Kind (focus _ Above as F) :- !, show-backtrace Above, command-loop Kind F.
@@ -181,8 +270,10 @@ run-command ["e"] Kind F :- !, show-deepest-failure, command-loop Kind F.
 run-command ["h"] Kind F :- !, show-help, command-loop Kind F.
 run-command ["?"] Kind F :- !, show-help, command-loop Kind F.
 % breakpoints
-run-command ["+", Name] Kind F :- !, change-breakpoint "+" Name, say 1 ["breakpoint on ", Name], command-loop Kind F.
-run-command ["-", Name] Kind F :- !, change-breakpoint "-" Name, say 1 ["no breakpoint on ", Name], command-loop Kind F.
+run-command ["+", "clause", N] Kind F :- !, change-clause-breakpoint "+" N, command-loop Kind F.
+run-command ["-", "clause", N] Kind F :- !, change-clause-breakpoint "-" N, command-loop Kind F.
+run-command ["+", Name] Kind F :- !, change-breakpoint "+" (on-predicate Name), say 1 ["breakpoint on ", Name], command-loop Kind F.
+run-command ["-", Name] Kind F :- !, change-breakpoint "-" (on-predicate Name), say 1 ["no breakpoint on ", Name], command-loop Kind F.
 % abort
 run-command ["a"] _ _ :- !, halt "debug: aborted".
 run-command _ Kind F :- print "    unknown command (h for help)", command-loop Kind F.
@@ -191,16 +282,19 @@ pred show-help.
 show-help :- std.forall [
   "    c or return  creep: go to the next event",
   "    s            skip: run this call to its exit or fail without stopping inside",
+  "    o            out: run to the exit or fail of the call whose body runs this event",
   "    l            leap: run to the next breakpoint",
   "    t            trace: show every event, stop only at breakpoints",
   "    n            nodebug: run to the end without stopping",
   "    r            retry this call from its call port (bindings, local program, scope undone)",
+  "    r N          retry the call #N of the stack",
   "    f            make this call fail",
   "    p            print the goal, the local program and the scope",
   "    g            the calls above (goals)",
   "    scope        the eigenvariables in force and what each logic variable may depend on",
   "    hyps         the local program: the clauses added by =>",
   "    + P, - P     set, remove a breakpoint on the predicate P",
+  "    + clause N, - clause N   set, remove a breakpoint on the clause N (option -machine lists them)",
   "    e            the deepest failure so far",
   "    a            abort"] (s\ print s).
 
