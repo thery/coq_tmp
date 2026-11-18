@@ -3,7 +3,7 @@ ROCQ = rocq c -R . XText -Q ../lexicon Lexicon
 
 all: Explain.vo paper.vo lemmas.vo inductive.vo thesis.vo stdlib.vo elim_type.vo partial.vo vocab_check.vo multilingual.vo
 
-Explain.vo: Explain.v xtext.elpi $(wildcard ../lexicon/*.elpi)
+Explain.vo: Explain.v xtext.elpi types.elpi $(wildcard ../lexicon/*.elpi)
 	$(ROCQ) Explain.v
 
 paper.vo: paper.v Explain.vo

@@ -585,6 +585,8 @@ unwrap (prfp P _) P :- !.
 unwrap P P.
 
 pred tr-p i:term, i:ctx, i:list int, o:pf.
+% (thesis 3.3.4: the double annotation of the subproof, types.elpi)
+tr-p T Ctx Path P :- thesis-hook T (tr-p T Ctx Path) P, !.
 tr-p T _ _ P :- open-goal T P, !.
 tr-p T _ _ P :- tactic-step T P, !.
 tr-p T Ctx Path P :- tr-root T Ctx Path P.
@@ -668,17 +670,22 @@ unchanged T (prf [] (some (it S []))) :-
 
 % --- abstraction: iterated abstraction rules
 pred tr-lam i:term, i:ctx, i:list int, o:pf.
+% (thesis 3.3.4, rule Abs: the conclusion says Tc, "that is" Tr; types.elpi)
+tr-lam (fun N A _ as T) Ctx Path P :- thesis-lam T Tr, abs-step Tr N A Tc _, !,
+  (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
+  binder-kind A K, equiv-text Tc Tr FT, lam-run K [] T FT Fl Ctx Path P.
 tr-lam (fun _ A _ as T) Ctx Path P :-
   (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
   binder-kind A K, typ T Tau0, fm Tau0 FT, lam-run K [] T FT Fl Ctx Path P.
 
 pred lam-run i:bk, i:list binder, i:term, i:string, i:list bool, i:ctx, i:list int, o:pf.
-lam-run K Acc (fun N A F) FT Fl Ctx Path P :- binder-kind A K1, K1 = K, !,
+lam-run K Acc (fun N A F as T) FT Fl Ctx Path P :- binder-kind A K1, K1 = K, lam-join Acc T, !,
   (if (Fl = [F0|Fr]) true (F0 = ff, Fr = [])),
   binder-name N N1 Id,
   ppf A FA,
   (if (F0 = tt, K = bk-assume) (B = bih Id FA) (B = b K Id FA)),
-  pi x\ (decl x N1 A, ctx-name Id) => lam-run K [B|Acc] (F x) FT Fr Ctx Path P.
+  pi x\ (decl x N1 A, ctx-name Id) =>
+    sigma Cls\ (lam-under T x Cls, Cls => lam-run K [B|Acc] (F x) FT Fr Ctx Path P).
 lam-run K Acc Body FT Fl Ctx Path P :-
   std.rev Acc Bs,
   ((cur-ih Fl :- !) => tr Body Ctx Path PB), flatten PB LB,
@@ -847,6 +854,11 @@ apply-rest T0 P00 Args Path P :-
 % a function whose type is a product only after unfolding: its
 % conclusion says the unfolded type ("that is")
 pred head-unfold i:term, i:term, i:pf, o:pf.
+% (thesis mode, rule App: the partial applications and the variables and
+% constants at the head, whose text does not go through thesis-hook)
+head-unfold T0 Ty0 P0 P :- thesis-mode, !,
+  (if ((T0 = app _ ; is-sym T0), whnf Ty0 W, W = prod _ _ _)
+      (beta-ty W W1, add-equiv Ty0 W1 P0 P) (P = P0)).
 head-unfold _ (prod _ _ _) P P :- !.
 head-unfold T0 Ty0 P0 P :- coq.reduction.lazy.whd Ty0 W, W = prod _ _ _, !,
   beta-ty W W1, that-is T0 W1 P0 P.
@@ -1134,7 +1146,7 @@ tr-rewrite RN Dir Tau PX E Path (prf [D1, D2] (some (it S []))) :-
 % The declared type of the theorem is followed along the abstractions:
 % what is left is the statement, inherited by the body (thesis 3.3.2).
 pred top-run i:list binder, i:term, i:term, o:string, o:list line.
-top-run Acc (fun N A F) Ty Stmt L :- !,
+top-run Acc (fun N A F) Ty Stmt L :- not (thesis-top-stop Ty N A), !,
   binder-kind A K, binder-name N N1 Id,
   ppf A FA,
   (if (Ty = prod _ _ B) true (coq.reduction.lazy.whd Ty (prod _ _ B) ; B = (_\ Ty))),
@@ -1143,12 +1155,20 @@ top-run Acc Body Ty0 Stmt L :-
   std.rev Acc Bs, beta-ty Ty0 Ty, fm Ty FT,
   statement Bs Ss, say-cap [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
   std.string.concat " " Ss1 Stmt,
-  ((root-term Body :- !) => tr-root Body star [] P0), that-is Body Ty P0 P, flatten P L.
+  (if (thesis-mode)
+     % (thesis 3.3.4: the body has the statement as required type; an
+     % abstraction left out of the statement says its conversion)
+     ((if (Body = fun _ _ _) (Ctx = nostar) (Ctx = star)),
+      (req Body Ty => (root-term Body :- !) => thesis-hook Body (tr-root Body Ctx []) P))
+     (((root-term Body :- !) => tr-root Body star [] P0), that-is Body Ty P0 P)),
+  flatten P L.
 
 % "that is" (the Cast' of the thesis, 5.2.2): when the type that a proof
 % proves (synthesised) differs from the type expected at its place
 % (inherited) but Rocq finds them convertible, its conclusion says both
 pred that-is i:term, i:term, i:pf, o:pf.
+% (thesis mode: the annotations are those of thesis-hook, types.elpi)
+that-is _ _ P P :- thesis-mode, !.
 that-is T Exp (prfp P Ps) Q :- !, that-is T Exp P P1,
   (if (P1 = P) (Q = prfp P Ps) (Q = P1)).
 that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-

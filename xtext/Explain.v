@@ -20,6 +20,7 @@ From Lexicon Extra Dependency "lang_zh.elpi" as lex_zh.
 From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
+From XText Extra Dependency "types.elpi" as types.
 
 (* The tactics tried on long subproofs (see xtext-tactic below).  Each is
    an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
@@ -67,6 +68,13 @@ Elpi Db xtext.db lp:{{
   pred xtext-lang o:string.
   :name "xtext-lang"
   xtext-lang "en".
+  % [xtext-annotation S]: the type expressions written (thesis chapter 3):
+  % "all" (default, the texts of the earlier rounds) or "thesis" (the double
+  % annotation of 3.3.4, Fig. 3.9; types.elpi).  The variable
+  % XTEXT_ANNOTATION overrides it.
+  pred xtext-annotation o:string.
+  :name "xtext-annotation"
+  xtext-annotation "all".
 }}.
 
 Elpi Command Explain.
@@ -82,6 +90,7 @@ Elpi Accumulate File lex_zh.
 Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
+Elpi Accumulate File types.
 Elpi Accumulate File xtext.
 Elpi Accumulate lp:{{
   main [str N] :- !, explain N T, coq.say T.
@@ -112,6 +121,7 @@ Elpi Accumulate File lex_zh.
 Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
+Elpi Accumulate File types.
 Elpi Accumulate File xtext.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
