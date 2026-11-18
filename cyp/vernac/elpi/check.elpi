@@ -5,9 +5,10 @@
 % [justify] clauses, tried in this order; their tactics [ltac N], [apply T]
 % and [lemma T].  Conjunctions and disjunctions are split here.
 
-% [tactic-name Name Ltac]: the tactic a step may name in *by Name*, and the
-% Ltac definition that runs it (Cyp.v); tactics defined with Ltac are
-% found by their own name
+% [tactic-name Name Ltac]: a tactic added by a proof's rules, and the Ltac
+% definition that runs it (Cyp.v).  The tactics every proof text may name
+% are prooftext's (prooftext/tactics.elpi): the tactic Name runs the Ltac
+% cyp_Name (Cyp.v).  Tactics defined with Ltac are found by their own name
 pred tactic-name o:string, o:string.
 
 % the default tactics of the proof being checked (its header's by:), then
@@ -47,6 +48,7 @@ close-default G :- default-ltac N, coq.ltac.call-ltac1 N G [], !.
 % string yet, see the README)
 pred run-name i:string, i:goal.
 run-name N G :- tactic-name N L, !, coq.ltac.call-ltac1 L G [].
+run-name N G :- prooftext.tactic N, !, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
 run-name N G :- rex.match "^[A-Za-z_][A-Za-z0-9_']*$" N, coq.ltac.call-ltac1 N G [].
 
 % [justify Tac G]: the justification of a step (*by X*), or none

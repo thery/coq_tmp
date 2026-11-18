@@ -196,14 +196,7 @@ json-step O K F La Es Rs :-
 
 pred json-formula i:element, o:string.
 json-formula (elt R X) J :-
-  role-name R N, J is "{\"role\":\"" ^ N ^ "\",\"text\":" ^ {json-string X} ^ "}".
-
-pred role-name i:role, o:string.
-role-name rvar "var".
-role-name rhyp "hyp".
-role-name rclaim "claim".
-role-name rback "claim".
-role-name rfact "fact".
+  prooftext.role-tag R N, !, J is "{\"role\":\"" ^ N ^ "\",\"text\":" ^ {json-string X} ^ "}".
 
 pred json-nodes i:out_stream, i:string, i:int, i:list node, i:list report.
 json-nodes _ _ _ [] _.

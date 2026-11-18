@@ -37,8 +37,8 @@ Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
    removed from the proof before the lemma is defined *)
 Definition cyp_condition (number : PrimString.string) : unit := tt.
 
-(* The tactics a proof may name in *by X* or in its header's by:, and the
-   default tactics.  More with
+(* The tactics a proof may name in *by X* or in its header's by:, those of
+   prooftext/tactics.elpi: the name N runs cyp_N, below.  More with
      Ltac my_tac := ...  Elpi Accumulate cyp.db lp:{{ tactic-name "my" "my_tac". }}. *)
 Ltac cyp_lia := lia.            Ltac cyp_nia := nia.
 Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
@@ -74,16 +74,9 @@ Elpi Db cyp.db lp:{{
   % and the only ones tried when a step says *by Name*
   pred named o:string, o:term, o:cyptac.
 
-  % [tactic-name Name Ltac]: a tactic a proof may name
+  % [tactic-name Name Ltac]: a tactic that the rules of a proof add to
+  % those of prooftext (elpi/check.elpi)
   pred tactic-name o:string, o:string.
-  tactic-name "lia" "cyp_lia".        tactic-name "nia" "cyp_nia".
-  tactic-name "lra" "cyp_lra".        tactic-name "nra" "cyp_nra".
-  tactic-name "ring" "cyp_ring".      tactic-name "field" "cyp_field".
-  tactic-name "tauto" "cyp_tauto".    tactic-name "auto" "cyp_auto".
-  tactic-name "easy" "cyp_easy".      tactic-name "reflexivity" "cyp_reflexivity".
-  tactic-name "assumption" "cyp_assumption".
-  tactic-name "congruence" "cyp_congruence".
-  tactic-name "firstorder" "cyp_firstorder".
 
   % the tactics tried when no rule closes a step, after the proof's own
   pred default-ltac o:string.
@@ -105,6 +98,9 @@ From Lexicon Extra Dependency "lang_zh.elpi" as lexicon_zh.
 From Lexicon Extra Dependency "lang_ar.elpi" as lexicon_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lexicon_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lexicon_la.
+(* the format of proof texts, shared with xtext: prooftext/ *)
+From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From CypV Extra Dependency "elpi/text.elpi" as cyp_text.
 From CypV Extra Dependency "elpi/check.elpi" as cyp_check.
 From CypV Extra Dependency "elpi/gaps.elpi" as cyp_gaps.
@@ -132,6 +128,7 @@ Elpi Accumulate File lexicon_zh.
 Elpi Accumulate File lexicon_ar.
 Elpi Accumulate File lexicon_ko.
 Elpi Accumulate File lexicon_la.
+Elpi Accumulate File pt_formulas pt_tactics.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.
@@ -180,6 +177,7 @@ Elpi Accumulate File lexicon_zh.
 Elpi Accumulate File lexicon_ar.
 Elpi Accumulate File lexicon_ko.
 Elpi Accumulate File lexicon_la.
+Elpi Accumulate File pt_formulas pt_tactics.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.
@@ -289,6 +287,7 @@ Elpi Accumulate File lexicon_zh.
 Elpi Accumulate File lexicon_ar.
 Elpi Accumulate File lexicon_ko.
 Elpi Accumulate File lexicon_la.
+Elpi Accumulate File pt_formulas pt_tactics.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.

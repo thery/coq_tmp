@@ -82,7 +82,8 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   `rclaim` `claim`, `rfact` `fact`, and `rback`, a claim that replaces
   the goal, written as a claim: read back, the class `claim` gives
   `rclaim`, the first role with it), `formula Role F S` (`` `F`{.tag} ``),
-  `justification J S` (`*by J*`), `is-justification S`;
+  `justification J S` (`*by J*`), `is-justification S`, and the reading
+  of a step's justification, `split-justification S J Rest`;
 - `names.elpi`: `fresh-name Used Wanted Name`, `Wanted` if it is not in
   use, else `Wanted0`, `Wanted1`, ...: the names a text introduces must
   differ from the names in use, so that `*by h*` names one hypothesis
@@ -90,8 +91,9 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   `xtext/elpi/printing.elpi`; cyp can name its hypotheses with it);
 - `tactics.elpi`: `tactic Name`, the tactics a text may name in `*by X*`
   or in its `by` field, and `unknown-tactics Names Unknown`.  Each tool
-  runs a name its own way: cyp maps it to an Ltac definition
-  (`tactic-name Name Ltac`, `cyp/vernac/Cyp.v`); xtext writes only these
+  runs a name its own way: cyp runs the Ltac definition `cyp_Name`
+  (`cyp/vernac/Cyp.v`; the rules of a proof may add tactics,
+  `tactic-name Name Ltac`); xtext writes only these
   names (the text of its tactics, `xtext-tactic Ltac Name` and
   `xtext-guard-tactic Ltac Name` in `xtext/Explain.v`, which run them with
   a time limit), and `xtext/vocab_check.v` checks it.  A name added to one

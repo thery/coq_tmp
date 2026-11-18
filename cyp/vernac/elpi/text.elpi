@@ -165,14 +165,10 @@ last-piece A tt [pform A].
 % ------------------------------------------------------------------ %
 % The elements of a step: each formula with its role
 
-% the justification *by X* of a text, and the text without it
+% the justification *by X* of a text, and the text without it (the syntax
+% of proof texts, prooftext/formulas.elpi)
 pred justification i:string, o:option string, o:string.
-justification S (some X) S1 :-
-  rex.match ".*[*]by [^*]+[*]" S, !,
-  rex.replace ".*[*]by \\([^*]+\\)[*].*" "\\1" S X0,
-  rex.replace "[*]by [^*]+[*]" "" S S1,
-  rex.replace "^ +\\| +$" "" X0 X.
-justification S none S.
+justification S J Rest :- prooftext.split-justification S J Rest.
 
 % [elements Pieces Role Elements]: Role is the role before the first
 % formula (claim in a step, the conclusion in a statement).  A formula
@@ -202,18 +198,13 @@ formula F rhyp [ptext W | P] R As [elt rhyp F, hname H | L] :-
   elements1 [ptext W1 | P] R ff As L.
 formula F R1 P R As [elt R1 F | L] :- elements1 P R ff As L.
 
-% a tag right after a formula
+% a tag right after a formula, {.Tag}: a class of a role
+% (prooftext/formulas.elpi; the first role with that class)
 pred tag i:string, o:role, o:string.
 tag W R W1 :-
-  rex.match "^{[.]\\(var\\|hyp\\|claim\\|fact\\)}" W,
-  rex.replace "^{[.]\\([a-z]*\\)}.*" "\\1" W T, tag-role T R,
-  rex.replace "^{[.][a-z]*}" "" W W1.
-
-pred tag-role i:string, o:role.
-tag-role "var" rvar.
-tag-role "hyp" rhyp.
-tag-role "claim" rclaim.
-tag-role "fact" rfact.
+  rex.match "^{[.][a-z]+}" W,
+  rex.replace "^{[.]\\([a-z]+\\)}.*" "\\1" W T, prooftext.role-tag R T, !,
+  rex.replace "^{[.][a-z]+}" "" W W1.
 
 % the text of a step, to report it
 pred elements-text i:list element, o:string.
