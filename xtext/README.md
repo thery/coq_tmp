@@ -61,7 +61,7 @@ writer is in `elpi/`, one file per subject, loaded in this order:
 | `inductive-text.elpi` | the text of introductions, eliminations (cases), `match`, `fix`, rewriting |
 | `document.elpi` | the statement, the document and its header (written by prooftext), the check of the vocabulary |
 | `type-expressions.elpi` | type expressions after chapter 3 of the thesis: synthesis, equality, the type required of the proof |
-| `staged.elpi` | the translation in three stages of the thesis (see "The staged translation") |
+| `staged.elpi` | the translation in three stages of the thesis, and the selection of type annotations (see "The staged translation") |
 
 [THESIS.md](THESIS.md) maps each rule and figure of Coscoy's thesis to the
 predicate that implements it, and to the example that reproduces it.
@@ -78,8 +78,12 @@ Examples and checks:
   lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la`);
 - `vocab_check.v`: the vocabulary of each language, and the tactic names
   that xtext writes (they must be prooftext's);
+- `selection.v`: the selection of type annotations (thesis 4.3.1) on
+  ABCD (Fig. 4.24), Trans_Inv and one term per rule (Fig. 4.11): each
+  selected term is checked against the expected one;
 - `examples-staged-none/`, `examples-staged-maximal/`,
-  `examples-staged-guarded/`: the texts with other switches, written by
+  `examples-staged-guarded/`, `examples-staged-selection/` (with
+  `XTEXT_SELECTION=thesis`): the texts with other switches, written by
   `sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
   staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`);
 - `measure.sh`, `measure_all.sh`: times and sizes of the texts;
@@ -88,7 +92,7 @@ Examples and checks:
 
 ## Switches
 
-Three switches change how a text is written (`elpi/switches.elpi`).  Each
+Four switches change how a text is written (`elpi/switches.elpi`).  Each
 has an environment variable that sets it and a default, in `xtext.db`
 (`xtext-switch Name Variable Default`, `Explain.v`):
 
@@ -96,6 +100,7 @@ has an environment variable that sets it and a default, in `xtext.db`
 |---|---|---|---|
 | `translation` | `XTEXT_TRANSLATION` | `direct` (one walk), `staged` (the three stages of the thesis, below) | `direct` |
 | `contraction` | `XTEXT_CONTRACTION` | `none`, `guarded`, `maximal` (thesis 3.4.2, below) | `guarded` |
+| `selection` | `XTEXT_SELECTION` | `none` (the contraction decides), `thesis` (the selection of thesis 4.3.1, in place of the contraction; staged translation only, below) | `none` |
 | `lang` | `XTEXT_LANG` | the languages of the lexicon: `en`, `fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la` | `en` |
 
 The language given to the command (`Explain foo in "fr"`) comes before
@@ -835,7 +840,8 @@ be read against its figure:
    merged.  The switch `contraction` (variable `XTEXT_CONTRACTION`):
    `none`, `maximal` (every contraction of 2.3) or `guarded` (only the
    contractions that drop a single annotation, so that no conversion step
-   disappears);
+   disappears); or, with the switch `selection`, the selection of
+   type annotations (4.3.1, below);
 3. **writing** (2.3.3, Fig. 2.10 for applications; 3.4.1, `write`): a
    conclusion says Tc, then `, that is` Tr when they differ (the thesis's
    "ce qui est équivalent à").
@@ -863,6 +869,70 @@ element that is not a proof (`The element z belongs to E`).  Fig. 3.12
 (`Applying h to z, y, x, h2 and h1, we have R z x, that is Inv E R x
 z`), Fig. 3.13 (guarded contraction) `examples-staged-guarded/Trans_Inv.md`.
 
+### The selection of type annotations (thesis 4.3.1, Fig. 4.10)
+
+With the switch `selection` set to `thesis` (variable
+`XTEXT_SELECTION=thesis`), the second stage is the thesis's selection
+(`select`) instead of the contraction: it decides on the term which type
+expressions the text says, by five rewriting rules.  The first three
+(redundant type expressions, successive abstractions, successive
+applications) are the guarded contraction of Fig. 3.11; the two others
+leave out the type of an identifier used as argument or head of an
+application: it is the statement of a hypothesis or of a theorem, said
+where it was introduced.  Only single annotations are dropped, so every
+conversion ("that is") stays.  An argument with no annotation is named in
+the sentence of its application ("Applying h2 to h4"); the arguments that
+keep one have their own text above it.
+
+`selection.v` checks the selected terms: ABCD is Fig. 4.24,
+
+```
+(λA:Prop. λB:Prop. λC:Prop. λD:Prop. λh1:A -> B -> C -> D. λh2:A -> C -> B. λh3:A -> C. λh4:A.
+   ((h1 h4 ((h2 h4 ((h3 h4) : C)) : B) ((h3 h4) : C)) : D) : forall A B C D : Prop, ...)
+```
+
+and its text (`examples-staged-selection/ABCD.md`), against the guarded
+contraction:
+
+```markdown
+guarded                                      selection
+- By h4 we have `A`.                         - Applying h2 to h4, we have `B`.
+- Applying h2, we have `B`.                    - Applying h3 to h4, we have `C`.
+  - By h4 we have `A`.                       - Applying h3 to h4, we have `C`.
+  - Applying h3 to h4, we have `C`.          - Applying h1 to h4, we have `D`.
+- Applying h3 to h4, we have `C`.
+- Applying h1, we have `D`.
+```
+
+Trans_Inv keeps its three conversions (h, h1, h2) and loses the three
+lines "The element z belongs to E": `By application, with z, y and x, we
+have R z x, that is Inv E R x z`.
+
+Sizes of the 73 staged texts (the texts in progress left out):
+
+| stage 2 | list items | characters |
+|---|---|---|
+| contraction none | 1778 | 221981 |
+| contraction maximal | 1128 | 118180 |
+| contraction guarded | 1164 | 126128 |
+| selection | 981 | 112964 |
+
+20 texts differ from the guarded contraction (the others have no
+identifier with a single annotation in an application), e.g. ABCD 6 → 4
+items, Trans_Inv 9 → 6, half_le 55 → 30, std_Nat_le_trans 187 → 129.
+
+What a reader loses: the statement of each hypothesis or theorem used by
+name (`By inj_le we have forall n m : nat, ...` is gone; for a library
+theorem the reader must know or look up its statement), the type of each
+element named (`The element z belongs to E`), and, in an application
+with both named arguments and arguments with a text, the position of the
+latter among the arguments.  Type arguments that the direct writer would
+infer are named too (`Applying f_equal to nat, nat, S, m0 and IH`): the
+staged translation does not leave out inferable arguments (thesis 5.4,
+6.4.1).  What a reader keeps: every conversion, every intermediate
+result that is not an identifier, and the conclusion of each series of
+abstractions.
+
 An earlier version computed the same double annotation in one pass, as
 hooks in the direct writer (switch `xtext-annotation`, texts
 `examples-double/`); it was removed in favour of the stages, which give
@@ -876,7 +946,8 @@ the same annotations (it is in the history, commit 56a84ef).
   and classical reasoning (`Altogether`, `Obviously`, `If we have ...
   Otherwise`).
 - From the thesis: leaving out the generalised predicate (6.4.1), and
-  its other chapters (type annotations, reversible scripts).
+  its chapter 4 except the selection of type annotations (the reversible
+  scripts, the naming of intermediate results).
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.
 - The `require` line of the header is the same for every text (the

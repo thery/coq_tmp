@@ -13,7 +13,9 @@ Two translations exist, chosen by the switch `translation`
 - **direct** (default): term to text in one walk (`transducer.elpi` and
   the files of its forms);
 - **staged**: the thesis's three stages, annotation, contraction, writing,
-  each a predicate on its own data type (`staged.elpi`).  The forms the
+  each a predicate on its own data type (`staged.elpi`).  With the switch
+  `selection` set to `thesis`, the second stage is the selection of
+  chapter 4 (4.3.1) instead of the contraction.  The forms the
   thesis treats only in chapter 6 (eliminations, introductions, rewriting,
   `fix`) and `let`, `match`, casts are written by the direct writer, whose
   subproofs come back to the stages.
@@ -49,6 +51,36 @@ The direct writer also has a contraction of application steps
 `maximal`), guarded by tactics rather than by the annotations: it is not
 the contraction of Fig. 3.11.
 
+## Chapter 4: the selection of type annotations
+
+| thesis | what | code |
+|---|---|---|
+| 4.3.1, Fig. 4.10 | selection of the type expressions the text keeps, five rewriting rules; switch `selection` = `thesis` (variable `XTEXT_SELECTION`), stage 2 in place of the contraction | `select` in `staged.elpi` |
+| 4.3.1, rules 1-3 (redundant type expressions, successive abstractions, successive applications) | the guarded contraction of Fig. 3.11: the same three rules | `select` calls `contract "guarded"` |
+| 4.3.1, rules 4-5 (argument, head of application) | an identifier loses its single annotation as argument or head of an application | `identifiers-unannotated`, `application-argument`, `application-head` in `staged.elpi` |
+| 4.3.1, Fig. 4.11 | one term per rule, before and after | `selection.v` (`rule_redundant`, `rule_abstractions`, `rule_applications`, `rule_argument`, `rule_head`) |
+| 4.4.1, Fig. 4.23-4.24 | ABCD with all its annotations, then with its selected annotations | `selection.v` (`check-selection "ABCD"`; the term is printed by `aterm-string`); its text `examples-staged-selection/ABCD.md` |
+| 4.4.1, Fig. 4.30 ("Nous appliquons h2 à h4 et P1") | an argument with no annotation is named in the sentence of its application | rules (2) and (4) of `application-text` in `staged.elpi` (`named-only`, `texts-and-names`) |
+
+Where the code departs from the thesis:
+
+- Fig. 4.23 writes the applications with all their arguments and leaves
+  out the types of the partial applications (`h1 h4 : B -> C -> D`); the
+  annotation of `selection.v` has them.  The selected term is Fig. 4.24
+  exactly.
+- The thesis annotates only proofs; the arguments that are not proofs
+  (App2, the `z`, `y`, `x` of Trans_Inv) carry their type, written "The
+  element z belongs to E", and the rule "argument of application" leaves
+  it out when the argument is an identifier.
+- Fig. 2.10 has no rule for an application whose arguments are partly
+  identifiers with no annotation: rules (2) and (4) name them after "to"
+  ("Applying h2 to h4, we have B") or "with" ("By application, with z, y
+  and x, we have ..."), as Fig. 4.30 does ("Nous appliquons h2 à h4 et
+  P1"); the arguments that keep a text are written above, unnamed (the
+  names P1, P2, P3 come from 4.3.3, not implemented).
+- A term argument is named as formulas print it (`BinInt.Z.le`, not
+  `le`), so that two constants with the same short name differ.
+
 ## Chapter 5: tactics, scripts and implicit information
 
 | thesis | what | code |
@@ -73,8 +105,10 @@ the contraction of Fig. 3.11.
 
 - Chapter 4, the reversible translation: a script language whose concrete
   syntax is natural language, so that a text can be read back into a proof.
-- 4.3.1, the selection of type annotations: which formulas a text can leave
-  out.
+  Of chapter 4, only the selection of type annotations (4.3.1) is
+  implemented: not the characterisation of subproofs (4.3.2) nor the
+  naming of intermediate results by η-expansion (4.3.3, the P1, P2, P3
+  of Fig. 4.27-4.30).
 - 6.4.1, leaving out implicit arguments in eliminations.
 
 ## From L. Théry's thesis (1994)
