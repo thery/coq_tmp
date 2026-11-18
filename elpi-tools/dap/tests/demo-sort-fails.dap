@@ -1,0 +1,7 @@
+# Configuration 6: sort [0,0] [0,0] fails; the explanation of the failure is printed at the end.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lists.elpi","goal":"sort [0,0] [0,0]"}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"terminated"}
+{"command":"disconnect"}

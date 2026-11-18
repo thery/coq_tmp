@@ -1,0 +1,14 @@
+# Configuration 5: sort [0,0] S, a breakpoint on line 10 (the wrong clause of insert); the stack shows the call of sort above.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lists.elpi","goal":"sort [0,0] S"}}
+{"await":"initialized"}
+{"command":"setBreakpoints","arguments":{"source":{"path":"lists.elpi"},"breakpoints":[{"line":10}]}}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+{"command":"variables","arguments":{"variablesReference":1}}
+{"command":"stepOut","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

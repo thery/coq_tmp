@@ -1,0 +1,74 @@
+{
+  // The goals of the demo (../DEMO.md, "The demo in VS Code"), for the
+  // debugger of the extension elpi-tools/dap/vscode.  Open the folder
+  // elpi-tools/demo in VS Code, then pick a configuration in Run and Debug.
+  // -I ../check/lib: lambda.elpi accumulates the declarations of the
+  // properties (check/lib/property.elpi).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "1. The wrong reduction (breakpoint on line 26)",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${workspaceFolder}/lambda.elpi",
+      "goal": "step (app (lam x\\ c) c) N",
+      "args": ["-I", "${workspaceFolder}/../check/lib", "-all"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "2. Hypotheses and eigenvariables (typing λx.λy.x)",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${workspaceFolder}/lambda.elpi",
+      "goal": "of (lam x\\ lam y\\ x) T",
+      "args": ["-I", "${workspaceFolder}/../check/lib"],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": true
+    },
+    {
+      "name": "3. A failure: self-application",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${workspaceFolder}/lambda.elpi",
+      "goal": "of (lam x\\ app x x) T",
+      "args": ["-I", "${workspaceFolder}/../check/lib"],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": true
+    },
+    {
+      "name": "4. A predicate defined nowhere",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${workspaceFolder}/nowhere.elpi",
+      "goal": "check [1,2]",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "5. Sorting: the wrong clause (breakpoint on line 10)",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${workspaceFolder}/lists.elpi",
+      "goal": "sort [0,0] S",
+      "args": ["-I", "${workspaceFolder}/../check/lib"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "6. Sorting: a failure to explain",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${workspaceFolder}/lists.elpi",
+      "goal": "sort [0,0] [0,0]",
+      "args": ["-I", "${workspaceFolder}/../check/lib"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "7. The profile of two reversals",
+      "type": "elpi",
+      "request": "launch",
+      "program": "${workspaceFolder}/lists.elpi",
+      "goal": "std.iota 200 L, naive-rev L R1, rev L R2",
+      "args": ["-I", "${workspaceFolder}/../check/lib", "-profile"],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

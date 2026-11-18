@@ -1,0 +1,7 @@
+# Configuration 7 with a shorter list (std.iota 20): the profile is printed at the end.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lists.elpi","goal":"std.iota 20 L, naive-rev L R1, rev L R2","args":["-profile"]}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"terminated"}
+{"command":"disconnect"}

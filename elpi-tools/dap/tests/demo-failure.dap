@@ -1,0 +1,9 @@
+# Configuration 3: self-application has no type; the explanation of the failure is printed at the end.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lambda.elpi","goal":"of (lam x\\ app x x) T","stopOnEntry":true}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

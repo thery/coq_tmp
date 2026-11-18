@@ -1,0 +1,12 @@
+# Configuration 4, with a function breakpoint on positive (declared, defined nowhere): its call, then its fail.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"nowhere.elpi","goal":"check [1,2]"}}
+{"await":"initialized"}
+{"command":"setFunctionBreakpoints","arguments":{"breakpoints":[{"name":"positive"}]}}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

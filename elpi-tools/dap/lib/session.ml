@@ -294,10 +294,16 @@ let capabilities =
       ("supportsEvaluateForHovers", `Bool false); ("supportsStepBack", `Bool false) ]
 
 (* [default_elpi_debug ()]: elpi-debug next to this executable (both are
-   installed in the same bin directory), else elpi-debug from the PATH. *)
+   installed in the same bin directory: the directory of the command as it
+   was called, which may be a symbolic link, or of the executable file),
+   else elpi-debug from the PATH. *)
 let default_elpi_debug () =
-  let sibling = Filename.concat (Filename.dirname Sys.executable_name) "elpi-debug" in
-  if Sys.file_exists sibling then sibling else "elpi-debug"
+  let next_to path = Filename.concat (Filename.dirname path) "elpi-debug" in
+  let called_as = Sys.argv.(0) in
+  let candidates = (if String.contains called_as '/' then [ next_to called_as ] else []) @ [ next_to Sys.executable_name ] in
+  match List.find_opt Sys.file_exists candidates with
+  | Some path -> path
+  | None -> "elpi-debug"
 
 let launch s (r : P.request) =
   match P.string_argument "program" r, P.string_argument "goal" r with

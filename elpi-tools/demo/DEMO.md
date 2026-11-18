@@ -331,6 +331,28 @@ Profile (ports per predicate; tries = clauses tried; self time):
 Solution 1:
 ```
 
+## The demo in VS Code
+
+The same goals in VS Code's debugger, through the debug adapter
+[`../dap`](../dap/README.md): open this folder in VS Code (with the
+extension of `../dap/vscode` installed), and
+[`.vscode/launch.json`](.vscode/launch.json) offers seven configurations:
+
+1. the wrong reduction, `step (app (lam x\ c) c) N` with `-all`, a
+   breakpoint on line 26 of `lambda.elpi`;
+2. the hypotheses and eigenvariables of `of (lam x\ lam y\ x) T`;
+3. the failure of `of (lam x\ app x x) T`;
+4. `check [1,2]` on `nowhere.elpi` (a function breakpoint on `positive`);
+5. `sort [0,0] S`, a breakpoint on line 10 of `lists.elpi`;
+6. the failure of `sort [0,0] [0,0]`;
+7. the profile of `std.iota 200 L, naive-rev L R1, rev L R2`.
+
+What to click and what one should see, step by step:
+[`../dap/README.md`, "The demo in VS Code"](../dap/README.md#the-demo-in-vs-code).
+**Not tested by clicking**: scripted DAP sessions
+([`../dap/tests/demo.t`](../dap/tests/demo.t)) check what the adapter
+answers at each of these steps, not what VS Code draws.
+
 ## How it works, in one paragraph
 
 `elpi-reflect` reads a program and gives it as Elpi data (types,

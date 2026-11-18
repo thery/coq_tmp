@@ -7,4 +7,5 @@
  (libraries yojson unix))
 
 (cram
- (deps %{bin:elpi-dap} %{bin:elpi-debug} dap_replay.exe (glob_files *.elpi) (glob_files *.dap)))
+ (deps %{bin:elpi-dap} %{bin:elpi-debug} dap_replay.exe (glob_files *.elpi) (glob_files *.dap)
+  (glob_files %{project_root}/demo/*.elpi) %{project_root}/check/lib/property.elpi))

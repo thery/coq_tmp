@@ -1,0 +1,12 @@
+# Configuration 1 of demo/.vscode/launch.json: all the reductions of (λx. c) c, a breakpoint on line 26 (the wrong rule).
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lambda.elpi","goal":"step (app (lam x\\ c) c) N","args":["-all"]}}
+{"await":"initialized"}
+{"command":"setBreakpoints","arguments":{"source":{"path":"lambda.elpi"},"breakpoints":[{"line":26}]}}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+{"command":"variables","arguments":{"variablesReference":1}}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

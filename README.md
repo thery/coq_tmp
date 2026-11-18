@@ -44,5 +44,13 @@ development), in [elpi-tools/](elpi-tools):
   failing goal with each clause tried and why it did not apply (or that the
   predicate has no clause at all).  50 to 150 times slower than the real
   engine.  Its strategy can be random: elpi-check uses it to generate.
+- [dap/](elpi-tools/dap/README.md): **the debugger in VS Code**.  `elpi-dap`,
+  a debug adapter (Debug Adapter Protocol) on `elpi-debug -machine`, and a
+  small VS Code extension: breakpoints on clause lines and on predicates,
+  step in, over, out, continue, pause, restart a call, the stack of calls
+  at their clauses, and three scopes (the goal, the local program, the
+  eigenvariables).  Tested by scripted DAP sessions, not by clicking.
+- [demo/](elpi-tools/demo/DEMO.md): **a demo** of the tools, also in VS Code
+  ([`demo/.vscode/launch.json`](elpi-tools/demo/.vscode/launch.json)).
 
 Build and test: `cd elpi-tools && dune build && dune build @runtest`.

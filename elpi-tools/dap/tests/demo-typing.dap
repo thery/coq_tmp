@@ -1,0 +1,33 @@
+# Configuration 2: the typing of λx.λy.x, stopped on entry; step in to the unify of the call of x (#3) with a hypothesis, then the scopes.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lambda.elpi","goal":"of (lam x\\ lam y\\ x) T","stopOnEntry":true}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+{"command":"variables","arguments":{"variablesReference":1}}
+{"command":"variables","arguments":{"variablesReference":2}}
+{"command":"variables","arguments":{"variablesReference":3}}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}
