@@ -12,3 +12,11 @@ symb arr ty -> ty -> ty.
 pred of i:tm, o:ty.
 of (app M N) T :- of M (arr S T), of N S.
 of (lam F) (arr S T) :- pi x\ of x S => of (F x) T.
+
+% vacuous F M: the λ-term F does not use its variable, and M is its body
+% (M is created outside the pi, so it cannot depend on x).
+pred vacuous i:(tm -> tm), o:tm.
+vacuous F M :- pi x\ same (F x) M.
+
+pred same o:tm, o:tm.
+same M M.

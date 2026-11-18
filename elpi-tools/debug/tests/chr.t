@@ -11,24 +11,30 @@ a woken goal enters the interpreter through its Wake port.
 
   $ elpi-debug -trace chr.elpi 'double 3 Y'
   Call: #1 double 3 X0
+  Unify: #1 with chr.elpi:18: double 3 X0
     Call: #2 even X0
-    Cut:  #2 commits to its current clause
-      (builtin) delay: even X0
+    Unify: #2 with chr.elpi:10: even X0
+    Cut: #2 commits to its current clause
+      Delay: [S1] even X0 on [X0]
     Exit: #2 even X0
-      Wake: #3 even 6
-      Exit: #3 even 6
+      Resume: [S1] #3 even 6
+      Unify: #3 with chr.elpi:10: even 6
+      Unify: #3 with chr.elpi:11: even 6
+      Exit: [S1] #3 even 6
   Exit: #1 double 3 6
   Solution 1:
     Y = 6
 
   $ elpi-debug -trace chr.elpi 'even X, odd X'
   Call: #1 even X0
-  Cut:  #1 commits to its current clause
-    (builtin) delay: even X0
+  Unify: #1 with chr.elpi:10: even X0
+  Cut: #1 commits to its current clause
+    Delay: [S1] even X0 on [X0]
   Exit: #1 even X0
   Call: #2 odd X0
-  Cut:  #2 commits to its current clause
-    (builtin) delay: odd X0
+  Unify: #2 with chr.elpi:14: odd X0
+  Cut: #2 commits to its current clause
+    Delay: [S2] odd X0 on [X0]
   CHR: both even and odd
   Fail: #2 odd X0
   Redo: #1 even X0

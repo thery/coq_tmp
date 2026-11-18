@@ -22,20 +22,20 @@ namespace debug {
 % Elpi's order, with fresh variables, and where each one comes from.
 pred program-clause i:any, o:(pred), o:(pred), o:origin.
 program-clause P Head Body Origin :-
-  reflect.clause P _ Loc _ Head Body,
+  reflect.clause P _ Loc Attrs Head Body,
   constant Head Q _, same_term Q P,     % (overloaded rules have no index)
-  Origin = at Loc.
+  Origin = at Loc Attrs.
 
 % Where a candidate clause comes from: a rule of the program, at a source
 % location, or a hypothetical clause, added by a call.  Turned into text
 % only when shown.
 data origin.
-symb at reflect.srcloc -> origin.
+symb at reflect.srcloc -> list reflect.attribute -> origin.
 symb added-by string -> int -> origin.   % its text, a number of its own
 
 func origin-string origin -> string.
 origin-string (added-by S _) S.
-origin-string (at (reflect.srcloc File Line _)) S :-
+origin-string (at (reflect.srcloc File Line _) _) S :-
   rex.replace "^.*/" "" File Base,
   S is Base ^ ":" ^ {std.any->string Line}.
 
@@ -106,6 +106,7 @@ symb seed int -> option.       % seed of the random order
 symb first-solution option.    % keep the first solution of each call (no redo)
 symb max-depth int -> option.  % calls deeper than this fail
 symb ignore-cut option.        % a cut does nothing (every clause is a candidate)
+symb echo option.             % print each command read (scripted sessions)
 
 % [opt O]: option O is on (a local clause installed by [run]).
 pred opt o:option.
@@ -134,8 +135,10 @@ noisy profile.
 
 % [state Name S]: the safes holding what must survive backtracking:
 % "deepest" (the deepest failure so far), "mode" (the stepping mode chosen
-% at a stop), "profile" (the port events), "warned" (the predicates
-% already reported as having no clause).
+% at a stop), "request" (a retry or fail asked at a stop), "breaks" (the
+% breakpoints set or removed at a stop), "profile" (the port events),
+% "warned" (the predicates already reported as having no clause), "eigen"
+% and "suspension" (counters for the names of eigenvariables and delays).
 pred state o:string, o:safe.
 
 % A box is one call of a predicate: its invocation number, its depth, its
@@ -171,18 +174,21 @@ run Options Goal :-
   declarations Decls,
   seed-random Options,
   new_safe Deepest, new_safe Mode, new_safe Prof, new_safe Warned,
-  stash_in_safe Mode "leap",
+  new_safe Request, new_safe Breaks, new_safe Eigens, new_safe Suspensions,
+  stash_in_safe Mode {initial-mode Options},
   std.map Options (o\ c\ c = opt o) OptClauses,
   quiet-flag Options Quiet,
   std.append OptClauses
     [state "deepest" Deepest, state "mode" Mode, state "profile" Prof,
-     state "warned" Warned, current-ctx "call" (ctx 0 []) | {std.append Quiet Decls}]
+     state "warned" Warned, state "request" Request, state "breaks" Breaks,
+     state "eigen" Eigens, state "suspension" Suspensions,
+     current-ctx "call" (ctx 0 []) | {std.append Quiet Decls}]
     Local,
   Local => run-top Goal.
 
 % [run-top Goal]: the query, with its outcome reported.
 pred run-top o:(pred).
-run-top Goal :- compile (ctx 0 []) Goal Code, Code, report-solution.
+run-top Goal :- compile (ctx 0 []) [] Goal Code _, Code, report-solution.
 run-top _ :- report-final-failure, fail.
 
 % ===== 4. Clause bodies, and the cut ======================================
@@ -203,25 +209,44 @@ run-top _ :- report-final-failure, fail.
 % and => and local to ; (checked on elpi 4.0.0), and keeping these
 % connectives native keeps that behaviour too.
 
-% [compile Ctx Body Code]: Code runs Body in context Ctx.
+% [compile Ctx Names Body Code Names1]: Code runs Body in context Ctx.
+% Names are the source names of the binders of Body, in textual order (from
+% reflect; [] when unknown), Names1 those left after Body: a pi names its
+% eigenvariable with the first one.  Outside the fast path, pi and =>
+% have their ports (still in line, so that the cut goes through them).
 :nooc
-pred compile o:ctx, i:(pred), o:(pred).
-compile Ctx G (debug.goal Ctx G) :- var G, !.
-compile _ ! true :- opt ignore-cut, !.
-compile Ctx ! (debug.cut-port Ctx, !) :- !.
-compile _ true true :- !.
-compile Ctx G Code :- conjuncts G Gs, !, compile-all Ctx Gs Codes, mk-conj Codes Code.
-compile Ctx (pi x\ F x) (pi x\ Code x) :- !, pi x\ compile Ctx (F x) (Code x).
-compile Ctx (sigma x\ F x) Code :- !, compile Ctx (F _) Code.
-compile Ctx (H => B) (debug.assume Ctx H Hyps, Hyps => Code) :- !, compile Ctx B Code.
-compile Ctx (A ; B) (CA ; CB) :- !, compile Ctx A CA, compile Ctx B CB.
-compile Ctx (declare_constraint G Keys) (debug.delay Ctx G Keys) :- !.
-compile Ctx G (debug.goal Ctx G).
+pred compile o:ctx, i:list string, i:(pred), o:(pred), o:list string.
+compile Ctx Ns G (debug.goal Ctx G) Ns :- var G, !.
+compile _ Ns ! true Ns :- opt ignore-cut, !.
+compile Ctx Ns ! (debug.cut-port Ctx, !) Ns :- !.
+compile _ Ns true true Ns :- !.
+compile Ctx Ns G Code Ns1 :- conjuncts G Gs, !, compile-all Ctx Ns Gs Codes Ns1, mk-conj Codes Code.
+compile Ctx Ns (pi x\ F x) (pi x\ Code x) Ns1 :- quiet, !,
+  next-name Ns _ Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
+compile Ctx Ns (pi x\ F x) (pi x\ debug.pi-port Ctx Name x (F x) N, (debug.eigen x N => Code x)) Ns1 :- !,
+  next-name Ns Name Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
+compile Ctx Ns (sigma x\ F x) Code Ns1 :- !, next-name Ns _ Ns0, compile Ctx Ns0 (F _) Code Ns1.
+compile Ctx Ns (H => B) (debug.assume Ctx H B Hyps, Hyps => Code) Ns1 :- !,
+  drop-names H Ns Ns0, compile Ctx Ns0 B Code Ns1.
+compile Ctx Ns (A ; B) (CA ; CB) Ns2 :- !, compile Ctx Ns A CA Ns1, compile Ctx Ns1 B CB Ns2.
+compile Ctx Ns (declare_constraint G Keys) (debug.delay Ctx G Keys) Ns1 :- !, drop-names G Ns Ns1.
+compile Ctx Ns G (debug.goal Ctx G) Ns1 :- drop-names G Ns Ns1.
+
+% [next-name Ns Name Ns1]: the name of the next binder ("x" when unknown).
+pred next-name i:list string, o:string, o:list string.
+next-name [N|Ns] N Ns :- !.
+next-name [] "x" [].
+
+% [drop-names T Ns Ns1]: the names of the binders of T are skipped.
+pred drop-names i:any, i:list string, o:list string.
+drop-names _ [] [] :- !.
+drop-names T Ns Ns1 :- lambda-count T N, std.length Ns L, N =< L, !, std.drop N Ns Ns1.
+drop-names _ _ [].
 
 :nooc
-pred compile-all o:ctx, i:list (pred), o:list (pred).
-compile-all _ [] [].
-compile-all Ctx [G|Gs] [C|Cs] :- compile Ctx G C, compile-all Ctx Gs Cs.
+pred compile-all o:ctx, i:list string, i:list (pred), o:list (pred), o:list string.
+compile-all _ Ns [] [] Ns.
+compile-all Ctx Ns [G|Gs] [C|Cs] Ns2 :- compile Ctx Ns G C Ns1, compile-all Ctx Ns1 Gs Cs Ns2.
 
 % [mk-conj Goals G]: G is the conjunction of Goals.
 :nooc
@@ -267,7 +292,7 @@ pred goal o:ctx, i:(pred).
 goal _ G :- var G, !, std.fatal-error "debug: the goal is a variable".
 % A connective known only at run time (a goal passed in a variable) is
 % compiled now; a cut in it is local to this goal (see README).
-goal Ctx G :- structural G, !, compile Ctx G Code, Code.
+goal Ctx G :- structural G, !, compile Ctx [] G Code _, Code.
 goal Ctx G :- program-goal G P, !, call Ctx P G "call".
 goal Ctx G :- native Ctx G.
 
@@ -314,15 +339,23 @@ may-call-back _.      % a λ-term, or a connective (,), =, pi...: assume it may
 % [delay Ctx G Keys]: suspend G on Keys with the real declare_constraint,
 % so that the CHR rules and the resumption are the engine's own; when G is
 % woken, its program predicate reaches [bridge], which gives it a box
-% entered through the "wake" port.
+% entered through the resume port, with the number of the suspension.
 :nooc
 pred delay o:ctx, i:(func), i:any.
 delay Ctx G Keys :-
-  native-port "delay" Ctx G,
-  ( (current-ctx "wake" Ctx => declare_constraint G Keys)
+  suspension-number K,
+  delay-port Ctx G Keys K,
+  Entry is "wake " ^ {std.any->string K},
+  ( (current-ctx Entry Ctx => declare_constraint G Keys)
   ; note-goal-failure Ctx G
       ["declare_constraint failed: adding this constraint fired a CHR rule that failed"],
     fail ).
+
+% [suspension-number K]: the number of a new suspension (0 when no port is
+% shown).
+pred suspension-number o:int.
+suspension-number 0 :- quiet, !.
+suspension-number K :- new-number "suspension" K.
 
 % ===== 6. Bridges from native code back to the interpreter ===============
 %
@@ -338,7 +371,8 @@ delay Ctx G Keys :-
 % local clauses [pi x1..xN\ ...], and they are for the predicates that only
 % have hypothetical clauses, but elpi 4.0.0 crashes ("index out of bounds")
 % when a CHR rule fires on a constraint whose predicate has such a local
-% clause in scope (tests/elpi-bugs/chr-pi-local-clause.elpi).
+% clause in scope (LPCIC/elpi#505, https://github.com/LPCIC/elpi/issues/505;
+% tests/elpi-bugs/chr-pi-local-clause.elpi).
 
 % [bridged P]: P is a predicate of the program (it has a bridge): a
 % declared predicate, or one given a bridge by [assume].
@@ -392,7 +426,31 @@ call (ctx D Above) P G Kind :-
 pred run-box o:box, i:(pred).
 run-box Box G :-
   new_safe Exited,
-  box-ports Exited Box G.
+  attempt Exited Box G.
+
+% [attempt Exited Box G]: the call; its second clause is the choice point
+% that a retry or fail command of the stepper unwinds to (see section 11).
+:nooc
+pred attempt i:safe, o:box, i:(pred).
+attempt Exited Box G :- box-ports Exited Box G.
+attempt Exited Box G :- resumed-by-request Exited Box G.
+
+:nooc
+pred resumed-by-request i:safe, o:box, i:(pred).
+resumed-by-request Exited Box G :-
+  box-id-goal Box Id _, take-request Id R, after-request R Exited Box G.
+
+:nooc
+pred after-request i:request, i:safe, o:box, i:(pred).
+after-request (retry _) Exited Box G :- attempt Exited Box G.
+after-request (fail-call _) Exited Box G :- forced-fail Exited Box G.
+
+% [forced-fail Exited Box G]: the fail port of a call made to fail (where
+% a retry may still be asked).
+:nooc
+pred forced-fail i:safe, o:box, i:(pred).
+forced-fail _ Box _ :- port "fail" Box, fail.
+forced-fail Exited Box G :- resumed-by-request Exited Box G.
 
 % [box-ports Exited Box G]: the call port, backchaining and then the exit
 % port; on backtracking, the redo port; when all is exhausted, the fail
@@ -401,6 +459,7 @@ run-box Box G :-
 pred box-ports i:safe, o:box, i:(pred).
 box-ports Exited Box G :-
   port "call" Box, solutions Box G, stash_in_safe Exited "exited", exit-or-redo Box.
+box-ports Exited Box _ :- port "fail" Box, note-failure-if-first Exited Box, fail.
 
 % [solutions Box G]: the solutions of G by backchaining, or only the first
 % one with option first-solution (a cut here discards those choice points).
@@ -408,7 +467,6 @@ box-ports Exited Box G :-
 pred solutions o:box, i:(pred).
 solutions Box G :- opt first-solution, !, backchain Box G, !.
 solutions Box G :- backchain Box G.
-box-ports Exited Box _ :- port "fail" Box, note-failure-if-first Exited Box, fail.
 
 :nooc
 pred exit-or-redo o:box.
@@ -427,10 +485,19 @@ backchain Box G :-
   within-depth D,
   strategy-candidate P G Origin Head Body,
   try-port Box Origin Head,
-  head-matches Modes G Head,
+  body-names Origin Head Body Names,
+  match-and-port Modes Box Origin G Head,
   D1 is D + 1,
-  compile (ctx D1 [frame Id D P G | Above]) Body Code,
+  compile (ctx D1 [frame Id D P G | Above]) Names Body Code _,
   Code.
+
+% [body-names Origin Head Body Names]: the source names of the binders of
+% the body of a rule (none for a hypothetical clause, or on the fast path).
+pred body-names i:origin, i:(pred), i:(pred), o:list string.
+body-names _ _ _ [] :- quiet, !.
+body-names (at _ Attrs) Head Body Names :- !,
+  binder-strings Attrs All, binder-names Head Body All Names.
+body-names _ _ _ [].
 
 % [box-parts Box Id Depth P Above]: the parts of a box (by head
 % unification: an as-pattern would be an equation, with an occurs check).
@@ -477,8 +544,8 @@ candidate-refs P Refs :-
 pred candidate-of-ref i:any, i:candidate-ref, o:origin, o:(pred), o:(pred).
 candidate-of-ref P (hyp-ref K) (added-by S K) Head Body :-
   hyp P (added-by S K) C, !, clause-parts C Head Body.
-candidate-of-ref P (rule-ref I) (at Loc) Head Body :-
-  reflect.clause P I Loc _ Head Body, constant Head Q _, same_term Q P, !.
+candidate-of-ref P (rule-ref I) (at Loc Attrs) Head Body :-
+  reflect.clause P I Loc Attrs Head Body, constant Head Q _, same_term Q P, !.
 
 % [shuffle L S]: S is L in a random order.
 pred shuffle i:list A, o:list A.
@@ -549,12 +616,13 @@ arg-match o A B :- A = B.
 % facts, so they have Elpi's own scope and order.
 pred hyp o:any, o:origin, o:(pred).
 
-% [assume Ctx H Hyps]: Hyps are the local clauses that represent the
-% hypothesis H (a clause or a list of clauses): one [hyp] fact per clause,
-% and a bridge for a predicate that had none.
+% [assume Ctx H B Hyps]: Hyps are the local clauses that represent the
+% hypothesis H (a clause or a list of clauses) for the goal B: one [hyp]
+% fact per clause, and a bridge for a predicate that had none.
 :nooc
-pred assume o:ctx, i:any, o:list (pred).
-assume Ctx H Hyps :-
+pred assume o:ctx, i:any, i:(pred), o:list (pred).
+assume Ctx H B Hyps :-
+  assume-port Ctx H B,
   hyp-list H Cs, hyp-origin Ctx Origin,
   std.fold Cs [] (hyp-facts Origin) Hyps.
 
@@ -588,7 +656,210 @@ func hyp-facts-of any, int, list (pred) -> list (pred).
 hyp-facts-of P _ Hs Hs :- bridged P, !.
 hyp-facts-of P N Hs [bridged P, B | Hs] :- bridge-clause P [] N B.
 
-% ===== 10. Ports: trace, breakpoints, stepping ============================
+% ===== 10. λProlog in view: eigenvariables, scopes, logic variables ======
+%
+% Elpi prints an eigenvariable as c0, c1... (its level).  Each pi entered
+% by the interpreter names its eigenvariable after the binder of the source
+% (from reflect's binders attribute) and a number, x#3, with a local clause
+% [eigen X "x#3"] in the scope of the pi; printing replaces c<level> by that
+% name.  A logic variable may depend on the eigenvariables in scope when it
+% was created; [can-depend V E] tests it by trying V = E without keeping
+% the binding (it fails when E was introduced after V).
+
+% [eigen X Name]: the eigenvariable X is shown as Name.
+pred eigen o:any, o:string.
+
+% [show-term T S]: T printed, with the names of its eigenvariables.
+func show-term any -> string.
+show-term T S :- term_to_string T S0, rex.replace "\n *" " " S0 S1, names Es, rename-eigens Es 0 S1 S.
+
+% [rename-eigens Es L S0 S]: Es are the eigenvariables in scope from level
+% L on, the oldest first (as [names] gives them, whatever its documentation
+% says: its code is list_init 0 depth).
+func rename-eigens list any, int, string -> string.
+rename-eigens [] _ S S.
+rename-eigens [E|Es] L S0 S :-
+  rename-eigen E L S0 S1, L1 is L + 1, rename-eigens Es L1 S1 S.
+
+func rename-eigen any, int, string -> string.
+rename-eigen E L S0 S :- eigen E Name, !,
+  Rex is "\\bc" ^ {std.any->string L} ^ "\\b", rex.replace Rex Name S0 S.
+rename-eigen _ _ S S.
+
+% [eigen-name E S]: the name of the eigenvariable E.
+pred eigen-name i:any, o:string.
+eigen-name E S :- show-term E S.
+
+pred eigen-names i:list any, o:list string.
+eigen-names [] [].
+eigen-names [E|Es] [N|Ns] :- eigen-name E N, eigen-names Es Ns.
+
+% [can-depend V E]: the logic variable V may be assigned a term mentioning
+% the eigenvariable E.
+pred can-depend i:any, i:any.
+can-depend V E :- not (not (V = E)).
+
+% [visible-eigens V Es]: the eigenvariables in scope that V may depend on.
+pred visible-eigens i:any, o:list any.
+visible-eigens V Es :- names All, keep-visible V All Es.
+
+pred keep-visible i:any, i:list any, o:list any.
+keep-visible _ [] [].
+keep-visible V [E|Es] [E|Vs] :- can-depend V E, !, keep-visible V Es Vs.
+keep-visible V [_|Es] Vs :- keep-visible V Es Vs.
+
+% [new-number Counter K]: the next number of a counter ("eigen" for
+% eigenvariables, "suspension" for delayed goals), kept across backtracking.
+pred new-number i:string, o:int.
+new-number Counter K :-
+  state Counter S, open_safe S L, std.length L N, K is N + 1, stash_in_safe S K.
+
+% --- walking terms (Elpi has no builtin to take a λ-term apart) ---
+
+% The shape of a term: a logic variable (its head, for an applied one), a
+% leaf, a node with its immediate subterms in textual order, or a binder
+% (pi, sigma, λ) with its body as a function.
+data shape.
+symb flexible any -> shape.
+symb leaf shape.
+symb node list any -> shape.
+symb binder any -> shape.
+
+pred shape-of i:any, o:shape.
+shape-of T (flexible H) :- var T H _, !.
+shape-of T leaf :- is_cdata T _, !.
+shape-of (pi x\ F x) (binder F) :- !.
+shape-of (sigma x\ F x) (binder F) :- !.
+shape-of G (node Gs) :- conjuncts G Gs, !.
+shape-of (A => B) (node [A, B]) :- !.
+shape-of (A :- B) (node [A, B]) :- !.
+shape-of (A = B) (node [A, B]) :- !.
+shape-of (pattern_match A B) (node [A, B]) :- !.
+shape-of (findall_solutions A B) (node [A, B]) :- !.
+shape-of (declare_constraint G K) (node [G, K]) :- !.
+shape-of ! leaf :- !.
+shape-of T (node Args) :- constant T _ Args, !.
+shape-of T (node Args) :- name T _ Args, !.
+shape-of [] leaf :- !.
+shape-of T (node [X, L1]) :- T = [X|L], !, std.unsafe-cast L L1.
+shape-of T (binder T) :- is-lambda T, !.
+shape-of _ leaf.             % an application of a builtin (var X...): not inspected
+
+% [is-lambda T]: T is a λ-term.  Elpi has no builtin for it, and unifying
+% T with x\ F x would eta-expand anything; a λ-term prints as "cN \ ...".
+pred is-lambda i:any.
+is-lambda T :- term_to_string T S, rex.match "^c[0-9]+ \\\\" S.
+
+% [binder-body F G]: G is the body of the binder F under the eigenvariable
+% x (F is a λ-term, applied to x).
+pred binder-body i:any, i:any, o:any.
+:untyped
+binder-body F X (F X).
+
+% [lambda-count T N]: the number of binders (pi, sigma, λ) in T, in the
+% order reflect lists their source names.
+pred lambda-count i:any, o:int.
+lambda-count T N :- shape-of T S, shape-lambda-count S N.
+
+pred shape-lambda-count i:shape, o:int.
+shape-lambda-count (flexible _) 0.
+shape-lambda-count leaf 0.
+shape-lambda-count (node Ts) N :- lambda-counts Ts N.
+
+pred lambda-counts i:list any, o:int.
+lambda-counts [] 0.
+lambda-counts [T|Ts] N :- lambda-count T A, lambda-counts Ts B, N is A + B.
+shape-lambda-count (binder F) N :- pi x\ sigma B\ binder-body F x B, lambda-count B M, N is M + 1.
+
+% [logic-vars T Vs]: the logic variables of T (their heads, once each).
+pred logic-vars i:any, o:list any.
+logic-vars T Vs :- logic-vars-acc T [] Vs1, std.rev Vs1 Vs.
+
+pred logic-vars-acc i:any, i:list any, o:list any.
+logic-vars-acc T Acc Acc1 :- shape-of T S, shape-vars S Acc Acc1.
+
+pred shape-vars i:shape, i:list any, o:list any.
+shape-vars (flexible H) Acc Acc :- std.exists Acc (same_var H), !.
+shape-vars (flexible H) Acc [H|Acc].
+shape-vars leaf Acc Acc.
+shape-vars (node Ts) Acc Acc1 :- logic-vars-all Ts Acc Acc1.
+
+pred logic-vars-all i:list any, i:list any, o:list any.
+logic-vars-all [] Acc Acc.
+logic-vars-all [T|Ts] Acc Acc2 :- logic-vars-acc T Acc Acc1, logic-vars-all Ts Acc1 Acc2.
+shape-vars (binder F) Acc Acc1 :- pi x\ sigma B\ binder-body F x B, logic-vars-acc B Acc Acc1.
+
+% [mentions-var T V]: the logic variable V occurs in T.
+pred mentions-var i:any, i:any.
+mentions-var T V :- logic-vars T Vs, std.exists Vs (same_var V).
+
+% [binder-names Head Body Names BodyNames]: the source names of the
+% binders of the body, given those of the whole rule (Names); none when
+% they do not add up.
+pred binder-names i:(pred), i:(pred), i:list string, o:list string.
+binder-names Head Body Names BodyNames :-
+  lambda-count Head NH, lambda-count Body NB, std.length Names N, N is NH + NB, !,
+  std.drop NH Names BodyNames.
+binder-names _ _ _ [].
+
+func binder-strings list reflect.attribute -> list string.
+binder-strings Attrs Names :- std.mem! Attrs (reflect.binders Bs), !,
+  std.map Bs (b\ s\ b = reflect.binder s _) Names.
+binder-strings _ [].
+
+% [show-scope G]: the eigenvariables in force and, for each logic
+% variable of G, the ones it may depend on.
+pred show-scope i:(pred).
+show-scope G :-
+  names Es, eigen-names Es Ns,
+  say 1 ["eigenvariables in force (oldest first): ", {std.string.concat ", " Ns}],
+  logic-vars G Vs,
+  show-var-scopes Vs.
+
+pred show-var-scopes i:list any.
+show-var-scopes [].
+show-var-scopes [V|Vs] :- show-var-scope V, show-var-scopes Vs.
+
+pred show-var-scope i:any.
+show-var-scope V :-
+  visible-eigens V Es, eigen-names Es Ns,
+  say 1 ["  ", {show-term V}, " may depend on: ", {names-or-none Ns}].
+
+func names-or-none list string -> string.
+names-or-none [] "no eigenvariable" :- !.
+names-or-none Ns S :- std.string.concat ", " Ns S.
+
+% ===== 11. Ports: trace, breakpoints, interactive stepping ===============
+%
+% An event is a port of a call (call, exit, redo, fail; a woken goal
+% enters through resume) or a step of λProlog inside a call: the head
+% unification of the selected clause (unify), the entry into pi (pi) or
+% into H => G (assume), the suspension of a goal (delay), a cut.  Each
+% event is shown when tracing, and in interactive mode the interpreter
+% stops there, as the box-model tracers of Prolog, and reads a command.
+%
+% The commands act on the focus of the event: the call whose port it is,
+% or whose body runs the pi, => or cut.
+%
+% retry and fail.  Each call is run by [attempt], whose second clause is a
+% choice point placed just before the call port.  The command records the
+% request (retry N or fail-call N) in a safe, which survives backtracking,
+% and fails.  While a request is pending every event fails at once, so
+% backtracking goes quickly through the choice points inside call N
+% (bindings undone by Elpi as usual) and reaches the second clause of
+% [attempt] for N, which takes the request and runs call N again, or shows
+% its fail port and fails.  The local program and the eigenvariables are
+% restored as well: the clauses added by => and the eigenvariables of pi
+% are Elpi's own (the interpreter keeps => and pi native), so going back to
+% the choice point before the call port leaves their scopes, exactly as it
+% undoes the bindings.  The cut does not get in the way: a cut in a body is
+% the cut of [backchain], below [attempt], so it never removes the choice
+% point of [attempt] of its own call or of the calls above.
+%
+% skip.  A stepping mode (skip N), kept in a safe: no event is shown or
+% stops until the exit or fail port of call N (breakpoints still stop).
+% Nothing is undone or changed in the run, the local program and scope
+% included: the call runs as without the debugger, only unseen.
 
 % [say Depth Parts]: print the concatenation of Parts, indented by Depth.
 func say int, list string.
@@ -602,126 +873,40 @@ indent N S :- M is N - 1, indent M S1, S is S1 ^ "  ".
 func box-name int -> string.
 box-name Id S :- std.any->string Id I, S is "#" ^ I.
 
-% [port Kind Box]: Box passes the port Kind ("call", "exit", "redo",
-% "fail").  It is recorded for the profile, shown when tracing (or when the
-% predicate has a breakpoint), and stops at a breakpoint or in step mode.
-:nooc
-pred port i:string, o:box.
-port _ _ :- quiet, !.
-port Kind Box :-
-  record-event Kind Box,
-  show-port-if-shown Kind Box,
-  stop-if-stopping Kind Box.
-
-% (The hot paths use clauses rather than std.if: its arguments are inputs,
-% and the goals passed to it hold the whole stack of frames.)
-:nooc
-pred show-port-if-shown i:string, o:box.
-show-port-if-shown Kind Box :- shown Box, !, show-port Kind Box.
-show-port-if-shown _ _.
+% The focus of an event: invocation number, depth, predicate and goal of a
+% call, and the frames above it (invocation number 0: the query itself).
+data focus.
+symb focus int -> int -> any -> (pred) -> list frame -> focus.
 
 :nooc
-pred stop-if-stopping i:string, o:box.
-stop-if-stopping Kind Box :- stops-at Kind Box, !, stop Kind Box.
-stop-if-stopping _ _.
-
-% [shown Box]: the ports of Box are printed.
-:nooc
-pred shown o:box.
-shown (box _ _ P _ _ _) :- shown-pred P.
-
-% [shown-pred P]: the ports of the calls of P are printed.
-pred shown-pred i:any.
-shown-pred _ :- opt trace, !.
-shown-pred _ :- current-mode "creep", !.
-shown-pred _ :- current-mode "trace", !.
-shown-pred P :- breakpoint-on P.
+func box-focus box -> focus.
+box-focus (box Id D P G Above _) (focus Id D P G Above).
 
 :nooc
-pred stops-at i:string, o:box.
-stops-at "call" Box :- has-breakpoint Box, !.
-stops-at _ _ :- opt interactive, current-mode "creep".
+func ctx-depth ctx -> int.
+ctx-depth (ctx D _) D.
 
 :nooc
-pred has-breakpoint o:box.
-has-breakpoint (box _ _ P _ _ _) :- breakpoint-on P.
+func ctx-focus ctx -> focus.
+ctx-focus (ctx _ [frame Id D P G | Above]) (focus Id D P G Above) :- !.
+ctx-focus _ (focus 0 0 query true []).
 
-pred breakpoint-on i:any.
-breakpoint-on P :- opt (break Name), term_to_string P Name, !.
+% the predicate of the focus of the query
+symb query any.
 
-:nooc
-pred show-port i:string, o:box.
-show-port Kind (box Id D _ G _ Entry) :-
-  port-label Kind Entry Label,
-  say D [Label, " ", {box-name Id}, " ", {term_to_string G}].
+% --- stepping modes and requests (kept in safes) ---
 
-% [port-label Kind Entry Label]: a woken goal enters through "Wake", as the
-% RESUME port of ECLiPSe.
-func port-label string, string -> string.
-port-label "call" "wake" "Wake:" :- !.
-port-label "call" _ "Call:" :- !.
-port-label "exit" _ "Exit:" :- !.
-port-label "redo" _ "Redo:" :- !.
-port-label "fail" _ "Fail:" :- !.
-port-label K _ L :- L is K ^ ":".
+data stepping.
+symb creep stepping.        % stop at every event
+symb skip int -> stepping.  % stop at nothing until call N exits or fails
+symb leap stepping.         % stop at breakpoints only
+symb tracing stepping.      % show every event, stop at breakpoints only
+symb nodebug stepping.      % show nothing, stop nowhere
 
-% [try-port Box Origin Head]: a candidate clause is tried (recorded for the
-% profile; shown in step mode only).
-:nooc
-pred try-port o:box, i:origin, i:(pred).
-try-port _ _ _ :- quiet, !.
-try-port Box Origin Head :-
-  record-event "try" Box,
-  show-try-if-creeping Box Origin Head.
-
-:nooc
-pred show-try-if-creeping o:box, i:origin, i:(pred).
-show-try-if-creeping Box Origin Head :- current-mode "creep", !, show-try Box Origin Head.
-show-try-if-creeping _ _ _.
-
-:nooc
-pred show-try o:box, i:origin, i:(pred).
-show-try (box Id D _ _ _ _) Origin Head :-
-  say D ["  try ", {box-name Id}, " ", {origin-string Origin}, ": ", {term_to_string Head}].
-
-% [cut-port Ctx]: a cut commits the box above Ctx to its current clause.
-:nooc
-pred cut-port o:ctx.
-cut-port (ctx _ [frame Id D P _|_]) :- !, if (shown-pred P) (show-cut Id D) true.
-cut-port _.
-
-pred show-cut i:int, i:int.
-show-cut Id D :- say D ["Cut:  ", {box-name Id}, " commits to its current clause"].
-
-% [native-port Kind Ctx G]: ports of builtins, shown with option builtins
-% (and delays with option trace).
-:nooc
-pred native-port i:string, o:ctx, i:(pred).
-native-port _ _ _ :- quiet, !.
-native-port Kind Ctx G :-
-  record-native-event Kind Ctx G,
-  show-native-if-shown Kind Ctx G.
-
-:nooc
-pred show-native-if-shown i:string, o:ctx, i:(pred).
-show-native-if-shown Kind Ctx G :- native-shown Kind, !, show-native Kind Ctx G.
-show-native-if-shown _ _ _.
-
-pred native-shown i:string.
-native-shown _ :- opt builtins, !.
-native-shown "delay" :- opt trace.
-
-:nooc
-pred show-native i:string, o:ctx, i:(pred).
-show-native Kind (ctx D _) G :- say D ["(builtin) ", Kind, ": ", {term_to_string G}].
-
-% --- stepping modes and stops ---
-
-% [current-mode M]: the stepping mode chosen at the last stop: "leap"
-% (run to the next breakpoint), "creep" (stop at every port) or "trace"
-% (show every port, stop only at breakpoints).
-pred current-mode o:string.
-current-mode M :- state "mode" S, open_safe S L, last-of L M1, !, M = M1.
+data request.
+symb no-request request.
+symb retry int -> request.
+symb fail-call int -> request.
 
 % [last-of L X]: X is the last element of L (fails on the empty list, unlike
 % std.last).
@@ -729,64 +914,400 @@ pred last-of i:list A, o:A.
 last-of [X] X :- !.
 last-of [_|L] X :- last-of L X.
 
-pred set-mode i:string.
+pred current-mode o:stepping.
+current-mode M :- state "mode" S, open_safe S L, last-of L M1, !, M = M1.
+current-mode leap.
+
+pred set-mode i:stepping.
 set-mode M :- state "mode" S, stash_in_safe S M.
 
-% [stop Kind Box]: show where we are; in interactive mode, read commands.
+% [initial-mode Options M]: interactive without breakpoints starts by
+% creeping (as Prolog's trace), otherwise it leaps to the first breakpoint.
+func initial-mode list option -> stepping.
+initial-mode Options creep :- std.mem! Options interactive, not (std.exists Options is-break), !.
+initial-mode _ leap.
+
+pred is-break i:option.
+is-break (break _).
+
+pred current-request o:request.
+current-request R :- state "request" S, open_safe S L, last-of L R1, !, R = R1.
+current-request no-request.
+
+pred set-request i:request.
+set-request R :- state "request" S, stash_in_safe S R.
+
+% [pending]: a retry or fail is unwinding the run.
+pred pending.
+pending :- current-request R, not (R = no-request).
+
+% [take-request Id R]: the pending request R concerns call Id; it is taken.
+pred take-request i:int, o:request.
+take-request Id (retry Id) :- current-request (retry Id), !, set-request no-request.
+take-request Id (fail-call Id) :- current-request (fail-call Id), !, set-request no-request.
+
+% --- breakpoints: the options, then the ones set or removed at a stop ---
+
+pred breakpoint-on i:any.
+breakpoint-on P :- term_to_string P Name, breakpoint-named Name.
+
+pred breakpoint-named i:string.
+breakpoint-named Name :- state "breaks" S, open_safe S L, last-break-change L Name C, !, C = "+".
+breakpoint-named Name :- opt (break Name), !.
+
+% [last-break-change L Name C]: C is the last change ("+" or "-") of the
+% breakpoint Name in L (changes [pr C Name], oldest first).
+pred last-break-change i:list (pair string string), i:string, o:string.
+last-break-change L Name C :- std.rev L R, find-change R Name C.
+
+% (a search, not std.mem!, whose element is an input: it would not bind C)
+pred find-change i:list (pair string string), i:string, o:string.
+find-change [pr C Name | _] Name C :- !.
+find-change [_ | L] Name C :- find-change L Name C.
+
+pred change-breakpoint i:string, i:string.
+change-breakpoint C Name :- state "breaks" S, stash_in_safe S (pr C Name).
+
+% --- events ---
+
+% [event Kind Indent Focus Text]: the event Kind (call, exit, redo, fail,
+% resume, unify, pi, assume, delay, cut) at indentation Indent, about
+% Focus; Text is printed after the label.  It fails while a retry or fail
+% is pending (to unwind), and when the command at the stop asks for it.
 :nooc
-pred stop i:string, o:box.
-stop Kind Box :-
-  box-id-goal Box Id G,
-  say 0 ["--- stop at ", Kind, " ", {box-name Id}, ": ", {term_to_string G}],
-  if (opt interactive) (command-loop Box) (show-context Box).
+pred event i:string, i:int, o:focus, i:list string.
+event _ _ _ _ :- pending, !, fail.
+event Kind Ind F Text :-
+  show-event-if-shown Kind Ind F Text,
+  stop-if-stopping Kind F.
+
+% (The hot paths use clauses rather than std.if: its arguments are inputs,
+% and the goals passed to it hold the whole stack of frames.)
+:nooc
+pred show-event-if-shown i:string, i:int, o:focus, i:list string.
+show-event-if-shown Kind Ind F Text :- event-shown Kind F, !,
+  say Ind [{event-label Kind}, " " | Text].
+show-event-if-shown _ _ _ _.
 
 :nooc
-pred show-context o:box.
-show-context Box :- show-backtrace Box, show-hyps, show-eigenvariables.
+pred stop-if-stopping i:string, o:focus.
+stop-if-stopping Kind F :- stops-at Kind F, !, stop Kind F.
+stop-if-stopping _ _.
+
+func event-label string -> string.
+event-label "call" "Call:" :- !.
+event-label "exit" "Exit:" :- !.
+event-label "redo" "Redo:" :- !.
+event-label "fail" "Fail:" :- !.
+event-label "resume" "Resume:" :- !.
+event-label "unify" "Unify:" :- !.
+event-label "pi" "Pi:" :- !.
+event-label "assume" "Assume:" :- !.
+event-label "delay" "Delay:" :- !.
+event-label "cut" "Cut:" :- !.
+event-label K L :- L is K ^ ":".
+
+% [event-shown Kind F]: the event is printed.
+:nooc
+pred event-shown i:string, o:focus.
+event-shown _ _ :- opt trace, !.
+event-shown Kind F :- opt interactive, current-mode M, !, shown-in-mode M Kind F.
+event-shown Kind (focus _ _ P _ _) :- box-port Kind, breakpoint-on P.
 
 :nooc
-pred command-loop o:box.
-command-loop Box :-
-  print "debug> (c)ontinue (s)tep (t)race (b)acktrace (h)yps (e)xplain (a)bort",
-  flush std_out,
+pred shown-in-mode i:stepping, i:string, o:focus.
+shown-in-mode creep _ _.
+shown-in-mode tracing _ _.
+shown-in-mode (skip Id) Kind (focus Id _ _ _ _) :- end-port Kind.
+shown-in-mode _ Kind (focus _ _ P _ _) :- box-port Kind, breakpoint-on P.
+
+pred box-port i:string.
+box-port "call". box-port "exit". box-port "redo". box-port "fail". box-port "resume".
+
+pred entry-port i:string.
+entry-port "call". entry-port "resume".
+
+pred end-port i:string.
+end-port "exit". end-port "fail".
+
+% [stops-at Kind F]: the interpreter stops at the event: a breakpoint, or
+% (interactive) creeping, or the end of a skipped call.
+:nooc
+pred stops-at i:string, o:focus.
+stops-at Kind (focus _ _ P _ _) :- entry-port Kind, breakpoint-on P, not (current-mode nodebug), !.
+stops-at Kind F :- opt interactive, current-mode M, stops-in-mode M Kind F.
+
+:nooc
+pred stops-in-mode i:stepping, i:string, o:focus.
+stops-in-mode creep _ _.
+stops-in-mode (skip Id) Kind (focus Id _ _ _ _) :- end-port Kind.
+
+% --- the ports of calls ---
+
+% [port Kind Box]: Box passes the port Kind ("call", "exit", "redo",
+% "fail"; "call" is shown as resume for a woken goal).
+:nooc
+pred port i:string, o:box.
+port _ _ :- quiet, !.
+port Kind Box :-
+  record-event Kind Box,
+  box-port-event Kind Box.
+
+:nooc
+pred box-port-event i:string, o:box.
+box-port-event Kind (box Id D P G Above Entry) :-
+  entry-kind Kind Entry Kind1 Tag,
+  event Kind1 D (focus Id D P G Above) [Tag, {box-name Id}, " ", {show-term G}].
+
+% [entry-kind Kind Entry Kind1 Tag]: a woken goal enters through resume,
+% tagged with the number of its suspension (as ECLiPSe's DELAY/RESUME).
+func entry-kind string, string -> string, string.
+entry-kind "call" Entry "resume" Tag :- rex.match "^wake" Entry, !,
+  rex.replace "^wake " "" Entry N, Tag is "[S" ^ N ^ "] ".
+entry-kind Kind Entry Kind Tag :- rex.match "^wake" Entry, !,
+  rex.replace "^wake " "" Entry N, Tag is "[S" ^ N ^ "] ".
+entry-kind Kind _ Kind "".
+
+% [try-port Box Origin Head]: a candidate clause is tried (for the profile).
+:nooc
+pred try-port o:box, i:origin, i:(pred).
+try-port _ _ _ :- quiet, !.
+try-port Box _ _ :- record-event "try" Box.
+
+% [unify-port Box Origin Head Bindings]: the head of the clause from Origin
+% unified with the goal; Bindings are the assignments of the goal's
+% variables it made.
+:nooc
+pred unify-port o:box, i:origin, i:(pred), i:list string.
+unify-port (box Id D P G Above _) Origin Head Bindings :-
+  event "unify" D (focus Id D P G Above)
+    [{box-name Id}, " with ", {origin-string Origin}, ": ", {show-term Head} | Bindings].
+
+% [match-and-port Modes Box Origin G Head]: head matching, with the unify
+% port when it is shown: the variables of G are looked at before and after.
+:nooc
+pred match-and-port i:list mode, o:box, i:origin, i:(pred), i:(pred).
+match-and-port Modes _ _ G Head :- quiet, !, head-matches Modes G Head.
+match-and-port Modes Box _ G Head :- box-focus Box F, not (event-shown "unify" F), !,
+  head-matches Modes G Head.
+match-and-port Modes Box Origin G Head :-
+  logic-vars G Vs, snapshot Vs Before,
+  head-matches Modes G Head,
+  bindings-text Before Lines,
+  unify-port Box Origin Head Lines.
+
+% A logic variable before the unification: itself, as printed, and the
+% eigenvariables it may depend on.
+data snap.
+symb snap any -> string -> list any -> snap.
+
+pred snapshot i:list any, o:list snap.
+snapshot [] [].
+snapshot [V|Vs] [snap V Name Vis | Ss] :- show-term V Name, visible-eigens V Vis, snapshot Vs Ss.
+
+% [bindings-text Before Lines]: one line per variable assigned, with
+% pruning when the variable lost eigenvariables it could depend on.
+pred bindings-text i:list snap, o:list string.
+bindings-text [] [].
+bindings-text [snap V Name Vis | Ss] [Line | Ls] :-
+  show-term V Now, not (Now = Name), !,
+  pruning V Vis Pruned,
+  std.string.concat "" ["\n      ", Name, " := ", Now, Pruned] Line,
+  bindings-text Ss Ls.
+bindings-text [_ | Ss] Ls :- bindings-text Ss Ls.
+
+% [pruning V Vis S]: V is now (headed by) a variable that may depend on
+% fewer eigenvariables than Vis: Elpi pruned it.
+pred pruning i:any, i:list any, o:string.
+pruning V _ S :- not (var V), pruned-arguments V S, !.
+pruning V Vis S :- var V H _, visible-eigens H Now,
+  lost-eigens Vis Now Lost, not (Lost = []), !,
+  eigen-names Lost Ns,
+  S is "   (pruned: may no longer depend on " ^ {std.string.concat ", " Ns} ^ ")".
+pruning _ _ "".
+
+% [pruned-arguments V S]: V is now x1..xn\ H a1..ak with H a new variable
+% and k < n: H does not get all the arguments (Elpi pruned the others).
+pred pruned-arguments i:any, o:string.
+pruned-arguments V S :- lambda-prefix V 0 N K H, N > 0, K < N,
+  S is "   (pruned: " ^ {show-term H} ^ " gets " ^ {std.any->string K} ^ " of the "
+       ^ {std.any->string N} ^ " arguments)".
+
+% [lambda-prefix T N0 N K H]: T is N-N0 binders around H a1..ak, H a
+% variable and k = K; the test is made under the binders, where the body
+% lives (H itself is older, so it can be returned).
+pred lambda-prefix i:any, i:int, o:int, o:int, o:any.
+lambda-prefix T N0 N K H :- shape-of T S, S = binder F, !, N1 is N0 + 1,
+  pi x\ sigma Bd\ binder-body F x Bd, lambda-prefix Bd N1 N K H.
+lambda-prefix T N N K H :- var T H Args, std.length Args K.
+
+pred lost-eigens i:list any, i:list any, o:list any.
+lost-eigens [] _ [].
+lost-eigens [E|Es] Now Lost :- std.exists Now (same_term E), !, lost-eigens Es Now Lost.
+lost-eigens [E|Es] Now [E|Lost] :- lost-eigens Es Now Lost.
+
+% [cut-port Ctx]: a cut commits the call above Ctx to its current clause.
+:nooc
+pred cut-port o:ctx.
+cut-port _ :- quiet, !.
+cut-port Ctx :- ctx-focus Ctx (focus Id D P G Above), Id > 0, !,
+  event "cut" D (focus Id D P G Above) [{box-name Id}, " commits to its current clause"].
+cut-port _.
+
+% [pi-port Ctx Name X Body N]: entering pi: X is a new eigenvariable, named
+% N (the source name and a number), whose scope is Body.
+:nooc
+pred pi-port o:ctx, i:string, i:any, i:(pred), o:string.
+pi-port _ Name _ _ Name :- quiet, !.
+pi-port Ctx Name X Body N :-
+  ctx-depth Ctx D,
+  new-number "eigen" K, N is Name ^ "#" ^ {std.any->string K},
+  ctx-focus Ctx F,
+  (eigen X N => (show-term Body BS,
+                 event "pi" D F [N, " is a new eigenvariable; its scope: ", BS])).
+
+% [assume-port Ctx H B]: entering H => B: H is added to the local program
+% for B only.
+:nooc
+pred assume-port o:ctx, i:any, i:(pred).
+assume-port _ _ _ :- quiet, !.
+assume-port Ctx H B :-
+  ctx-depth Ctx D,
+  ctx-focus Ctx F,
+  event "assume" D F [{show-term H}, "   (added to the local program, for ", {show-term B}, " only)"].
+
+% [native-port Kind Ctx G]: ports of builtins, shown with option builtins.
+:nooc
+pred native-port i:string, o:ctx, i:(pred).
+native-port _ _ _ :- quiet, !.
+native-port _ _ _ :- pending, !, fail.
+native-port Kind Ctx G :-
+  record-native-event Kind Ctx G,
+  show-native-if-shown Kind Ctx G.
+
+:nooc
+pred show-native-if-shown i:string, o:ctx, i:(pred).
+show-native-if-shown Kind Ctx G :- opt builtins, !, show-native Kind Ctx G.
+show-native-if-shown _ _ _.
+
+:nooc
+pred show-native i:string, o:ctx, i:(pred).
+show-native Kind (ctx D _) G :- say D ["(builtin) ", Kind, ": ", {show-term G}].
+
+% [delay-port Ctx G Keys K]: G suspended on Keys, suspension number K.
+:nooc
+pred delay-port o:ctx, i:(pred), i:any, i:int.
+delay-port _ _ _ _ :- quiet, !.
+delay-port Ctx G Keys K :-
+  ctx-depth Ctx D,
+  ctx-focus Ctx F,
+  event "delay" D F ["[S", {std.any->string K}, "] ", {show-term G}, " on ", {show-term Keys}].
+
+% --- stops and commands ---
+
+% [stop Kind F]: in interactive mode, read and run commands; otherwise (a
+% breakpoint) show where we are.
+:nooc
+pred stop i:string, o:focus.
+stop Kind F :- opt interactive, !, command-loop Kind F.
+stop _ F :- show-context F.
+
+:nooc
+pred show-context o:focus.
+show-context (focus Id _ _ G Above) :-
+  say 0 ["--- breakpoint at ", {box-name Id}, ": ", {show-term G}],
+  show-backtrace Above, show-hyps, show-eigenvariables.
+
+:nooc
+pred command-loop i:string, o:focus.
+command-loop Kind F :-
+  output std_out "   ? ", flush std_out,
   read-command C,
-  run-command C Box.
+  echo-command C,
+  rex.split " +" C Words,
+  run-command Words Kind F.
 
 pred read-command o:string.
-read-command "c" :- eof std_in, !.
+read-command "n" :- eof std_in, !.
 read-command C :- input_line std_in C.
 
+% [echo-command C]: with option echo (scripted sessions), the command read
+% is printed, so that a transcript reads as a session.
+pred echo-command i:string.
+echo-command C :- opt echo, !, print C.
+echo-command _.
+
+% [run-command Words Kind F]: succeeds to go on, fails to unwind (retry,
+% fail), loops for the commands that only show something.
 :nooc
-pred run-command i:string, o:box.
-run-command "c" _ :- !, set-mode "leap".
-run-command "" _ :- !, set-mode "leap".
-run-command "s" _ :- !, set-mode "creep".
-run-command "t" _ :- !, set-mode "trace".
-run-command "b" Box :- !, show-backtrace Box, command-loop Box.
-run-command "h" Box :- !, show-hyps, show-eigenvariables, command-loop Box.
-run-command "e" Box :- !, show-deepest-failure, command-loop Box.
-run-command "a" _ :- !, halt "debug: aborted".
-run-command C Box :- print "unknown command" C, command-loop Box.
+pred run-command i:list string, i:string, o:focus.
+run-command [] _ _ :- !, set-mode creep.
+run-command ["c"] _ _ :- !, set-mode creep.
+run-command ["s"] Kind (focus Id _ _ _ _) :- not (end-port Kind), Id > 0, !, set-mode (skip Id).
+run-command ["s"] _ _ :- !, set-mode creep.
+run-command ["l"] _ _ :- !, set-mode leap.
+run-command ["t"] _ _ :- !, set-mode tracing.
+run-command ["n"] _ _ :- !, set-mode nodebug.
+run-command ["r"] Kind (focus 0 _ _ _ _ as F) :- !, print "    (the query itself cannot be retried)", command-loop Kind F.
+run-command ["r"] _ (focus Id _ _ _ _) :- !,
+  say 0 ["    retry ", {box-name Id}, ": back to its call port"],
+  set-request (retry Id), fail.
+run-command ["f"] Kind (focus 0 _ _ _ _ as F) :- !, print "    (the query itself cannot be failed)", command-loop Kind F.
+run-command ["f"] _ (focus Id _ _ _ _) :- !, set-request (fail-call Id), fail.
+run-command ["p"] Kind F :- !, show-focus F, command-loop Kind F.
+run-command ["g"] Kind (focus _ _ _ _ Above as F) :- !, show-backtrace Above, command-loop Kind F.
+run-command ["scope"] Kind (focus _ _ _ G _ as F) :- !, show-scope G, command-loop Kind F.
+run-command ["hyps"] Kind F :- !, show-hyps, command-loop Kind F.
+run-command ["+", Name] Kind F :- !, change-breakpoint "+" Name,
+  say 1 ["breakpoint on ", Name], command-loop Kind F.
+run-command ["-", Name] Kind F :- !, change-breakpoint "-" Name,
+  say 1 ["no breakpoint on ", Name], command-loop Kind F.
+run-command ["e"] Kind F :- !, show-deepest-failure, command-loop Kind F.
+run-command ["a"] _ _ :- !, halt "debug: aborted".
+run-command ["h"] Kind F :- !, show-help, command-loop Kind F.
+run-command ["?"] Kind F :- !, show-help, command-loop Kind F.
+run-command _ Kind F :- print "    unknown command (h for help)", command-loop Kind F.
+
+pred show-help.
+show-help :- std.forall [
+  "    c or return  creep: go to the next event",
+  "    s            skip: run this call to its exit or fail without stopping inside",
+  "    l            leap: run to the next breakpoint",
+  "    t            trace: show every event, stop only at breakpoints",
+  "    n            nodebug: run to the end without stopping",
+  "    r            retry this call from its call port (bindings, local program, scope undone)",
+  "    f            make this call fail",
+  "    p            print the goal, the local program and the scope",
+  "    g            the calls above (goals)",
+  "    scope        the eigenvariables in force and what each logic variable may depend on",
+  "    hyps         the local program: the clauses added by =>",
+  "    + P, - P     set, remove a breakpoint on the predicate P",
+  "    e            the deepest failure so far",
+  "    a            abort"] (s\ print s).
 
 :nooc
-pred show-backtrace o:box.
-show-backtrace (box _ _ _ _ Above _) :-
-  print "  called from:",
-  std.forall Above show-ancestor.
+pred show-focus o:focus.
+show-focus (focus Id _ _ G _) :-
+  say 1 [{box-name Id}, " ", {show-term G}],
+  show-hyps, show-scope G.
 
-:nooc
-func show-ancestor frame.
-show-ancestor B :- say 2 [{ancestor-string B}].
+pred show-backtrace i:list frame.
+show-backtrace Above :- print "  called from:", show-ancestors Above.
+
+pred show-ancestors i:list frame.
+show-ancestors [].
+show-ancestors [Fr|Frs] :- say 2 [{ancestor-string Fr}], show-ancestors Frs.
 
 pred show-hyps.
-show-hyps :- print "  hypothetical clauses in scope (most recent first):", fail.
-show-hyps :- hyp _ Origin C, say 2 [{term_to_string C}, "    (", {origin-string Origin}, ")"], fail.
+show-hyps :- print "  local program (clauses added by =>, most recent first):", fail.
+show-hyps :- hyp _ Origin C, say 2 [{show-term C}, "    (", {origin-string Origin}, ")"], fail.
 show-hyps.
 
 pred show-eigenvariables.
-show-eigenvariables :- names L, say 1 ["eigenvariables in scope: ", {term_to_string L}].
+show-eigenvariables :- names Es, eigen-names Es Ns,
+  say 1 ["eigenvariables in scope: ", {names-or-none Ns}].
 
-% ===== 11. Explaining failures ============================================
+% ===== 12. Explaining failures ============================================
 %
 % Each failing box deeper than all the failures seen so far is recorded
 % with its explanation, computed at the fail port, where the goal is back
@@ -802,7 +1323,7 @@ note-failure (box _ D _ _ _ _) :- deepest-depth M, D =< M, !.
 note-failure (box Id D P G Above _) :-
   std.map Above ancestor-string AboveS,
   failure-reasons D P G Reasons,
-  std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S,
+  std.string.concat "" [{box-name Id}, " ", {show-term G}] S,
   state "deepest" Safe,
   stash_in_safe Safe (failure D S AboveS Reasons).
 
@@ -818,13 +1339,13 @@ pred note-goal-failure o:ctx, i:(pred), i:list string.
 note-goal-failure (ctx D _) _ _ :- deepest-depth M, D =< M, !.
 note-goal-failure (ctx D Above) G Reasons :-
   std.map Above ancestor-string AboveS,
-  term_to_string G S,
+  show-term G S,
   state "deepest" Safe,
   stash_in_safe Safe (failure D S AboveS Reasons).
 
 :nooc
 func ancestor-string frame -> string.
-ancestor-string (frame Id _ _ G) S :- std.string.concat "" [{box-name Id}, " ", {term_to_string G}] S.
+ancestor-string (frame Id _ _ G) S :- std.string.concat "" [{box-name Id}, " ", {show-term G}] S.
 
 pred deepest-depth o:int.
 deepest-depth D :- state "deepest" S, open_safe S L, last-of L (failure D1 _ _ _), !, D = D1.
@@ -855,13 +1376,13 @@ pred explain-candidate i:any, i:(pred), o:string.
 explain-candidate P G Reason :-
   modes-of P G Modes,
   candidate P G Origin Head Body,
-  term_to_string Head HS,
+  show-term Head HS,
   candidate-verdict Modes G Head Body Verdict,
   std.string.concat "" ["  ", {origin-string Origin}, ": ", HS, "\n        ", Verdict] Reason.
 
 pred candidate-verdict i:list mode, i:(pred), i:(pred), i:(pred), o:string.
 candidate-verdict Modes G Head _ V :- head-mismatch Modes G Head Why, !, V is "does not match: " ^ Why.
-candidate-verdict _ _ _ Body V :- term_to_string Body BS, V is "head matches; then its body failed: " ^ BS.
+candidate-verdict _ _ _ Body V :- show-term Body BS, V is "head matches; then its body failed: " ^ BS.
 
 pred no-clause-reason i:any, o:list string.
 no-clause-reason P [R] :- declared P _, !, term_to_string P S,
@@ -882,7 +1403,7 @@ args-mismatch N Ms [A|_] [B|_] Why :-
   first-mode Ms M _,
   clash M A B Clash,
   std.string.concat "" ["argument ", {std.any->string N}, " (", {mode-name M}, "): ",
-    {term_to_string A}, " vs ", {term_to_string B}, Clash] Why.
+    {show-term A}, " vs ", {show-term B}, Clash] Why.
 
 func mode-name mode -> string.
 mode-name i "input".
@@ -893,7 +1414,7 @@ mode-name o "output".
 pred clash i:mode, i:any, i:any, o:string.
 clash M A B S :-
   subterm-clash M A B A1 B1 Why, not (same_term A A1, same_term B B1), !,
-  std.string.concat "" [", at ", {term_to_string A1}, " vs ", {term_to_string B1}, Why] S.
+  std.string.concat "" [", at ", {show-term A1}, " vs ", {show-term B1}, Why] S.
 clash M A B Why :- subterm-clash M A B _ _ Why, !.
 clash _ _ _ "".
 
@@ -901,7 +1422,24 @@ clash _ _ _ "".
 pred subterm-clash i:mode, i:any, i:any, o:any, o:any, o:string.
 subterm-clash i A B A B " (the goal has a variable where the clause expects a term: an input argument is only matched)" :-
   var A, not (var B), !.
-subterm-clash _ A B A B " (occurs check, or an eigenvariable out of scope)" :- (var A ; var B), !.
+subterm-clash _ A B A B Why :- var A, !, flex-clash A B Why.
+subterm-clash _ A B A B Why :- var B, !, flex-clash B A Why.
+
+% [flex-clash V T Why]: why the variable V cannot be assigned T: T contains
+% V (occurs check), or an eigenvariable that V may not depend on (it was
+% introduced by a pi after V was created).
+pred flex-clash i:any, i:any, o:string.
+flex-clash V T Why :- var V H _, mentions-var T H, !,
+  Why is " (occurs check: " ^ {show-term H} ^ " occurs in " ^ {show-term T} ^ ")".
+flex-clash V T Why :- names Es, std.exists Es (e\ occurs e T, not (can-depend V e)), !,
+  out-of-scope V T Es E,
+  Why is " (" ^ {show-term V} ^ " cannot depend on the eigenvariable " ^ {show-term E}
+         ^ ", introduced by a pi after " ^ {show-term V} ^ " was created)".
+flex-clash _ _ " (they do not unify)".
+
+pred out-of-scope i:any, i:any, i:list any, o:any.
+out-of-scope V T [E|_] E :- occurs E T, not (can-depend V E), !.
+out-of-scope V T [_|Es] E :- out-of-scope V T Es E.
 subterm-clash M A B A1 B1 Why :-
   rigid-parts A HA AArgs, rigid-parts B HB BArgs,
   same_term HA HB, std.length AArgs N, std.length BArgs N, !,
@@ -934,7 +1472,7 @@ pred show-above i:list string.
 show-above [] :- !.
 show-above Above :- say 1 ["called from:"], std.forall Above (a\ say 2 [a]).
 
-% ===== 12. Outcome and profile ============================================
+% ===== 13. Outcome and profile ============================================
 
 pred report-solution.
 report-solution :- if (opt profile) show-profile true.

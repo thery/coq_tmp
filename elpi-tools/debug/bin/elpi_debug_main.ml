@@ -45,7 +45,8 @@ let spec =
       ( "-break",
         Arg.String (fun p -> add_option (Printf.sprintf "debug.break %S" p)),
         "PRED stop at each call of PRED (repeatable)" );
-      ("-i", Arg.Unit (fun () -> add_option "debug.interactive"), " at a stop, read commands from stdin");
+      ("-i", Arg.Unit (fun () -> add_option "debug.interactive"), " interactive stepping: stop at each event, read commands from stdin");
+      ("-echo", Arg.Unit (fun () -> add_option "debug.echo"), " print each command read (for scripted sessions)");
       ("-profile", Arg.Unit (fun () -> add_option "debug.profile"), " count ports and time per predicate");
       ("-no-explain", Arg.Unit (fun () -> add_option "debug.no-explain"), " do not explain a failure");
       ( "-random",
@@ -172,11 +173,17 @@ let interpreted_units ~elpi ~flags file =
 
 (* ---- Running ------------------------------------------------------------- *)
 
+(* [one_line s]: s with its line breaks (Elpi's printer breaks long terms
+   and λ-terms) replaced by spaces, as the tracer prints terms *)
+let one_line s = Str.global_replace (Str.regexp "\n *") " " s
+
 (* [solution_text]: the assignments of a solution, one "X = t" per line *)
 let solution_text (s : API.Data.solution) =
   let b = Buffer.create 80 in
   API.Data.StrMap.iter
-    (fun name v -> Buffer.add_string b (Format.asprintf "  %s = %a\n" name (API.Pp.term s.API.Data.pp_ctx) v))
+    (fun name v ->
+      let value = one_line (Format.asprintf "%a" (API.Pp.term s.API.Data.pp_ctx) v) in
+      Buffer.add_string b (Printf.sprintf "  %s = %s\n" name value))
     s.API.Data.assignments;
   Buffer.contents b
 

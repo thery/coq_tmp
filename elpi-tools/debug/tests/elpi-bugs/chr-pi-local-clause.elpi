@@ -1,11 +1,7 @@
-constraint even odd {
-  rule (even X) (odd X) <=> (print "CHR: both even and odd", fail).
-}
-func even int.
-func odd int.
-pred h o:int.
-pred t1. pred t2. pred t3.
-t1 :- C = (even 3), (C => declare_constraint (even X) [X]), declare_constraint (odd X) [X].
-t2 :- C = (pi x\ even x), (C => declare_constraint (even X) [X]), declare_constraint (odd X) [X].
-t3 :- C = (pi x\ even x), (C => true), declare_constraint (even X) [X], declare_constraint (odd X) [X].
-main :- (t3 ; print "t3 failed"), (t1 ; print "t1 failed"), (t2 ; print "t2 failed").
+% Elpi crash, reported upstream as https://github.com/LPCIC/elpi/issues/505
+% (elpi 4.0.0 and master 631d14a): a CHR rule fires on a constraint whose
+% predicate has a pi-quantified local clause in scope, and Elpi stops with
+% Invalid_argument("index out of bounds").  Run: elpi -test chr-pi-local-clause.elpi
+constraint p { rule (p X) <=> true. }
+func p int.
+main :- C = (pi x\ p x), (C => declare_constraint (p X) [X]).

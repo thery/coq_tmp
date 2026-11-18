@@ -7,17 +7,25 @@ the program, which [`../reflect`](../reflect/README.md) gives as Elpi data,
 and shows what the real engine does not:
 
 - the four **ports** of each call (call, exit, redo, fail, as in Prolog
-  tracers), plus the cut, the suspension of a goal by `declare_constraint`
-  and its **wake-up** by CHR;
-- **breakpoints** on a predicate, with the calls above, the hypothetical
-  clauses in scope (and the call that added each one) and the
-  eigenvariables; interactive stepping;
+  tracers), and the steps of **λProlog** inside a call: the **unify** port
+  of the selected clause (where it comes from, file:line or a hypothesis
+  and the call that added it; the bindings it makes, higher-order ones and
+  **pruning** included), the entry into **pi** (a new eigenvariable, shown
+  with its source name, `x#3`, and its scope), the entry into **=>** (the
+  clause added to the local program), the cut, and the **delay** of a goal
+  by `declare_constraint` and its **resume** by CHR, numbered (`[S2]`);
+- **interactive stepping** (`-i`), as in the box-model tracers of Prolog:
+  creep, skip, leap, retry, fail, print, the scope of each logic variable,
+  the local program, breakpoints set at the prompt;
+- **breakpoints** on a predicate, with the calls above, the local program
+  (and the call that added each clause) and the eigenvariables;
 - **counts and time per predicate** (calls, exits, redos, fails, clauses
   tried, self time);
 - on failure, an **explanation**: the deepest goal that failed at its first
   try, the calls above it, every clause tried and why it did not apply (the
   argument and the smallest subterms that clash, an input argument that the
-  goal leaves unknown, the occurs check), or that the predicate **has no
+  goal leaves unknown, the occurs check, a variable that cannot depend on an
+  eigenvariable introduced after it), or that the predicate **has no
   clause at all** (in Elpi such a call just fails, silently).
 
 ## Usage
@@ -62,7 +70,8 @@ Solution 1:
 | `-trace` | show the ports of every call |
 | `-builtins` | also show the calls to builtins |
 | `-break PRED` | stop at each call of PRED (repeatable); without `-i` the context is printed and the run goes on |
-| `-i` | at a stop, read commands on stdin: `c` continue, `s` step (stop at every port), `t` trace, `b` backtrace, `h` hypotheses and eigenvariables, `e` deepest failure so far, `a` abort |
+| `-i` | interactive stepping: stop at each event and read a command on stdin (below) |
+| `-echo` | print each command read (for scripted sessions) |
 | `-profile` | ports and self time per predicate |
 | `-no-explain` | no explanation of a failure |
 | `-all`, `-n N` | all the solutions (at most N), not only the first |
@@ -73,6 +82,80 @@ Solution 1:
 
 `ELPI_DEBUG_TRACE="-trace-on tty stdout ..."` passes options to Elpi's own
 tracer (to debug the debugger).
+
+## Interactive stepping
+
+With `-i` the interpreter stops at each event and reads a command after
+the prompt ` ? ` (with `-break`, it first leaps to a breakpoint).  The
+events are the ports of the calls (`Call`, `Exit`, `Redo`, `Fail`,
+`Resume` for a woken goal) and the steps of λProlog (`Unify`, `Pi`,
+`Assume`, `Delay`, `Cut`); `-trace` prints the same events without
+stopping.  An excerpt of [`tests/interactive.t`](tests/interactive.t):
+
+```
+Call: #1 of (lam c0 \ lam c1 \ c0) X0
+   ? c
+Unify: #1 with lambda.elpi:14: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
+      X0 := arr X1 X2
+   ? c
+  Pi: x#1 is a new eigenvariable; its scope: (of x#1 X1) ==> of (lam c1 \ x#1) X2
+   ? c
+  Assume: of x#1 X1   (added to the local program, for of (lam c1 \ x#1) X2 only)
+   ? c
+  Call: #2 of (lam c1 \ x#1) X2
+   ? scope
+  eigenvariables in force (oldest first): x#1
+    X2 may depend on: no eigenvariable
+   ? hyps
+  local program (clauses added by =>, most recent first):
+    of x#1 X1    (hypothesis added by #1)
+```
+
+| command | |
+|---|---|
+| `c`, return | creep: go to the next event |
+| `s` | skip: run this call to its exit or fail without stopping inside |
+| `l` | leap: run to the next breakpoint |
+| `t` | trace: show every event, stop only at breakpoints |
+| `n` | nodebug: run to the end (also at the end of stdin) |
+| `r` | retry this call from its call port |
+| `f` | make this call fail |
+| `p` | print the goal, the local program and the scope |
+| `g` | the calls above |
+| `scope` | the eigenvariables in force and, for each logic variable of the goal, those it may depend on |
+| `hyps` | the local program (the clauses added by `=>`, with the call that added each) |
+| `+ P`, `- P` | set, remove a breakpoint on the predicate P |
+| `e` | the deepest failure so far |
+| `a` | abort |
+| `h`, `?` | help |
+
+A command acts on the focus of the event: the call whose port it is, or
+whose body runs the pi, `=>` or cut.
+
+**How retry and fail work.**  Each call is run by `attempt`, whose second
+clause is a choice point placed just before the call port.  `r` (or `f`)
+records the request "retry #N" (or "fail #N") in a safe, which survives
+backtracking, and fails.  While a request is pending, every event fails at
+once, so backtracking goes quickly through the choice points inside call
+N, Elpi undoing their bindings as usual, and reaches the second clause of
+`attempt` for N, which takes the request and runs call N again from its
+call port (or shows its fail port and fails).  The **local program and the
+scope** are restored with the bindings: the clauses added by `=>` and the
+eigenvariables of `pi` are Elpi's own (the interpreter keeps `=>` and `pi`
+native), so going back to the choice point before the call port leaves
+their scopes, as it undoes the bindings.  The cut does not get in the way:
+a cut in a body is the native cut of `backchain`, which runs below
+`attempt`, so it never removes the choice point of `attempt` of its own
+call or of the calls above.  (A retried call gets new numbers for its
+eigenvariables: they are new eigenvariables.  A builtin with a side effect,
+such as `print`, inside the unwound part is not undone; while unwinding,
+the alternatives of builtins with several solutions are still tried.)
+
+**How skip works.**  `s` sets the stepping mode "skip #N", kept in a safe:
+no event is shown or stops until the exit or fail port of call N
+(breakpoints still stop).  Nothing in the run is undone or changed, the
+local program and the scope included: the call runs as without the
+debugger, unseen.
 
 Build and test: `cd elpi-tools && dune build && dune test`.  The tests
 ([`tests/*.t`](tests), dune cram tests) record traces, explanations,
@@ -89,6 +172,10 @@ declarations, so that the terms of the program type check, and its CHR
 rules, which run natively); the rules as facts
 `reflect.clause P Index Loc Attrs Head Body`; and one **bridge** per
 predicate, `P X1..Xn :- !, debug.bridge (P X1..Xn)`, its only native rule.
+The bridges are static rules, written by `debug.write-bridges`, and not
+local clauses `pi x1..xn\ ...` installed by the interpreter: with those,
+Elpi crashes when a CHR rule fires
+([LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505)).
 The query is `debug.run Options (GOAL)`.
 
 **Goals.**  Conjunction, `pi`, `sigma`, `=>`, `;` and the cut keep Elpi's
@@ -178,12 +265,19 @@ holding it are `:nooc`).
   goals; a refused constraint is explained as such).
 - **Explanations** name the deepest failure, which is not always the
   culprit; failures inside `not` count as failures.
-- Variables print as Elpi prints them (`X12`, eigenvariables `c0`), not with
-  their source names.
+- Logic variables print as Elpi prints them (`X12`; Elpi's printer may give
+  one variable different names in two lines), not with their source names.
+  Eigenvariables get their source name (`x#3`) only when events are shown
+  (`-trace`, `-i`, `-break`): on the fast path (no option) the explanation
+  of a failure shows them as `c0`, `c1`.  The binder names come from
+  reflect's `binders` attribute, matched with the binders of the rule in
+  textual order; for a hypothetical clause or the query the name is `x`.
 - An Elpi 4.0.0 crash met on the way: a CHR rule firing on a constraint
   whose predicate has a `pi`-quantified local clause in scope fails with
-  `Invalid_argument("index out of bounds")`
-  ([`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi));
+  `Invalid_argument("index out of bounds")`, reported upstream as
+  [LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505) (also on Elpi
+  master 631d14a; minimal form in
+  [`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi));
   it is why the bridges are static rules.
 - The driver hands the parsed program to the compiler with `Obj.magic`:
   Elpi's API has no function for a program built from parsed units, but its
