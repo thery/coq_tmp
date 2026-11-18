@@ -59,7 +59,19 @@ complete (check.variable _ T Origin) :-
 
 pred body i:(pred).
 body (A ==> B) :- !, premise A, body B.
-body C :- goal C conclusion.
+body C :- warn-misplaced-premise C, goal C conclusion.
+
+% (a, b ==> c) reads a, (b ==> c) in Elpi 4: the premise b would be
+% assumed as a rule by the conclusion, which is not what was meant
+pred warn-misplaced-premise i:(pred).
+warn-misplaced-premise C :-
+  check.goals.conjuncts C Gs, std.exists Gs is-implication, !,
+  print "  WARNING: a conclusion (a, b ==> c) reads a, (b ==> c); write the premises as a ==> b ==> c".
+warn-misplaced-premise _.
+
+func is-implication (pred).
+:untyped
+is-implication (_ ==> _).
 
 data position.
 symb premise-position, conclusion : position.

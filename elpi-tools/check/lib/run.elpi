@@ -74,10 +74,11 @@ symb result outcome -> int -> int -> int -> result.
 
 pred check-property i:settings, i:prop, o:result.
 check-property Settings (prop I Name Loc Binders) Result :-
+  say ["property ", Name, " (", {location Loc}, ")"],
   formula I F,
   check.analyse.variables F Binders Vars,
   Settings = settings Tests MaxSize _ _,
-  print-header Name Loc Vars,
+  print-variables Vars,
   tests I Vars Tests MaxSize 1 0 0 0 Result,
   report I Vars Result.
 
@@ -211,10 +212,9 @@ func text any -> string.
 text S S :- is_cdata S "string", !.
 text X S :- term_to_string X S.
 
-pred print-header i:string, i:reflect.srcloc, i:list check.variable.
-print-header Name Loc Vars :-
+pred print-variables i:list check.variable.
+print-variables Vars :-
   std.map Vars describe Ds, std.string.concat ", " Ds D,
-  say ["property ", Name, " (", {location Loc}, ")"],
   say ["  variables: ", {text D}].
 
 func describe check.variable -> string.

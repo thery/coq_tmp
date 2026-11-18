@@ -1,16 +1,17 @@
 % Random terms of a type, built from the constructors that the program
-% declares (reflect.constructor), with a size bound.
+% declares (reflect.constructor), with a size budget S.
 %
-% Size: a constructor, a bound variable or a literal counts 1.  A term of
-% size at most S is built so:
 % - a leaf (a constant, a bound variable of the type) costs 1;
-% - a node c A1 .. An costs 1 plus its arguments; the remaining budget
+% - a node c A1 .. An costs 1 plus its arguments: the remaining budget
 %   S - 1 is split at random among the recursive arguments (those whose
-%   type is the type being built), each other argument gets S - 1 for itself;
+%   type is the type being built), so the recursive structure (the spine of
+%   a list, the nodes of a tree) has at most S constructors; each other
+%   argument (an element of a list) gets S - 1 for itself;
 % - with budget S the leaves are tried first with probability 1/S, the
 %   nodes first otherwise.  For lists this gives a length uniform in
-%   [0, S - 1], as QuickCheck does; for trees, sizes up to S.
-% The size strictly decreases along every path, so generation terminates.
+%   [0, S - 1], as QuickCheck does.
+% - an int is uniform in [-S, S], a string has at most 3 letters.
+% The budget strictly decreases along every path, so generation terminates.
 % A choice that cannot be completed within its budget is dropped and the
 % next one is tried.
 %

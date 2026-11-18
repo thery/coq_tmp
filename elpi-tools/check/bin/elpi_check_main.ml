@@ -63,8 +63,16 @@ let driver ~program ~facts =
 
 (* -- Running ------------------------------------------------------------- *)
 
-let fail_with_errors errors =
-  List.iter (fun e -> Format.eprintf "%a@." API.Error.pp e) errors;
+(* An error in the program shows twice: in the program and in its facts,
+   which mention the same constants.  The errors located in the generated
+   facts are shown only when there is no other error. *)
+let fail_with_errors ?(generated = "") errors =
+  let in_generated (e : API.Error.t) =
+    match e.loc with Some l -> l.API.Ast.Loc.source_name = generated | None -> false
+  in
+  let others = List.filter (fun e -> not (in_generated e)) errors in
+  let shown = if others = [] then errors else others in
+  List.iter (fun e -> Format.eprintf "%a@." API.Error.pp e) shown;
   exit 2
 
 let run o file =
@@ -99,7 +107,7 @@ let run o file =
   if errors <> [] then fail_with_errors errors;
   let program, errors, warnings = API.Compile.program ~flags ~elpi ast in
   show_warnings warnings;
-  if errors <> [] then fail_with_errors errors;
+  if errors <> [] then fail_with_errors ~generated:facts_file errors;
   let args = String.concat ", " (List.map (Printf.sprintf "%S") o.checker_args) in
   let text = Printf.sprintf "check.main [%s]." args in
   let query =
