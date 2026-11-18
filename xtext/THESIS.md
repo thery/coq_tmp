@@ -10,15 +10,17 @@ this file and in the comments.
 Two translations exist, chosen by the switch `translation`
 (`elpi/switches.elpi`; variable `XTEXT_TRANSLATION`):
 
-- **direct** (default): term to text in one walk (`transducer.elpi` and
-  the files of its forms);
-- **staged**: the thesis's three stages, annotation, contraction, writing,
-  each a predicate on its own data type (`staged.elpi`).  With the switch
+- **staged** (default): the thesis's three stages, annotation,
+  contraction, writing, each a predicate on its own data type
+  (`staged.elpi`).  With the switch
   `selection` set to `thesis`, the second stage is the selection of
   chapter 4 (4.3.1) instead of the contraction.  The forms the
   thesis treats only in chapter 6 (eliminations, introductions, rewriting,
   `fix`) and `let`, `match`, casts are written by the direct writer, whose
-  subproofs come back to the stages.
+  subproofs come back to the stages;
+- **direct** (option): term to text in one walk (`transducer.elpi` and
+  the files of its forms), with a contraction checked by tactics that is
+  not the thesis's (below).
 
 ## Chapter 2: structural translation
 
@@ -44,7 +46,7 @@ Two translations exist, chosen by the switch `translation`
 | 3.4.1 | a conclusion says Tc, then "that is" Tr when they differ | `conclusion-parts` in `staged.elpi` |
 | 3.4.2, Fig. 3.11 | guarded contraction: redundant double annotation, weak and strong contraction of the abstraction, contraction of the application | stage 2 in `staged.elpi`: `redundant-annotation`, `contract-body`, `variable-parts` (strong), `merge-application`, `merges`; the statement stops at the first abstraction whose annotation is double (`statement-stops-at`, `single-annotation`) |
 | 3.4.2, Fig. 3.12 | Trans_Inv, maximal contraction | `examples-staged-maximal/Trans_Inv.md` |
-| 3.4.2, Fig. 3.13 | Trans_Inv, guarded contraction | `examples-staged-guarded/Trans_Inv.md` |
+| 3.4.2, Fig. 3.13 | Trans_Inv, guarded contraction | `examples/Trans_Inv.md` |
 
 The direct writer also has a contraction of application steps
 (`applications.elpi`, `contract-premises`, strategies `none`, `guarded`,

@@ -103,9 +103,10 @@ Elpi Db xtext.db lp:{{
   % the writer knows are in elpi/switches.elpi; any other value, an empty
   % one included, is an error.  The switches are read when Explain runs
   % (make does not see the variables: compile the example files again).
-  %   translation: how a proof becomes text, "direct" (in one walk) or
-  %     "staged" (annotation, contraction, writing, as in Coscoy's thesis;
-  %     elpi/staged.elpi);
+  %   translation: how a proof becomes text, "staged" (annotation,
+  %     contraction, writing, as in Coscoy's thesis; elpi/staged.elpi) or
+  %     "direct" (in one walk, its contraction checked by tactics: not the
+  %     thesis's);
   %   contraction: the contraction of application steps (thesis 3.4.2),
   %     "none", "guarded" or "maximal";
   %   selection: with the staged translation, the type expressions the
@@ -117,7 +118,7 @@ Elpi Db xtext.db lp:{{
   % Elpi Accumulate xtext.db lp:{{ :before "xtext-switch" xtext-switch "contraction" "XTEXT_CONTRACTION" "none" :- !. }}.
   pred xtext-switch o:string, o:string, o:string.
   :name "xtext-switch"
-  xtext-switch "translation" "XTEXT_TRANSLATION" "direct".
+  xtext-switch "translation" "XTEXT_TRANSLATION" "staged".
   xtext-switch "contraction" "XTEXT_CONTRACTION" "guarded".
   xtext-switch "selection" "XTEXT_SELECTION" "none".
   xtext-switch "lang" "XTEXT_LANG" "en".

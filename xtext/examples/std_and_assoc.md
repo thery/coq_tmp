@@ -11,13 +11,12 @@ Let `A B C : Prop`{.var}. We prove `(A /\ B) /\ C <-> A /\ B /\ C`{.claim}.
   - Assume `(A /\ B) /\ C`{.hyp} (H).
     - Going back to the definition of and (match) in `(A /\ B) /\ C`{.fact} (H), we prove `A /\ B /\ C`{.claim}:
       - Assume `A /\ B`{.hyp} (H0) and `C`{.hyp} (h).
-        - By h we have `C`{.claim}.
         - Going back to the definition of and (match) in `A /\ B`{.fact} (H0), we prove `C -> A /\ B /\ C`{.claim}:
           - Assume `A`{.hyp} (H1), `B`{.hyp} (H00) and `C`{.hyp} (H10).
             - By H1 we have `A`{.claim}.
             - By definition of and (conj), from `B`{.fact} (H00) and `C`{.fact} (H10) we deduce `B /\ C`{.claim} *by Corelib.Init.Logic.conj*.
             - So by definition of and (conj), we have `A /\ B /\ C`{.claim} *by Corelib.Init.Logic.conj*.
-        - We deduce `A /\ B /\ C`{.claim}.
+        - By application, with h, we have `A /\ B /\ C`{.claim}.
 - We have proved `A /\ B /\ C -> (A /\ B) /\ C`{.claim}.
   - Assume `A /\ B /\ C`{.hyp} (H).
     - Going back to the definition of and (match) in `A /\ B /\ C`{.fact} (H), we prove `(A /\ B) /\ C`{.claim}:
@@ -27,4 +26,4 @@ Let `A B C : Prop`{.var}. We prove `(A /\ B) /\ C <-> A /\ B /\ C`{.claim}.
             - By definition of and (conj), from `A`{.fact} (H0) and `B`{.fact} (H01) we deduce `A /\ B`{.claim} *by Corelib.Init.Logic.conj*.
             - By H1 we have `C`{.claim}.
             - So by definition of and (conj), we have `(A /\ B) /\ C`{.claim} *by Corelib.Init.Logic.conj*.
-- So by definition of and (conj), we have `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)`{.claim} *by Corelib.Init.Logic.conj*, that is `(A /\ B) /\ C <-> A /\ B /\ C`{.fact}.
+- So by definition of and (conj), we have `((A /\ B) /\ C -> A /\ B /\ C) /\ (A /\ B /\ C -> (A /\ B) /\ C)`{.claim} *by Corelib.Init.Logic.conj*.

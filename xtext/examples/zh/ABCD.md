@@ -9,11 +9,8 @@ by: tauto | congruence | lia | firstorder | auto
 设 `A B C D : Prop`{.var}. 假设 `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) 且 `A`{.hyp} (h4). 我们证明 `D`{.claim}.
 
 - 根据 h4 我们有 `A`{.claim}.
-- 根据 h4 我们有 `A`{.claim}.
-- 根据 h4 我们有 `A`{.claim}.
-- 根据 h3 我们有 `A -> C`{.claim}.
-- 根据 h2 我们有 `A -> C -> B`{.claim}.
-- 根据 h4 我们有 `A`{.claim}.
-- 根据 h3 我们有 `A -> C`{.claim}.
-- 根据 h1 我们有 `A -> B -> C -> D`{.claim}.
-- 由此可得 `D`{.claim} *by tauto*.
+- 将 h2, 我们有 `B`{.claim}.
+  - 根据 h4 我们有 `A`{.claim}.
+  - 将 h3 应用于 h4, 我们有 `C`{.claim}.
+- 将 h3 应用于 h4, 我们有 `C`{.claim}.
+- 将 h1, 我们有 `D`{.claim}.

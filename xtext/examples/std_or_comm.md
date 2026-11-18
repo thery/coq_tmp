@@ -27,4 +27,4 @@ Let `A B : Prop`{.var}. We prove `A \/ B <-> B \/ A`{.claim}.
       - Assume `A`{.hyp} (H0).
         - By definition of or (or_introl), from `A`{.fact} (H0) we deduce `A \/ B`{.claim} *by Corelib.Init.Logic.or_introl*.
     - We have `A \/ B`{.claim} in all cases.
-- So by definition of and (conj), we have `(A \/ B -> B \/ A) /\ (B \/ A -> A \/ B)`{.claim} *by Corelib.Init.Logic.conj*, that is `A \/ B <-> B \/ A`{.fact}.
+- So by definition of and (conj), we have `(A \/ B -> B \/ A) /\ (B \/ A -> A \/ B)`{.claim} *by Corelib.Init.Logic.conj*.

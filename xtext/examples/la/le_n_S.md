@@ -12,7 +12,6 @@ Sint `n m : nat`{.var}. Ponamus `n <= m`{.hyp} (H). Ostendamus `S n <= S m`{.cla
 - Casus 1 (basis): ostendamus `S n <= S n`{.claim}.
   - Ex definitione le (le_n), habemus `S n <= S n`{.claim} *by Corelib.Init.Peano.le_n*.
 - Casus 2 (gradus): ostendamus `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.
-  - Consideremus quodlibet `m0 : nat`{.var}.
-    - Ponamus `n <= m0`{.hyp} (H0) et per hypothesim inductionis `S n <= S m0`{.hyp} (IH).
-      - Ex definitione le (le_S) cum teste `S m0`{.fact}, ex `S n <= S m0`{.fact} (IH) unde sequitur `S n <= S (S m0)`{.claim} *by Corelib.Init.Peano.le_S*.
+  - Eligamus quaelibet `m0 : nat`{.var}; ponamus `n <= m0`{.hyp} (H0) et per hypothesim inductionis `S n <= S m0`{.hyp} (IH).
+    - Ex definitione le (le_S) cum teste `S m0`{.fact}, ex `S n <= S m0`{.fact} (IH) unde sequitur `S n <= S (S m0)`{.claim} *by Corelib.Init.Peano.le_S*.
 - Habemus `S n <= S m`{.claim} in omnibus casibus.

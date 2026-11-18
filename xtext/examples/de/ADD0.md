@@ -12,10 +12,13 @@ Sei `m : nat`{.var}. Wir zeigen `m + 0 = m`{.claim}.
 - Fall 1 (Anfang): wir zeigen `0 + 0 = 0 + 0`{.claim}.
   - Nach Definition von eq (eq_refl), es gilt `0 + 0 = 0 + 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Fall 2 (Schritt): wir zeigen `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.
-  - Sei beliebig `m0 : nat`{.var}.
-    - Angenommen nach Induktionsvoraussetzung `m0 + 0 = m0`{.hyp} (IH).
-      - Nach IH es gilt `m0 + 0 = m0`{.claim}.
-      - Mit f_equal wir erhalten `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y`{.claim} *by Corelib.Init.Logic.f_equal*.
-      - Daraus folgt `S (m0 + 0) = S m0`{.claim}.
+  - Seien beliebig `m0 : nat`{.var}; angenommen nach Induktionsvoraussetzung `m0 + 0 = m0`{.hyp} (IH).
+    - Das Element `nat`{.fact} gehört zu `Type`{.fact}.
+    - Das Element `nat`{.fact} gehört zu `Type`{.fact}.
+    - Das Element `S`{.fact} gehört zu `nat -> nat`{.fact}.
+    - Das Element `m0 + 0`{.fact} gehört zu `nat`{.fact}.
+    - Das Element `m0`{.fact} gehört zu `nat`{.fact}.
+    - Nach IH es gilt `m0 + 0 = m0`{.claim}.
+    - Durch Anwendung von f_equal, es gilt `S (m0 + 0) = S m0`{.claim}.
 - Da diese Fälle vollständig sind, daraus folgt `forall n : nat, n + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
 - Insbesondere `m + 0 = m`{.claim}.

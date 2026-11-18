@@ -12,10 +12,6 @@ by: tauto | congruence | lia | firstorder | auto
   - Предположим, что `x -> z`{.hyp} (i) и `y -> t`{.hyp} (j).
     - Возвращаясь к определению and (and_ind) в `x /\ y`{.fact} (h2), докажем, что `z /\ t`{.claim}:
       - Предположим, что `x`{.hyp} (k) и `y`{.hyp} (l).
-        - Следовательно `z`{.claim}.
-          - По k имеем `x`{.claim}.
-          - По i имеем `x -> z`{.claim}.
-        - Следовательно `t`{.claim}.
-          - По l имеем `y`{.claim}.
-          - По j имеем `y -> t`{.claim}.
+        - Применяя i к k, имеем `z`{.claim}.
+        - Применяя j к l, имеем `t`{.claim}.
         - Тогда по определению and (conj), имеем `z /\ t`{.claim} *by Corelib.Init.Logic.conj*.

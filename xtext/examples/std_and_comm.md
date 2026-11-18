@@ -17,4 +17,4 @@ Let `A B : Prop`{.var}. We prove `A /\ B <-> B /\ A`{.claim}.
     - Going back to the definition of and (match) in `B /\ A`{.fact} (H), we prove `A /\ B`{.claim}:
       - Assume `B`{.hyp} (H0) and `A`{.hyp} (H00).
         - By definition of and (conj), from `A`{.fact} (H00) and `B`{.fact} (H0) we deduce `A /\ B`{.claim} *by Corelib.Init.Logic.conj*.
-- So by definition of and (conj), we have `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)`{.claim} *by Corelib.Init.Logic.conj*, that is `A /\ B <-> B /\ A`{.fact}.
+- So by definition of and (conj), we have `(A /\ B -> B /\ A) /\ (B /\ A -> A /\ B)`{.claim} *by Corelib.Init.Logic.conj*.

@@ -12,10 +12,13 @@ by: tauto | congruence | lia | firstorder | auto
 - 경우 1 (기저): `0 + 0 = 0 + 0`{.claim} 임을 보이자.
   - eq (eq_refl) 의 정의에 의해, `0 + 0 = 0 + 0`{.claim} 이다 *by Corelib.Init.Logic.eq_refl*.
 - 경우 2 (귀납): `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim} 임을 보이자.
-  - 임의의 `m0 : nat`{.var}.
-    - 귀납 가정에 의해 `m0 + 0 = m0`{.hyp} (IH) 라고 가정하자.
-      - IH 에 의해 `m0 + 0 = m0`{.claim} 이다.
-      - f_equal 을(를) 이용하여 `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y`{.claim} 임을 얻는다 *by Corelib.Init.Logic.f_equal*.
-      - 따라서 `S (m0 + 0) = S m0`{.claim}.
+  - 임의로 택한 `m0 : nat`{.var}; 귀납 가정에 의해 `m0 + 0 = m0`{.hyp} (IH) 라고 가정하자.
+    - 원소 `nat`{.fact} 에 속한다 `Type`{.fact}.
+    - 원소 `nat`{.fact} 에 속한다 `Type`{.fact}.
+    - 원소 `S`{.fact} 에 속한다 `nat -> nat`{.fact}.
+    - 원소 `m0 + 0`{.fact} 에 속한다 `nat`{.fact}.
+    - 원소 `m0`{.fact} 에 속한다 `nat`{.fact}.
+    - IH 에 의해 `m0 + 0 = m0`{.claim} 이다.
+    - 적용하여 f_equal, `S (m0 + 0) = S m0`{.claim} 이다.
 - 이 경우들이 전부이므로, 따라서 `forall n : nat, n + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
 - 특히 `m + 0 = m`{.claim}.

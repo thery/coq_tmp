@@ -11,10 +11,9 @@ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
 - Case 1 (base): we prove `0 = 0`{.claim}.
   - By definition of eq (eq_refl), we have `0 = 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Case 2 (inductive): we prove `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.
-  - Let us consider an arbitrary `m : nat`{.var}.
-    - Assume by induction hypothesis `m + 0 = m`{.hyp} (IH).
-      - By definition of eq (eq_refl), we have `S m = S m`{.claim} *by Corelib.Init.Logic.eq_refl*.
-      - By IH we have `m + 0 = m`{.claim}.
-      - Rewriting with `m + 0 = m`{.fact} from right to left (eq_ind_r), we get `S (m + 0) = S m`{.claim}.
+  - Let us choose arbitrarily `m : nat`{.var}; assume by induction hypothesis `m + 0 = m`{.hyp} (IH).
+    - By definition of eq (eq_refl), we have `S m = S m`{.claim} *by Corelib.Init.Logic.eq_refl*.
+    - By IH we have `m + 0 = m`{.claim}.
+    - Rewriting with `m + 0 = m`{.fact} from right to left (eq_ind_r), we get `S (m + 0) = S m`{.claim}.
 - These cases being exhaustive, we deduce `forall n0 : nat, n0 + 0 = n0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
 - In particular `n + 0 = n`{.claim}.

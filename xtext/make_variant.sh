@@ -5,7 +5,7 @@
 # Explain commands (sum of Rocq's Time).
 #   usage: sh make_variant.sh NAME [VAR=VALUE ...]
 #   e.g.   sh make_variant.sh staged-none XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=none
-#          sh make_variant.sh staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded
+#          sh make_variant.sh direct XTEXT_TRANSLATION=direct
 # The switches are read when Explain runs (see Explain.v), so the example
 # files are compiled again with them.
 name=$1; shift

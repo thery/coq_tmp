@@ -9,7 +9,5 @@ by: tauto | congruence | lia | firstorder | auto
 Пусть `A B C : Prop`{.var}. Предположим, что `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) и `A`{.hyp} (h1). Докажем, что `C`{.claim}.
 
 - По h1 имеем `A`{.claim}.
-- По h1 имеем `A`{.claim}.
-- По h0 имеем `A -> B`{.claim}.
-- По h имеем `A -> B -> C`{.claim}.
-- Следовательно `C`{.claim} *by tauto*.
+- Применяя h0 к h1, имеем `B`{.claim}.
+- Применяя h, имеем `C`{.claim}.

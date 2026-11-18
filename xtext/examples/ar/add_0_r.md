@@ -12,10 +12,9 @@ by: tauto | congruence | lia | firstorder | auto
 - الحالة 1 (الأساس): سنثبت أن `0 = 0`{.claim}.
   - حسب تعريف eq (eq_refl), لدينا `0 = 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - الحالة 2 (الاستقرائية): سنثبت أن `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.
-  - لنأخذ عنصرا اختياريا `m : nat`{.var}.
-    - لنفرض أن حسب فرضية الاستقراء `m + 0 = m`{.hyp} (IH).
-      - حسب تعريف eq (eq_refl), لدينا `S m = S m`{.claim} *by Corelib.Init.Logic.eq_refl*.
-      - حسب IH لدينا `m + 0 = m`{.claim}.
-      - بإعادة الكتابة باستخدام `m + 0 = m`{.fact} من اليمين إلى اليسار (eq_ind_r), نحصل على `S (m + 0) = S m`{.claim}.
+  - لنختر اختياريا `m : nat`{.var}; لنفرض أن حسب فرضية الاستقراء `m + 0 = m`{.hyp} (IH).
+    - حسب تعريف eq (eq_refl), لدينا `S m = S m`{.claim} *by Corelib.Init.Logic.eq_refl*.
+    - حسب IH لدينا `m + 0 = m`{.claim}.
+    - بإعادة الكتابة باستخدام `m + 0 = m`{.fact} من اليمين إلى اليسار (eq_ind_r), نحصل على `S (m + 0) = S m`{.claim}.
 - هذه الحالات شاملة, نستنتج أن `forall n0 : nat, n0 + 0 = n0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
 - بشكل خاص `n + 0 = n`{.claim}.

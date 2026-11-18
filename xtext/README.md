@@ -82,10 +82,10 @@ Examples and checks:
   ABCD (Fig. 4.24), Trans_Inv and one term per rule (Fig. 4.11): each
   selected term is checked against the expected one;
 - `examples-staged-none/`, `examples-staged-maximal/`,
-  `examples-staged-guarded/`, `examples-staged-selection/` (with
-  `XTEXT_SELECTION=thesis`): the texts with other switches, written by
-  `sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
-  staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`);
+  `examples-staged-selection/` (with `XTEXT_SELECTION=thesis`),
+  `examples-direct/` (with `XTEXT_TRANSLATION=direct`): the texts with
+  other switches, written by `sh make_variant.sh NAME VAR=VALUE...` (e.g.
+  `sh make_variant.sh direct XTEXT_TRANSLATION=direct`);
 - `measure.sh`, `measure_all.sh`: times and sizes of the texts;
 - optional checks with cyp: `cyprun.sh`, `cyp-check/` (cyp's results,
   below), `cyp-check/roles_check.sh`.
@@ -98,7 +98,7 @@ has an environment variable that sets it and a default, in `xtext.db`
 
 | switch | variable | values | default |
 |---|---|---|---|
-| `translation` | `XTEXT_TRANSLATION` | `direct` (one walk), `staged` (the three stages of the thesis, below) | `direct` |
+| `translation` | `XTEXT_TRANSLATION` | `staged` (the three stages of the thesis, below), `direct` (one walk; its contraction is checked by tactics, not the thesis's) | `staged` |
 | `contraction` | `XTEXT_CONTRACTION` | `none`, `guarded`, `maximal` (thesis 3.4.2, below) | `guarded` |
 | `selection` | `XTEXT_SELECTION` | `none` (the contraction decides), `thesis` (the selection of thesis 4.3.1, in place of the contraction; staged translation only, below) | `none` |
 | `lang` | `XTEXT_LANG` | the languages of the lexicon: `en`, `fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la` | `en` |
@@ -822,8 +822,7 @@ language (`cyp-check/results_fr_it.tsv`, `cyp-check/results_langs.tsv`).
 
 ## The staged translation (thesis chapters 2 and 3, `elpi/staged.elpi`)
 
-With the switch `translation` set to `staged` (variable
-`XTEXT_TRANSLATION=staged`), a proof becomes text in the three stages of
+By default (switch `translation`, `staged`), a proof becomes text in the three stages of
 Coscoy's thesis, each a predicate on its own data type, so that each can
 be read against its figure:
 
@@ -850,6 +849,13 @@ The forms that the thesis treats only in chapter 6 (eliminations,
 introductions, rewriting, `fix`) and `let`, `match`, casts are written by
 the direct writer; their subproofs come back to the stages.
 
+The direct translation (`XTEXT_TRANSLATION=direct`, texts in
+`examples-direct/`) writes a proof in one walk.  Its contraction of
+application steps (`applications.elpi`) is not the thesis's: a merge is
+kept when a tactic (`xtext-guard-tactic`, `Explain.v`) proves the merged
+step from its new premises, and the tactic's name becomes the step's
+justification.
+
 **Trans_Inv**, Fig. 3.10 of the thesis (doubly annotated, not
 contracted), is `examples-staged-none/Trans_Inv.md`: the five double
 annotations L1-L5 of the figure are at the same steps,
@@ -867,7 +873,7 @@ with, as in the figure, one sentence per abstraction and per application
 element that is not a proof (`The element z belongs to E`).  Fig. 3.12
 (maximal contraction) is `examples-staged-maximal/Trans_Inv.md`
 (`Applying h to z, y, x, h2 and h1, we have R z x, that is Inv E R x
-z`), Fig. 3.13 (guarded contraction) `examples-staged-guarded/Trans_Inv.md`.
+z`), Fig. 3.13 (guarded contraction) `examples/Trans_Inv.md`.
 
 ### The selection of type annotations (thesis 4.3.1, Fig. 4.10)
 

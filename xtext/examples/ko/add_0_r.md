@@ -12,10 +12,9 @@ by: tauto | congruence | lia | firstorder | auto
 - 경우 1 (기저): `0 = 0`{.claim} 임을 보이자.
   - eq (eq_refl) 의 정의에 의해, `0 = 0`{.claim} 이다 *by Corelib.Init.Logic.eq_refl*.
 - 경우 2 (귀납): `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim} 임을 보이자.
-  - 임의의 `m : nat`{.var}.
-    - 귀납 가정에 의해 `m + 0 = m`{.hyp} (IH) 라고 가정하자.
-      - eq (eq_refl) 의 정의에 의해, `S m = S m`{.claim} 이다 *by Corelib.Init.Logic.eq_refl*.
-      - IH 에 의해 `m + 0 = m`{.claim} 이다.
-      - `m + 0 = m`{.fact} 오른쪽에서 왼쪽으로 (eq_ind_r) 을(를) 이용하여 다시 쓰면, `S (m + 0) = S m`{.claim} 임을 얻는다.
+  - 임의로 택한 `m : nat`{.var}; 귀납 가정에 의해 `m + 0 = m`{.hyp} (IH) 라고 가정하자.
+    - eq (eq_refl) 의 정의에 의해, `S m = S m`{.claim} 이다 *by Corelib.Init.Logic.eq_refl*.
+    - IH 에 의해 `m + 0 = m`{.claim} 이다.
+    - `m + 0 = m`{.fact} 오른쪽에서 왼쪽으로 (eq_ind_r) 을(를) 이용하여 다시 쓰면, `S (m + 0) = S m`{.claim} 임을 얻는다.
 - 이 경우들이 전부이므로, 따라서 `forall n0 : nat, n0 + 0 = n0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
 - 특히 `n + 0 = n`{.claim}.

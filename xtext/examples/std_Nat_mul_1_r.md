@@ -7,83 +7,130 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
 
-- Using one_succ we get `1 = 1`{.claim} *by Stdlib.Arith.PeanoNat.Nat.one_succ*.
-- Using mul_succ_r we get `forall n0 m : nat, n0 * S m = n0 * m + n0`{.claim} *by Stdlib.Arith.PeanoNat.Nat.mul_succ_r*.
-- Using mul_0_r we get `forall n0 : nat, n0 * 0 = 0`{.claim} *by Stdlib.Arith.PeanoNat.Nat.mul_0_r*.
-- Using add_0_l we get `forall n0 : nat, 0 + n0 = n0`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_0_l*.
-- In particular `n = n`{.claim}, that is `n = n`{.fact}.
-  - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-  - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
-  - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by Corelib.Classes.RelationClasses.reflexivity*.
-  - We deduce `forall x : nat, x = x`{.claim} *by tauto*.
-- We have proved `0 + n = n -> Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}.
-  - Assume `0 + n = n`{.hyp} (lemma).
-    - In particular `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
-      - Using eq_proper_proxy we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim} *by Corelib.Classes.Morphisms.eq_proper_proxy*.
-    - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (0 + n)) (eq n)`{.claim}, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (0 + n = x) (n = y)`{.fact}.
-      - By lemma we have `0 + n = n`{.claim}.
-      - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
-        - We deduce `RelationClasses.Transitive (@eq nat)`{.claim}.
-          - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-          - Using Equivalence_Transitive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Transitive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Transitive*.
-        - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by Corelib.Classes.Morphisms.trans_co_eq_inv_impl_morphism*.
-    - We deduce `Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}.
-- We have proved `n * 0 = 0 -> Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}.
-  - Assume `n * 0 = 0`{.hyp} (lemma).
-    - In particular `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
-      - Using eq_proper_proxy we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim} *by Corelib.Classes.Morphisms.eq_proper_proxy*.
-    - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 0 + n)) (eq (0 + n))`{.claim} *by congruence*, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 0 + n = x) (0 + n = y)`{.fact}.
-      - In particular `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
-        - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
-          - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
-            - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-            - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
-          - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by Corelib.Classes.Morphisms.reflexive_reflexive_proxy*.
-        - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by Corelib.Classes.Morphisms.reflexive_proper_proxy*.
-        - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
-      - We deduce `Morphisms.respectful eq eq (Init.Nat.add (n * 0)) (Init.Nat.add 0)`{.claim}, that is `forall x y : nat, x = y -> n * 0 + x = 0 + y`{.fact}.
-        - By lemma we have `n * 0 = 0`{.claim}.
-        - Using add_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_wd*, that is `forall x y : nat, x = y -> Morphisms.respectful eq eq (Init.Nat.add x) (Init.Nat.add y)`{.fact}.
-      - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
-        - We deduce `RelationClasses.Transitive (@eq nat)`{.claim}.
-          - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-          - Using Equivalence_Transitive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Transitive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Transitive*.
-        - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by Corelib.Classes.Morphisms.trans_co_eq_inv_impl_morphism*.
-    - We deduce `Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}.
-- We have proved `n * 1 = n * 0 + n -> Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}.
-  - Assume `n * 1 = n * 0 + n`{.hyp} (lemma).
-    - In particular `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
-      - Using eq_proper_proxy we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim} *by Corelib.Classes.Morphisms.eq_proper_proxy*.
-    - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 1)) (eq (n * 0 + n))`{.claim}, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 1 = x) (n * 0 + n = y)`{.fact}.
-      - By lemma we have `n * 1 = n * 0 + n`{.claim}.
-      - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
-        - We deduce `RelationClasses.Transitive (@eq nat)`{.claim}.
-          - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-          - Using Equivalence_Transitive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Transitive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Transitive*.
-        - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by Corelib.Classes.Morphisms.trans_co_eq_inv_impl_morphism*.
-    - We deduce `Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}.
-- We have proved `1 = 1 -> Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}.
-  - Assume `1 = 1`{.hyp} (lemma).
-    - In particular `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
-      - Using eq_proper_proxy we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim} *by Corelib.Classes.Morphisms.eq_proper_proxy*.
-    - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 1)) (eq (n * 1))`{.claim} *by congruence*, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 1 = x) (n * 1 = y)`{.fact}.
-      - By lemma we have `1 = 1`{.claim}.
-      - We deduce `Morphisms.Proper (Morphisms.respectful eq eq) (Nat.mul n)`{.claim}, that is `forall x y : nat, x = y -> n * x = n * y`{.fact}.
-        - In particular `Morphisms.ProperProxy eq n`{.claim}.
-          - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
-            - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
-              - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-              - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
-            - Using reflexive_reflexive_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> Morphisms.ReflexiveProxy R`{.claim} *by Corelib.Classes.Morphisms.reflexive_reflexive_proxy*.
-          - Using reflexive_proper_proxy we get `forall (A : Type) (R : Relation_Definitions.relation A), Morphisms.ReflexiveProxy R -> forall x : A, Morphisms.ProperProxy R x`{.claim} *by Corelib.Classes.Morphisms.reflexive_proper_proxy*.
-          - We deduce `forall x : nat, Morphisms.ProperProxy eq x`{.claim}.
-        - We deduce `forall x : nat, Morphisms.ProperProxy eq x -> Morphisms.Proper (Morphisms.respectful eq eq) (Nat.mul x)`{.claim}.
-          - Using mul_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.mul`{.claim} *by Stdlib.Arith.PeanoNat.Nat.mul_wd*.
-          - Using Reflexive_partial_app_morphism we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m : A -> B), Morphisms.Proper (Morphisms.respectful R R') m -> forall x : A, Morphisms.ProperProxy R x -> Morphisms.Proper R' (m x)`{.claim} *by Corelib.Classes.Morphisms.Reflexive_partial_app_morphism*.
-      - We deduce `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
-        - We deduce `RelationClasses.Transitive (@eq nat)`{.claim}.
-          - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-          - Using Equivalence_Transitive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Transitive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Transitive*.
-        - Using trans_co_eq_inv_impl_morphism we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim} *by Corelib.Classes.Morphisms.trans_co_eq_inv_impl_morphism*.
-    - We deduce `Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}.
-- We deduce `n * 1 = n`{.claim} *by congruence*.
+- By application, with one_succ, we have `Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}, that is `n * 1 = n -> n * 1 = n`{.fact}.
+  - We have proved `1 = 1 -> Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}.
+    - Assume `1 = 1`{.hyp} (lemma).
+      - By application, we have `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 1)) (eq (n * 1))`{.claim}, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 1 = x) (n * 1 = y)`{.fact}.
+        - Applying trans_co_eq_inv_impl_morphism, we have `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
+          - The element `nat`{.fact} belongs to `Type`{.fact}.
+          - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+          - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+            - The element `nat`{.fact} belongs to `Type`{.fact}.
+            - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+            - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+        - The element `n * 1`{.fact} belongs to `nat`{.fact}.
+        - The element `n * 1`{.fact} belongs to `nat`{.fact}.
+        - By application, we have `n * 1 = n * 1`{.claim}.
+          - Applying Reflexive_partial_app_morphism, we have `Morphisms.Proper (Morphisms.respectful eq eq) (Nat.mul n)`{.claim}, that is `forall x y : nat, x = y -> n * x = n * y`{.fact}.
+            - The element `nat`{.fact} belongs to `Type`{.fact}.
+            - The element `nat -> nat`{.fact} belongs to `Type`{.fact}.
+            - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+            - The element `Morphisms.respectful eq eq`{.fact} belongs to `Relation_Definitions.relation (nat -> nat)`{.fact}.
+            - The element `Nat.mul`{.fact} belongs to `nat -> nat -> nat`{.fact}.
+            - By mul_wd we have `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Nat.mul`{.claim}.
+            - The element `n`{.fact} belongs to `nat`{.fact}.
+            - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy eq n`{.claim}.
+              - The element `nat`{.fact} belongs to `Type`{.fact}.
+              - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+              - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
+                - The element `nat`{.fact} belongs to `Type`{.fact}.
+                - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                - Applying Equivalence_Reflexive, we have `RelationClasses.Reflexive (@eq nat)`{.claim}.
+                  - The element `nat`{.fact} belongs to `Type`{.fact}.
+                  - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                  - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+              - The element `n`{.fact} belongs to `nat`{.fact}.
+          - The element `1`{.fact} belongs to `nat`{.fact}.
+          - The element `1`{.fact} belongs to `nat`{.fact}.
+          - By lemma we have `1 = 1`{.claim}.
+      - The element `n`{.fact} belongs to `nat`{.fact}.
+      - The element `n`{.fact} belongs to `nat`{.fact}.
+      - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+      - By application, we have `Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}.
+- By application, we have `n * 1 = n`{.claim}.
+  - By application, we have `Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}, that is `n * 0 + n = n -> n * 1 = n`{.fact}.
+    - We have proved `n * 1 = n * 0 + n -> Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}.
+      - Assume `n * 1 = n * 0 + n`{.hyp} (lemma).
+        - By application, we have `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 1)) (eq (n * 0 + n))`{.claim}, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 1 = x) (n * 0 + n = y)`{.fact}.
+          - Applying trans_co_eq_inv_impl_morphism, we have `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
+            - The element `nat`{.fact} belongs to `Type`{.fact}.
+            - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+            - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+              - The element `nat`{.fact} belongs to `Type`{.fact}.
+              - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+              - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+          - The element `n * 1`{.fact} belongs to `nat`{.fact}.
+          - The element `n * 0 + n`{.fact} belongs to `nat`{.fact}.
+          - By lemma we have `n * 1 = n * 0 + n`{.claim}.
+        - The element `n`{.fact} belongs to `nat`{.fact}.
+        - The element `n`{.fact} belongs to `nat`{.fact}.
+        - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+        - By application, we have `Basics.flip Basics.impl (n * 1 = n) (n * 0 + n = n)`{.claim}.
+    - Applying mul_succ_r to n and O, we have `n * 1 = n * 0 + n`{.claim}.
+  - By application, we have `n * 0 + n = n`{.claim}.
+    - By application, we have `Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}, that is `0 + n = n -> n * 0 + n = n`{.fact}.
+      - We have proved `n * 0 = 0 -> Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}.
+        - Assume `n * 0 = 0`{.hyp} (lemma).
+          - By application, we have `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 0 + n)) (eq (0 + n))`{.claim}, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 0 + n = x) (0 + n = y)`{.fact}.
+            - Applying trans_co_eq_inv_impl_morphism, we have `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
+              - The element `nat`{.fact} belongs to `Type`{.fact}.
+              - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+              - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+                - The element `nat`{.fact} belongs to `Type`{.fact}.
+                - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+            - The element `n * 0 + n`{.fact} belongs to `nat`{.fact}.
+            - The element `0 + n`{.fact} belongs to `nat`{.fact}.
+            - By application, we have `n * 0 + n = 0 + n`{.claim}.
+              - By application, we have `Morphisms.respectful eq eq (Init.Nat.add (n * 0)) (Init.Nat.add 0)`{.claim}, that is `forall x y : nat, x = y -> n * 0 + x = 0 + y`{.fact}.
+                - By add_wd we have `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq eq (Init.Nat.add x) (Init.Nat.add y)`{.fact}.
+                - The element `n * 0`{.fact} belongs to `nat`{.fact}.
+                - The element `0`{.fact} belongs to `nat`{.fact}.
+                - By lemma we have `n * 0 = 0`{.claim}.
+              - The element `n`{.fact} belongs to `nat`{.fact}.
+              - The element `n`{.fact} belongs to `nat`{.fact}.
+              - Applying reflexive_proper_proxy, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+                - The element `nat`{.fact} belongs to `Type`{.fact}.
+                - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                - Applying reflexive_reflexive_proxy, we have `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
+                  - The element `nat`{.fact} belongs to `Type`{.fact}.
+                  - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                  - Applying Equivalence_Reflexive, we have `RelationClasses.Reflexive (@eq nat)`{.claim}.
+                    - The element `nat`{.fact} belongs to `Type`{.fact}.
+                    - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                    - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+                - The element `n`{.fact} belongs to `nat`{.fact}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+          - The element `n`{.fact} belongs to `nat`{.fact}.
+          - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+          - By application, we have `Basics.flip Basics.impl (n * 0 + n = n) (0 + n = n)`{.claim}.
+      - Applying mul_0_r to n, we have `n * 0 = 0`{.claim}.
+    - By application, we have `0 + n = n`{.claim}.
+      - By application, we have `Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}, that is `n = n -> 0 + n = n`{.fact}.
+        - We have proved `0 + n = n -> Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}.
+          - Assume `0 + n = n`{.hyp} (lemma).
+            - By application, we have `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (0 + n)) (eq n)`{.claim}, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (0 + n = x) (n = y)`{.fact}.
+              - Applying trans_co_eq_inv_impl_morphism, we have `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq (Basics.flip Basics.impl))) (@eq nat)`{.claim}, that is `forall x y : nat, x = y -> Morphisms.respectful eq (Basics.flip Basics.impl) (eq x) (eq y)`{.fact}.
+                - The element `nat`{.fact} belongs to `Type`{.fact}.
+                - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                - Applying Equivalence_Transitive, we have `RelationClasses.Transitive (@eq nat)`{.claim}.
+                  - The element `nat`{.fact} belongs to `Type`{.fact}.
+                  - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+                  - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+              - The element `0 + n`{.fact} belongs to `nat`{.fact}.
+              - The element `n`{.fact} belongs to `nat`{.fact}.
+              - By lemma we have `0 + n = n`{.claim}.
+            - The element `n`{.fact} belongs to `nat`{.fact}.
+            - The element `n`{.fact} belongs to `nat`{.fact}.
+            - Applying eq_proper_proxy to nat and n, we have `Morphisms.ProperProxy eq n`{.claim}, that is `n = n`{.fact}.
+            - By application, we have `Basics.flip Basics.impl (0 + n = n) (n = n)`{.claim}.
+        - Applying add_0_l to n, we have `0 + n = n`{.claim}.
+      - Applying reflexivity, we have `n = n`{.claim}.
+        - The element `nat`{.fact} belongs to `Type`{.fact}.
+        - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+        - Applying Equivalence_Reflexive, we have `RelationClasses.Reflexive (@eq nat)`{.claim}.
+          - The element `nat`{.fact} belongs to `Type`{.fact}.
+          - The element `eq`{.fact} belongs to `Relation_Definitions.relation nat`{.fact}.
+          - By eq_equiv we have `RelationClasses.Equivalence (@eq nat)`{.claim}.
+        - The element `n`{.fact} belongs to `nat`{.fact}.
+- By application, we have `n * 1 = n`{.claim}.
