@@ -1,0 +1,4 @@
+% A long countdown, to pause while it runs.
+pred count i:int.
+count 0 :- !.
+count N :- M is N - 1, count M.

@@ -1,0 +1,5 @@
+; The debug adapter, as a library: the wire formats, the debuggee
+; (elpi-debug -machine), the breakpoints, the DAP session.
+(library
+ (name elpi_dap)
+ (libraries yojson unix))

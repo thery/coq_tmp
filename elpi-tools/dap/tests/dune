@@ -1,0 +1,10 @@
+; Scripted DAP sessions: dap_replay plays each script (*.dap, one JSON
+; request per line) with elpi-dap, as VS Code would, and the cram tests
+; (*.t) record the transcripts.  `dune test` checks them, `dune promote`
+; accepts a new transcript.
+(executable
+ (name dap_replay)
+ (libraries yojson unix))
+
+(cram
+ (deps %{bin:elpi-dap} %{bin:elpi-debug} dap_replay.exe (glob_files *.elpi) (glob_files *.dap)))

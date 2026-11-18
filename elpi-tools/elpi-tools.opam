@@ -1,4 +1,4 @@
 opam-version: "2.0"
-synopsis: "Tools for standalone Elpi: reflection of programs, property checking"
-depends: [ "ocaml" "dune" "elpi" {>= "4.0.0"} ]
+synopsis: "Tools for standalone Elpi: reflection of programs, property checking, a debugger and its debug adapter (DAP)"
+depends: [ "ocaml" "dune" "elpi" {>= "4.0.0"} "yojson" {>= "2.0"} ]
 build: [ "dune" "build" "-p" name ]

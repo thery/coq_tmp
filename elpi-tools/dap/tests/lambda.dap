@@ -1,0 +1,41 @@
+# Stop on entry (before the first event), then step into the typing of λx.λy.x.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"lambda.elpi","goal":"of (lam x\\ lam y\\ x) T","stopOnEntry":true}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+# Eight steps in: call, unify, pi, assume (call #1), call, unify, pi, assume (call #2).
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+# The three scopes of the call #2: its goal, the local program, the eigenvariables.
+{"command":"scopes","arguments":{"frameId":2}}
+{"command":"variables","arguments":{"variablesReference":1}}
+{"command":"variables","arguments":{"variablesReference":2}}
+{"command":"variables","arguments":{"variablesReference":3}}
+# The same scopes for the call #1 (second in the stack: references 4, 5, 6).
+{"command":"variables","arguments":{"variablesReference":6}}
+# Next at a step inside a call creeps: the call port of #3, then its unify with a hypothesis.
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+# Make the call #3 fail from the debug console (f): the run goes on.
+{"command":"evaluate","arguments":{"expression":"f","context":"repl"}}
+{"await":"stopped"}
+{"command":"disconnect"}

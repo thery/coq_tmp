@@ -1,0 +1,32 @@
+# The client starts the adapter and launches append [1,2] [3] L.
+{"command":"initialize","arguments":{"adapterID":"elpi","linesStartAt1":true,"columnsStartAt1":true}}
+{"command":"launch","arguments":{"program":"append.elpi","goal":"append [1,2] [3] L"}}
+{"await":"initialized"}
+# A breakpoint on line 6 (the second clause of append), and one on a comment line before any clause.
+{"command":"setBreakpoints","arguments":{"source":{"path":"append.elpi"},"breakpoints":[{"line":6},{"line":2}]}}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"threads"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+{"command":"scopes","arguments":{"frameId":1}}
+{"command":"variables","arguments":{"variablesReference":1}}
+# Step in: the call port of the recursive call.
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+# Remove the breakpoint, step over the recursive call: its exit port.
+{"command":"setBreakpoints","arguments":{"source":{"path":"append.elpi"},"breakpoints":[]}}
+{"command":"next","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+# Step out: the exit of the first call.
+{"command":"stepOut","arguments":{"threadId":1}}
+{"await":"stopped"}
+# A command of elpi-debug in the debug console.
+{"command":"evaluate","arguments":{"expression":"g","context":"repl"}}
+# Restart the first call (retry), then continue to the end.
+{"command":"restartFrame","arguments":{"frameId":1}}
+{"await":"stopped"}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

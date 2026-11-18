@@ -1,0 +1,13 @@
+# A breakpoint on the predicate even: its call, then the resume of the goal suspended by CHR.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"chr.elpi","goal":"double 3 Y"}}
+{"await":"initialized"}
+{"command":"setFunctionBreakpoints","arguments":{"breakpoints":[{"name":"even"},{"name":"nowhere"}]}}
+{"command":"configurationDone"}
+{"await":"stopped"}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}
