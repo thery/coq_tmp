@@ -99,8 +99,10 @@ let main ~json md =
   let cmd =
     String.concat " " (List.map Filename.quote
       ([ "rocq"; "c"; "-Q"; cyp_lib (); "CypV"; "-Q"; tmp; "CypRules" ] @ flags @ [ src ])) in
+  (* run in the directory of the proof, where the caches of lia and nia
+     (.lia.cache, .nia.cache) are kept from one run to the next *)
   let code = Sys.command (Printf.sprintf "cd %s && %s > %s 2>&1"
-                            (Filename.quote tmp) cmd (Filename.quote out)) in
+                            (Filename.quote dir) cmd (Filename.quote out)) in
   let js = Filename.remove_extension md ^ ".cyp.json" in
   if json && Sys.file_exists js then print_string (read_file js)
   else
