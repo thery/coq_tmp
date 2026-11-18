@@ -57,9 +57,14 @@ declarations Ds :-
   std.fold Sigs [] add-declaration Ds.
 
 func add-declaration (pred), list (pred) -> list (pred).
-add-declaration (reflect.signature _ P _ Args _ _) Ds [declared P Modes | Ds] :-
-  not (var P), !, std.map Args arg-mode Modes.
+add-declaration (reflect.signature _ P _ Args _ Loc) Ds [declared P Modes | Ds] :-
+  not (var P), not (builtin-loc Loc), !, std.map Args arg-mode Modes.
 add-declaration _ Ds Ds.
+
+% [builtin-loc Loc]: a declaration of Elpi's builtins or standard library
+% (printed by elpi-reflect -builtins), which runs natively.
+pred builtin-loc i:reflect.srcloc.
+builtin-loc (reflect.srcloc File _ _) :- rex.match "^builtin[a-z_]*\\.elpi$" File.
 
 func arg-mode reflect.arg -> mode.
 arg-mode (reflect.arg reflect.in _) i.
@@ -78,7 +83,7 @@ write-bridges File :-
 % [write-bridge Out Sig Done Done1]: one bridge per predicate name.
 func write-bridge out_stream, (pred), list string -> list string.
 write-bridge _ (reflect.signature Name _ _ _ _ _) Done Done :- std.mem! Done Name, !.
-write-bridge Out (reflect.signature Name P _ Args _ _) Done [Name|Done] :- not (var P), !,
+write-bridge Out (reflect.signature Name P _ Args _ Loc) Done [Name|Done] :- not (var P), not (builtin-loc Loc), !,
   std.length Args N, std.iota N Is,
   std.map Is (i\ s\ s is " X" ^ {std.any->string i}) Vars,
   std.string.concat "" Vars Xs,
@@ -574,7 +579,7 @@ hyp-facts _ C _ _ :- std.fatal-error-w-data "debug: unsupported hypothetical cla
 % [hyp-number K]: a number of its own for a hypothetical clause, used by
 % the random order only (elsewhere 0, so that the boxes keep consecutive
 % numbers).
-pred hyp-number o:int.
+func hyp-number -> int.
 hyp-number K :- opt random-order, !, new_int K.
 hyp-number 0.
 
