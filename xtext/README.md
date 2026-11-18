@@ -879,5 +879,7 @@ the same annotations (it is in the history, commit 56a84ef).
   its other chapters (type annotations, reversible scripts).
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.
-- The `require` line of the header is fixed (Arith, Lia, List and the
-  file of the theorem); the load path for cyp is added by `cyprun.sh`.
+- The `require` line of the header is the same for every text (the
+  parameter `xtext-header-require`, and the file of the theorem): it does
+  not list what a proof uses; the load path for cyp is added by
+  `cyprun.sh`.

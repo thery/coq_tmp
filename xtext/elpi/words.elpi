@@ -14,8 +14,6 @@ type wd string -> part.
 type tx string -> part.
 % a formula, from its term, with its role for cyp: `F`{.claim}
 type fml role -> term -> part.
-% a formula already printed, with its role: `x y : E`{.var}
-type fmls role -> string -> part.
 % a name (of a hypothesis, a constant, ...), as it is
 type nm string -> part.
 % an enumeration, "A, B and C", each element a list of parts
@@ -71,7 +69,6 @@ pred part-text i:part, o:string.
 part-text (wd U) S :- word U S.
 part-text (tx S) S.
 part-text (fml R T) S :- formula R T S.
-part-text (fmls R S0) S :- prooftext.formula R S0 S.
 part-text (nm N) N.
 part-text (enum Ls) S :- enumeration Ls Ps, text-of-parts Ps S.
 
