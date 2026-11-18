@@ -5,7 +5,7 @@
 
 tr-lam (fun _ A _ as T) Ctx Path P :-
   (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
-  binder-kind A K, typ T Tau0, fm Tau0 FT, lam-run K [] T FT Fl Ctx Path P.
+  binder-kind A K, typ T Tau0, formula rclaim Tau0 FT, lam-run K [] T FT Fl Ctx Path P.
 
 pred lam-run i:bk, i:list binder, i:term, i:string, i:list bool, i:ctx, i:list int, o:pf.
 lam-run K Acc (fun N A F) FT Fl Ctx Path P :- binder-kind A K1, K1 = K, !,
@@ -28,12 +28,12 @@ lam-text bk-assume Bs FT LB Ctx (prf [it H LB] C) :-
   say-cap [wd "assume" | Ps] H,
   concl Ctx [wd "proved", tx FT] C.
 lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
-  V is "`" ^ Id ^ " : " ^ FA ^ "`{.var}", X is "`" ^ Id ^ "`{.fact}",
+  declaration-formula [Id] FA V, prooftext.formula rfact Id X,
   say-cap [wd "consider", tx V] H,
   concl Ctx [wd "have", tx FT, tx ",", wd "since", tx X, wd "arbitrary"] C.
 lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
   std.map Bs (x\ y\ sigma Id FA\ x = b _ Id FA,
-     y is "`" ^ Id ^ " : " ^ FA ^ "`{.var}") L,
+     declaration-formula [Id] FA y) L,
   std.map L (v\ p\ p = [tx v]) L1, sep-parts [tx ","] L1 Ps,
   say-cap [wd "choose" | Ps] H,
   concl Ctx [wd "thus-have", tx FT] C.
@@ -48,8 +48,8 @@ pred and-parts i:list (list part), o:list part.
 and-parts L Ps :- sep-parts [wd "and"] L Ps.
 
 pred assume-text i:binder, o:list part.
-assume-text (b _ Id FA) [tx F, tx "(", tx Id, tx ")"] :- F is "`" ^ FA ^ "`{.hyp}".
-assume-text (bih Id FA) [wd "ih", tx F, tx "(", tx Id, tx ")"] :- F is "`" ^ FA ^ "`{.hyp}".
+assume-text (b _ Id FA) [tx F, tx "(", tx Id, tx ")"] :- prooftext.formula rhyp FA F.
+assume-text (bih Id FA) [wd "ih", tx F, tx "(", tx Id, tx ")"] :- prooftext.formula rhyp FA F.
 
 pred concl i:ctx, i:list part, o:option line.
 concl star _ none.
@@ -60,8 +60,7 @@ pred let-lines i:list binder, o:list line.
 let-lines [] [].
 let-lines [b _ Id FA|Bs] [it S []|Ls] :-
   same-type FA Bs Ids Rest,
-  std.string.concat " " [Id|Ids] Vs,
-  V is "`" ^ Vs ^ " : " ^ FA ^ "`{.var}",
+  declaration-formula [Id|Ids] FA V,
   (if (Ids = []) (U = "let") (U = "let-plural")), say-cap [wd U, tx V] S,
   let-lines Rest Ls.
 
@@ -80,7 +79,7 @@ tr-let R N Ty V F Ctx Path (prf [L1|LB] C) :-
       (tr V nostar Path PV, dashed PV (it S0 Ch),
        L1 = it {calc (S0 ^ " (" ^ Id ^ ")")} Ch)
       (ppf V FV, ppf Ty FTy,
-       LV is "`" ^ Id ^ " : " ^ FTy ^ " := " ^ FV ^ "`{.var}",
+       prooftext.formula rvar {calc (Id ^ " : " ^ FTy ^ " := " ^ FV)} LV,
        say-cap [wd "let", tx LV] SL, L1 = it SL [])),
   (pi x\ (def x N1 Ty V, ctx-name Id) =>
      if (R = tt) ((root-term (F x) :- !) => tr-root (F x) Ctx Path PB)

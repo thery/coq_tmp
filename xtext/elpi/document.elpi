@@ -1,4 +1,4 @@
-% xtext: The top level: the statement, the header, the document.
+% xtext: The top level: the statement, the document and its header.
 % (part of xtext's writer; the files are loaded in the order of Explain.v)
 
 % ------------------------------------------------------------------
@@ -15,7 +15,7 @@ top-run Acc (fun N A F) Ty Stmt L :- not (statement-stops-at Ty N A), !,
   (if (Ty = prod _ _ B) true (whnf Ty (prod _ _ B) ; B = (_\ Ty))),
   pi x\ (decl x N1 A, ctx-name Id) => top-run [b K Id FA|Acc] (F x) (B x) Stmt L.
 top-run Acc Body Ty0 Stmt L :-
-  std.rev Acc Bs, beta-ty Ty0 Ty, fm Ty FT,
+  std.rev Acc Bs, beta-ty Ty0 Ty, formula rclaim Ty FT,
   statement Bs Ss, say-cap [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
   std.string.concat " " Ss1 Stmt,
   (if (staged-mode)
@@ -36,7 +36,7 @@ that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-
   not (off "thatis"), typ T Syn, not (Syn = Exp), coq.unify-eq Syn Exp ok, !,
   % the second form is shown, not claimed: Rocq checked the conversion,
   % and the step's justification is about the first form
-  fm-fact Exp F, say-cap [tx S, tx ",", wd "that-is", tx F] S1.
+  formula rfact Exp F, say-cap [tx S, tx ",", wd "that-is", tx F] S1.
 that-is _ _ P P.
 
 % the expected types of the arguments As of a term of type Ty
@@ -77,43 +77,55 @@ let-run [b bk-assume Id FA|Bs] [] [b bk-assume Id FA|Bs] :- !.
 let-run [B|Bs] [B|Ls] Rest :- !, let-run Bs Ls Rest.
 let-run [] [] [].
 
-pred render i:string, i:list line, o:list string.
-render _ [] [].
-render I [it S Ch|L] Out :-
-  end-dot S S1, Line is I ^ "- " ^ S1,
-  I2 is I ^ "  ", render I2 Ch O1, render I L O2,
-  std.append [Line|O1] O2 Out.
+% ------------------------------------------------------------------
+% The document (../prooftext/document.elpi)
+
+% [proof-text Title Path Body Type Text]: the text of the proof Body of
+% type Type, under the title Title; Path is the module of the theorem
+pred proof-text i:string, i:list string, i:term, i:term, o:string.
+proof-text Title Path Body Type Text :-
+  top-run [] Body Type Statement Lines,
+  std.map Lines document-step Steps,
+  header-fields Path Fields,
+  prooftext.write-document
+    (prooftext.document Fields Title prooftext.unplaced Statement Steps) Text.
+
+% a line of the proof is a step of the document; its text ends with a
+% punctuation mark
+pred document-step i:line, o:prooftext.step.
+document-step (it S Ch) (prooftext.step prooftext.unplaced S1 Steps) :-
+  end-dot S S1, std.map Ch document-step Steps.
 
 pred end-dot i:string, o:string.
 end-dot S S :- rex.match "^.*[:.,]$" S, !.
 end-dot S S1 :- S1 is S ^ ".".
 
-% the cyp header; the file that defines the theorem is required too, so
-% that the lemmas it uses are known to cyp
-
-header GR H :- coq.gref->path GR Path, header-path Path H.
-
-pred header-path i:list string, o:string.
-header-path Path H :-
+% The fields of the header, for cyp: the libraries (xtext-header-require)
+% and the module of the theorem, so that the lemmas it uses are known
+% (none for a theorem of the standard library, which the libraries load);
+% the language; the default tactics, those that check a guarded
+% contraction (xtext-guard-tactic), so that cyp closes the contracted
+% steps with the tactics that checked them.
+pred header-fields i:list string, o:list prooftext.field.
+header-fields Path Fields :-
+  xtext-header-require Libraries,
   (if (Path = [Lib|_], (Lib = "Stdlib" ; Lib = "Corelib"))
-      (Req = "")
-      (std.string.concat "." Path Mod, Req is " Require Import " ^ Mod ^ ".")),
-  R is "require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations." ^ Req,
-  switch "lang" Lg, (if (Lg = "en") (Ls = []) (Ls = [{calc ("lang: " ^ Lg)}])),
-  std.string.concat "\n" {std.append ["---", R | Ls] [
-    "by: tauto | congruence | lia | firstorder | auto",
-    "---" ]} H.
+      (Require = Libraries)
+      (std.string.concat "." Path Module,
+       Require is Libraries ^ " Require Import " ^ Module ^ ".")),
+  switch "lang" Lang, prooftext.lang-fields Lang LangFields,
+  std.findall (xtext-guard-tactic _ _) Guards,
+  std.map Guards (g\ t\ sigma L\ g = xtext-guard-tactic L t) Tactics,
+  prooftext.by-field Tactics By,
+  std.append [prooftext.field "require" Require | LangFields] [By] Fields.
 
 % the text of a proof in progress (Explain_partial): its partial proof
 % term P, where the open goals are holes (thesis of L. Théry, 3.3.3)
 pred explain-partial i:string, i:term, o:string.
 explain-partial Name P Text :-
   beta P P1, coq.typecheck P Ty0 ok, beta-ty Ty0 Ty,
-  top-run [] P1 Ty Stmt L, render "" L Lines,
-  coq.env.current-path Path, header-path Path Hd,
-  Title is "# " ^ Name ^ " (proof in progress)",
-  std.append [Hd, "", Title, "", Stmt, ""] Lines All,
-  std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
+  coq.env.current-path Path,
+  proof-text {calc (Name ^ " (proof in progress)")} Path P1 Ty Text.
 
 pred explain i:string, o:string.
 explain Name Text :-
@@ -123,11 +135,8 @@ explain Name Text :-
   % the beta-redexes left by tactics (intro patterns) are reduced first
   beta Bo Bo1,
   coq.env.const C _ CTy,
-  top-run [] Bo1 CTy Stmt L, render "" L Lines,
-  header GR Hd,
-  Title is "# " ^ Name,
-  std.append [Hd, "", Title, "", Stmt, ""] Lines All,
-  std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
+  coq.gref->path GR Path,
+  proof-text Name Path Bo1 CTy Text.
 
 % The vocabulary of the writer in language L (the lexicon): every use of
 % English has a phrase in L, and every phrase of a role is in lower case

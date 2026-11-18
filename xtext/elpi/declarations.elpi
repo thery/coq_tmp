@@ -52,9 +52,6 @@ pred dashed-exp i:list term, i:list term, i:list int, o:list line.
 % defined in document.elpi, used in transducer.elpi, inductive-text.elpi
 pred statement i:list binder, o:list string.
 
-% defined in document.elpi, used in inductive-text.elpi
-pred header i:gref, o:string.
-
 % defined in type-expressions.elpi, used in document.elpi: the type the
 % body M of the proof is required to prove ([req M Tr], thesis 3.3.2)
 pred req o:term, o:term.

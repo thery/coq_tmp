@@ -1,0 +1,20 @@
+% prooftext: names that the text introduces (hypotheses, variables), each
+% different from the names already in use, so that a justification *by h*
+% names one hypothesis.
+
+namespace prooftext {
+
+% [fresh-name Used Wanted Name]: Wanted if it is not in Used, else the
+% first of Wanted0, Wanted1, ... that is not
+pred fresh-name i:list string, i:string, o:string.
+fresh-name Used Wanted Wanted :- not (std.mem! Used Wanted), !.
+fresh-name Used Wanted Name :- numbered-name Used Wanted 0 Name.
+
+pred numbered-name i:list string, i:string, i:int, o:string.
+numbered-name Used Base I Name :-
+  Candidate is Base ^ {std.any->string I},
+  if (std.mem! Used Candidate)
+     (I1 is I + 1, numbered-name Used Base I1 Name)
+     (Name = Candidate).
+
+}

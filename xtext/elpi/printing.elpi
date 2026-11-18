@@ -44,32 +44,35 @@ rename U (match T R B) (match T1 R1 B1) :- !,
 rename _ X Y :- copy X Y.
 
 % the name of a new hypothesis or variable: anonymous ones are called h,
-% and a name already in the context gets a number
+% and a name already in the context gets a number (prooftext.fresh-name)
 pred binder-name i:name, o:name, o:string.
 binder-name N N1 Id :-
   coq.name->id N Id0, (if (Id0 = "_") (Id1 = "h") (Id1 = Id0)),
   context-names Used,
-  (if (std.mem! Used Id1) (fresh-aux Used Id1 0 Id) (Id = Id1)),
+  prooftext.fresh-name Used Id1 Id,
   coq.id->name Id N1.
 
+% [fresh Used N N1 Id]: the bound name N, renamed (N1, its text Id) if it
+% is in Used; an anonymous one stays anonymous
 pred fresh i:list string, i:name, o:name, o:string.
 fresh U N N1 Id :- coq.name->id N Id0,
   if (Id0 = "_" ; not (std.mem! U Id0)) (N1 = N, Id = Id0)
-     (fresh-aux U Id0 0 Id, coq.id->name Id N1).
-pred fresh-aux i:list string, i:string, i:int, o:string.
-fresh-aux U B I Id :- Id0 is B ^ {std.any->string I},
-  if (std.mem! U Id0) (I1 is I + 1, fresh-aux U B I1 Id) (Id = Id0).
+     (prooftext.fresh-name U Id0 Id, coq.id->name Id N1).
 
 % the formula printed so that it type-checks again (defined in reparse.elpi)
 pred ppf i:term, o:string.
 
-% a formula, between backticks
-% Each formula carries its role for cyp, as a Pandoc attribute:
-% {.claim} (proved by the step), {.hyp}, {.var}, {.fact} (shown only).
-pred fm i:term, o:string.
-fm T S :- ppf T S0, S is "`" ^ S0 ^ "`{.claim}".
-pred fm-fact i:term, o:string.
-fm-fact T S :- ppf T S0, S is "`" ^ S0 ^ "`{.fact}".
+% [formula Role T S]: the formula T, printed so that it type-checks again,
+% with its role for cyp: rclaim (proved by the step), rhyp, rvar, rfact
+% (shown only); ../prooftext/formulas.elpi
+pred formula i:role, i:term, o:string.
+formula Role T S :- ppf T S0, prooftext.formula Role S0 S.
+
+% [declaration-formula Ids Type S]: the variables Ids of type Type (printed),
+% as the formula of their declaration: `x y : A`{.var}
+pred declaration-formula i:list string, i:string, o:string.
+declaration-formula Ids Type S :-
+  std.string.concat " " Ids Vars, prooftext.formula rvar {calc (Vars ^ " : " ^ Type)} S.
 
 % ------------------------------------------------------------------
 % Beta-reduction

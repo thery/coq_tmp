@@ -68,13 +68,13 @@ tr-root T _ _ P :- open-goal T P, !.
 tr-root T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ctx Path P.
 tr-root T Ctx Path P :- tr.aux T Ctx Path P, !.
 tr-root T _ _ P :- unchanged T P, !.
-tr-root T _ _ P :- pp T S0, F is "`" ^ S0 ^ "`{.fact}",
+tr-root T _ _ P :- pp T S0, prooftext.formula rfact S0 F,
   say-cap [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, one S P.
 
 % an open goal of a proof in progress (a hole of the partial proof term)
 % is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez")
 pred open-goal i:term, o:pf.
-open-goal T P :- var T, typ T G, fm G F, say-cap [wd "prove", tx F] S, one S P.
+open-goal T P :- var T, typ T G, formula rclaim G F, say-cap [wd "prove", tx F] S, one S P.
 
 % Tactic-built subproofs (thesis 5.4, the "pragmatic method"): a proper
 % subproof whose proof term has at least xtext-threshold nodes is first
@@ -86,7 +86,7 @@ tactic-step T P :- not (off "tactics"),
   xtext-threshold N, size-ge T N,
   typ T Ty, binder-kind Ty K, K = bk-assume,
   xtext-tactic L Txt, try-tactic L Ty, !,
-  fm Ty F, by-part Txt J, say-cap [wd "have", tx F, J] S, one S P.
+  formula rclaim Ty F, by-part Txt J, say-cap [wd "have", tx F, J] S, one S P.
 
 pred try-tactic i:string, i:term.
 try-tactic L Ty :-
@@ -131,5 +131,5 @@ tr-other T _ _ P :- unchanged T P.
 % expressions that match no rule are left unchanged
 pred unchanged i:term, o:pf.
 unchanged T (prf [] (some (it S []))) :-
-  typ T Tau, fm-fact T FT, fm Tau F,
+  typ T Tau, formula rfact T FT, formula rclaim Tau F,
   say-cap [wd "using", tx FT, wd "get", tx F] S.

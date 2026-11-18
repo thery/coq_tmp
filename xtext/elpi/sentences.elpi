@@ -12,21 +12,10 @@ type nm string -> part.
 % an enumeration, "A, B and C", each element a list of parts
 type enum list (list part) -> part.
 
-part-text (fml R T) S :- ppf T S0, fmls-text R S0 S.
-part-text (fmls R S0) S :- fmls-text R S0 S.
+part-text (fml R T) S :- formula R T S.
+part-text (fmls R S0) S :- prooftext.formula R S0 S.
 part-text (nm N) N.
 part-text (enum Ls) S :- enum-parts Ls Ps, say Ps S.
-
-pred fmls-text i:role, i:string, o:string.
-fmls-text R S0 S :- role-tag R G, S is "`" ^ S0 ^ "`{." ^ G ^ "}".
-
-% the Pandoc class of a role (read back by cyp, text.elpi)
-pred role-tag i:role, o:string.
-role-tag rvar "var".
-role-tag rhyp "hyp".
-role-tag rclaim "claim".
-role-tag rback "claim".
-role-tag rfact "fact".
 
 % "A", "A and B", "A, B and C"
 pred enum-parts i:list (list part), o:list part.

@@ -58,7 +58,7 @@ scope [P | Ps] D [P | In] Rest :- scope Ps D In Rest.
 pred scope-end i:part.
 scope-end (wd U) :- switch "lang" L, write-role L U _ _.
 scope-end (tx S) :- std.mem! [",", ".", ":", ";"] S.
-scope-end (tx S) :- rex.match "^[*]by " S.
+scope-end (tx S) :- prooftext.is-justification S.
 
 pred part-text i:part, o:string.
 part-text (wd U) S :- word U S.
@@ -82,4 +82,4 @@ cap-first S S.
 % a justification *by J* as a part ("" for none)
 pred by-part i:string, o:part.
 by-part "" (tx "") :- !.
-by-part J (tx S) :- S is "*by " ^ J ^ "*".
+by-part J (tx S) :- prooftext.justification J S.

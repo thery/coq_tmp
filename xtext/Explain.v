@@ -36,6 +36,13 @@ From Lexicon Extra Dependency "lang_zh.elpi" as lex_zh.
 From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
+(* the format of proof texts (../prooftext), shared with cyp: the document,
+   its header, formulas and justifications, fresh names, tactic names *)
+From ProofText Extra Dependency "header.elpi" as pt_header.
+From ProofText Extra Dependency "document.elpi" as pt_document.
+From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "names.elpi" as pt_names.
+From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
 From XText Extra Dependency "elpi/sentences.elpi" as sentences.
 From XText Extra Dependency "elpi/staged.elpi" as staged.
@@ -74,6 +81,13 @@ Elpi Db xtext.db lp:{{
   xtext-guard-tactic "xtext_g_lia" "lia".
   xtext-guard-tactic "xtext_g_firstorder" "firstorder".
   xtext-guard-tactic "xtext_g_auto" "auto".
+  % [xtext-header-require S]: the require field of the header of a text
+  % (the libraries cyp loads to read the formulas; the module of the
+  % theorem is added).  The default loads the libraries of the example
+  % files.
+  pred xtext-header-require o:string.
+  :name "xtext-header-require"
+  xtext-header-require "From Stdlib Require Import Arith Lia List Bool. Import ListNotations.".
   % [xtext-switch Name Variable Default]: a switch of the writer, the
   % environment variable that sets it, and its default value.  The values
   % the writer knows are in elpi/switches.elpi; any other value, an empty
@@ -108,6 +122,11 @@ Elpi Accumulate File lex_zh.
 Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
+Elpi Accumulate File pt_header.
+Elpi Accumulate File pt_document.
+Elpi Accumulate File pt_formulas.
+Elpi Accumulate File pt_names.
+Elpi Accumulate File pt_tactics.
 Elpi Accumulate File xt_text_tree.
 Elpi Accumulate File xt_printing.
 Elpi Accumulate File xt_switches.
@@ -156,6 +175,11 @@ Elpi Accumulate File lex_zh.
 Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
+Elpi Accumulate File pt_header.
+Elpi Accumulate File pt_document.
+Elpi Accumulate File pt_formulas.
+Elpi Accumulate File pt_names.
+Elpi Accumulate File pt_tactics.
 Elpi Accumulate File xt_text_tree.
 Elpi Accumulate File xt_printing.
 Elpi Accumulate File xt_switches.

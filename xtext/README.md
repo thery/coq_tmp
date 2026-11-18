@@ -25,8 +25,12 @@ constants.
 ## Build
 
 Rocq 9.1.1, Elpi 4.0.0 and rocq-elpi 3.5.1 (opam switch `elpi4`, the
-switch of cyp).  xtext needs the lexicon, `../lexicon` (logical name
-`Lexicon`), and nothing of cyp:
+switch of cyp).  xtext needs two libraries that it shares with cyp, and
+nothing of cyp itself: the lexicon, `../lexicon` (logical name `Lexicon`,
+the words of each language), and prooftext, `../prooftext` (logical name
+`ProofText`, [the format of proof texts](../prooftext/README.md): the
+document and its writer, the header, formulas with their roles, the
+justification `*by X*`, fresh names, the tactics a text may name):
 
 ```sh
 eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4)"

@@ -1,0 +1,52 @@
+% prooftext: the header of a proof text, its fields and their writing.
+% (load before document.elpi)
+
+namespace prooftext {
+
+% a field of the header, "key: value"
+kind field type.
+type field string -> string -> field.
+
+% [header-key Key]: the keys a header may have
+pred header-key o:string.
+% the Rocq commands run before the proof: the libraries, and the file of
+% the lemmas it uses
+header-key "require".
+% the files of rules (.elpi, .v) that a reader adds to its own
+header-key "rules".
+% options of rocq c for the reader's driver (load paths -Q, -R, -I)
+header-key "flags".
+% the notation scope in which the formulas are read (a name or a key)
+header-key "scope".
+% the language of the text (default-lang when there is none)
+header-key "lang".
+% the default tactics of the proof, tried on a step that names none,
+% separated by " | " (the names of tactics.elpi)
+header-key "by".
+
+% the language of a text whose header has no lang field
+pred default-lang o:string.
+default-lang "en".
+
+% [header-lines Fields Lines]: the lines of the header, between two
+% lines ---; a key that is not a header-key is an error
+pred header-lines i:list prooftext.field, o:list string.
+header-lines Fields Lines :-
+  std.map Fields field-line FieldLines,
+  std.append ["---" | FieldLines] ["---"] Lines.
+
+pred field-line i:prooftext.field, o:string.
+field-line (prooftext.field Key Value) Line :- header-key Key, !, Line is Key ^ ": " ^ Value.
+field-line (prooftext.field Key _) _ :- coq.error "prooftext: no header field" Key.
+
+% [lang-fields Lang Fields]: the field that gives the language Lang, none
+% for the default language
+pred lang-fields i:string, o:list prooftext.field.
+lang-fields Lang [] :- default-lang Lang, !.
+lang-fields Lang [prooftext.field "lang" Lang].
+
+% [by-field Tactics Field]: the field of the default tactics
+pred by-field i:list string, o:prooftext.field.
+by-field Tactics (prooftext.field "by" Value) :- std.string.concat " | " Tactics Value.
+
+}
