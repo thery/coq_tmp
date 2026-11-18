@@ -1,9 +1,10 @@
 # A demo of `elpi-check` and `elpi-debug`
 
 Two tools for standalone Elpi 4.0.0 (opam switch `elpi5`, the released
-Elpi, no patch), on one small program: the simply typed λ-calculus, with
+Elpi, no patch), on two small programs.  The first is the simply typed λ-calculus, with
 binders as Elpi lambdas and the typing context as hypotheses (`pi`, `=>`).
-Its reduction has one wrong rule.  `elpi-check` finds it from a property;
+Its reduction has one wrong rule.  The second (at the end) is insertion
+sort on lists, as in Prolog.  `elpi-check` finds it from a property;
 `elpi-debug` shows why.  Every output below is real; `sh demo.sh` reruns
 all the commands (after `dune build` in `elpi-tools/`; it runs the tools
 from `_build/`, with `-I ../check/lib` for the property declarations).
@@ -219,6 +220,115 @@ No solution.
 ```
 $ elpi-debug -compare -all lambda.elpi 'step (app (lam x\ c) c) N'
 Same answers (2).
+```
+
+## A second example: lists, as in Prolog
+
+[`lists.elpi`](lists.elpi): insertion sort with one wrong clause, and two
+reversals.
+
+```prolog
+% [insert X L R]: R is the sorted list L with X inserted
+pred insert i:int, i:list int, o:list int.
+insert X [] [X].
+insert X [Y | L] [X, Y | L] :- X < Y.
+insert X [Y | L] [Y | L] :- X = Y.            % the bug: X is lost
+insert X [Y | L] [Y | R] :- X > Y, insert X L R.
+
+pred sort i:list int, o:list int.
+sort [] [].
+sort [X | L] S :- sort L S1, insert X S1 S.
+
+property "sort-sorted" (pi L S\ sort L S ==> sorted S).
+property "sort-length"
+  (pi L S N M\ sort L S ==> std.length L N ==> std.length S M ==> N = M).
+property "rev-agree" (pi L R1 R2\ naive-rev L R1 ==> rev L R2 ==> R1 = R2).
+```
+
+`elpi-check` finds the bug, and shrinks the counterexample from three
+elements to two:
+
+```
+$ elpi-check lists.elpi
+property sort-sorted (lists.elpi:41)
+  variables: L : list int (generated), S : list int (computed)
+  OK: passed 100 tests, 0 discarded; average size of the values 11
+property sort-length (lists.elpi:44)
+  variables: L : list int (generated), S : list int (computed), N : int (computed), M : int (computed)
+  FAILED at test 23 (22 passed, 0 discarded); first counterexample:
+    L = [-4, 0, 0]
+    S = [-4, 0]
+    N = 3
+    M = 2
+  shrunk in 1 steps to:
+    L = [0, 0]
+    S = [0]
+    N = 2
+    M = 1
+property rev-agree (lists.elpi:48)
+  variables: L : list int (generated), R1 : list int (computed), R2 : list int (computed)
+  OK: passed 100 tests, 0 discarded; average size of the values 11
+elpi-check: 2 of 3 properties hold
+```
+
+The trace of the shrunk case shows the wrong clause at work (line 10,
+after line 9 fails on `0 < 0`):
+
+```
+$ elpi-debug -trace lists.elpi 'sort [0,0] S'
+Call: #1 sort [0, 0] X0
+Unify: #1 with lists.elpi:16: sort [0, 0] X0
+  Call: #2 sort [0] X1
+  Unify: #2 with lists.elpi:16: sort [0] X1
+    Call: #3 sort [] X2
+    Unify: #3 with lists.elpi:15: sort [] []
+      X2 := []
+    Exit: #3 sort [] []
+    Call: #4 insert 0 [] X1
+    Unify: #4 with lists.elpi:8: insert 0 [] [0]
+      X1 := [0]
+    Exit: #4 insert 0 [] [0]
+  Exit: #2 sort [0] [0]
+  Call: #5 insert 0 [0] X0
+  Unify: #5 with lists.elpi:9: insert 0 [0] [0, 0]
+      X0 := [0, 0]
+  Unify: #5 with lists.elpi:10: insert 0 [0] [0]
+      X0 := [0]
+  Exit: #5 insert 0 [0] [0]
+Exit: #1 sort [0, 0] [0]
+Solution 1:
+  S = [0]
+```
+
+Asking why the expected answer is not found points to the fix: the clause
+that would keep both zeros needs `=<`, not `<`:
+
+```
+$ elpi-debug lists.elpi 'sort [0,0] [0,0]'
+debug: no (more) solution.
+Deepest failure (depth 2): 0 < 0
+  called from:
+    #5 insert 0 [0] [0, 0]
+    #1 sort [0, 0] [0, 0]
+  a builtin (not a predicate of the program): it ran natively and failed
+No solution.
+```
+
+The profile shows the quadratic cost of the naive reverse (20 100 calls to
+`append` for a list of 200 elements, against 201 calls for the reversal
+with an accumulator):
+
+```
+$ elpi-debug -profile lists.elpi 'std.iota 200 L, naive-rev L R1, rev L R2'
+Profile (ports per predicate; tries = clauses tried; self time):
+  predicate                        calls   exits   redos   fails   tries   time (ms)
+  (query)                              0       0       0       0       0        1.02
+  append                           20100   20100       0       0   40000    11457.60
+  naive-rev                          201     201       0       0     401      258.21
+  rev                                  1       1       0       0       1        1.44
+  rev-onto                           201     201       0       0     401      229.06
+  std.iota (builtin)                   1       1       0       0       0        1.15
+Solution 1:
 ```
 
 ## How it works, in one paragraph
