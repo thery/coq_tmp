@@ -19,6 +19,7 @@ From XText Extra Dependency "elpi/kinds.elpi" as xt_kinds.
 From XText Extra Dependency "elpi/inductive.elpi" as xt_inductive.
 From XText Extra Dependency "elpi/declarations.elpi" as xt_declarations.
 From XText Extra Dependency "elpi/transducer.elpi" as xt_transducer.
+From XText Extra Dependency "elpi/expected-types.elpi" as xt_expected_types.
 From XText Extra Dependency "elpi/abstractions.elpi" as xt_abstractions.
 From XText Extra Dependency "elpi/applications.elpi" as xt_applications.
 From XText Extra Dependency "elpi/inductive-text.elpi" as xt_inductive_text.
@@ -44,7 +45,6 @@ From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
-From XText Extra Dependency "elpi/sentences.elpi" as sentences.
 From XText Extra Dependency "elpi/staged.elpi" as staged.
 
 (* The tactics tried on long subproofs (see xtext-tactic below).  Each is
@@ -81,6 +81,16 @@ Elpi Db xtext.db lp:{{
   xtext-guard-tactic "xtext_g_lia" "lia".
   xtext-guard-tactic "xtext_g_firstorder" "firstorder".
   xtext-guard-tactic "xtext_g_auto" "auto".
+  % [xtext-implicit-choice-limit N]: a formula whose applications with
+  % implicit arguments do not all type-check again without them is printed
+  % with the arguments of each application decided one by one (README,
+  % "Formulas that type-check again"), when it has at most N such
+  % applications; above, they are all printed in full.  Each decision
+  % elaborates the whole formula once.  The default 60 is the value the
+  % mechanism was written with; no measurement chose it.
+  pred xtext-implicit-choice-limit o:int.
+  :name "xtext-implicit-choice-limit"
+  xtext-implicit-choice-limit 60.
   % [xtext-header-require S]: the require field of the header of a text
   % (the libraries cyp loads to read the formulas; the module of the
   % theorem is added).  The default loads the libraries of the example
@@ -136,12 +146,12 @@ Elpi Accumulate File xt_kinds.
 Elpi Accumulate File xt_inductive.
 Elpi Accumulate File xt_declarations.
 Elpi Accumulate File xt_transducer.
+Elpi Accumulate File xt_expected_types.
 Elpi Accumulate File xt_abstractions.
 Elpi Accumulate File xt_applications.
 Elpi Accumulate File xt_inductive_text.
 Elpi Accumulate File xt_document.
 Elpi Accumulate File xt_type_expressions.
-Elpi Accumulate File sentences.
 Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
   main [str N] :- !, with-switches (explain N T), coq.say T.
@@ -189,12 +199,12 @@ Elpi Accumulate File xt_kinds.
 Elpi Accumulate File xt_inductive.
 Elpi Accumulate File xt_declarations.
 Elpi Accumulate File xt_transducer.
+Elpi Accumulate File xt_expected_types.
 Elpi Accumulate File xt_abstractions.
 Elpi Accumulate File xt_applications.
 Elpi Accumulate File xt_inductive_text.
 Elpi Accumulate File xt_document.
 Elpi Accumulate File xt_type_expressions.
-Elpi Accumulate File sentences.
 Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,

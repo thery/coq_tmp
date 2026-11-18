@@ -26,36 +26,9 @@ top-run Acc Body Ty0 Stmt L :-
      (((root-term Body :- !) => tr-root Body star [] P0), that-is Body Ty P0 P)),
   flatten P L.
 
-% "that is" (the Cast' of the thesis, 5.2.2): when the type that a proof
-% proves (synthesised) differs from the type expected at its place
-% (inherited) but Rocq finds them convertible, its conclusion says both
-
-that-is T Exp (prfp P Ps) Q :- !, that-is T Exp P P1,
-  (if (P1 = P) (Q = prfp P Ps) (Q = P1)).
-that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-
-  not (off "thatis"), typ T Syn, not (Syn = Exp), coq.unify-eq Syn Exp ok, !,
-  % the second form is shown, not claimed: Rocq checked the conversion,
-  % and the step's justification is about the first form
-  formula rfact Exp F, sentence [tx S, tx ",", wd "that-is", tx F] S1.
-that-is _ _ P P.
-
-% the expected types of the arguments As of a term of type Ty
-
-domains _ [] [] :- !.
-domains (prod _ D B) [A|As] [D1|Ds] :- !, beta-ty D D1, domains (B A) As Ds.
-domains Ty As Ds :- whnf Ty (prod N D B), !, domains (prod N D B) As Ds.
-domains _ As Ds :- std.map As (_\ d\ true) Ds.
-
-% subproofs as dashed lines, each with its expected type
-
-dashed-exp [] _ _ [].
-dashed-exp [T|Ts] Es Path [D|Ds] :-
-  (if (Es = [E|Er]) true (Er = [])),
-  tr T nostar Path P0,
-  (if (ground_term E) (that-is T E P0 P) (P = P0)),
-  dashed P D, dashed-exp Ts Er Path Ds.
-
-
+% [statement Binders Sentences]: the sentences of the statement that
+% introduce the binders at the top of the proof
+pred statement i:list binder, o:list string.
 statement [] [].
 statement [b bk-assume Id FA|Bs] [S|Ss] :- !,
   assume-run [b bk-assume Id FA|Bs] Hs Rest,

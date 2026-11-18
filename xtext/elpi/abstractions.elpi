@@ -4,7 +4,7 @@
 % --- abstraction: iterated abstraction rules
 
 tr-lam (fun _ A _ as T) Ctx Path P :-
-  (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
+  induction-flags Fl,
   binder-kind A K, typ T Tau0, formula rclaim Tau0 FT, lam-run K [] T FT Fl Ctx Path P.
 
 pred lam-run i:bk, i:list binder, i:term, i:string, i:list bool, i:ctx, i:list int, o:pf.
@@ -34,22 +34,16 @@ lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
 lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
   std.map Bs (x\ y\ sigma Id FA\ x = b _ Id FA,
      declaration-formula [Id] FA y) L,
-  std.map L (v\ p\ p = [tx v]) L1, sep-parts [tx ","] L1 Ps,
+  std.map L (v\ p\ p = [tx v]) L1, separated [tx ","] L1 Ps,
   sentence [wd "choose" | Ps] H,
   concl Ctx [wd "thus-have", tx FT] C.
 
-% [sep-parts Sep Ls Ps]: the lists of parts Ls, with Sep between them
-pred sep-parts i:list part, i:list (list part), o:list part.
-sep-parts _ [] [].
-sep-parts _ [L] L :- !.
-sep-parts Sep [L | Ls] Ps :- sep-parts Sep Ls Ps1, std.append L Sep L1, std.append L1 Ps1 Ps.
-
 pred and-parts i:list (list part), o:list part.
-and-parts L Ps :- sep-parts [wd "and"] L Ps.
+and-parts L Ps :- separated [wd "and"] L Ps.
 
 pred assume-text i:binder, o:list part.
-assume-text (b _ Id FA) [tx F, tx "(", tx Id, tx ")"] :- prooftext.formula rhyp FA F.
-assume-text (bih Id FA) [wd "ih", tx F, tx "(", tx Id, tx ")"] :- prooftext.formula rhyp FA F.
+assume-text (b _ Id FA) Ps :- prooftext.formula rhyp FA F, with-name F Id Ps.
+assume-text (bih Id FA) [wd "ih" | Ps] :- prooftext.formula rhyp FA F, with-name F Id Ps.
 
 pred concl i:ctx, i:list part, o:option line.
 concl star _ none.

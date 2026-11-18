@@ -4,8 +4,10 @@
 % ------------------------------------------------------------------
 % Kinds of binders and arguments
 
+% the sort Set (its universe compared without unification, so that a
+% universe variable is not taken for Set)
 pred is-set-sort i:term.
-is-set-sort S :- pp S "Set".
+is-set-sort (sort (typ U)) :- {{ Set }} = sort (typ SetUniverse), U == SetUniverse.
 
 pred binder-kind i:term, o:bk.  % call it with a fresh output
 binder-kind A K :-

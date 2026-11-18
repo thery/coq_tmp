@@ -40,19 +40,19 @@ tr-app H Args Path P :-
   witnesses KWs Ws0 Ws,
   (if (Ws = []) (WP = [])
       (std.map Ws (formula rfact) FWs, std.map FWs (f\ p\ p = [tx f]) FWs1,
-       sep-parts [tx ","] FWs1 WP0, WP = [wd "witness" | WP0])),
-  CD = [tx C, tx "(", tx K, tx ")" | WP],
+       separated [tx ","] FWs1 WP0, WP = [wd "witness" | WP0])),
+  with-name C K CN, std.append CN WP CD,
   qual-name (indc KC) QK, tr-intro CD QK Tau Ns Es Path P0,
   apply-rest T0 P0 Rest Path P.
 tr-app H [] _ P :- name H, rec-var H, !,
-  var-name H N, typ H Tau, formula rclaim Tau F,
+  var-name H N, type-formula rclaim H F,
   sentence [wd "ih", tx "(", wd "recursive-call", tx N, tx ")", wd "have", tx F] S,
   conclusion-only S P.
 tr-app H [] _ P :- name H, !,
-  var-name H N, typ H Tau, formula rclaim Tau F,
+  var-name H N, type-formula rclaim H F,
   sentence [wd "by", tx N, wd "have", tx F] S, conclusion-only S P.
 tr-app H [] _ P :- gr-of H GR, !,
-  coq.gref->id GR N, typ H Tau, formula rclaim Tau F, qual-name GR Q,
+  coq.gref->id GR N, type-formula rclaim H F, qual-name GR Q,
   by-part Q BJ, sentence [wd "using", tx N, wd "get", tx F, BJ] S, conclusion-only S P.
 
 % the full name of a global reference, usable when its module is loaded
@@ -63,10 +63,6 @@ qual-name GR Q :- coq.gref->path GR P, coq.gref->id GR Id,
 tr-app H Args Path P :-
   (if (is-sym H) (tr-app H [] Path P0) (tr-p H nostar Path P0)),
   apply-rest H P0 Args Path P.
-
-pred dashed-all i:list term, i:list int, o:list line.
-dashed-all Ts Path Ds :-
-  std.map Ts (t\ d\ sigma P\ tr t nostar Path P, dashed P d) Ds.
 
 % iterated application: the arguments of T0 (whose text is P0) are
 % split into maximal runs of the same kind
@@ -138,9 +134,9 @@ mp-step Run Es T0 P0 Tau Path (prfp (prf L (some (it S []))) Tys) :-
 pred premise-cands i:list term, i:list term, i:list int, o:list cand.
 premise-cands [] _ _ [].
 premise-cands [T|Ts] Es Path [C|Cs] :-
-  (if (Es = [E|Er]) true (Er = [])),
+  next-expected Es E Er,
   tr-p T nostar Path P0, typ T Ty,
-  (if (ground_term E) (that-is T E P0 P) (P = P0)),
+  at-expected T E P0 P,
   cand-of P Ty C, premise-cands Ts Er Path Cs.
 
 pred cand-of i:pf, i:term, o:cand.

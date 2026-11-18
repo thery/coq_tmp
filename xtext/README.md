@@ -50,12 +50,14 @@ subject, loaded in this order:
   introduction and elimination theorems), `declarations.elpi` (predicates
   used by a file before the one that defines them);
 - `transducer.elpi` (the text of a proof term, by its form),
+  `expected-types.elpi` (the type expected at the place of a subproof,
+  "that is"),
   `abstractions.elpi`, `applications.elpi` (with the contraction of their
   steps), `inductive-text.elpi` (introductions, eliminations, fix,
   rewriting), `document.elpi` (the statement, the header, the document);
 - `type-expressions.elpi` (synthesis and equality of type expressions,
-  chapter 3 of the thesis), `sentences.elpi` and `staged.elpi` (the
-  translation in three stages, below).
+  chapter 3 of the thesis) and `staged.elpi` (the translation in three
+  stages, below).
 
 Examples: 
 `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
@@ -452,7 +454,8 @@ full.  The kept applications are printed `@f a1 .. an`, for example
 - Limits: a kept application under a binder cannot be put back into the
   printed text by the placeholder method used here, so the whole formula
   is printed with `Printing All` (`@eq nat (@length A ...)`).  A formula
-  with more than 60 such applications is printed in full when the fast
+  with more than 60 such applications (`xtext-implicit-choice-limit`)
+  is printed in full when the fast
   test fails.  The test is up to conversion and assumes that Rocq parses
   the printed text back to the skeleton (notations, scopes).
 - Binder types (`Let`, `Assume`) and the local definitions get the same

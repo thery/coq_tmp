@@ -12,6 +12,14 @@
 kind part type.
 type wd string -> part.
 type tx string -> part.
+% a formula, from its term, with its role for cyp: `F`{.claim}
+type fml role -> term -> part.
+% a formula already printed, with its role: `x y : E`{.var}
+type fmls role -> string -> part.
+% a name (of a hypothesis, a constant, ...), as it is
+type nm string -> part.
+% an enumeration, "A, B and C", each element a list of parts
+type enum list (list part) -> part.
 
 pred word i:string, o:string.
 word U S :- switch "lang" L, (write-role L U S _ ; write-word L U S), !.
@@ -62,6 +70,10 @@ scope-end (tx S) :- prooftext.is-justification S.
 pred part-text i:part, o:string.
 part-text (wd U) S :- word U S.
 part-text (tx S) S.
+part-text (fml R T) S :- formula R T S.
+part-text (fmls R S0) S :- prooftext.formula R S0 S.
+part-text (nm N) N.
+part-text (enum Ls) S :- enumeration Ls Ps, text-of-parts Ps S.
 
 pred join-words i:list string, o:string.
 join-words [] "".
@@ -69,6 +81,27 @@ join-words [S] S :- !.
 join-words [A, B | L] S :-
   (if (rex.match "^[,.:;)]" B ; rex.match ".*($" A) (Sp = "") (Sp = " ")),
   A1 is A ^ Sp ^ B, join-words [A1 | L] S.
+
+% [with-name X N Ps]: the text X followed by the name N in parentheses: a
+% hypothesis and its name, `A`{.hyp} (h), an inductive type and its rule,
+% or (or_ind)
+pred with-name i:string, i:string, o:list part.
+with-name X N [tx X, tx "(", tx N, tx ")"].
+
+% [enumeration Ls Ps]: the lists of parts Ls as an enumeration: "A", "A and
+% B", "A, B and C"
+pred enumeration i:list (list part), o:list part.
+enumeration [] [].
+enumeration [L] L :- !.
+enumeration [L1, L2] Ps :- !, std.append L1 [wd "and" | L2] Ps.
+enumeration [L | Ls] Ps :- enumeration Ls Ps1, std.append L [tx "," | Ps1] Ps.
+
+% [separated Sep Ls Ps]: the lists of parts Ls, with the parts Sep between
+% two of them
+pred separated i:list part, i:list (list part), o:list part.
+separated _ [] [].
+separated _ [L] L :- !.
+separated Sep [L | Ls] Ps :- separated Sep Ls Ps1, std.append L Sep L1, std.append L1 Ps1 Ps.
 
 % a justification *by J* as a part ("" for none)
 pred by-part i:string, o:part.

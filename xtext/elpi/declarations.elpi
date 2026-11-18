@@ -13,12 +13,6 @@ pred tr-app i:term, i:list term, i:list int, o:pf.
 % defined in inductive-text.elpi, used in applications.elpi
 pred tr-intro i:list part, i:string, i:term, i:list term, i:list term, i:list int, o:pf.
 
-% defined in inductive-text.elpi, used in inductive.elpi
-pred cases i:list term, i:list case-info, i:bool, i:list int, i:int, o:list line.
-
-% defined in inductive-text.elpi, used in transducer.elpi
-pred recursive i:list case-info, o:bool.
-
 % defined in inductive-text.elpi, used in applications.elpi
 pred tr-elim1 i:string, i:string, i:term, i:term, i:list term, i:list case-info, i:list int, o:pf.
 
@@ -39,18 +33,6 @@ pred rewrite-info i:term, o:string.
 
 % defined in inductive-text.elpi, used in applications.elpi
 pred tr-rewrite i:string, i:string, i:term, i:term, i:term, i:list int, o:pf.
-
-% defined in document.elpi, used in applications.elpi, inductive-text.elpi
-pred that-is i:term, i:term, i:pf, o:pf.
-
-% defined in document.elpi, used in applications.elpi
-pred domains i:term, i:list term, o:list term.
-
-% defined in document.elpi, used in inductive-text.elpi
-pred dashed-exp i:list term, i:list term, i:list int, o:list line.
-
-% defined in document.elpi, used in transducer.elpi, inductive-text.elpi
-pred statement i:list binder, o:list string.
 
 % defined in type-expressions.elpi, used in document.elpi: the type the
 % body M of the proof is required to prove ([req M Tr], thesis 3.3.2)

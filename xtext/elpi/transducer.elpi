@@ -21,9 +21,6 @@ dashed (prf L none) (it S L) :- sentence [wd "have"] S.
 pred conclusion-only i:string, o:pf.
 conclusion-only S (prf [] (some (it S []))).
 
-pred join-names i:list string, o:string.
-join-names L S :- std.string.concat ", " L S.
-
 pred dewey i:list int, o:string.
 dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S.
 
@@ -35,6 +32,10 @@ dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S
 % cur-ih Fl: the induction-hypothesis flags of the binders of the branch
 % being translated (set by the elimination rules)
 pred cur-ih o:list bool.
+% [induction-flags Fl]: those flags, none outside a branch
+pred induction-flags o:list bool.
+induction-flags F :- cur-ih F, !.
+induction-flags [].
 % rec-var F: F is the recursive function of an enclosing fix
 pred rec-var o:term.
 
@@ -74,7 +75,7 @@ tr-root T _ _ P :- pp T S0, prooftext.formula rfact S0 F,
 % an open goal of a proof in progress (a hole of the partial proof term)
 % is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez")
 pred open-goal i:term, o:pf.
-open-goal T P :- var T, typ T G, formula rclaim G F, sentence [wd "prove", tx F] S, conclusion-only S P.
+open-goal T P :- var T, type-formula rclaim T F, sentence [wd "prove", tx F] S, conclusion-only S P.
 
 % Tactic-built subproofs (thesis 5.4, the "pragmatic method"): a proper
 % subproof whose proof term has at least xtext-threshold nodes is first
@@ -131,5 +132,5 @@ tr-other T _ _ P :- unchanged T P.
 % expressions that match no rule are left unchanged
 pred unchanged i:term, o:pf.
 unchanged T (prf [] (some (it S []))) :-
-  typ T Tau, formula rfact T FT, formula rclaim Tau F,
+  formula rfact T FT, type-formula rclaim T F,
   sentence [wd "using", tx FT, wd "get", tx F] S.

@@ -322,12 +322,6 @@ element-line (app-element _ L) L.
 % text of its body below it, and a conclusion with the annotation of the
 % series.
 
-% the induction-hypothesis flags of the branch being written (set by the
-% elimination rules of the writer)
-pred induction-flags o:list bool.
-induction-flags F :- cur-ih F, !.
-induction-flags [].
-
 pred abstraction-series i:list binder, i:aterm, i:annot, i:list bool,
   i:ctx, i:list int, o:pf.
 abstraction-series Acc (alam N T Joined Body _) A Flags Ctx Path P :-
@@ -364,7 +358,7 @@ pred binder-phrases i:list binder, o:list part.
 binder-phrases Binders Phrases :-
   binder-groups Binders Groups,
   std.map Groups group-phrase Ps,
-  joined [tx ";"] Ps Phrases.
+  separated [tx ";"] Ps Phrases.
 
 % the binders, cut into groups of the same kind
 pred binder-groups i:list binder, o:list (list binder).
@@ -386,7 +380,7 @@ pred group-phrase i:list binder, o:list part.
 group-phrase [B | Bs] [wd "assume" | Ps] :-
   binder-kind-of B bk-assume, !,
   std.map [B | Bs] hypothesis-parts Hs,
-  enum-parts Hs Ps.
+  enumeration Hs Ps.
 group-phrase [b bk-set Id FT | Bs] [wd "choose" | Ps] :- !,
   variable-parts [b bk-set Id FT | Bs] Ps.
 group-phrase Bs [wd "let" | Ps] :-
@@ -394,8 +388,8 @@ group-phrase Bs [wd "let" | Ps] :-
 
 % a hypothesis: `A`{.hyp} (h), or an induction hypothesis
 pred hypothesis-parts i:binder, o:list part.
-hypothesis-parts (b _ Id FT) [fmls rhyp FT, tx "(", nm Id, tx ")"].
-hypothesis-parts (bih Id FT) [wd "ih", fmls rhyp FT, tx "(", nm Id, tx ")"].
+hypothesis-parts (b _ Id FT) Ps :- prooftext.formula rhyp FT F, with-name F Id Ps.
+hypothesis-parts (bih Id FT) [wd "ih" | Ps] :- prooftext.formula rhyp FT F, with-name F Id Ps.
 
 % Variables, those of the same type together (strong contraction of the
 % abstraction, Fig. 3.11: λx1:T1, x2:T1.M → λx1, x2 : T1.M):
@@ -404,19 +398,13 @@ pred variable-parts i:list binder, o:list part.
 variable-parts Bs Ps :-
   type-runs Bs Runs,
   std.map Runs run-formula Fs,
-  enum-parts Fs Ps.
+  enumeration Fs Ps.
 
 pred type-runs i:list binder, o:list (pair (list string) string).
 type-runs [] [].
 type-runs [b _ Id FT | Bs] [pr [Id | Ids] FT | Runs] :-
-  same-type-ids FT Bs Ids Rest,
+  same-type FT Bs Ids Rest,
   type-runs Rest Runs.
 
-pred same-type-ids i:string, i:list binder, o:list string, o:list binder.
-same-type-ids FT [b _ Id FT | Bs] [Id | Ids] Rest :- !, same-type-ids FT Bs Ids Rest.
-same-type-ids _ Bs [] Bs.
-
 pred run-formula i:pair (list string) string, o:list part.
-run-formula (pr Ids FT) [fmls rvar F] :-
-  std.string.concat " " Ids Vars,
-  F is Vars ^ " : " ^ FT.
+run-formula (pr Ids FT) [tx F] :- declaration-formula Ids FT F.

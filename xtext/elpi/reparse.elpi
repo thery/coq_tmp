@@ -63,7 +63,7 @@ pred droppable i:term, o:list int, o:int.
 droppable T D N :-
   skel [] 0 T N _, ints 0 N All,
   (if (N = 0 ; elab-back All T) (D = All)
-      (if (N > 60) (D = []) (greedy T 0 N [] D))).
+      (if (xtext-implicit-choice-limit Max, N > Max) (D = []) (greedy T 0 N [] D))).
 
 pred greedy i:term, i:int, i:int, i:list int, o:list int.
 greedy _ I N D D :- I >= N, !.
@@ -178,6 +178,10 @@ typ X Ty :- name X, decl X _ Ty0, !, beta-ty Ty0 Ty.
 typ X Ty :- name X, def X _ Ty0 _, !, beta-ty Ty0 Ty.
 typ (fix _ _ Ty _) Ty :- !.
 typ T Ty :- away-from-context T T1, coq.typecheck T1 Ty0 ok, !, beta-ty Ty0 Ty.
+
+% [type-formula Role T F]: the formula of the type of T, with the role Role
+pred type-formula i:role, i:term, o:string.
+type-formula Role T F :- typ T Ty, formula Role Ty F.
 
 pred var-name i:term, o:string.
 var-name X S :- decl X N _, coq.name->id N S0, !,
