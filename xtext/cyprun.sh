@@ -15,8 +15,11 @@ CYP=${CYP:-$here/../cyp/_build/default/bin/cyp.exe}
 CYP_LIB=${CYP_LIB:-$here/../cyp/vernac}
 export CYP_LIB
 eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)"
-# at most 8 GB of memory per text (some texts went over 16 GB)
-ulimit -v 8000000
+# the memory allowed per text, in GB: 8 by default, so that runs in
+# parallel fit on the machine; a hard text may get more (CYP_MEMORY_GB=16),
+# one such run at a time (some texts went over 16 GB)
+mem_gb=${CYP_MEMORY_GB:-8}
+ulimit -v $((mem_gb * 1000000))
 cd "$here/cyp-check" || exit 1
 for f in "$@"; do
   mkdir -p "$(dirname "$f")"
