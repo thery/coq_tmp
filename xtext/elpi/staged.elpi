@@ -76,7 +76,7 @@ staged-text M Ctx Path P :-
 % the contraction strategy, for the writing stage
 pred contraction-strategy o:string.
 
-% the type M is used at: the one its parent requires (annotation.elpi), or else
+% the type M is used at: the one required of it (type-expressions.elpi), or else
 % the one it proves
 pred required-type i:term, o:term.
 required-type M Tr :- required M Tr, !.
@@ -125,14 +125,19 @@ pred annotate-argument i:term, i:term, o:aarg.
 annotate-argument M1 T1 (aproof A) :- is-prop T1, !, annotate M1 T1 A.
 annotate-argument M1 T1 (aelem M1 T1).
 
-% the applications that have their own writer in the writer (rewriting,
-% elimination and introduction theorems, recursive calls)
-% The statement (top-run in the writer) stops at the first abstraction
+% The statement (top-run, document.elpi) stops at the first abstraction
 % whose annotation is double: that abstraction is then a step of the proof,
-% whose conclusion says the conversion (3.4.1).  The same rule as for the
-% one-pass annotation (annotation.elpi).
-statement-stops-at Ty N A :- staged-mode, not (abs-single Ty N A).
+% whose conclusion says the conversion (3.4.1).
+statement-stops-at Ty N A :- staged-mode, not (single-annotation Ty N A).
 
+% [single-annotation Tr N A]: the abstraction of N : A, required to prove
+% Tr, proves Tr as it is written: by (Abs), its constrained type
+% Pi N:A. T1, where Tr has the weak head normal form Pi _:_. T1, is Tr
+pred single-annotation i:term, i:name, i:term.
+single-annotation Tr N A :- whnf Tr (prod _ _ T1), same-ty (prod N A T1) Tr.
+
+% the applications that have their own writer in the direct writer
+% (rewriting, elimination and introduction theorems, recursive calls)
 pred has-own-writer i:term.
 has-own-writer (app [H | _]) :- rewrite-info H _, !.
 has-own-writer (app [H | _]) :- elim-info H _ _ _ _ _, !.

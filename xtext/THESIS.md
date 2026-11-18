@@ -34,12 +34,12 @@ Two translations exist, chosen by the switch `xtext-translation`
 | thesis | what | code |
 |---|---|---|
 | 3.1.2 | the double annotation ((M : Tc) : Tr) | the type `annot` (`one`, `two`) in `staged.elpi` |
-| 3.2.4, Fig. 3.3 | weak head normal form | `whnf` in `annotation.elpi` |
-| 3.3.1, Fig. 3.4 | synthesis of types (Var, Const, Abs, App) | `synth` in `annotation.elpi` |
-| 3.3.2 | inheritance of types, from the statement | `required`, `req`; the statement in `document.elpi` (`top-run`) |
-| 3.3.4, Fig. 3.9 | the double computation Γ; Tr ⊢ M ↪ ((M:Tc):Tr), rules Var, Const, App1, App2, Abs | stage 1, `annotate` in `staged.elpi` (one clause per rule); in one pass: `d-annot`, `d-abs` in `annotation.elpi` |
-| 3.3.4, Fig. 3.10 | Trans_Inv, doubly annotated, not contracted (L1–L5) | `examples-double/Trans_Inv.md` |
-| 3.4.1 | a conclusion says Tc, then "that is" Tr when they differ | `conclusion-parts` in `staged.elpi`; `add-equiv`, `equiv-text` in `annotation.elpi` |
+| 3.2.4, Fig. 3.3 | weak head normal form | `whnf` in `printing.elpi` |
+| 3.3.1, Fig. 3.4 | synthesis of types (Var, Const, Abs, App) | `synth` in `type-expressions.elpi` |
+| 3.3.2 | inheritance of types, from the statement | `required`, `req` in `type-expressions.elpi`; the statement in `document.elpi` (`top-run`) |
+| 3.3.4, Fig. 3.9 | the double computation Γ; Tr ⊢ M ↪ ((M:Tc):Tr), rules Var, Const, App1, App2, Abs | stage 1, `annotate` in `staged.elpi` (one clause per rule) |
+| 3.3.4, Fig. 3.10 | Trans_Inv, doubly annotated, not contracted (L1–L5) | `examples-staged-none/Trans_Inv.md` |
+| 3.4.1 | a conclusion says Tc, then "that is" Tr when they differ | `conclusion-parts` in `staged.elpi` |
 | 3.4.2, Fig. 3.11 | guarded contraction: redundant double annotation, weak and strong contraction of the abstraction, contraction of the application | stage 2 in `staged.elpi`: `redundant-annotation`, `contract-body`, `variable-parts` (strong), `merge-application`, `merges` |
 | 3.4.2, Fig. 3.12 | Trans_Inv, maximal contraction | `examples-staged-maximal/Trans_Inv.md` |
 | 3.4.2, Fig. 3.13 | Trans_Inv, guarded contraction | `examples-staged-guarded/Trans_Inv.md` |

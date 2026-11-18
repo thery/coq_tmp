@@ -60,6 +60,9 @@ pred fresh-aux i:list string, i:string, i:int, o:string.
 fresh-aux U B I Id :- Id0 is B ^ {std.any->string I},
   if (std.mem! U Id0) (I1 is I + 1, fresh-aux U B I1 Id) (Id = Id0).
 
+% the formula printed so that it type-checks again (defined in reparse.elpi)
+pred ppf i:term, o:string.
+
 % a formula, between backticks
 % Each formula carries its role for cyp, as a Pandoc attribute:
 % {.claim} (proved by the step), {.hyp}, {.var}, {.fact} (shown only).
@@ -67,3 +70,47 @@ pred fm i:term, o:string.
 fm T S :- ppf T S0, S is "`" ^ S0 ^ "`{.claim}".
 pred fm-fact i:term, o:string.
 fm-fact T S :- ppf T S0, S is "`" ^ S0 ^ "`{.fact}".
+
+% ------------------------------------------------------------------
+% Beta-reduction
+
+% beta-reduction of the redexes (fun i => M) x, x a variable, left by
+% intro patterns: fun h => (fun i => M) h becomes fun i => M, keeping the
+% name chosen by the user.  Other redexes are cuts and are kept.
+pred beta i:term, o:term.
+beta T R :- beta.aux ff T R.
+
+% full beta-reduction, for the types that are printed
+
+pred beta-ty i:term, o:term.
+beta-ty T R :- beta.aux tt T R.
+
+% fun x => .. => (fun y1 .. yk => M) a1 .. x .. : the name of the binder yi
+% that receives x
+pred redex-name i:(term -> term), o:name.
+redex-name F M :- pi x\ find-redex (F x) x M.
+pred find-redex i:term, i:term, o:name.
+find-redex (app [Hd|As]) X M :- nth-fun-name Hd As X M.
+find-redex (fun _ _ G) X M :- pi z\ find-redex (G z) X M.
+pred nth-fun-name i:term, i:list term, i:term, o:name.
+nth-fun-name (fun M _ _) [X|_] Y M :- X == Y, !.
+nth-fun-name (fun _ _ G) [_|As] Y M :- pi z\ nth-fun-name (G z) As Y M.
+
+% beta.aux All T R: All = tt reduces every redex, All = ff only those
+% whose argument is a variable
+pred beta.aux i:bool, i:term, o:term.
+beta.aux All (fun N T F) (fun N1 T1 F1) :- !,
+  (if (redex-name F M) (N1 = M) (N1 = N)),
+  beta.aux All T T1, pi x\ beta.aux All (F x) (F1 x).
+beta.aux All (app [fun _ _ F, A|Rest]) R :- (All = tt ; name A), !,
+  coq.mk-app (F A) Rest T1, beta.aux All T1 R.
+beta.aux All (app L) R :- !, std.map L (beta.aux All) L1,
+  (if (L1 = [fun _ _ _, A|_], (All = tt ; name A))
+      (beta.aux All (app L1) R) (R = app L1)).
+beta.aux All (prod N T F) (prod N T1 F1) :- !,
+  beta.aux All T T1, pi x\ beta.aux All (F x) (F1 x).
+beta.aux All (let N T B F) (let N T1 B1 F1) :- !,
+  beta.aux All T T1, beta.aux All B B1, pi x\ beta.aux All (F x) (F1 x).
+beta.aux All (match T R B) (match T1 R1 B1) :- !,
+  beta.aux All T T1, beta.aux All R R1, std.map B (beta.aux All) B1.
+beta.aux _ X Y :- copy X Y.

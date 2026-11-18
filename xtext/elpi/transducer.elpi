@@ -49,15 +49,7 @@ pred unwrap i:pf, o:pf.
 unwrap (prfp P _) P :- !.
 unwrap P P.
 
-% the staged translation (staged.elpi): whether it is on, the terms the
-% direct writer keeps, and the text it gives
-pred staged-mode.
-pred is-direct-only i:term.
-pred staged-text i:term, i:ctx, i:list int, o:pf.
-
 pred tr-p i:term, i:ctx, i:list int, o:pf.
-% (thesis 3.3.4: the double annotation of the subproof, annotation.elpi)
-tr-p T Ctx Path P :- annotation-hook T (tr-p T Ctx Path) P, !.
 tr-p T _ _ P :- open-goal T P, !.
 tr-p T _ _ P :- tactic-step T P, !.
 % (the staged translation, staged.elpi)

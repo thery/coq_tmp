@@ -54,3 +54,15 @@ pred statement i:list binder, o:list string.
 
 % defined in document.elpi, used in inductive-text.elpi
 pred header i:gref, o:string.
+
+% defined in type-expressions.elpi, used in document.elpi: the type the
+% body M of the proof is required to prove ([req M Tr], thesis 3.3.2)
+pred req o:term, o:term.
+
+% defined in staged.elpi, used in transducer.elpi and document.elpi: the
+% staged translation is on, the terms the direct writer keeps, the text
+% the staged translation gives, and where the statement stops
+pred staged-mode.
+pred is-direct-only i:term.
+pred staged-text i:term, i:ctx, i:list int, o:pf.
+pred statement-stops-at i:term, i:name, i:term.

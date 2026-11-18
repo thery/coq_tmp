@@ -3,22 +3,17 @@
 
 % --- abstraction: iterated abstraction rules
 
-% (thesis 3.3.4, rule Abs: the conclusion says Tc, "that is" Tr; annotation.elpi)
-tr-lam (fun N A _ as T) Ctx Path P :- required-of-lambda T Tr, abs-step Tr N A Tc _, !,
-  (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
-  binder-kind A K, equiv-text Tc Tr FT, lam-run K [] T FT Fl Ctx Path P.
 tr-lam (fun _ A _ as T) Ctx Path P :-
   (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
   binder-kind A K, typ T Tau0, fm Tau0 FT, lam-run K [] T FT Fl Ctx Path P.
 
 pred lam-run i:bk, i:list binder, i:term, i:string, i:list bool, i:ctx, i:list int, o:pf.
-lam-run K Acc (fun N A F as T) FT Fl Ctx Path P :- binder-kind A K1, K1 = K, lam-join Acc T, !,
+lam-run K Acc (fun N A F) FT Fl Ctx Path P :- binder-kind A K1, K1 = K, !,
   (if (Fl = [F0|Fr]) true (F0 = ff, Fr = [])),
   binder-name N N1 Id,
   ppf A FA,
   (if (F0 = tt, K = bk-assume) (B = bih Id FA) (B = b K Id FA)),
-  pi x\ (decl x N1 A, ctx-name Id) =>
-    sigma Cls\ (lam-under T x Cls, Cls => lam-run K [B|Acc] (F x) FT Fr Ctx Path P).
+  pi x\ (decl x N1 A, ctx-name Id) => lam-run K [B|Acc] (F x) FT Fr Ctx Path P.
 lam-run K Acc Body FT Fl Ctx Path P :-
   std.rev Acc Bs,
   ((cur-ih Fl :- !) => tr Body Ctx Path PB), flatten PB LB,

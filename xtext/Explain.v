@@ -35,7 +35,7 @@ From Lexicon Extra Dependency "lang_zh.elpi" as lex_zh.
 From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
-From XText Extra Dependency "elpi/annotation.elpi" as types.
+From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
 From XText Extra Dependency "elpi/sentences.elpi" as sentences.
 From XText Extra Dependency "elpi/staged.elpi" as staged.
 
@@ -85,13 +85,6 @@ Elpi Db xtext.db lp:{{
   pred xtext-lang o:string.
   :name "xtext-lang"
   xtext-lang "en".
-  % [xtext-annotation S]: the type expressions written (thesis chapter 3):
-  % "all" (default, the texts of the earlier rounds) or "double" (the double
-  % annotation of 3.3.4, Fig. 3.9; types.elpi).  The variable
-  % XTEXT_ANNOTATION overrides it.
-  pred xtext-annotation o:string.
-  :name "xtext-annotation"
-  xtext-annotation "all".
   % [xtext-translation S]: how a proof becomes text: "direct" (default,
   % term to text in one walk, xtext.elpi) or "staged" (annotation, then
   % contraction, then writing, as in Coscoy's thesis; staged.elpi; the
@@ -115,7 +108,6 @@ Elpi Accumulate File lex_zh.
 Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
-Elpi Accumulate File types.
 Elpi Accumulate File xt_text_tree.
 Elpi Accumulate File xt_printing.
 Elpi Accumulate File xt_words.
@@ -128,6 +120,7 @@ Elpi Accumulate File xt_abstractions.
 Elpi Accumulate File xt_applications.
 Elpi Accumulate File xt_inductive_text.
 Elpi Accumulate File xt_document.
+Elpi Accumulate File xt_type_expressions.
 Elpi Accumulate File sentences.
 Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
@@ -159,7 +152,6 @@ Elpi Accumulate File lex_zh.
 Elpi Accumulate File lex_ar.
 Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
-Elpi Accumulate File types.
 Elpi Accumulate File xt_text_tree.
 Elpi Accumulate File xt_printing.
 Elpi Accumulate File xt_words.
@@ -172,6 +164,7 @@ Elpi Accumulate File xt_abstractions.
 Elpi Accumulate File xt_applications.
 Elpi Accumulate File xt_inductive_text.
 Elpi Accumulate File xt_document.
+Elpi Accumulate File xt_type_expressions.
 Elpi Accumulate File sentences.
 Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
