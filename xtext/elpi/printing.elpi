@@ -1,4 +1,5 @@
-% xtext: Printing terms and formulas (formulas carry their role for cyp).
+% xtext: Terms: the names of the context, the terms sent to Rocq, printing,
+% formulas with their roles for cyp, beta-reduction.
 % (part of xtext's writer; the files are loaded in the order of Explain.v)
 
 % ------------------------------------------------------------------

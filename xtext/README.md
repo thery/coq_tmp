@@ -37,41 +37,54 @@ eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4)"
 make          # builds Explain.vo, then the example files, which write examples/*.md
 ```
 
+## Files
+
+`Explain.v` defines the commands `Explain` and `Explain_partial`, the
+database `xtext.db` (the parameters: tactics, thresholds, switches, the
+header's libraries) and loads the lexicon, prooftext and the writer.  The
+writer is in `elpi/`, one file per subject, loaded in this order:
+
+| file | what it does |
+|---|---|
+| `text-tree.elpi` | the data of a text: lines with sub-lines, the text of a proof (its lines and its conclusion), kinds of binders and of arguments, the \* context |
+| `printing.elpi` | terms: the names of the context, the terms sent to Rocq (`away-from-context`, `whnf`), printing (`pp`, bound names renamed, fresh names of binders), formulas with their roles (`formula`), beta-reduction |
+| `switches.elpi` | the switches (`switch`, see "Switches"), and `XTEXT_OFF` |
+| `words.elpi` | sentences: a sentence is a list of parts (phrases of the lexicon, text, formulas, enumerations "A, B and C"), `sentence` writes it in the language of the text |
+| `reparse.elpi` | formulas that type-check again (the implicit arguments to print); the type of a term (`typ`) |
+| `kinds.elpi` | the kind of a binder (`Let`, `Assume`, arbitrary element) and of an argument (specialisation, modus ponens) |
+| `inductive.elpi` | introduction, elimination and rewriting theorems, recognised by their type |
+| `declarations.elpi` | the predicates that a file uses and a later one defines |
+| `transducer.elpi` | the text of a proof term, by its form; open goals; subproofs closed by a tactic |
+| `expected-types.elpi` | the type expected at the place of a subproof, and "that is" |
+| `abstractions.elpi` | series of abstractions, local definitions |
+| `applications.elpi` | specialisations and modus ponens, inferable arguments, the contraction of application steps |
+| `inductive-text.elpi` | the text of introductions, eliminations (cases), `match`, `fix`, rewriting |
+| `document.elpi` | the statement, the document and its header (written by prooftext), the check of the vocabulary |
+| `type-expressions.elpi` | type expressions after chapter 3 of the thesis: synthesis, equality, the type required of the proof |
+| `staged.elpi` | the translation in three stages of the thesis (see "The staged translation") |
+
 [THESIS.md](THESIS.md) maps each rule and figure of Coscoy's thesis to the
 predicate that implements it, and to the example that reproduces it.
 
-Files: `Explain.v` (the command) and the writer in `elpi/`, one file per
-subject, loaded in this order:
+Examples and checks:
 
-- `text-tree.elpi` (lines and the text of a proof), `printing.elpi`
-  (terms and formulas), `switches.elpi` (the switches, below), `words.elpi` (words and sentences from the
-  lexicon), `reparse.elpi` (formulas that type-check again), `kinds.elpi`
-  (kinds of binders and arguments), `inductive.elpi` (recognising
-  introduction and elimination theorems), `declarations.elpi` (predicates
-  used by a file before the one that defines them);
-- `transducer.elpi` (the text of a proof term, by its form),
-  `expected-types.elpi` (the type expected at the place of a subproof,
-  "that is"),
-  `abstractions.elpi`, `applications.elpi` (with the contraction of their
-  steps), `inductive-text.elpi` (introductions, eliminations, fix,
-  rewriting), `document.elpi` (the statement, the header, the document);
-- `type-expressions.elpi` (synthesis and equality of type expressions,
-  chapter 3 of the thesis) and `staged.elpi` (the translation in three
-  stages, below).
-
-Examples: 
-`paper.v` (the paper's examples), `lemmas.v` (small lemmas),
-`inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`,
-`stdlib.v`, `elim_type.v`, `partial.v` (see below): the texts in
-`examples/` (82 with those of a private case study, kept in a private
-branch); `multilingual.v`: 12 of them in each of the other
-languages of the lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`,
-`ko`, `la`); `vocab_check.v` (the vocabulary, below); the optional checks with cyp:
-`cyprun.sh`, `cyp-check/` (cyp's results, below), and
-`cyp-check/roles_check.sh`; `examples-staged-none/`, `examples-staged-maximal/`,
-`examples-staged-guarded/`: the texts with other switches, written by
-`sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
-staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`).
+- `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
+  `inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`
+  (the theses' examples), `stdlib.v` (lemmas of Rocq's Stdlib),
+  `elim_type.v` (elimination principles recognised by their type),
+  `partial.v` (proofs in progress): the texts in `examples/` (82 with
+  those of a private case study, kept in a private branch, 77 here);
+- `multilingual.v`: 12 of them in each of the other languages of the
+  lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la`);
+- `vocab_check.v`: the vocabulary of each language, and the tactic names
+  that xtext writes (they must be prooftext's);
+- `examples-staged-none/`, `examples-staged-maximal/`,
+  `examples-staged-guarded/`: the texts with other switches, written by
+  `sh make_variant.sh NAME VAR=VALUE...` (e.g. `sh make_variant.sh
+  staged-guarded XTEXT_TRANSLATION=staged XTEXT_CONTRACTION=guarded`);
+- `measure.sh`, `measure_all.sh`: times and sizes of the texts;
+- optional checks with cyp: `cyprun.sh`, `cyp-check/` (cyp's results,
+  below), `cyp-check/roles_check.sh`.
 
 ## Switches
 
@@ -116,8 +129,13 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 - We have `B \/ A`{.claim} in all cases.
 ```
 
-- the header is cyp's; `require` loads the file that defines the theorem;
-  a text in another language has `lang: fr`, `lang: ko`, ...;
+- the text is in the format of proof texts ([prooftext](../prooftext/README.md)),
+  which cyp reads;
+- the header: `require` loads the libraries (`xtext-header-require` in
+  `xtext.db`) and the file that defines the theorem; a text in another
+  language has `lang: fr`, `lang: ko`, ...; `by` lists the tactics that
+  check a guarded contraction (`xtext-guard-tactic`), which cyp then tries
+  on the steps that name none;
 - the abstractions at the top of the proof make the statement (`Let`,
   `Assume`, `We prove`);
 - each formula carries its cyp role (`{.var}`, `{.hyp}`, `{.claim}`,

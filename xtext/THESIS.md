@@ -40,7 +40,7 @@ Two translations exist, chosen by the switch `translation`
 | 3.3.4, Fig. 3.9 | the double computation Γ; Tr ⊢ M ↪ ((M:Tc):Tr), rules Var, Const, App1, App2, Abs | stage 1, `annotate` in `staged.elpi` (one clause per rule) |
 | 3.3.4, Fig. 3.10 | Trans_Inv, doubly annotated, not contracted (L1–L5) | `examples-staged-none/Trans_Inv.md` |
 | 3.4.1 | a conclusion says Tc, then "that is" Tr when they differ | `conclusion-parts` in `staged.elpi` |
-| 3.4.2, Fig. 3.11 | guarded contraction: redundant double annotation, weak and strong contraction of the abstraction, contraction of the application | stage 2 in `staged.elpi`: `redundant-annotation`, `contract-body`, `variable-parts` (strong), `merge-application`, `merges` |
+| 3.4.2, Fig. 3.11 | guarded contraction: redundant double annotation, weak and strong contraction of the abstraction, contraction of the application | stage 2 in `staged.elpi`: `redundant-annotation`, `contract-body`, `variable-parts` (strong), `merge-application`, `merges`; the statement stops at the first abstraction whose annotation is double (`statement-stops-at`, `single-annotation`) |
 | 3.4.2, Fig. 3.12 | Trans_Inv, maximal contraction | `examples-staged-maximal/Trans_Inv.md` |
 | 3.4.2, Fig. 3.13 | Trans_Inv, guarded contraction | `examples-staged-guarded/Trans_Inv.md` |
 
@@ -53,7 +53,7 @@ the contraction of Fig. 3.11.
 
 | thesis | what | code |
 |---|---|---|
-| 5.2.2 (Cast') | "that is" for a conversion | `that-is` (`document.elpi`) |
+| 5.2.2 (Cast') | "that is" for a conversion | `that-is` (`expected-types.elpi`) |
 | 5.4 (pragmatic method) | a subproof built by a tactic, written as one step "by T" | `tactic-step` in `transducer.elpi` |
 | 5.4 (extended App) | arguments that can be inferred are left out | `apply-rest`, `inferable` in `applications.elpi` |
 | 5.4, applied to formulas | formulas that type-check again (the implicit arguments printed when needed) | `reparse.elpi` |

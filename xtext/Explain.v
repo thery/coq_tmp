@@ -2,28 +2,10 @@
    basic transducer of "Extracting Text from Proofs" (TLCA 1995).
    [Explain foo to "foo.md".] writes the text to the file foo.md.
    [Explain foo to "foo.md" in "fr".]: the same in French (the languages of
-   the lexicon: en, fr, it, de, nl, ru, zh, ar, ko, la
+   the lexicon: en, fr, it, de, nl, ru, zh, ar, ko, la).
    [Explain_partial.], inside a proof, prints the proof so far. *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
-(* xtext's writer, in elpi/: the structure of texts, printing, words,
-   formulas that type-check again, kinds of binders, inductive types, the
-   transducer and its forms (abstractions, applications, inductive
-   constructions), the document *)
-From XText Extra Dependency "elpi/text-tree.elpi" as xt_text_tree.
-From XText Extra Dependency "elpi/printing.elpi" as xt_printing.
-From XText Extra Dependency "elpi/switches.elpi" as xt_switches.
-From XText Extra Dependency "elpi/words.elpi" as xt_words.
-From XText Extra Dependency "elpi/reparse.elpi" as xt_reparse.
-From XText Extra Dependency "elpi/kinds.elpi" as xt_kinds.
-From XText Extra Dependency "elpi/inductive.elpi" as xt_inductive.
-From XText Extra Dependency "elpi/declarations.elpi" as xt_declarations.
-From XText Extra Dependency "elpi/transducer.elpi" as xt_transducer.
-From XText Extra Dependency "elpi/expected-types.elpi" as xt_expected_types.
-From XText Extra Dependency "elpi/abstractions.elpi" as xt_abstractions.
-From XText Extra Dependency "elpi/applications.elpi" as xt_applications.
-From XText Extra Dependency "elpi/inductive-text.elpi" as xt_inductive_text.
-From XText Extra Dependency "elpi/document.elpi" as xt_document.
 (* the lexicon (../lexicon): the roles and the phrases of each language,
    shared with the reader cyp *)
 From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
@@ -44,8 +26,24 @@ From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
+(* xtext's writer, in elpi/, one file per subject, in the order they are
+   loaded (README.md, "Files") *)
+From XText Extra Dependency "elpi/text-tree.elpi" as xt_text_tree.
+From XText Extra Dependency "elpi/printing.elpi" as xt_printing.
+From XText Extra Dependency "elpi/switches.elpi" as xt_switches.
+From XText Extra Dependency "elpi/words.elpi" as xt_words.
+From XText Extra Dependency "elpi/reparse.elpi" as xt_reparse.
+From XText Extra Dependency "elpi/kinds.elpi" as xt_kinds.
+From XText Extra Dependency "elpi/inductive.elpi" as xt_inductive.
+From XText Extra Dependency "elpi/declarations.elpi" as xt_declarations.
+From XText Extra Dependency "elpi/transducer.elpi" as xt_transducer.
+From XText Extra Dependency "elpi/expected-types.elpi" as xt_expected_types.
+From XText Extra Dependency "elpi/abstractions.elpi" as xt_abstractions.
+From XText Extra Dependency "elpi/applications.elpi" as xt_applications.
+From XText Extra Dependency "elpi/inductive-text.elpi" as xt_inductive_text.
+From XText Extra Dependency "elpi/document.elpi" as xt_document.
 From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
-From XText Extra Dependency "elpi/staged.elpi" as staged.
+From XText Extra Dependency "elpi/staged.elpi" as xt_staged.
 
 (* The tactics tried on long subproofs (see xtext-tactic below).  Each is
    an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
@@ -121,38 +119,13 @@ Elpi Db xtext.db lp:{{
 
 Elpi Command Explain.
 Elpi Accumulate Db xtext.db.
-Elpi Accumulate File lex_core.
-Elpi Accumulate File lex_en.
-Elpi Accumulate File lex_fr.
-Elpi Accumulate File lex_it.
-Elpi Accumulate File lex_de.
-Elpi Accumulate File lex_nl.
-Elpi Accumulate File lex_ru.
-Elpi Accumulate File lex_zh.
-Elpi Accumulate File lex_ar.
-Elpi Accumulate File lex_ko.
-Elpi Accumulate File lex_la.
-Elpi Accumulate File pt_header.
-Elpi Accumulate File pt_document.
-Elpi Accumulate File pt_formulas.
-Elpi Accumulate File pt_names.
-Elpi Accumulate File pt_tactics.
-Elpi Accumulate File xt_text_tree.
-Elpi Accumulate File xt_printing.
-Elpi Accumulate File xt_switches.
-Elpi Accumulate File xt_words.
-Elpi Accumulate File xt_reparse.
-Elpi Accumulate File xt_kinds.
-Elpi Accumulate File xt_inductive.
-Elpi Accumulate File xt_declarations.
-Elpi Accumulate File xt_transducer.
-Elpi Accumulate File xt_expected_types.
-Elpi Accumulate File xt_abstractions.
-Elpi Accumulate File xt_applications.
-Elpi Accumulate File xt_inductive_text.
-Elpi Accumulate File xt_document.
-Elpi Accumulate File xt_type_expressions.
-Elpi Accumulate File staged.
+Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
+  lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics.
+Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
+  xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
+  xt_abstractions xt_applications xt_inductive_text xt_document
+  xt_type_expressions xt_staged.
 Elpi Accumulate lp:{{
   main [str N] :- !, with-switches (explain N T), coq.say T.
   main [str N, str "in", str L] :- !, in-language L (explain N T), coq.say T.
@@ -174,38 +147,13 @@ Elpi Export Explain.
    closes the proof. *)
 Elpi Command Explain_partial.
 Elpi Accumulate Db xtext.db.
-Elpi Accumulate File lex_core.
-Elpi Accumulate File lex_en.
-Elpi Accumulate File lex_fr.
-Elpi Accumulate File lex_it.
-Elpi Accumulate File lex_de.
-Elpi Accumulate File lex_nl.
-Elpi Accumulate File lex_ru.
-Elpi Accumulate File lex_zh.
-Elpi Accumulate File lex_ar.
-Elpi Accumulate File lex_ko.
-Elpi Accumulate File lex_la.
-Elpi Accumulate File pt_header.
-Elpi Accumulate File pt_document.
-Elpi Accumulate File pt_formulas.
-Elpi Accumulate File pt_names.
-Elpi Accumulate File pt_tactics.
-Elpi Accumulate File xt_text_tree.
-Elpi Accumulate File xt_printing.
-Elpi Accumulate File xt_switches.
-Elpi Accumulate File xt_words.
-Elpi Accumulate File xt_reparse.
-Elpi Accumulate File xt_kinds.
-Elpi Accumulate File xt_inductive.
-Elpi Accumulate File xt_declarations.
-Elpi Accumulate File xt_transducer.
-Elpi Accumulate File xt_expected_types.
-Elpi Accumulate File xt_abstractions.
-Elpi Accumulate File xt_applications.
-Elpi Accumulate File xt_inductive_text.
-Elpi Accumulate File xt_document.
-Elpi Accumulate File xt_type_expressions.
-Elpi Accumulate File staged.
+Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
+  lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics.
+Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
+  xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
+  xt_abstractions xt_applications xt_inductive_text xt_document
+  xt_type_expressions xt_staged.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
