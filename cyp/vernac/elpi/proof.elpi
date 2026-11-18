@@ -69,6 +69,37 @@ parse (elt _ S) T D :-
   coq.parse.argument P ff Sc A D, (D = ok, A = trm T ; true), !.
 parse (eltt _ T0) T D :- coq.elaborate-skeleton T0 _ T D.
 
+% [variables S C D]: the variables S of a Let (e.g. "a b : Z"), as a
+% context C, in the current context; D the diagnostic.  The declaration
+% "Context (S)" is parsed raw and its types elaborated here: elaborated by
+% coq.parse.argument, a Context keeps only its own universes in the
+% universe state (Rocq's interp_context restricts the state to them), so
+% the universes of the formulas parsed before it would be lost and the
+% lemma could not be defined ("Universe ... undefined").
+pred variables i:string, o:context-decl, o:diagnostic.
+variables S C D :-
+  P is "Context (" ^ S ^ ")",
+  coq.parse.argument P tt "" A D0,
+  if (D0 = ok, A = ctx-decl R) (elaborate-context R C D) (D = D0).
+
+% [elaborate-context R C D]: the raw context R elaborated, each variable
+% known to the types after it
+pred elaborate-context i:context-decl, o:context-decl, o:diagnostic.
+elaborate-context context-end context-end ok.
+elaborate-context (context-item Id Imp T0 none R) (context-item Id Imp T none C) D :-
+  coq.elaborate-ty-skeleton T0 _ T D0,
+  if (D0 = ok)
+     (coq.id->name Id N,
+      pi x\ decl x N T => elaborate-context (R x) (C x) D)
+     (D = D0).
+elaborate-context (context-item Id Imp T0 (some B0) R) (context-item Id Imp T (some B) C) D :-
+  coq.elaborate-ty-skeleton T0 _ T D0,
+  if (D0 = ok) (coq.elaborate-skeleton B0 T B D1) (D1 = D0),
+  if (D1 = ok)
+     (coq.id->name Id N,
+      pi x\ def x N T B => elaborate-context (R x) (C x) D)
+     (D = D1).
+
 pred is-prop i:term.
 is-prop T :- coq.typecheck T Ty ok, coq.unify-eq Ty (sort prop) ok.
 
@@ -161,7 +192,7 @@ level Own OTac [step I Es Tac Ch | Rest] G P Rs :-
      (if (Ch = []) (Body = Rest, Rest1 = []) (Body = Ch, Rest1 = Rest),
       scope Vs Hs Body ExTy ExPf N Rs1,
       if (N = 0) (level Own OTac Rest1 G P Rs2)
-                 (exports I Own OTac ExTy ExPf 1 N Rest1 G P Rs2),
+                 (shared I ExTy G ExPf N (e\ p\ exports I Own OTac ExTy e 1 N Rest1 G p Rs2) P),
       std.append Rs1 Rs2 Rs)
   (if (Cs = [])
      % a comment
@@ -178,7 +209,7 @@ level Own OTac [step I Es Tac Ch | Rest] G P Rs :-
      (std.length Cs NC,
       if (Ch = []) (claims-then I 1 NC Tac Cs Own OTac Rest G P Rs)
         (level I Tac Ch C P1 Rs1,
-         exports I Own OTac C P1 1 NC Rest G P Rs2,
+         shared I C G P1 NC (e\ p\ exports I Own OTac C e 1 NC Rest G p Rs2) P,
          std.append Rs1 Rs2 Rs))))).
 
 % [claims-then S J N Tac Cs ...]: the claims J.. of the N claims Cs of step
@@ -211,9 +242,7 @@ scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :- rex.match ".*:=" S, !,
   Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
   pi x\ def x Nm T Bo => scope Vs Hs Body (TyR x) (PfR x) N Rs.
 scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :-
-  P is "Context (" ^ S ^ ")",
-  std.assert-ok! (coq.parse.argument P ff "" (ctx-decl C))
-    {msg "variables-not-parsed" [S]},
+  std.assert-ok! (variables S C) {msg "variables-not-parsed" [S]},
   scope-ctx C Vs Hs Body Ty Pf N Rs.
 scope [] [pr E Nm0 | Hs] Body (prod Nm A TyR) (fun Nm A PfR) N Rs :-
   std.assert-ok! (parse E A) {msg "hypothesis-not-parsed" []},
@@ -249,7 +278,7 @@ open-level Acc [step I Es Tac Ch | Rest] Ty Pf N Rs :-
   (if (Cs = [], (Vs = [_ | _] ; Hs = [_ | _]))
      (if (Ch = []) (Body = Rest, Rest1 = []) (Body = Ch, Rest1 = Rest),
       scope Vs Hs Body ExTy ExPf N0 Rs1,
-      open-exports I Acc ExTy ExPf 1 N0 Rest1 Ty Pf N Rs2,
+      shared I ExTy Ty ExPf N0 (e\ p\ open-exports I Acc ExTy e 1 N0 Rest1 Ty p N Rs2) Pf,
       std.append Rs1 Rs2 Rs)
   (if (Cs = [])
      (open-level Acc {std.append Ch Rest} Ty Pf N Rs)
@@ -260,7 +289,7 @@ open-level Acc [step I Es Tac Ch | Rest] Ty Pf N Rs :-
      (std.length Cs NC,
       if (Ch = []) (open-claims I 1 NC Tac Cs Acc Rest Ty Pf N Rs)
         (level I Tac Ch C P1 Rs1,
-         open-exports I Acc C P1 1 NC Rest Ty Pf N Rs2,
+         shared I C Ty P1 NC (e\ p\ open-exports I Acc C e 1 NC Rest Ty p N Rs2) Pf,
          std.append Rs1 Rs2 Rs))))).
 
 pred open-claims i:string, i:int, i:int, i:option string, i:list term,
@@ -307,6 +336,20 @@ component-proof {{ lp:A /\ lp:R }} E I N P :-
   I1 is I - 1, N1 is N - 1,
   component-proof R {{ @proj2 lp:A lp:R lp:E }} I1 N1 P.
 
+% [shared S ExTy G ExPf N Use P]: P proves G by [Use E P'] with E a proof
+% of ExTy, the N claims of a scope or of the step S with sub-steps.  With
+% several claims, ExPf is given once to cyp_have and E is the variable that
+% names it: each claim is then a projection of that variable, instead of a
+% projection of its own copy of ExPf (copies that double the proof term at
+% each nested level, and so its type-check and definition).  The variable
+% is not declared in the context of the conditions: it is not one of the
+% claims, and no condition refers to it.
+pred shared i:string, i:term, i:term, i:term, i:int, i:(term -> term -> prop), o:term.
+shared _ _ _ ExPf N Use P :- N < 2, !, Use ExPf P.
+shared S ExTy G ExPf _ Use {{ cyp_have lp:ExTy lp:G lp:ExPf lp:K }} :-
+  claim-name S Nm, K = fun Nm ExTy P,
+  pi e\ Use e (P e).
+
 % [exports S Own OTac ExTy ExPf I N Rest G P Rs]: the claims I..N of a
 % scope or of a step S with sub-steps, as hypotheses named after S, then
 % the rest of the steps
@@ -337,9 +380,7 @@ open-exports S Acc ExTy ExPf I N0 Rest Ty {{ cyp_have lp:T lp:Ty lp:Pi lp:K }} N
 pred statement i:list element, i:list (pair element (option string)),
   i:list element, i:list step, o:term, o:term, o:list report.
 statement [elt rvar S | Vs] Hs Gs Steps Ty Pf Rs :-
-  P is "Context (" ^ S ^ ")",
-  std.assert-ok! (coq.parse.argument P ff "" (ctx-decl C))
-    {msg "statement-variables-not-parsed" [S]},
+  std.assert-ok! (variables S C) {msg "statement-variables-not-parsed" [S]},
   statement-ctx C Vs Hs Gs Steps Ty Pf Rs.
 statement [] Hs Gs Steps Ty Pf Rs :- statement-hyps 1 Hs Gs Steps Ty Pf Rs.
 
