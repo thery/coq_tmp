@@ -133,3 +133,21 @@ its sub-steps, which needs the lemma of strong induction the text names;
 its 1.1.1.1.9.2.1.6 and .7, the certificates of a `lia` proof
 (`Tauto.eval_bf ...`); and `std_Nat_le_trans` 8, `Basics.impl (n <= m)
 (m <= p -> n <= p)`, which needs `lia` after the unfolding.
+
+## cyp with both (the library of this branch)
+
+All 77 texts of each set checked by cyp with `bounded_firstorder` and
+`cyp_gap` (`PROBE=idtac`):
+
+| set | before: open, no result | now: open, no result | total time now |
+|---|---|---|---|
+| default | 22, 6 texts | 4, 2 texts | 780 s (2013 s before) |
+| maximal | 22, 6 texts | 1, 3 texts | 921 s (2109 s before) |
+| default, no `by:` | 214, 2 texts | 5, 2 texts | 704 s |
+| maximal, no `by:` | 178, 3 texts | 1, 3 texts | 864 s |
+
+The open conditions are those of the end of the section above, in the
+texts that now finish (`half_le`, `std_Nat_le_trans`).  On cyp's own
+examples and demos (`cyp/gaps_regress.sh`) the results are the same, and
+the times too (33.1 s before, 33.4 s now for the same files, within the
+noise of a run).
