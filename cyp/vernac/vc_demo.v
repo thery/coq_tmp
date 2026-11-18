@@ -1,6 +1,7 @@
 (* A text as a verification condition generator: the conditions cyp does
    not discharge are the goals of the Proof block, in the order of the
-   text; each says its number (condition := "1a"). *)
+   text; each is named after its condition (?c1a for 1a, ?c2_1b for
+   2.1b), and the script proves it by that name, in any order. *)
 From Stdlib Require Import ZArith Lia PrimString List.
 From CypV Require Import Cyp.
 Import ListNotations.
@@ -13,7 +14,7 @@ Cyp Lemma sqrt_sq (a b : Z) (H : 0 <= a) (Hb : 0 <= b) :
   [ "We have" (0 <= Z.sqrt a) "and" (0 <= Z.sqrt b) ;
     "So" (0 <= Z.sqrt a * Z.sqrt a) ].
 Proof.
-  - Show. apply Z.sqrt_nonneg.
-  - Show. apply Z.sqrt_nonneg.
+  [c1b]: apply Z.sqrt_nonneg.
+  [c1a]: { Show. apply Z.sqrt_nonneg. }
 CypQed.
 Print Assumptions sqrt_sq.

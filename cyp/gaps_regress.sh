@@ -6,7 +6,7 @@
 # the times printed by CYP_TIME; OUTDIR/NAME.json: the statuses of the steps.
 out=$1; mkdir -p "$out"; out=$(cd "$out" && pwd)
 here=$(cd "$(dirname "$0")" && pwd)
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)"
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)"
 export CYP_LIB="$here/vernac" CYP_TIME=1
 exe=${CYP_EXE:-$here/_build/default/bin/cyp.exe}
 ulimit -v 8000000
@@ -21,6 +21,6 @@ done
 cd "$here/vernac" || exit 1
 for v in vc_demo vc_file bare_demo square_pos named_v wrong; do
   s=$(date +%s%N)
-  nice -n 19 timeout 300 rocq c -Q . CypV -Q ../../lexicon Lexicon $v.v > "$out/$v.v.out" 2>&1
+  nice -n 19 timeout 300 rocq c -Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText $v.v > "$out/$v.v.out" 2>&1
   echo "exit $? total $(( ($(date +%s%N) - s) / 1000000 )) ms" >> "$out/$v.v.out"
 done

@@ -164,16 +164,22 @@ condition-proof _ I T P (rep I (todo S)) :- proof-mode, !,
   condition-hole I T P, coq.term->string T S.
 condition-proof _ I T _ (rep I (ko S)) :- coq.term->string T S.
 
-% a hole for the condition I, of type T, under a definition
-% condition := cyp_condition "I" that names it in its goal
+% a hole for the condition I, of type T: a goal of the Proof block, named
+% after the condition (condition-ident: the goal of 2.1b is ?c2_1b)
 pred condition-hole i:string, i:term, o:term.
-condition-hole I T (let `condition` {{ unit }} Lab H) :-
-  Lab = {{ cyp_condition lp:{{ primitive (pstring {coq.string->pstring I}) }} }},
-  pi x\ def x `condition` {{ unit }} Lab => coq.typecheck (H x) T ok.
+condition-hole I T H :-
+  coq.typecheck H T ok, coq.ltac.name-uvar H {condition-ident I}.
 
-% the hypothesis of claim Id: c followed by its number, dots as _
+% the identifier of condition Id: c followed by its number, dots as _
+% (2.1b gives c2_1b; a Rocq name cannot begin with a digit nor hold a
+% dot); the name of its goal in the Proof block and of its claim in the
+% goals after it
+pred condition-ident i:string, o:id.
+condition-ident Id N :- rex.replace "[.]" "_" Id S, N is "c" ^ S.
+
+% the hypothesis of claim Id, named by condition-ident
 pred claim-name i:string, o:name.
-claim-name Id N :- rex.replace "[.]" "_" Id S, coq.id->name {calc ("c" ^ S)} N.
+claim-name Id N :- coq.id->name {condition-ident Id} N.
 
 % [level Own OTac Steps G P Rs]: P proves G from the steps, in the current
 % context; the last condition (G follows) belongs to the step Own and is

@@ -1,15 +1,6 @@
 % What the commands of Cyp.v share: reading a Markdown proof and checking
 % it, counting and printing the result.
 
-% [remove-labels Proof0 Proof]: Proof0 without the labels
-% condition := cyp_condition "2a" of the goals of a Proof block (only a
-% proof with a Proof block has them: walking a whole proof term is long)
-pred remove-labels i:term, o:term.
-remove-labels Proof0 Proof :-
-  coq.locate "cyp_condition" (const C),
-  (pi T L B R\ copy (let _ T (app [global (const C), L]) B) R :- !,
-     copy (B {{ tt }}) R) => copy Proof0 Proof.
-
 % what a proof opened by Cyp gives to CypQed: name, language, statement
 kind qed type.
 type qed-data string -> string -> term -> qed.

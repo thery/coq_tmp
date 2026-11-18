@@ -14,9 +14,10 @@
      Cyp Lemma name binders : statement := [ step ; step ; ... ].
      Proof. tactics. CypQed.
        the same, but the conditions not discharged are the goals of the
-       Proof block, in the order of the text; each goal says its number
-       (condition := cyp_condition "2a").  In Cyp Lemma a step is words (strings) and
-       formulas (terms), "by X" for its justification.
+       Proof block, in the order of the text; each goal is named after its
+       condition (?c2a for 2a, ?c2_1b for 2.1b), so that [c2a]: tac. proves
+       it.  In Cyp Lemma a step is words (strings) and formulas (terms),
+       "by X" for its justification.
 
    What a proof means is in the Elpi files of elpi/: text.elpi (words,
    formulas and their roles), lexicon/ (the vocabulary of each
@@ -32,10 +33,6 @@ From CypV Require Export Gaps.
 
 (* a claim C of the text, proved by p, is a hypothesis of the rest k *)
 Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
-
-(* the label of a goal of the Proof block: condition := cyp_condition "2a";
-   removed from the proof before the lemma is defined *)
-Definition cyp_condition (number : PrimString.string) : unit := tt.
 
 (* The tactics a proof may name in *by X* or in its header's by:, those of
    prooftext/tactics.elpi: the name N runs cyp_N, below.  More with
@@ -155,7 +152,7 @@ Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
   % #[bare]: the conditions are printed, nothing is tried or defined
   main [str F] :- attributes A, std.mem A (attribute "bare" _), !,
-    proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs,
+    (proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs),
     (current-lang Lang :- !) => (
       std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []},
       coq.ltac.collect-goals Proof GL _, say-goals GL,
@@ -276,12 +273,12 @@ Elpi Accumulate lp:{{
       coq.arity->term Arity Ty0,
       std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) {msg "statement-no-typecheck" []},
       coq.say "cyp:" Name,
-      (current-scope "" :- !) => proof-mode => with-attributes (lemma Ty Body Proof Rs),
+      ((current-scope "" :- !) => proof-mode => with-attributes (lemma Ty Body Proof Rs)),
       std.forall Rs (r\ sigma I S\ r = rep I S,
         (S = ok, coq.say "  ✅" I ; S = todo _, true ; coq.say "  ❌" I S)),
       open Name Ty Proof Rs GL).
   main-interp-proof [str "File", str F] _ Proof GL (qed-data Name Lang Ty) :-
-    proof-mode => with-attributes (check-file F Lang Name Ty Proof Rs),
+    (proof-mode => with-attributes (check-file F Lang Name Ty Proof Rs)),
     (current-lang Lang :- !) => open Name Ty Proof Rs GL.
 }}.
 #[proof="begin"] Elpi Export Cyp.
@@ -310,8 +307,7 @@ Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
   main-interp-qed _ _ Proof _ (qed-data Name Lang Ty) :-
     (current-lang Lang :- !) => (
-      remove-labels Proof Proof1,
-      define Name Ty Proof1,
+      define Name Ty Proof,
       say "proved-lemma" [Name]).
 }}.
 #[proof="end"] Elpi Export CypQed.
