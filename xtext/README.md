@@ -819,11 +819,13 @@ list items proved / not proved / not checked (`cyp-check/results.tsv`).
 The 77 English texts written by default (staged translation), 300 s per
 text (2026-11-18, `cyp-check/results.tsv`):
 
-- 76 texts are checked, in 170 s in all: 650 steps proved, 17 not proved,
-  488 not checked (lines with no claim: `Let`, `Assume`, the
+- all 77 texts are checked, in 227 s in all: 675 steps proved, 17 not
+  proved, 502 not checked (lines with no claim: `Let`, `Assume`, the
   announcement of an induction, and the staged texts' "The element x
   belongs to T");
-- 1 times out: `std_or_assoc`;
+- none times out (`std_or_assoc` did, until cyp tried first whether a
+  goal is one of its hypotheses: `tauto` runs for minutes on one of its
+  goals, two hypotheses long);
 - the 17 steps not proved are in 7 texts (`std_Nat_le_trans` 6,
   `half_le` 3, `std_Nat_lt_irrefl` 3, `std_rev_app_distr` 2, `drinker`,
   `std_length_rev`, `std_rev_involutive` 1 each); e.g. in `drinker`,
