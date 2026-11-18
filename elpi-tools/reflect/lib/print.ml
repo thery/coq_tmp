@@ -60,9 +60,12 @@ let is_infix name = (is_symbolic name && name.[0] <> '~') || List.mem name word_
 let is_prefix name = (String.length name > 0 && name.[0] = '~') || List.mem name word_prefixes
 
 (* A constant on its own: an operator is put between parentheses *)
+(* pi and sigma are keywords: on their own they need parentheses too *)
+let binder_keywords = [ "pi"; "sigma" ]
+
 let constant name =
   if name = "%dummy" then "_"
-  else if is_infix name || is_prefix name then "(" ^ name ^ ")"
+  else if is_infix name || is_prefix name || List.mem name binder_keywords then "(" ^ name ^ ")"
   else name
 
 (* ------------------------------------------------------------------------ *)

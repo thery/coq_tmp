@@ -15,7 +15,11 @@ and reads the program by querying the facts.  The facts mention the
 program's own constants (`rev`, `app`, …), so they are type checked with the
 program and a rule's head and body are ordinary goals that can be run.
 
-    elpi-reflect [-I DIR].. [-D VAR].. FILE..     # facts on standard output
+    elpi-reflect [-I DIR].. [-D VAR].. [-builtins] FILE..     # facts on standard output
+
+With `-builtins` it also prints the declarations (data types, constructors,
+signatures; not the rules) of Elpi's builtins and standard library, e.g.
+the signature of `std.rev`.
 
 Standalone Elpi 4 only (opam switch `elpi5`), not Rocq-Elpi.
 
@@ -93,6 +97,13 @@ reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [reflect.binders []] (rev L R
   `constraint Clique { rule ToMatch \ ToRemove | Guard <=> NewGoal. }`; a
   pattern `(E :> C ?- G)` is `reflect.sequent E C G`, a missing `E` or `C`
   is a fresh variable, a missing guard or new goal is `none`.
+- **Overloaded symbols** (declared twice with different types): the
+  constant is cast to its type when that type is monomorphic
+  (`((+) : int -> int -> int)`); for a polymorphic overloaded symbol such as
+  `std.map` the constant is `_`.  The rules of an overloaded predicate are
+  printed `:untyped`.
+- **Connectives** (`:-`, `,`, `;`, `=>`, `==>`, `pi`, `sigma`, `uvar`,
+  `as`) are syntax: their builtin declarations are not reflected.
 - **Accumulated files** are reflected too (once each); the facts carry
   their own file in the locations.  Elpi's builtins and standard library
   (`std.*`) are not reflected: their rules are compiled into Elpi.
