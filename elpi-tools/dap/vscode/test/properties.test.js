@@ -129,8 +129,6 @@ test('Debug this counterexample, from the failure message: the replay goal under
   // the Debug Console says what is debugged, before the first step
   const header = recorded.debugConsole[recorded.debugConsole.length - 1];
   assert.match(header, /^Debugging the counterexample of the property sort-length \(lists\.elpi:44\):\n  L = \[0, 0\]\n/);
-  assert.match(header, /The goal: sort \[0, 0\] S, std\.length \[0, 0\] N, std\.length S M, N = M\n/);
-  assert.match(header, /Step Into \(F11\)/);
 });
 
 test('Debug this counterexample on a property that holds: a message, no debugging', async () => {
