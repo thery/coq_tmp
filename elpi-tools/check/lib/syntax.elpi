@@ -1,6 +1,6 @@
 % Terms in Elpi's source syntax, on one line, so that Elpi (elpi-debug)
-% reads them back: the values of a counterexample in the report of -json,
-% and the goal that replays a counterexample (replay.elpi).
+% reads them back: the values of a counterexample in the reports (for people
+% and -json), and the goal that replays a counterexample (replay.elpi).
 %
 % term_to_string is made for people: it prints a string without its
 % quotes, breaks long lines, and writes a binder that ends an element of a

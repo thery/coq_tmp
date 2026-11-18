@@ -4,13 +4,13 @@ property preservation (stlc.elpi:48)
 property preservation-wrong (stlc.elpi:52)
   variables: M : tm (generated-by), T : ty (generated-by), N : tm (computed)
   FAILED at test 6 (0 passed, 5 discarded); first counterexample:
-    M = app (lam c0 \ c) (lam c0 \ c)
+    M = app (lam (c0 \ c)) (lam (c0 \ c))
     T = base
-    N = lam c0 \ c
+    N = lam (c0 \ c)
   shrunk in 1 steps to:
-    M = app (lam c0 \ c) c
+    M = app (lam (c0 \ c)) c
     T = base
-    N = lam c0 \ c
+    N = lam (c0 \ c)
 property substitution (stlc.elpi:56)
   variables: F : tm -> tm (generated-by), A : ty (generated-by), B : ty (generated-by), N : tm (generated-by)
   OK: passed 100 tests, 0 discarded; average size of the values 59

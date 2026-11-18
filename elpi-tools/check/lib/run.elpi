@@ -337,7 +337,9 @@ show-counterexample I Vars Values :-
   counterexample-values I Values Xs,
   std.forall2 Vars Xs show-value.
 
+% [show-value Var X]: Name = X, the value in source syntax (syntax.elpi), as
+% Elpi reads it back: strings in quotes, binders in parentheses
 pred show-value i:check.variable, i:any.
-show-value (check.variable Name _ _) X :- say ["    ", Name, " = ", {text X}].
+show-value (check.variable Name _ _) X :- say ["    ", Name, " = ", {check.syntax.term X}].
 
 }

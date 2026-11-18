@@ -180,9 +180,9 @@ $ elpi-check -json lists.elpi        # demo/lists.elpi, the lines shortened
 The values are in Elpi's source syntax, on one line, so that Elpi reads
 them back ([`lib/syntax.elpi`](lib/syntax.elpi)): strings in quotes, a
 binder in parentheses (`lam (c0 \ c)`), every non-atomic argument in
-parentheses.  (The human report prints them with Elpi's `term_to_string`,
-which writes a string without its quotes.)  A line that is not a JSON
-object is a print of the program under test, to be skipped.
+parentheses.  The human report prints them with the same printer.  A line
+that is not a JSON object is a print of the program under test, to be
+skipped.
 
 ## Replaying a counterexample (the goal for the debugger)
 
@@ -227,7 +227,7 @@ elpi-tools/check/lib` there (for `accumulate property`).
 ## Examples and tests
 
 [`tests/`](tests): `dune build @runtest` checks the reports against
-`*.expected` (seed 1).
+`*.expected` (seed 1): rev, sort, stlc, strings.
 
 - [`rev.elpi`](tests/rev.elpi): reverse and append; two true properties and
   a false one.
@@ -241,7 +241,7 @@ elpi-tools/check/lib` there (for `accumulate property`).
   `F : tm -> tm`; `copy` on terms generated from their type; a `pi` in the
   conclusion; a false property on all closed terms.
 - [`strings.elpi`](tests/strings.elpi): values that are strings (quoted in
-  the JSON report and the replay goal); [`crash.elpi`](tests/crash.elpi): a
+  both reports and the replay goal); [`crash.elpi`](tests/crash.elpi): a
   runtime error in a property.
 - [`json.t`](tests/json.t): the `-json` and `-list` reports of these
   programs, the error event, and every replay goal run under elpi-debug
@@ -272,10 +272,7 @@ properties), sort 1.2 s (4), stlc 2.9-3.8 s (6) with the checker's former solver
 - No exhaustive enumeration of small values (SmallCheck style), no
   checking of the properties at run time on a real execution (that needs
   the meta-interpreter of the debugger, section 6 of the design notes).
-- The human report prints values with Elpi's `term_to_string`: a string
-  without its quotes (`L = [, ]` for a list of two empty strings); the
-  `-json` report quotes them.
-- The source-syntax printer of `-json` and of the replay goal knows the
+- The source-syntax printer of the reports and of the replay goal knows the
   constructors, lists, literals, binders, the connectives (`,` `;` `=` `pi`
   `sigma` `=>` `==>`) and the operators; a builtin of the FFI inside a
   formula (`print`, `var`, the cut ..) is printed by `term_to_string` (its
