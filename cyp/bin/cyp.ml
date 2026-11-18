@@ -117,6 +117,8 @@ let main ~json ~conditions md =
     List.iter (fun l ->
         if Str.string_match (Str.regexp ".*\\(cyp:\\|Error\\)") l 0 then print_endline l)
       (String.split_on_char '\n' (read_file out));
+  (* the temporary directory and its files are not kept *)
+  ignore (Sys.command ("rm -rf " ^ Filename.quote tmp));
   code
 
 let () =

@@ -1,0 +1,23 @@
+% cyp's messages in French (see messages_en.elpi)
+message "fr" "proved" "cyp: %1 démontré, %2 étapes".
+message "fr" "proved-lemma" "cyp: %1 démontré".
+message "fr" "not-proved" "cyp: %1 étapes sur %2 de %3 non démontrées (%4), voir %5".
+message "fr" "conditions" "cyp: %1, %2 étapes, %3 conditions".
+message "fr" "all-discharged" "cyp: %1, %2 étapes, toutes les conditions sont déchargées".
+message "fr" "left" "cyp: %1, %2 étapes, %3 condition(s) laissée(s) au bloc Proof : %4".
+message "fr" "left-line" "  🔶 condition %1 : %2".
+message "fr" "no-typecheck" "cyp: la preuve n'est pas bien typée".
+message "fr" "holes" "cyp: des conditions ne sont pas démontrées".
+message "fr" "steps-not-parsed" "cyp: étapes de %1 qui ne s'analysent pas : %2".
+message "fr" "statement-no-typecheck" "cyp: l'énoncé n'est pas bien typé".
+message "fr" "definition-not-parsed" "cyp: la définition ne s'analyse pas : %1".
+message "fr" "variables-not-parsed" "cyp: les variables ne s'analysent pas : %1".
+message "fr" "hypothesis-not-parsed" "cyp: une hypothèse ne s'analyse pas".
+message "fr" "statement-variables-not-parsed" "cyp: les variables de l'énoncé ne s'analysent pas : %1".
+message "fr" "conclusion-not-parsed" "cyp: la conclusion de l'énoncé ne s'analyse pas".
+message "fr" "statement-hypothesis-not-parsed" "cyp: une hypothèse de l'énoncé ne s'analyse pas".
+message "fr" "md-not-proved" "non démontré : %1".
+message "fr" "md-not-parsed" "ne s'analyse pas : %1".
+message "fr" "md-todo" "condition %1, à démontrer dans le bloc Proof : %2".
+message "fr" "backward-no-goal" "une étape en arrière demande un but : pas dans un Soit/Supposons".
+message "fr" "time" "cyp: temps %1 %2 ms".

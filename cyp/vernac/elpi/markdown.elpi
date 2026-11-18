@@ -116,12 +116,12 @@ steps-of P K [node (it _ T _ _) Ch | Ns] [step Id Es Tac Sub | Ss] :-
 
 % the status of step S: of its conditions (S, or S with a letter), the worst
 pred status-of i:list report, i:string, o:string, o:string.
-status-of Rs S "ko" M :- std.mem Rs (rep I (ko G)), step-of I S, !, M is "not proved: " ^ G.
-status-of Rs S "ko" M :- std.mem Rs (rep I (bad E)), step-of I S, !, M is "does not parse: " ^ E.
+status-of Rs S "ko" M :- std.mem Rs (rep I (ko G)), step-of I S, !, msg "md-not-proved" [G] M.
+status-of Rs S "ko" M :- std.mem Rs (rep I (bad E)), step-of I S, !, msg "md-not-parsed" [E] M.
 status-of Rs S "todo" M :-
   std.findall (std.mem Rs (rep I (todo _)), step-of I S) L, L = [_ | _], !,
   std.map L (x\ m\ sigma I G\ x = (std.mem Rs (rep I (todo G)), step-of I S),
-    m is "condition " ^ I ^ ", to prove in the Proof block: " ^ G) Ms,
+    msg "md-todo" [I, G] m) Ms,
   std.string.concat "; " Ms M.
 status-of Rs S "ok" "" :- std.mem Rs (rep I ok), step-of I S, !.
 status-of _ _ "none" "".

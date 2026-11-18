@@ -1,0 +1,27 @@
+% cyp's messages in English: [message Lang Key Template], %1, %2, ... the
+% arguments.  The messages of the other languages are in messages_xx.elpi;
+% a message missing in a language is given in English.  The prefix cyp: is
+% the program's tag, the same in every language (the driver shows the
+% lines that carry it).
+message "en" "proved" "cyp: %1 proved, %2 steps".
+message "en" "proved-lemma" "cyp: %1 proved".
+message "en" "not-proved" "cyp: %1 of %2 steps of %3 not proved (%4), see %5".
+message "en" "conditions" "cyp: %1, %2 steps, %3 conditions".
+message "en" "all-discharged" "cyp: %1, %2 steps, every condition discharged".
+message "en" "left" "cyp: %1, %2 steps, %3 condition(s) left for the Proof block: %4".
+message "en" "left-line" "  🔶 condition %1: %2".
+message "en" "no-typecheck" "cyp: the proof does not type-check".
+message "en" "holes" "cyp: some conditions are not proved".
+message "en" "steps-not-parsed" "cyp: steps of %1 that do not parse: %2".
+message "en" "statement-no-typecheck" "cyp: the statement does not type-check".
+message "en" "definition-not-parsed" "cyp: the definition does not parse: %1".
+message "en" "variables-not-parsed" "cyp: the variables do not parse: %1".
+message "en" "hypothesis-not-parsed" "cyp: a hypothesis does not parse".
+message "en" "statement-variables-not-parsed" "cyp: the variables of the statement do not parse: %1".
+message "en" "conclusion-not-parsed" "cyp: the conclusion of the statement does not parse".
+message "en" "statement-hypothesis-not-parsed" "cyp: a hypothesis of the statement does not parse".
+message "en" "md-not-proved" "not proved: %1".
+message "en" "md-not-parsed" "does not parse: %1".
+message "en" "md-todo" "condition %1, to prove in the Proof block: %2".
+message "en" "backward-no-goal" "a backward step needs a goal: not inside Let/Assume".
+message "en" "time" "cyp: time %1 %2 ms".

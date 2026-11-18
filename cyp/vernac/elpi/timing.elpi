@@ -1,0 +1,11 @@
+% Timing: with the environment variable CYP_TIME set, cyp prints the time
+% spent on each condition and on each phase of a check.
+
+% [timed Label P]: P, its time printed as that of Label when CYP_TIME is set
+pred timed i:string, i:prop.
+timed L P :- gettimeofday T0, P, gettimeofday T1, say-time L {calc (T1 - T0)}.
+
+pred say-time i:string, i:float.
+say-time I D :- getenv "CYP_TIME" (some _), !,
+  Ms is floor (D * 1000.0), say "time" [I, {std.any->string Ms}].
+say-time _ _.

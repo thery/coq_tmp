@@ -1,0 +1,22 @@
+% cyp's messages, in the language of the proof: the tables are in
+% messages_xx.elpi ([message Lang Key Template], %1, %2, ... the arguments)
+
+pred message o:string, o:string, o:string.
+
+% [msg Key Args S]: the message Key with its arguments
+pred msg i:string, i:list string, o:string.
+msg K As S :-
+  (current-lang L, ! ; L = "en"),
+  (message L K T, ! ; message "en" K T, ! ; T = K),
+  fill 1 As T S.
+% %1, %2, ... replaced by the arguments (their backslashes protected, since
+% rex.replace reads them in the replacement)
+pred fill i:int, i:list string, i:string, o:string.
+fill _ [] T T.
+fill I [A | As] T S :-
+  rex.replace "\\\\" "\\\\\\\\" A A1,
+  P is "%" ^ {std.any->string I}, rex.replace P A1 T T1,
+  I1 is I + 1, fill I1 As T1 S.
+
+pred say i:string, i:list string.
+say K As :- msg K As S, coq.say S.

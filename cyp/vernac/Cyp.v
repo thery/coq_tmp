@@ -93,12 +93,22 @@ From CypV Extra Dependency "elpi/check.elpi" as cyp_check.
 From CypV Extra Dependency "elpi/proof.elpi" as cyp_proof.
 From CypV Extra Dependency "elpi/markdown.elpi" as cyp_markdown.
 From CypV Extra Dependency "elpi/command.elpi" as cyp_command.
+From CypV Extra Dependency "elpi/messages.elpi" as cyp_messages.
+From CypV Extra Dependency "elpi/timing.elpi" as cyp_timing.
+From CypV Extra Dependency "elpi/messages_en.elpi" as cyp_messages_en.
+From CypV Extra Dependency "elpi/messages_fr.elpi" as cyp_messages_fr.
+From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
 
 (* ------------------------------------------------------------------ *)
 
 Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File cyp_text.
+Elpi Accumulate File cyp_messages.
+Elpi Accumulate File cyp_timing.
+Elpi Accumulate File cyp_messages_en.
+Elpi Accumulate File cyp_messages_fr.
+Elpi Accumulate File cyp_messages_it.
 Elpi Accumulate File cyp_vocab_en.
 Elpi Accumulate File cyp_vocab_fr.
 Elpi Accumulate File cyp_vocab_it.
@@ -109,21 +119,22 @@ Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
   % #[bare]: the conditions are printed, nothing is tried or defined
   main [str F] :- attributes A, std.mem A (attribute "bare" _), !,
-    proof-mode => bare-mode => check-file F Name Ty Proof Rs,
-    std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
-    coq.ltac.collect-goals Proof GL _, say-goals GL,
-    count Rs Steps _ Todo, std.length Steps NS, std.length Todo NT,
-    coq.say "cyp:" Name "," NS "steps," NT "conditions".
+    proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs,
+    (current-lang Lang :- !) => (
+      std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []},
+      coq.ltac.collect-goals Proof GL _, say-goals GL,
+      count Rs Steps _ Todo, std.length Steps NS, std.length Todo NT,
+      say "conditions" [Name, {std.any->string NS}, {std.any->string NT}]).
   main [str F] :-
-    check-file F Name Ty Proof Rs,
+    check-file F Lang Name Ty Proof Rs,
     count Rs Steps Ko _,
     std.length Steps NR, std.length Ko NK, NP is NR - NK,
+    (current-lang Lang :- !) => (
     if (Ko = [])
-       (define Name Ty Proof, coq.say "cyp:" Name "proved," NP "steps")
+       (define Name Ty Proof, say "proved" [Name, {std.any->string NP}])
        (rex.replace "[.]md$" ".checked.md" F OutMd,
         std.string.concat ", " Ko KoS,
-        Msg is "cyp: " ^ {std.any->string NK} ^ " of " ^ {std.any->string NR} ^ " steps of " ^ Name ^ " not proved (" ^ KoS ^ "), see " ^ OutMd,
-        coq.error Msg).
+        coq.error {msg "not-proved" [{std.any->string NK}, {std.any->string NR}, Name, KoS, OutMd]})).
 }}.
 Elpi Export CypFile.
 
@@ -132,6 +143,11 @@ Elpi Export CypFile.
 #[arguments(raw)] Elpi Command Cyp.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File cyp_text.
+Elpi Accumulate File cyp_messages.
+Elpi Accumulate File cyp_timing.
+Elpi Accumulate File cyp_messages_en.
+Elpi Accumulate File cyp_messages_fr.
+Elpi Accumulate File cyp_messages_it.
 Elpi Accumulate File cyp_vocab_en.
 Elpi Accumulate File cyp_vocab_fr.
 Elpi Accumulate File cyp_vocab_it.
@@ -187,43 +203,57 @@ Elpi Accumulate lp:{{
   lemma G Body P Rs :-
     list-of Body Ts, numbered 1 Ts Steps, level "0" none Steps G P Rs.
 
-  % the proof is opened with the conditions left as its goals; the data for
-  % CypQed: the name and the statement
+  % the proof is opened with the conditions left as its goals
   pred open i:string, i:term, i:term, i:list report, o:list sealed-goal.
   open Name Ty Proof Rs GL :-
     count Rs Steps Ko Todo,
     if (Ko = []) true
-       (std.string.concat ", " Ko KoS,
-        coq.error "cyp: steps of" Name "that do not parse:" KoS),
-    std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
+       (std.string.concat ", " Ko KoS, coq.error {msg "steps-not-parsed" [Name, KoS]}),
+    std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []},
     coq.ltac.collect-goals Proof GL _,
     std.length Steps NS, std.length Todo NT,
     if (Todo = [])
-       (coq.say "cyp:" Name "," NS "steps, every condition discharged")
+       (say "all-discharged" [Name, {std.any->string NS}])
        (std.string.concat ", " Todo TS,
-        coq.say "cyp:" Name "," NS "steps," NT "condition(s) left for the Proof block:" TS,
+        say "left" [Name, {std.any->string NS}, {std.any->string NT}, TS],
         say-todo Rs).
 
-  main-interp-proof [const-decl Name (some Body) Arity] _ Proof GL (pr Name Ty) :-
-    coq.arity->term Arity Ty0,
-    std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) "cyp: the statement does not type-check",
-    coq.say "cyp:" Name,
-    (current-lang "en" :- !) => (current-scope "" :- !) => proof-mode =>
-      with-attributes (lemma Ty Body Proof Rs),
-    std.forall Rs (r\ sigma I S\ r = rep I S,
-      (S = ok, coq.say "  ✅" I ; S = todo _, true ; coq.say "  ❌" I S)),
-    open Name Ty Proof Rs GL.
-  main-interp-proof [str "File", str F] _ Proof GL (pr Name Ty) :-
-    proof-mode => with-attributes (check-file F Name Ty Proof Rs),
-    open Name Ty Proof Rs GL.
+  % the language of Cyp Lemma: #[lang="fr"], English by default
+  pred lemma-lang o:string.
+  lemma-lang L :- attributes A, std.mem A (attribute "lang" (leaf-str L)), !.
+  lemma-lang "en".
+
+  % the data for CypQed: the name, the language and the statement
+  main-interp-proof [const-decl Name (some Body) Arity] _ Proof GL (qed-data Name Lang Ty) :-
+    lemma-lang Lang,
+    (current-lang Lang :- !) => (
+      coq.arity->term Arity Ty0,
+      std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) {msg "statement-no-typecheck" []},
+      coq.say "cyp:" Name,
+      (current-scope "" :- !) => proof-mode => with-attributes (lemma Ty Body Proof Rs),
+      std.forall Rs (r\ sigma I S\ r = rep I S,
+        (S = ok, coq.say "  ✅" I ; S = todo _, true ; coq.say "  ❌" I S)),
+      open Name Ty Proof Rs GL).
+  main-interp-proof [str "File", str F] _ Proof GL (qed-data Name Lang Ty) :-
+    proof-mode => with-attributes (check-file F Lang Name Ty Proof Rs),
+    (current-lang Lang :- !) => open Name Ty Proof Rs GL.
 }}.
 #[proof="begin"] Elpi Export Cyp.
 
 (* the end of the Proof block of Cyp File or Cyp Lemma *)
 Elpi Command CypQed.
+Elpi Accumulate File cyp_text.
+Elpi Accumulate File cyp_messages.
+Elpi Accumulate File cyp_timing.
+Elpi Accumulate File cyp_messages_en.
+Elpi Accumulate File cyp_messages_fr.
+Elpi Accumulate File cyp_messages_it.
 Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
-  main-interp-qed _ _ Proof _ (pr Name Ty) :-
-    define Name Ty Proof, coq.say "cyp:" Name "proved".
+  main-interp-qed _ _ Proof _ (qed-data Name Lang Ty) :-
+    (current-lang Lang :- !) => (
+      remove-labels Proof Proof1,
+      define Name Ty Proof1,
+      say "proved-lemma" [Name]).
 }}.
 #[proof="end"] Elpi Export CypQed.

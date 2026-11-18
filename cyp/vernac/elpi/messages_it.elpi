@@ -1,0 +1,23 @@
+% cyp's messages in Italian (see messages_en.elpi)
+message "it" "proved" "cyp: %1 dimostrato, %2 passi".
+message "it" "proved-lemma" "cyp: %1 dimostrato".
+message "it" "not-proved" "cyp: %1 passi su %2 di %3 non dimostrati (%4), vedi %5".
+message "it" "conditions" "cyp: %1, %2 passi, %3 condizioni".
+message "it" "all-discharged" "cyp: %1, %2 passi, tutte le condizioni sono chiuse".
+message "it" "left" "cyp: %1, %2 passi, %3 condizione/i lasciata/e al blocco Proof: %4".
+message "it" "left-line" "  🔶 condizione %1: %2".
+message "it" "no-typecheck" "cyp: la dimostrazione non è ben tipata".
+message "it" "holes" "cyp: alcune condizioni non sono dimostrate".
+message "it" "steps-not-parsed" "cyp: passi di %1 che non si analizzano: %2".
+message "it" "statement-no-typecheck" "cyp: l'enunciato non è ben tipato".
+message "it" "definition-not-parsed" "cyp: la definizione non si analizza: %1".
+message "it" "variables-not-parsed" "cyp: le variabili non si analizzano: %1".
+message "it" "hypothesis-not-parsed" "cyp: un'ipotesi non si analizza".
+message "it" "statement-variables-not-parsed" "cyp: le variabili dell'enunciato non si analizzano: %1".
+message "it" "conclusion-not-parsed" "cyp: la conclusione dell'enunciato non si analizza".
+message "it" "statement-hypothesis-not-parsed" "cyp: un'ipotesi dell'enunciato non si analizza".
+message "it" "md-not-proved" "non dimostrato: %1".
+message "it" "md-not-parsed" "non si analizza: %1".
+message "it" "md-todo" "condizione %1, da dimostrare nel blocco Proof: %2".
+message "it" "backward-no-goal" "un passo all'indietro richiede un obiettivo: non dentro Sia/Supponiamo".
+message "it" "time" "cyp: tempo %1 %2 ms".

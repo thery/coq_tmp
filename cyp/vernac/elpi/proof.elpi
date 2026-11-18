@@ -133,11 +133,6 @@ condition-proof _ I T P (rep I (todo S)) :- proof-mode, !,
   condition-hole I T P, coq.term->string T S.
 condition-proof _ I T _ (rep I (ko S)) :- coq.term->string T S.
 
-pred say-time i:string, i:float.
-say-time I D :- getenv "CYP_TIME" (some _), !,
-  Ms is floor (D * 1000.0), coq.say "cyp: time" I Ms "ms".
-say-time _ _.
-
 % a hole for the condition I, of type T, under a definition
 % condition := cyp_condition "I" that names it in its goal
 pred condition-hole i:string, i:term, o:term.
@@ -211,17 +206,17 @@ scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :- rex.match ".*:=" S, !,
   % a definition u := e (or u : T := e)
   P is "Definition " ^ S,
   std.assert-ok! (coq.parse.argument P ff {current-scope} (const-decl Id (some Bo) Ar))
-    {calc ("cyp: the definition does not parse: " ^ S)},
+    {msg "definition-not-parsed" [S]},
   coq.arity->term Ar T, coq.id->name Id Nm,
   Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
   pi x\ def x Nm T Bo => scope Vs Hs Body (TyR x) (PfR x) N Rs.
 scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :-
   P is "Context (" ^ S ^ ")",
   std.assert-ok! (coq.parse.argument P ff "" (ctx-decl C))
-    {calc ("cyp: the variables do not parse: " ^ S)},
+    {msg "variables-not-parsed" [S]},
   scope-ctx C Vs Hs Body Ty Pf N Rs.
 scope [] [pr E Nm0 | Hs] Body (prod Nm A TyR) (fun Nm A PfR) N Rs :-
-  std.assert-ok! (parse E A) "cyp: a hypothesis does not parse",
+  std.assert-ok! (parse E A) {msg "hypothesis-not-parsed" []},
   hyp-name Nm0 Nm,
   pi h\ decl h Nm A => scope [] Hs Body (TyR h) (PfR h) N Rs.
 
@@ -260,7 +255,7 @@ open-level Acc [step I Es Tac Ch | Rest] Ty Pf N Rs :-
      (open-level Acc {std.append Ch Rest} Ty Pf N Rs)
   (conj Cs C,
    if (backward Es)
-     (Rs = [rep I (bad "a backward step needs a goal: not inside Let/Assume") | Rs1],
+     (Rs = [rep I (bad {msg "backward-no-goal" []}) | Rs1],
       open-level Acc Rest Ty Pf N Rs1)
      (std.length Cs NC,
       if (Ch = []) (open-claims I 1 NC Tac Cs Acc Rest Ty Pf N Rs)
@@ -344,7 +339,7 @@ pred statement i:list element, i:list (pair element (option string)),
 statement [elt rvar S | Vs] Hs Gs Steps Ty Pf Rs :-
   P is "Context (" ^ S ^ ")",
   std.assert-ok! (coq.parse.argument P ff "" (ctx-decl C))
-    {calc ("cyp: the variables of the statement do not parse: " ^ S)},
+    {msg "statement-variables-not-parsed" [S]},
   statement-ctx C Vs Hs Gs Steps Ty Pf Rs.
 statement [] Hs Gs Steps Ty Pf Rs :- statement-hyps 1 Hs Gs Steps Ty Pf Rs.
 
@@ -360,10 +355,10 @@ pred statement-hyps i:int, i:list (pair element (option string)), i:list element
   i:list step, o:term, o:term, o:list report.
 statement-hyps _ [] Gs Steps G Pf Rs :-
   claim-terms Gs Cs Bad,
-  std.assert! (Bad = [], Cs = [_ | _]) "cyp: the conclusion of the statement does not parse",
+  std.assert! (Bad = [], Cs = [_ | _]) {msg "conclusion-not-parsed" []},
   conj Cs G, level "0" none Steps G Pf Rs.
 statement-hyps J [pr E Nm0 | Hs] Gs Steps (prod Nm A TyR) (fun Nm A PfR) Rs :-
-  std.assert-ok! (parse E A) "cyp: a hypothesis of the statement does not parse",
+  std.assert-ok! (parse E A) {msg "statement-hypothesis-not-parsed" []},
   (Nm0 = some S, ! ; S is "H" ^ {std.any->string J}), coq.id->name S Nm,
   J1 is J + 1,
   pi h\ decl h Nm A => statement-hyps J1 Hs Gs Steps (TyR h) (PfR h) Rs.

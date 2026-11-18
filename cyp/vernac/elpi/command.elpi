@@ -1,6 +1,19 @@
 % What the commands of Cyp.v share: reading a Markdown proof and checking
 % it, counting and printing the result.
 
+% [remove-labels Proof0 Proof]: Proof0 without the labels
+% condition := cyp_condition "2a" of the goals of a Proof block (only a
+% proof with a Proof block has them: walking a whole proof term is long)
+pred remove-labels i:term, o:term.
+remove-labels Proof0 Proof :-
+  coq.locate "cyp_condition" (const C),
+  (pi T L B R\ copy (let _ T (app [global (const C), L]) B) R :- !,
+     copy (B {{ tt }}) R) => copy Proof0 Proof.
+
+% what a proof opened by Cyp gives to CypQed: name, language, statement
+kind qed type.
+type qed-data string -> string -> term -> qed.
+
 % the default tactics of the header's by: field, e.g. "lra | assumption"
 pred by-clauses i:string, o:list prop.
 by-clauses "" [] :- !.
@@ -19,10 +32,10 @@ undup [] [].
 undup [X | L] R :- std.mem L X, !, undup L R.
 undup [X | L] [X | R] :- undup L R.
 
-% [check-file F Name Ty Proof Rs]: the proof in the Markdown file F, checked;
-% writes F.checked.md and F.cyp.json next to it
-pred check-file i:string, o:string, o:term, o:term, o:list report.
-check-file F Name Ty Proof Rs :-
+% [check-file F Lang Name Ty Proof Rs]: the proof in the Markdown file F, in
+% the language Lang, checked; writes F.checked.md and F.cyp.json next to it
+pred check-file i:string, o:string, o:string, o:term, o:term, o:list report.
+check-file F Lang Name Ty Proof Rs :-
   rex.replace "[.]md$" ".checked.md" F OutMd,
   rex.replace "[.]md$" ".cyp.json" F OutJs,
   read-proof F H Name Stmt SF SL Ns,
@@ -34,9 +47,9 @@ check-file F Name Ty Proof Rs :-
     justification Stmt _ Stmt1, pieces Stmt1 P, elements P rclaim SEs,
     binders SEs Vs, hyps SEs Hs, claims SEs Gs,
     steps-of "" 1 Ns Steps,
-    statement Vs Hs Gs Steps Ty Proof Rs,
-    write-md OutMd H Name Stmt Ns Rs,
-    write-json OutJs SF SL SEs Ns Rs).
+    timed "conditions" (statement Vs Hs Gs Steps Ty Proof Rs),
+    timed "markdown" (write-md OutMd H Name Stmt Ns Rs),
+    timed "json" (write-json OutJs SF SL SEs Ns Rs)).
 
 % the steps of the reports, and those with a condition not proved (Ko) or
 % left to the Proof block (Todo)
@@ -64,16 +77,12 @@ say-hyp _.
 % the conditions left, one line each
 pred say-todo i:list report.
 say-todo Rs :- std.forall Rs (r\ (sigma I G\ r = rep I (todo G), !,
-  coq.say "  🔶 condition" I ":" G) ; true).
+  say "left-line" [I, G]) ; true).
 
-% [define Name Ty Proof]: the lemma, once its proof has no hole; the
-% labels condition := cyp_condition "2a" of the goals are removed first
+% [define Name Ty Proof]: the lemma, once its proof has no hole
 pred define i:string, i:term, i:term.
-define Name Ty Proof0 :-
-  (pi T L B R\ copy (let _ T (app [global (const C), L]) B) R :-
-     coq.locate "cyp_condition" (const C), !,
-     copy (B {{ tt }}) R) => copy Proof0 Proof,
+define Name Ty Proof :-
   % the type-check also fills the holes the rules left (their _)
-  std.assert-ok! (coq.typecheck Proof Ty) "cyp: the proof does not type-check",
-  std.assert! (ground_term Proof) "cyp: some conditions are not proved",
-  coq.env.add-const Name Proof Ty @opaque! _.
+  timed "type-check" (std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []}),
+  std.assert! (ground_term Proof) {msg "holes" []},
+  timed "definition" (coq.env.add-const Name Proof Ty @opaque! _).
