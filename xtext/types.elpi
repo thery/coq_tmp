@@ -13,10 +13,10 @@
 
    The strategy is xtext-annotation (Explain.v), or the variable
    XTEXT_ANNOTATION: "all" (the texts of the earlier rounds, where "that
-   is" is added at the places listed in the README) or "thesis" (this
-   algorithm).  The writer (xtext.elpi) calls: thesis-mode, thesis-hook
-   (in tr-p, on every subproof), thesis-lam (the abstraction rule, in
-   tr-lam), thesis-top (the statement, in top-run) and add-equiv.     */
+   is" is added at the places listed in the README) or "double" (this
+   algorithm).  The writer (xtext.elpi) calls: double-annotation-mode, annotation-hook
+   (in tr-p, on every subproof), required-of-lambda (the abstraction rule, in
+   tr-lam), statement-stops-at (the statement, in top-run) and add-equiv.     */
 
 
 % The writer's types and predicates used here (defined in xtext.elpi,
@@ -49,8 +49,8 @@ annotation S :- getenv "XTEXT_ANNOTATION" (some S), not (S = ""), !.
 annotation S :- xtext-annotation S, !.
 annotation "all".
 
-pred thesis-mode.
-thesis-mode :- annotation "thesis".
+pred double-annotation-mode.
+double-annotation-mode :- annotation "double".
 
 % ------------------------------------------------------------------
 % Fig. 3.3, the weak head normal form: the fewest delta and beta
@@ -153,12 +153,12 @@ with-reqs [sub M Tr | Subs] G :- req M Tr => with-reqs Subs G.
 
 pred in-hook o:term.
 
-% [thesis-hook T G P]: the text P of the subproof T, whose required type
+% [annotation-hook T G P]: the text P of the subproof T, whose required type
 % is known: G is translated with the required types of T's subproofs,
 % then its conclusion says Tc, "that is" Tr if they differ.  An
-% abstraction says it itself (thesis-lam).
-pred thesis-hook i:term, i:(pf -> prop), o:pf.
-thesis-hook T G P :- thesis-mode, not (var T), not (in-hook K, K == T),
+% abstraction says it itself (required-of-lambda).
+pred annotation-hook i:term, i:(pf -> prop), o:pf.
+annotation-hook T G P :- double-annotation-mode, not (var T), not (in-hook K, K == T),
   % (no required type: the parent is a form that Fig. 3.9 does not treat,
   % let, match, fix or a cast; the annotation starts again from the
   % synthesised type, Fig. 3.4)
@@ -188,9 +188,9 @@ equiv-text Tc Tr S :- fm Tc F1, beta-ty Tr Tr1, fm-fact Tr1 F2,
 % of an inner abstraction only when it is single (Tc = Tr): the series
 % stops at an abstraction whose annotation is double, which starts its
 % own series.
-% [thesis-lam T Tr]: the required type of the abstraction T is Tr.
-pred thesis-lam i:term, o:term.
-thesis-lam T Tr :- thesis-mode, required T Tr.
+% [required-of-lambda T Tr]: the required type of the abstraction T is Tr.
+pred required-of-lambda i:term, o:term.
+required-of-lambda T Tr :- double-annotation-mode, required T Tr.
 
 % [abs-step Tr N A Tc T1]: (Abs) on λN:A, with required type Tr
 pred abs-step i:term, i:name, i:term, o:term, o:(term -> term).
@@ -205,13 +205,13 @@ abs-single Tr N A :- d-abs Tr N A Tc _, same-ty Tc Tr.
 % followed along the declared type by (Abs).  The statement stops at the
 % first abstraction whose annotation is double: it is then a step of the
 % proof, so that its conversion is said ("We have proved Tc, that is Tr").
-pred thesis-top-stop i:term, i:name, i:term.
-thesis-top-stop Ty N A :- thesis-mode, not (abs-single Ty N A).
+pred statement-stops-at i:term, i:name, i:term.
+statement-stops-at Ty N A :- double-annotation-mode, not (abs-single Ty N A).
 
 % [lam-join Acc T]: the abstraction T continues the series Acc (in the
-% thesis mode, only if its annotation is single)
+% double annotation, only if its annotation is single)
 pred lam-join i:list binder, i:term.
-lam-join _ _ :- not (thesis-mode), !.
+lam-join _ _ :- not (double-annotation-mode), !.
 lam-join [] _ :- !.
 lam-join _ (fun N A _ as T) :- required T Tr, !, abs-single Tr N A.
 lam-join _ _.
@@ -219,6 +219,6 @@ lam-join _ _.
 % [lam-under T x Cls]: under the binder x of the abstraction T, the
 % required type of its body (rule Abs)
 pred lam-under i:term, i:term, o:list prop.
-lam-under (fun N A F as T) X [req (F X) (T1 X)] :- thesis-mode,
+lam-under (fun N A F as T) X [req (F X) (T1 X)] :- double-annotation-mode,
   required T Tr, d-abs Tr N A _ T1, !.
 lam-under _ _ [].

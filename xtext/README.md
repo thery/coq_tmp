@@ -43,7 +43,8 @@ branch); `multilingual.v`: 12 of them in each of the other
 languages of the lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`,
 `ko`, `la`); `vocab_check.v` (the vocabulary, below); the optional checks with cyp:
 `cyprun.sh`, `cyp-check/` (cyp's results, below), and
-`cyp-check/roles_check.sh`.
+`cyp-check/roles_check.sh`; `examples-double/` (the texts with
+`xtext-annotation` `double`, written by `make_double.sh`).
 
 ## The output
 
@@ -279,7 +280,7 @@ in the thesis.
   announced with its unfolding before the binders `x y z` (`Montrons
   (Trans E (Inv E R)), ce qui est équivalent à ∀x, y, z ...`): the
   statement is `Let x y z : E`, `Assume ...`, as the λ-term gives it.
-  With `xtext-annotation` `thesis` it is: see "The double annotation of
+  With `xtext-annotation` `double` it is: see "The double annotation of
   the thesis" below.
 
 **ABCD** (Coscoy, Fig. 4.28, 5.5, 5.6):
@@ -770,8 +771,8 @@ The strategy is `xtext-annotation` in `xtext.db`, or the variable
 
 - `all` (default): the texts of the earlier rounds, with "that is" at the
   places of mechanism (4) above.  The 82 texts are the same, byte for byte;
-- `thesis`: the algorithm of Fig. 3.9.  `sh make_thesis.sh` writes all the
-  texts with it to `examples-thesis/`.
+- `double`: the algorithm of Fig. 3.9.  `sh make_double.sh` writes all the
+  texts with it to `examples-double/`.
 
 `types.elpi` holds the rules (`d-annot`, `d-abs`, one clause per rule,
 with the figure in a comment).  The writer calls it at five places
@@ -795,7 +796,7 @@ How the rules meet xtext's writer:
 - the wording is cyp's `that is` (the phrase `that-is` of the vocabulary
   files), not "which is equivalent to".
 
-**Trans_Inv** (Fig. 3.10), with `thesis`:
+**Trans_Inv** (Fig. 3.10), with `double`:
 
 ```markdown
 Let `E : Set`. Let `R : Rel E`. Assume `Trans E R` (h). We prove `Trans E (Inv E R)`.
@@ -848,7 +849,7 @@ machine.
 The algorithm does not leave out the formula of any step: it chooses
 which formula each conclusion shows and where the conversion is said.
 
-cyp reads the `thesis` texts: `Trans_Inv` is read and all its steps are
+cyp reads the `double` texts: `Trans_Inv` is read and all its steps are
 proved.  `ADD0`, `std_app_nil_r` and `std_Nat_add_comm` stop on a
 justification (`*by eapply @eq_refl; eauto*`, `*by exact @...*`).  The
 same happens with their `all` texts, so this comes from cyp's current

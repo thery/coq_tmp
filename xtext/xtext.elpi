@@ -584,11 +584,19 @@ pred unwrap i:pf, o:pf.
 unwrap (prfp P _) P :- !.
 unwrap P P.
 
+% the staged translation (staged.elpi): whether it is on, the terms the
+% direct writer keeps, and the text it gives
+pred staged-mode.
+pred is-direct-only i:term.
+pred staged-text i:term, i:ctx, i:list int, o:pf.
+
 pred tr-p i:term, i:ctx, i:list int, o:pf.
 % (thesis 3.3.4: the double annotation of the subproof, types.elpi)
-tr-p T Ctx Path P :- thesis-hook T (tr-p T Ctx Path) P, !.
+tr-p T Ctx Path P :- annotation-hook T (tr-p T Ctx Path) P, !.
 tr-p T _ _ P :- open-goal T P, !.
 tr-p T _ _ P :- tactic-step T P, !.
+% (the staged translation, staged.elpi)
+tr-p T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ctx Path P.
 tr-p T Ctx Path P :- tr-root T Ctx Path P.
 
 % the whole proof (no tactic is tried on it): the body of the theorem,
@@ -600,6 +608,7 @@ is-root T :- root-term R, R == T, !.
 % the same, without trying the tactics (for the whole proof)
 pred tr-root i:term, i:ctx, i:list int, o:pf.
 tr-root T _ _ P :- open-goal T P, !.
+tr-root T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ctx Path P.
 tr-root T Ctx Path P :- tr.aux T Ctx Path P, !.
 tr-root T _ _ P :- unchanged T P, !.
 tr-root T _ _ P :- pp T S0, F is "`" ^ S0 ^ "`{.fact}",
@@ -671,7 +680,7 @@ unchanged T (prf [] (some (it S []))) :-
 % --- abstraction: iterated abstraction rules
 pred tr-lam i:term, i:ctx, i:list int, o:pf.
 % (thesis 3.3.4, rule Abs: the conclusion says Tc, "that is" Tr; types.elpi)
-tr-lam (fun N A _ as T) Ctx Path P :- thesis-lam T Tr, abs-step Tr N A Tc _, !,
+tr-lam (fun N A _ as T) Ctx Path P :- required-of-lambda T Tr, abs-step Tr N A Tc _, !,
   (if (cur-ih Fl0) (Fl = Fl0) (Fl = [])),
   binder-kind A K, equiv-text Tc Tr FT, lam-run K [] T FT Fl Ctx Path P.
 tr-lam (fun _ A _ as T) Ctx Path P :-
@@ -854,9 +863,9 @@ apply-rest T0 P00 Args Path P :-
 % a function whose type is a product only after unfolding: its
 % conclusion says the unfolded type ("that is")
 pred head-unfold i:term, i:term, i:pf, o:pf.
-% (thesis mode, rule App: the partial applications and the variables and
-% constants at the head, whose text does not go through thesis-hook)
-head-unfold T0 Ty0 P0 P :- thesis-mode, !,
+% (double annotation, rule App: the partial applications and the variables and
+% constants at the head, whose text does not go through annotation-hook)
+head-unfold T0 Ty0 P0 P :- double-annotation-mode, !,
   (if ((T0 = app _ ; is-sym T0), whnf Ty0 W, W = prod _ _ _)
       (beta-ty W W1, add-equiv Ty0 W1 P0 P) (P = P0)).
 head-unfold _ (prod _ _ _) P P :- !.
@@ -1146,7 +1155,7 @@ tr-rewrite RN Dir Tau PX E Path (prf [D1, D2] (some (it S []))) :-
 % The declared type of the theorem is followed along the abstractions:
 % what is left is the statement, inherited by the body (thesis 3.3.2).
 pred top-run i:list binder, i:term, i:term, o:string, o:list line.
-top-run Acc (fun N A F) Ty Stmt L :- not (thesis-top-stop Ty N A), !,
+top-run Acc (fun N A F) Ty Stmt L :- not (statement-stops-at Ty N A), !,
   binder-kind A K, binder-name N N1 Id,
   ppf A FA,
   (if (Ty = prod _ _ B) true (coq.reduction.lazy.whd Ty (prod _ _ B) ; B = (_\ Ty))),
@@ -1155,20 +1164,33 @@ top-run Acc Body Ty0 Stmt L :-
   std.rev Acc Bs, beta-ty Ty0 Ty, fm Ty FT,
   statement Bs Ss, say-cap [wd "we-prove", tx FT, tx "."] WP, std.append Ss [WP] Ss1,
   std.string.concat " " Ss1 Stmt,
-  (if (thesis-mode)
+  (if (annotating-mode)
      % (thesis 3.3.4: the body has the statement as required type; an
      % abstraction left out of the statement says its conversion)
      ((if (Body = fun _ _ _) (Ctx = nostar) (Ctx = star)),
-      (req Body Ty => (root-term Body :- !) => thesis-hook Body (tr-root Body Ctx []) P))
+      (req Body Ty => (root-term Body :- !) => annotated-root Body Ctx P))
      (((root-term Body :- !) => tr-root Body star [] P0), that-is Body Ty P0 P)),
   flatten P L.
+
+% the modes that annotate a proof with the types it proves and the types
+% it is used at: the one-pass annotation (types.elpi) and the staged
+% translation (staged.elpi)
+pred annotating-mode.
+annotating-mode :- double-annotation-mode, !.
+annotating-mode :- staged-mode.
+
+% the text of the body of a proof whose required type is known
+pred annotated-root i:term, i:ctx, o:pf.
+annotated-root Body Ctx P :- double-annotation-mode, !,
+  annotation-hook Body (tr-root Body Ctx []) P.
+annotated-root Body Ctx P :- tr-root Body Ctx [] P.
 
 % "that is" (the Cast' of the thesis, 5.2.2): when the type that a proof
 % proves (synthesised) differs from the type expected at its place
 % (inherited) but Rocq finds them convertible, its conclusion says both
 pred that-is i:term, i:term, i:pf, o:pf.
-% (thesis mode: the annotations are those of thesis-hook, types.elpi)
-that-is _ _ P P :- thesis-mode, !.
+% (double annotation: the annotations are those of annotation-hook, types.elpi)
+that-is _ _ P P :- double-annotation-mode, !.
 that-is T Exp (prfp P Ps) Q :- !, that-is T Exp P P1,
   (if (P1 = P) (Q = prfp P Ps) (Q = P1)).
 that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-

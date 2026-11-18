@@ -21,6 +21,8 @@ From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
 From XText Extra Dependency "types.elpi" as types.
+From XText Extra Dependency "sentences.elpi" as sentences.
+From XText Extra Dependency "staged.elpi" as staged.
 
 (* The tactics tried on long subproofs (see xtext-tactic below).  Each is
    an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
@@ -69,12 +71,20 @@ Elpi Db xtext.db lp:{{
   :name "xtext-lang"
   xtext-lang "en".
   % [xtext-annotation S]: the type expressions written (thesis chapter 3):
-  % "all" (default, the texts of the earlier rounds) or "thesis" (the double
+  % "all" (default, the texts of the earlier rounds) or "double" (the double
   % annotation of 3.3.4, Fig. 3.9; types.elpi).  The variable
   % XTEXT_ANNOTATION overrides it.
   pred xtext-annotation o:string.
   :name "xtext-annotation"
   xtext-annotation "all".
+  % [xtext-translation S]: how a proof becomes text: "direct" (default,
+  % term to text in one walk, xtext.elpi) or "staged" (annotation, then
+  % contraction, then writing, as in Coscoy's thesis; staged.elpi; the
+  % contraction strategy is xtext-contraction).  The variable
+  % XTEXT_TRANSLATION overrides it.
+  pred xtext-translation o:string.
+  :name "xtext-translation"
+  xtext-translation "direct".
 }}.
 
 Elpi Command Explain.
@@ -92,6 +102,8 @@ Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
 Elpi Accumulate File types.
 Elpi Accumulate File xtext.
+Elpi Accumulate File sentences.
+Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
   main [str N] :- !, explain N T, coq.say T.
   main [str N, str "in", str L] :- !, ((writer-lang L :- !) => explain N T), coq.say T.
@@ -123,6 +135,8 @@ Elpi Accumulate File lex_ko.
 Elpi Accumulate File lex_la.
 Elpi Accumulate File types.
 Elpi Accumulate File xtext.
+Elpi Accumulate File sentences.
+Elpi Accumulate File staged.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
