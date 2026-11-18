@@ -43,6 +43,12 @@ const configurationProvider = {
       const found = elpiDebugPath(adapterPath());
       if (found) config.elpiDebug = found;
     }
+    // the events of the run (Call, Unify, Exit, ...) are written to the
+    // Debug Console: open it when the session starts, unless the
+    // configuration says otherwise
+    if (config.internalConsoleOptions === undefined) {
+      config.internalConsoleOptions = 'openOnSessionStart';
+    }
     return config;
   }
 };
