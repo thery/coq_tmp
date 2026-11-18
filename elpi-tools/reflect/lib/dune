@@ -1,0 +1,4 @@
+; The library that reads Elpi files and prints them as Elpi data.
+(library
+ (name elpi_reflect)
+ (libraries elpi elpi.parser elpi.util))

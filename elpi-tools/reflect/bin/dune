@@ -1,0 +1,5 @@
+(executable
+ (name elpi_reflect_main)
+ (public_name elpi-reflect)
+ (package elpi-tools)
+ (libraries elpi_reflect))
