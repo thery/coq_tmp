@@ -133,19 +133,13 @@ todo-ids Rs S Ts :-
   std.filter Rs (r\ sigma I G\ r = rep I (todo G), step-of I S) L,
   std.map L (r\ i\ sigma G\ r = rep i G) Ts.
 
-pred mark i:string, o:string.
-mark "ok" "✅".
-mark "ko" "❌".
-mark "todo" "🔶".
-mark "none" "▫️".
-
 pred write-md i:string, i:list string, i:string, i:string, i:list node,
   i:list report.
 write-md Out H Name Stmt Ns Rs :-
   open_out Out O,
   output O "---\n", std.forall H (l\ output O {calc (l ^ "\n")}), output O "---\n\n",
   output O {calc ("# " ^ Name ^ "\n\n")},
-  status-of Rs "0" S M, mark S Mk,
+  status-of Rs "0" S M, prooftext.status-mark S Mk,
   output O {calc (Mk ^ " " ^ Stmt ^ "\n")}, details O "" M,
   output O "\n",
   write-nodes O "" "" 1 Ns Rs,
@@ -154,16 +148,16 @@ write-md Out H Name Stmt Ns Rs :-
 pred details i:out_stream, i:string, i:string.
 details _ _ "" :- !.
 details O Pad M :-
-  output O {calc ("\n" ^ Pad ^ "<details><summary>" ^ M ^ "</summary></details>\n\n")}.
+  output O {calc ("\n" ^ Pad ^ {prooftext.message-block M} ^ "\n\n")}.
 
 % [write-nodes O Pad P K Ns Rs]: the nodes, numbered as in steps-of; a step
 % with a condition left shows its number
 pred write-nodes i:out_stream, i:string, i:string, i:int, i:list node, i:list report.
 write-nodes _ _ _ _ [] _.
 write-nodes O Pad P K [node (it _ T _ _) Ch | Ns] Rs :-
-  dewey P K Id, status-of Rs Id S M, mark S Mk,
+  dewey P K Id, status-of Rs Id S M, prooftext.status-mark S Mk,
   (S = "todo", todo-ids Rs Id Ts, std.string.concat ", " Ts TS,
-   Num is " **[" ^ TS ^ "]**" ; Num = ""), !,
+   Num is " " ^ {prooftext.conditions-mark TS} ; Num = ""), !,
   output O {calc (Pad ^ "- " ^ Mk ^ Num ^ " " ^ T ^ "\n")},
   details O {calc (Pad ^ "  ")} M,
   write-nodes O {calc (Pad ^ "  ")} Id 1 Ch Rs,

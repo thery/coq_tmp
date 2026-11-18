@@ -98,8 +98,12 @@ From Lexicon Extra Dependency "lang_zh.elpi" as lexicon_zh.
 From Lexicon Extra Dependency "lang_ar.elpi" as lexicon_ar.
 From Lexicon Extra Dependency "lang_ko.elpi" as lexicon_ko.
 From Lexicon Extra Dependency "lang_la.elpi" as lexicon_la.
-(* the format of proof texts, shared with xtext: prooftext/ *)
+(* the format of proof texts, shared with xtext: prooftext/ (the header and
+   the document are loaded for checked.elpi, the marks of a checked text) *)
+From ProofText Extra Dependency "header.elpi" as pt_header.
+From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "checked.elpi" as pt_checked.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From CypV Extra Dependency "elpi/text.elpi" as cyp_text.
 From CypV Extra Dependency "elpi/check.elpi" as cyp_check.
@@ -128,7 +132,7 @@ Elpi Accumulate File lexicon_zh.
 Elpi Accumulate File lexicon_ar.
 Elpi Accumulate File lexicon_ko.
 Elpi Accumulate File lexicon_la.
-Elpi Accumulate File pt_formulas pt_tactics.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_checked pt_tactics.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.
@@ -177,7 +181,7 @@ Elpi Accumulate File lexicon_zh.
 Elpi Accumulate File lexicon_ar.
 Elpi Accumulate File lexicon_ko.
 Elpi Accumulate File lexicon_la.
-Elpi Accumulate File pt_formulas pt_tactics.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_checked pt_tactics.
 Elpi Accumulate File cyp_text.
 Elpi Accumulate File cyp_messages.
 Elpi Accumulate File cyp_timing.
