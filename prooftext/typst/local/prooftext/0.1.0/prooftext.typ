@@ -62,6 +62,8 @@
   zh: ("Noto Serif CJK SC",),
   ko: ("Noto Serif CJK KR",),
 )
+// the font of the marks of the steps (bullets and statuses)
+#let mark-font = "DejaVu Sans"
 
 // the indentation of one level of steps
 #let step-indent = 1.4em
@@ -99,7 +101,7 @@
 }
 #let formula(text) = formula-of("plain", text)
 
-// the name of a hypothesis, (h)
+// the name given to the formula before it (a hypothesis, a claim), (h)
 #let name(text) = std.text(fill: role-colours.hyp, size: 0.9em,
   [(#std.text(font: code-fonts, text))])
 
@@ -150,10 +152,10 @@
 // the mark in front of a step of status status, a bullet for a step that
 // is not checked (and nothing for a statement that is not checked)
 #let status-mark(status, bullet) = {
-  if status == none { if bullet { std.text(fill: luma(110), "•") } else { [] } }
+  if status == none { if bullet { std.text(font: mark-font, fill: luma(110), "•") } else { [] } }
   else {
     let s = status-marks.at(status)
-    std.text(fill: s.colour, weight: "bold", s.mark)
+    std.text(font: mark-font, fill: s.colour, weight: "bold", s.mark)
   }
 }
 

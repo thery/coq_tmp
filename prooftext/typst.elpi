@@ -23,7 +23,7 @@
 %
 % The text of a statement or of a step is cut into its parts: the
 % formulas with their roles (formulas.elpi; a formula without a class is
-% shown without a role), the name (h) of a hypothesis right after a
+% shown without a role), the name (h) given to a formula right after a
 % formula, the justification *by X*, and the plain text between them, each
 % written as a Typst string, so that no character of the text is read as
 % Typst markup.  In a text checked by cyp (checked.elpi), the status of
@@ -136,7 +136,7 @@ kind text-part type.
 type plain string -> text-part.            % text
 type formula-part string -> string -> text-part.
                                            % the class of a formula ("" for none), its text
-type name-part string -> text-part.        % the name of a hypothesis, (h)
+type name-part string -> text-part.        % the name given to a formula, (h)
 type by-part string -> text-part.          % the justification, *by X*
 
 % [text-content Text Content]: the Typst content of a text, [...] with
@@ -160,7 +160,7 @@ part-typst (by-part J) C :- C is "#by(" ^ {typst-string J} ^ ")".
 
 % [text-parts Text Parts]: the parts of a text, in order: the formulas
 % (between backticks, with an optional class {.tag}), each followed by
-% the name of a hypothesis if there is one, and the text between them,
+% the name given to it if there is one, and the text between them,
 % where the justifications are
 pred text-parts i:string, o:list text-part.
 text-parts Text Parts :-
@@ -169,7 +169,7 @@ text-parts Text Parts :-
   rex.replace "^[^`]*`\\([^`]*\\)`.*" "\\1" Text F,
   rex.replace "^[^`]*`[^`]*`" "" Text After,
   formula-class After Tag After1,
-  hypothesis-name After1 Names After2,
+  formula-name After1 Names After2,
   plain-parts Before BeforeParts,
   text-parts After2 Rest,
   std.append BeforeParts [formula-part Tag F | Names] Parts0,
@@ -185,15 +185,16 @@ formula-class After Tag Rest :-
   rex.replace "^{[.][A-Za-z]+}" "" After Rest.
 formula-class After "" After.
 
-% [hypothesis-name After Names Rest]: the name (h) right after a formula,
+% [formula-name After Names Rest]: the name (h) right after a formula (a
+% hypothesis, or a claim that a later step names),
 % one space before it, as [plain " ", name-part h] ([] if there is none),
 % and the text after it
-pred hypothesis-name i:string, o:list text-part, o:string.
-hypothesis-name After [plain " ", name-part N] Rest :-
+pred formula-name i:string, o:list text-part, o:string.
+formula-name After [plain " ", name-part N] Rest :-
   rex.match "^ ([A-Za-z_][A-Za-z0-9_']*)" After, !,
   rex.replace "^ (\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" After N,
   rex.replace "^ ([A-Za-z_][A-Za-z0-9_']*)" "" After Rest.
-hypothesis-name After [] After.
+formula-name After [] After.
 
 % [plain-parts Text Parts]: a text without formulas: plain text and the
 % justifications *by X* in it (no part for an empty text)
