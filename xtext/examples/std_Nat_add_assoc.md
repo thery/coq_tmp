@@ -37,7 +37,7 @@ Let `n m p : nat`{.var}. We prove `n + (m + p) = n + m + p`{.claim}.
             - By H we have `x = y`{.claim}.
             - Using add_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_wd*, that is `forall x0 y0 : nat, x0 = y0 -> Morphisms.respectful eq eq (Init.Nat.add x0) (Init.Nat.add y0)`{.fact}.
           - Using add_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_wd*, that is `forall x0 y0 : nat, x0 = y0 -> Morphisms.respectful eq eq (Init.Nat.add x0) (Init.Nat.add y0)`{.fact}.
-        - We deduce `Morphisms.respectful eq iff (eq (x + (m + p))) (eq (y + (m + p)))`{.claim} *by auto*, that is `forall x0 y0 : nat, x0 = y0 -> x + (m + p) = x0 <-> y + (m + p) = y0`{.fact}.
+        - We deduce `Morphisms.respectful eq iff (eq (x + (m + p))) (eq (y + (m + p)))`{.claim} *by firstorder*, that is `forall x0 y0 : nat, x0 = y0 -> x + (m + p) = x0 <-> y + (m + p) = y0`{.fact}.
           - In particular `Morphisms.ProperProxy eq (m + p)`{.claim}, that is `m + p = m + p`{.fact}.
             - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
               - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.

@@ -1,5 +1,5 @@
-(* Bounded searches of cyp: the coarse gap tactic cyp_gap, and the bounded
-   first-order search that cyp runs for firstorder (Cyp.v).
+(* The coarse gap tactic of cyp, cyp_gap; it uses the bounded first-order
+   search shared with xtext (prooftext/Tactics.v).
 
    cyp_gap is a last try on a condition that its justification, the rules
    and the default tactics leave open (elpi/gaps.elpi says when it is
@@ -11,27 +11,7 @@
    ways and their order come from measurement on the conditions that cyp
    leaves open in xtext's texts (xtext/gaps/README.md). *)
 
-(* the goal unfolded and introduced, its conjunctions split, and the
-   connectives of the hypotheses taken apart; each step removes a binder
-   or a connective, so that it ends *)
-Ltac decompose_all :=
-  repeat (intro || split || match goal with
-    | H : _ /\ _ |- _ => destruct H
-    | H : _ <-> _ |- _ => destruct H
-    | H : _ \/ _ |- _ => destruct H
-    | H : exists _, _ |- _ => destruct H
-    | H : False |- _ => destruct H
-    end).
-
-(* the closing tactic: a proof search of depth 4 with the hypotheses, or
-   equational reasoning *)
-Ltac gap_close := solve [ eauto 4 | congruence ].
-
-(* first-order reasoning, bounded: what cyp runs for firstorder; the
-   second time after a simplification (a function on a constructor) *)
-Ltac bounded_firstorder :=
-  solve [ decompose_all; gap_close
-        | decompose_all; simpl in *; decompose_all; gap_close ].
+From ProofText Require Export Tactics.
 
 (* a case analysis on every boolean of the context *)
 Ltac bool_cases :=

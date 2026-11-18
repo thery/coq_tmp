@@ -29,7 +29,7 @@ Let `n m : nat`{.var}. We prove `n + m = m + n`{.claim}.
           - We deduce `forall x0 : nat, Morphisms.ProperProxy eq x0 -> Morphisms.Proper (Morphisms.respectful eq eq) (Nat.add x0)`{.claim}.
             - Using add_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_wd*.
             - Using Reflexive_partial_app_morphism we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m0 : A -> B), Morphisms.Proper (Morphisms.respectful R R') m0 -> forall x0 : A, Morphisms.ProperProxy R x0 -> Morphisms.Proper R' (m0 x0)`{.claim} *by Corelib.Classes.Morphisms.Reflexive_partial_app_morphism*.
-        - We deduce `Morphisms.respectful eq iff (eq (x + m)) (eq (y + m))`{.claim} *by auto*, that is `forall x0 y0 : nat, x0 = y0 -> x + m = x0 <-> y + m = y0`{.fact}.
+        - We deduce `Morphisms.respectful eq iff (eq (x + m)) (eq (y + m))`{.claim} *by firstorder*, that is `forall x0 y0 : nat, x0 = y0 -> x + m = x0 <-> y + m = y0`{.fact}.
           - In particular `Morphisms.ProperProxy eq m`{.claim}, that is `m = m`{.fact}.
             - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
               - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.

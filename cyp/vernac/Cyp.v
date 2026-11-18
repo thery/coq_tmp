@@ -46,7 +46,7 @@ Ltac cyp_ring := ring.          Ltac cyp_field := field.
 Ltac cyp_tauto := tauto.        Ltac cyp_auto := auto.
 Ltac cyp_easy := easy.          Ltac cyp_reflexivity := reflexivity.
 Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
-(* firstorder, bounded (Gaps.v): firstorder has no bound (on a condition
+(* firstorder, bounded (prooftext/Tactics.v, shared with xtext): firstorder has no bound (on a condition
    of xtext's half_le it ran over 30 s and took up to 7 GB) *)
 Ltac cyp_firstorder := bounded_firstorder.
 (* used by cyp itself *)

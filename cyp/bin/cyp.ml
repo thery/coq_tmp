@@ -83,6 +83,13 @@ let lexicon () =
   | Some d -> d
   | None -> Filename.concat (Filename.dirname (Filename.dirname (cyp_lib ()))) "lexicon"
 
+(* the format of proof texts (prooftext/, shared with xtext): CYP_PROOFTEXT,
+   or the directory prooftext/ next to lexicon/ *)
+let prooftext () =
+  match Sys.getenv_opt "CYP_PROOFTEXT" with
+  | Some d -> d
+  | None -> Filename.concat (Filename.dirname (lexicon ())) "prooftext"
+
 let main ~json ~conditions md =
   let md = absolute (Sys.getcwd ()) md in
   let dir = Filename.dirname md in
@@ -107,7 +114,7 @@ let main ~json ~conditions md =
   let out = Filename.concat tmp "cyp_check.out" in
   let cmd =
     String.concat " " (List.map Filename.quote
-      ([ "rocq"; "c"; "-Q"; cyp_lib (); "CypV"; "-Q"; lexicon (); "Lexicon";
+      ([ "rocq"; "c"; "-Q"; cyp_lib (); "CypV"; "-Q"; lexicon (); "Lexicon"; "-Q"; prooftext (); "ProofText";
          "-Q"; tmp; "CypRules" ] @ flags @ [ src ])) in
   (* run in the directory of the proof, where the caches of lia and nia
      (.lia.cache, .nia.cache) are kept from one run to the next *)

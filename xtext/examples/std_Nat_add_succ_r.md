@@ -28,7 +28,7 @@ Let `n m : nat`{.var}. We prove `n + S m = S (n + m)`{.claim}.
           - By H we have `x = y`{.claim}.
           - Using add_wd we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_wd*, that is `forall x0 y0 : nat, x0 = y0 -> Morphisms.respectful eq eq (Init.Nat.add x0) (Init.Nat.add y0)`{.fact}.
         - Using succ_wd we get `Morphisms.Proper (Morphisms.respectful eq eq) S`{.claim} *by Stdlib.Arith.PeanoNat.Nat.succ_wd*, that is `forall x0 y0 : nat, x0 = y0 -> S x0 = S y0`{.fact}.
-        - We deduce `Morphisms.respectful eq iff (eq (x + S m)) (eq (y + S m))`{.claim} *by auto*, that is `forall x0 y0 : nat, x0 = y0 -> x + S m = x0 <-> y + S m = y0`{.fact}.
+        - We deduce `Morphisms.respectful eq iff (eq (x + S m)) (eq (y + S m))`{.claim} *by firstorder*, that is `forall x0 y0 : nat, x0 = y0 -> x + S m = x0 <-> y + S m = y0`{.fact}.
           - In particular `Morphisms.ProperProxy eq (S m)`{.claim}, that is `S m = S m`{.fact}.
             - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
               - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.

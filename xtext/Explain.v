@@ -6,6 +6,8 @@
    [Explain_partial.], inside a proof, prints the proof so far. *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
+(* the bounded searches shared with cyp (bounded_firstorder) *)
+From ProofText Require Import Tactics.
 (* the lexicon (../lexicon): the roles and the phrases of each language,
    shared with the reader cyp *)
 From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
@@ -54,7 +56,7 @@ Ltac xtext_lia := timeout 2 lia.
 Ltac xtext_g_tauto := timeout 1 tauto.
 Ltac xtext_g_congruence := timeout 1 congruence.
 Ltac xtext_g_lia := timeout 1 lia.
-Ltac xtext_g_firstorder := timeout 1 firstorder.
+Ltac xtext_g_firstorder := bounded_firstorder.   (* the one cyp runs *)
 Ltac xtext_g_auto := timeout 1 auto.
 
 Elpi Db xtext.db lp:{{

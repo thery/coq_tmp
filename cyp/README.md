@@ -91,7 +91,7 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   else the tactic X (an Ltac name, or `lia`, `lra`, `nia`, `nra`, `ring`,
   `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
   `congruence`, `firstorder`; `firstorder` is run bounded, as
-  `bounded_firstorder` of [vernac/Gaps.v](vernac/Gaps.v): the tactic
+  `bounded_firstorder` of [../prooftext/Tactics.v](../prooftext/Tactics.v), shared with xtext: the tactic
   itself has no bound: more than 30 s and 7 GB on one step of a text).  X
   cannot be tactic code (`interval with (i_prec 100)`): Rocq-Elpi cannot
   yet turn a string into a tactic; name an Ltac definition instead.  A

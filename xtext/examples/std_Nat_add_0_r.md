@@ -17,7 +17,7 @@ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
       - We deduce `forall x0 : Prop, x0 <-> x0`{.claim}.
       - We deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + 0 = x)) (iff (y + 0 = y))`{.claim} *by congruence*, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x + 0 = x <-> x0) (y + 0 = y <-> y0)`{.fact}.
         - By H we have `x = y`{.claim}.
-        - We deduce `Morphisms.respectful eq iff (eq (x + 0)) (eq (y + 0))`{.claim} *by auto*, that is `forall x0 y0 : nat, x0 = y0 -> x + 0 = x0 <-> y + 0 = y0`{.fact}.
+        - We deduce `Morphisms.respectful eq iff (eq (x + 0)) (eq (y + 0))`{.claim} *by firstorder*, that is `forall x0 y0 : nat, x0 = y0 -> x + 0 = x0 <-> y + 0 = y0`{.fact}.
           - In particular `Morphisms.ProperProxy eq 0`{.claim}, that is `0 = 0`{.fact}.
             - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
               - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
