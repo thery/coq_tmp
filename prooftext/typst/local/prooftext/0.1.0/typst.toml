@@ -1,0 +1,5 @@
+[package]
+name = "prooftext"
+version = "0.1.0"
+entrypoint = "prooftext.typ"
+description = "The look of a proof text (xtext, cyp): the roles of the formulas, the steps, the statuses of a checked text."

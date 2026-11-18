@@ -1,0 +1,229 @@
+% prooftext: the writer of a proof text in Typst, for a PDF.
+% (load after document.elpi, formulas.elpi and checked.elpi)
+%
+% [write-typst D Text] gives the Typst source of the document D: calls of
+% the functions of the template typst/local/prooftext/0.1.0/prooftext.typ
+% (the Typst package @local/prooftext), which gives each role, step and
+% status its look:
+%
+%   #import "@local/prooftext:0.1.0": *
+%   #show: proof-text.with(lang: "en", numbers: false)
+%
+%   #title-block("and_swap", (
+%     ("require", "From Stdlib Require Import Lia."),
+%   ))
+%
+%   #statement[#"Let "#var("A B : Prop")#". We prove "#claim("A /\\ B -> B /\\ A")#"."]
+%
+%   #steps((
+%     step("1", [#"Assume "#hyp("A /\\ B")#" "#name("h")#"."], (
+%       step("1.1", [#"We have "#claim("B /\\ A")#" "#by("tauto")#"."], ()),
+%     )),
+%   ))
+%
+% The text of a statement or of a step is cut into its parts: the
+% formulas with their roles (formulas.elpi; a formula without a class is
+% shown without a role), the name (h) of a hypothesis right after a
+% formula, the justification *by X*, and the plain text between them, each
+% written as a Typst string, so that no character of the text is read as
+% Typst markup.  In a text checked by cyp (checked.elpi), the status of
+% each text, the conditions left and cyp's message become arguments of
+% statement and step, and the steps are numbered as cyp numbers them.
+
+namespace prooftext {
+
+% ------------------------------------------------------------------
+% The document
+
+% [write-typst D Text]: the Typst source of the document D
+pred write-typst i:prooftext.document, o:string.
+write-typst (prooftext.document Fields Name _ Statement Steps) Text :-
+  text-language Fields Lang,
+  (if (text-is-checked Statement) (Numbers = "true") (Numbers = "false")),
+  typst-string Name TName,
+  std.map Fields typst-field FieldLines,
+  statement-typst Statement StatementLine,
+  steps-typst "  " "" 1 Steps StepLines,
+  std.append [
+    {calc ("// The proof text " ^ Name ^ ", written by prooftext (write-typst).")},
+    "// Its PDF: prooftext/pdf.sh, or typst compile --package-path prooftext/typst.",
+    "#import \"@local/prooftext:0.1.0\": *",
+    {calc ("#show: proof-text.with(lang: \"" ^ Lang ^ "\", numbers: " ^ Numbers ^ ")")},
+    "",
+    {calc ("#title-block(" ^ TName ^ ", (")} | FieldLines]
+    ["))", "", StatementLine, "", "#steps((" | StepLines] Lines0,
+  std.append Lines0 ["))"] Lines,
+  std.string.concat "\n" Lines Text0,
+  Text is Text0 ^ "\n".
+
+% [text-language Fields Lang]: the language of the text, from its lang
+% field (default-lang when it has none)
+pred text-language i:list prooftext.field, o:string.
+text-language Fields Lang :- std.mem Fields (prooftext.field "lang" Lang), !.
+text-language _ Lang :- prooftext.default-lang Lang.
+
+% [text-is-checked Statement]: the text was checked (by cyp): its
+% statement has a status mark
+pred text-is-checked i:string.
+text-is-checked Statement :- prooftext.split-checked Statement _ _.
+
+% a field of the header, a pair (key, value)
+pred typst-field i:prooftext.field, o:string.
+typst-field (prooftext.field Key Value) Line :-
+  Line is "  (" ^ {typst-string Key} ^ ", " ^ {typst-string Value} ^ "),".
+
+% [statement-typst Statement Line]: the call of statement
+pred statement-typst i:string, o:string.
+statement-typst Statement Line :-
+  checked-text Statement Check Text, check-arguments Check Arguments,
+  (if (Arguments = "") (Call = "#statement") (Call is "#statement(" ^ Arguments ^ ")")),
+  Line is Call ^ {text-content Text}.
+
+% [steps-typst Indent Prefix K Steps Lines]: the calls of step for Steps,
+% the K-th, K+1-th, ... of their list, numbered in Dewey notation after
+% Prefix ("" at the top: 1, 2, ...; 2.1 is the first sub-step of 2, as cyp
+% numbers its conditions); each one's sub-steps in its list, indented
+pred steps-typst i:string, i:string, i:int, i:list prooftext.step, o:list string.
+steps-typst _ _ _ [] [].
+steps-typst Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
+  dewey-number Prefix K Number,
+  checked-text Text0 Check Text, check-arguments Check Arguments,
+  (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
+  Head is Indent ^ "step(" ^ {typst-string Number} ^ ", " ^ {text-content Text} ^ ", (",
+  (if (Sub = [])
+     (Own = [{calc (Head ^ ")" ^ Tail ^ "),")}])
+     (steps-typst {calc (Indent ^ "  ")} Number 1 Sub SubLines,
+      std.append [Head | SubLines] [{calc (Indent ^ ")" ^ Tail ^ "),")}] Own)),
+  K1 is K + 1,
+  steps-typst Indent Prefix K1 Steps Next,
+  std.append Own Next Lines.
+
+% [dewey-number Prefix K Number]: the number of the K-th step of a list
+% whose parent has the number Prefix ("" at the top)
+pred dewey-number i:string, i:int, o:string.
+dewey-number "" K N :- !, N is {std.any->string K}.
+dewey-number P K N :- N is P ^ "." ^ {std.any->string K}.
+
+% ------------------------------------------------------------------
+% Checked texts
+
+% [checked-text Text Check Rest]: the status, conditions and message of a
+% checked text (some C), none for a text that is not checked; Rest is the
+% text without them
+pred checked-text i:string, o:option prooftext.check, o:string.
+checked-text Text (some C) Rest :- prooftext.split-checked Text C Rest, !.
+checked-text Text none Text.
+
+% [check-arguments Check Arguments]: the named arguments of statement or
+% step that give a status, its conditions and its message ("" for none)
+pred check-arguments i:option prooftext.check, o:string.
+check-arguments none "".
+check-arguments (some (prooftext.checked Status Conditions Message)) Arguments :-
+  optional-argument "conditions" Conditions C,
+  optional-argument "message" Message M,
+  std.filter [{calc ("status: " ^ {typst-string Status})}, C, M] (a\ not (a = "")) As,
+  std.string.concat ", " As Arguments.
+
+pred optional-argument i:string, i:option string, o:string.
+optional-argument _ none "".
+optional-argument Name (some V) A :- A is Name ^ ": " ^ {typst-string V}.
+
+% ------------------------------------------------------------------
+% The parts of a text
+
+% a part of the text of a statement or a step
+kind text-part type.
+type plain string -> text-part.            % text
+type formula-part string -> string -> text-part.
+                                           % the class of a formula ("" for none), its text
+type name-part string -> text-part.        % the name of a hypothesis, (h)
+type by-part string -> text-part.          % the justification, *by X*
+
+% [text-content Text Content]: the Typst content of a text, [...] with
+% one call per part
+pred text-content i:string, o:string.
+text-content Text Content :-
+  text-parts Text Parts,
+  std.map Parts part-typst Calls,
+  std.string.concat "" Calls Inner,
+  Content is "[" ^ Inner ^ "]".
+
+% [part-typst Part Call]: the Typst code of a part; a formula whose class
+% is a role's tag is shown with that role (var, hyp, claim, fact), other
+% formulas without a role (formula)
+pred part-typst i:text-part, o:string.
+part-typst (plain S) C :- C is "#" ^ {typst-string S}.
+part-typst (formula-part Tag F) C :- prooftext.role-tag _ Tag, !, C is "#" ^ Tag ^ "(" ^ {typst-string F} ^ ")".
+part-typst (formula-part _ F) C :- C is "#formula(" ^ {typst-string F} ^ ")".
+part-typst (name-part N) C :- C is "#name(" ^ {typst-string N} ^ ")".
+part-typst (by-part J) C :- C is "#by(" ^ {typst-string J} ^ ")".
+
+% [text-parts Text Parts]: the parts of a text, in order: the formulas
+% (between backticks, with an optional class {.tag}), each followed by
+% the name of a hypothesis if there is one, and the text between them,
+% where the justifications are
+pred text-parts i:string, o:list text-part.
+text-parts Text Parts :-
+  rex.match "^[^`]*`[^`]*`" Text, !,
+  rex.replace "^\\([^`]*\\)`.*" "\\1" Text Before,
+  rex.replace "^[^`]*`\\([^`]*\\)`.*" "\\1" Text F,
+  rex.replace "^[^`]*`[^`]*`" "" Text After,
+  formula-class After Tag After1,
+  hypothesis-name After1 Names After2,
+  plain-parts Before BeforeParts,
+  text-parts After2 Rest,
+  std.append BeforeParts [formula-part Tag F | Names] Parts0,
+  std.append Parts0 Rest Parts.
+text-parts Text Parts :- plain-parts Text Parts.
+
+% [formula-class After Tag Rest]: the class {.tag} right after a formula
+% ("" if there is none) and the text after it
+pred formula-class i:string, o:string, o:string.
+formula-class After Tag Rest :-
+  rex.match "^{[.][A-Za-z]+}" After, !,
+  rex.replace "^{[.]\\([A-Za-z]+\\)}.*" "\\1" After Tag,
+  rex.replace "^{[.][A-Za-z]+}" "" After Rest.
+formula-class After "" After.
+
+% [hypothesis-name After Names Rest]: the name (h) right after a formula,
+% one space before it, as [plain " ", name-part h] ([] if there is none),
+% and the text after it
+pred hypothesis-name i:string, o:list text-part, o:string.
+hypothesis-name After [plain " ", name-part N] Rest :-
+  rex.match "^ ([A-Za-z_][A-Za-z0-9_']*)" After, !,
+  rex.replace "^ (\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" After N,
+  rex.replace "^ ([A-Za-z_][A-Za-z0-9_']*)" "" After Rest.
+hypothesis-name After [] After.
+
+% [plain-parts Text Parts]: a text without formulas: plain text and the
+% justifications *by X* in it (no part for an empty text)
+pred plain-parts i:string, o:list text-part.
+plain-parts "" [] :- !.
+plain-parts Text Parts :-
+  rex.match "^.*[*]by [^*]+[*]" Text, !,
+  rex.replace "^\\(.*\\)[*]by [^*]+[*].*" "\\1" Text Before,
+  rex.replace "^.*[*]by \\([^*]+\\)[*].*" "\\1" Text J,
+  rex.replace "^.*[*]by [^*]+[*]" "" Text After,
+  plain-parts Before BeforeParts,
+  plain-parts After AfterParts,
+  std.append BeforeParts [by-part J | AfterParts] Parts.
+plain-parts Text [plain Text].
+
+% [typst-string S T]: S as a Typst string literal, "...", with its
+% backslashes and double quotes escaped
+pred typst-string i:string, o:string.
+typst-string S T :-
+  rex.replace "\\\\" "\\\\\\\\" S S1,
+  rex.replace "\"" "\\\\\"" S1 S2,
+  T is "\"" ^ S2 ^ "\"".
+
+% ------------------------------------------------------------------
+% Choosing the writer
+
+% [write-as File D Text]: the text of D in the format of the file File:
+% Typst for a file .typ, Markdown otherwise
+pred write-as i:string, i:prooftext.document, o:string.
+write-as File D Text :- rex.match ".*[.]typ$" File, !, write-typst D Text.
+write-as _ D Text :- prooftext.write-document D Text.
+
+}

@@ -1,0 +1,70 @@
+% prooftext: what a checker adds to the text of a step (cyp's checked
+% text, proof.checked.md).
+%
+%   ✅ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
+%   - ❌ We have `0 < a - b`{.claim}.
+%
+%     <details><summary>not proved: 0 < a - b</summary></details>
+%
+%   - 🔶 **[2a, 2b]** We have `C`{.claim}.
+%
+% the mark of the status of the step, first; the conditions left to a
+% Proof block (status todo), after it; the message of the checker, in a
+% folded block below the item (read back, a continuation line, so at the
+% end of the step's text).
+
+namespace prooftext {
+
+% [status-mark Status Mark]: the mark of a status, with cyp's names of the
+% statuses: proved, not proved, left to a Proof block, nothing to check
+pred status-mark o:string, o:string.
+status-mark "ok" "✅".
+status-mark "ko" "❌".
+status-mark "todo" "🔶".
+status-mark "none" "▫️".
+
+% [message-block M S]: the folded block of the message M
+pred message-block i:string, o:string.
+message-block M S :- S is "<details><summary>" ^ M ^ "</summary></details>".
+
+% [conditions-mark Ids S]: the conditions Ids (as cyp numbers them, "2a,
+% 2b") left to a Proof block
+pred conditions-mark i:string, o:string.
+conditions-mark Ids S :- S is "**[" ^ Ids ^ "]**".
+
+% a checked step: its status, the conditions left (none if there are
+% none), the checker's message (none if there is none)
+kind check type.
+type checked string -> option string -> option string -> check.
+
+% [split-checked Text Check Rest]: the status, conditions and message in
+% the text of a step, and the text without them; fails on a text that has
+% no status mark (a text that is not checked)
+pred split-checked i:string, o:check, o:string.
+split-checked Text (checked Status Conditions Message) Rest :-
+  status-mark Status Mark, string-starts-with Mark Text, !,
+  prooftext.trim {calc (substring Text (size Mark) ((size Text) - (size Mark)))} T1,
+  split-conditions T1 Conditions T2,
+  split-message T2 Message Rest.
+
+pred split-conditions i:string, o:option string, o:string.
+split-conditions T (some Ids) Rest :-
+  rex.match "^[*][*][[][^]]*[]][*][*]" T, !,
+  rex.replace "^[*][*][[]\\([^]]*\\)[]][*][*].*" "\\1" T Ids,
+  rex.replace "^[*][*][[][^]]*[]][*][*] *" "" T Rest.
+split-conditions T none T.
+
+pred split-message i:string, o:option string, o:string.
+split-message T (some M) Rest :-
+  rex.match ".*<details><summary>.*</summary></details>" T, !,
+  rex.replace ".*<details><summary>\\(.*\\)</summary></details>.*" "\\1" T M,
+  rex.replace " *<details><summary>.*</summary></details>" "" T Rest0,
+  prooftext.trim Rest0 Rest.
+split-message T none T.
+
+% [string-starts-with Prefix S]: S starts with Prefix
+pred string-starts-with i:string, i:string.
+string-starts-with P S :-
+  L is size P, L =< size S, Start is substring S 0 L, Start = P.
+
+}
