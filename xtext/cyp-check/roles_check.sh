@@ -6,7 +6,7 @@
 #   usage: sh cyp-check/roles_check.sh file.md ...   (paths from xtext/)
 here=$(cd "$(dirname "$0")" && pwd)
 top=$(cd "$here/../.." && pwd)
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)"
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)"
 flags="-Q $top/lexicon Lexicon -Q $top/cyp/vernac CypV -Q $here XTextCheck"
 (cd "$here" && rocq c $flags RolesCheck.v) || exit 1
 cd "$here/.." || exit 1

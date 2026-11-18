@@ -9,7 +9,7 @@ papers (in development):
 - [cyp/](cyp/README.md): **coloured proofs**.  A proof written in Markdown,
   formulas in backticks, is checked step by step with Rocq and written back
   with ✅ / ❌ on each step; Elpi rules choose how each step is proved.
-  The checker is written in Rocq-Elpi (opam switch `elpi4`), the text may
+  The checker is written in Rocq-Elpi (opam switch `elpi5`), the text may
   be in English, French or Italian.  A larger case study (a floating-point
   paper) is kept in a private branch.  After *Colouring proofs: a
   lightweight approach to adding formal structure to proofs* (UITP).

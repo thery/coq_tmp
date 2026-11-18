@@ -102,7 +102,9 @@ setting, not a path written in the code.
   `coq.parse.argument`) until that API is released.  xtext, today in
   `native` (Elpi 3.7), moves to `elpi4` too, since it shares the
   vocabulary: its Elpi code needs the small Elpi 4 fixes cyp needed (typed
-  higher-order arguments).
+  higher-order arguments).  (2026-11-18: cyp and xtext moved on to the
+  switch `elpi5`, rocq-elpi master, for the named goals of cyp's Proof
+  block; the private case study stays in `elpi4`.)
 - **The cache of proved steps** (the OCaml cyp's) goes: inside Rocq each
   run checks every step.  A failing step costs its time limit, which becomes
   a parameter per proof (`timeout:`).  Make-style caching per file remains.

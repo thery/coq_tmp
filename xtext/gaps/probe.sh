@@ -13,13 +13,14 @@ lim=$1; out=$2; shift 2
 here=$(cd "$(dirname "$0")" && pwd)
 xt=$(cd "$here/.." && pwd)
 lex=$(cd "$xt/../lexicon" && pwd)
+pt=$(cd "$xt/../prooftext" && pwd)
 CYP_LIB=${CYP_LIB:-$(cd "$xt/../cyp/vernac" && pwd)}
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)"
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)"
 ulimit -v $(( ${CYP_MEMORY_GB:-8} * 1000000 ))
 mkdir -p "$out/probe"; out=$(cd "$out" && pwd)
 # Probe.v is compiled in OUTDIR/probe: xtext/ is mapped to XText, gaps/ with it
 cp "$here/Probe.v" "$out/probe/"
-(cd "$out/probe" && rocq c -Q "$CYP_LIB" CypV -Q "$lex" Lexicon -Q . Gaps Probe.v) || exit 1
+(cd "$out/probe" && rocq c -Q "$CYP_LIB" CypV -Q "$lex" Lexicon -Q "$pt" ProofText -Q . Gaps Probe.v) || exit 1
 for md in "$@"; do
   n=$(basename "$md" .md)
   cp "$md" "$out/$n.md"
@@ -31,7 +32,7 @@ for md in "$@"; do
     echo "${BARE:+#[bare] }Cyp File \"$out/$n.md\"."
     echo "Proof. all: (match goal with |- _ => ${PROBE:-gap_probe} end). Abort."; } > "$out/$n.v"
   s=$(date +%s)
-  (cd "$out" && nice -n 19 timeout "$lim" /usr/bin/time -f "MAXRSS %M" rocq c -Q "$CYP_LIB" CypV -Q "$lex" Lexicon \
+  (cd "$out" && nice -n 19 timeout "$lim" /usr/bin/time -f "MAXRSS %M" rocq c -Q "$CYP_LIB" CypV -Q "$lex" Lexicon -Q "$pt" ProofText \
      -Q "$out/probe" Gaps -R "$xt" XText "$n.v" > "$n.log" 2>&1)
   printf "%s\t%s\t%s\t%s\n" "$n" "$(( $(date +%s) - s ))" "$(grep -c "^COND" "$out/$n.log")" "$(sed -n "s/^MAXRSS //p" "$out/$n.log")"
 done

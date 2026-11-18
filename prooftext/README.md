@@ -165,7 +165,7 @@ prooftext/pdf.sh foo.typ                              # a text xtext wrote in Ty
 
 `pdf.sh` writes the Typst source of each text next to it (`proof.md` gives
 `proof.typ`), then its PDF with [Typst](https://typst.app) (0.15).  It
-needs the opam switch `elpi4` and `typst`; it compiles `Typst.vo` when it
+needs the opam switch `elpi5` and `typst`; it compiles `Typst.vo` when it
 is older than its sources.  Typst is installed as a snap here: it reads
 and writes only under the home directory, not in `/tmp`.
 

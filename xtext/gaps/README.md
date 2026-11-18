@@ -33,7 +33,9 @@ constructor.
   Each candidate must close the goal within 2 s: a limit of the
   measurement only.  `CYP_LIB` is the cyp library used;
 - `table.sh OUTDIR/*.log`: one line per condition and candidate (text,
-  condition, candidate, OK or KO, seconds);
+  condition, candidate, OK or KO, seconds); Ltac cannot read the name of a
+  goal (`?c2a`), so the k-th probed goal is the k-th condition that cyp
+  lists (its lines 🔶), the goals being in the order of the text;
 - `order.sh TABLE`: the candidates in a greedy order (each the one that
   closes most of the conditions still open); `order.sh TABLE tac...`: the
   conditions closed by that order and the time per condition.

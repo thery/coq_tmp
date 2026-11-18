@@ -10,7 +10,7 @@
 # files are compiled again with them.
 name=$1; shift
 for setting in "$@"; do export "$setting"; done
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)"
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)"
 here=$(pwd)
 lexicon=$(cd ../lexicon && pwd)
 prooftext=$(cd ../prooftext && pwd)

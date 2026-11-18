@@ -28,7 +28,7 @@
         "cyp.command": {
           "type": "string",
           "default": "cyp",
-          "description": "The command that runs cyp (the driver, in an opam switch with Elpi 4 and the cyp library; e.g. 'opam exec --switch=elpi4 -- env CYP_LIB=/path/to/cyp/vernac cyp'); the options --json and the file name are added at the end."
+          "description": "The command that runs cyp (the driver, in an opam switch with Elpi 4, rocq-elpi master (named goals) and the cyp library; e.g. 'opam exec --switch=elpi5 -- env CYP_LIB=/path/to/cyp/vernac cyp'); the options --json and the file name are added at the end."
         },
         "cyp.checkOnSave": {
           "type": "boolean",

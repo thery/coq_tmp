@@ -60,11 +60,11 @@ Ltac t_induction_eauto := idtac; induction_then close_eauto.
 Ltac t_induction_firstorder := idtac; induction_then close_firstorder.
 Ltac t_induction_congruence := idtac; induction_then close_congruence.
 
-(* the label condition := cyp_condition "2a" of the goal is cleared first:
-   inside cyp, the gap tactic sees the goal without it (and a case analysis
-   on that variable of type unit would bias the measure) *)
+(* each probe begins with the line COND: Ltac cannot read the name of a goal
+   (?c2a), so table.sh pairs the k-th COND with the k-th condition that cyp
+   lists (its lines 🔶), the goals being in the order of the text *)
 Ltac gap_probe :=
-  match goal with c := cyp_condition ?n |- _ => idtac "COND" n; clear c end;
+  idtac "COND";
   match goal with |- ?g => idtac "GOAL" g end;
   idtac "T assumption"; probe t_assumption;
   idtac "T reflexivity"; probe t_reflexivity;
@@ -101,7 +101,7 @@ Ltac gap_probe :=
 (* cyp's own gap tactic (cyp/vernac/Gaps.v, with its own time limits) *)
 From CypV Require Gaps.
 Ltac gap_final :=
-  match goal with c := cyp_condition ?n |- _ => idtac "COND" n; clear c end;
+  idtac "COND";
   match goal with |- ?g => idtac "GOAL" g end;
   idtac "T cyp_gap";
   first [ assert_succeeds (time (solve [Gaps.cyp_gap])); idtac "OK" | idtac "KO" ];
@@ -121,7 +121,7 @@ Ltac r_intuition_eauto2 := intros; intuition (eauto 2).
 Ltac r_intuition_eauto3 := intros; intuition (eauto 3).
 Ltac r_dintuition_eauto3 := intros; dintuition (eauto 3).
 Ltac fo_probe :=
-  match goal with c := cyp_condition ?n |- _ => idtac "COND" n; clear c end;
+  idtac "COND";
   idtac "T firstorder"; probe r_firstorder;
   idtac "T auto"; probe r_auto;
   idtac "T tauto"; probe r_tauto;
@@ -152,7 +152,7 @@ Ltac r_bfo_eauto3 := decompose_all; eauto 3.
 Ltac r_bfo_eauto4 := decompose_all; eauto 4.
 Ltac r_ri_eauto3 := repeat intro; eauto 3.
 Ltac fo2_probe :=
-  match goal with c := cyp_condition ?n |- _ => idtac "COND" n; clear c end;
+  idtac "COND";
   idtac "T bfo_auto"; probe r_bfo_auto;
   idtac "T bfo_eauto2"; probe r_bfo_eauto2;
   idtac "T bfo_eauto3"; probe r_bfo_eauto3;
@@ -162,8 +162,7 @@ Ltac fo2_probe :=
 
 (* the goals firstorder closes and the bounded search does not *)
 Ltac fo_diff :=
-  match goal with c := cyp_condition ?n |- _ => clear c;
-    tryif (assert_succeeds (timeout 2 (solve [r_firstorder])));
-          (assert_fails (solve [r_bfo_eauto4]))
-    then (match goal with |- ?g => idtac "LOST" n g end) else idtac
-  end.
+  idtac "COND";
+  tryif (assert_succeeds (timeout 2 (solve [r_firstorder])));
+        (assert_fails (solve [r_bfo_eauto4]))
+  then (match goal with |- ?g => idtac "LOST" g end) else idtac.

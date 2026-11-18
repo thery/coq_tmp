@@ -8,11 +8,11 @@
 # Typst package @local/prooftext).  A file .typ (Explain foo to "foo.typ")
 # is compiled as it is.  Stops at the first error.
 #
-# Needs: the opam switch elpi4 (rocq-elpi), typst (0.15).  Typst.vo is
+# Needs: the opam switch elpi5 (rocq-elpi), typst (0.15).  Typst.vo is
 # compiled when it is older than its sources.
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)" || true
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)" || true
 ulimit -v 8000000
 
 # Typst.vo, compiled again when a source is newer

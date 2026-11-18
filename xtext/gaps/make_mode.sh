@@ -3,7 +3,7 @@
 # from a copy of xtext/ (examples/ and the .vo files here are not touched).
 #   usage: sh make_mode.sh CONTRACTION ANNOTATION OUTDIR
 # e.g. sh make_mode.sh maximal thesis /tmp/max-thesis
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)"
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)"
 xt=$(cd "$(dirname "$0")/.." && pwd)
 lex=$(cd "$xt/../lexicon" && pwd)
 out=$3

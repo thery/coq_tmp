@@ -13,7 +13,7 @@
 # 4. the round, when cyp is built (../../cyp/_build/default/bin/cyp.exe):
 #    a text of xtext checked by cyp now, then its PDF.
 #
-# Needs: the opam switch elpi4, typst; for 1, xtext built (cd xtext && make).
+# Needs: the opam switch elpi5, typst; for 1, xtext built (cd xtext && make).
 # typst (a snap) reads and writes only under the home directory, not /tmp.
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
@@ -21,7 +21,7 @@ prooftext=$(dirname "$here")
 repo=$(dirname "$prooftext")
 out=$here/tests/out
 rm -rf "$out"; mkdir -p "$out"
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)" || true
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)" || true
 ulimit -v 8000000
 
 # Typst.vo up to date (pdf.sh compiles it when a source is newer)

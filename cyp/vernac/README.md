@@ -1,6 +1,6 @@
 # cyp inside Rocq: Cyp File and Cyp Lemma
 
-The library [Cyp.v](Cyp.v) (Rocq-Elpi, opam switch `elpi4`) is cyp
+The library [Cyp.v](Cyp.v) (Rocq-Elpi, opam switch `elpi5`) is cyp
 itself: what a proof means, how its steps are checked, and how the
 Markdown is read and written back.  It gives two commands.
 
@@ -38,35 +38,42 @@ goal, the claims of the earlier steps are plain hypotheses (`c1a`,
 `c2_1`), whatever their proof.  cyp discharges each condition by its rules
 and default tactics; with a Proof block, the conditions it does not
 discharge are the goals of the block, in the order of the text, each
-labelled with its number (`condition := cyp_condition "1b"`):
+named after its number: `c`, then the number with its dots written `_`
+(a Rocq name cannot begin with a digit nor hold a dot), the same name as
+the claim's hypothesis in the goals after it.  Condition `1b` is the goal
+`?c1b`, condition `2.1b` the goal `?c2_1b`, condition `0` the goal `?c0`.
+The script proves a condition by its name, in any order, with Rocq's goal
+selectors:
 
 ```coq
 Cyp File "vc_file.md".
 Proof.
-  - apply Z.sqrt_nonneg.      (* condition 1a *)
-  - apply Z.sqrt_nonneg.      (* condition 1b *)
+  [c1b]: apply Z.sqrt_nonneg.
+  [c1a]: apply Z.sqrt_nonneg.
 CypQed.
 ```
 
-The goal of condition 1b reads
+(`[c1a]: { tac. }` for several tactics.)  The goal of condition 1b reads
 
 ```
+1 goal (?c1b)
+
   a, b : Z
   H : 0 <= a
   Hb : 0 <= b
   c1a : 0 <= Z.sqrt a
-  condition := cyp_condition "1b" : unit
   ============================
   0 <= Z.sqrt b
 ```
 
 and the checked Markdown marks the step 🔶 **[1a, 1b]**
 ([vc_file.md](vc_file.md), [vc_file.v](vc_file.v); the same with Cyp
-Lemma: [vc_demo.v](vc_demo.v)).  The proof is closed by `CypQed.`, not
+Lemma: [vc_demo.v](vc_demo.v); a sub-step, `[c2_1]:`, in
+[bare_demo.v](bare_demo.v)).  The proof is closed by `CypQed.`, not
 `Qed.` (Rocq-Elpi does not let `Qed` close a proof opened by an Elpi
-command).  The goals cannot yet be selected by their number (`[c1b]:
-tac`): Rocq-Elpi does not keep the name of a hole it creates.  The label
-`condition` is removed from the proof term before the lemma is defined.
+command).  The names are given by `coq.ltac.name-uvar` of rocq-elpi
+master (switch `elpi5`).  Ltac cannot read the name of a goal: a tactic
+run on every goal (`all: tac.`) does not know which condition it is on.
 
 `CypFile "proof.md".`, used by the program `cyp`, has no Proof block:
 a condition it does not discharge is ❌ and the lemma is not defined.

@@ -12,8 +12,9 @@ result.  The program `cyp` ([bin/cyp.ml](bin/cyp.ml)) is only a driver:
 it writes the small Rocq file that loads the proof's libraries and rules
 and runs this command.
 
-It needs the opam switch `elpi4` (Rocq 9.1.1, Elpi 4.0.0, rocq-elpi with
-`coq.parse.argument`, coq-elpi pull request #1133):
+It needs the opam switch `elpi5` (Rocq 9.1.1, Elpi 4.0.0, rocq-elpi master
+4a8efd9: `coq.parse.argument`, coq-elpi pull request #1133, and
+`coq.ltac.name-uvar`, which names the goals of a Proof block):
 
 ```sh
 dune build
@@ -130,7 +131,9 @@ step gives conditions (its claims, numbered `2`, or `2a`, `2b` for several,
 `2.1` for a sub-step), which cyp discharges by its rules and default
 tactics.  Inside Rocq, the conditions it does not discharge can be left to
 a Proof block of ordinary tactics, `Cyp File "proof.md". Proof. ...
-CypQed.` (marked 🔶 with their numbers), see [vernac/](vernac/README.md).
+CypQed.` (marked 🔶 with their numbers), where each is a goal named after
+its number (`?c2a` for 2a, `?c2_1b` for 2.1b) and proved by `[c2a]: tac.`,
+see [vernac/](vernac/README.md).
 
 ## Rules: choosing the justification with Elpi
 
@@ -206,7 +209,7 @@ build): on saving a proof it runs `cyp --json`, colours each formula by
 its role, marks each step with a green ✓ or a red ✗, and shows the goal and
 Rocq's message of a failing step on hover.  Install it by linking the
 directory into `~/.vscode/extensions/`; set `cyp.command` to the command
-that runs cyp (for instance `opam exec --switch=elpi4 -- env
+that runs cyp (for instance `opam exec --switch=elpi5 -- env
 CYP_LIB=/path/to/cyp/vernac cyp`).
 
 ## Departures from the 2006 paper

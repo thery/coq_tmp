@@ -25,7 +25,7 @@ constants.
 
 ## Build
 
-Rocq 9.1.1, Elpi 4.0.0 and rocq-elpi 3.5.1 (opam switch `elpi4`, the
+Rocq 9.1.1, Elpi 4.0.0 and rocq-elpi master (opam switch `elpi5`, the
 switch of cyp).  xtext needs two libraries that it shares with cyp, and
 nothing of cyp itself: the lexicon, `../lexicon` (logical name `Lexicon`,
 the words of each language), and prooftext, `../prooftext` (logical name
@@ -34,7 +34,7 @@ document and its writer, the header, formulas with their roles, the
 justification `*by X*`, fresh names, the tactics a text may name):
 
 ```sh
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4)"
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5)"
 make          # builds Explain.vo, then the example files, which write examples/*.md
 ```
 
@@ -811,7 +811,7 @@ goal.  They are not counted above.
 `sh cyprun.sh LIMIT name...` copies each text to `cyp-check/`, adds a
 `flags:` line to its header (so that `Require Import XText.<file>`
 finds the example files), and runs cyp's driver (`cyp/bin/cyp.ml`, which runs
-`Cyp File` in the switch `elpi4`; `CYP_LIB` the directory where
+`Cyp File` in the switch `elpi5`; `CYP_LIB` the directory where
 `cyp/vernac/Cyp.v` is compiled), one text at a time, under `nice`, with
 at most 8 GB of memory per text.  It prints, per text, the time and the
 list items proved / not proved / not checked (`cyp-check/results.tsv`).

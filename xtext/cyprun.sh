@@ -1,5 +1,5 @@
 #!/bin/sh
-# Run cyp (the driver cyp/bin/cyp.ml, Cyp File, switch elpi4) on the given
+# Run cyp (the driver cyp/bin/cyp.ml, Cyp File, switch elpi5) on the given
 # examples, copied to cyp-check/, with a time limit per text; print: name,
 # seconds, proved, not proved, not checked (or "timeout").
 #   usage: sh cyprun.sh LIMIT name...
@@ -14,7 +14,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 CYP=${CYP:-$here/../cyp/_build/default/bin/cyp.exe}
 CYP_LIB=${CYP_LIB:-$here/../cyp/vernac}
 export CYP_LIB
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi4 2>/dev/null)"
+eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)"
 # the memory allowed per text, in GB: 8 by default, so that runs in
 # parallel fit on the machine; a hard text may get more (CYP_MEMORY_GB=16),
 # one such run at a time (some texts went over 16 GB)
