@@ -48,14 +48,17 @@
   "none": (mark: "▫", colour: rgb("#9e9e9e")),
 )
 
-// the fonts of the text, the first that has the glyph is used, and of
-// the formulas; the language puts its own fonts first
-#let text-fonts = ("Libertinus Serif", "Noto Serif", "Noto Naskh Arabic",
+// the fonts of the text and of the formulas: for each character, the
+// first font that has it (Latin and Cyrillic: Libertinus; Arabic: Noto
+// Naskh; Chinese and Korean: Noto Serif CJK); the fonts of a language
+// come before the others, after Libertinus (Korean: the Korean forms of
+// the CJK font)
+#let latin-font = "Libertinus Serif"
+#let text-fonts = ("Noto Serif", "Noto Naskh Arabic",
   "Noto Serif CJK SC", "Noto Serif CJK KR", "DejaVu Sans")
 #let code-fonts = ("DejaVu Sans Mono", "Noto Sans Mono CJK SC",
   "Noto Sans Mono CJK KR", "Noto Sans Mono")
 #let language-fonts = (
-  ar: ("Noto Naskh Arabic",),
   zh: ("Noto Serif CJK SC",),
   ko: ("Noto Serif CJK KR",),
 )
@@ -113,7 +116,7 @@
 #let proof-text(lang: "en", numbers: false, body) = {
   set page(paper: "a4", margin: (x: 2cm, y: 2cm), numbering: "1")
   set text(lang: lang, dir: if lang in rtl-languages { rtl } else { ltr },
-    font: language-fonts.at(lang, default: ()) + text-fonts,
+    font: (latin-font,) + language-fonts.at(lang, default: ()) + text-fonts,
     size: 10.5pt)
   // the formulas are Rocq code, written from left to right in every
   // language

@@ -8,3 +8,6 @@ xtext/cyp-check/**/*.out
 
 # native compilation products
 .coq-native/
+
+# the outputs of the tests of the Typst back end
+prooftext/typst/tests/out/
