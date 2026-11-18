@@ -27,10 +27,6 @@ elim_type.vo: elim_type.v Explain.vo
 partial.vo: partial.v Explain.vo
 	$(ROCQ) partial.v
 
-# not in all: needs the compiled CORE-MATH exp proof
-exp_examples.vo: exp_examples.v Explain.vo
-	$(ROCQ) -Q /home/thery/git/libm-coremath-proofs/exp Exp exp_examples.v
-
 clean:
 	rm -f *.vo *.vok *.vos *.glob .*.aux
 

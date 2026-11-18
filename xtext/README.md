@@ -34,7 +34,8 @@ Files: `xtext.elpi` (the transducer), `Explain.v` (the command),
 `paper.v` (the paper's examples), `lemmas.v` (small lemmas),
 `inductive.v` (induction, case analysis, rewriting, fix), `examples/`
 (the 24 texts produced), `cyp-check/` (cyp's results); see also
-`thesis.v`, `stdlib.v` and `exp_examples.v` below (76 texts in all).
+`thesis.v` and `stdlib.v` below.  (The texts of 5 lemmas of the CORE-MATH
+exp proof, `exp_examples.v`, are kept in a private branch.)
 
 ## The output
 
@@ -314,9 +315,7 @@ is written `Prouvez G` at its place, is now `Explain_partial` (below).
 
 Files: `thesis.v` (the theses' examples, above), `stdlib.v` (40 lemmas
 of Rocq's Stdlib, explained from the library itself: `Time Explain
-app_assoc to ...`), `exp_examples.v` (5 lemmas of the CORE-MATH exp
-proof, read from its compiled `.vo` files, not in `make all`: `make
-exp_examples.vo`).  `measure.sh f.v` prints, for each text, the time of
+app_assoc to ...`).  `measure.sh f.v` prints, for each text, the time of
 `Explain` (Rocq's `Time`), the number of list items and the size;
 `cyprun.sh` and `cyprun_exp.sh` run cyp (300 s per text for the theses and
 Stdlib, 600 s for CORE-MATH).  For the CORE-MATH texts, the header of the

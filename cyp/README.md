@@ -160,9 +160,9 @@ compiled library, never in a file loaded with `Load`: a lemma proved by
 Example: [examples/rules_demo.md](examples/rules_demo.md) with
 [examples/rules_demo.elpi](examples/rules_demo.elpi) proves its three
 steps; without the rule file, `lra` proves only one.
-A larger example: [exp/](exp/README.md), proofs of lemmas of the CORE-MATH
-exp paper with a library of float lemmas (`exp/float_lemmas.v`) and
-shared rules (`exp/float.elpi`).
+A larger use, not in this repository (the paper is not public): proofs
+of four lemmas of the CORE-MATH exp paper, with a library of
+floating-point lemmas and shared rules, in a private branch.
 
 ## The editor
 

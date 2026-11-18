@@ -106,8 +106,8 @@ defines `square_pos`
 ([square_pos.v](square_pos.v)); a word `"by X"` in a step is its
 justification ([named_v.v](named_v.v)).  A false step leaves a condition
 that the Proof block cannot prove ([wrong.v](wrong.v)).
-[lemma1.v](lemma1.v) is Lemma 1 of the exp paper written this way, with
-the same rules as [../exp/lemma1.md](../exp/lemma1.md).
+(Lemma 1 of the CORE-MATH exp paper has also been written this way, in the
+private branch that holds the exp proofs.)
 
 ## How it works
 

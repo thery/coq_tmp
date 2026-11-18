@@ -1,0 +1,6 @@
+# private (kept in the local branch exp-private, never pushed)
+cyp/exp/
+cyp/vernac/lemma1.v
+xtext/exp_examples.v
+xtext/examples/exp_*
+xtext/cyp-check/exp_*
