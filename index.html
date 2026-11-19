@@ -2,12 +2,26 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>coq_tmp</title>
-<meta http-equiv="refresh" content="0; url=txt/">
 <style>
-:root { --bg: #fdfdfb; --fg: #1d1d1b; --link: #1f5fa8; }
-@media (prefers-color-scheme: dark) { :root { --bg: #17181a; --fg: #e8e8e3; --link: #7fb2ee; } }
-body { background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
-a { color: var(--link); }
+:root { --bg: #fdfdfb; --fg: #1d1d1b; --muted: #6b6b66; --link: #1f5fa8; --rule: #e3e3dc; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #17181a; --fg: #e8e8e3; --muted: #9a9a94; --link: #7fb2ee; --rule: #33343a; }
+}
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif;
+       max-width: 44rem; margin: 2rem auto; padding: 0 1rem; }
+h1 { font-size: 1.6rem; margin-bottom: .3rem; }
+p.intro { color: var(--muted); margin-top: 0; }
+ul { list-style: none; padding: 0; }
+li { padding: .8rem 0; border-top: 1px solid var(--rule); }
+a { color: var(--link); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+span.what { display: block; color: var(--muted); }
 </style></head><body>
-<p>The proof texts of <a href="https://github.com/thery/coq_tmp">thery/coq_tmp</a> are in <a href="txt/">txt/</a>.</p>
+<h1>coq_tmp</h1>
+<p class="intro">Pages of <a href="https://github.com/thery/coq_tmp">github.com/thery/coq_tmp</a>.</p>
+<ul>
+  <li><a href="txt/">Proof texts</a>
+    <span class="what">Proofs written as text: by xtext from Rocq proof terms, in ten languages, and checked step by step by cyp.
+    Each text as a web page, with its formulas as mathematics, and as a PDF.</span></li>
+</ul>
 </body></html>
