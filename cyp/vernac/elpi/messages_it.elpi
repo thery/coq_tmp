@@ -8,7 +8,8 @@ message "it" "left" "cyp: %1, %2 passi, %3 condizione/i lasciata/e al blocco Pro
 message "it" "left-line" "  🔶 condizione %1: %2".
 message "it" "no-typecheck" "cyp: la dimostrazione non è ben tipata".
 message "it" "holes" "cyp: alcune condizioni non sono dimostrate".
-message "it" "steps-not-parsed" "cyp: passi di %1 che non si analizzano: %2".
+message "it" "errors" "cyp: %1, %2 nodo/i con un errore (❌ sopra): %3".
+message "it" "statement-not-read" "cyp: l'enunciato di %1 non si può leggere: %2".
 message "it" "statement-no-typecheck" "cyp: l'enunciato non è ben tipato".
 message "it" "md-not-proved" "non dimostrato: %1".
 message "it" "md-not-parsed" "non si analizza: %1".
