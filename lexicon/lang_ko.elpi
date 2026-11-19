@@ -73,6 +73,7 @@ write-word "ko" "belongs-to" "에 속한다".
 write-word "ko" "legend-var" "변수".
 write-word "ko" "legend-hyp" "가정".
 write-word "ko" "legend-claim" "주장".
+write-word "ko" "legend-goal" "열린 목표".
 write-word "ko" "legend-fact" "사실".
 write-word "ko" "legend-just" "근거".
 write-word "ko" "legend-ok" "증명됨".

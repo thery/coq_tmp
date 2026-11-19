@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.claim}.
 
-- We prove `forall l' : list A, map f (l ++ l') = map f l ++ map f l'` by induction on `l` (list, *list_ind*{.just}):
+- We prove `forall l' : list A, map f (l ++ l') = map f l ++ map f l'` by induction on *l*{.just} (*list*{.just}, *induction*{.just}):
   - Case 1 (base): we prove `forall l' : list A, map f (nil ++ l') = map f nil ++ map f l'`{.claim}.
     - Let `l' : list A`{.var}. By definition of eq (*eq_refl*{.just}), we have `map f l' = map f l'`{.claim}.
   - Case 2 (inductive): we prove `forall (a : A) (l0 : list A), (forall l' : list A, map f (l0 ++ l') = map f l0 ++ map f l') -> forall l' : list A, map f ((a :: l0) ++ l') = map f (a :: l0) ++ map f l'`{.claim}.

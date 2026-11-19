@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Пусть `n : nat`{.var}. Докажем, что `n + 0 = n`{.claim}.
 
-- Докажем, что `n + 0 = n` индукцией по `n` (nat, *nat_ind*{.just}):
+- Докажем, что `n + 0 = n` индукцией по *n*{.just} (*nat*{.just}, *induction*{.just}):
   - Случай 1 (база): докажем, что `0 = 0`{.claim}.
     - По определению eq (*eq_refl*{.just}), имеем `0 = 0`{.claim}.
   - Случай 2 (шаг): докажем, что `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.

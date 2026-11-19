@@ -19,9 +19,20 @@ text (`cyp-check/results.tsv`, all rerun 2026-11-19, in the tree format):
 | | nodes proved | not proved | remarks (▫️) | time |
 |---|---|---|---|---|
 | before the tree (`*by X*`, nodes without conclusion) | 666 | 17 | 504 not checked | 176 s |
-| the tree (now) | 684 | 2 | 279 | 107 s |
+| the tree | 684 | 2 | 279 | 107 s |
+| open goals and fixed justifications (now) | 678 (+ 6 open goals ◆) | 2 | 279 | 114 s |
 
 - all 80 texts are checked, none times out;
+- with the open goals tagged `{.goal}` and the eliminations justified by
+  `*match*{.just}` and `*induction*{.just}` (rerun 2026-11-19): every
+  node has the status it had, except the 6 open goals of the 4 texts in
+  progress (`*_partial`), proved by cyp before (they are easy: `Prove
+  B \/ A` after `Assume B`) and now not tried, ◆, as their author left
+  them open: `add_0_r_partial` (1), `or_swap_partial` (2),
+  `praeclarum_partial1` (2), `praeclarum_partial2` (1).  The 88 steps
+  whose justification changed (`(or, match)` to `(*or*{.just},
+  *match*{.just})`, `(nat, *nat_ind*{.just})` to `(*nat*{.just},
+  *induction*{.just})`, ...) keep their status;
 - the 504 lines not checked before were the `Let` and `Assume` lines,
   the announcements of a proof by cases and the lines "The element x
   belongs to T".  The first three are now parts of real nodes (a `Let` or
@@ -65,6 +76,9 @@ The texts in the other languages (12 texts per language, 9 languages:
 (`cyp-check/results_langs.tsv`; the checked texts in `cyp-check/<lang>/`):
 
 - all 108 texts are checked, none times out, 141 s in all;
+- rerun with `*match*` and `*induction*` (2026-11-19): the same counts,
+  text by text, 154 s (108 steps with the new justifications, 12 per
+  language, all with the status they had);
 - each language gives 79 nodes proved, 0 not proved, 10 remarks, as the
   same 12 texts in English (before the tree: 77 proved, 1 not proved, 38
   not checked); text by text, the counts are those of English in all 108

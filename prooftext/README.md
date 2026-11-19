@@ -81,18 +81,44 @@ Let `x y z t : Prop`{.var}. If `x -> z`{.hyp} and `y -> t`{.hyp} then `(x /\ y) 
 
 | tag (paper) | Markdown | in a node |
 |---|---|---|
-| conclusion `<c>` | `` `C`{.claim} `` | exactly one |
+| conclusion `<c>` | `` `C`{.claim} ``, or `` `C`{.goal} `` for an open goal | exactly one |
 | name `<n>` of the node | `(n)` right after its conclusion | at most one; the name later nodes use (else `c` and its number, `c2_1` for node 2.1) |
 | variable `<v>` | `` `x y : T`{.var} ``, `` `u := e`{.var} `` | any; they hold in the node and its subnodes |
 | hypothesis `<h>` | `` `A`{.hyp} (h) `` | any, each with at most one name; they hold in the node and its subnodes |
 | fact `<f>` | `` `F`{.fact} `` | any: formulas the node uses, each a hypothesis or a conclusion it can see |
-| justification `<j>` | `*X*{.just}` | any: names of hypotheses, nodes, lemmas, rules or tactics |
+| justification `<j>` | `*X*{.just}` | any: names of hypotheses, nodes, lemmas, rules or tactics, the two fixed methods `match` and `induction`, the inductive type they eliminate |
 
 and its **subnodes**, in the order of the text.  The parts may come in any
 order: the conclusion first ("We prove C: ...") or last ("..., so we get
 C").  A formula with no class, and any emphasis without `{.just}`, are
 plain text: shown, without colour, and not used.  The word "by" is an
 ordinary word.
+
+**Open goals.**  A proof in progress has steps that its author has not
+proved yet: their conclusion is tagged `` `G`{.goal} `` instead of
+`` `G`{.claim} `` ("Prove `z`{.goal}.", as xtext's `ExtractText_partial`
+writes the open goals of a proof).  It is the conclusion of its node in
+every respect (its name, its scope, the nodes after it use it), but a
+checker does not try it: cyp leaves it as a goal of the Proof block.  The
+PDF and the web page frame it (see "What the PDF shows").
+
+**Fixed justifications.**  Two names are methods, the same in every
+language, that say how a step eliminates an object:
+
+| justification | meaning | example |
+|---|---|---|
+| `*match*{.just}` | a case analysis on the hypotheses or variables the node names (one case per constructor, no induction hypotheses) | "Going back to the definition of *and*{.just} (*match*{.just}) in *H0*{.just}" |
+| `*induction*{.just}` | an induction on the variables or hypotheses the node names | "By induction on *n*{.just} (*nat*{.just}, *induction*{.just})" |
+
+The name of an inductive type, `*and*{.just}`, may come with them: it
+says the type of the object eliminated (with no object named, the one
+object of that type in scope); alone, it justifies nothing.  The cases
+are the subnodes, as for any other step.  `match` is a keyword of Rocq,
+never a name; `induction` may be the name of a lemma or of a hypothesis
+in Rocq, but as a justification it always means the method (such a lemma
+is named by a qualified name).  A non-standard elimination principle
+(`*two_step*{.just}`, `*strong_induction*{.just}`) is a lemma, named as
+such.  The list is `method` in `tactics.elpi`.
 
 **Two syntaxes for the same tree**, which may be mixed at any depth:
 
@@ -230,7 +256,7 @@ that names no formula in scope).
   mathematics, the table of notations, the printer of Rocq terms and its
   Typst writer; see "Formulas as mathematics";
 - `formulas.elpi`: `role-tag Role Tag` (`rvar` `var`, `rhyp` `hyp`,
-  `rclaim` `claim`, `rfact` `fact`, and `rback`, a backward claim of the
+  `rclaim` `claim`, `rgoal` `goal` (an open goal), `rfact` `fact`, and `rback`, a backward claim of the
   lexicon, which the format no longer has, written as a claim: read back,
   the class `claim` gives `rclaim`, the first role with it),
   `justification-class C` (`just`), `formula Role F S` (`` `F`{.tag} ``),
@@ -245,7 +271,9 @@ that names no formula in scope).
   (xtext names its binders with it, `binder-name` in
   `xtext/elpi/printing.elpi`; cyp can name its hypotheses with it);
 - `tactics.elpi`: `tactic Name`, the tactics a text may name in a justification
-  or in its `by` field, and `unknown-tactics Names Unknown`.  Each tool
+  or in its `by` field, and `unknown-tactics Names Unknown`; `method
+  Name`, the two fixed justifications `match` and `induction` (no
+  tactics: a `by` field does not name them).  Each tool
   runs a name its own way: cyp runs the Ltac definition `cyp_Name`
   (`cyp/vernac/Cyp.v`; the rules of a proof may add tactics,
   `tactic-name Name Ltac`); xtext writes only these
@@ -328,7 +356,9 @@ where a checker writes its status mark), where a message about it goes
 text: `run Text Parts`, `sub Node`, `para-end` (the end of a paragraph)
 and `flaw Line Error` (an error of the reader: a span or a div left open
 or closed but not opened, an unknown class of a span or a div).
-`nodes.elpi` says what a node says: `node-parts`, `claim-parts`,
+`nodes.elpi` says what a node says: `node-parts`, `claim-parts` (its
+conclusions, `{.claim}` or `{.goal}`, `conclusion-class`), `is-goal-node`
+(its conclusion is an open goal),
 `hypothesis-names`, `variable-names`, `justification-names`, `node-name`,
 `is-remark`, its numbers (`numbered-subnodes`, `node-children`, which
 replaces a remark by its subnodes, `all-nodes`; the top node is `0`, its
@@ -404,7 +434,7 @@ of comments, its `require` line shortened):
 
 #proof([#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H", label: "statement:H")#". We prove "#claim($B ∧ A$)#"."], (
   steps((
-    step("1", [#"Going back to the definition of and (match) in "#just("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
+    step("1", [#"Going back to the definition of "#just("and", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#and")#" ("#just("match")#") in "#just("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
       steps((
         step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#". By definition of and ("#just("conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), from "#just("b", target: "1.1:b")#" and "#just("a", target: "1.1:a")#" we deduce "#claim($B ∧ A$)#"."], ()),
       )),
@@ -460,6 +490,7 @@ form of the texts written before the tree, `*by X*`, is shown as the word
   | variable | `{.var}` | light sky blue `#d4ebf9` | none |
   | hypothesis | `{.hyp}` | light orange `#f8d49c` | a dashed line under it |
   | claim | `{.claim}` | light yellow `#fcf6c6` | a thin frame |
+  | open goal | `{.goal}` | light yellow `#fcf6c6`, the claim's | a frame, thicker, in the text too |
   | fact (a mention) | `{.fact}` | light grey `#e3e3e3` | a dotted line under it |
   | justification | `*X*{.just}` | reddish purple `#d9a9cb` (darker) | a line under it |
   | no class | | none | none |
@@ -471,7 +502,15 @@ form of the texts written before the tree, `*by X*`, is shown as the word
   darker.  The page was checked through the
   simulations of protanopia, deuteranopia and tritanopia (Machado et al.'s
   matrices, ImageMagick's `-color-matrix`, on the PDF and on the web
-  page of `drinker`): the four roles stay distinct.  In the PDF a formula
+  page of `drinker`): the four roles stay distinct.
+
+  An open goal (`{.goal}`, a proof in progress) is the one formula of a
+  text with a frame (1 pt in the PDF, 2 px on the web page; the claim's
+  mark in the legend is 0.5 pt, 1 px), on the claim's background: it is
+  a claim not proved yet, and what is left to prove is seen at once.
+  The frame needs no colour, so it is the same for every kind of colour
+  blindness, and it stays when the colours are off (a switch of the
+  legend, `pdf.sh --roles`): only the background goes.  In the PDF a formula
   is a box (Typst's highlights and underlines do not reach the symbols of
   maths); a formula wider than its line is a box as wide as the line,
   where it breaks.
@@ -582,14 +621,17 @@ role, and, for a text checked by cyp, the status marks with their
 meanings (✔ proved, ✘ not proved, ◆ left to a Proof block, ▫ nothing to
 check, the mark of a remark).  Its words are in the language of the text: the uses
 `legend-var`, `legend-hyp`, `legend-claim`, `legend-fact`, `legend-just`,
-`legend-ok`, ..., `legend-none` of the lexicon, in its ten languages
+`legend-ok`, ..., `legend-none` of the lexicon, and `legend-goal` (open
+goal, but à prouver, ...) for the open goals, listed only in a text that
+has one (a proof in progress),, in its ten languages
 (`write-word`).  In the web page it is a `footer class="legend"`, and each
 role in it is a switch (a check box) that turns the colour of that role on
 and off in the whole text (CSS only); the button before them turns them
 all off when any is on, else all on, its label ☐ or ☑ being what the next
 click does (a few lines of script, `all-script`).
 
-The roles coloured are all of them by default; `pdf.sh --roles claim,just`
+The roles coloured are all of them by default (`var`, `hyp`, `claim`,
+`goal`, `fact`, `just`; `pdf.sh` stops on another name); `pdf.sh --roles claim,just`
 (Typst's `--input roles=...`) colours only those listed: the others look
 like plain formulas, the PDF's legend lists only the coloured roles, and
 the web page starts with only their switches on.
@@ -712,7 +754,9 @@ the hover, for the proposal's examples in both syntaxes, checked and not
    and spans;
 8. the round, when cyp is built: xtext's `or_commut` checked by cyp, then
    the PDF of the checked text; cyp's `sqrt_square` (real numbers)
-   checked, then its PDF and its HTML page;
+   checked, then its PDF and its HTML page; xtext's proof in progress
+   `praeclarum_partial1` checked (its open goals left, ◆), then its PDF
+   and its HTML page (the goals framed, `#goal`, and in the legend);
 9. the links, on a small gallery of four pages built in
    `typst/tests/out/gallery` (`ABCD` and `or_commut` in English,
    `or_commut` in French and checked by cyp): the names of `ABCD` link

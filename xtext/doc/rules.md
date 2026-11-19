@@ -111,10 +111,13 @@ They replace the paper's rules for introduction and elimination theorems.
 - An elimination with several cases is one node of the tree: the goal
   announced (untagged), the cases below it, and the conclusion in its
   closing paragraph (`These cases being exhaustive, we deduce ...`).  It
-  is justified by the elimination theorem, named where the text names it
-  (`(nat, *nat_ind*{.just})`), which cyp applies to the cases; a `match`,
-  and a first-kind elimination on a type with indices (`le_ind`), have no
-  justification (see ["The output"](../README.md#the-output)).
+  is justified by one of the fixed justifications of the format, with
+  the type eliminated, when the object is named and the rule is a `match`
+  or the type's standard scheme: `(*nat*{.just}, *induction*{.just})`
+  (an induction hypothesis in a case), `(*or*{.just}, *match*{.just})`
+  (none), on which cyp runs Rocq's `induction` or `destruct`; another
+  principle is named, `(nat, *two_step*{.just})`, and cyp applies it (see
+  ["The output"](../README.md#the-output)).
 - Intro patterns leave redexes `fun h => (fun i => M) h`; they are reduced
   and the user's name `i` is kept.  Other redexes are cuts and are
   rendered with the application rules.  Casts are skipped; `let x := N in

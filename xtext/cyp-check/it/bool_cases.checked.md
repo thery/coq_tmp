@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: it
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Sia `b : bool`{.var}. Dimostriamo `b = true \/ b = false`{.claim}.
 
-- ✅ Dimostriamo `b = true \/ b = false` per casi su `b` (bool, match):
+- ✅ Dimostriamo `b = true \/ b = false` per casi su *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ Caso 1: dimostriamo `true = true \/ true = false`{.claim}.
     - ✅ Per definizione di eq (*eq_refl*{.just}), abbiamo `true = true`{.claim}.
     - ✅ Per definizione di or (*or_introl*{.just}), abbiamo `true = true \/ true = false`{.claim}.

@@ -10,7 +10,7 @@
 
 #proof([#"Let "#var($n , m ∈ ℕ$)#". Assume "#hyp($n ≤ m$)#" "#name("H", label: "statement:H")#". We prove "#claim($"S"\(n\) ≤ "S"\(m\)$)#"."], (
   steps((
-    step("1", [#"We prove "#formula($"S"\(n\) ≤ "S"\(m\)$)#" by induction on "#just("H", target: "statement:H")#" ("#cited("le", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#", "#cited("le_ind", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le_ind")#"):"], (
+    step("1", [#"We prove "#formula($"S"\(n\) ≤ "S"\(m\)$)#" by induction on "#just("H", target: "statement:H")#" ("#just("le", url: "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#", "#just("induction")#"):"], (
       steps((
         step("1.1", [#"Case 1 (base): we prove "#claim($"S"\(n\) ≤ "S"\(n\)$)#"."], (
           steps((

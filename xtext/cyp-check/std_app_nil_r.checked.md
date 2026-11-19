@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ nil = l`{.claim}.
 
-- ✅ We prove `l ++ nil = l` by induction on `l` (list, *list_ind*{.just}):
+- ✅ We prove `l ++ nil = l` by induction on *l*{.just} (*list*{.just}, *induction*{.just}):
   - ✅ Case 1 (base): we prove `nil ++ nil = (@nil A)`{.claim}.
     - ✅ By definition of eq (*eq_refl*{.just}), we have `A = A`{.claim} (H).
     - ✅ By definition of eq (*eq_refl*{.just}), we have `nil = (@nil A)`{.claim}.

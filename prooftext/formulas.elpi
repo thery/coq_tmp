@@ -18,6 +18,7 @@ pred role-tag o:role, o:string.
 role-tag rvar "var".
 role-tag rhyp "hyp".
 role-tag rclaim "claim".
+role-tag rgoal "goal".
 role-tag rfact "fact".
 role-tag rback "claim".
 

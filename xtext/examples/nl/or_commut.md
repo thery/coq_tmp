@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Laat `A B : Prop`{.var}. Stel `A \/ B`{.hyp} (h). We bewijzen `B \/ A`{.claim}.
 
-- We bewijzen `B \/ A` met gevalsonderscheiding naar *h*{.just} (or, *or_ind*{.just}):
+- We bewijzen `B \/ A` met gevalsonderscheiding naar *h*{.just} (*or*{.just}, *match*{.just}):
   - Geval 1: we bewijzen `A -> B \/ A`{.claim}.
     - Stel `A`{.hyp} (i). Volgens de definitie van or (*or_intror*{.just}), uit *i*{.just} hieruit volgt `B \/ A`{.claim}.
   - Geval 2: we bewijzen `B -> B \/ A`{.claim}.

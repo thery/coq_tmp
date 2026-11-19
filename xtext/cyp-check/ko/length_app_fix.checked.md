@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: ko
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -10,7 +10,7 @@ by: tauto | congruence | lia | firstorder | auto
 ✅ `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} 임을 보이자.
 
 - ✅ `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} 임을 보이자 `l1` (fix length_app') 에 대한 재귀로:
-  - ✅ `A : Type`{.var} 그리고 `l1 l2 : list A`{.var} 라 하자. `length (l1 ++ l2) = length l1 + length l2` 임을 보이자 `l1` (list, match) 에 대한 귀납법으로:
+  - ✅ `A : Type`{.var} 그리고 `l1 l2 : list A`{.var} 라 하자. `length (l1 ++ l2) = length l1 + length l2` 임을 보이자 *l1*{.just} (*list*{.just}, *induction*{.just}) 에 대한 귀납법으로:
     - ✅ 경우 1 (기저): `length (nil ++ l2) = length (nil ++ l2)`{.claim} 임을 보이자.
       - ✅ eq (*eq_refl*{.just}) 의 정의에 의해, `length (nil ++ l2) = length (nil ++ l2)`{.claim} 이다.
     - ✅ 경우 2 (귀납): `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim} 임을 보이자.

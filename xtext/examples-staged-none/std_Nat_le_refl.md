@@ -13,7 +13,7 @@ Let `n : nat`{.var}. We prove `n <= n`{.claim}.
       - By application, we have `forall m0 : nat, n0 <= m0 <-> n0 < m0 \/ n0 = m0`{.claim}.
         - By *PeanoNat.Nat.lt_eq_cases*{.just} we have `forall n1 m0 : nat, n1 <= m0 <-> n1 < m0 \/ n1 = m0`{.claim}.
       - By application, we have `n0 <= m <-> n0 < m \/ n0 = m`{.claim}.
-      - Going back to the definition of and (match) in `n0 <= m <-> n0 < m \/ n0 = m`{.fact}, we prove `n0 < m \/ n0 = m -> n0 <= m`{.claim}:
+      - Going back to the definition of *and*{.just} (*match*{.just}) in `n0 <= m <-> n0 < m \/ n0 = m`{.fact}, we prove `n0 < m \/ n0 = m -> n0 <= m`{.claim}:
         - Assume `n0 <= m -> n0 < m \/ n0 = m`{.hyp} (h). Assume `n0 < m \/ n0 = m -> n0 <= m`{.hyp} (h0). By *h0*{.just} we have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.
 
       We have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.

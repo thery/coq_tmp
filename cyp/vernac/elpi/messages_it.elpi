@@ -33,3 +33,11 @@ message "it" "unclosed-span" "una [ senza ]{.p} dopo: uno span non chiuso".
 message "it" "unopened-span" "una ]{.p} senza [ prima".
 message "it" "unclosed-div" "un ::: p senza ::: dopo: un div non chiuso".
 message "it" "unopened-div" "un ::: che non chiude nessun div".
+% gli obiettivi aperti di un testo ({.goal}) e i metodi fissi (*match*,
+% *induction*)
+message "it" "goal-line" "  🔶 obiettivo aperto %1 del testo: %2".
+message "it" "md-goal" "obiettivo aperto del testo, non tentato: condizione %1, da dimostrare nel blocco Proof: %2".
+message "it" "method-no-object" "*%1*{.just} non nomina niente da eliminare: nominare l'ipotesi o la variabile (*h*{.just}), o il suo tipo (*T*{.just})".
+message "it" "type-objects" "nessuna ipotesi o variabile unica di tipo %1 visibile qui da eliminare (%2 trovate): nominarla".
+message "it" "not-of-type" "%1 non è di tipo %2".
+message "it" "type-alone" "%1 è un tipo induttivo: giustifica un passo solo con *match*{.just} o *induction*{.just}".

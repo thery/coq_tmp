@@ -37,6 +37,11 @@ PDF, 8 the hover, 9 the proposed rule.  The differences:
   off, with a ↺ button that puts them back; `pdf.sh --roles claim,just`
   colours only the roles listed; xtext's `ExtractText` prints plain text
   by default (`#[tags]` for this format).
+- **Added later (November 2026):** a role for the open goals of a
+  proof in progress, `` `G`{.goal} `` (a conclusion that cyp does not
+  try, framed in the PDF and the web page), and two fixed
+  justifications, `*match*{.just}` and `*induction*{.just}`, the method
+  of a step that eliminates an object (prooftext's README, "The format").
 - The role was renamed `just` in the template, the legend and the
   writers (section 1), and the reader accepts the closing paragraph
   (section 2).

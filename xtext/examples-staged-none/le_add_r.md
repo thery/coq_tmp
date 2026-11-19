@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n m : nat`{.var}. We prove `n <= n + m`{.claim}.
 
-- We prove `n <= n + m` by induction on `m` (nat, *nat_ind*{.just}):
+- We prove `n <= n + m` by induction on *m*{.just} (*nat*{.just}, *induction*{.just}):
   - Case 1 (base): we prove `n <= n + 0`{.claim}.
     - By definition of le (*le_n*{.just}), we have `n <= n`{.claim}.
     - By application, we have `n + 0 = n`{.claim}.

@@ -9,9 +9,11 @@ papers (in development):
 - [cyp/](cyp/README.md): **coloured proofs**.  A proof written in Markdown,
   the tree of the 2003 paper (a node per list item or per span
   `[…]{.p}`, its formulas tagged `{.claim}`, `{.hyp}`, ..., its
-  justifications `*X*{.just}`), is checked node by node with Rocq and
+  justifications `*X*{.just}`, among them the two fixed methods
+  `*match*{.just}` and `*induction*{.just}`), is checked node by node with Rocq and
   written back with ✅ / ❌ on each node; Elpi rules choose how each node
-  is proved.  cyp always succeeds: what it cannot prove is reported and
+  is proved; an open goal of a proof in progress (`` `G`{.goal} ``) is not
+  tried and left to a Proof block.  cyp always succeeds: what it cannot prove is reported and
   left as named goals for a Proof block.  The checker is written in
   Rocq-Elpi (opam switch `elpi5`); the text may be in any language (cyp
   reads only the tags), its messages are in English, French or Italian.
@@ -22,7 +24,8 @@ papers (in development):
   `ExtractText foo.`, that writes the proof term of `foo` as a coarse but
   faithful text, in ten languages (`in "fr"`): printed as plain text, or
   in cyp's format with `#[tags]` and in a file (`ExtractText foo to
-  "foo.md".`); `ExtractText_partial.` does it for a proof in progress.
+  "foo.md".`); `ExtractText_partial.` does it for a proof in progress,
+  its open goals tagged `{.goal}`.
   After Coscoy, Kahn and Théry,
   *Extracting Text from Proofs* (TLCA 1995), and Yann Coscoy's thesis
   (2000): its staged translation (chapters 2-4, up to the named
@@ -37,7 +40,8 @@ papers (in development):
   that a library can extend; `--code` keeps the Rocq code, `--html` makes
   an HTML page (MathML) instead of the PDF.  Each role of a formula has its
   own light background and a mark readable without colour (a frame, a
-  dashed or dotted line), with a legend at the end; a structured text keeps
+  dashed or dotted line), with a legend at the end; the open goals of a
+  proof in progress are framed in the text; a structured text keeps
   its list, a free text its paragraphs (no structure shown, decision 7 of
   the [proposal](proposal/PROPOSAL.md)), and cyp's statuses are coloured
   marks; on the web page, the pointer over a node highlights what it rests

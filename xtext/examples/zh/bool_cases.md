@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 设 `b : bool`{.var}. 我们证明 `b = true \/ b = false`{.claim}.
 
-- 我们证明 `b = true \/ b = false` 分情形讨论，对 `b` (bool, match):
+- 我们证明 `b = true \/ b = false` 分情形讨论，对 *b*{.just} (*bool*{.just}, *match*{.just}):
   - 情形 1: 我们证明 `true = true \/ true = false`{.claim}.
     - 根据定义 eq (*eq_refl*{.just}), 我们有 `true = true`{.claim}.
     - 根据定义 or (*or_introl*{.just}), 我们有 `true = true \/ true = false`{.claim}.

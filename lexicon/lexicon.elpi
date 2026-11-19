@@ -8,10 +8,12 @@
 % Roles: what a formula is in a step of a proof
 
 kind role type.
-type rvar, rhyp, rclaim, rfact, rback role.
+type rvar, rhyp, rclaim, rgoal, rfact, rback role.
 % rvar: a variable (or a definition) introduced; rhyp: a hypothesis;
-% rclaim: a claim, proved by the step; rfact: a fact used (a mention);
-% rback: a claim that replaces the goal (a backward step)
+% rclaim: a claim, proved by the step; rgoal: an open goal, the claim of
+% a step that the author leaves to prove (a proof in progress); rfact: a
+% fact used (a mention); rback: a claim that replaces the goal (a
+% backward step)
 
 % ------------------------------------------------------------------ %
 % Phrases

@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: ar
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ لتكن `n m : nat`{.var}. لنفرض أن `n <= m`{.hyp} (H). سنثبت أن `S n <= S m`{.claim}.
 
-- ✅ سنثبت أن `S n <= S m` بالاستقراء على *H*{.just} (le, le_ind):
+- ✅ سنثبت أن `S n <= S m` بالاستقراء على *H*{.just} (*le*{.just}, *induction*{.just}):
   - ✅ الحالة 1 (الأساس): سنثبت أن `S n <= S n`{.claim}.
     - ✅ حسب تعريف le (*le_n*{.just}), لدينا `S n <= S n`{.claim}.
   - ✅ الحالة 2 (الاستقرائية): سنثبت أن `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.

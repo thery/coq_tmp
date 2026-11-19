@@ -73,6 +73,7 @@ write-word "nl" "belongs-to" "behoort tot".
 write-word "nl" "legend-var" "variabele".
 write-word "nl" "legend-hyp" "hypothese".
 write-word "nl" "legend-claim" "bewering".
+write-word "nl" "legend-goal" "open doel".
 write-word "nl" "legend-fact" "feit".
 write-word "nl" "legend-just" "rechtvaardiging".
 write-word "nl" "legend-ok" "bewezen".

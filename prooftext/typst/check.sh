@@ -26,7 +26,8 @@
 #    paragraph after the sub-items, a free text as paragraphs and spans;
 # 8. the round, when cyp is built (../../cyp/_build/default/bin/cyp.exe):
 #    a text of xtext checked by cyp now, then its PDF; cyp's sqrt_square
-#    (real numbers) checked, then its PDF and HTML page.
+#    (real numbers) checked, then its PDF and HTML page; a proof in
+#    progress (praeclarum_partial1): its open goals left by cyp, framed.
 # 9. the links, on a small gallery (gallery.sh) of four pages: the names
 #    of ABCD link to their steps (HTML anchors, PDF destinations), a
 #    justification and a lemma link to their documentation, each page
@@ -188,6 +189,19 @@ if [ -x "$cyp" ] && [ -f "$repo/cyp/vernac/Cyp.vo" ]; then
   [ "$(code_count)" = 0 ] || { echo "FAIL sqrt_square: formulas shown as code"; exit 1; }
   compile "$out/round/sqrt_square.checked.typ"
   html "$out/round/sqrt_square.checked.typ" "formula just" "mark ok"
+  # a proof in progress: its open goals ({.goal}) are not tried by cyp
+  # (marked todo), framed (#goal) in the PDF and the HTML page, and the
+  # legend has the open goals
+  sed -e "s|^by: |flags: $xtext_flags\nby: |" "$repo/xtext/examples/praeclarum_partial1.md" > "$out/round/praeclarum_partial1.md"
+  (cd "$out/round" && CYP_LIB=$repo/cyp/vernac nice "$cyp" praeclarum_partial1.md) || true
+  grep -q '🔶 \*\*\[1.1.1.1\]\*\* Prove `z`{.goal}' "$out/round/praeclarum_partial1.checked.md" \
+    || { echo "FAIL partial: the open goal 1.1.1.1 is not left to a Proof block"; exit 1; }
+  typst_of "$out/round/praeclarum_partial1.checked.md"
+  grep -q '#goal(' "$out/round/praeclarum_partial1.checked.typ" && grep -q '("goal", "open goal")' "$out/round/praeclarum_partial1.checked.typ" \
+    || { echo "FAIL partial: no #goal or no open goal in the legend"; exit 1; }
+  compile "$out/round/praeclarum_partial1.checked.typ"
+  html "$out/round/praeclarum_partial1.checked.typ" "formula goal" "mark todo"
+  echo "ok   a proof in progress: its open goals left, framed"
 else
   echo "skipped: cyp is not built (cd cyp && dune build ./bin/cyp.exe; cd vernac && rocq c ... Cyp.v)"
 fi
@@ -215,8 +229,8 @@ has "$out/ABCD.qdf.pdf" "/Dest" "names linked to their steps (PDF)"
 # a justification and a lemma of the corelib, linked to their documentation
 has "$gallery/xtext/or_commut.typ" '#just("or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")' \
   "justification linked to its documentation"
-has "$gallery/xtext/or_commut.html" 'href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind"' \
-  "lemma in the text linked to its documentation (HTML)"
+has "$gallery/xtext/or_commut.html" 'href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or"' \
+  "the type eliminated, *or*{.just}, linked to its documentation (HTML)"
 # the links between the pages: index, other languages, checked by cyp, and back
 has "$gallery/xtext/or_commut.html" '<a href="../index.html">index</a>' "page to the index"
 has "$gallery/xtext/or_commut.html" '<a href="../xtext-languages/fr/or_commut.html">fr</a>' "page to its other languages"

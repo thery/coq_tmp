@@ -109,7 +109,7 @@ write-typst-in Style D Text :-
 % [write-typst-tree Style T Text]: the Typst source of the proof text T,
 % its formulas in the style Style
 pred write-typst-tree i:formula-style, i:prooftext.proof-text, o:string.
-write-typst-tree Style (prooftext.proof-text Fields Name (prooftext.node _ _ _ _ Cs0)) Text :-
+write-typst-tree Style (prooftext.proof-text Fields Name (prooftext.node _ _ _ _ Cs0) as T) Text :-
   prooftext.header-lang Fields Lang,
   node-check Cs0 Check Cs,
   (if (Check = some _) (Checked = tt, Numbers = "true") (Checked = ff, Numbers = "false")),
@@ -131,9 +131,15 @@ write-typst-tree Style (prooftext.proof-text Fields Name (prooftext.node _ _ _ _
     {calc ("#title-block(" ^ TName ^ ", (")} | FieldLines]
     ["))", "", {calc ("#proof([" ^ Statement ^ "], (")} | BlockLines] Lines0,
   (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
-  std.append Lines0 [{calc (")" ^ Tail ^ ")")}, "", {legend-typst Lang Checked}] Lines,
+  (if (has-goal T) (Goals = tt) (Goals = ff)),
+  std.append Lines0 [{calc (")" ^ Tail ^ ")")}, "", {legend-typst Lang Checked Goals}] Lines,
   std.string.concat "\n" Lines Text0,
   Text is Text0 ^ "\n".
+
+% [has-goal T]: a node of the proof text T has an open goal, `C`{.goal}
+pred has-goal i:prooftext.proof-text.
+has-goal (prooftext.proof-text _ _ Top) :-
+  prooftext.all-nodes "0" Top All, std.exists All (n\ sigma Id N\ n = pr Id N, prooftext.is-goal-node N), !.
 
 % [first-context Style Fields Lang C]: the context at the start of a text
 % in the language Lang: its first formulas (first-formulas), no names, the
@@ -383,12 +389,15 @@ optional-argument Name (some V) A :- A is Name ^ ": " ^ {prooftext.typst-string 
 % ------------------------------------------------------------------
 % The legend
 
-% [legend-typst Lang Checked Line]: the call of legend: the words of the
-% roles in the language Lang, and of the statuses for a checked text
-% (Checked = tt); the words of the lexicon, legend-var, legend-ok, ...
-pred legend-typst i:string, i:bool, o:string.
-legend-typst Lang Checked Line :-
-  std.map ["var", "hyp", "claim", "fact", "just"] (legend-pair Lang) Roles,
+% [legend-typst Lang Checked Goals Line]: the call of legend: the words
+% of the roles in the language Lang (the open goals only in a text that
+% has one, Goals = tt), and of the statuses for a checked text (Checked =
+% tt); the words of the lexicon, legend-var, legend-goal, legend-ok, ...
+pred legend-typst i:string, i:bool, i:bool, o:string.
+legend-typst Lang Checked Goals Line :-
+  (if (Goals = tt) (Keys = ["var", "hyp", "claim", "goal", "fact", "just"])
+                   (Keys = ["var", "hyp", "claim", "fact", "just"])),
+  std.map Keys (legend-pair Lang) Roles,
   (if (Checked = tt)
      (std.map ["ok", "ko", "todo", "none"] (legend-pair Lang) Statuses,
       Tail is ", statuses: (" ^ {std.string.concat ", " Statuses} ^ ",)")
@@ -416,7 +425,7 @@ parts-typst C0 Where [P | Ps] [Call | Calls] C :-
 
 % [part-typst C0 Where Part Call C]: the Typst code of a part.  A formula
 % whose class is a role's tag is shown with that role (var, hyp, claim,
-% fact), other formulas without a role (formula), followed by the name
+% goal, fact), other formulas without a role (formula), followed by the name
 % written after it (name-typst); a justification and the words of the
 % text link to what they name
 pred part-typst i:context, i:string, i:prooftext.text-part, o:string, o:context.

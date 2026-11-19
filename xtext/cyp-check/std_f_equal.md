@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,5 +8,5 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `x y : A`{.var}. Assume `x = y`{.hyp} (H). We prove `f x = f y`{.claim}.
 
-- Going back to the definition of eq (match) in *H*{.just}, we prove `f x = f y`{.claim}:
+- Going back to the definition of *eq*{.just} (*match*{.just}) in *H*{.just}, we prove `f x = f y`{.claim}:
   - By definition of eq (*eq_refl*{.just}), we have `f x = f x`{.claim}.

@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,11 +8,11 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove `forall x : A, In x l -> In (f x) (map f l)`{.claim}.
 
-- We prove `forall x : A, In x l -> In (f x) (map f l)` by induction on `l` (list, *list_ind*{.just}):
+- We prove `forall x : A, In x l -> In (f x) (map f l)` by induction on *l*{.just} (*list*{.just}, *induction*{.just}):
   - Case 1 (base): we prove `forall x : A, In x nil -> In x nil`{.claim}.
     - Let `x : A`{.var}; assume `In x nil`{.hyp} (H). By *H*{.just} we have `In x nil`{.claim}.
   - Case 2 (inductive): we prove `forall (a : A) (l0 : list A), (forall x : A, In x l0 -> In (f x) (map f l0)) -> forall x : A, In x (a :: l0) -> In (f x) (map f (a :: l0))`{.claim}.
-    - Let `a : A`{.var} and `l0 : list A`{.var}; assume by induction hypothesis `forall x : A, In x l0 -> In (f x) (map f l0)`{.hyp} (IHl); let `x : A`{.var}; assume `In x (a :: l0)`{.hyp} (H). We prove `In (f x) (map f (a :: l0))` by case analysis on *H*{.just} (or, *or_ind*{.just}):
+    - Let `a : A`{.var} and `l0 : list A`{.var}; assume by induction hypothesis `forall x : A, In x l0 -> In (f x) (map f l0)`{.hyp} (IHl); let `x : A`{.var}; assume `In x (a :: l0)`{.hyp} (H). We prove `In (f x) (map f (a :: l0))` by case analysis on *H*{.just} (*or*{.just}, *match*{.just}):
       - Case 2.1: we prove `a = x -> f a = f x \/ In (f x) (map f l0)`{.claim}.
         - Assume `a = x`{.hyp} (H0).
           - By definition of eq (*eq_refl*{.just}), we have `f x = f x`{.claim}.

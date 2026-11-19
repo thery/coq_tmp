@@ -2,7 +2,7 @@
 % of a tree.  (load after tree.elpi)
 %
 % A node of the tree (tree.elpi) says, by the tags of its own text: one
-% conclusion `C`{.claim}, with at most one name (n) after it, the name of
+% conclusion `C`{.claim} (or `C`{.goal}, an open goal), with at most one name (n) after it, the name of
 % the node; its variables `x : T`{.var} and its hypotheses `A`{.hyp} (h),
 % which hold in it and in its subnodes; the facts `F`{.fact} it uses; its
 % justifications *X*{.just} (and *by X*, in the texts written before the
@@ -44,9 +44,21 @@ is-tag P :- part-class P C, not (C = "").
 pred is-remark i:prooftext.node.
 is-remark N :- node-parts N Ps, not (std.exists Ps is-tag).
 
-% [claim-parts Parts Claims]: the conclusions among the parts
+% [claim-parts Parts Claims]: the conclusions among the parts: the
+% claims `C`{.claim}, and the open goals `C`{.goal} (the conclusion of a
+% node that the author leaves to prove)
 pred claim-parts i:list prooftext.text-part, o:list prooftext.text-part.
-claim-parts Ps Cs :- std.filter Ps (p\ part-class p C, prooftext.role-tag rclaim C) Cs.
+claim-parts Ps Cs :- std.filter Ps (p\ part-class p C, conclusion-class C) Cs.
+
+% [conclusion-class C]: C is the class of a conclusion, claim or goal
+pred conclusion-class i:string.
+conclusion-class C :- prooftext.role-tag rclaim C, !.
+conclusion-class C :- prooftext.role-tag rgoal C.
+
+% [is-goal-node N]: the conclusion of the node N is an open goal,
+% `C`{.goal}: a step the author leaves to prove
+pred is-goal-node i:prooftext.node.
+is-goal-node N :- node-parts N Ps, std.exists Ps (p\ part-class p C, prooftext.role-tag rgoal C).
 
 % [part-name P Name]: the name (n) written after a formula
 pred part-name i:prooftext.text-part, o:option string.

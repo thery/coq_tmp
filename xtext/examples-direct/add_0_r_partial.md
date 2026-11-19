@@ -7,10 +7,10 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
 
-- We prove `n + 0 = n` by induction on `n` (nat, *nat_ind*{.just}):
+- We prove `n + 0 = n` by induction on *n*{.just} (*nat*{.just}, *induction*{.just}):
   - Case 1 (base): we prove `0 = 0`{.claim}.
     - By definition of eq (*eq_refl*{.just}), we have `0 = 0`{.claim}.
   - Case 2 (inductive): we prove `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.
-    - Let us consider an arbitrary `m : nat`{.var}. Assume by induction hypothesis `m + 0 = m`{.hyp} (IH). Prove `S m + 0 = S m`{.claim}.
+    - Let us consider an arbitrary `m : nat`{.var}. Assume by induction hypothesis `m + 0 = m`{.hyp} (IH). Prove `S m + 0 = S m`{.goal}.
 
   These cases being exhaustive, we deduce `n + 0 = n`{.claim}.

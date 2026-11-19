@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `P : nat -> nat -> Prop`{.var}. Assume `exists x : nat, forall y : nat, P x y`{.hyp} (H0). We prove `forall y : nat, exists x : nat, P x y`{.claim}.
 
-- Going back to the definition of ex (match) in *H0*{.just}, we prove `forall y : nat, exists x : nat, P x y`{.claim}:
+- Going back to the definition of *ex*{.just} (*match*{.just}) in *H0*{.just}, we prove `forall y : nat, exists x : nat, P x y`{.claim}:
   - Let us choose arbitrarily `x : nat`{.var}; assume `forall y : nat, P x y`{.hyp} (H); let us choose arbitrarily `y : nat`{.var}.
     - Applying *H*{.just} to y, we have `P x y`{.claim}.
 

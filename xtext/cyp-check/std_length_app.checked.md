@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, length (l ++ l') = length l + length l'`{.claim}.
 
-- ✅ We prove `forall l' : list A, length (l ++ l') = length l + length l'` by induction on `l` (list, *list_ind*{.just}):
+- ✅ We prove `forall l' : list A, length (l ++ l') = length l + length l'` by induction on *l*{.just} (*list*{.just}, *induction*{.just}):
   - ✅ Case 1 (base): we prove `forall l' : list A, @eq nat (@length A (@app A (@nil A) l')) (Init.Nat.add (@length A (@nil A)) (@length A l'))`{.claim}.
     - ✅ Let `l' : list A`{.var}. By definition of eq (*eq_refl*{.just}), we have `length l' = length l'`{.claim}.
   - ✅ Case 2 (inductive): we prove `forall (a : A) (l0 : list A), (forall l' : list A, length (l0 ++ l') = length l0 + length l') -> forall l' : list A, length ((a :: l0) ++ l') = length (a :: l0) + length l'`{.claim}.

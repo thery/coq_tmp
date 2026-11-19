@@ -81,9 +81,12 @@ tr-root T _ _ P :- pp T S0, prooftext.untagged-formula S0 F,
   sentence [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, conclusion-only S P.
 
 % an open goal of a proof in progress (a hole of the partial proof term)
-% is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez")
+% is written "Prove G" at its place (L. Théry's thesis, 3.3.3: "Prouvez"),
+% G with the role of an open goal, `G`{.goal}: the conclusion of a step
+% that the author leaves to prove (cyp does not try it, and leaves it as a
+% goal of the Proof block)
 pred open-goal i:term, o:pf.
-open-goal T P :- var T, type-formula rclaim T F, sentence [wd "prove", tx F] S, conclusion-only S P.
+open-goal T P :- var T, type-formula rgoal T F, sentence [wd "prove", tx F] S, conclusion-only S P.
 
 % Tactic-built subproofs (thesis 5.4, the "pragmatic method"): a proper
 % subproof whose proof term has at least xtext-threshold nodes is first

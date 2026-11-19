@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 lang: la
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sint `A B : Prop`{.var}. Ponamus `A \/ B`{.hyp} (h). Ostendamus `B \/ A`{.claim}.
 
-- Ostendamus `B \/ A` per casus in *h*{.just} (or, *or_ind*{.just}):
+- Ostendamus `B \/ A` per casus in *h*{.just} (*or*{.just}, *match*{.just}):
   - Casus 1: ostendamus `A -> B \/ A`{.claim}.
     - Ponamus `A`{.hyp} (i). Ex definitione or (*or_intror*{.just}), ex *i*{.just} unde sequitur `B \/ A`{.claim}.
   - Casus 2: ostendamus `B -> B \/ A`{.claim}.

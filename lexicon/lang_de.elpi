@@ -76,6 +76,7 @@ write-word "de" "belongs-to" "gehört zu".
 write-word "de" "legend-var" "Variable".
 write-word "de" "legend-hyp" "Annahme".
 write-word "de" "legend-claim" "Behauptung".
+write-word "de" "legend-goal" "offenes Ziel".
 write-word "de" "legend-fact" "Tatsache".
 write-word "de" "legend-just" "Begründung".
 write-word "de" "legend-ok" "bewiesen".

@@ -23,7 +23,12 @@ tr-app H Args Path P :-
   % the step from the cases
   gr-of H GRE, short-name GRE QE,
   (if (Kind = 1, instance-arity I NS, NS > 1) (Justified = ff) (Justified = tt)),
-  ((elim-app EN QE :- Justified = tt, !) =>
+  % the standard scheme of the type (T_ind, T_rect, ...): cyp's fixed
+  % justifications *match* and *induction* stand for it (elim-parts)
+  short-name (indt I) QI,
+  (if (standard-scheme GRE I) (Std = tt) (Std = ff)),
+  ((elim-app EN QE :- Justified = tt, !) => (elim-standard EN :- Std = tt, !) =>
+   (elim-type-just QI :- !) =>
   (if (Kind = 1)
       (imp-args Ks Cons Imps, std.last Imps Maj, std.drop-last 1 Imps Ns,
        std.drop-last 1 Cis0 Cis,

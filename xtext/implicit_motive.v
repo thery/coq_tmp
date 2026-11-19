@@ -29,7 +29,7 @@ Definition bool_P (P : bool -> Prop) (ht : P true) (hf : P false) (b0 : bool) : 
 Time ExtractText bool_P to "examples/bool_P.md".
 Elpi Query ExtractText lp:{{ check-text "bool_P" "fr" [
   "Soit `P : bool -> Prop`{.var}. Supposons `P true`{.hyp} (ht) et `P false`{.hyp} (hf). Soit `b0 : bool`{.var}. Montrons `P b0`{.claim}.",
-  "- Montrons `P b0` par analyse de cas sur `b0` (bool, *bool_ind*{.just}):",
+  "- Montrons `P b0` par analyse de cas sur *b0*{.just} (*bool*{.just}, *match*{.just}):",
   "  - Cas 1: montrons `P true`{.claim}.",
   "    - Par *ht*{.just} nous avons `P true`{.claim}.",
   "  - Cas 2: montrons `P false`{.claim}.",
@@ -45,7 +45,7 @@ Definition prod_P (E F : Set) (P : prod E F -> Prop)
 Time ExtractText prod_P to "examples/prod_P.md".
 Elpi Query ExtractText lp:{{ check-text "prod_P" "fr" [
   "Soient `E F : Set`{.var}. Soit `P : E * F -> Prop`{.var}. Supposons `forall (x : E) (y : F), P (x, y)`{.hyp} (h). Soit `p0 : (E * F)%type`{.var}. Montrons `P p0`{.claim}.",
-  "- Par définition de prod (*prod_ind*{.just}) sur `p0`, montrons `P p0`{.claim}:",
+  "- Par définition de *prod*{.just} (*match*{.just}) sur *p0*{.just}, montrons `P p0`{.claim}:",
   "  - Par *h*{.just} nous avons `forall (x : E) (y : F), P (x, y)`{.claim}."] }}.
 
 (* 6.3.4, the lists, by induction: "Pour montrer (P l0) par récurrence,
@@ -57,7 +57,7 @@ Definition list_P (E : Set) (P : list E -> Prop) (h0 : P nil)
 Time ExtractText list_P to "examples/list_P.md".
 Elpi Query ExtractText lp:{{ check-text "list_P" "fr" [
   "Soit `E : Set`{.var}. Soit `P : list E -> Prop`{.var}. Supposons `P nil`{.hyp} (h0) et `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.hyp} (h1). Soit `l0 : list E`{.var}. Montrons `P l0`{.claim}.",
-  "- Montrons `P l0` par récurrence sur `l0` (list, *list_ind*{.just}):",
+  "- Montrons `P l0` par récurrence sur *l0*{.just} (*list*{.just}, *induction*{.just}):",
   "  - Cas 1 (base): montrons `P nil`{.claim}.",
   "    - Par *h0*{.just} nous avons `P nil`{.claim}.",
   "  - Cas 2 (inductif): montrons `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.claim}.",
@@ -65,7 +65,7 @@ Elpi Query ExtractText lp:{{ check-text "list_P" "fr" [
   "  Ces cas étant exhaustifs, nous en déduisons `P l0`{.claim}."] }}.
 Elpi Query ExtractText lp:{{ check-text "list_P" "en" [
   "Let `E : Set`{.var}. Let `P : list E -> Prop`{.var}. Assume `P nil`{.hyp} (h0) and `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.hyp} (h1). Let `l0 : list E`{.var}. We prove `P l0`{.claim}.",
-  "- We prove `P l0` by induction on `l0` (list, *list_ind*{.just}):",
+  "- We prove `P l0` by induction on *l0*{.just} (*list*{.just}, *induction*{.just}):",
   "  - Case 1 (base): we prove `P nil`{.claim}.",
   "    - By *h0*{.just} we have `P nil`{.claim}.",
   "  - Case 2 (inductive): we prove `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.claim}.",
@@ -77,7 +77,7 @@ Elpi Query ExtractText lp:{{ check-text "list_P" "en" [
    induction on n *)
 Elpi Query ExtractText lp:{{ check-text "add_0_r'" "en" [
   "Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.",
-  "- We prove `n + 0 = n` by induction on `n` (nat, *nat_ind*{.just}):",
+  "- We prove `n + 0 = n` by induction on *n*{.just} (*nat*{.just}, *induction*{.just}):",
   "  - Case 1 (base): we prove `0 = 0`{.claim}.",
   "    - By definition of eq (*eq_refl*{.just}), we have `0 = 0`{.claim}.",
   "  - Case 2 (inductive): we prove `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.",

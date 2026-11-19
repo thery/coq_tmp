@@ -20,13 +20,17 @@
 
 % [status-of Rs Id Status M]: the status of node Id and its message: its
 % errors (with the goal left to the Proof block, if any), a condition not
-% proved, left to the Proof block, proved, or nothing to check (a remark)
+% proved, left to the Proof block (or an open goal of the text), proved,
+% or nothing to check (a remark)
 pred status-of i:list report, i:string, o:string, o:string.
 status-of Rs Id "ko" M :- report-errors Rs Id [E | Es], !,
   std.string.concat "; " [E | Es] E1,
   if (std.mem Rs (rep Id (todo G))) (M is E1 ^ "; " ^ {msg "md-todo" [Id, G]}) (M = E1).
 status-of Rs Id "ko" M :- std.mem Rs (rep Id (ko G)), !, msg "md-not-proved" [G] M.
 status-of Rs Id "todo" M :- std.mem Rs (rep Id (todo G)), !, msg "md-todo" [Id, G] M.
+% an open goal of the text: the status of a condition left to the Proof
+% block (◆), with its own message
+status-of Rs Id "todo" M :- std.mem Rs (rep Id (goal G)), !, msg "md-goal" [Id, G] M.
 status-of Rs Id "ok" "" :- std.mem Rs (rep Id ok), !.
 status-of _ _ "none" "".
 

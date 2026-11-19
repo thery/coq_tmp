@@ -69,7 +69,9 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   definition), `` `A`{.hyp} (h) `` (a hypothesis and its name; without a
   name, cyp names it with the first of `H1`, `H2`, ... that nothing in
   scope has, example `examples/unnamed_hyps.md`), `` `C`{.claim} (n) ``
-  (the conclusion of the node and its name), `` `F`{.fact} `` (a fact the
+  (the conclusion of the node and its name), `` `C`{.goal} `` (the
+  conclusion of a node that the author leaves to prove: an open goal,
+  below), `` `F`{.fact} `` (a fact the
   node uses), and `*X*{.just}` is a justification.  A formula with no
   class and every word are plain text: no word gives a role (the lexicon
   of xtext's writing is not read).  A tag is Pandoc's attribute syntax; it
@@ -104,6 +106,23 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     none) or of a variable, or of a lemma (possibly qualified,
     `Nat.add_comm`) is handed to the method: put first in the context, a
     lemma added to it (Ltac `cyp_first`);
+  - the two fixed justifications state how the step eliminates an object,
+    the way an author says it: `*match*{.just}`, a case analysis (Rocq's
+    `destruct`, `cyp_match`), and `*induction*{.just}`, an induction
+    (Rocq's `induction`, `cyp_induction`), on each hypothesis or variable
+    the node names (else on the hypotheses its facts are), then each case
+    closed by the rest of the node's method (its other names, the rules,
+    the default tactics), the subnodes (the cases) in context: "By
+    *induction*{.just} on *l*{.just}, we prove ...", "By case analysis
+    (*match*{.just}) on *h*{.just}" ([examples/induction_demo.md](examples/induction_demo.md),
+    [examples/cases_demo.md](examples/cases_demo.md)).  The name of an
+    inductive type with them, `*or*{.just}`, says the type of the object:
+    each object named must have it (else an error), and with no object
+    named it is the one hypothesis or variable of that type in scope
+    (none, or several: an error).  A type named without a method is an
+    error ("*and* is an inductive type: it justifies a step only with
+    *match* or *induction*").  `induction` is a name Rocq accepts for a
+    lemma, but as a justification it is the method;
   - with no rule or tactic name, the names handed are applied one after
     the other, like a lemma, the premises that are one of the other names
     closed by it first, the others by the rules or the default tactics
@@ -123,6 +142,15 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     error.  X cannot be tactic code (`interval with (i_prec 100)`):
     Rocq-Elpi cannot yet turn a string into a tactic; name an Ltac
     definition instead (`tactic-name`).
+- **Open goals.**  A node whose conclusion is `` `C`{.goal} `` (a proof
+  in progress: xtext's `ExtractText_partial` writes "Prove
+  `C`{.goal}.") is not tried, even when it is easy: the author left it
+  open.  It is marked ◆ (🔶 in the checked Markdown, the status of a
+  condition left to a Proof block, with its own message, "open goal of
+  the text, not tried"), its conclusion is the goal `?cN` of the Proof
+  block (`Cyp File`, `Cyp Lemma`), and the nodes after it use it as any
+  conclusion.  Without a Proof block (`CypFile`, the program `cyp`) the
+  lemma is not defined (exit code 1), as with a step not proved.
 - **Old texts.**  The texts written before the tree name a justification
   `*by X*`: it is still read as `*X*{.just}` (xtext and cyp's examples
   are written in the new format).
@@ -248,7 +276,8 @@ makes the PDF of a checked text with Typst, in the template that
 prooftext shares with xtext
 ([../prooftext](../prooftext/README.md#the-pdf-of-a-proof-text-typst)):
 each step has its status as a coloured mark (✔ proved, ✘ not proved, ◆
-left to a Proof block, ▫ nothing to check: a remark), cyp's message in a box under
+left to a Proof block, or an open goal, ▫ nothing to check: a remark),
+an open goal's formula framed, cyp's message in a box under
 it, and its number in the margin, the number of its condition; the
 legend at the end recalls the marks and the looks of the roles, and the
 names (h) and the lemmas are links (to their steps, to their

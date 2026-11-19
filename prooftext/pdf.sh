@@ -21,8 +21,9 @@
 #                   [text, target] pairs (gallery.sh; the template's
 #                   page-links): typst compile --input links=JSON;
 #   --roles R,...   colour only the formulas of these roles (var, hyp,
-#                   claim, fact, just), the others plain; all by default.  On
-#                   the web page the legend turns each role on and off.
+#                   claim, goal, fact, just), the others plain; all by
+#                   default (an open goal keeps its frame).  On the web page
+#                   the legend turns each role on and off.
 #
 # Needs: the opam switch elpi5 (rocq-elpi), typst (0.15).  Typst.vo is
 # compiled when it is older than its sources.
@@ -40,7 +41,12 @@ while [ $# -gt 0 ]; do
     --html) output=html; shift ;;
     --source) output=none; shift ;;
     --links) links=$2; shift 2 ;;
-    --roles) roles=$2; shift 2 ;;
+    --roles) roles=$2; shift 2
+      for r in $(echo "$roles" | tr ',' ' '); do
+        case $r in var|hyp|claim|goal|fact|just) ;;
+          *) echo "pdf.sh: unknown role $r (var, hyp, claim, goal, fact, just)" >&2; exit 2 ;;
+        esac
+      done ;;
     *) break ;;
   esac
 done

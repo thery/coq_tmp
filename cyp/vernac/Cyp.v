@@ -75,6 +75,11 @@ Ltac cyp_exact t := exact t.
 (* an elimination principle t on the variable x: the goal abstracted over x
    first, so that the motive is that abstraction (as elim does) *)
 Ltac cyp_elim_on t x := pattern x; eapply t.
+(* the fixed methods of a text, *match*{.just} and *induction*{.just}
+   (prooftext/tactics.elpi), on a hypothesis or a variable h: a case
+   analysis (no induction hypotheses), an induction *)
+Ltac cyp_match h := first [ destruct h | case h ].
+Ltac cyp_induction h := induction h.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.
@@ -169,7 +174,8 @@ Elpi Accumulate lp:{{
       say "conditions" [Name, {std.any->string NS}, {std.any->string NT}]).
   main [str F] :-
     check-file F Lang Name Ty Proof Rs Stated,
-    count Rs Steps Ko _,
+    % an open goal of the text ({.goal}) is not proved: no Proof block here
+    count Rs Steps Ko0 Goals, std.append Ko0 Goals Ko,
     std.length Steps NR, std.length Ko NK, NP is NR - NK,
     (current-lang Lang :- !) => (
     check-statement Name Stated Rs,

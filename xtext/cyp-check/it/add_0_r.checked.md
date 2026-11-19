@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
 lang: it
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Sia `n : nat`{.var}. Dimostriamo `n + 0 = n`{.claim}.
 
-- ✅ Dimostriamo `n + 0 = n` per induzione su `n` (nat, *nat_ind*{.just}):
+- ✅ Dimostriamo `n + 0 = n` per induzione su *n*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ Caso 1 (base): dimostriamo `0 = 0`{.claim}.
     - ✅ Per definizione di eq (*eq_refl*{.just}), abbiamo `0 = 0`{.claim}.
   - ✅ Caso 2 (induttivo): dimostriamo `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.

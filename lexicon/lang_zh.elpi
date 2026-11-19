@@ -74,6 +74,7 @@ write-word "zh" "belongs-to" "属于".
 write-word "zh" "legend-var" "变量".
 write-word "zh" "legend-hyp" "假设".
 write-word "zh" "legend-claim" "断言".
+write-word "zh" "legend-goal" "待证目标".
 write-word "zh" "legend-fact" "事实".
 write-word "zh" "legend-just" "依据".
 write-word "zh" "legend-ok" "已证明".

@@ -87,6 +87,7 @@ write-word "ru" "belongs-to" "принадлежит".
 write-word "ru" "legend-var" "переменная".
 write-word "ru" "legend-hyp" "гипотеза".
 write-word "ru" "legend-claim" "утверждение".
+write-word "ru" "legend-goal" "открытая цель".
 write-word "ru" "legend-fact" "факт".
 write-word "ru" "legend-just" "обоснование".
 write-word "ru" "legend-ok" "доказано".

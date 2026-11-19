@@ -103,7 +103,9 @@ run-name N G :- prooftext.tactic N, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
 % so are the hypotheses that the facts of the node are.  With no rule or
 % tactic name, the names given are applied, one after the other, as a
 % single justification *X*{.just} is; with no name at all, the rules and the default
-% tactics run.
+% tactics run.  The fixed methods *match* and *induction* (prooftext's
+% method) first eliminate the objects named (proof.elpi, node-method),
+% then close each case so.
 
 % [classify Names Methods Given Unknown]: the names of the justifications
 % of a node sorted: rule and tactic names (Methods), names given (Given),
@@ -113,6 +115,9 @@ run-name N G :- prooftext.tactic N, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
 % possibly qualified), a tactic
 pred classify i:list string, o:list string, o:list given, o:list string.
 classify [] [] [] [].
+% the fixed methods match and induction first: induction may also be a
+% name of Rocq, but as a justification it is the method
+classify [X | Xs] [X | Ms] Gs Us :- prooftext.method X, !, classify Xs Ms Gs Us.
 classify [X | Xs] [X | Ms] Gs Us :- std.findall (named X _ _) [_ | _], !, classify Xs Ms Gs Us.
 classify [X | Xs] Ms [given-local X | Gs] Us :- local-in-scope _ X _, !, classify Xs Ms Gs Us.
 classify [X | Xs] Ms [given-lemma GR | Gs] Us :-
@@ -122,6 +127,11 @@ classify [X | Xs] Ms Gs [X | Us] :- classify Xs Ms Gs Us.
 
 % [justify-step M G]: the goal G closed by the method M
 pred justify-step i:method, i:goal.
+% a fixed method, match or induction: the case analysis or the induction
+% on each object named (eliminate), then each case closed by the rest of
+% the method (the other names, the rules, the default tactics)
+justify-step (eliminating E Ts M) G :- !,
+  eliminate E Ts G GL, coq.ltac.all (coq.ltac.open (solve-step M)) GL [].
 % no name: the rules and the default tactics, the facts first
 justify-step (method [] [] Fs) G :- !,
   std.map Fs (f\ g\ g = given-local f) First, with-first First close-default G.
@@ -161,6 +171,16 @@ pred premise-by-given i:list given, i:goal, o:list sealed-goal.
 premise-by-given Others (goal Ctx _ _ _ _ as G) [] :-
   std.mem Others X, given-term Ctx X H, coq.ltac.call "cyp_exact" [trm H] G [], !.
 premise-by-given _ G GL :- coq.ltac.call-ltac1 "idtac" G GL.
+
+% [eliminate E Ts G GL]: the goal G after the method E (match: a case
+% analysis, cyp_match; induction: cyp_induction, Cyp.v) on the
+% hypotheses or variables named Ts, in turn, in each case of the ones
+% before
+pred eliminate i:string, i:list string, i:goal, o:list sealed-goal.
+eliminate _ [] G GL :- coq.ltac.call-ltac1 "idtac" G GL.
+eliminate E [T | Ts] (goal Ctx _ _ _ _ as G) GL :-
+  local-name Ctx T H, L is "cyp_" ^ E, coq.ltac.call L [trm H] G GL1,
+  coq.ltac.all (coq.ltac.open (eliminate E Ts)) GL1 GL.
 
 % [run-method M G]: the rules named M (only them, if there are any), or
 % the tactic M, run on G

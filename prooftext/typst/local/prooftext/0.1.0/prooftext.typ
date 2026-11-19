@@ -37,13 +37,17 @@
 // (plain) has none.  The
 // legend also shows each role's mark that needs no colour (claims a thin
 // frame, hypotheses a dashed underline, facts a dotted underline); the
-// formulas of the text have their background only.
+// formulas of the text have their background only, except the open goals
+// of a proof in progress (`G`{.goal}): the claim's background and a frame
+// (role-frames), the only framed formulas of a text, so that what is left
+// to prove is seen at once, with or without colours.
 
 // the background of the formulas of each role (none: no background)
 #let role-backgrounds = (
   var: rgb("#d4ebf9"),
   hyp: rgb("#f8d49c"),
   claim: rgb("#fcf6c6"),
+  goal: rgb("#fcf6c6"),
   fact: rgb("#e3e3e3"),
   just: rgb("#d9a9cb"),
   plain: none,
@@ -66,6 +70,7 @@
   var: none,
   hyp: (line: "underline", dash: "dashed"),
   claim: (line: "frame", dash: "solid"),
+  goal: none,
   fact: (line: "underline", dash: "dotted"),
   just: (line: "underline", dash: "solid"),
   plain: none,
@@ -73,6 +78,17 @@
 
 // the colour of the frames and underlines of the roles
 #let cue-colour = rgb("#4d4d4d")
+
+// the roles whose formulas are framed everywhere, in the text as in the
+// legend, whatever the colours shown: an open goal, a frame thicker than
+// the claim's mark in the legend.  The frame is no colour: a switch of
+// the web page, or pdf.sh --roles, turns the background off, not it
+#let role-frames = (
+  goal: (paint: cue-colour, thickness: 1pt),
+)
+// the width of these frames in the web page, twice the 1px of the claim's
+// mark in the legend
+#let html-frame-width = "2px"
 
 // the colour of the links (Okabe-Ito blue): to the step that introduced
 // a name, to the documentation of a lemma, between the pages of a gallery
@@ -171,7 +187,7 @@ function named(a) {
 // the last hypothesis or conclusion before the fact f with its text
 function repeated(f) {
   let found = null;
-  for (const g of document.querySelectorAll('.p .formula.hyp, .p .formula.claim'))
+  for (const g of document.querySelectorAll('.p .formula.hyp, .p .formula.claim, .p .formula.goal'))
     if ((g.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING)
         && g.textContent === f.textContent) found = g;
   return found;
@@ -182,7 +198,7 @@ function show(p) {
   p.classList.add('cur');
   for (const q of p.querySelectorAll('.p'))
     if (q.parentElement.closest('.p') === p) q.classList.add('sub');
-  own(p, '.formula.claim').forEach(c => c.classList.add('c-cur'));
+  own(p, '.formula.claim, .formula.goal').forEach(c => c.classList.add('c-cur'));
   own(p, '.formula.hyp').forEach(h => h.classList.add('h-cur'));
   const targets = own(p, 'a[href^=\"#\"]').map(named)
     .concat(own(p, '.formula.fact').map(repeated));
@@ -227,7 +243,7 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
     ".p { border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }",
     "li.p.cur, div.p.cur:not([data-id=\"0\"]) { background: rgba(0, 0, 0, 0.03); }",
     ".p.sub { background: rgba(0, 114, 178, 0.10); }",
-    ".formula.claim.c-cur { outline: 1.5px solid #333; }",
+    ".formula.claim.c-cur, .formula.goal.c-cur { outline: 1.5px solid #333; }",
     ".formula.hyp.h-cur { outline: 1.5px dashed #333; }",
     ".ref-target { outline: 2px solid " + link-colour.to-hex() + "; }",
   )
@@ -237,6 +253,12 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
     // the mark of the role, in the legend only
     let mark = css-cue(role-cues.at(role))
     if mark != "" { rules.push("footer.legend .formula." + role + " {" + mark + " }") }
+    // the frame of the role, everywhere (role-frames)
+    if role in role-frames {
+      let f = role-frames.at(role)
+      rules.push(".formula." + role + " { border: " + html-frame-width
+        + " solid " + f.paint.to-hex() + "; }")
+    }
     // the legend's switch of the role: unchecked, the role's formulas in
     // the text lose their background (CSS only, no script)
     rules.push("body:has(#show-" + role + ":not(:checked)) .formula." + role
@@ -267,7 +289,8 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
   let background = if role in shown-roles { role-backgrounds.at(role) } else { none }
   let cue = if cue { role-cues.at(role) } else { none }
   let line = if cue == none { none } else { (paint: cue-colour, thickness: 0.5pt, dash: cue.dash) }
-  let stroke = if cue == none { none } else if cue.line == "frame" { line } else { (bottom: line) }
+  let stroke = if role in role-frames { role-frames.at(role) }
+    else if cue == none { none } else if cue.line == "frame" { line } else { (bottom: line) }
   if background == none and stroke == none { body }
   else {
     box(layout(size => {
@@ -280,7 +303,7 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
   }
 }
 
-// a formula of role Role ("var", "hyp", "claim", "fact" or "plain"):
+// a formula of role Role ("var", "hyp", "claim", "goal", "fact" or "plain"):
 // mathematics (content, $...$, printed from its Rocq term), or its text
 // in Rocq syntax (a string), shown as code
 #let formula-of(role, body) = {
@@ -290,10 +313,13 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
     () => role-look(role, written))
 }
 
-// a variable, a hypothesis, a claim, a fact, a formula without a role
+// a variable, a hypothesis, a claim, a fact, a formula without a role (the
+// open goal below)
 #let var(body) = formula-of("var", body)
 #let hyp(body) = formula-of("hyp", body)
 #let claim(body) = formula-of("claim", body)
+// an open goal of a proof in progress, `G`{.goal}: framed
+#let goal(body) = formula-of("goal", body)
 #let fact(body) = formula-of("fact", body)
 #let formula(body) = formula-of("plain", body)
 

@@ -58,9 +58,10 @@ tagged-part (prooftext.formula-part C _ _) :- not (C = "").
 tagged-part (prooftext.tagged-name _ _).
 tagged-part (prooftext.by-part _).
 
-% [claim-part P]: the part P is a formula of class claim, a conclusion
+% [claim-part P]: the part P is a conclusion: a formula of class claim,
+% or of class goal (an open goal of a proof in progress)
 pred claim-part i:prooftext.text-part.
-claim-part (prooftext.formula-part "claim" _ _).
+claim-part (prooftext.formula-part C _ _) :- prooftext.conclusion-class C.
 
 % [line-claim L F]: the conclusion of the line L (in its text, or in its
 % closing paragraph), as written with its tag, `C`{.claim}
@@ -68,11 +69,12 @@ pred line-claim i:line, o:string.
 line-claim (it S _) F :- text-claim S F.
 line-claim (with-closing _ _ C) F :- text-claim C F.
 
-% [text-claim S F]: the first conclusion of the text S, written with its
-% tag, `C`{.claim}
+% [text-claim S F]: the first conclusion of the text S (a claim or an open
+% goal), written as a claim, `C`{.claim}: the conclusion that a closing
+% paragraph says again
 pred text-claim i:string, o:string.
 text-claim S F :-
-  prooftext.text-parts S Ps, std.mem Ps (prooftext.formula-part "claim" C _), !,
+  prooftext.text-parts S Ps, std.mem Ps P, claim-part P, P = prooftext.formula-part _ C _, !,
   prooftext.formula rclaim C F.
 
 % [last-claim Ls F]: the conclusion of the last of the lines Ls that has one

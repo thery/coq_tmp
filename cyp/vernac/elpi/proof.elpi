@@ -11,7 +11,9 @@
 % (its variables and hypotheses hold in it only), whatever its proof.
 % Each condition is discharged by the node's justifications and facts
 % (check.elpi), or the rules and the default tactics; in proof mode
-% (proof-mode), one that is not becomes a goal of the Proof block.
+% (proof-mode), one that is not becomes a goal of the Proof block.  The
+% condition of an open goal of the text, `C`{.goal}, is not tried: it is
+% a goal of the Proof block (goal-condition).
 % The proof term of a node: fun V H => cyp_have T1 C P1 (fun c1 : T1 =>
 % ... cyp_have Tk C Pk (fun ck : Tk => proof of C)), Ti the subnode Pi
 % seen from outside, ci its name (the name of its conclusion).
@@ -77,6 +79,10 @@ type unread string -> status.           % an error: a variable, a hypothesis
                                         % or a definition that does not parse,
                                         % left out of the node
 type todo string -> status.             % a goal left to the Proof block
+type goal string -> status.             % an open goal of the text
+                                        % ({.goal}): not tried; a goal of the
+                                        % Proof block, or not proved without
+                                        % one
 
 % A node with an error is reported, and the proof goes on: with a
 % conclusion C, its condition is not tried, and in proof mode C is a goal
@@ -169,6 +175,11 @@ claims L C :- std.filter L is-claim C.
 pred is-claim i:element.
 is-claim (elt rclaim _).
 is-claim (eltt rclaim _).
+is-claim E :- is-goal E.
+% [is-goal E]: the element E is an open goal of the text, {.goal}
+pred is-goal i:element.
+is-goal (elt rgoal _).
+is-goal (eltt rgoal _).
 % [is-hyp E]: the element E is a hypothesis
 pred is-hyp i:element.
 is-hyp (elt rhyp _).
@@ -244,10 +255,73 @@ condition Id Es C P Rs :-
   facts Es Fs, std.map Fs fact-hypothesis Found,
   std.map-filter Found (f\ s\ f = unknown-fact s) Unknown,
   justifications Es Js, classify Js Ms Gs NotNames,
+  std.map-filter Found (f\ h\ f = known-fact h) Hs,
   if (Unknown = [S | _]) (Rs = [rep Id (bad {msg "fact-unknown" [S]}) | Rs1], error-condition Id C P Rs1)
   (if (NotNames = [X | _]) (Rs = [rep Id (bad {msg "name-unknown" [X]}) | Rs1], error-condition Id C P Rs1)
-  (std.map-filter Found (f\ h\ f = known-fact h) Hs,
-   step-proof (method Ms Gs Hs) Id C P R, Rs = [R])).
+  (node-method Ms Gs Hs MF,
+   if (MF = wrong M) (Rs = [rep Id (bad M) | Rs1], error-condition Id C P Rs1)
+   (MF = right Me, step-proof Me Id C P R, Rs = [R]))).
+
+% the method of a node, or why it has none
+kind method-found type.
+type right method -> method-found.
+type wrong string -> method-found.      % the message
+
+% [node-method Ms Gs Hs F]: the method of a node of rule and tactic names
+% Ms, names given Gs and facts Hs (the hypotheses they are).  With a
+% fixed method (match, induction: prooftext's method), its objects are
+% the hypotheses and variables named (else the facts), each of the type
+% named, if one is (*nat*{.just}); with a type named and no object, the
+% one hypothesis or variable in scope of that type.  A type named with no
+% fixed method is an error: it names nothing a step can use
+pred node-method i:list string, i:list given, i:list string, o:method-found.
+node-method Ms Gs Hs F :- std.filter Ms prooftext.method [E | _], !,
+  std.filter Ms (m\ not (prooftext.method m)) Ms1,
+  std.map-filter Gs (g\ i\ g = given-lemma (indt i)) Types,
+  std.map-filter Gs (g\ x\ g = given-local x) Named0,
+  std.filter Gs (g\ not (g = given-lemma (indt _)), not (g = given-local _)) Gs1,
+  (if (Named0 = []) (Named = Hs, Hs1 = []) (Named = Named0, Hs1 = Hs)),
+  elimination-objects E Types Named F0,
+  (if (F0 = right-objects Ts)
+     (std.filter Hs1 (h\ not (std.mem Ts h)) Hs2,
+      F = right (eliminating E Ts (method Ms1 Gs1 Hs2)))
+     (F0 = wrong-objects M, F = wrong M)).
+node-method _ Gs _ (wrong M) :- std.mem Gs (given-lemma (indt I)), !,
+  msg "type-alone" [{coq.gref->id (indt I)}] M.
+node-method Ms Gs Hs (right (method Ms Gs Hs)).
+
+% the objects of a fixed method, or why there are none
+kind objects type.
+type right-objects list string -> objects.
+type wrong-objects string -> objects.
+
+% [elimination-objects E Types Named O]: the objects of the method E,
+% from the types named and the names given
+pred elimination-objects i:string, i:list inductive, i:list string, o:objects.
+elimination-objects E [] [] (wrong-objects M) :- !, msg "method-no-object" [E] M.
+elimination-objects _ [] Named (right-objects Named) :- !.
+elimination-objects _ [I | _] [] O :- !,
+  std.findall (local-in-scope _ _ _) L,
+  std.map-filter L (l\ s\ sigma X T\ l = local-in-scope X s T, of-inductive T I) Ss0,
+  undup Ss0 Ss,
+  (if (Ss = [S]) (O = right-objects [S])
+     (O = wrong-objects M, std.length Ss N,
+      msg "type-objects" [{coq.gref->id (indt I)}, {std.any->string N}] M)).
+elimination-objects _ [I | _] Named O :-
+  std.filter Named (s\ not (local-of-inductive s I)) Bad,
+  (if (Bad = [B | _])
+     (O = wrong-objects M, msg "not-of-type" [B, {coq.gref->id (indt I)}] M)
+     (O = right-objects Named)).
+
+% [local-of-inductive S I]: the latest variable or hypothesis named S in
+% scope has the type I (of-inductive)
+pred local-of-inductive i:string, i:inductive.
+local-of-inductive S I :- local-in-scope _ S T, !, of-inductive T I.
+
+% [of-inductive T I]: the type T is the inductive type I applied (up to
+% its weak head normal form)
+pred of-inductive i:term, i:inductive.
+of-inductive T I :- coq.reduction.lazy.whd T W, (W = global (indt I) ; W = app [global (indt I) | _]), !.
 
 % [error-condition Id C P Rs]: the condition C of a node Id with an error,
 % not tried: in proof mode, a goal of the Proof block named after the node
@@ -256,6 +330,14 @@ pred error-condition i:string, i:term, o:term, o:list report.
 error-condition Id C P [rep Id (todo S)] :- proof-mode, !,
   condition-hole Id C P, coq.term->string C S.
 error-condition _ _ _ [].
+
+% [goal-condition Id C P Rs]: the condition C of a node Id whose
+% conclusion is an open goal of the text, {.goal}: not tried; in proof
+% mode a goal of the Proof block named after the node (?c2_1), else left
+% unproved (the lemma is not defined); its report says it either way
+pred goal-condition i:string, i:term, o:term, o:list report.
+goal-condition Id C P [rep Id (goal S)] :- coq.term->string C S,
+  if (proof-mode) (condition-hole Id C P) true.
 
 % the hypothesis a fact is
 kind fact-found type.
@@ -378,6 +460,7 @@ missing-report _ _ [].
 % the condition is not tried, error-condition)
 pred children-chain i:string, i:list element, i:bool, i:list cnode, i:option term,
   o:term, o:list report.
+children-chain Id Es ff [] (some C) P Rs :- std.exists Es is-goal, !, goal-condition Id C P Rs.
 children-chain Id Es ff [] (some C) P Rs :- !, condition Id Es C P Rs.
 children-chain Id _ tt [] (some C) P Rs :- !, error-condition Id C P Rs.
 children-chain _ _ _ [] none {{ I }} [] :- !.
