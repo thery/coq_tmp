@@ -115,7 +115,10 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   - with no justification, all the rules, then the tactics of `by`, then
     cyp's own (`tauto`, `lia`, `nia`, `lra`), the facts first; the tactics
     only on a goal with no existential variable (a premise of a lemma not
-    yet determined: `firstorder` runs for very long on `z /\ ?B`);
+    yet determined: `firstorder` runs for very long on `z /\ ?B`), and at
+    last, once, on the goal with its head unfolded (its weak head normal
+    form: a conclusion `Inv E R x z`{.claim} that the steps before prove as
+    `R z x`);
   - a name that is none of these (and no name of the text in scope) is an
     error.  X cannot be tactic code (`interval with (i_prec 100)`):
     Rocq-Elpi cannot yet turn a string into a tactic; name an Ltac

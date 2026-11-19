@@ -71,6 +71,16 @@ close-default G :- close G, !.
 % firstorder on z /\ ?B after eapply proj1)
 close-default G :- coq.ltac.call-ltac1 "cyp_evar_free" G _, proof-default N, run-name N G, !.
 close-default G :- coq.ltac.call-ltac1 "cyp_evar_free" G _, default-ltac N, coq.ltac.call-ltac1 N G [], !.
+% at last, once, the goal with its head unfolded (its weak head normal form):
+% a text may state a conclusion with a definition that the steps before it
+% prove unfolded ("R z x, that is `Inv E R x z`{.claim}", Inv E R x z being
+% R z x by definition), and the default tactics do not unfold it
+close-default G :- not head-unfolded,
+  coq.ltac.call-ltac1 "cyp_head_unfolded" G [SG],
+  coq.ltac.open (g\ gl\ head-unfolded => close-tac g gl) SG [], !.
+
+% [head-unfolded]: the goal is already in weak head normal form
+pred head-unfolded.
 
 % [tactic-known X]: X names a tactic: prooftext's, or one that the rules
 % of the proof add (tactic-name)
