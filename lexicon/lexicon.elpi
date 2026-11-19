@@ -17,7 +17,9 @@ type rvar, rhyp, rclaim, rfact, rback role.
 % Phrases
 
 % [phrase Lang Phrase Role]: a phrase that gives its role to a formula
-% (in lower case)
+% (in lower case).  No reader takes a role from a phrase now (cyp reads
+% the class of a formula, `F`{.claim}); the links of prooftext read the
+% phrases only as words of the lexicon, never names (links.elpi)
 pred phrase o:string, o:string, o:role.
 
 % [phrase-after Lang Phrase]: the phrase stands after the formula whose
@@ -40,16 +42,18 @@ phrase Lang P R :- write-role Lang _ P R.
 % lower case (case folding uses those of all the languages loaded)
 pred capital o:string, o:string, o:string.
 
-% [clitic Lang Prefix]: a prefix glued to the next word (Arabic و, ف);
-% a reader leaves it out of the words and of the phrases before matching
+% [clitic Lang Prefix]: a prefix glued to the next word (Arabic و, ف),
+% for a reader that matches phrases (none does now: cyp reads the tags)
 pred clitic o:string, o:string.
 
 % [punctuation Lang P]: a punctuation mark of the language other than the
-% ASCII ones (Chinese "，", Arabic "،"): it ends a word
+% ASCII ones (Chinese "，", Arabic "،"): it ends a word (for a reader
+% that matches phrases; none does now)
 pred punctuation o:string, o:string.
 
 % [unspaced Lang]: the language is written without spaces between words
-% (Chinese): a phrase is found anywhere in a text, not only between words
+% (Chinese): a phrase is to be found anywhere in a text, not only between
+% words (for a reader that matches phrases; none does now)
 pred unspaced o:string.
 
 % [lower S L]: S in lower case, by the capital letters of all the languages

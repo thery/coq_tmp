@@ -63,6 +63,8 @@ recursive _ ff.
 pred how i:bool, o:part.
 how tt (wd "by-induction").
 how ff (wd "by-cases").
+% the same words, followed by the object eliminated: by induction on, by
+% cases on
 pred how-on i:bool, o:part.
 how-on tt (wd "by-induction-on").
 how-on ff (wd "by-cases-on").

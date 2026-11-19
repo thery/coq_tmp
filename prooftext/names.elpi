@@ -1,5 +1,5 @@
 % prooftext: names that the text introduces (hypotheses, variables), each
-% different from the names already in use, so that a justification *by h*
+% different from the names already in use, so that a justification *h*{.just}
 % names one hypothesis.
 
 namespace prooftext {

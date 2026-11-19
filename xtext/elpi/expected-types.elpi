@@ -21,6 +21,8 @@ pred restated-line i:line, i:string, o:line.
 restated-line (it S Ch) F (it S1 Ch) :- restated S F S1.
 restated-line (with-closing O Ch S) F (with-closing O Ch S1) :- restated S F S1.
 
+% [restated S F S1]: the sentence S, its conclusion untagged, then ", that
+% is" and the formula F, followed by the name of the conclusion if it had one
 pred restated i:string, i:string, o:string.
 restated S F S1 :-
   (if (rex.match ".*`{[.]claim} ([A-Za-z0-9_']+)" S)

@@ -111,6 +111,7 @@ aterm-term (alam N T _ Body _) (fun N T F) :-
 aterm-term (aother M) M.
 aterm-term (adone M _) M.
 
+% [argument-term A M]: the term M of the annotated argument A
 pred argument-term i:aarg, o:term.
 argument-term (aproof A) M :- aterm-term A M.
 argument-term (aelem M _) M.
@@ -176,6 +177,8 @@ name-node Path (naming I Scope Defs) (aother M)
 % an identifier, a subproof already written (Ident, Défaut)
 name-node _ S A S A.
 
+% [name-arguments Path S Args S1 Args1]: the proof arguments of an
+% application named in turn (name-part), the naming state going from S to S1
 pred name-arguments i:list int, i:naming, i:list aarg, o:naming, o:list aarg.
 name-arguments _ S [] S [].
 name-arguments Path S [aproof A | Args] S2 [aproof A1 | Args1] :- !,

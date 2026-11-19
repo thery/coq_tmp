@@ -71,7 +71,7 @@ write-word "en" "right-left" "from right to left".
 write-role "en" "the-term" "the term" rfact.
 write-word "en" "not-translated" "not translated".
 
-% The capital letters of the language (text.elpi, case folding).
+% The capital letters of the language (lexicon.elpi, case folding).
 capital "en" "A" "a".
 capital "en" "B" "b".
 capital "en" "C" "c".

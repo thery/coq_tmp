@@ -140,6 +140,9 @@ abstract-terms [T|Ts] [Ty|Tys] B (fun `y` Ty F) :-
   pi y\ sigma Tys1 B1\ ((copy T y :- !) => (std.map Tys copy Tys1, copy B B1)),
     abstract-terms Ts Tys1 B1 (F y).
 
+% [apply-run K Run Es T0 P0 Tau Path P]: the text P of an application step
+% of conclusion Tau: a particular case for a run of universal arguments
+% (ak-all), a modus ponens step (mp-step) for a run of proofs (ak-imp)
 pred apply-run i:ak, i:list term, i:list term, i:term, i:pf, i:term, i:list int, o:pf.
 apply-run ak-all _ _ T0 P0 Tau _ (prfp (prf L (some (it S []))) [Ty0]) :-
   flatten P0 L, formula rclaim Tau F, sentence [wd "particular", tx F] S, typ T0 Ty0.
@@ -177,6 +180,9 @@ premise-cands [T|Ts] Es Path [C|Cs] :-
   at-expected T E P0 P,
   cand-of P Ty C, premise-cands Ts Er Path Cs.
 
+% [cand-of P Ty C]: the candidate of the premise of text P and type Ty: its
+% line, and, for a step with one line and premises, the lines and types
+% that may take its place (contractible)
 pred cand-of i:pf, i:term, o:cand.
 cand-of (prfp (prf L (some (it S Ch))) Tys) Ty (cand D Lift Tys Ty tt) :- !,
   dashed (prf L (some (it S Ch))) D, std.append L Ch Lift.
@@ -192,6 +198,9 @@ contract-premises Strat Cs Tau L Tys By :-
   decide Strat Cs Tau 0 Dec0 "" Dec By,
   lines-of Cs Dec L Tys.
 
+% [decide Strat Cs Tau I D0 B0 D By]: the choices D (contract or not) for
+% the candidates Cs from the I-th on, each tried in turn by the strategy
+% Strat; By, the tactic of the last contraction accepted
 pred decide i:string, i:list cand, i:term, i:int, i:list bool, i:string, o:list bool, o:string.
 decide _ Cs _ I D B D B :- std.length Cs N, I >= N, !.
 decide Strat Cs Tau I D0 B0 D B :-
@@ -199,15 +208,22 @@ decide Strat Cs Tau I D0 B0 D B :-
   (if (Ok = tt, contract-ok Strat Cs Tau I D0 B1) (set-nth I D0 tt D1, B2 = B1) (D1 = D0, B2 = B0)),
   I1 is I + 1, decide Strat Cs Tau I1 D1 B2 D B.
 
+% [contract-ok Strat Cs Tau I D0 By]: the I-th candidate may be contracted:
+% always (maximal), or when Tau still follows from the premises (guarded,
+% checked by the tactic By)
 pred contract-ok i:string, i:list cand, i:term, i:int, i:list bool, o:string.
 contract-ok "maximal" _ _ _ _ "" :- !.
 contract-ok "guarded" Cs Tau I D0 By :-
   set-nth I D0 tt D1, lines-of Cs D1 _ Tys, guard Tys Tau By.
 
+% [set-nth I L B L1]: the list L with its I-th element (from 0) set to B
 pred set-nth i:int, i:list bool, i:bool, o:list bool.
 set-nth 0 [_|L] B [B|L] :- !.
 set-nth I [X|L] B [X|L1] :- I1 is I - 1, set-nth I1 L B L1.
 
+% [lines-of Cs Ds L Tys]: the lines L of the step and the types Tys they
+% prove: each contracted candidate gives its own premises, the others their
+% line
 pred lines-of i:list cand, i:list bool, o:list line, o:list term.
 lines-of [] _ [] [].
 lines-of [cand D Lift Ps Ty _|Cs] [B|Bs] L Tys :-
@@ -219,10 +235,13 @@ lines-of [cand D Lift Ps Ty _|Cs] [B|Bs] L Tys :-
 pred guard i:list term, i:term, o:string.
 guard Tys Tau By :- arrows Tys Tau G, xtext-guard-tactic L By, try-tactic L G, !.
 
+% [arrows As T G]: the implication A1 -> ... -> An -> T
 pred arrows i:list term, i:term, o:term.
 arrows [] T T.
 arrows [A|As] T (prod `_` A (_\ R)) :- arrows As T R.
 
+% [witnesses Ks Ts Ws]: the arguments among Ts whose kind in Ks is
+% universal (ak-all), the witnesses of the step
 pred witnesses i:list ak, i:list term, o:list term.
 witnesses [ak-all|Ks] [W|Ws] [W|R] :- !, witnesses Ks Ws R.
 witnesses [_|Ks] [_|Ws] R :- !, witnesses Ks Ws R.

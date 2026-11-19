@@ -63,6 +63,8 @@ with-switches G :-
   std.map Ss (s\ n\ sigma Vs\ s = switch-values n Vs) Names,
   with-values-of Names G.
 
+% [with-values-of Names G]: G, with each switch of Names read once and its
+% value fixed by a clause
 pred with-values-of i:list string, i:prop.
 with-values-of [] G :- G.
 with-values-of [Name | Names] G :-
@@ -83,6 +85,8 @@ pred off i:string.
 off M :- getenv "XTEXT_OFF" (some S), rex.split "," S L,
   std.forall L known-mechanism, std.mem! L M.
 
+% [known-mechanism M]: M is a mechanism that XTEXT_OFF may name; an error
+% for any other name
 pred known-mechanism i:string.
 known-mechanism M :- std.mem! ["explicit", "args", "motive", "tactics", "thatis"] M, !.
 known-mechanism M :- coq.error {calc ("xtext: XTEXT_OFF names \"" ^ M ^

@@ -5,13 +5,13 @@
 % Two kinds of links, found while the text is read, without a table of
 % names:
 % - a name given to a formula, `A`{.hyp} (h), introduces it: its uses
-%   (`B`{.fact} (h), "by h", "Applying h to ...", *by h*) link back to
+%   (`B`{.fact} (h), "by h", "Applying h to ...", *h*{.just}) link back to
 %   the step that introduced it.  A name holds where a declaration does
 %   (a Let, typst.elpi): in the rest of its step, the step's sub-steps and
 %   the steps after it in its list; a name of the statement, in the whole
 %   proof;
-% - a name of a lemma, a constructor or a type, in a justification (*by
-%   Corelib.Init.Logic.conj*) or in the text ("Applying f_equal_nat, ..."),
+% - a name of a lemma, a constructor or a type, in a justification
+%   (*Corelib.Init.Logic.conj*{.just}) or in the text ("Applying f_equal_nat, ..."),
 %   that Rocq locates in a library with an online documentation (the
 %   corelib, the stdlib: library-documentation) links to its entry there.
 %

@@ -6,7 +6,7 @@
 %
 %     <details><summary>not proved: 0 < a - b</summary></details>
 %
-%   - 🔶 **[2a, 2b]** We have `C`{.claim}.
+%   - 🔶 **[2.1]** We have `C`{.claim}.
 %
 % the mark of the status of the step, first; the conditions left to a
 % Proof block (status todo), after it; the message of the checker, in a
@@ -27,8 +27,8 @@ status-mark "none" "▫️".
 pred message-block i:string, o:string.
 message-block M S :- S is "<details><summary>" ^ M ^ "</summary></details>".
 
-% [conditions-mark Ids S]: the conditions Ids (as cyp numbers them, "2a,
-% 2b") left to a Proof block
+% [conditions-mark Ids S]: the mark **[Ids]** of the conditions left to a
+% Proof block; cyp writes in it the number of the node, "2.1"
 pred conditions-mark i:string, o:string.
 conditions-mark Ids S :- S is "**[" ^ Ids ^ "]**".
 
@@ -47,7 +47,7 @@ split-checked Text (checked Status Conditions Message) Rest :-
   split-conditions T1 Conditions T2,
   split-message T2 Message Rest.
 
-% [split-conditions T Ids Rest]: the conditions mark **[2a, 2b]** at the
+% [split-conditions T Ids Rest]: the conditions mark **[2.1]** at the
 % start of T (none if there is none), and the text after it
 pred split-conditions i:string, o:option string, o:string.
 split-conditions T (some Ids) Rest :-
