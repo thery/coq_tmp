@@ -55,9 +55,10 @@ development), in [elpi-tools/](elpi-tools):
 - [debug/](elpi-tools/debug/README.md): **a debugger**.  `elpi-debug
   file.elpi 'goal'` runs the goal through a meta-interpreter written in
   Elpi: ports (call, exit, redo, fail, cut, CHR wake-up), the attempts of
-  the CHR rules and the constraint store, breakpoints and stepping, counts and time per predicate, and on failure the deepest
-  failing goal with each clause tried and why it did not apply (or that the
-  predicate has no clause at all); the bindings made by each unify step and
+  the CHR rules and the constraint store, breakpoints and stepping,
+  counts and time per predicate, and on failure the deepest failing goal
+  with each clause tried and why it did not apply (or that the predicate
+  has no clause at all); the bindings made by each unify step and
   by each call (at its exit); at each call, the premise of the clause it
   comes from (`premise 1 of lists.elpi:16`).  About 20 times slower than the real engine
   on the benchmarks of its README.  Its strategy can be random:
