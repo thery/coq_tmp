@@ -70,7 +70,8 @@ run-name N G :- tactic-name N L, !, coq.ltac.call-ltac1 L G [].
 run-name N G :- prooftext.tactic N, !, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
 run-name N G :- rex.match "^[A-Za-z_][A-Za-z0-9_']*$" N, coq.ltac.call-ltac1 N G [].
 
-% [justify Tac G]: the justification of a step (*by X*), or none
+% [justify-step J G]: the goal G closed by the justification J of a step
+% (*by X*), or, when it has none (J = none), by the rules and the defaults
 pred justify-step i:option string, i:goal.
 justify-step none G :- close-default G.
 % the rules named X, and only them, if there are any
@@ -83,6 +84,8 @@ justify-step (some X) G :-
   rex.replace "^@" "" X X1,
   coq.locate-all X1 L, std.mem L (loc-gref GR), !,
   apply-lemma GR G.
+% else the tactic X
+justify-step (some X) G :- run-name X G.
 
 % [apply-lemma GR G]: the lemma GR applied to the goal, its premises closed
 % by the rules: directly (its conclusion unified with the goal), else, for
@@ -106,8 +109,6 @@ elimination-principle GR :- coq.env.typeof GR (prod _ PT _), conclusion-sort PT.
 pred conclusion-sort i:term.
 conclusion-sort (sort _).
 conclusion-sort (prod _ _ B) :- pi x\ conclusion-sort (B x).
-% else the tactic X
-justify-step (some X) G :- run-name X G.
 
 % [solve-step Tac G]: as [justify-step], and again after introducing the
 % premises of the goal
