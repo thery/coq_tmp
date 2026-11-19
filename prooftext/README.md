@@ -87,7 +87,9 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
 
   and the writing of a header: `header-lines Fields Lines` (a key that
   is not a `header-key` is an error), `lang-fields Lang Fields` (no field
-  for the default language), `by-field Tactics Field`;
+  for the default language), `by-field Tactics Field`, and its reading:
+  `field-value Fields Key Value` (`""` for a field the header has not),
+  `header-lang Fields Lang` (`default-lang` without a `lang` field);
 - `document.elpi`: the document tree, `document Fields Name Place
   Statement Steps`, a step `step Place Text Sub-steps`, a `place` (`lines
   First Last`, the lines of a text in its file, numbered from 0, given by

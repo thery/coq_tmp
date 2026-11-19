@@ -19,12 +19,6 @@
 % read-document), into its document: the fields of the header, the name,
 % the statement, the tree of steps (prooftext.step), with their lines.
 
-% [field Fields Key Value]: the value of the field Key of the header, ""
-% when there is none
-pred field i:list prooftext.field, i:string, o:string.
-field Fields Key Value :- std.mem Fields (prooftext.field Key Value), !.
-field _ _ "".
-
 % the steps of a tree, numbered in Dewey notation (prooftext.step-number)
 pred steps-of i:string, i:int, i:list prooftext.step, o:list step.
 steps-of _ _ [] [].

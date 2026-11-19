@@ -74,7 +74,7 @@ write-typst D Text :- write-typst-in maths D Text.
 % formulas in the style Style
 pred write-typst-in i:formula-style, i:prooftext.document, o:string.
 write-typst-in Style (prooftext.document Fields Name _ Statement Steps) Text :-
-  text-language Fields Lang,
+  prooftext.header-lang Fields Lang,
   (if (text-is-checked Statement) (Checked = tt, Numbers = "true") (Checked = ff, Numbers = "false")),
   prooftext.typst-string Name TName,
   std.map Fields typst-field FieldLines,
@@ -108,13 +108,7 @@ first-context Style Fields Lang (context F [] Words) :-
 pred first-formulas i:formula-style, i:list prooftext.field, o:formulas.
 first-formulas code _ in-code.
 first-formulas maths Fields (in-maths Scope []) :-
-  (std.mem Fields (prooftext.field "scope" Scope), ! ; Scope = "").
-
-% [text-language Fields Lang]: the language of the text, from its lang
-% field (default-lang when it has none)
-pred text-language i:list prooftext.field, o:string.
-text-language Fields Lang :- std.mem Fields (prooftext.field "lang" Lang), !.
-text-language _ Lang :- prooftext.default-lang Lang.
+  prooftext.field-value Fields "scope" Scope.
 
 % [text-is-checked Statement]: the text was checked (by cyp): its
 % statement has a status mark

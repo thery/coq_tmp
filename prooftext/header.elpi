@@ -30,6 +30,18 @@ header-key "gaps".
 pred default-lang o:string.
 default-lang "en".
 
+% [field-value Fields Key Value]: the value of the field Key of a header,
+% "" when it has none
+pred field-value i:list prooftext.field, i:string, o:string.
+field-value Fields Key Value :- std.mem Fields (prooftext.field Key Value), !.
+field-value _ _ "".
+
+% [header-lang Fields Lang]: the language of a text, its lang field,
+% default-lang when it has none (or an empty one)
+pred header-lang i:list prooftext.field, o:string.
+header-lang Fields Lang :- field-value Fields "lang" Lang, not (Lang = ""), !.
+header-lang _ Lang :- default-lang Lang.
+
 % [header-lines Fields Lines]: the lines of the header, between two
 % lines ---; a key that is not a header-key is an error
 pred header-lines i:list prooftext.field, o:list string.
