@@ -10,7 +10,7 @@ extension of [`vscode/`](vscode), VS Code's usual debugging interface
 works on Elpi programs: breakpoints in the margin of `.elpi` files and on
 predicates, Step Into, Step Over, Step Out, Continue, Pause, Restart
 Frame, the call stack, the variables panel, the debug console.  Standalone
-Elpi 4.0.0 only (opam switch `elpi5`), not Rocq-Elpi.
+Elpi 4.0.0 only, not Rocq-Elpi.
 
 It follows the idea of Eshel Yaron's
 [DAP server for SWI-Prolog](https://github.com/eshelyaron/debug_adapter):

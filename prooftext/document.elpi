@@ -85,19 +85,6 @@ step-lines Indent [closed-step P Text Sub Closing | Steps] Lines :-
   step-lines Indent Steps Next,
   std.append ItemLines ["", {calc (Indent ^ "  " ^ Closing)} | Next] Lines.
 
-% [closings-joined D D1]: the document D, each closing paragraph joined to
-% the text of its step (after it, before the sub-steps), as read-document
-% (tree.elpi) gives it: for a writer that does not show closing paragraphs
-% yet (the Typst writer, typst.elpi)
-pred closings-joined i:document, o:document.
-closings-joined (document Fields Name Place Statement Steps) (document Fields Name Place Statement Steps1) :-
-  std.map Steps step-closing-joined Steps1.
-
-pred step-closing-joined i:step, o:step.
-step-closing-joined (step P Text Sub) (step P Text Sub1) :- std.map Sub step-closing-joined Sub1.
-step-closing-joined (closed-step P Text Sub Closing) (step P {calc (Text ^ " " ^ Closing)} Sub1) :-
-  std.map Sub step-closing-joined Sub1.
-
 % [trim S T]: S without the spaces and tabs at its ends
 pred trim i:string, o:string.
 trim S T :- rex.replace "^[ \t]+" "" S S1, rex.replace "[ \t]+$" "" S1 T.

@@ -8,20 +8,30 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var($n ∈ ℕ$)#". We prove "#claim($n + 0 = n$)#"."]
-
-#steps((
-  step("1", [#"We prove "#formula($n + 0 = n$)#" by induction on "#formula($n$)#" ("#cited("nat", "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat")#", "#by("nat_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"): These cases being exhaustive, we deduce "#claim($n + 0 = n$)#"."], (
-    step("1.1", [#"Case 1 (base): we prove "#claim($0 = 0$)#"."], (
-      step("1.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#by("eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($0 = 0$)#"."], ()),
-    )),
-    step("1.2", [#"Case 2 (inductive): we prove "#claim($∀ m ∈ ℕ , m + 0 = m → "S"\(m\) + 0 = "S"\(m\)$)#"."], (
-      step("1.2.1", [#"Let us choose arbitrarily "#var($m ∈ ℕ$)#"; assume by induction hypothesis "#hyp($m + 0 = m$)#" "#name("IH", label: "1.2.1:IH")#". Rewriting with "#fact($m + 0 = m$)#" from right to left ("#cited("eq_ind_r", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_ind_r")#"), we get "#claim($"S"\(m + 0\) = "S"\(m\)$)#"."], (
-        step("1.2.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#by("eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($"S"\(m\) = "S"\(m\)$)#"."], ()),
-        step("1.2.1.2", [#"By "#by("IH", target: "1.2.1:IH")#" we have "#claim($m + 0 = m$)#"."], ()),
+#proof([#"Let "#var($n ∈ ℕ$)#". We prove "#claim($n + 0 = n$)#"."], (
+  steps((
+    step("1", [#"We prove "#formula($n + 0 = n$)#" by induction on "#formula($n$)#" ("#cited("nat", "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat")#", "#just("nat_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"):"], (
+      steps((
+        step("1.1", [#"Case 1 (base): we prove "#claim($0 = 0$)#"."], (
+          steps((
+            step("1.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#just("eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($0 = 0$)#"."], ()),
+          )),
+        )),
+        step("1.2", [#"Case 2 (inductive): we prove "#claim($∀ m ∈ ℕ , m + 0 = m → "S"\(m\) + 0 = "S"\(m\)$)#"."], (
+          steps((
+            step("1.2.1", [#"Let us choose arbitrarily "#var($m ∈ ℕ$)#"; assume by induction hypothesis "#hyp($m + 0 = m$)#" "#name("IH", label: "1.2.1:IH")#"."], (
+              steps((
+                step("1.2.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#just("eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($"S"\(m\) = "S"\(m\)$)#"."], ()),
+                step("1.2.1.2", [#"By "#just("IH", target: "1.2.1:IH")#" we have "#claim($m + 0 = m$)#"."], ()),
+              )),
+              paragraph[#"Rewriting with "#fact($m + 0 = m$)#" from right to left ("#cited("eq_ind_r", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_ind_r")#"), we get "#claim($"S"\(m + 0\) = "S"\(m\)$)#"."],
+            )),
+          )),
+        )),
       )),
+      paragraph[#"These cases being exhaustive, we deduce "#claim($n + 0 = n$)#"."],
     )),
   )),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("just", "justification"),))

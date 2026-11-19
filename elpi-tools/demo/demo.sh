@@ -1,7 +1,7 @@
 #!/bin/sh
-# Runs every command of DEMO.md, in order (opam switch elpi5, after
-# `dune build` in elpi-tools/).
-eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)"
+# Runs every command of DEMO.md, in order (after `dune build` in
+# elpi-tools/).
+# Run it in an opam switch with elpi 4.0.0 (eval $(opam env --switch=...)).
 cd "$(dirname "$0")" || exit 1
 build=../_build/default
 check="$build/check/bin/elpi_check_main.exe -I ../check/lib"

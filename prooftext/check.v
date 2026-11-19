@@ -70,9 +70,7 @@ Elpi Accumulate lp:{{
       "  - By *h*{.just} we have `A`{.claim}.",
       "",
       "  So we have `B /\\ A`{.claim}.",
-      ""]},
-    prooftext.closings-joined DC (prooftext.document _ _ _ _ [prooftext.step _ JT _]),
-    expect "closing joined" JT "Assume `A /\\ B`{.hyp} (h). So we have `B /\\ A`{.claim}.".
+      ""]}.
 }}.
 Elpi prooftext_check.
 
@@ -87,7 +85,7 @@ From Lexicon Extra Dependency "lang_en.elpi" as lex_en.
 From Lexicon Extra Dependency "lang_fr.elpi" as lex_fr.
 
 Elpi Command prooftext_check_typst.
-Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_checked
+Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
   pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   pred expect i:string, i:string, i:string.
@@ -255,7 +253,7 @@ Elpi prooftext_check_tree.
    the corelib links to its documentation, a tactic does not; the
    legend, in the language of the text. *)
 Elpi Command prooftext_check_links.
-Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_checked
+Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
   pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   % [expect-in What Text Part]: Part is in Text (Part read as a regexp
@@ -279,7 +277,7 @@ Elpi Accumulate lp:{{
     prooftext.write-typst-in prooftext.code D T,
     expect-in "label of a name of the statement" T "#name(\"a\", label: \"statement:a\")",
     expect-in "label of a name of a step" T "#name(\"P1\", label: \"1:P1\")",
-    expect-in "justification by a name" T "#by(\"a\", target: \"statement:a\")",
+    expect-in "justification by a name" T "#just(\"a\", target: \"statement:a\")",
     expect-in "name in the text" T " By \"#named(\"h\", \"1.1:h\")",
     expect-not-in "a word of the lexicon" T "#named(\"the\"",
     expect-in "name of an earlier step" T "#named(\"P1\", \"1:P1\")",
@@ -287,16 +285,49 @@ Elpi Accumulate lp:{{
     expect-in "lemma in the text" T
       "#cited(\"conj\", \"https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj\")",
     expect-in "justification by a lemma" T
-      "#by(\"Corelib.Init.Logic.conj\", url: \"https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj\")",
+      "#just(\"Corelib.Init.Logic.conj\", url: \"https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj\")",
     expect-in "name after a fact" T "#name(\"a\", target: \"statement:a\")",
-    expect-in "a tactic" T "#by(\"tauto\")",
+    expect-in "a tactic" T "#just(\"tauto\")",
     expect-in "legend" T
-      "#legend(((\"var\", \"variable\"), (\"hyp\", \"hypothesis\"), (\"claim\", \"claim\"), (\"fact\", \"fact\"), (\"by\", \"justification\"),))",
+      "#legend(((\"var\", \"variable\"), (\"hyp\", \"hypothesis\"), (\"claim\", \"claim\"), (\"fact\", \"fact\"), (\"just\", \"justification\"),))",
     prooftext.legend-typst "fr" tt LegendFr,
     expect-in "legend in French, checked" LegendFr "(\"hyp\", \"hypothèse\")",
     expect-in "legend of the statuses" LegendFr "statuses: ((\"ok\", \"prouvé\")".
 }}.
 Elpi prooftext_check_links.
+
+(* The Typst writer on a tree (typst.elpi): a checked free text, its
+   spans (node) with their marks inline, cyp's messages in the order of
+   the nodes, each with the status of its node (todo before ko here); a
+   checked list item, its closing paragraph after its sub-item. *)
+Elpi Command prooftext_check_typst_tree.
+Elpi Accumulate File lex_core lex_en pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
+  pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
+Elpi Accumulate lp:{{
+  pred expect-in i:string, i:string, i:string.
+  expect-in What Text Part :-
+    if (rex.split Part Text [_, _ | _]) (coq.say What ": ok")
+      (coq.error What ": no" Part "in" Text).
+  main [] :-
+    rex.split "\n" {std.string.concat "\n" [
+      "# free", "",
+      "✅ Let `A : Prop`{.var}. Assume `A`{.hyp} (a). We prove `A`{.claim}.", "",
+      "[🔶 **[1]** We have `A`{.claim} (P)]{.p} and [❌ by *P*{.just} `A`{.claim}]{.p}.", "",
+      "<details><summary>left: A</summary></details>", "",
+      "<details><summary>not proved: A</summary></details>", "",
+      "- ✅ Assume `A`{.hyp} (b).", "  - ✅ We have `A`{.claim}.", "",
+      "  Hence `A`{.claim}."]} Lines,
+    prooftext.lines-tree Lines T,
+    prooftext.write-typst-tree prooftext.code T Text,
+    expect-in "statement, checked" Text "), status: \"ok\")",
+    expect-in "a span, its mark inline" Text "#node(\"1\").#mark(\"todo\", conditions: \"1\")#\"We have \"",
+    expect-in "the name of a span's conclusion, after it" Text "#just(\"P\", target: \"1:P\")",
+    expect-in "the first message, of the first node" Text "message(\"todo\", \"left: A\"),",
+    expect-in "the second message, of the second node" Text "message(\"ko\", \"not proved: A\"),",
+    expect-in "the closing paragraph after the sub-item" Text
+      "We have \"#claim(\"A\")#\".\"., (), status: \"ok\"),\n      )),\n      paragraph.#\"Hence \"".
+}}.
+Elpi prooftext_check_typst_tree.
 
 (* A lemma of the stdlib, in a module (Nat) of its file (PeanoNat) *)
 From Stdlib Require Import Arith.

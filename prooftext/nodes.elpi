@@ -244,7 +244,7 @@ conclusion-errors Id L Ps Es :-
 % [part-text P S]: the text of a formula, for a message
 pred part-text i:prooftext.text-part, o:string.
 part-text (prooftext.formula-part _ F _) F :- !.
-part-text (prooftext.term-part _ T _) S :- !, S = {std.any->string T}.
+part-text (prooftext.term-part _ T _) S :- !, coq.term->string T S.
 part-text _ "".
 
 % [twice-errors Id L Hs Scope Es]: the hypotheses Hs of a node named by a

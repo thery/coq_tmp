@@ -201,14 +201,11 @@ that names no formula in scope).
   a reader; `unplaced` for a text being written), the writer
   `write-document D Text`, and the number of a step, `step-number Parent
   K Number` (Dewey notation, `2.1` the first sub-step of step 2: cyp
-  numbers its nodes with it, the Typst writer its steps), and
-  `closings-joined D D1`, each closing paragraph joined to the text of its
-  step, as `read-document` gives it, for a writer that does not show
-  closing paragraphs (the Typst writer);
+  numbers its nodes with it, the Typst writer its steps);
 - `tree.elpi`: the reader, `read-tree File T` and `lines-tree Lines T`,
   into the tree of nodes (below, the reader's contract), and
-  `read-document File D`, the document of a writer from the tree (the
-  Typst back end's);
+  `read-document File D`, a flattened document of a writer from the tree
+  (the Typst back end no longer uses it: it writes from the tree);
 - `nodes.elpi`: what the nodes of a tree say, their numbers, and the
   errors of a tree, `tree-errors` (below, the reader's contract);
 - `checked.elpi`: what a checker adds to the text of a step (cyp's
@@ -218,8 +215,10 @@ that names no formula in scope).
   `conditions-mark Ids S` (`**[2a, 2b]**`, the conditions left to a Proof
   block), and their reading, `split-checked Text (checked Status
   Conditions Message) Rest`.  cyp writes its marks with these predicates;
-- `typst.elpi`: the Typst writer, `write-typst D Text` (formulas in
-  mathematics), `write-typst-in Style D Text` (`maths` or `code`), and
+- `typst.elpi`: the Typst writer, `write-typst-tree Style T Text` (the
+  tree of a text, formulas in the style `maths` or `code`; it needs
+  `tree.elpi` and `nodes.elpi`), `write-typst D Text` (a document, through
+  its Markdown; formulas in mathematics), `write-typst-in Style D Text`, and
   `write-as File D Text` (Typst for a file `.typ`, Markdown otherwise);
   see "The PDF of a proof text";
 - `links.elpi`: the links of the PDF and of the web page: `name-label
@@ -331,15 +330,15 @@ subnodes `1`, `2`, ..., the subnodes of `2` are `2.1`, ...), and the
 errors, `tree-errors Top Errors`, each `node-error Number Line Error`
 (`error-message E S`, its English message).
 
-**For a writer** (the Typst back end), `read-document File D` gives the
-`document` of the tree: the statement is the text of the top node (its
-first lines are its place), the steps are its list items, and the text of
-a step is its own text with that of its spans and divs, their marks left
-out, its paragraphs joined.  A text written by `write-document` gives
-back the same document, with places.  The PDF of a free text so shows no
-structure (decision 7 of the proposal); a closing paragraph is shown with
-the text of its item, before its sub-steps, until the Typst writer reads
-the tree itself.
+**For a writer**, `read-document File D` gives a flattened `document` of
+the tree: the statement is the text of the top node (its first lines are
+its place), the steps are its list items, and the text of a step is its
+own text with that of its spans and divs, their marks left out, its
+paragraphs joined.  A text written by `write-document` gives back the
+same document, with places.  The Typst back end does not use it: it
+writes from the tree itself (`write-typst-tree`, below), so that a
+closing paragraph comes after its sub-items and a free text keeps its
+paragraphs.
 
 ## The PDF of a proof text (Typst)
 
@@ -352,6 +351,7 @@ prooftext/pdf.sh --html proof.md                      # an HTML page, proof.html
 prooftext/pdf.sh --flags "-R xtext XText" proof.md    # a load path for the require line
 prooftext/pdf.sh --source proof.md                    # the Typst source only
 prooftext/pdf.sh --links '[["index", "../index.html"]]' proof.typ   # links above the text (gallery.sh)
+prooftext/pdf.sh --roles claim,just proof.md # colour only the claims and justifications (all by default)
 sh prooftext/gallery.sh ~/gallery                      # every text of the repository, with an index
 ```
 
@@ -369,17 +369,20 @@ and writes only under the home directory, not in `/tmp`.
 
 ### How it works, and why there
 
-- **The writer is in Elpi, here**, next to `write-document`:
-  `write-typst D Text` (`typst.elpi`) writes the same document tree.  Both
-  tools use it.  xtext writes a document it has just built
+- **The writer is in Elpi, here**, next to the reader:
+  `write-typst-tree Style T Text` (`typst.elpi`) writes the tree of
+  nodes `T` that the reader gives (`read-tree`, the reader's contract
+  above), so that a text in Markdown (one that xtext wrote, a text
+  checked by cyp, a text written by hand, in either syntax) is shown as
+  it is written.  xtext writes a document it has just built
   (`Explain foo to "foo.typ"`: `write-as` chooses the writer by the
-  extension of the file).  A text in Markdown (one that xtext wrote, a
-  text checked by cyp, a text written by hand) is first read with
-  `read-document`, which follows the reader's contract above.  Reading
-  Markdown therefore needs no OCaml driver: the command
-  `Typst "proof.md" to "proof.typ".` (`Typst.v`) is a few lines, and
-  `pdf.sh` is a shell script that runs it, then `typst`.  pandoc is not
-  used: its generic conversion knows neither the roles nor the statuses.
+  extension of the file) with `write-typst D Text`: the document's
+  Markdown (`write-document`), read back into its tree, so that both
+  give the same Typst source.  Reading Markdown needs no OCaml driver:
+  the command `Typst "proof.md" to "proof.typ".` (`Typst.v`) is a few
+  lines, and `pdf.sh` is a shell script that runs it, then `typst`.
+  pandoc is not used: its generic conversion knows neither the roles nor
+  the statuses.
 - **The look is in a Typst template**, `typst/local/prooftext/0.1.0/prooftext.typ`.
   It is a local Typst package, `@local/prooftext:0.1.0`, so that a Typst
   source imports it by name, wherever the source is:
@@ -398,26 +401,49 @@ A Typst source (xtext's `and_swap`, shortened):
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H", label: "statement:H")#". We prove "#claim($B ∧ A$)#"."]
-
-#steps((
-  step("1", [#"Going back to the definition of and (match) in "#fact($A ∧ B$)#" "#name("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
-    step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#"."], (
-      step("1.1.1", [#"By definition of and ("#cited("conj", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), ... "#by("Corelib.Init.Logic.conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"."], ()),
+#proof([#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H", label: "statement:H")#". We prove "#claim($B ∧ A$)#"."], (
+  steps((
+    step("1", [#"Going back to the definition of and in "#fact($A ∧ B$)#" "#name("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
+      steps((
+        step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#"."], (
+          steps((
+            step("1.1.1", [#"By definition of and ("#just("conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), we have "#claim($B ∧ A$)#"."], ()),
+          )),
+        )),
+      )),
     )),
   )),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("just", "justification"),))
 ```
 
-The text of a statement or of a step is cut into its parts: the formulas
-with their roles, the name `(h)` given to a formula (right after it), the
-justification `*by X*`, and the plain text between them, where the names
-and the lemmas are links (`named`, `cited`; see "Links").  Each part is
-written as a Typst string, so that no character of the text is read as
-Typst markup; a formula is Typst maths, `$...$`, made by the printer, or,
-as code, a string: `#claim("B /\\ A")`.
+`proof` is the top node: its first paragraph (the statement), then its
+*blocks*, in the order of the text.  The blocks of a node are its
+paragraphs (`paragraph[...]`), its lists of items (`steps((...))`, each
+item a `step`: its number, its first paragraph, its own blocks: its
+sub-items, its closing paragraph), its divs (`division(number, (...))`)
+and cyp's messages (`message(status, text)`).  A span `[ ... ]{.p}` is a
+call inside the text of a paragraph, `node(number)[...]`.  The numbers
+are those of the nodes (`nodes.elpi`, the numbers of cyp's conditions:
+the subnodes of a node are numbered in the order of the text, whatever
+their syntax).  The same proof, free (the paper's `praeclarum`):
+
+```typst
+#proof([#"Let "#var($x , y , z , t : "Prop"$)#". If "#hyp($x → z$)#" ... then "#claim($x ∧ y → z ∧ t$)#"."], (
+  paragraph[#node("1")[#"Suppose "#hyp($x ∧ y$)#". "#node("1.1")[#node("1.1.1")[#"We have "#claim($x$)]#", so by "#fact($x → z$)#" we get "#claim($z$)#"."]#" ... Altogether we have "#claim($z ∧ t$)#"."]],
+))
+```
+
+The text of a paragraph is cut into its parts: the formulas with their
+roles, the name `(h)` given to a formula (right after it), the
+justifications `*X*{.just}` (`just`), and the plain text between them,
+where the names and the lemmas are links (`named`, `cited`; see
+"Links").  Each part is written as a Typst string, so that no character
+of the text is read as Typst markup; a formula is Typst maths, `$...$`,
+made by the printer, or, as code, a string: `#claim("B /\\ A")`.  The
+form of the texts written before the tree, `*by X*`, is shown as the word
+*by* followed by `just("X")`.
 
 ### What the PDF shows
 
@@ -438,10 +464,11 @@ as code, a string: `#claim("B /\\ A")`.
   | hypothesis | `{.hyp}` | light orange `#f8d49c` | a dashed line under it |
   | claim | `{.claim}` | light yellow `#fcf6c6` | a thin frame |
   | fact (a mention) | `{.fact}` | light grey `#e3e3e3` | a dotted line under it |
+  | justification | `*X*{.just}` | reddish purple `#d9a9cb` (darker) | a line under it |
   | no class | | none | none |
 
   The backgrounds are light tints of the Okabe-Ito palette (sky blue,
-  orange, yellow; grey), whose colours stay apart for the common kinds
+  orange, yellow; grey; reddish purple), whose colours stay apart for the common kinds
   of colour blindness; there is no red and green pair.  Orange and yellow
   look alike for red-green colour blindness: the hypothesis's tint is
   darker.  The page was checked through the
@@ -452,19 +479,36 @@ as code, a string: `#claim("B /\\ A")`.
   maths); a formula wider than its line is a box as wide as the line,
   where it breaks.
 
-  The name `(h)` of a formula is in black, in monospace.  The
-  justification is grey, *by* `X`.  The links are blue (Okabe-Ito blue,
-  `#0072b2`): a name and a lemma that link somewhere (see "Links").
-- **The steps** are one paragraph each, indented by their depth, with a
-  bullet.  A long step wraps under its own text, not under the bullet.
-- **A text checked by cyp** has a coloured mark in place of the bullet:
-  ✔ green, proved (✅); ✘ red, not proved (❌); ◆ orange, left to a Proof
-  block (🔶), with the numbers of the conditions left; ▫ grey, nothing to
-  check (▫️).  The statement has its mark too.  cyp's message is in a tinted
-  box under the step.  The steps are numbered in the margin, in Dewey
-  notation (`2.1` is the first sub-step of `2`), as cyp numbers its
-  conditions.  Only a checked text has these numbers: a text that is not
-  checked has no use for them.
+  The name `(h)` of a formula is in black, in monospace.  A
+  justification `*X*{.just}` is the name X, in monospace, on its
+  background; the words around it ("by", "applying ... to") are ordinary
+  text, and a node with several justifications has each name coloured
+  where it is written.  The links are blue (Okabe-Ito blue, `#0072b2`): a
+  name and a lemma that link somewhere (see "Links").
+- **A structured text** (list items): each item is a paragraph with a
+  bullet, indented by its depth; a long item wraps under its own text,
+  not under the bullet.  Its sub-items come below it, one level further
+  in, and its closing paragraph after them, at the level of the item's
+  text, as written.
+- **A free text** (spans `[ ... ]{.p}`, divs `::: p`) shows no structure
+  (decision 7 of the proposal): its paragraphs are the paragraphs the
+  author wrote, with the colours of the roles only, no bars, no corners.
+  A text that mixes the two syntaxes shows its items as a list and its
+  spans as text.
+- **A text checked by cyp** has a coloured mark in place of the bullet of
+  each item: ✔ green, proved (✅); ✘ red, not proved (❌); ◆ orange, left
+  to a Proof block (🔶), with the numbers of the conditions left; ▫ grey,
+  nothing to check (▫️).  The statement has its mark too, in front of it.
+  A span or a div has its mark (a little smaller) inline, at the start of
+  its text, where cyp wrote it: the one place where a free text shows
+  where a node starts.  cyp's message is in a tinted box where cyp wrote
+  it: after the paragraph where its node starts (under the item, for an
+  item).  The errors of the tree (a node with no conclusion, a fact not
+  in scope, a name that names nothing, a name out of scope, ...) are
+  cyp's messages too, with their lines.  The items are numbered in the
+  margin, in Dewey notation (`2.1` is the first subnode of `2`), as cyp
+  numbers its conditions.  Only a checked text has these numbers: a text
+  that is not checked has no use for them.
 - **The language** is the `lang` field.  Arabic is written from right to
   left: the bullets, the indentation and the wrapped lines are on the
   right; formulas stay left to right.
@@ -477,21 +521,22 @@ are three kinds; the writer finds the first two while it reads the text,
 with no table of names.
 
 1. **A name and its uses.**  A name given to a formula, `` `A`{.hyp}
-   (h) `` (a hypothesis, or a claim that a later step names, `(P1)`),
-   introduces it: the writer gives it a label, `statement:h` or `1.2:h`
-   (the number of its step).  Its uses link back to it: the name after a
+   (h) `` (a hypothesis, or the conclusion of a node that later nodes
+   name, `(P1)`), introduces it: the writer gives it a label,
+   `statement:h` or `1.2:h` (the number of its node).  Its uses link back to it: the name after a
    fact, `` `A`{.fact} (h) `` (the hypothesis the fact is), a word of the
    text ("By h4 we have", "Applying h2 to h4 and P1", "By IH we have")
-   and a justification, `*by h*`.  A name holds where a declaration does
-   (a `Let`): in the rest of its step, the step's sub-steps and the steps
-   after it in its list; the names of the statement in the whole proof;
-   the latest introduction wins.  A word is a name only when it is not a
+   and a justification, `*h*{.just}`.  A name holds where the format
+   says ('Scope' above): a hypothesis in the rest of its node and in its
+   subnodes; the name of a node's conclusion in the nodes after it and in
+   the node around it; the names of the statement in the whole proof; the
+   latest introduction wins.  A word is a name only when it is not a
    word of the lexicon of the text's language, so that "a" in French
    "il y a" never links to a hypothesis `(a)`.  This is the same for the
-   texts of xtext and for the texts checked by cyp: both are read by
-   `read-document`.
-2. **A lemma and its documentation.**  A justification, `*by
-   Corelib.Init.Datatypes.nat_ind*`, and a word of the text that Rocq
+   texts of xtext and for the texts checked by cyp: both are read into
+   their tree.
+2. **A lemma and its documentation.**  A justification,
+   `*Corelib.Init.Datatypes.nat_ind*{.just}`, and a word of the text that Rocq
    locates as a lemma, a constructor or a type ("Applying f_equal_nat",
    "(nat, nat_ind)") link to its entry in the online documentation of
    its library, when the library has one: the corelib and the stdlib
@@ -505,7 +550,7 @@ with no table of names.
    line of the text (with `--code`, without it: only the names that the
    prelude has, or given in full).  A name of another library (a lemma
    of the user, of xtext's examples) has no link: the gallery does not
-   know where its source is published.  A tactic (`*by lia*`) has none.
+   know where its source is published.  A tactic (`*lia*{.just}`) has none.
    Another library adds its documentation with a clause, as the
    notations are added: `prooftext.library-documentation "MyLib"
    "https://.../"`, if its pages follow rocqdoc's scheme.
@@ -535,12 +580,21 @@ good within a page, not as addresses from other pages.
 ### The legend
 
 At the end of the text, a small legend recalls the look of the roles:
-the words variable, hypothesis, claim and fact, each in the look of its
+the words variable, hypothesis, claim, fact and justification, each in the look of its
 role, and, for a text checked by cyp, the status marks with their
 meanings (✔ proved, ✘ not proved, ◆ left to a Proof block, ▫ nothing to
 check).  Its words are in the language of the text: the uses
-`legend-var`, ..., `legend-none` of the lexicon, in its ten languages
-(`write-word`).  In the web page it is a `footer class="legend"`.
+`legend-var`, `legend-hyp`, `legend-claim`, `legend-fact`, `legend-just`,
+`legend-ok`, ..., `legend-none` of the lexicon, in its ten languages
+(`write-word`).  In the web page it is a `footer class="legend"`, and each
+role in it is a switch (a check box) that turns the colour of that role on
+and off in the whole text (CSS only, no script); the button ↺ before them
+puts every switch back as the page started.
+
+The roles coloured are all of them by default; `pdf.sh --roles claim,just`
+(Typst's `--input roles=...`) colours only those listed: the others look
+like plain formulas, the PDF's legend lists only the coloured roles, and
+the web page starts with only their switches on.
 
 ### The gallery
 
@@ -584,13 +638,28 @@ experimental in Typst 0.15; `pdf.sh` hides its warning about that).  Its
 maths are MathML (`<math>`), which browsers draw without JavaScript.  The
 template has an HTML version of each of its functions (`on-html`): a
 formula is a `span` with the classes `formula` and its role (`formula
-claim`), a step an item of nested lists (`ul class="steps"`, `li
-class="step"`), a status a `span class="mark ok"`, cyp's message a `div
-class="message ko"`, the legend a `footer class="legend"`, the links of
-a gallery a `nav class="gallery"`, and a small style sheet, made from the
-template's colours, gives them their look (the mark of a role is a
-border: browsers draw no text decoration under MathML).  The page needs nothing else: no
-JavaScript, no file beside it.
+claim`, `formula just`), an item of a list an item of nested lists (`ul
+class="steps"`, `li class="step p"`), a paragraph a `p class="para"`, a
+status a `span class="mark ok"` (`mark inline ok` at the start of a span
+or a div), cyp's message a `div class="message ko"`, the legend a
+`footer class="legend"`, the links of a gallery a `nav class="gallery"`,
+and a small style sheet, made from the template's colours, gives them
+their look (the mark of a role is a border: browsers draw no text
+decoration under MathML).  The page needs no file beside it.
+
+**The hover** (decision 8 of the proposal).  Every node is an element of
+class `p` with its number, `data-id` (`0` for the top node, around the
+statement and the proof; `li` for an item, `span` for a span, `div` for
+a div), and a small script at the end of the page (the template's
+`hover-script`, about 40 lines) shows, under the pointer, the node and
+what it rests on: its conclusion framed, its hypotheses dashed, its
+direct subnodes tinted blue, and the formulas that its justifications,
+its names and its facts point to outlined in blue (the hypothesis or
+the named conclusion a name links to; for a fact, the last hypothesis
+or conclusion before it with the same text).  It is the only place where
+a free text shows its structure.  The address `page.html#hover=1.2`
+fixes the hover on node 1.2, for a screenshot (a headless browser cannot
+hover).  Without JavaScript the page is the same, without the hover.
 
 What Typst's HTML export does not do, so that the template does it
 itself:
@@ -600,8 +669,9 @@ itself:
 - the colours of text (`text(fill: ...)`), highlights, underlines and
   boxes: dropped; hence the classes;
 - labels: kept, but as ids of Typst's own (`loc-N`), see "Links";
-- the style sheet goes in the body (`html.elem("style")`), as Typst gives
-  no way to add to the `head`; browsers accept it;
+- the style sheet and the script go in the body (`html.elem("style")`,
+  `html.elem("script")`, written as they are, not escaped), as Typst
+  gives no way to add to the `head`; browsers accept it;
 - Chrome draws Typst's stretchy parentheses `(x)` with wide gaps; the
   writer therefore writes parentheses that keep their size, `\(x\)`, but
   around a fraction (the same in the PDF).
@@ -609,16 +679,20 @@ itself:
 The page was looked at in Chrome (headless screenshots) for a text of
 xtext, a checked text with its statuses and messages, and the unit tests
 of the printer; with the links and the new look of the roles, for
-`drinker`, `or_commut` in French and the pages of a small gallery.  Firefox was not tried.
+`drinker`, `or_commut` in French and the pages of a small gallery; with
+the hover, for the proposal's examples in both syntaxes, checked and not
+(`#hover=...`).  Firefox was not tried.
 
 ### Tests
 
-`sh prooftext/typst/check.sh` (about 80 s, with cyp built; needs `qpdf`):
+`sh prooftext/typst/check.sh` (about 90 s, with cyp built; needs `qpdf`):
 
 1. for the ten texts that xtext writes in Typst (`xtext/examples-typst/`:
    five in English, one each in French, Arabic, Chinese, Russian and
    Korean), the Typst source read back from their Markdown text
-   (`xtext/examples/`) is the same, character for character;
+   (`xtext/examples/`) is the same, character for character; (xtext writes
+   them through their Markdown, read back: they differ only if the
+   Markdown does not read back as written);
 2. for two texts checked by cyp (`xtext/cyp-check/add_0_r.checked.md`,
    all proved, and `half_le.checked.md`, with steps not proved and cyp's
    messages; their `flags` line left out), the Typst source is the
@@ -632,10 +706,16 @@ of the printer; with the links and the new look of the roles, for
    warnings (the PDFs are in `typst/tests/out/`);
 6. the HTML pages of `half_le.checked` and of the unit tests compile;
    they have MathML and the classes of the roles and statuses;
-7. the round, when cyp is built: xtext's `or_commut` checked by cyp, then
+7. the two syntaxes: the proposal's examples `praeclarum` (the
+   paper's), `xtext_praeclarum` and `Trans_Inv`, structured and free:
+   their PDF and their web page, each node an element of class `p` with
+   its number, the script of the hover, the same nodes in both syntaxes,
+   the closing paragraph after the sub-items, a free text as paragraphs
+   and spans;
+8. the round, when cyp is built: xtext's `or_commut` checked by cyp, then
    the PDF of the checked text; cyp's `sqrt_square` (real numbers)
    checked, then its PDF and its HTML page;
-8. the links, on a small gallery of four pages built in
+9. the links, on a small gallery of four pages built in
    `typst/tests/out/gallery` (`ABCD` and `or_commut` in English,
    `or_commut` in French and checked by cyp): the names of `ABCD` link
    to their steps (every `href="#loc-N"` of the page has its `id`, the
@@ -649,15 +729,23 @@ marks of a checked step, the parts of a text and the Typst strings, and
 the links: the labels of the names, their uses in the text, after a
 fact and in a justification, a name out of its scope and a word of the
 lexicon (not linked), the documentation of a lemma of the corelib and of
-the stdlib (`Nat.lt_eq_cases`), a tactic (no link), and the legend in
-English and French.
+the stdlib (`Nat.lt_eq_cases`), a tactic (no link), the legend in
+English and French, and the Typst writer on a tree: a checked free text
+(its spans, their marks, cyp's messages matched to their nodes) and the
+closing paragraph of an item after its sub-item.
 
 ### Limits
 
-- A formula without a class (cyp's own examples write few classes) is
-  shown without a role.  The Typst writer does not guess roles from the
-  words, as cyp does (`cyp/vernac/elpi/text.elpi`, not shared).  The texts
-  of xtext have a class on every formula.
+- A formula without a class is plain text: shown without a role (cyp
+  does not use it either).
+- The errors of the tree (an unclosed span, a node with no conclusion,
+  ...) are shown only in a checked text, as cyp's messages; the PDF of a
+  text that is not checked shows the text as it reads it, without them.
+- In a checked free text, nodes that start at the same place show their
+  marks side by side (✔ ✔ We have ...), one per node.
+- The hover finds the formula a fact repeats by its text (the last
+  hypothesis or conclusion before it with the same text), not by
+  conversion as cyp does.
 - In an Arabic text, a run of Latin words (`or (or_intror),`) is ordered
   by the Unicode bidirectional algorithm, as a Markdown viewer would order
   it.

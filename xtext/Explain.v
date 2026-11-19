@@ -30,6 +30,8 @@ From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "tree.elpi" as pt_tree.
+From ProofText Extra Dependency "nodes.elpi" as pt_nodes.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
@@ -146,7 +148,7 @@ Elpi Command Explain.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_tactics
   pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
@@ -168,7 +170,7 @@ Elpi Accumulate lp:{{
   % the document D written to the file F: in Typst if F ends with .typ,
   % else in Markdown (prooftext.write-as)
   pred write-text i:string, i:prooftext.document.
-  write-text F D :- for-file F D D1, prooftext.write-as F D1 T,
+  write-text F D :- prooftext.write-as F D T,
     open_out F O, output O T, close_out O, coq.say "Explain: written" F.
 }}.
 Elpi Export Explain.
@@ -181,7 +183,7 @@ Elpi Command Explain_partial.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_tactics
   pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
@@ -190,7 +192,7 @@ Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
-    with-switches (explain-partial N P D), for-file F D D1, prooftext.write-as F D1 T,
+    with-switches (explain-partial N P D), prooftext.write-as F D T,
     open_out F O, output O T, close_out O,
     coq.say "Explain_partial: written" F.
   main-interp-qed _ _ P _ Name :-

@@ -8,12 +8,14 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H", label: "statement:H")#". We prove "#claim($B ∧ A$)#"."]
-
-#steps((
-  step("1", [#"Going back to the definition of and (match) in "#by("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
-    step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#". By definition of and ("#by("conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), from "#by("b", target: "1.1:b")#" and "#by("a", target: "1.1:a")#" we deduce "#claim($B ∧ A$)#"."], ()),
+#proof([#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H", label: "statement:H")#". We prove "#claim($B ∧ A$)#"."], (
+  steps((
+    step("1", [#"Going back to the definition of and (match) in "#just("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
+      steps((
+        step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#". By definition of and ("#just("conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), from "#just("b", target: "1.1:b")#" and "#just("a", target: "1.1:a")#" we deduce "#claim($B ∧ A$)#"."], ()),
+      )),
+    )),
   )),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("just", "justification"),))

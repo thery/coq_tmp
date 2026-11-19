@@ -19,7 +19,10 @@
 #   --source        the Typst source only, no PDF;
 #   --links JSON    links to other pages above the text, a JSON list of
 #                   [text, target] pairs (gallery.sh; the template's
-#                   page-links): typst compile --input links=JSON.
+#                   page-links): typst compile --input links=JSON;
+#   --roles R,...   colour only the formulas of these roles (var, hyp,
+#                   claim, fact, just), the others plain; all by default.  On
+#                   the web page the legend turns each role on and off.
 #
 # Needs: the opam switch elpi5 (rocq-elpi), typst (0.15).  Typst.vo is
 # compiled when it is older than its sources.
@@ -28,7 +31,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5 2>/dev/null)" || true
 ulimit -v 8000000
 
-style=maths; extra_flags=""; output=pdf; links="[]"
+style=maths; extra_flags=""; output=pdf; links="[]"; roles=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --code) style=code; shift ;;
@@ -37,6 +40,7 @@ while [ $# -gt 0 ]; do
     --html) output=html; shift ;;
     --source) output=none; shift ;;
     --links) links=$2; shift 2 ;;
+    --roles) roles=$2; shift 2 ;;
     *) break ;;
   esac
 done
@@ -81,11 +85,11 @@ for f in "$@"; do
     *) echo "pdf.sh: $f is neither .md nor .typ" >&2; exit 2 ;;
   esac
   case $output in
-    pdf) nice typst compile --input "links=$links" --package-path "$here/typst" "$typ" "${typ%.typ}.pdf"
+    pdf) nice typst compile --input "links=$links" --input "roles=$roles" --package-path "$here/typst" "$typ" "${typ%.typ}.pdf"
          echo "pdf.sh: written ${typ%.typ}.pdf" ;;
     html) # typst warns that its HTML export is experimental: that warning
           # is left out, the others are shown
-          log=$(nice typst compile --features html --format html --input "links=$links" --package-path "$here/typst" \
+          log=$(nice typst compile --features html --format html --input "links=$links" --input "roles=$roles" --package-path "$here/typst" \
             "$typ" "${typ%.typ}.html" 2>&1) || { echo "$log"; exit 1; }
           echo "$log" | grep -v "^warning: html export\|^ *= hint\|^$" || true
           echo "pdf.sh: written ${typ%.typ}.html" ;;

@@ -17,7 +17,9 @@
      Proof. tactics. CypQed.
        the same, but the conditions not discharged are the goals of the
        Proof block, in the order of the text; each goal is named after its
-       node (?c2 for 2, ?c2_1 for 2.1), so that [c2]: tac. proves it.  In
+       node (?c2 for 2, ?c2_1 for 2.1), so that [c2]: tac. proves it.  They
+       always succeed when the statement can be read: an error of a node
+       is printed, and the node's conclusion is a goal all the same.  In
        Cyp Lemma a step is a node: words (strings, with *X*{.just} for a
        justification), formulas (terms, each followed by its class,
        "{.claim}"), and its subnodes (a list of steps).
@@ -158,17 +160,19 @@ Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
 Elpi Accumulate lp:{{
   % #[bare]: the conditions are printed, nothing is tried or defined
   main [str F] :- attributes A, std.mem A (attribute "bare" _), !,
-    (proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs),
+    (proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs Stated),
     (current-lang Lang :- !) => (
+      say-reports Rs, check-statement Name Stated Rs,
       std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []},
       coq.ltac.collect-goals Proof GL _, say-goals GL,
       count Rs Steps _ Todo, std.length Steps NS, std.length Todo NT,
       say "conditions" [Name, {std.any->string NS}, {std.any->string NT}]).
   main [str F] :-
-    check-file F Lang Name Ty Proof Rs,
+    check-file F Lang Name Ty Proof Rs Stated,
     count Rs Steps Ko _,
     std.length Steps NR, std.length Ko NK, NP is NR - NK,
     (current-lang Lang :- !) => (
+    check-statement Name Stated Rs,
     if (Ko = [])
        (define Name Ty Proof, say "proved" [Name, {std.any->string NP}])
        (rex.replace "[.]md$" ".checked.md" F OutMd,
@@ -235,27 +239,33 @@ Elpi Accumulate lp:{{
   list-of (app [global (indc Nil), _]) [] :- coq.locate "nil" (indc Nil), !.
   list-of T [T].
 
-  % [lemma Ty Body P Rs]: the binders of the statement and of the body, in
-  % parallel; then the top node: the conclusion of the statement, the
-  % steps of the body as its subnodes
-  pred lemma i:term, i:term, o:term, o:list report.
-  lemma (prod N T A) (fun _ _ B) (fun N T S) Rs :- !,
-    under-decl N T (x\ lemma (A x) (B x) (S x) Rs).
-  lemma G Body P Rs :-
+  % [lemma Ty Body P Rs Stated]: the binders of the statement and of the
+  % body, in parallel; then the top node: the conclusion of the statement,
+  % the steps of the body as its subnodes (Stated: check-tree)
+  pred lemma i:term, i:term, o:term, o:list report, o:bool.
+  lemma (prod N T A) (fun _ _ B) (fun N T S) Rs Stated :- !,
+    under-decl N T (x\ lemma (A x) (B x) (S x) Rs Stated).
+  lemma G Body P Rs Stated :-
     list-of Body Ts, std.map Ts raw-node Ns, std.map Ns (n\ c\ c = prooftext.sub n) Subs,
     Top = prooftext.node prooftext.whole-text prooftext.unplaced (prooftext.spot 0 0) (prooftext.spot 0 0)
       [prooftext.run "" [prooftext.term-part "claim" G none] | Subs],
-    check-tree Top _ P Rs.
+    check-tree Top _ P Rs Stated.
 
-  % the proof is opened with the conditions left as its goals
-  pred open i:string, i:term, i:term, i:list report, o:list sealed-goal.
-  open Name Ty Proof Rs GL :-
+  % [open Name Ty Proof Rs Stated GL]: the proof is opened with the
+  % conditions left as its goals, GL, whatever the errors of the nodes
+  % (each printed, its condition one of the goals when the node has a
+  % conclusion); only a statement that cannot be read stops it
+  pred open i:string, i:term, i:term, i:list report, i:bool, o:list sealed-goal.
+  open Name Ty Proof Rs Stated GL :-
+    say-reports Rs,
+    check-statement Name Stated Rs,
     count Rs Steps Ko Todo,
-    if (Ko = []) true
-       (std.string.concat ", " Ko KoS, coq.error {msg "steps-not-parsed" [Name, KoS]}),
     std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []},
     coq.ltac.collect-goals Proof GL _,
     std.length Steps NS, std.length Todo NT,
+    if (Ko = []) true
+       (std.string.concat ", " Ko KoS,
+        say "errors" [Name, {std.any->string {std.length Ko} }, KoS]),
     if (Todo = [])
        (say "all-discharged" [Name, {std.any->string NS}])
        (std.string.concat ", " Todo TS,
@@ -274,13 +284,11 @@ Elpi Accumulate lp:{{
       coq.arity->term Arity Ty0,
       std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) {msg "statement-no-typecheck" []},
       coq.say "cyp:" Name,
-      ((current-scope "" :- !) => proof-mode => with-attributes (lemma Ty Body Proof Rs)),
-      std.forall Rs (r\ sigma I S\ r = rep I S,
-        (S = ok, coq.say "  ✅" I ; S = todo _, true ; coq.say "  ❌" I S)),
-      open Name Ty Proof Rs GL).
+      ((current-scope "" :- !) => proof-mode => with-attributes (lemma Ty Body Proof Rs Stated)),
+      open Name Ty Proof Rs Stated GL).
   main-interp-proof [str "File", str F] _ Proof GL (qed-data Name Lang Ty) :-
-    (proof-mode => with-attributes (check-file F Lang Name Ty Proof Rs)),
-    (current-lang Lang :- !) => open Name Ty Proof Rs GL.
+    (proof-mode => with-attributes (check-file F Lang Name Ty Proof Rs Stated)),
+    (current-lang Lang :- !) => open Name Ty Proof Rs Stated GL.
 }}.
 #[proof="begin"] Elpi Export Cyp.
 

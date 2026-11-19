@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.thesis.
-flags: -R /home/thery/git/coq_tmp/xtext XText
+flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,14 +8,14 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `x y z t : Prop`{.var}. Assume `(x -> z) /\ (y -> t)`{.hyp} (H1) and `x /\ y`{.hyp} (H2). We prove `z /\ t`{.claim}.
 
-- Applying proj1, we have `z`{.claim}.
-  - The element `x -> z`{.fact} belongs to `Prop`{.fact}.
-  - The element `y -> t`{.fact} belongs to `Prop`{.fact}.
-  - By H1 we have `(x -> z) /\ (y -> t)`{.claim}.
-  - Applying proj1 to x, y and H2, we have `x`{.claim}.
-- Applying proj2, we have `t`{.claim}.
-  - The element `x -> z`{.fact} belongs to `Prop`{.fact}.
-  - The element `y -> t`{.fact} belongs to `Prop`{.fact}.
-  - By H1 we have `(x -> z) /\ (y -> t)`{.claim}.
-  - Applying proj2 to x, y and H2, we have `y`{.claim}.
-- So by definition of and (conj), we have `z /\ t`{.claim} *by Corelib.Init.Logic.conj*.
+- Applying *proj1*{.just}, we have `z`{.claim}.
+  - The element `x -> z` belongs to `Prop`.
+  - The element `y -> t` belongs to `Prop`.
+  - By *H1*{.just} we have `(x -> z) /\ (y -> t)`{.claim}.
+  - Applying *proj1*{.just} to x, y and *H2*{.just}, we have `x`{.claim}.
+- Applying *proj2*{.just}, we have `t`{.claim}.
+  - The element `x -> z` belongs to `Prop`.
+  - The element `y -> t` belongs to `Prop`.
+  - By *H1*{.just} we have `(x -> z) /\ (y -> t)`{.claim}.
+  - Applying *proj2*{.just} to x, y and *H2*{.just}, we have `y`{.claim}.
+- So by definition of and (*conj*{.just}), we have `z /\ t`{.claim}.

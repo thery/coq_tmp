@@ -1,5 +1,5 @@
 #!/bin/sh
-# Tests of the Typst back end: sh check.sh (from anywhere; about a minute).
+# Tests of the Typst back end: sh check.sh (from anywhere; about a minute and a half).
 # Each step prints "ok" or stops with the difference or error.
 #
 # 1. the texts of ../../xtext/examples-typst (written in Typst by xtext,
@@ -19,10 +19,15 @@
 # 6. the HTML page of a checked text and of the unit tests (Typst's HTML
 #    export): it compiles, its formulas are MathML (<math>), with the
 #    classes of their roles and of the statuses;
-# 7. the round, when cyp is built (../../cyp/_build/default/bin/cyp.exe):
+# 7. the two syntaxes: the proposal's examples praeclarum (the paper's),
+#    xtext_praeclarum and Trans_Inv, structured and free: their PDF and
+#    their web page (each node an element of class p with its number, the
+#    script of the hover), the same nodes in both syntaxes, the closing
+#    paragraph after the sub-items, a free text as paragraphs and spans;
+# 8. the round, when cyp is built (../../cyp/_build/default/bin/cyp.exe):
 #    a text of xtext checked by cyp now, then its PDF; cyp's sqrt_square
 #    (real numbers) checked, then its PDF and HTML page.
-# 8. the links, on a small gallery (gallery.sh) of four pages: the names
+# 9. the links, on a small gallery (gallery.sh) of four pages: the names
 #    of ABCD link to their steps (HTML anchors, PDF destinations), a
 #    justification and a lemma link to their documentation, each page
 #    links to the index, to the same text in French and checked by cyp,
@@ -135,7 +140,35 @@ html "$out/half_le.checked.typ" "formula claim" "formula hyp" "formula var" \
   "mark ok" "mark ko" "message ko" "number"
 html "$out/check_maths.typ"
 
-echo "7. the round: xtext's text, checked by cyp, then its PDF"
+echo "7. the two syntaxes (the proposal's examples, structured and free)"
+mkdir -p "$out/syntaxes"
+for name in praeclarum xtext_praeclarum Trans_Inv; do
+  for syntax in structured free; do
+    cp "$repo/proposal/examples/$name.$syntax.md" "$out/syntaxes/"
+    typst_of "$out/syntaxes/$name.$syntax.md"
+    compile "$out/syntaxes/$name.$syntax.typ"
+    # each node is an element of class p with its number, and the page
+    # has the script of the hover
+    html "$out/syntaxes/$name.$syntax.typ" "p" "formula claim"
+    grep -q "<script>" "$out/syntaxes/$name.$syntax.html" \
+      || { echo "FAIL $name.$syntax: no script for the hover"; exit 1; }
+    grep -o 'data-id="[0-9.]*"' "$out/syntaxes/$name.$syntax.html" | sort > "$out/syntaxes/$name.$syntax.ids"
+  done
+  same "$name: the same nodes in both syntaxes" "$out/syntaxes/$name.free.ids" "$out/syntaxes/$name.structured.ids"
+done
+# the closing paragraph of an item comes after its sub-items, as written
+typ=$out/syntaxes/praeclarum.structured.typ
+[ "$(grep -n 'Altogether' "$typ" | cut -d: -f1)" -gt "$(grep -n 'step("1.2"' "$typ" | cut -d: -f1)" ] \
+  || { echo "FAIL praeclarum: the closing paragraph before the sub-items"; exit 1; }
+echo "ok   the closing paragraph after the sub-items"
+# a free text has no list in the PDF: its nodes are spans (node), its
+# text is in paragraphs
+typ=$out/syntaxes/praeclarum.free.typ
+grep -q '#node("1.1")' "$typ" && ! grep -q 'steps((' "$typ" \
+  || { echo "FAIL praeclarum.free: not written as paragraphs and spans"; exit 1; }
+echo "ok   a free text is paragraphs with spans"
+
+echo "8. the round: xtext's text, checked by cyp, then its PDF"
 cyp=$repo/cyp/_build/default/bin/cyp.exe
 if [ -x "$cyp" ] && [ -f "$repo/cyp/vernac/Cyp.vo" ]; then
   mkdir -p "$out/round"
@@ -154,12 +187,12 @@ if [ -x "$cyp" ] && [ -f "$repo/cyp/vernac/Cyp.vo" ]; then
   typst_of "$out/round/sqrt_square.checked.md"
   [ "$(code_count)" = 0 ] || { echo "FAIL sqrt_square: formulas shown as code"; exit 1; }
   compile "$out/round/sqrt_square.checked.typ"
-  html "$out/round/sqrt_square.checked.typ" "formula plain" "mark ok"
+  html "$out/round/sqrt_square.checked.typ" "formula just" "mark ok"
 else
   echo "skipped: cyp is not built (cd cyp && dune build ./bin/cyp.exe; cd vernac && rocq c ... Cyp.v)"
 fi
 
-echo "8. the links: a small gallery (gallery.sh), in tests/out/gallery"
+echo "9. the links: a small gallery (gallery.sh), in tests/out/gallery"
 gallery=$out/gallery
 sh "$prooftext/gallery.sh" "$gallery" \
   "xtext:English:$xtext_flags:$repo/xtext/examples/ABCD.md $repo/xtext/examples/or_commut.md" \
@@ -180,7 +213,7 @@ echo "ok   every link to a name has its anchor (HTML)"
 qpdf --qdf --object-streams=disable "$gallery/xtext/ABCD.pdf" "$out/ABCD.qdf.pdf"
 has "$out/ABCD.qdf.pdf" "/Dest" "names linked to their steps (PDF)"
 # a justification and a lemma of the corelib, linked to their documentation
-has "$gallery/xtext/or_commut.typ" '#by("Corelib.Init.Logic.or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")' \
+has "$gallery/xtext/or_commut.typ" '#just("Corelib.Init.Logic.or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")' \
   "justification linked to its documentation"
 has "$gallery/xtext/or_commut.html" 'href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind"' \
   "lemma in the text linked to its documentation (HTML)"

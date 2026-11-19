@@ -26,8 +26,8 @@ Elpi Accumulate File lex_en.        (* then the tables, in any order *)
 - `write-role Lang Use Phrase Role` and `write-word Lang Use Words`: the
   phrases of a writer, by their use (the same uses in every language); a
   `write-role` phrase is also a `phrase` (one clause); the uses
-  `legend-var`, `legend-hyp`, `legend-claim`, `legend-fact` and
-  `legend-ok`, `legend-ko`, `legend-todo`, `legend-none` are the words of
+  `legend-var`, `legend-hyp`, `legend-claim`, `legend-fact`, `legend-just`
+  (the justifications) and `legend-ok`, `legend-ko`, `legend-todo`, `legend-none` are the words of
   the legend of a PDF or a web page of a proof text (the names of the
   roles and of cyp's statuses, [prooftext](../prooftext/README.md#the-legend));
 - writing systems: `capital Lang Upper Lower` (case folding: `lower S L`

@@ -4,7 +4,7 @@ How it works and why, with the other tools: [`../DESIGN.md`](../DESIGN.md) (this
 
 A program states properties next to its predicates; `elpi-check` tests
 them on random values, QuickCheck style, and reports the smallest
-counterexample it finds.  Standalone Elpi 4 (opam switch `elpi5`), not
+counterexample it finds.  Standalone Elpi 4, not
 Rocq-Elpi.
 
 ```elpi

@@ -8,17 +8,24 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var($n , m ∈ ℕ$)#". Assume "#hyp($n ≤ m$)#" "#name("H", label: "statement:H")#". We prove "#claim($"S"\(n\) ≤ "S"\(m\)$)#"."]
-
-#steps((
-  step("1", [#"We prove "#formula($"S"\(n\) ≤ "S"\(m\)$)#" by induction on "#by("H", target: "statement:H")#" ("#cited("le", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#", "#cited("le_ind", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le_ind")#"): We have "#claim($"S"\(n\) ≤ "S"\(m\)$)#" in all cases."], (
-    step("1.1", [#"Case 1 (base): we prove "#claim($"S"\(n\) ≤ "S"\(n\)$)#"."], (
-      step("1.1.1", [#"By definition of "#cited("le", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#" ("#by("le_n", url: "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le_n")#"), we have "#claim($"S"\(n\) ≤ "S"\(n\)$)#"."], ()),
-    )),
-    step("1.2", [#"Case 2 (inductive): we prove "#claim($∀ m_(0) ∈ ℕ , n ≤ m_(0) → "S"\(n\) ≤ "S"\(m_(0)\) → "S"\(n\) ≤ "S"\("S"\(m_(0)\)\)$)#"."], (
-      step("1.2.1", [#"Let us choose arbitrarily "#var($m_(0) ∈ ℕ$)#"; assume "#hyp($n ≤ m_(0)$)#" "#name("H0", label: "1.2.1:H0")#" and by induction hypothesis "#hyp($"S"\(n\) ≤ "S"\(m_(0)\)$)#" "#name("IH", label: "1.2.1:IH")#". By definition of "#cited("le", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#" ("#by("le_S", url: "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le_S")#") with witness "#formula($"S"\(m_(0)\)$)#", from "#by("IH", target: "1.2.1:IH")#" we deduce "#claim($"S"\(n\) ≤ "S"\("S"\(m_(0)\)\)$)#"."], ()),
+#proof([#"Let "#var($n , m ∈ ℕ$)#". Assume "#hyp($n ≤ m$)#" "#name("H", label: "statement:H")#". We prove "#claim($"S"\(n\) ≤ "S"\(m\)$)#"."], (
+  steps((
+    step("1", [#"We prove "#formula($"S"\(n\) ≤ "S"\(m\)$)#" by induction on "#just("H", target: "statement:H")#" ("#cited("le", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#", "#cited("le_ind", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le_ind")#"):"], (
+      steps((
+        step("1.1", [#"Case 1 (base): we prove "#claim($"S"\(n\) ≤ "S"\(n\)$)#"."], (
+          steps((
+            step("1.1.1", [#"By definition of "#cited("le", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#" ("#just("le_n", url: "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le_n")#"), we have "#claim($"S"\(n\) ≤ "S"\(n\)$)#"."], ()),
+          )),
+        )),
+        step("1.2", [#"Case 2 (inductive): we prove "#claim($∀ m_(0) ∈ ℕ , n ≤ m_(0) → "S"\(n\) ≤ "S"\(m_(0)\) → "S"\(n\) ≤ "S"\("S"\(m_(0)\)\)$)#"."], (
+          steps((
+            step("1.2.1", [#"Let us choose arbitrarily "#var($m_(0) ∈ ℕ$)#"; assume "#hyp($n ≤ m_(0)$)#" "#name("H0", label: "1.2.1:H0")#" and by induction hypothesis "#hyp($"S"\(n\) ≤ "S"\(m_(0)\)$)#" "#name("IH", label: "1.2.1:IH")#". By definition of "#cited("le", "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le")#" ("#just("le_S", url: "https://rocq-prover.org/corelib/Corelib.Init.Peano.html#le_S")#") with witness "#formula($"S"\(m_(0)\)$)#", from "#just("IH", target: "1.2.1:IH")#" we deduce "#claim($"S"\(n\) ≤ "S"\("S"\(m_(0)\)\)$)#"."], ()),
+          )),
+        )),
+      )),
+      paragraph[#"We have "#claim($"S"\(n\) ≤ "S"\(m\)$)#" in all cases."],
     )),
   )),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("just", "justification"),))

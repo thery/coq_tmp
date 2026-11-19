@@ -131,9 +131,14 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   no conclusion, two conclusions, a name out of scope or given twice in
   one scope, an unknown class, an unclosed span or div (prooftext's
   table); a fact that is no visible hypothesis or conclusion; a
-  justification that names nothing known
-  ([examples/errors_demo.md](examples/errors_demo.md)).  The subnodes of a
-  node with an error are checked all the same.
+  justification that names nothing known; a formula that does not parse
+  ([examples/errors_demo.md](examples/errors_demo.md),
+  [vernac/errors_file.md](vernac/errors_file.md)).  An error never stops
+  the check: the node is not tried, and the nodes after it use its
+  conclusion all the same.  A node with no conclusion (none, two, or one
+  that does not parse) is used by nothing; its subnodes are checked all
+  the same, and each is used by the subnodes after it.  A hypothesis or a
+  variable that does not parse is left out of its node.
 - **The gap tactic.**  A condition that its justifications, the rules and
   the default tactics leave open gets a last, coarse try: `cyp_gap`
   ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (the goal and
@@ -161,6 +166,20 @@ of ordinary tactics, `Cyp File "proof.md". Proof. ... CypQed.` (marked 🔶
 with their numbers), where each is a goal named after its node (`?c2` for
 2, `?c2_1` for 2.1) and proved by `[c2]: tac.`, see
 [vernac/](vernac/README.md).
+
+**cyp always succeeds, and leaves goals.**  cyp is not a yes/no check:
+what it proves is proved, and the rest is left as goals.  `Cyp File` and
+`Cyp Lemma` succeed whatever the nodes say: a condition not discharged
+and the conclusion of a node with an error are goals of the Proof block,
+and each error is printed with its node (❌).  They fail only when the
+statement itself cannot be read (the conclusion or a hypothesis of the
+statement does not parse, or it does not type-check), or on an error of
+Rocq outside cyp (a library that is not found, a proof term that Rocq
+rejects).  The program `cyp` always writes the checked Markdown and the
+JSON, with the status of every node; its exit code is 0 when the lemma is
+defined (every node proved), 1 when it is not (a node not proved or with
+an error, or a statement that cannot be read: the messages say which), 2
+when it cannot run (usage, `CYP_LIB` not set).
 
 **The checked Markdown** is the text itself, with the mark of each node's
 status at the start of its own text (`- ✅ ...` for an item, `[✅ ...]{.p}`

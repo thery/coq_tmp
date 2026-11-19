@@ -10,7 +10,7 @@ by interpreting the rules of the program, which
 ports of each call, the unify steps with their bindings, `pi` and `=>`,
 CHR at work, a failure explained; it has interactive stepping and drives
 a debug adapter for VS Code ([`../dap`](../dap/README.md)).  Elpi is
-version 4.0.0 (opam switch `elpi5`).
+version 4.0.0.
 
 Wherever the debugger works around something Elpi does not offer, the
 workaround is a **stand-in** behind a small interface in one place, and
@@ -34,7 +34,7 @@ by what they would bring to the debugger.
 **Running the tests.**
 
 ```sh
-eval $(opam env --switch=elpi5)        # Elpi 4.0.0
+opam install elpi.4.0.0 yojson dune    # Elpi 4.0.0, in any opam switch
 cd elpi-tools
 dune build @runtest                    # all the tests: debug, reflect, check, dap
 dune exec -- elpi-debug -trace debug/tests/append.elpi 'rev [1,2] R'

@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
-flags: -R /home/thery/git/coq_tmp/xtext XText
+flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,5 +8,5 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B C : Prop`{.var}. Assume `A -> B`{.hyp} (f), `B -> C`{.hyp} (g) and `A`{.hyp} (a). We prove `C`{.claim}.
 
-- Applying f to a, we have `B`{.claim}.
-- Applying g, we have `C`{.claim}.
+- Applying *f*{.just} to *a*{.just}, we have `B`{.claim}.
+- Applying *g*{.just}, we have `C`{.claim}.

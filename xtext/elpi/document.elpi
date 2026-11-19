@@ -128,11 +128,3 @@ vocab-check L Bad :-
   std.map-filter Us (u\ m\ not (write-role L u _ _ ; write-word L u _),
      m is "no phrase for " ^ u) B2,
   std.append B1 B2 Bad.
-
-% [for-file F D D1]: the document D as it is written to the file F: in a
-% Typst file, each closing paragraph is joined to the text of its step
-% (prooftext.closings-joined), as the Typst writer does not show closing
-% paragraphs yet
-pred for-file i:string, i:prooftext.document, o:prooftext.document.
-for-file F D D1 :- rex.match ".*[.]typ$" F, !, prooftext.closings-joined D D1.
-for-file _ D D.

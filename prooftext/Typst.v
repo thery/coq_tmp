@@ -1,7 +1,7 @@
 (* The command [Typst "proof.md" to "proof.typ".]: the Typst source of a
    proof text (written by xtext, or checked by cyp), for its PDF.  It reads
-   the Markdown with prooftext's reader (tree.elpi, read-document) and writes it with
-   write-typst-in (typst.elpi); pdf.sh runs it, then typst.
+   the Markdown with prooftext's reader (tree.elpi, read-tree) and writes it with
+   write-typst-tree (typst.elpi); pdf.sh runs it, then typst.
 
    The formulas are mathematics (maths.elpi), or Rocq code with the option
    [as code]:
@@ -28,6 +28,7 @@ From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
 From ProofText Extra Dependency "tree.elpi" as pt_tree.
+From ProofText Extra Dependency "nodes.elpi" as pt_nodes.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
 From ProofText Extra Dependency "maths-table.elpi" as pt_maths_table.
 From ProofText Extra Dependency "maths.elpi" as pt_maths.
@@ -37,7 +38,7 @@ From ProofText Extra Dependency "typst.elpi" as pt_typst.
 
 Elpi Command Typst.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de lex_nl lex_ru lex_zh
-  lex_ar lex_ko lex_la pt_header pt_document pt_formulas pt_tree pt_checked
+  lex_ar lex_ko lex_la pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
   pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   main [str In, str "to", str Out] :- !, typst-of In Out prooftext.maths.
@@ -48,8 +49,8 @@ Elpi Accumulate lp:{{
   % [typst-of In Out Style]: the Typst source of the text In, in Out
   pred typst-of i:string, i:string, i:prooftext.formula-style.
   typst-of In Out Style :-
-    prooftext.read-document In D,
-    prooftext.write-typst-in Style D Text,
+    prooftext.read-tree In T,
+    prooftext.write-typst-tree Style T Text,
     open_out Out O, output O Text, close_out O,
     formula-counts Text All AsCode,
     coq.say {calc ("Typst: written " ^ Out ^ " (" ^ {std.any->string All} ^ " formulas, "

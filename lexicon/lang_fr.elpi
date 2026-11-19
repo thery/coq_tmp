@@ -99,7 +99,7 @@ write-word "fr" "legend-var" "variable".
 write-word "fr" "legend-hyp" "hypothèse".
 write-word "fr" "legend-claim" "affirmation".
 write-word "fr" "legend-fact" "fait".
-write-word "fr" "legend-by" "justification".
+write-word "fr" "legend-just" "justification".
 write-word "fr" "legend-ok" "prouvé".
 write-word "fr" "legend-ko" "non prouvé".
 write-word "fr" "legend-todo" "laissé à un bloc Proof".

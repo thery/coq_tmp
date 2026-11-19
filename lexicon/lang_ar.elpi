@@ -80,7 +80,7 @@ write-word "ar" "legend-var" "متغير".
 write-word "ar" "legend-hyp" "فرضية".
 write-word "ar" "legend-claim" "ادعاء".
 write-word "ar" "legend-fact" "حقيقة".
-write-word "ar" "legend-by" "تبرير".
+write-word "ar" "legend-just" "تبرير".
 write-word "ar" "legend-ok" "مثبت".
 write-word "ar" "legend-ko" "غير مثبت".
 write-word "ar" "legend-todo" "متروك لكتلة Proof".

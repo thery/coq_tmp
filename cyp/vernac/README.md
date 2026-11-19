@@ -84,6 +84,36 @@ run on every goal (`all: tac.`) does not know which condition it is on.
 `CypFile "proof.md".`, used by the program `cyp`, has no Proof block:
 a condition it does not discharge is ❌ and the lemma is not defined.
 
+**Always succeeds, leaves goals.**  `Cyp File` and `Cyp Lemma` succeed
+whatever their nodes say: what is proved is proved, and the rest is left
+as goals of the Proof block.  An error of a node (a justification that
+names nothing, a fact not in scope, a name out of scope, an unknown
+class, an unclosed span, two conclusions, a formula that does not
+parse...) is printed, `❌ 1 sqrt_magic names nothing known...`, marked ❌
+in the checked Markdown and the JSON, and the command goes on:
+
+- a node with an error and a conclusion C: its condition is not tried
+  (the error is the reason), C is the goal of the Proof block named
+  after the node (`?c1`), and the nodes after it use C as usual;
+- a node with no conclusion (none, two, or one that does not parse or is
+  no proposition): there is no goal; the node is used by nothing, its
+  subnodes are checked all the same and each is used by the subnodes
+  after it (not outside the node: the scope rules are unchanged);
+- a variable, a hypothesis or a definition that does not parse: reported,
+  and left out of its node (the node is proved without it).
+
+The commands fail only when the statement cannot be read whole: in `Cyp
+File`, the conclusion or a variable or hypothesis of the statement does
+not parse ([statement_error.md](statement_error.md)); in `Cyp Lemma`, the
+statement does not type-check (Rocq's message) or is no proposition; and
+on errors of Rocq outside cyp (a library not found, a proof term that
+Rocq rejects).  [errors_v.v](errors_v.v) (Cyp Lemma, an example of each
+error, `Show.` listing the goals ?c1 and ?c6) and
+[errors_file.v](errors_file.v) (Cyp File on [errors_file.md](errors_file.md))
+are the tests.  `CypFile` (no Proof block) and the program `cyp` treat a
+node with an error as a node not proved: the checked Markdown and the
+JSON are written, and the lemma is not defined.
+
 **Bare mode.**  With `#[bare]` (`#[bare] Cyp File "p.md".`, `#[bare] Cyp
 Lemma ...`), nothing is tried: every condition is a goal of the Proof
 block ([bare_demo.v](bare_demo.v)).  `#[bare] CypFile "p.md".` only

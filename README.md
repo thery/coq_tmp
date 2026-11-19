@@ -29,9 +29,12 @@ papers (in development):
   that a library can extend; `--code` keeps the Rocq code, `--html` makes
   an HTML page (MathML) instead of the PDF.  Each role of a formula has its
   own light background and a mark readable without colour (a frame, a
-  dashed or dotted line), with a legend at the end; the steps are indented
-  as in the list, and cyp's statuses are coloured marks; Arabic is laid out
-  from right to left.  The PDF and the page have links: a name (h) and its
+  dashed or dotted line), with a legend at the end; a structured text keeps
+  its list, a free text its paragraphs (no structure shown, decision 7 of
+  the [proposal](proposal/PROPOSAL.md)), and cyp's statuses are coloured
+  marks; on the web page, the pointer over a node highlights what it rests
+  on (its conclusion, hypotheses, subnodes and the formulas its names point
+  to); Arabic is laid out from right to left.  The PDF and the page have links: a name (h) and its
   uses lead to the step that introduced it, a lemma of the corelib or the
   stdlib to its documentation, and the pages of the gallery
   (`prooftext/gallery.sh`) to each other

@@ -70,10 +70,20 @@ pred current-scope o:string.
 kind status type.
 type ok status.
 type ko string -> status.               % the goal not proved
-type bad string -> status.              % an error: a formula that does not
-                                        % parse, an error of the tree, a fact
-                                        % or a name unknown
+type bad string -> status.              % an error: an error of the tree, a
+                                        % fact or a name unknown, a conclusion
+                                        % that does not parse
+type unread string -> status.           % an error: a variable, a hypothesis
+                                        % or a definition that does not parse,
+                                        % left out of the node
 type todo string -> status.             % a goal left to the Proof block
+
+% A node with an error is reported, and the proof goes on: with a
+% conclusion C, its condition is not tried, and in proof mode C is a goal
+% of the Proof block (todo), so that the nodes after it still use C; with
+% no conclusion (none, several, or one that does not parse), the node is
+% ∀ V, H → True, used by nothing, its subnodes checked all the same (their
+% conclusions seen by the subnodes after them, not outside the node).
 kind report type.
 type rep string -> status -> report.    % the number of the node
 
@@ -225,18 +235,27 @@ condition-hole I T H :-
 pred condition-ident i:string, o:id.
 condition-ident Id N :- prooftext.auto-name Id N.
 
-% [condition Id Es C P R]: the condition of node Id, of elements Es and
+% [condition Id Es C P Rs]: the condition of node Id, of elements Es and
 % conclusion C: its facts must be hypotheses or conclusions in scope, and
-% its justifications name something known; then it is proved by them
-pred condition i:string, i:list element, i:term, o:term, o:report.
-condition Id Es C P R :-
+% its justifications name something known; then it is proved by them,
+% else the error is reported and the condition is not tried
+pred condition i:string, i:list element, i:term, o:term, o:list report.
+condition Id Es C P Rs :-
   facts Es Fs, std.map Fs fact-hypothesis Found,
   std.map-filter Found (f\ s\ f = unknown-fact s) Unknown,
   justifications Es Js, classify Js Ms Gs NotNames,
-  if (Unknown = [S | _]) (R = rep Id (bad {msg "fact-unknown" [S]}))
-  (if (NotNames = [X | _]) (R = rep Id (bad {msg "name-unknown" [X]}))
+  if (Unknown = [S | _]) (Rs = [rep Id (bad {msg "fact-unknown" [S]}) | Rs1], error-condition Id C P Rs1)
+  (if (NotNames = [X | _]) (Rs = [rep Id (bad {msg "name-unknown" [X]}) | Rs1], error-condition Id C P Rs1)
   (std.map-filter Found (f\ h\ f = known-fact h) Hs,
-   step-proof (method Ms Gs Hs) Id C P R)).
+   step-proof (method Ms Gs Hs) Id C P R, Rs = [R])).
+
+% [error-condition Id C P Rs]: the condition C of a node Id with an error,
+% not tried: in proof mode, a goal of the Proof block named after the node
+% (the report todo); else not proved (no report: the error's is the node's)
+pred error-condition i:string, i:term, o:term, o:list report.
+error-condition Id C P [rep Id (todo S)] :- proof-mode, !,
+  condition-hole Id C P, coq.term->string C S.
+error-condition _ _ _ [].
 
 % the hypothesis a fact is
 kind fact-found type.
@@ -289,20 +308,20 @@ binders-proof Id [var-binder S | Bs] N Ty Pf Concluded Rs :- rex.match ".*:=" S,
      (coq.arity->term Ar T, coq.id->name Def Nm,
       Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
       under-def Nm T Bo (x\ binders-proof Id Bs N (TyR x) (PfR x) Concluded Rs))
-     (Rs = [rep Id (bad {msg "definition-not-parsed" [S]}) | Rs1],
+     (Rs = [rep Id (unread {msg "definition-not-parsed" [S]}) | Rs1],
       binders-proof Id Bs N Ty Pf Concluded Rs1).
 binders-proof Id [var-binder S | Bs] N Ty Pf Concluded Rs :-
   variables S C D,
   if (D = ok)
      (under-context C Ty Pf (ty\ pf\ binders-proof Id Bs N ty pf Concluded Rs))
-     (Rs = [rep Id (bad {msg "variables-not-parsed" [S, {diagnostic-text D}]}) | Rs1],
+     (Rs = [rep Id (unread {msg "variables-not-parsed" [S, {diagnostic-text D}]}) | Rs1],
       binders-proof Id Bs N Ty Pf Concluded Rs1).
 binders-proof Id [hyp-binder E Nm0 | Bs] N Ty Pf Concluded Rs :-
   parse E A D,
   if (D = ok)
      (hyp-name Nm0 Nm, Ty = prod Nm A TyR, Pf = fun Nm A PfR,
       under-decl Nm A (h\ binders-proof Id Bs N (TyR h) (PfR h) Concluded Rs))
-     (Rs = [rep Id (bad {msg "hypothesis-not-parsed" [{element-text E}, {diagnostic-text D}]}) | Rs1],
+     (Rs = [rep Id (unread {msg "hypothesis-not-parsed" [{element-text E}, {diagnostic-text D}]}) | Rs1],
       binders-proof Id Bs N Ty Pf Concluded Rs1).
 
 % [hyp-name Given Name]: the name of a hypothesis: the one the text gives
@@ -355,12 +374,12 @@ missing-report _ _ [].
 % [children-chain Id Es Flawed Subs Goal P Rs]: P proves the goal of node
 % Id (some C; none for a node with no conclusion) from its subnodes Subs,
 % each known to the subnodes after it and to the condition; the
-% condition last, unless the node has an error (Flawed = tt: its report
-% is the error's, the condition is not tried)
+% condition last, unless the node has an error of the tree (Flawed = tt:
+% the condition is not tried, error-condition)
 pred children-chain i:string, i:list element, i:bool, i:list cnode, i:option term,
   o:term, o:list report.
-children-chain Id Es ff [] (some C) P [R] :- !, condition Id Es C P R.
-children-chain _ _ tt [] (some _) _ [] :- !.
+children-chain Id Es ff [] (some C) P Rs :- !, condition Id Es C P Rs.
+children-chain Id _ tt [] (some C) P Rs :- !, error-condition Id C P Rs.
 children-chain _ _ _ [] none {{ I }} [] :- !.
 children-chain Id Es Flawed [S | Ss] Goal P Rs :-
   node-proof S T PS Concluded RsS,
