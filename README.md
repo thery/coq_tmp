@@ -7,16 +7,23 @@ Two tools that relate a written proof and a Rocq proof, revived from old
 papers (in development):
 
 - [cyp/](cyp/README.md): **coloured proofs**.  A proof written in Markdown,
-  formulas in backticks, is checked step by step with Rocq and written back
-  with ✅ / ❌ on each step; Elpi rules choose how each step is proved.
-  The checker is written in Rocq-Elpi (opam switch `elpi5`), the text may
-  be in English, French or Italian.  A larger case study (a floating-point
-  paper) is kept in a private branch.  After *Colouring proofs: a
-  lightweight approach to adding formal structure to proofs* (UITP).
+  the tree of the 2003 paper (a node per list item or per span
+  `[…]{.p}`, its formulas tagged `{.claim}`, `{.hyp}`, ..., its
+  justifications `*X*{.just}`), is checked node by node with Rocq and
+  written back with ✅ / ❌ on each node; Elpi rules choose how each node
+  is proved.  cyp always succeeds: what it cannot prove is reported and
+  left as named goals for a Proof block.  The checker is written in
+  Rocq-Elpi (opam switch `elpi5`); the text may be in any language (cyp
+  reads only the tags), its messages are in English, French or Italian.
+  A larger case study (a floating-point paper) is kept in a private
+  branch.  After *Colouring proofs: a lightweight approach to adding
+  formal structure to proofs* (UITP 2003; ENTCS 103, 2004).
 - [xtext/](xtext/README.md): **text from proofs**.  A Rocq-Elpi command,
   `ExtractText foo.`, that writes the proof term of `foo` as a coarse but
-  faithful text: printed as plain text, written to a file (`ExtractText
-  foo to "foo.md".`) in cyp's format.  After Coscoy, Kahn and Théry,
+  faithful text, in ten languages (`in "fr"`): printed as plain text, or
+  in cyp's format with `#[tags]` and in a file (`ExtractText foo to
+  "foo.md".`); `ExtractText_partial.` does it for a proof in progress.
+  After Coscoy, Kahn and Théry,
   *Extracting Text from Proofs* (TLCA 1995), and Yann Coscoy's thesis
   (2000): its staged translation (chapters 2-4, up to the named
   intermediate results) and inductive types ([THESIS.md](xtext/THESIS.md)).
@@ -35,7 +42,9 @@ papers (in development):
   the [proposal](proposal/PROPOSAL.md)), and cyp's statuses are coloured
   marks; on the web page, the pointer over a node highlights what it rests
   on (its conclusion, hypotheses, subnodes and the formulas its names point
-  to); Arabic is laid out from right to left.  The PDF and the page have links: a name (h) and its
+  to), and the legend's roles are switches that turn their colours on and
+  off (↺ puts them back; `pdf.sh --roles claim,just` colours only those
+  roles); Arabic is laid out from right to left.  The PDF and the page have links: a name (h) and its
   uses lead to the step that introduced it, a lemma of the corelib or the
   stdlib to its documentation, and the pages of the gallery
   (`prooftext/gallery.sh`) to each other

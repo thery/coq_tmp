@@ -149,7 +149,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   a bounded search (at most 0.06 s measured).  On the conditions cyp left
   open in xtext's texts (closing steps of case analyses and inductions,
   steps that follow from earlier claims by a few applications) it closed
-  99% ([../xtext/gaps/](../xtext/gaps/README.md)).  It is not tried on a
+  99% (measured on the texts written before the tree,
+  [../xtext/gaps/](../xtext/gaps/README.md)).  It is not tried on a
   node justified by named rules (*monotonicity*{.just}: those rules only).
   The header line `gaps: off` turns it off
   ([examples/gaps_demo.md](examples/gaps_demo.md) is proved with it, not

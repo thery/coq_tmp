@@ -6,8 +6,13 @@ were chosen by the measurements of this directory:
 - `cyp_gap`, the coarse gap tactic, tried on a condition that the step's
   justification, the rules and the default tactics leave open;
 - `bounded_firstorder`, what cyp runs for `firstorder` (in a `by:` line or
-  a `*by firstorder*`): `firstorder` has no bound, and was the cause of
+  a justification `*firstorder*{.just}`): `firstorder` has no bound, and was the cause of
   most of the timeouts and memory blow-ups of xtext's texts.
+
+The measurements below (2026-11-18) were made on the texts written
+before the tree of the 2003 paper, in the old form (`*by X*`, several
+claims per step); they were not rerun.  cyp's results on today's texts
+are in [../doc/checking-with-cyp.md](../doc/checking-with-cyp.md).
 
 Both are bounded searches with no time limit: the goal unfolded and
 introduced, its conjunctions split, the connectives of the hypotheses taken
