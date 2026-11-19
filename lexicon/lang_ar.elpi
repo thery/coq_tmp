@@ -1,7 +1,8 @@
 % Arabic.  Phrases of the usual mathematical style ("ليكن", "لنفرض أن",
 % "إذن", "بما أن ... فإن", "يكفي أن نثبت أن"), as in Arabic textbooks.
 % The conjunctions و and ف are glued to the next word (clitic): a reader
-% leaves them out, so "فإن" is read as the phrase "إن", "وإذن" as "إذن".
+% of phrases leaves them out, so "فإن" is the phrase "إن", "وإذن" "إذن"
+% (cyp reads the tags, not the phrases).
 % For review by a speaker.
 clitic "ar" "و".  clitic "ar" "ف".
 punctuation "ar" "،".  punctuation "ar" "؛".  punctuation "ar" "؟".
