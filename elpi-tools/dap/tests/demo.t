@@ -87,8 +87,8 @@ hypothesis added by #1; the scopes of the call:
   <- {"seq":19,"type":"event","event":"stopped","body":{"reason":"step","description":"Assume step","text":"Assume: of x#1 X1   (added to the local program, for of (lam c1 \\ x#1) X2 only)","threadId":1,"allThreadsStopped":true}}
   -> {"seq":8,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":20,"type":"response","request_seq":8,"success":true,"command":"stepIn","body":null}
-  <- {"seq":21,"type":"event","event":"output","body":{"category":"stdout","output":"  Call: #2 of (lam c1 \\ x#1) X2\n"}}
-  <- {"seq":22,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #2 of (lam c1 \\ x#1) X2","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":21,"type":"event","event":"output","body":{"category":"stdout","output":"  Call: #2 of (lam c1 \\ x#1) X2   (premise 1 of lambda.elpi:20)\n"}}
+  <- {"seq":22,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #2 of (lam c1 \\ x#1) X2   (premise 1 of lambda.elpi:20)","threadId":1,"allThreadsStopped":true}}
   -> {"seq":9,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":23,"type":"response","request_seq":9,"success":true,"command":"stepIn","body":null}
   <- {"seq":24,"type":"event","event":"output","body":{"category":"stdout","output":"  Unify: #2 with lambda.elpi:20: of (lam c1 \\ x#1) (arr X3 X4)\n"}}
@@ -104,15 +104,15 @@ hypothesis added by #1; the scopes of the call:
   <- {"seq":32,"type":"event","event":"stopped","body":{"reason":"step","description":"Assume step","text":"Assume: of x#2 X3   (added to the local program, for of x#1 X4 only)","threadId":1,"allThreadsStopped":true}}
   -> {"seq":12,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":33,"type":"response","request_seq":12,"success":true,"command":"stepIn","body":null}
-  <- {"seq":34,"type":"event","event":"output","body":{"category":"stdout","output":"    Call: #3 of x#1 X4\n"}}
-  <- {"seq":35,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #3 of x#1 X4","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":34,"type":"event","event":"output","body":{"category":"stdout","output":"    Call: #3 of x#1 X4   (premise 1 of lambda.elpi:20)\n"}}
+  <- {"seq":35,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #3 of x#1 X4   (premise 1 of lambda.elpi:20)","threadId":1,"allThreadsStopped":true}}
   -> {"seq":13,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":36,"type":"response","request_seq":13,"success":true,"command":"stepIn","body":null}
   <- {"seq":37,"type":"event","event":"output","body":{"category":"stdout","output":"    Unify: #3 with hypothesis added by #1: of x#1 X1\n"}}
   <- {"seq":38,"type":"event","event":"output","body":{"category":"stdout","output":"      X4 := X1\n"}}
   <- {"seq":39,"type":"event","event":"stopped","body":{"reason":"step","description":"Unify step","text":"Unify: #3 with hypothesis added by #1: of x#1 X1\n      X4 := X1","threadId":1,"allThreadsStopped":true}}
   -> {"seq":14,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
-  <- {"seq":40,"type":"response","request_seq":14,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Unify: #3 of x#1 X1   (hypothesis added by #1)","id":3,"column":1,"line":0},{"name":"#2 of (lam c2 \\ x#1) (arr X3 X1)","id":2,"column":1,"source":{"name":"lambda.elpi","path":"lambda.elpi"},"line":20},{"name":"#1 of (lam c2 \\ lam c3 \\ c2) (arr X1 (arr X3 X1))","id":1,"column":1,"source":{"name":"lambda.elpi","path":"lambda.elpi"},"line":20}],"totalFrames":3}}
+  <- {"seq":40,"type":"response","request_seq":14,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Unify: #3 of x#1 X1   (hypothesis added by #1)","id":3,"column":1,"line":0},{"name":"#2 of (lam c2 \\ x#1) (arr X3 X1)","id":2,"column":25,"source":{"name":"lambda.elpi","path":"lambda.elpi"},"line":20,"endLine":20,"endColumn":51},{"name":"#1 of (lam c2 \\ lam c3 \\ c2) (arr X1 (arr X3 X1))","id":1,"column":25,"source":{"name":"lambda.elpi","path":"lambda.elpi"},"line":20,"endLine":20,"endColumn":51}],"totalFrames":3}}
   -> {"seq":15,"type":"request","command":"variables","arguments":{"variablesReference":1}}
   <- {"seq":41,"type":"response","request_seq":15,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"of x#1 X1","variablesReference":0},{"name":"arg 1 (output)","value":"x#1","variablesReference":0},{"name":"arg 2 (output)","value":"X1","variablesReference":0},{"name":"X4 :=","value":"X1","variablesReference":0}]}}
   -> {"seq":16,"type":"request","command":"variables","arguments":{"variablesReference":3}}
@@ -178,8 +178,8 @@ one step in shows its fail port:
   -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
   <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: check [1,2]   (running to the first breakpoint, or to the end)\n"}}
-  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Call: #2 positive 1\n"}}
-  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Call port","text":"Call: #2 positive 1","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Call: #2 positive 1   (premise 1 of nowhere.elpi:4)\n"}}
+  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Call port","text":"Call: #2 positive 1   (premise 1 of nowhere.elpi:4)","threadId":1,"allThreadsStopped":true}}
   -> {"seq":5,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":9,"type":"response","request_seq":5,"success":true,"command":"stepIn","body":null}
   <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"  Fail: #2 positive 1\n"}}
@@ -217,7 +217,7 @@ exit of insert:
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"      X0 := [0]\n"}}
   <- {"seq":9,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Unify step","text":"Unify: #5 with lists.elpi:10: insert 0 [0] [0]\n      X0 := [0]","threadId":1,"allThreadsStopped":true}}
   -> {"seq":5,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
-  <- {"seq":10,"type":"response","request_seq":5,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Unify: #5 insert 0 [0] [0]","id":5,"column":1,"source":{"name":"lists.elpi","path":"lists.elpi"},"line":10},{"name":"#1 sort [0, 0] [0]","id":1,"column":1,"source":{"name":"lists.elpi","path":"lists.elpi"},"line":16}],"totalFrames":2}}
+  <- {"seq":10,"type":"response","request_seq":5,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Unify: #5 insert 0 [0] [0]","id":5,"column":1,"source":{"name":"lists.elpi","path":"lists.elpi"},"line":10},{"name":"#1 sort [0, 0] [0]","id":1,"column":30,"source":{"name":"lists.elpi","path":"lists.elpi"},"line":16,"endLine":16,"endColumn":43}],"totalFrames":2}}
   -> {"seq":6,"type":"request","command":"variables","arguments":{"variablesReference":1}}
   <- {"seq":11,"type":"response","request_seq":6,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"insert 0 [0] [0]","variablesReference":0},{"name":"arg 1 (input)","value":"0","variablesReference":0},{"name":"arg 2 (input)","value":"[0]","variablesReference":0},{"name":"arg 3 (output)","value":"[0]","variablesReference":0},{"name":"X0 :=","value":"[0]","variablesReference":0}]}}
   -> {"seq":7,"type":"request","command":"stepOut","arguments":{"threadId":1}}

@@ -69,7 +69,7 @@ emit J :- output std_out "@@elpi-debug ", output std_out {json-text J}, output s
 pred start-session.
 start-session :- opt machine, !,
   emit-program,
-  stop started start-step (focus (frame 0 0 query true) []) ["the run is about to start"].
+  stop started start-step (focus (frame 0 0 query true called) []) ["the run is about to start"].
 start-session.
 
 % [emit-program]: the message "program": the rules, numbered from 1, and
@@ -151,15 +151,16 @@ string-json S (json-string S).
 
 % [frame-json Frame J]: a call of the stack: its number, its goal, the
 % clause it runs (null at the ports of the call itself, where it runs no
-% clause), its arguments with their modes, and for each logic variable of
-% the goal the eigenvariables it may depend on.  The frame 0 is the query.
+% clause), the premise it comes from ([premise-json]), its arguments with
+% their modes, and for each logic variable of the goal the eigenvariables
+% it may depend on.  The frame 0 is the query.
 :nooc
 pred frame-json i:frame, o:json.
-frame-json (frame 0 _ _ _) (json-object [pr "id" (json-int 0), pr "goal" (json-string "(the query)"),
-                                          pr "clause" json-null, pr "args" (json-list []),
+frame-json (frame 0 _ _ _ _) (json-object [pr "id" (json-int 0), pr "goal" (json-string "(the query)"),
+                                          pr "clause" json-null, pr "premise" json-null, pr "args" (json-list []),
                                           pr "scope" (json-list [])]) :- !.
-frame-json (frame Id _ P G) (json-object [pr "id" (json-int Id), pr "goal" (json-string {show-term G}),
-                                           pr "clause" Clause, pr "args" (json-list Args),
+frame-json (frame Id _ P G Entry) (json-object [pr "id" (json-int Id), pr "goal" (json-string {show-term G}),
+                                           pr "clause" Clause, pr "premise" {premise-json Entry}, pr "args" (json-list Args),
                                            pr "scope" (json-list Scope)]) :-
   clause-run-by Id Clause,
   args-json P G Args,
@@ -176,6 +177,29 @@ clause-run-by _ json-null.
 func origin-json origin -> json.
 origin-json (at Loc _) (json-object Fields) :- location-fields Loc Fields.
 origin-json (added-by S _) (json-object [pr "hypothesis" (json-string S)]).
+
+% [premise-json Entry J]: where a call entered from a premise is written:
+% {"index": N, "clause": the clause (as [origin-json]), "place": the place
+% of the goal N of its body, {"file", "line", "column", "endLine",
+% "endColumn"} (lines from 1, columns from 0, the end just after the last
+% character; from reflect.premises, null for a hypothetical clause)};
+% null for a call of the query, a woken goal, or a premise not known.
+func premise-json entry -> json.
+premise-json (called-from (premise Origin N))
+  (json-object [pr "index" (json-int N), pr "clause" {origin-json Origin}, pr "place" {premise-place-json Origin N}]) :- !.
+premise-json _ json-null.
+
+func premise-place-json origin, int -> json.
+premise-place-json (at Loc _) N
+  (json-object [pr "file" (json-string File), pr "line" (json-int Line), pr "column" (json-int Column),
+                pr "endLine" (json-int EndLine), pr "endColumn" (json-int EndColumn)]) :-
+  reflect.premises Loc Places, nth-place N Places (reflect.span File Line Column EndLine EndColumn), !.
+premise-place-json _ _ json-null.
+
+% [nth-place N Places P]: P is the N-th of Places (from 1); fails beyond.
+pred nth-place i:int, i:list reflect.span, o:reflect.span.
+nth-place 1 [P | _] P :- !.
+nth-place N [_ | Ps] P :- N > 1, M is N - 1, nth-place M Ps P.
 
 % [args-json P G Js]: {"mode":"input"|"output", "value"} per argument of G.
 :nooc

@@ -99,7 +99,7 @@ stop-if-stopping _ _ _.
 pred event-shown i:event-kind, o:focus.
 event-shown _ _ :- opt trace, !.
 event-shown Kind F :- opt interactive, current-mode M, !, shown-in-mode M Kind F.
-event-shown Kind (focus (frame _ _ P _) _) :- box-event Kind, breakpoint-on P.
+event-shown Kind (focus (frame _ _ P _ _) _) :- box-event Kind, breakpoint-on P.
 
 % ===== The ports of a call ===========================================================
 
@@ -117,16 +117,32 @@ pred port-seen i:event-kind, o:box, i:list string, o:bool.
 port-seen _ _ _ ff :- quiet, !.
 port-seen Kind Box Lines Seen :-
   record-event Kind Box,
-  box-split Box Frame Above Entry,
-  entry-port Kind Entry Kind1 Tag,
+  box-split Box Frame Above,
+  entry-port Kind {frame-entry Frame} Kind1 Tag,
   frame-depth Frame D,
-  event-seen Kind1 D (focus Frame Above) (port-text Tag Frame Lines) Seen.
+  event-seen Kind1 D (focus Frame Above) (port-text Kind1 Tag Frame Lines) Seen.
 
-% [port-text Tag Frame Lines T]: the text of a port, "[Sn] #Id goal",
-% then Lines.
+% [port-text Kind Tag Frame Lines T]: the text of the port Kind, "[Sn] #Id
+% goal", at a call port the premise the call comes from, then Lines.
 :nooc
-pred port-text i:string, i:frame, i:list string, o:list string.
-port-text Tag Frame Lines [Tag | T] :- frame-text Frame T0, std.append T0 Lines T.
+pred port-text i:event-kind, i:string, i:frame, i:list string, o:list string.
+port-text Kind Tag Frame Lines [Tag | T] :-
+  frame-text Frame T0, premise-note Kind Frame Note, std.append T0 [Note | Lines] T.
+
+% [premise-note Kind Frame Note]: at a call port, "   (premise N of
+% file:line)", the premise of a clause that the call of Frame comes from;
+% "" at the other ports, or when the premise is not known.
+:nooc
+func premise-note event-kind, frame -> string.
+premise-note call-port (frame _ _ _ _ (called-from Premise)) Note :- !,
+  Note is "   (" ^ {premise-string Premise} ^ ")".
+premise-note _ _ "".
+
+% [premise-string Premise S]: "premise N of file:line", or "premise N of
+% hypothesis added by #K".
+func premise-string premise -> string.
+premise-string (premise Origin N) S :-
+  S is "premise " ^ {std.any->string N} ^ " of " ^ {origin-string Origin}.
 
 % ===== What a call computed ==========================================================
 %
@@ -187,7 +203,7 @@ new-vars [V|Vs] Known [V|New] :- new-vars Vs Known New.
 func entry-port event-kind, entry -> event-kind, string.
 entry-port call-port (woken N) resume-port Tag :- !, suspension-tag N Tag.
 entry-port Kind (woken N) Kind Tag :- !, suspension-tag N Tag.
-entry-port Kind called Kind "".
+entry-port Kind _ Kind "".
 
 func suspension-tag int -> string.
 suspension-tag N Tag :- Tag is "[S" ^ {std.any->string N} ^ "] ".
@@ -195,18 +211,23 @@ suspension-tag N Tag :- Tag is "[S" ^ {std.any->string N} ^ "] ".
 % [frame-text Frame Text]: "#Id goal".
 :nooc
 func frame-text frame -> list string.
-frame-text (frame Id _ _ G) [{box-name Id}, " ", {show-term G}].
+frame-text (frame Id _ _ G _) [{box-name Id}, " ", {show-term G}].
 
 :nooc
 func frame-depth frame -> int.
-frame-depth (frame _ D _ _) D.
+frame-depth (frame _ D _ _ _) D.
+
+% [frame-entry Frame Entry]: how the call of Frame was entered.
+:nooc
+func frame-entry frame -> entry.
+frame-entry (frame _ _ _ _ Entry) Entry.
 
 % [try-port Ctx]: a candidate clause is tried by the call whose body would
 % run in Ctx (for the profile: with option profile, it comes first in the
 % head unification of every compiled clause, compiled.elpi).
 :nooc
 pred try-port i:ctx.
-try-port (ctx _ [Frame | Above]) :- record-event try-step (box Frame Above called).
+try-port (ctx _ [Frame | Above]) :- record-event try-step (box Frame Above).
 
 % ===== The steps of λProlog inside a call ===============================================
 
@@ -224,13 +245,13 @@ pred unify-port i:ctx, i:origin, i:(pred), i:(pred).
 unify-port (ctx _ [Frame | Above]) Origin _ Post :-
   not (event-shown unify-step (focus Frame Above)), not (clause-breakpoint-on Origin), !,
   Post.
-unify-port (ctx _ [frame Id D P G | Above]) Origin Head Post :-
+unify-port (ctx _ [frame Id D P G E | Above]) Origin Head Post :-
   trail-mark (in-reach G) Mark,
   Post,
   bindings-since Mark Bindings,
   std.map Bindings binding-line Lines,
   [runs Id Origin, made-bindings Bindings] =>
-    event unify-step D (focus (frame Id D P G) Above) (unify-text Id Origin Head Lines).
+    event unify-step D (focus (frame Id D P G E) Above) (unify-text Id Origin Head Lines).
 
 % [unify-text Id Origin Head Lines T]: the text of a unify event.
 pred unify-text i:int, i:origin, i:(pred), i:list string, o:list string.
@@ -300,8 +321,8 @@ delay-text K G Keys [{suspension-tag K}, {show-term G}, " on ", {show-term Keys}
 :nooc
 pred cut-port o:ctx.
 cut-port _ :- quiet, !.
-cut-port (ctx _ [frame Id D P G | Above]) :- !,
-  event cut-step D (focus (frame Id D P G) Above) (cut-text Id).
+cut-port (ctx _ [frame Id D P G E | Above]) :- !,
+  event cut-step D (focus (frame Id D P G E) Above) (cut-text Id).
 
 % [cut-text Id T]: the text of a cut step.
 pred cut-text i:int, o:list string.
@@ -313,7 +334,7 @@ cut-port _.
 :nooc
 func ctx-focus list frame -> focus.
 ctx-focus [Frame | Above] (focus Frame Above) :- !.
-ctx-focus [] (focus (frame 0 0 query true) []).
+ctx-focus [] (focus (frame 0 0 query true called) []).
 
 % ===== Builtins ==========================================================================
 

@@ -61,9 +61,9 @@ is-break (break _).
 pred shown-in-mode i:stepping, i:event-kind, o:focus.
 shown-in-mode creep _ _.
 shown-in-mode tracing _ _.
-shown-in-mode (skip Id) Kind (focus (frame Id _ _ _) _) :- end-event Kind.
-shown-in-mode _ Kind (focus (frame _ _ P _) _) :- box-event Kind, breakpoint-on P.
-shown-in-mode _ unify-step (focus (frame Id _ _ _) _) :- runs Id Origin, clause-breakpoint-on Origin.
+shown-in-mode (skip Id) Kind (focus (frame Id _ _ _ _) _) :- end-event Kind.
+shown-in-mode _ Kind (focus (frame _ _ P _ _) _) :- box-event Kind, breakpoint-on P.
+shown-in-mode _ unify-step (focus (frame Id _ _ _ _) _) :- runs Id Origin, clause-breakpoint-on Origin.
 
 % Why the interpreter stops at an event.
 data stop-reason.
@@ -78,9 +78,9 @@ symb started stop-reason.        % the start of the run, before its first event 
 % stepping mode says.
 :nooc
 pred stop-reason i:event-kind, o:focus, o:stop-reason.
-stop-reason Kind (focus (frame _ _ P _) _) at-breakpoint :-
+stop-reason Kind (focus (frame _ _ P _ _) _) at-breakpoint :-
   entry-event Kind, breakpoint-on P, not (current-mode nodebug), !.
-stop-reason unify-step (focus (frame Id _ _ _) _) at-breakpoint :-
+stop-reason unify-step (focus (frame Id _ _ _ _) _) at-breakpoint :-
   runs Id Origin, clause-breakpoint-on Origin, not (current-mode nodebug), !.
 stop-reason _ _ paused :- opt machine, not (current-mode nodebug), pause-requested, !.
 stop-reason Kind F stepped :- opt interactive, current-mode M, stops-in-mode M Kind F.
@@ -88,15 +88,15 @@ stop-reason Kind F stepped :- opt interactive, current-mode M, stops-in-mode M K
 :nooc
 pred stops-in-mode i:stepping, i:event-kind, o:focus.
 stops-in-mode creep _ _.
-stops-in-mode (skip Id) Kind (focus (frame Id _ _ _) _) :- end-event Kind.
+stops-in-mode (skip Id) Kind (focus (frame Id _ _ _ _) _) :- end-event Kind.
 
 % [step-out-mode Kind F M]: the mode of step out (o) at the event Kind:
 % skip the call whose body runs the event, the call above at a port of a
 % call; at the level of the query, leap.
 :nooc
 pred step-out-mode i:event-kind, o:focus, o:stepping.
-step-out-mode Kind (focus _ [frame Id _ _ _ | _]) (skip Id) :- box-event Kind, !.
-step-out-mode Kind (focus (frame Id _ _ _) _) (skip Id) :- not (box-event Kind), Id > 0, !.
+step-out-mode Kind (focus _ [frame Id _ _ _ _ | _]) (skip Id) :- box-event Kind, !.
+step-out-mode Kind (focus (frame Id _ _ _ _) _) (skip Id) :- not (box-event Kind), Id > 0, !.
 step-out-mode _ _ leap.
 
 % ===== Requests: retry and fail ============================================================
@@ -134,7 +134,7 @@ pred call-in-stack i:int, o:focus.
 call-in-stack Id (focus Frame Above) :- std.exists [Frame | Above] (frame-has-id Id).
 
 pred frame-has-id i:int, i:frame.
-frame-has-id Id (frame Id _ _ _).
+frame-has-id Id (frame Id _ _ _ _).
 
 % ===== Breakpoints ==========================================================================
 %
@@ -206,7 +206,7 @@ forget-pause-request.
 
 :nooc
 pred show-context o:focus.
-show-context (focus (frame Id _ _ G) Above) :-
+show-context (focus (frame Id _ _ G _) Above) :-
   say 0 ["--- breakpoint at ", {box-name Id}, ": ", {show-term G}],
   show-backtrace Above, show-hyps, show-eigenvariables.
 
@@ -245,7 +245,7 @@ pred run-command i:list string, i:event-kind, o:focus.
 run-command [] _ _ :- !, set-mode creep.
 run-command ["c"] _ _ :- !, set-mode creep.
 % skip: run the call to its exit or fail, unseen (at its exit or fail: creep)
-run-command ["s"] Kind (focus (frame Id _ _ _) _) :- Id > 0, not (end-event Kind), !, set-mode (skip Id).
+run-command ["s"] Kind (focus (frame Id _ _ _ _) _) :- Id > 0, not (end-event Kind), !, set-mode (skip Id).
 run-command ["s"] _ _ :- !, set-mode creep.
 % out: run to the exit or fail of the call whose body runs this event
 run-command ["o"] Kind F :- !, step-out-mode Kind F M, set-mode M.
@@ -255,16 +255,16 @@ run-command ["t"] _ _ :- !, set-mode tracing.
 run-command ["n"] _ _ :- !, set-mode nodebug.
 % retry, fail: unwind to the call port of the call in focus (or of the
 % call N of the stack)
-run-command ["r"] _ (focus (frame Id _ _ _) _) :- Id > 0, !, ask-retry Id.
+run-command ["r"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, ask-retry Id.
 run-command ["r", N] _ F :- rex.match "^[1-9][0-9]*$" N, Id is string_to_int N, call-in-stack Id F, !, ask-retry Id.
-run-command ["f"] _ (focus (frame Id _ _ _) _) :- Id > 0, !, set-request (fail-call Id), fail.
+run-command ["f"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, set-request (fail-call Id), fail.
 run-command [C] Kind F :- (C = "r" ; C = "f"), !,
   print "    (the query itself cannot be retried or failed)", command-loop Kind F.
 run-command ["r", _] Kind F :- !, print "    (no such call in the stack)", command-loop Kind F.
 % the commands that show something, then prompt again
 run-command ["p"] Kind F :- !, show-focus F, command-loop Kind F.
 run-command ["g"] Kind (focus _ Above as F) :- !, show-backtrace Above, command-loop Kind F.
-run-command ["scope"] Kind (focus (frame _ _ _ G) _ as F) :- !, show-scope G, command-loop Kind F.
+run-command ["scope"] Kind (focus (frame _ _ _ G _) _ as F) :- !, show-scope G, command-loop Kind F.
 run-command ["hyps"] Kind F :- !, show-hyps, command-loop Kind F.
 run-command ["e"] Kind F :- !, show-deepest-failure, command-loop Kind F.
 run-command ["h"] Kind F :- !, show-help, command-loop Kind F.
@@ -302,7 +302,7 @@ show-help :- std.forall [
 
 :nooc
 pred show-focus o:focus.
-show-focus (focus (frame Id _ _ G) _) :-
+show-focus (focus (frame Id _ _ G _) _) :-
   say 1 [{box-name Id}, " ", {show-term G}],
   show-hyps, show-scope G.
 

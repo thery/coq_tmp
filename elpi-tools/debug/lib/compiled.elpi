@@ -208,9 +208,30 @@ pred clause-body i:int, i:ctx, i:origin, i:list string, i:(pred), i:(pred), i:li
 clause-body Id Ctx Origin Names H B Gs Body :-
   head-rest Ctx Gs Post,
   unify-goal Ctx Origin H Post Unify,
-  compile Ctx Names B Code _,
+  compile-body Ctx Origin Names B Code,
   run-goal Id Origin Code Run,
   and-then Unify Run Body.
+
+% [compile-body Ctx Origin Names B Code]: Code runs the body B of the clause
+% from Origin, compiled ([compile], interpreter.elpi).  When events may be
+% shown, each call made by the goal N of B (the N-th goal of its top-level
+% conjunction) is entered [called-from (premise Origin N)]: its ports say
+% where it is written, and a front end shows that place.  On the fast path
+% the premise is not kept: the calls are entered [called].
+pred compile-body i:ctx, i:origin, i:list string, i:(pred), o:(pred).
+compile-body Ctx _ Names B Code :- quiet, !, compile Ctx called Names B Code _.
+compile-body Ctx Origin Names B Code :- conjuncts B Gs, !,
+  compile-premises Ctx Origin 1 Names Gs Codes, mk-conj Codes Code.
+compile-body Ctx Origin Names B Code :- compile Ctx (called-from (premise Origin 1)) Names B Code _.
+
+% [compile-premises Ctx Origin N Names Gs Codes]: the goals Gs compiled, the
+% first one as the goal N of the body of the clause from Origin.
+pred compile-premises i:ctx, i:origin, i:int, i:list string, i:list (pred), o:list (pred).
+compile-premises _ _ _ _ [] [].
+compile-premises Ctx Origin N Names [G | Gs] [C | Cs] :-
+  compile Ctx (called-from (premise Origin N)) Names G C Names1,
+  N1 is N + 1,
+  compile-premises Ctx Origin N1 Names1 Gs Cs.
 
 % [and-then A B G]: G runs A then B (B when A is true).
 pred and-then i:(pred), i:(pred), o:(pred).

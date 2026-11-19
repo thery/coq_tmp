@@ -24,14 +24,14 @@ The cut port: first commits to its clause after the first element > 1.
   $ elpi-debug -trace cut.elpi 'first 1 [0,3,5] X'
   Call: #1 first 1 [0, 3, 5] X0
   Unify: #1 with cut.elpi:9: first 1 [0, 3, 5] X0
-    Call: #2 mem X0 [0, 3, 5]
+    Call: #2 mem X0 [0, 3, 5]   (premise 1 of cut.elpi:9)
     Unify: #2 with cut.elpi:4: mem 0 [0, 3, 5]
         X0 := 0
     Exit: #2 mem 0 [0, 3, 5]
         X0 := 0
     Redo: #2 mem 0 [0, 3, 5]
     Unify: #2 with cut.elpi:5: mem X0 [0, 3, 5]
-      Call: #3 mem X0 [3, 5]
+      Call: #3 mem X0 [3, 5]   (premise 1 of cut.elpi:5)
       Unify: #3 with cut.elpi:4: mem 3 [3, 5]
         X0 := 3
       Exit: #3 mem 3 [3, 5]
@@ -50,7 +50,7 @@ ports, through its bridge:
   $ elpi-debug -trace cut.elpi 'not-mem 1 [1,2]'
   Call: #1 not-mem 1 [1, 2]
   Unify: #1 with cut.elpi:33: not-mem 1 [1, 2]
-    Call: #2 mem 1 [1, 2]
+    Call: #2 mem 1 [1, 2]   (premise 1 of cut.elpi:33)
     Unify: #2 with cut.elpi:4: mem 1 [1, 2]
     Exit: #2 mem 1 [1, 2]
   Fail: #1 not-mem 1 [1, 2]

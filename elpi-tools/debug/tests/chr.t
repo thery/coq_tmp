@@ -12,7 +12,7 @@ a woken goal enters the interpreter through its Wake port.
   $ elpi-debug -trace chr.elpi 'double 3 Y'
   Call: #1 double 3 X0
   Unify: #1 with chr.elpi:18: double 3 X0
-    Call: #2 even X0
+    Call: #2 even X0   (premise 1 of chr.elpi:18)
     Unify: #2 with chr.elpi:10: even X0
     Cut: #2 commits to its current clause
       Delay: [S1] even X0 on [X0]

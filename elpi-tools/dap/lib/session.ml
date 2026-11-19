@@ -52,6 +52,7 @@ type t = {
       (* where the query is written (launch's queryPath and queryLine): the
          place of the frames that run no clause yet *)
   mutable lines_start_at_1 : bool;
+  mutable columns_start_at_1 : bool;
   mutable errors_text : Buffer.t;  (* what elpi-debug wrote on stderr *)
   clause_breakpoints : (string, int list) Hashtbl.t;  (* file -> the rules with a breakpoint *)
   mutable function_breakpoints : string list;
@@ -72,6 +73,7 @@ let create ~write =
     query = "";
     query_place = None;
     lines_start_at_1 = true;
+    columns_start_at_1 = true;
     errors_text = Buffer.create 256;
     clause_breakpoints = Hashtbl.create 7;
     function_breakpoints = [];
@@ -202,32 +204,69 @@ let on_debuggee_end s =
 (* [client_line s line]: a line number as the client counts them. *)
 let client_line s line = if s.lines_start_at_1 then line else line - 1
 
+(* [client_column s column]: a column (from 0) as the client counts them. *)
+let client_column s column = if s.columns_start_at_1 then column + 1 else column
+
 (* [current_frames s]: the calls of the stop in progress. *)
 let current_frames s = match s.stop with Some stop -> stop.frames | None -> []
 
-(* [frame_location frames index]: where the call [index] of the stack is:
-   at the clause it runs; at its own ports, where it runs no clause, at the
-   clause of its caller. *)
+(* Where a call of the stack is shown: a range of a file (the goal of a
+   clause being run), the line of a clause, a hypothetical clause, or no
+   clause. *)
+type shown_at = Range of span | Line of location | In_hypothesis of string | Nowhere
+
+(* [premise_span f]: the place of the goal that the call f comes from. *)
+let premise_span (f : frame) = Option.bind f.premise (fun p -> p.place)
+
+(* [premise_in at f]: the place of the goal that the call f comes from,
+   when that goal is a premise of the rule at [at]. *)
+let premise_in (at : location) (f : frame) =
+  match f.premise with
+  | Some { written_in = Rule_at w; place = Some span; _ } when w = at -> Some span
+  | _ -> None
+
+(* [frame_location frames index]: where the call [index] of the stack is.
+   In the clause it runs: at the goal of that clause that made the call
+   just below it in the stack (index - 1), as debuggers show a caller at
+   the call it made; for the call in focus, at the clause.  At its own
+   ports, where it runs no clause: at the goal it comes from, where it is
+   written; for a call with no such goal (of the query, or woken), where
+   its caller is. *)
 let rec frame_location frames index =
   match List.nth_opt frames index with
-  | None -> No_clause
-  | Some f -> ( match f.running with No_clause -> frame_location frames (index + 1) | place -> place)
+  | None -> Nowhere
+  | Some f -> (
+      match f.running with
+      | Rule_at at -> (
+          match Option.bind (if index > 0 then List.nth_opt frames (index - 1) else None) (premise_in at) with
+          | Some span -> Range span
+          | None -> Line at)
+      | Hypothesis origin -> In_hypothesis origin
+      | No_clause -> ( match premise_span f with Some span -> Range span | None -> frame_location frames (index + 1)))
 
 let source_of file = `Assoc [ ("name", `String (Filename.basename file)); ("path", `String file) ]
 
 (* [stack_frame s stop index f]: the DAP stack frame of the call f; the
-   name of the call in focus starts with the port of the stop. *)
+   name of the call in focus starts with the port of the stop.  A range
+   is given with its end (endLine, endColumn: the position just after its
+   last character), so that the editor highlights just that goal. *)
 let stack_frame s stop index f =
   let name = if f.id = 0 then f.goal else Printf.sprintf "#%d %s" f.id f.goal in
   let name = if index = 0 then stop.port ^ ": " ^ name else name in
-  let common = [ ("id", `Int f.id); ("column", `Int (if s.lines_start_at_1 then 1 else 0)) ] in
+  let frame ?(name = name) ?(column = 0) fields =
+    `Assoc ((("name", `String name) :: ("id", `Int f.id) :: ("column", `Int (client_column s column)) :: fields)) in
+  let whole_line file line = frame [ ("source", source_of file); ("line", `Int (client_line s line)) ] in
   match frame_location stop.frames index with
-  | Rule_at at -> `Assoc ((("name", `String name) :: common) @ [ ("source", source_of at.file); ("line", `Int (client_line s at.line)) ])
-  | Hypothesis origin -> `Assoc ((("name", `String (name ^ "   (" ^ origin ^ ")")) :: common) @ [ ("line", `Int 0) ])
-  | No_clause -> (
+  | Range span ->
+      frame ~column:span.start_column
+        [ ("source", source_of span.span_file); ("line", `Int (client_line s span.start_line));
+          ("endLine", `Int (client_line s span.end_line)); ("endColumn", `Int (client_column s span.end_column)) ]
+  | Line at -> whole_line at.file at.line
+  | In_hypothesis origin -> frame ~name:(name ^ "   (" ^ origin ^ ")") [ ("line", `Int 0) ]
+  | Nowhere -> (
       match s.query_place with
-      | Some (file, line) -> `Assoc ((("name", `String name) :: common) @ [ ("source", source_of file); ("line", `Int (client_line s line)) ])
-      | None -> `Assoc ((("name", `String name) :: common) @ [ ("line", `Int 0) ]))
+      | Some (file, line) -> whole_line file line
+      | None -> frame [ ("line", `Int 0) ])
 
 (* The scopes of a frame: references index * 4 + 1 .. + 4 (index: its
    place in the stack, from 0); valid while the stop lasts. *)
@@ -491,6 +530,7 @@ let on_request s (r : P.request) =
   match r.command with
   | "initialize" ->
       s.lines_start_at_1 <- P.bool_argument "linesStartAt1" ~default:true r;
+      s.columns_start_at_1 <- P.bool_argument "columnsStartAt1" ~default:true r;
       respond s r capabilities
   | "launch" -> launch s r
   | "setBreakpoints" -> with_program s r (set_clause_breakpoints s r)

@@ -19,13 +19,29 @@ type program = { rules : rule list; declarations : location list }
    none (at the ports of the call itself, before or after its clauses). *)
 type running = Rule_at of location | Hypothesis of string | No_clause
 
+(* A range of a file: from line, column to end_line, end_column, the
+   position just after its last character (lines from 1, columns from 0). *)
+type span = { span_file : string; start_line : int; start_column : int; end_line : int; end_column : int }
+
+(* Where a call is written: the goal [index] (from 1) of the body of the
+   clause [written_in], and the place of that goal in the source (none for
+   a hypothetical clause). *)
+type premise = { index : int; written_in : running; place : span option }
+
 type argument = { mode : string; value : string }
 
 (* A logic variable of a goal and the eigenvariables it may depend on. *)
 type var_scope = { var : string; depends : string list }
 
 (* A call of the stack; the call 0 is the query. *)
-type frame = { id : int; goal : string; running : running; args : argument list; scope : var_scope list }
+type frame = {
+  id : int;
+  goal : string;
+  running : running;
+  premise : premise option;  (* none for a call of the query or a woken goal *)
+  args : argument list;
+  scope : var_scope list;
+}
 
 (* A binding made by the step of the stop: the head unification of a unify
    step, or the whole call at an exit port (the variable named X<n>). *)
@@ -74,6 +90,23 @@ let running_of json =
   | `Assoc fields when List.mem_assoc "hypothesis" fields -> Hypothesis (string_field "hypothesis" json)
   | _ -> Rule_at (location_of json)
 
+let span_of json =
+  {
+    span_file = string_field "file" json;
+    start_line = int_field "line" json;
+    start_column = int_field "column" json;
+    end_line = int_field "endLine" json;
+    end_column = int_field "endColumn" json;
+  }
+
+(* [premise_of json]: the field "premise" of a frame (null, or absent from
+   an older elpi-debug, when the premise is not known). *)
+let premise_of = function
+  | `Null -> None
+  | json ->
+      let place = match J.member "place" json with `Null -> None | p -> Some (span_of p) in
+      Some { index = int_field "index" json; written_in = running_of (J.member "clause" json); place }
+
 let argument_of json = { mode = string_field "mode" json; value = string_field "value" json }
 
 let var_scope_of json = { var = string_field "var" json; depends = list_field "depends" J.to_string json }
@@ -83,6 +116,7 @@ let frame_of json =
     id = int_field "id" json;
     goal = string_field "goal" json;
     running = running_of (J.member "clause" json);
+    premise = premise_of (J.member "premise" json);
     args = list_field "args" argument_of json;
     scope = list_field "scope" var_scope_of json;
   }

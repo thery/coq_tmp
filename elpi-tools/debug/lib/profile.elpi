@@ -53,7 +53,7 @@ native-name _ "other builtins".
 
 :nooc
 func parent-name list frame -> string.
-parent-name [frame _ _ P _ | _] Name :- !, term_to_string P Name.
+parent-name [frame _ _ P _ _ | _] Name :- !, term_to_string P Name.
 parent-name [] "(query)".
 
 % ===== The flat profile ===========================================================================

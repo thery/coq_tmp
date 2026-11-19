@@ -30,9 +30,9 @@ note-failure-if-first _ _.
 pred note-failure o:box.
 note-failure Box :- box-parts Box _ D _ _ _, deepest-depth M, D =< M, !.
 note-failure Box :-
-  box-parts Box Id D P G Above,
+  box-parts Box _ D P G _, box-split Box Frame Above,
   failure-reasons D P G Reasons,
-  record-failure D {frame-string (frame Id D P G)} Above Reasons.
+  record-failure D {frame-string Frame} Above Reasons.
 
 % [note-native-failure-if-first Exited Ctx G]: likewise for a builtin.
 :nooc

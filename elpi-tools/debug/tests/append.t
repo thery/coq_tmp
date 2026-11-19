@@ -5,24 +5,24 @@ The four ports of each call, and a solution:
   $ elpi-debug -trace append.elpi 'rev [1,2] R'
   Call: #1 rev [1, 2] X0
   Unify: #1 with append.elpi:15: rev [1, 2] X0
-    Call: #2 rev [2] X1
+    Call: #2 rev [2] X1   (premise 1 of append.elpi:15)
     Unify: #2 with append.elpi:15: rev [2] X1
-      Call: #3 rev [] X2
+      Call: #3 rev [] X2   (premise 1 of append.elpi:15)
       Unify: #3 with append.elpi:14: rev [] []
         X2 := []
       Exit: #3 rev [] []
         X2 := []
-      Call: #4 append [] [2] X1
+      Call: #4 append [] [2] X1   (premise 2 of append.elpi:15)
       Unify: #4 with append.elpi:5: append [] [2] [2]
         X1 := [2]
       Exit: #4 append [] [2] [2]
         X1 := [2]
     Exit: #2 rev [2] [2]
         X1 := [2]
-    Call: #5 append [2] [1] X0
+    Call: #5 append [2] [1] X0   (premise 2 of append.elpi:15)
     Unify: #5 with append.elpi:6: append [2] [1] [2 | X3]
         X0 := [2 | X3]
-      Call: #6 append [] [1] X3
+      Call: #6 append [] [1] X3   (premise 1 of append.elpi:6)
       Unify: #6 with append.elpi:5: append [] [1] [1]
         X3 := [1]
       Exit: #6 append [] [1] [1]
@@ -50,7 +50,7 @@ Backtracking into a relation shows the redo ports:
   Redo: #1 app [] [1, 2] [1, 2]
   Unify: #1 with append.elpi:11: app [1 | X2] X1 [1, 2]
         X0 := [1 | X2]
-    Call: #2 app X2 X1 [2]
+    Call: #2 app X2 X1 [2]   (premise 1 of append.elpi:11)
     Unify: #2 with append.elpi:10: app [] [2] [2]
         X2 := []
         X1 := [2]
@@ -67,7 +67,7 @@ Backtracking into a relation shows the redo ports:
     Redo: #2 app [] [2] [2]
     Unify: #2 with append.elpi:11: app [2 | X3] X1 [2]
         X2 := [2 | X3]
-      Call: #3 app X3 X1 []
+      Call: #3 app X3 X1 []   (premise 1 of append.elpi:11)
       Unify: #3 with append.elpi:10: app [] [] []
         X3 := []
         X1 := []
@@ -125,7 +125,7 @@ The relation (all outputs) runs backwards; same answers as the real engine:
 A breakpoint on append (without -i: the context is printed at each stop):
 
   $ elpi-debug -break append append.elpi 'rev [1,2] R'
-      Call: #4 append [] [2] X0
+      Call: #4 append [] [2] X0   (premise 2 of append.elpi:15)
   --- breakpoint at #4: append [] [2] X0
     called from:
       #2 rev [2] X0
@@ -134,13 +134,13 @@ A breakpoint on append (without -i: the context is printed at each stop):
     eigenvariables in scope: no eigenvariable
       Exit: #4 append [] [2] [2]
         X0 := [2]
-    Call: #5 append [2] [1] X1
+    Call: #5 append [2] [1] X1   (premise 2 of append.elpi:15)
   --- breakpoint at #5: append [2] [1] X1
     called from:
       #1 rev [1, 2] X1
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
-      Call: #6 append [] [1] X2
+      Call: #6 append [] [1] X2   (premise 1 of append.elpi:6)
   --- breakpoint at #6: append [] [1] X2
     called from:
       #5 append [2] [1] [2 | X2]

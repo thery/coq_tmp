@@ -49,7 +49,7 @@ shows-events profile.
 
 % [run-query Goal]: the query, with its outcome reported.
 pred run-query o:(pred).
-run-query Goal :- start-session, compile (ctx 0 []) [] Goal Code _, Code, report-solution.
+run-query Goal :- start-session, compile (ctx 0 []) called [] Goal Code _, Code, report-solution.
 run-query _ :- report-final-failure, fail.
 
 % ===== Clause bodies, and the cut ==============================================
@@ -70,50 +70,52 @@ run-query _ :- report-final-failure, fail.
 % (checked on elpi 4.0.0); keeping these connectives native keeps that too.
 % The ports of pi and => are goals in line, so the cut goes through them.
 
-% [compile Ctx Names Body Code Names1]: Code runs Body in context Ctx.
+% [compile Ctx Entry Names Body Code Names1]: Code runs Body in context Ctx,
+% its calls entered as Entry (the premise they come from, compiled.elpi:
+% [compile-body]).
 % Names are the source names of the binders of Body in textual order (from
 % reflect; [] when unknown) and Names1 those left after Body: a pi names its
 % eigenvariable after the first one.  Code has no variable of its own (those
 % it needs when it runs are bound in it by sigma), so that a clause can be
 % compiled once and its compiled body run at each call (compiled.elpi).
 :nooc
-pred compile o:ctx, i:list string, i:(pred), o:(pred), o:list string.
+pred compile o:ctx, i:entry, i:list string, i:(pred), o:(pred), o:list string.
 % a goal only known at run time: dispatched then
-compile Ctx Ns G (debug.goal Ctx G) Ns :- var G, !.
+compile Ctx E Ns G (debug.goal Ctx E G) Ns :- var G, !.
 % the cut: native, after its port (or nothing, if the strategy ignores it)
-compile _ Ns ! true Ns :- cut-ignored-here, !.
-compile Ctx Ns ! (debug.cut-port Ctx, !) Ns :- !.
-compile _ Ns true true Ns :- !.
+compile _ _ Ns ! true Ns :- cut-ignored-here, !.
+compile Ctx _ Ns ! (debug.cut-port Ctx, !) Ns :- !.
+compile _ _ Ns true true Ns :- !.
 % a conjunction: its goals compiled in turn
-compile Ctx Ns G Code Ns1 :- conjuncts G Gs, !, compile-all Ctx Ns Gs Codes Ns1, mk-conj Codes Code.
+compile Ctx E Ns G Code Ns1 :- conjuncts G Gs, !, compile-all Ctx E Ns Gs Codes Ns1, mk-conj Codes Code.
 % pi x\ B: native pi; with events, its port names the eigenvariable, and
 % the name ([eigen x N]) stays in force in the scope of x
-compile Ctx Ns (pi x\ F x) (pi x\ Code x) Ns1 :- quiet, !,
-  next-name Ns _ Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
-compile Ctx Ns (pi x\ F x) (pi x\ sigma N\ debug.pi-port Ctx Name x (F x) N, (debug.eigen x N => Code x)) Ns1 :- !,
-  next-name Ns Name Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
+compile Ctx E Ns (pi x\ F x) (pi x\ Code x) Ns1 :- quiet, !,
+  next-name Ns _ Ns0, pi x\ compile Ctx E Ns0 (F x) (Code x) Ns1.
+compile Ctx E Ns (pi x\ F x) (pi x\ sigma N\ debug.pi-port Ctx Name x (F x) N, (debug.eigen x N => Code x)) Ns1 :- !,
+  next-name Ns Name Ns0, pi x\ compile Ctx E Ns0 (F x) (Code x) Ns1.
 % sigma x\ B: native sigma (a fresh variable for x at each run of the code)
-compile Ctx Ns (sigma x\ F x) (sigma x\ Code x) Ns1 :- !, next-name Ns _ Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
+compile Ctx E Ns (sigma x\ F x) (sigma x\ Code x) Ns1 :- !, next-name Ns _ Ns0, pi x\ compile Ctx E Ns0 (F x) (Code x) Ns1.
 % H => B: native =>, of the hypothetical clauses of H as data ([assume])
-compile Ctx Ns (H => B) (sigma Hyps\ debug.assume Ctx H B Hyps, Hyps => Code) Ns1 :- !,
-  drop-names H Ns Ns0, compile Ctx Ns0 B Code Ns1.
+compile Ctx E Ns (H => B) (sigma Hyps\ debug.assume Ctx H B Hyps, Hyps => Code) Ns1 :- !,
+  drop-names H Ns Ns0, compile Ctx E Ns0 B Code Ns1.
 % A ; B: native ;, of the compiled branches
-compile Ctx Ns (A ; B) (CA ; CB) Ns2 :- !, compile Ctx Ns A CA Ns1, compile Ctx Ns1 B CB Ns2.
+compile Ctx E Ns (A ; B) (CA ; CB) Ns2 :- !, compile Ctx E Ns A CA Ns1, compile Ctx E Ns1 B CB Ns2.
 % declare_constraint G Keys: the real one, with its delay port
-compile Ctx Ns (declare_constraint G Keys) (debug.delay Ctx G Keys) Ns1 :- !, drop-names G Ns Ns1.
+compile Ctx _ Ns (declare_constraint G Keys) (debug.delay Ctx G Keys) Ns1 :- !, drop-names G Ns Ns1.
 % an atomic goal of a declared predicate of the program: a call
-compile Ctx Ns G (debug.call Ctx P G debug.called) Ns1 :- constant G P _, declared P _, !, drop-names G Ns Ns1.
+compile Ctx E Ns G (debug.call Ctx P G E) Ns1 :- constant G P _, declared P _, !, drop-names G Ns Ns1.
 % an atomic goal of a constant the program does not declare: a builtin, or
 % a predicate with hypothetical clauses only, told apart when it runs
-compile Ctx Ns G (debug.undeclared-goal Ctx P G) Ns1 :- constant G P _, !, drop-names G Ns Ns1.
+compile Ctx E Ns G (debug.undeclared-goal Ctx E P G) Ns1 :- constant G P _, !, drop-names G Ns Ns1.
 % any other goal (headed by an eigenvariable, an application of a builtin
 % written in OCaml): dispatched by [goal] when it runs
-compile Ctx Ns G (debug.goal Ctx G) Ns1 :- drop-names G Ns Ns1.
+compile Ctx E Ns G (debug.goal Ctx E G) Ns1 :- drop-names G Ns Ns1.
 
 :nooc
-pred compile-all o:ctx, i:list string, i:list (pred), o:list (pred), o:list string.
-compile-all _ Ns [] [] Ns.
-compile-all Ctx Ns [G|Gs] [C|Cs] Ns2 :- compile Ctx Ns G C Ns1, compile-all Ctx Ns1 Gs Cs Ns2.
+pred compile-all o:ctx, i:entry, i:list string, i:list (pred), o:list (pred), o:list string.
+compile-all _ _ Ns [] [] Ns.
+compile-all Ctx E Ns [G|Gs] [C|Cs] Ns2 :- compile Ctx E Ns G C Ns1, compile-all Ctx E Ns1 Gs Cs Ns2.
 
 % [next-name Ns Name Ns1]: the source name of the next binder ("x" when unknown).
 pred next-name i:list string, o:string, o:list string.
@@ -164,26 +166,27 @@ connective (A_ ; B_) :- !.
 
 % ===== Goals ====================================================================
 
-% [goal Ctx G]: run the goal G, known only now.
+% [goal Ctx Entry G]: run the goal G, known only now, its calls entered as
+% Entry.
 :nooc
-pred goal o:ctx, i:(pred).
+pred goal o:ctx, i:entry, i:(pred).
 % a variable: Elpi refuses to run it, and so does the debugger
-goal _ G :- var G, !, std.fatal-error "debug: the goal is a variable".
+goal _ _ G :- var G, !, std.fatal-error "debug: the goal is a variable".
 % a connective (a goal passed in a variable): compiled now; a cut in it is
 % then local to it (a limit, see README)
-goal Ctx G :- connective G, !, compile Ctx [] G Code _, Code.
+goal Ctx Entry G :- connective G, !, compile Ctx Entry [] G Code _, Code.
 % a goal of a program predicate: a call, with its box
-goal Ctx G :- program-goal G P, !, call Ctx P G called.
+goal Ctx Entry G :- program-goal G P, !, call Ctx P G Entry.
 % anything else: a builtin, run natively
-goal Ctx G :- native Ctx G.
+goal Ctx Entry G :- native Ctx Entry G.
 
-% [undeclared-goal Ctx P G]: the goal G of the constant P, which the program
+% [undeclared-goal Ctx Entry P G]: the goal G of the constant P, which the program
 % does not declare: a call when hypothetical clauses of P are in scope,
 % otherwise a builtin (as [goal] tells them apart).
 :nooc
-pred undeclared-goal o:ctx, i:any, i:(pred).
-undeclared-goal Ctx P G :- hyp P _ _, !, call Ctx P G called.
-undeclared-goal Ctx _ G :- native Ctx G.
+pred undeclared-goal o:ctx, i:entry, i:any, i:(pred).
+undeclared-goal Ctx Entry P G :- hyp P _ _, !, call Ctx P G Entry.
+undeclared-goal Ctx Entry _ G :- native Ctx Entry G.
 
 % [program-goal G P]: G is a goal of the predicate P of the program
 % (declared, or with hypothetical clauses in scope).
@@ -209,7 +212,7 @@ pred call o:ctx, i:any, i:(pred), i:entry.
 call (ctx D Above) P G Entry :-
   new_int Id,
   new_safe Exited,
-  run-box Exited (box (frame Id D P G) Above Entry).
+  run-box Exited (box (frame Id D P G Entry) Above).
 
 % [run-box Exited Box]: the call, with its ports ([attempt]); on the fast
 % path, where no event is shown or recorded (so no stop, and no retry), it
@@ -272,11 +275,10 @@ exit-or-redo _ Box :- port redo-port Box, fail.
 % its rule, in which a cut is the native cut of the compiled clause.
 :nooc
 pred backchain o:box.
-backchain Box :-
-  box-parts Box Id D P G Above,
+backchain (box (frame Id D P G Entry) Above) :-
   within-depth D,
   D1 is D + 1,
-  ordered-clause G Id (ctx D1 [frame Id D P G | Above]).
+  ordered-clause G Id (ctx D1 [frame Id D P G Entry | Above]).
 
 % [binder-names-of-body Origin Head Body Names]: the source names of the
 % binders of the body of a rule, for the names of its eigenvariables (none
@@ -341,7 +343,7 @@ hyp-list C [C].
 % [hyp-origin Ctx S]: "hypothesis added by #N", N the call whose body runs =>.
 :nooc
 func hyp-origin ctx -> string.
-hyp-origin (ctx _ [frame Id _ _ _|_]) S :- !, S is "hypothesis added by " ^ {box-name Id}.
+hyp-origin (ctx _ [frame Id _ _ _ _ |_]) S :- !, S is "hypothesis added by " ^ {box-name Id}.
 hyp-origin _ "hypothesis added by the query".
 
 % [hyp-clauses Origin C Cs]: the [hyp] fact of the clause C, and its

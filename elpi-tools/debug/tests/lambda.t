@@ -12,12 +12,12 @@ program.
         X0 := arr X1 X2
     Pi: x#1 is a new eigenvariable; its scope: (of x#1 X1) ==> of (lam c1 \ x#1) X2
     Assume: of x#1 X1   (added to the local program, for of (lam c1 \ x#1) X2 only)
-    Call: #2 of (lam c1 \ x#1) X2
+    Call: #2 of (lam c1 \ x#1) X2   (premise 1 of lambda.elpi:14)
     Unify: #2 with lambda.elpi:14: of (lam c1 \ x#1) (arr X3 X4)
         X2 := arr X3 X4
       Pi: x#2 is a new eigenvariable; its scope: (of x#2 X3) ==> of x#1 X4
       Assume: of x#2 X3   (added to the local program, for of x#1 X4 only)
-      Call: #3 of x#1 X4
+      Call: #3 of x#1 X4   (premise 1 of lambda.elpi:14)
       Unify: #3 with hypothesis added by #1: of x#1 X1
         X4 := X1
       Exit: #3 of x#1 X1
@@ -56,14 +56,14 @@ the call that added them) and the eigenvariables:
     called from:
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
-    Call: #2 of (lam c1 \ x#1) X1
+    Call: #2 of (lam c1 \ x#1) X1   (premise 1 of lambda.elpi:14)
   --- breakpoint at #2: of (lam c1 \ x#1) X1
     called from:
       #1 of (lam c1 \ lam c2 \ c1) (arr X2 X1)
     local program (clauses added by =>, most recent first):
       of x#1 X2    (hypothesis added by #1)
     eigenvariables in scope: x#1
-      Call: #3 of x#1 X3
+      Call: #3 of x#1 X3   (premise 1 of lambda.elpi:14)
   --- breakpoint at #3: of x#1 X3
     called from:
       #2 of (lam c2 \ x#1) (arr X4 X3)
@@ -103,8 +103,8 @@ Interactive: commands read from stdin (backtrace, hyps, step, continue).
       + clause N, - clause N   set, remove a breakpoint on the clause N (option -machine lists them)
       e            the deepest failure so far
       a            abort
-     ?   Call: #2 of (lam c1 \ x#1) X1
-     ?     Call: #3 of x#1 X3
+     ?   Call: #2 of (lam c1 \ x#1) X1   (premise 1 of lambda.elpi:14)
+     ?     Call: #3 of x#1 X3   (premise 1 of lambda.elpi:14)
      ?     Exit: #3 of x#1 X2
         X3 := X2
      ?   Exit: #2 of (lam c1 \ x#1) (arr X4 X2)

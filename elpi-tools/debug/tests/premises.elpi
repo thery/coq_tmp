@@ -1,0 +1,22 @@
+% Where each call is written: the premise of the clause it comes from.
+
+% [positive N]: N > 0
+pred positive i:int.
+positive N :- N > 0.
+
+% [all-positive L]: its calls of positive are made by std.forall, a
+% builtin that calls the program back: they come from premise 1
+pred all-positive i:list int.
+all-positive L :- std.forall L positive.
+
+% [twice X Y]: Y is 2 X, through a hypothetical clause, whose body has two premises
+pred twice i:int, o:int.
+twice X Y :- (pi a\ pi b\ twice a b :- b is a * 2, positive b) => twice X Y.
+
+% [check L]: a premise written on two lines, then a nested conjunction
+% (three premises in all, as Elpi reads them)
+pred check i:list int.
+check L :-
+  all-positive
+    L,
+  (twice 1 Y, positive Y).

@@ -18,7 +18,7 @@ eigenvariable and its hypothesis are undone, then rebuilt), skip a call:
      ? c
     Assume: of x#1 X1   (added to the local program, for of (lam c1 \ x#1) X2 only)
      ? c
-    Call: #2 of (lam c1 \ x#1) X2
+    Call: #2 of (lam c1 \ x#1) X2   (premise 1 of lambda.elpi:14)
      ? scope
     eigenvariables in force (oldest first): x#1
       X2 may depend on: no eigenvariable
@@ -41,7 +41,7 @@ eigenvariable and its hypothesis are undone, then rebuilt), skip a call:
       X4 may depend on: no eigenvariable
      ? r
       retry #2: back to its call port
-    Call: #2 of (lam c1 \ x#1) X2
+    Call: #2 of (lam c1 \ x#1) X2   (premise 1 of lambda.elpi:14)
      ? c
     Unify: #2 with lambda.elpi:14: of (lam c1 \ x#1) (arr X5 X6)
         X2 := arr X5 X6
@@ -50,7 +50,7 @@ eigenvariable and its hypothesis are undone, then rebuilt), skip a call:
      ? c
       Assume: of x#3 X5   (added to the local program, for of x#1 X6 only)
      ? c
-      Call: #3 of x#1 X6
+      Call: #3 of x#1 X6   (premise 1 of lambda.elpi:14)
      ? c
       Unify: #3 with hypothesis added by #1: of x#1 X1
         X6 := X1
@@ -75,7 +75,7 @@ afterwards), and look at the calls above:
      ? c
   Unify: #1 with lambda.elpi:13: of (app (lam c0 \ c0) (lam c0 \ c0)) X0
      ? c
-    Call: #2 of (lam c0 \ c0) (arr X1 X0)
+    Call: #2 of (lam c0 \ c0) (arr X1 X0)   (premise 1 of lambda.elpi:13)
      ? c
     Unify: #2 with lambda.elpi:14: of (lam c0 \ c0) (arr X1 X0)
      ? c
@@ -87,7 +87,7 @@ afterwards), and look at the calls above:
      ? + same
     breakpoint on same
      ? l
-    Call: #4 same (lam c1 \ c1) X9
+    Call: #4 same (lam c1 \ c1) X9   (premise 1 of lambda.elpi:19)
      ? g
     called from:
       #3 vacuous (c1 \ lam c2 \ c2) X9
@@ -114,7 +114,7 @@ higher-order binding and a pruning:
   Call: #1 vacuous (c0 \ app c0 c0) X0
   Unify: #1 with lambda.elpi:19: vacuous (c0 \ app c0 c0) X0
     Pi: x#1 is a new eigenvariable; its scope: same (app x#1 x#1) X0
-    Call: #2 same (app x#1 x#1) X0
+    Call: #2 same (app x#1 x#1) X0   (premise 1 of lambda.elpi:19)
     Fail: #2 same (app x#1 x#1) X0
   Fail: #1 vacuous (c0 \ app c0 c0) X0
   debug: no (more) solution.
@@ -160,12 +160,12 @@ again); the help:
      ? c
     Pi: x#1 is a new eigenvariable; its scope: same x#1 X0
      ? c
-    Call: #2 same x#1 X0
+    Call: #2 same x#1 X0   (premise 1 of lambda.elpi:19)
      ? c
     Fail: #2 same x#1 X0
      ? r
       retry #2: back to its call port
-    Call: #2 same x#1 X0
+    Call: #2 same x#1 X0   (premise 1 of lambda.elpi:19)
      ? c
     Fail: #2 same x#1 X0
      ? c

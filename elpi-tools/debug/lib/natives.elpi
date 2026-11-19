@@ -4,43 +4,44 @@
 
 % ===== Builtins ====================================================================
 
-% [native Ctx G]: the builtin goal G, run natively, with its call, exit and
-% fail ports (shown with option builtins; none on the fast path, where no
-% event is shown or recorded).  Only a builtin that fails without ever
+% [native Ctx Entry G]: the builtin goal G, run natively (the program goals
+% it calls back entered as Entry), with its call, exit and fail ports
+% (shown with option builtins; none on the fast path, where no event is
+% shown or recorded).  Only a builtin that fails without ever
 % succeeding is a candidate for the failure explanation.
 :nooc
-pred native o:ctx, i:(pred).
-native Ctx G :- quiet, !,
+pred native o:ctx, i:entry, i:(pred).
+native Ctx _ G :- quiet, !,
   new_safe Exited,
   unseen-native Exited Ctx G.
-native Ctx G :-
+native Ctx Entry G :-
   native-port call-port Ctx G,
   new_safe Exited,
-  native-ports Exited Ctx G.
+  native-ports Exited Ctx Entry G.
 
 :nooc
 pred unseen-native i:safe, o:ctx, i:(pred).
-unseen-native Exited Ctx G :- run-native Ctx G, stash_in_safe Exited "exited".
+unseen-native Exited Ctx G :- run-native Ctx called G, stash_in_safe Exited "exited".
 unseen-native Exited Ctx G :- note-native-failure-if-first Exited Ctx G, fail.
 
 % (alternatives as clauses, not ;, as for [box-ports])
 :nooc
-pred native-ports i:safe, o:ctx, i:(pred).
-native-ports Exited Ctx G :-
-  run-native Ctx G, native-port exit-port Ctx G, stash_in_safe Exited "exited".
-native-ports Exited Ctx G :-
+pred native-ports i:safe, o:ctx, i:entry, i:(pred).
+native-ports Exited Ctx Entry G :-
+  run-native Ctx Entry G, native-port exit-port Ctx G, stash_in_safe Exited "exited".
+native-ports Exited Ctx _ G :-
   native-port fail-port Ctx G, note-native-failure-if-first Exited Ctx G, fail.
 
-% [run-native Ctx G]: run G, with Ctx as the context of the program goals
-% it may call back (through their bridges).  Installing the local clause
-% costs the same whatever the size of Ctx (measured: under 1 µs, with 1 or
+% [run-native Ctx Entry G]: run G, with Ctx as the context of the program
+% goals it may call back (through their bridges), entered as Entry.
+% Installing the local clause costs the same whatever the size of Ctx (measured: under 1 µs, with 1 or
 % 50 frames of large goals), far less than looking into G for a possible
 % call back, so it is always installed.  (Reading it back, at a call
 % back only, walks Ctx: Elpi makes the occurs check on the head
 % unification of every local clause.)
 :nooc
-pred run-native o:ctx, i:(pred).
-run-native Ctx G :- (current-ctx called Ctx => G).
+pred run-native o:ctx, i:entry, i:(pred).
+run-native Ctx Entry G :- (current-ctx Entry Ctx => G).
 
 % ===== Suspended goals: CHR at depth 1 ==================================================
 %

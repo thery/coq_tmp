@@ -192,21 +192,46 @@ let source_text file =
       Hashtbl.add source_texts file text;
       text
 
-(* [span l]: the place of the text at l, (reflect.span File Line Column
-   EndLine EndColumn), its end the position just after its last character
-   (lines from 1, columns from 0).  When the file cannot be read, the end
-   is computed as if the text held on one line. *)
-let span (l : Loc.t) =
-  let end_line, end_column =
-    match source_text l.source_name with
-    | Some text when l.source_stop <= String.length text ->
-        let line = ref l.line and line_start = ref l.line_starts_at in
-        for i = l.source_start to l.source_stop - 1 do
-          if text.[i] = '\n' then (incr line; line_start := i + 1)
-        done;
-        (!line, l.source_stop - !line_start)
-    | _ -> (l.line, l.source_stop - l.line_starts_at)
+(* [last_located t]: the location of the sub-term of t (t included) that
+   starts last: it knows the line where it starts, the nearest one to the
+   end of t that a location gives. *)
+let rec last_located (t : Term.t) : Loc.t =
+  let later (l : Loc.t) (u : Term.t) =
+    let m = last_located u in
+    if m.source_start > l.source_start then m else l
   in
+  match t.it with
+  | Term.App (hd, args) -> List.fold_left later t.loc (hd :: args)
+  | Term.Lam (_, _, _, b) | Term.Cast (b, _) | Term.Parens b -> later t.loc b
+  | Term.Const _ | Term.CData _ | Term.Quoted _ -> t.loc
+
+(* [end_position t]: the line and column just after the last character of
+   t.  Elpi's locations give the offset of the end of a term, not its line:
+   the line is found in the text of the file, read once; when the file
+   cannot be read (Elpi's resolver may name a file by a path that does not
+   exist, e.g. under a directory whose name starts with a dot), from the
+   sub-term that starts last, which is exact unless a line break lies
+   after its start (a closing parenthesis on a line of its own, a string
+   on several lines). *)
+let end_position (t : Term.t) =
+  let l = t.loc in
+  match source_text l.source_name with
+  | Some text when l.source_stop <= String.length text ->
+      let line = ref l.line and line_start = ref l.line_starts_at in
+      for i = l.source_start to l.source_stop - 1 do
+        if text.[i] = '\n' then (incr line; line_start := i + 1)
+      done;
+      (!line, l.source_stop - !line_start)
+  | _ ->
+      let last = last_located t in
+      (last.line, l.source_stop - last.line_starts_at)
+
+(* [span t]: the place of the term t, (reflect.span File Line Column
+   EndLine EndColumn), its end the position just after its last character
+   (lines from 1, columns from 0). *)
+let span (t : Term.t) =
+  let l = t.loc in
+  let end_line, end_column = end_position t in
   Printf.sprintf "(reflect.span %s %d %d %d %d)" (Print.string_literal l.source_name) l.line
     (l.source_start - l.line_starts_at) end_line end_column
 
@@ -229,7 +254,7 @@ let premises (body : Term.t) =
    places of the goals of its body, in order (the goals of its spills
    included, where they are written). *)
 let premises_fact (r : rule) =
-  fact "premises" [ srcloc r.loc; "[" ^ String.concat ", " (List.map (fun (g : Term.t) -> span g.loc) (premises r.body)) ^ "]" ]
+  fact "premises" [ srcloc r.loc; "[" ^ String.concat ", " (List.map span (premises r.body)) ^ "]" ]
 
 (* [rule_variables ts]: the variables of the terms ts, in order of
    appearance, once each, and the terms with each discard _ named
