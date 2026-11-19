@@ -22,14 +22,13 @@
 // Colours and fonts
 
 // The look of the roles of a formula.  The text of every formula is
-// black, the colour of the text; its role is given twice, so that it can
-// be read without colour vision (and in black and white):
-// - a light background, a tint of a colour of the Okabe-Ito palette, which
-//   stays distinct for colour-blind readers: variables sky blue,
-//   hypotheses orange, claims yellow, facts grey;
-// - a mark that needs no colour: claims a thin frame, hypotheses a dashed
-//   underline, facts a dotted underline, variables the background alone.
-// A formula without a role (plain) has neither.
+// black, the colour of the text; its role is given by a light background,
+// a tint of a colour of the Okabe-Ito palette, which stays distinct for
+// colour-blind readers: variables sky blue, hypotheses orange, claims
+// yellow, facts grey.  A formula without a role (plain) has none.  The
+// legend also shows each role's mark that needs no colour (claims a thin
+// frame, hypotheses a dashed underline, facts a dotted underline); the
+// formulas of the text have their background only.
 
 // the background of the formulas of each role (none: no background)
 #let role-backgrounds = (
@@ -155,8 +154,10 @@
   )
   for (role, background) in role-backgrounds {
     rules.push(".formula." + role + " {"
-      + (if background == none { "" } else { " background: " + background.to-hex() + ";" })
-      + css-cue(role-cues.at(role)) + " }")
+      + (if background == none { "" } else { " background: " + background.to-hex() + ";" }) + " }")
+    // the mark of the role, in the legend only
+    let mark = css-cue(role-cues.at(role))
+    if mark != "" { rules.push("footer.legend .formula." + role + " {" + mark + " }") }
   }
   for (status, s) in status-marks {
     rules.push(".mark." + status + " { color: " + s.colour.to-hex() + "; }")
@@ -169,15 +170,16 @@
 // ------------------------------------------------------------------
 // The parts of the text of a step
 
-// [role-look(role, body)]: body in the PDF with the look of the role: a
-// box with its background and its mark (a frame, or a line under it).
+// [role-look(role, body, cue: false)]: body in the PDF with the look of
+// the role: a box with its background, and with cue: true (the legend)
+// its mark too (a frame, or a line under it).
 // Typst's highlights and underlines do not reach the symbols of maths,
 // hence a box.  A box does not break across lines: a formula wider than
 // the line is a box as wide as the line, where it breaks (on its own
 // lines)
-#let role-look(role, body) = {
+#let role-look(role, body, cue: false) = {
   let background = role-backgrounds.at(role)
-  let cue = role-cues.at(role)
+  let cue = if cue { role-cues.at(role) } else { none }
   let line = if cue == none { none } else { (paint: cue-colour, thickness: 0.5pt, dash: cue.dash) }
   let stroke = if cue == none { none } else if cue.line == "frame" { line } else { (bottom: line) }
   if background == none and stroke == none { body }
@@ -444,7 +446,7 @@
   () => block(above: 2em, {
     line(length: 30%, stroke: 0.4pt + luma(190))
     set std.text(size: 0.75em, fill: luma(70))
-    (roles.map(((role, word)) => role-look(role, word))
+    (roles.map(((role, word)) => role-look(role, word, cue: true))
       + statuses.map(((status, word)) => box(status-mark(status, false)) + " " + word))
       .join(h(1.4em))
   }))

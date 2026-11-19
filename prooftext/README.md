@@ -261,11 +261,12 @@ as code, a string: `#claim("B /\\ A")`.
 - **Formulas** are mathematics (∀ n ∈ ℕ, n + 0 = n), printed from their
   Rocq terms (see "Formulas as mathematics"); with `--code`, or when a
   formula does not elaborate, Rocq code in a monospace font.  The text of
-  every formula is black; its role is given twice, by a light background
-  and by a mark that needs no colour, so that the roles can be told apart
-  by colour-blind readers and in black and white:
+  every formula is black; its role is given by a light background.  The
+  legend at the end of a text also shows, for each role, a mark that needs
+  no colour (the template's `role-cues`); the formulas of the text have
+  their background only:
 
-  | role | class | background | mark |
+  | role | class | background | mark (in the legend) |
   |---|---|---|---|
   | variable | `{.var}` | light sky blue `#d4ebf9` | none |
   | hypothesis | `{.hyp}` | light orange `#f8d49c` | a dashed line under it |
@@ -277,7 +278,7 @@ as code, a string: `#claim("B /\\ A")`.
   orange, yellow; grey), whose colours stay apart for the common kinds
   of colour blindness; there is no red and green pair.  Orange and yellow
   look alike for red-green colour blindness: the hypothesis's tint is
-  darker, and the marks differ.  The page was checked through the
+  darker.  The page was checked through the
   simulations of protanopia, deuteranopia and tritanopia (Machado et al.'s
   matrices, ImageMagick's `-color-matrix`, on the PDF and on the web
   page of `drinker`): the four roles stay distinct.  In the PDF a formula
