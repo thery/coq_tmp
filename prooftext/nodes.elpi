@@ -152,7 +152,6 @@ error-template "unknown-class" "an unknown class, {.%1}".
 error-template "not-a-name" "a justification is a name, not *%1*{.just}".
 error-template "out-of-scope" "%1 is out of scope here".
 error-template "name-twice" "the name %1 is given twice in one scope".
-error-template "unclosed-span" "a [ with no ]{.p} after it: an unclosed span".
 error-template "unopened-span" "a ]{.p} with no [ before it".
 error-template "unclosed-div" "a ::: p with no ::: after it: an unclosed div".
 error-template "unopened-div" "a ::: that closes no div".

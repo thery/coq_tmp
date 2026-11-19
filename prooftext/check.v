@@ -224,8 +224,13 @@ Elpi Accumulate lp:{{
       "3 6 not-a-name", "3 6 unknown-class", "3.1 7 name-twice"],
     errors-of ["We prove `A`{.claim} here ]{.p}, there [`]`]{.x}, and [open.", "",
       ":::", "::: p", "We have `A`{.claim}.", "", "::: q", "We have `A`{.claim}."] Ec,
-    expect-term "reader errors" Ec ["0 1 unopened-span", "0 1 unknown-class", "0 1 unclosed-span",
-      "0 3 unopened-div", "1 4 unclosed-div", "1.1 7 unknown-class", "1.1 7 unclosed-div"].
+    expect-term "reader errors" Ec ["0 1 unopened-span", "0 1 unknown-class",
+      "0 3 unopened-div", "1 4 unclosed-div", "1.1 7 unknown-class", "1.1 7 unclosed-div"],
+    % a [ that no ]{.p} closes is text (intervals in prose), not an error
+    errors-of ["We have `A`{.claim} on [0, 1) and [2, 3), [x [y]."] Ed,
+    expect-term "brackets in prose" Ed [],
+    tree-of ["We have `A`{.claim} on [0, 1), and [[we have `B`{.claim}]{.p}."] T6,
+    shape "0" T6 S6, expect-term "a span after an open bracket" S6 ["0: A", "1: B"].
 }}.
 Elpi prooftext_check_tree.
 

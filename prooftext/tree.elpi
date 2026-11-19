@@ -295,7 +295,8 @@ joined-lines Acc [nl N S | Ls] Text [segment Off N C | Segs] :-
 % Frames, the spans open at Pos, the innermost first.  A formula between
 % backticks is text, whatever it holds; a [ opens a span, closed by the
 % next ]{.p}; a [ closed by a ] with no class, or another class, is text
-% (another class is an error: there is no other kind of span)
+% (another class is an error: there is no other kind of span), and so is a
+% [ that nothing closes
 pred scan i:string, i:int, i:list frame, o:list inline.
 scan T P Frames Is :- P >= size T, !, close-all Frames Is.
 scan T P Frames Is :-
@@ -349,12 +350,12 @@ close-at P Class Close [frame Open Is, frame O2 Is2 | Fs] Frames :- !,
   Frames = [frame O2 Is4 | Fs].
 close-at P _ Close Fs Fs1 :- add-inline Fs (text-at P Close) Fs1.
 
-% [close-all Frames Is]: the pieces of a paragraph once read: each span
-% left open is an error, its [ text
+% [close-all Frames Is]: the pieces of a paragraph once read: a [ that no
+% ]{.p} closes is text, as any other bracket (an interval [0, 1) in prose)
 pred close-all i:list frame, o:list inline.
 close-all [frame _ Is] Inlines :- !, std.rev Is Is1, merge-texts Is1 Inlines.
 close-all [frame Open Is, frame O2 Is2 | Fs] Inlines :-
-  std.append Is [text-at Open "[", error-at Open (text-error "unclosed-span" []) | Is2] Is3,
+  std.append Is [text-at Open "[" | Is2] Is3,
   close-all [frame O2 Is3 | Fs] Inlines.
 
 % [add-inline Frames I Frames1]: the piece I added to the innermost frame

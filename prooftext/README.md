@@ -153,7 +153,7 @@ subnodes.
 | a name given twice in one scope | two hypotheses `(h)` both visible |
 | an unknown class | `` `F`{.clam} ``, `*h*{.jsut}`, `]{.q}`, `::: q` |
 | a justification that is not a name | `*by lia*{.just}` |
-| an unclosed span or div, a span or div closed but not opened | `[...` with no `]{.p}`, `::: p` with no `:::` |
+| an unclosed div, a span or div closed but not opened | `::: p` with no `:::`, `]{.p}` with no `[` before it |
 
 Two errors need the meaning of the names, and are the checker's: a
 justification that names nothing known (no hypothesis, node, lemma, rule
@@ -293,7 +293,8 @@ is the one reader of cyp and of the Typst back end.
 - **spans**: in a paragraph, a `[` opens a span, closed by the next
   `]{.p}`; the span is a node.  The text between backticks is a formula,
   whatever it holds (a `]` there does not count); a `[` closed by a `]`
-  with no class is text (`[0, 1]`);
+  with no class is text (`[0, 1]`), and so is a `[` that nothing closes (an
+  interval `[0, 1)` in prose);
 - **parts**: the own text of a node (`run`, its text and its parts) is
   read by `text-parts` (`formulas.elpi`): a **formula** is the text
   between two backticks (a backtick with no other after it is text);
