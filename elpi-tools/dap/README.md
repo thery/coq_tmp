@@ -70,11 +70,16 @@ on line 6 of [`tests/append.elpi`](tests/append.elpi) (its second clause),
 F5 stops with line 6 highlighted, the call stack showing `Unify: #1 append
 [1, 2] [3] [1 | X1]`, and in the variables panel the scope **Goal**: `goal`,
 `arg 1 (input) = [1, 2]`, `arg 2 (input) = [3]`, `arg 3 (output) = [1 |
-X1]`, `X0 := [1 | X1]`.  Step Into stops at `Call: #2 append [2] [3] X1`, the
-stack showing #2 above #1; the debug console shows each event as the
-trace of elpi-debug does, and the solutions at the end.  Typing a command
-of elpi-debug in the debug console (`g`, `p`, `scope`, `hyps`, `e`, `f`,
-`+ P`...) runs it.
+X1]`, `X0 := [1 | X1]`, and the scope **Query**: `L = [1 | X1]`.  Step
+Into stops at `Call: #2 append [2] [3] X1`, the stack showing #2 above #1;
+the debug console shows each event as the trace of elpi-debug does, and
+the solutions at the end.  Typing a command of elpi-debug in the debug
+console (`g`, `p`, `scope`, `hyps`, `e`, `f`, `+ P`...) runs it.  In the
+Watch panel, `L` shows the value of the query's `L` at each stop, `X1`
+that of the variable `X1` while it is in view (bound by the step, or in
+a goal of the stack); at the exit port of a call seen at its call port,
+the Goal scope lists what the whole call bound (`X0 := [1, 2, 3]` at the
+exit of #1).  Variables keep their name `X<n>` for the whole run.
 
 ## The mapping
 
@@ -90,8 +95,9 @@ of elpi-debug in the debug console (`g`, `p`, `scope`, `hyps`, `e`, `f`,
 | pause | the signal SIGUSR1: the run stops at its next event |
 | restartFrame (call #N) | `r N`: retry call #N from its call port (bindings, local program and scope undone) |
 | evaluate (debug console) | the command typed, its output as the answer |
+| evaluate (watch) | from the description of the stop: a variable of the query by its source name (`L` of `append [1,2] [3] L`), its value now; a variable as elpi-debug names it (`X1`), its binding by the step of the stop (a unify step, an exit port), or `X1   (unbound)` when it is a logic variable of a goal of the stack; otherwise an error, "not in view at this stop" |
 | stackTrace | the calls of the stop, the call in focus first, named `#N goal` (the first one prefixed by the port: `Call:`, `Unify:`, `Pi:`...); each at the line of the clause it runs; the call in focus at its own ports (call, exit, redo, fail), where it runs no clause, at the clause of its caller, where the goal is written; a call that runs a hypothetical clause has no source line |
-| scopes | **Goal**: the goal, its arguments with their modes, and at a unify step the bindings it made (`X0 := ...`, with the pruning, if any); **Local program (=>)**: the clauses added by `=>`, each with the call that added it; **Eigenvariables**: those in force, and for each logic variable of the goal the eigenvariables it may depend on |
+| scopes | **Goal**: the goal, its arguments with their modes, and the bindings made by the step of the stop (`X0 := ...`, with the pruning, if any): at a unify step those of the head unification, at an exit port those of the whole call (when its call port was shown or stopped at); **Query**: the variables of the query by their source names, with their values at the stop (the same in every frame); **Local program (=>)**: the clauses added by `=>`, each with the call that added it; **Eigenvariables**: those in force, and for each logic variable of the goal the eigenvariables it may depend on |
 | stopped | reason `breakpoint`, `step`, `pause` or `entry`; the description says the port (`Call port`, `Unify step`...), the text is the event |
 | output | every line elpi-debug prints that is not for the adapter: the events shown, the prints of the program, the solutions, the explanation of a failure, the profile |
 | exited, terminated | when elpi-debug ends |
@@ -109,8 +115,9 @@ listing of the program (its rules, numbered, with file and line; the lines
 of its declarations), then at each stop, in place of the prompt, the
 description of the stop: its number, its reason, the event, the stack
 (each call with the clause it runs, its arguments, the scope of its
-variables), the bindings of a unify step, the local program, the
-eigenvariables.  It waits at a stop `Start` before the first event, where
+variables), the bindings of a unify step or of an exit port, the local
+program, the eigenvariables, the variables of the query by their source
+names with their values.  It waits at a stop `Start` before the first event, where
 the adapter sets the breakpoints.  The adapter never parses the text for a
 person: it forwards it as output.
 
@@ -234,9 +241,11 @@ request per line, `{"await": E}` to wait for an event) with
 - [`tests/sessions.t`](tests/sessions.t): breakpoints on a clause and on
   a line without one, the stack, the scopes, step in, next, step out, the
   debug console, restart frame, continue (append); stop on entry, pi and
-  `=>`, the three scopes, a frame running a hypothetical clause, `f` from
+  `=>`, the four scopes, a frame running a hypothetical clause, `f` from
   the console (λ-calculus); a function breakpoint met at a call and at
-  the resume of a goal suspended by CHR; a program that does not exist;
+  the resume of a goal suspended by CHR; the Query scope and watch
+  expressions, the bindings of an exit port (append); a program that does
+  not exist;
   a pause of a long run (only its reason is compared: where it stops
   depends on timing);
 - [`tests/demo.t`](tests/demo.t): the seven configurations of the demo

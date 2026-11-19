@@ -72,17 +72,17 @@ Solution 2:
 debug: no (more) solution.
 Deepest failure (depth 2): #3 step c (X9 c0)
   called from:
-    #2 step (lam c1 \ c) (lam c1 \ X9 c1)
-    #1 step (app (lam c1 \ c) c) (app (lam c1 \ X9 c1) c)
+    #2 step (lam c1 \ c) (lam X9)
+    #1 step (app (lam c1 \ c) c) (app (lam X9) c)
   clauses tried:
-    lambda.elpi:24: step (app (lam X0^1) X1^1) (X0^1 X1^1)
-        does not match: argument 1 (input): c vs app (lam X0^1) X1^1
-    lambda.elpi:25: step (app X2^1 X3^1) (app X4^1 X3^1)
-        does not match: argument 1 (input): c vs app X2^1 X3^1
-    lambda.elpi:26: step (app X5^1 X6^1) X5^1
-        does not match: argument 1 (input): c vs app X5^1 X6^1
-    lambda.elpi:27: step (lam X7^1) (lam X8^1)
-        does not match: argument 1 (input): c vs lam X7^1
+    lambda.elpi:24: step (app (lam X0) X1) (X0 X1)
+        does not match: argument 1 (input): c vs app (lam X0) X1
+    lambda.elpi:25: step (app X2 X3) (app X4 X3)
+        does not match: argument 1 (input): c vs app X2 X3
+    lambda.elpi:26: step (app X5 X6) X5
+        does not match: argument 1 (input): c vs app X5 X6
+    lambda.elpi:27: step (lam X7) (lam X8)
+        does not match: argument 1 (input): c vs lam X7
 ```
 
 After the last answer, the debugger says why there is no other: the
@@ -96,6 +96,7 @@ Call: #1 step (app (lam c0 \ c) c) X0
 Unify: #1 with lambda.elpi:24: step (app (lam c0 \ c) c) c
       X0 := c
 Exit: #1 step (app (lam c0 \ c) c) c
+      X0 := c
 Solution 1:
   N = c
 Redo: #1 step (app (lam c0 \ c) c) c
@@ -104,6 +105,7 @@ Unify: #1 with lambda.elpi:25: step (app (lam c0 \ c) c) (app X1 c)
 Unify: #1 with lambda.elpi:26: step (app (lam c0 \ c) c) (lam c0 \ c)
       X0 := lam c0 \ c
 Exit: #1 step (app (lam c0 \ c) c) (lam c0 \ c)
+      X0 := lam c0 \ c
 Solution 2:
   N = lam c0 \ c
 ```
@@ -152,11 +154,17 @@ Unify: #1 with lambda.elpi:20: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
     Unify: #3 with hypothesis added by #1: of x#1 X1
       X4 := X1
     Exit: #3 of x#1 X1
+      X4 := X1
   Exit: #2 of (lam c1 \ x#1) (arr X3 X1)
+      X2 := arr X3 X1
 Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X1 (arr X3 X1))
+      X0 := arr X1 (arr X3 X1)
 Solution 1:
   T = arr X1 (arr X3 X1)
 ```
+
+At each exit port, the bindings the whole call made since its call port:
+`#3` bound `X4` (its output) to the type of `x#1`, `#1` bound `T` (`X0`).
 
 ## 5. Interactive stepping
 
@@ -303,18 +311,23 @@ Unify: #1 with lists.elpi:16: sort [0, 0] X0
     Unify: #3 with lists.elpi:15: sort [] []
       X2 := []
     Exit: #3 sort [] []
+      X2 := []
     Call: #4 insert 0 [] X1
     Unify: #4 with lists.elpi:8: insert 0 [] [0]
       X1 := [0]
     Exit: #4 insert 0 [] [0]
+      X1 := [0]
   Exit: #2 sort [0] [0]
+      X1 := [0]
   Call: #5 insert 0 [0] X0
   Unify: #5 with lists.elpi:9: insert 0 [0] [0, 0]
       X0 := [0, 0]
   Unify: #5 with lists.elpi:10: insert 0 [0] [0]
       X0 := [0]
   Exit: #5 insert 0 [0] [0]
+      X0 := [0]
 Exit: #1 sort [0, 0] [0]
+      X0 := [0]
 Solution 1:
   S = [0]
 ```
