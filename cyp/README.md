@@ -235,7 +235,20 @@ CYP_LIB=/path/to/cyp/vernac cyp`).
 cyp revives *Colouring proofs: a lightweight approach to adding formal
 structure to proofs* (UITP).  It keeps its idea, a proof written as text
 with formulas whose role is marked, each step checked by the prover, and
-changes the rest where there is an obvious improvement:
+changes the rest where there is an obvious improvement.  The paper's format
+has seven XML tags (its section 2.2); each has its Markdown form in cyp:
+
+| paper (2006) | cyp |
+|---|---|
+| `<p>` a proof or a subproof | a list item, its sub-steps indented below it |
+| `<n>` a name | the title `# name`; for a hypothesis, `(h)` after its formula |
+| `<c>` the conclusion | `` `F`{.claim} ``, or after *we have*, *we prove*, ... |
+| `<h>` an assumption | `` `F`{.hyp} ``, or after *assume*, *if*, ... |
+| `<v>` a local variable `name:type` | `` `x : T`{.var} ``, or after *let* |
+| `<f>` a formula (of an assumption, or a fact in a justification) | `` `F`{.fact} ``, or after *from*, *using*, ... |
+| `<j>` a justification, which holds names (other proofs, local assumptions) | `*by X*`: X a lemma, a hypothesis, a rule or a tactic |
+
+The changes:
 
 - Markdown instead of XML tags, so that a proof reads as a normal document;
 - the role of a formula is guessed from the words before it, with an
@@ -245,6 +258,7 @@ changes the rest where there is an obvious improvement:
   its goal, written per field in a rule file;
 - under a failing step, its goal and Rocq's message, in the Markdown
   output and in the editor;
-- the text may be in English, French or Italian;
+- the text may be in any of the ten languages of the lexicon (English,
+  French, Italian, German, Dutch, Russian, Chinese, Arabic, Korean, Latin);
 - the whole checker runs inside Rocq (Rocq-Elpi), and the same proof can
   also be written as a Rocq command, `Cyp Lemma` ([vernac/](vernac/README.md)).
