@@ -1,0 +1,34 @@
+<footer class="legend"><span class="formula var">variable</span><span class="formula hyp">hypothesis</span><span class="formula claim">conclusion</span><span class="formula fact">fact</span><span class="by">justification</span></footer>
+</div>
+<script>
+// the hover of the mock-up: the proof node under the pointer, its
+// conclusion, its hypotheses, its direct subproofs; over a justification,
+// the hypothesis it names; over a fact, the hypothesis or conclusion it is
+function owner(el) { return el.parentElement ? el.parentElement.closest('.p') : null; }
+function clear() { document.querySelectorAll('.cur,.sub,.c-cur,.h-cur,.ref-target').forEach(e => e.classList.remove('cur','sub','c-cur','h-cur','ref-target')); }
+function show(p) {
+  clear(); if (!p) return;
+  p.classList.add('cur');
+  p.querySelectorAll('.p').forEach(q => { if (owner(q) === p) q.classList.add('sub'); });
+  p.querySelectorAll('.formula.claim').forEach(c => { if (c.closest('.p') === p) c.classList.add('c-cur'); });
+  p.querySelectorAll('.formula.hyp').forEach(h => { if (h.closest('.p') === p) h.classList.add('h-cur'); });
+}
+function target(by) {
+  const sec = by.closest('section'), t = by.textContent.trim();
+  for (const n of sec.querySelectorAll('.name')) if (n.textContent.replace(/[()]/g,'').trim() === t) return n;
+  for (const f of sec.querySelectorAll('.formula.hyp, .formula.claim')) if (f !== by && f.textContent.trim() === t) return f;
+  return null;
+}
+document.addEventListener('mouseover', e => {
+  const by = e.target.closest('.by, .formula.fact');
+  show(e.target.closest('.p'));
+  if (by) { const t = target(by); if (t) t.classList.add('ref-target'); }
+});
+// a fixed hover for the screenshots: page.html#hover=x1.1.1 or #by=x1.1.1.1/i
+const h = location.hash.match(/hover=([^&]*)/);
+if (h) show(document.querySelector('.p[data-id="' + h[1] + '"]'));
+const b = location.hash.match(/by=([^/]*)\/(.*)/);
+if (b) { const p = document.querySelector('.p[data-id="' + b[1] + '"]'); show(p);
+  for (const by of p.querySelectorAll('.by')) if (by.textContent.trim() === decodeURIComponent(b[2])) { const t = target(by); if (t) t.classList.add('ref-target'); by.style.outline = '2px solid #0072b2'; } }
+</script>
+</body></html>

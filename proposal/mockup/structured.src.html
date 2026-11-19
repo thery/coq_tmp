@@ -1,0 +1,45 @@
+<p class="intro">Mock-up of the <b>structured</b> syntax as a web page: one list item per proof node, the closing paragraph after the sub-items. The same hover as the free syntax. Hand-written HTML, not produced by a reader.</p>
+<section>
+{EX|praeclarum|(UITP 2006)}
+<p>Let {v|x, y, z, t : Prop}. If {h|x → z} and {h|y → t} then {c|(x ∧ y) → (z ∧ t)}.</p>
+<ul class="steps"><li class="step p" data-id="p1">Suppose {h|x ∧ y}.
+ <ul class="steps"><li class="step p" data-id="p1.1">We get {c|z} by {f|x → z}, since
+   <ul class="steps"><li class="step p" data-id="p1.1.1">we have {c|x}.</li></ul></li>
+  <li class="step p" data-id="p1.2">We get {c|t} by {f|y → t}, since
+   <ul class="steps"><li class="step p" data-id="p1.2.1">we have {c|y}.</li></ul></li></ul>
+ <div class="closing">Altogether we have {c|z ∧ t}.</div></li></ul>
+</section>
+<section>
+{EX|square_pos|(UITP 2006)}
+<p>Let {v|a, b ∈ ℤ}. If {h|0 &lt; a &lt; b} then {c|a a &lt; b b}.</p>
+<ul class="steps"><li class="step p" data-id="s1">It is equivalent to prove {c|0 &lt; b b − a a}.
+ <ul class="steps"><li class="step p" data-id="s1.1">That can also be written as {c|0 &lt; (b + a)(b − a)}.
+  <ul class="steps"><li class="step p" data-id="s1.1.1">From {f|0 &lt; a &lt; b} we have {c|0 &lt; b + a ∧ 0 &lt; b − a}.</li></ul></li></ul></li></ul>
+</section>
+<section>
+{EX|exp_pos|(UITP 2006)}
+<p>Let {v|x ∈ ℝ} and {v|y ∈ ℤ}. If {h|0 &lt; x}, to prove {c|0 &lt; x<sup>y</sup>}, we have three cases:</p>
+<ul class="steps"><li class="step p" data-id="e1">If {h|0 &lt; y} then {c|x<sup>1</sup> ≤ x<sup>y</sup>}.</li>
+<li class="step p" data-id="e2">If {h|0 = y} then {c|x<sup>y</sup> = 1}.</li>
+<li class="step p" data-id="e3">If {h|y &lt; 0} then {c|x<sup>y</sup> = 1 / x<sup>−y</sup>}.</li></ul>
+</section>
+<section>
+{EX|praeclarum|(xtext)}
+<p>Let {v|x, y, z, t : Prop}. Assume {h|(x → z) ∧ (y → t)} {n|h1} and {h|x ∧ y} {n|h2}. We prove {c|z ∧ t}.</p>
+<ul class="steps"><li class="step p" data-id="x1">Going back to the definition of and ({b|and_ind}) in {b|h1}, we prove {c|z ∧ t}:
+ <ul class="steps"><li class="step p" data-id="x1.1">Assume {h|x → z} {n|i} and {h|y → t} {n|j}. Going back to the definition of and ({b|and_ind}) in {b|h2}, we prove {c|z ∧ t}:
+  <ul class="steps"><li class="step p" data-id="x1.1.1">Assume {h|x} {n|k} and {h|y} {n|l}.
+   <ul class="steps"><li class="step p" data-id="x1.1.1.1">Applying {b|i} to {b|k}, we have {c|z}.</li>
+    <li class="step p" data-id="x1.1.1.2">Applying {b|j} to {b|l}, we have {c|t}.</li></ul>
+   <div class="closing">So by definition of and ({b|conj}), we have {c|z ∧ t}.</div></li></ul></li></ul></li></ul>
+</section>
+<section>
+{EX|Trans_Inv|(xtext)}
+<p>Let {v|E : Set}. Let {v|R : Rel E}. Assume {h|Trans E R} {n|h}. We prove {c|Trans E (Inv E R)}.</p>
+<ul class="steps"><li class="step p" data-id="t1">Let us choose arbitrarily {v|x, y, z ∈ E}; assume {h|Inv E R x y} {n|h1} and {h|Inv E R y z} {n|h2}.
+ <ul class="steps"><li class="step p" data-id="t1.1">By {b|h} we have {m|Trans E R}, that is {c|∀ x₀ y₀ z₀ ∈ E, R x₀ y₀ → R y₀ z₀ → R x₀ z₀}.</li>
+  <li class="step p" data-id="t1.2">By {b|h2} we have {m|Inv E R y z}, that is {c|R z y}.</li>
+  <li class="step p" data-id="t1.3">By {b|h1} we have {m|Inv E R x y}, that is {c|R y x}.</li></ul>
+ <div class="closing">By application, we have {m|R z x}, that is {c|Inv E R x z}.</div></li>
+<li class="step p" data-id="t2">We have proved {c|∀ x₀ y₀ z₀ ∈ E, Inv E R x₀ y₀ → Inv E R y₀ z₀ → Inv E R x₀ z₀}, that is {m|Trans E (Inv E R)}.</li></ul>
+</section>

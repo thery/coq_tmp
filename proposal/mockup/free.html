@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof format: free syntax</title>
+<style>
+body { background: #fff; color: #000; }
+.proof-text { font-family: 'Libertinus Serif', 'Noto Serif', serif; max-width: 48em; margin: 1.5em auto; padding: 0 1em; line-height: 1.75; }
+.proof-text code { font-family: 'DejaVu Sans Mono', monospace; font-size: 0.85em; }
+.m { font-family: 'Latin Modern Math', 'STIX Two Math', serif; font-style: italic; }
+h2 { font-size: 1.15em; margin: 1.2em 0 0.3em; } h2 small { font-weight: normal; color: #6e6e6e; font-size: 0.75em; }
+.intro { font-size: 0.85em; color: #505050; }
+.formula, .by { border-radius: 2px; padding: 0 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.formula.var { background: #d4ebf9; } .formula.hyp { background: #f8d49c; }
+.formula.claim { background: #fcf6c6; } .formula.fact { background: #e3e3e3; }
+.by { background: #d9a9cb; cursor: pointer; }
+.name { font-size: 0.9em; }
+ul.steps { list-style: none; padding-inline-start: 1.4em; margin: 0; }
+section > ul.steps { padding-inline-start: 0; }
+li.step { margin: 0.35em 0; } li.step::before { content: "•"; display: inline-block; width: 1.3em; margin-left: -1.3em; color: #6e6e6e; font-family: 'DejaVu Sans', sans-serif; }
+li.step { padding-left: 1.3em; } .closing { margin: 0.35em 0; }
+/* the hover: the node under the pointer (cur), its conclusion framed, its
+   subproofs tinted, its hypotheses underlined; a justification's target */
+.p { border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: background 0.1s; }
+.p.sub { background: rgba(0, 114, 178, 0.10); }
+li.p.cur { background: rgba(0, 0, 0, 0.03); }
+.formula.claim.c-cur { outline: 1.5px solid #333; }
+.formula.hyp.h-cur { outline: 1.5px dashed #333; }
+.ref-target { outline: 2px solid #0072b2; border-radius: 2px; }
+footer.legend { margin-top: 2em; padding-top: 0.4em; border-top: 1px solid #d0d0d0; font-size: 0.8em; color: #505050; }
+footer.legend span { margin-right: 1.2em; }
+footer.legend .hyp { border-bottom: 1px dashed #4d4d4d; } footer.legend .claim { border: 1px solid #4d4d4d; } footer.legend .fact { border-bottom: 1px dotted #4d4d4d; } footer.legend .by { border-bottom: 1px solid #4d4d4d; }
+</style></head><body><div class="proof-text">
+<p class="intro">Mock-up of the <b>free</b> syntax as a web page: proof nodes are spans inside the paragraphs, with no visible mark. Move the pointer over a sentence: its proof node's conclusion is framed, its hypotheses dashed, its direct subproofs tinted blue. Over a justification name (purple), the hypothesis it names is outlined; over a fact (grey), the hypothesis or conclusion it repeats. Hand-written HTML, not produced by a reader.</p>
+<section>
+<h2><code>praeclarum</code> <small>(UITP 2006)</small></h2>
+<p>Let <span class="formula var"><span class="m">x, y, z, t : Prop</span></span>. If <span class="formula hyp"><span class="m">x → z</span></span> and <span class="formula hyp"><span class="m">y → t</span></span> then <span class="formula claim"><span class="m">(x ∧ y) → (z ∧ t)</span></span>.</p>
+<p><span class="p" data-id="p1">Suppose <span class="formula hyp"><span class="m">x ∧ y</span></span>. <span class="p" data-id="p1.1"><span class="p" data-id="p1.1.1">We have <span class="formula claim"><span class="m">x</span></span></span>, so by <span class="formula fact"><span class="m">x → z</span></span> we get <span class="formula claim"><span class="m">z</span></span>.</span> <span class="p" data-id="p1.2"><span class="p" data-id="p1.2.1">We have <span class="formula claim"><span class="m">y</span></span></span>, so by <span class="formula fact"><span class="m">y → t</span></span> we get <span class="formula claim"><span class="m">t</span></span>.</span> Altogether we have <span class="formula claim"><span class="m">z ∧ t</span></span>.</span></p>
+</section>
+<section>
+<h2><code>square_pos</code> <small>(UITP 2006)</small></h2>
+<p>Let <span class="formula var"><span class="m">a, b ∈ ℤ</span></span>. If <span class="formula hyp"><span class="m">0 &lt; a &lt; b</span></span> then <span class="formula claim"><span class="m">a a &lt; b b</span></span>.</p>
+<p><span class="p" data-id="s1">It is equivalent to prove <span class="formula claim"><span class="m">0 &lt; b b − a a</span></span>. <span class="p" data-id="s1.1">That can also be written as <span class="formula claim"><span class="m">0 &lt; (b + a)(b − a)</span></span>. <span class="p" data-id="s1.1.1">From <span class="formula fact"><span class="m">0 &lt; a &lt; b</span></span> we have <span class="formula claim"><span class="m">0 &lt; b + a ∧ 0 &lt; b − a</span></span>.</span></span></span></p>
+</section>
+<section>
+<h2><code>exp_pos</code> <small>(UITP 2006)</small></h2>
+<p>Let <span class="formula var"><span class="m">x ∈ ℝ</span></span> and <span class="formula var"><span class="m">y ∈ ℤ</span></span>. If <span class="formula hyp"><span class="m">0 &lt; x</span></span>, to prove <span class="formula claim"><span class="m">0 &lt; x<sup>y</sup></span></span>, we have three cases: <span class="p" data-id="e1">if <span class="formula hyp"><span class="m">0 &lt; y</span></span> then <span class="formula claim"><span class="m">x<sup>1</sup> ≤ x<sup>y</sup></span></span></span>; <span class="p" data-id="e2">if <span class="formula hyp"><span class="m">0 = y</span></span> then <span class="formula claim"><span class="m">x<sup>y</sup> = 1</span></span></span>; <span class="p" data-id="e3">if <span class="formula hyp"><span class="m">y &lt; 0</span></span> then <span class="formula claim"><span class="m">x<sup>y</sup> = 1 / x<sup>−y</sup></span></span></span>.</p>
+</section>
+<section>
+<h2><code>praeclarum</code> <small>(xtext)</small></h2>
+<p>Let <span class="formula var"><span class="m">x, y, z, t : Prop</span></span>. Assume <span class="formula hyp"><span class="m">(x → z) ∧ (y → t)</span></span> <span class="name">(<code>h1</code>)</span> and <span class="formula hyp"><span class="m">x ∧ y</span></span> <span class="name">(<code>h2</code>)</span>. We prove <span class="formula claim"><span class="m">z ∧ t</span></span>.</p>
+<p><span class="p" data-id="x1">Going back to the definition of and (<span class="by"><code>and_ind</code></span>) in <span class="by"><code>h1</code></span>, we prove <span class="formula claim"><span class="m">z ∧ t</span></span>: <span class="p" data-id="x1.1">assume <span class="formula hyp"><span class="m">x → z</span></span> <span class="name">(<code>i</code>)</span> and <span class="formula hyp"><span class="m">y → t</span></span> <span class="name">(<code>j</code>)</span>; going back to the definition of and (<span class="by"><code>and_ind</code></span>) in <span class="by"><code>h2</code></span>, we prove <span class="formula claim"><span class="m">z ∧ t</span></span>: <span class="p" data-id="x1.1.1">assume <span class="formula hyp"><span class="m">x</span></span> <span class="name">(<code>k</code>)</span> and <span class="formula hyp"><span class="m">y</span></span> <span class="name">(<code>l</code>)</span>; <span class="p" data-id="x1.1.1.1">applying <span class="by"><code>i</code></span> to <span class="by"><code>k</code></span>, we have <span class="formula claim"><span class="m">z</span></span></span>; <span class="p" data-id="x1.1.1.2">applying <span class="by"><code>j</code></span> to <span class="by"><code>l</code></span>, we have <span class="formula claim"><span class="m">t</span></span></span>; so by definition of and (<span class="by"><code>conj</code></span>), we have <span class="formula claim"><span class="m">z ∧ t</span></span>.</span></span></span></p>
+</section>
+<section>
+<h2><code>Trans_Inv</code> <small>(xtext)</small></h2>
+<p>Let <span class="formula var"><span class="m">E : Set</span></span>. Let <span class="formula var"><span class="m">R : Rel E</span></span>. Assume <span class="formula hyp"><span class="m">Trans E R</span></span> <span class="name">(<code>h</code>)</span>. We prove <span class="formula claim"><span class="m">Trans E (Inv E R)</span></span>.</p>
+<p><span class="p" data-id="t1">Let us choose arbitrarily <span class="formula var"><span class="m">x, y, z ∈ E</span></span>; assume <span class="formula hyp"><span class="m">Inv E R x y</span></span> <span class="name">(<code>h1</code>)</span> and <span class="formula hyp"><span class="m">Inv E R y z</span></span> <span class="name">(<code>h2</code>)</span>. <span class="p" data-id="t1.1">By <span class="by"><code>h</code></span> we have <span class="m">Trans E R</span>, that is <span class="formula claim"><span class="m">∀ x₀ y₀ z₀ ∈ E, R x₀ y₀ → R y₀ z₀ → R x₀ z₀</span></span>.</span> <span class="p" data-id="t1.2">By <span class="by"><code>h2</code></span> we have <span class="m">Inv E R y z</span>, that is <span class="formula claim"><span class="m">R z y</span></span>.</span> <span class="p" data-id="t1.3">By <span class="by"><code>h1</code></span> we have <span class="m">Inv E R x y</span>, that is <span class="formula claim"><span class="m">R y x</span></span>.</span> By application, we have <span class="m">R z x</span>, that is <span class="formula claim"><span class="m">Inv E R x z</span></span>.</span> <span class="p" data-id="t2">We have proved <span class="formula claim"><span class="m">∀ x₀ y₀ z₀ ∈ E, Inv E R x₀ y₀ → Inv E R y₀ z₀ → Inv E R x₀ z₀</span></span></span>, that is <span class="m">Trans E (Inv E R)</span>.</p>
+</section>
+<footer class="legend"><span class="formula var">variable</span><span class="formula hyp">hypothesis</span><span class="formula claim">conclusion</span><span class="formula fact">fact</span><span class="by">justification</span></footer>
+</div>
+<script>
+// the hover of the mock-up: the proof node under the pointer, its
+// conclusion, its hypotheses, its direct subproofs; over a justification,
+// the hypothesis it names; over a fact, the hypothesis or conclusion it is
+function owner(el) { return el.parentElement ? el.parentElement.closest('.p') : null; }
+function clear() { document.querySelectorAll('.cur,.sub,.c-cur,.h-cur,.ref-target').forEach(e => e.classList.remove('cur','sub','c-cur','h-cur','ref-target')); }
+function show(p) {
+  clear(); if (!p) return;
+  p.classList.add('cur');
+  p.querySelectorAll('.p').forEach(q => { if (owner(q) === p) q.classList.add('sub'); });
+  p.querySelectorAll('.formula.claim').forEach(c => { if (c.closest('.p') === p) c.classList.add('c-cur'); });
+  p.querySelectorAll('.formula.hyp').forEach(h => { if (h.closest('.p') === p) h.classList.add('h-cur'); });
+}
+function target(by) {
+  const sec = by.closest('section'), t = by.textContent.trim();
+  for (const n of sec.querySelectorAll('.name')) if (n.textContent.replace(/[()]/g,'').trim() === t) return n;
+  for (const f of sec.querySelectorAll('.formula.hyp, .formula.claim')) if (f !== by && f.textContent.trim() === t) return f;
+  return null;
+}
+document.addEventListener('mouseover', e => {
+  const by = e.target.closest('.by, .formula.fact');
+  show(e.target.closest('.p'));
+  if (by) { const t = target(by); if (t) t.classList.add('ref-target'); }
+});
+// a fixed hover for the screenshots: page.html#hover=x1.1.1 or #by=x1.1.1.1/i
+const h = location.hash.match(/hover=([^&]*)/);
+if (h) show(document.querySelector('.p[data-id="' + h[1] + '"]'));
+const b = location.hash.match(/by=([^/]*)\/(.*)/);
+if (b) { const p = document.querySelector('.p[data-id="' + b[1] + '"]'); show(p);
+  for (const by of p.querySelectorAll('.by')) if (by.textContent.trim() === decodeURIComponent(b[2])) { const t = target(by); if (t) t.classList.add('ref-target'); by.style.outline = '2px solid #0072b2'; } }
+</script>
+</body></html>

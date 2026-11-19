@@ -1,0 +1,6 @@
+<p>Proposition <n>square_pos</n>:
+If  <h>0 < a < b </h> then  <c>a*a < b*b</c>.
+<p>It is equivalent to prove  <c>0 < b*b - a*a </c>.
+ <p>That can also be written as  <c>0 < (b + a) * (b - a)</c>
+<p> <j>From  <f>0 < a < b </f></j>  we have <c>0 < (b + a) and 0 < (b - a)</c>.</p></p></p>
+</p>
