@@ -180,16 +180,33 @@ Where 6.4.1 is followed or not:
   n <= n + m).  cyp proves the closing steps of all the texts that 6.4.1
   shortens.
 
+## Chapter 4's reversible translation: served by cyp, differently
+
+Chapter 4 makes the texts a script language whose concrete syntax is
+natural language (4.2, 4.3.4: Fig. 4.18-4.21, 4.28-4.29), so that a text
+is read back into a proof.  Of chapter 4, xtext implements the selection
+of type annotations (4.3.1), the characterisation of subproofs (4.3.2) and
+the naming of intermediate results (4.3.3), as stages of the translation.
+The reading back is done by the reader
+[cyp](../cyp/README.md), in another way:
+
+- **the thesis inverts**: the grammar of the script mirrors the
+  translation, each form of sentence one construction of the term, so
+  that reading a text back rebuilds the term it came from, with no search;
+- **cyp checks**: each step of a text gives conditions, proved by tactics
+  and rules; it reads any text of the format (written by xtext or by
+  hand), but the proof it builds is in general not the term the text came
+  from, and a step can be left unproved (cyp's results on xtext's texts:
+  [doc/checking-with-cyp.md](doc/checking-with-cyp.md)).
+
+The exact round trip of the thesis (a term, its text, the same term back)
+is therefore not implemented: it would be a second reader, for xtext's own
+texts, inverting each form of sentence.
+
 ## Not implemented
 
-- Chapter 4, the reversible translation: a script language whose concrete
-  syntax is natural language, so that a text can be read back into a proof.
-  Of chapter 4, the selection of type annotations (4.3.1), the
-  characterisation of subproofs (4.3.2) and the naming of intermediate
-  results (4.3.3) are implemented, as stages of the translation; not the
-  script language (4.2, 4.3.4: Fig. 4.18-4.21, 4.28-4.29), so a text
-  cannot be read back into a term.  Fig. 4.15 (a β-expansion that keeps
-  the tree, P1.1 inside P1) is not produced: the thesis shows it to
+- The exact inversion of chapter 4, above.  Fig. 4.15 (a β-expansion that
+  keeps the tree, P1.1 inside P1) is not produced: the thesis shows it to
   motivate the postfix one, Fig. 4.16, which is the algorithm.
 
 ## From L. Théry's thesis (1994)
