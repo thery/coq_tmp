@@ -1,0 +1,194 @@
+% prooftext: the table of the mathematical notation of formulas.
+% (read by maths.elpi; load before it)
+%
+% One entry per constant: [maths-notation Name Form], the constant whose
+% full name ends with Name (Stdlib.Reals.Rdefinitions.Rplus: "Rplus";
+% Stdlib.ZArith.BinInt.Z.le: "Z.le"; the longest suffix with an entry
+% wins), written in the form Form.  The operands of a form are the
+% explicit arguments of the constant (its implicit ones, the A of @eq A x
+% y, are left out); a constant applied to another number of explicit
+% arguments is written as a function, f(x, y).
+%
+% An entry says what the notation is, not how a target writes it: the
+% symbols are Unicode characters or words ("mod"), the forms are
+% operators, fractions, powers, roots, delimiters, binders, symbols and
+% named functions.  The writer of each target (maths-typst.elpi for
+% Typst, from which come the PDF and the HTML page) writes them.
+%
+% The levels are those of the notations (a smaller level binds tighter),
+% Rocq's for the same symbols: 30 ^, 35 unary -, 40 * /, 50 + -, 60 ::,
+% 70 = <=, 75 ~, 80 /\, 85 \/, 95 <->, 99 ->, 200 forall.  The level is
+% that of the written symbol: negb is written ¬, so it has ¬'s level.
+%
+% A library or a user adds entries by accumulating clauses of
+% maths-notation in the command after this file, as for cyp's rules:
+%
+%   Elpi Accumulate Typst lp:{{
+%     prooftext.maths-notation "Rmax" (prooftext.function "max").
+%   }}.
+%
+% An entry added with :before (or a longer suffix) overrides one here.
+
+namespace prooftext {
+
+% the associativity of an infix operator
+kind associativity type.
+type left-assoc associativity.       % a - b - c is (a - b) - c
+type right-assoc associativity.      % A /\ B /\ C is A /\ (B /\ C)
+type no-assoc associativity.         % a = b = c is not a formula
+
+% the written form of a constant and its operands
+kind maths-form type.
+type binary string -> int -> associativity -> maths-form.
+                                     % a Symbol b, at a level
+type conjunction string -> int -> maths-form.
+                                     % A Symbol B, right associative; two
+                                     % relations on the same middle term
+                                     % are a chain: 0 < a ∧ a < b is
+                                     % 0 < a < b (Rocq's notation)
+type relation string -> string -> int -> maths-form.
+                                     % a Symbol b, not associative; its
+                                     % negation ~ (a R b) is a Negated b
+                                     % ("" when it has no symbol)
+type unary string -> int -> maths-form.
+                                     % Symbol a (~ A: not A)
+type negation string -> int -> maths-form.
+                                     % Symbol a, the negation: a relation
+                                     % with a negated symbol takes it
+type sign string -> int -> maths-form.
+                                     % -a: a sign, in parentheses after
+                                     % an arithmetic operator, a - (-b)
+type fraction maths-form.            % a over b
+type reciprocal maths-form.          % 1 over a
+type power maths-form.               % a to the power b, a^b
+type fixed-power string -> maths-form.
+                                     % a to a given power (Rsqr a: a²)
+type enclosed string -> string -> maths-form.
+                                     % a between two delimiters: |a|
+type root maths-form.                % the square root of a
+type glyph string -> maths-form.     % a symbol for a constant without
+                                     % operands (nat: ℕ)
+type function string -> maths-form.  % Name(a, b), a named function,
+                                     % upright
+type hidden maths-form.              % a coercion (INR n): its operand only
+type binder string -> maths-form.    % a quantifier on a function
+                                     % (ex (fun x => P)): Symbol x, P
+
+% [maths-notation Name Form]: the constants written in mathematics
+pred maths-notation o:string, o:maths-form.
+
+% ------------------------------------------------------------------
+% Types
+
+maths-notation "Datatypes.nat" (glyph "ℕ").                     % natural numbers
+maths-notation "BinNums.N" (glyph "ℕ").                         % binary natural numbers
+maths-notation "BinNums.Z" (glyph "ℤ").                         % integers
+maths-notation "QArith_base.Q" (glyph "ℚ").                     % rationals
+maths-notation "RbaseSymbolsImpl.R" (glyph "ℝ").                % real numbers
+maths-notation "Datatypes.bool" (glyph "𝔹").                    % booleans
+maths-notation "Datatypes.prod" (binary "×" 40 left-assoc).     % A * B, the pairs
+
+% ------------------------------------------------------------------
+% Logic
+
+maths-notation "Logic.True" (glyph "⊤").                        % the true proposition
+maths-notation "Logic.False" (glyph "⊥").                       % the false proposition
+maths-notation "Logic.and" (conjunction "∧" 80).                % A /\ B
+maths-notation "Logic.or" (binary "∨" 85 right-assoc).          % A \/ B
+maths-notation "Logic.iff" (binary "↔" 95 no-assoc).            % A <-> B
+maths-notation "Logic.not" (negation "¬" 75).                   % ~ A; ~ (a = b) is a ≠ b
+maths-notation "Logic.ex" (binder "∃").                         % exists x, P
+
+% ------------------------------------------------------------------
+% Relations: equality and orders, on every type of numbers
+
+maths-notation "Logic.eq" (relation "=" "≠" 70).                % a = b
+maths-notation "Peano.le" (relation "≤" "" 70).                 % nat: a <= b
+maths-notation "Peano.lt" (relation "<" "" 70).                 % nat: a < b
+maths-notation "Peano.ge" (relation "≥" "" 70).                 % nat: a >= b
+maths-notation "Peano.gt" (relation ">" "" 70).                 % nat: a > b
+maths-notation "Z.le" (relation "≤" "" 70).                     % Z: a <= b
+maths-notation "Z.lt" (relation "<" "" 70).                     % Z: a < b
+maths-notation "Z.ge" (relation "≥" "" 70).                     % Z: a >= b
+maths-notation "Z.gt" (relation ">" "" 70).                     % Z: a > b
+maths-notation "N.le" (relation "≤" "" 70).                     % N: a <= b
+maths-notation "N.lt" (relation "<" "" 70).                     % N: a < b
+maths-notation "Rle" (relation "≤" "" 70).                      % R: a <= b
+maths-notation "Rlt" (relation "<" "" 70).                      % R: a < b
+maths-notation "Rge" (relation "≥" "" 70).                      % R: a >= b
+maths-notation "Rgt" (relation ">" "" 70).                      % R: a > b
+maths-notation "Qle" (relation "≤" "" 70).                      % Q: a <= b
+maths-notation "Qlt" (relation "<" "" 70).                      % Q: a < b
+maths-notation "Z.divide" (relation "∣" "∤" 70).                % Z: (a | b), a divides b
+maths-notation "Nat.divide" (relation "∣" "∤" 70).              % nat: a divides b
+maths-notation "Nat.eqb" (relation "=?" "" 70).                 % nat: a =? b, a boolean
+maths-notation "Z.eqb" (relation "=?" "" 70).                   % Z: a =? b, a boolean
+
+% ------------------------------------------------------------------
+% Arithmetic on nat, N, Z, R and Q
+
+maths-notation "Nat.add" (binary "+" 50 left-assoc).            % a + b
+maths-notation "Nat.sub" (binary "-" 50 left-assoc).            % a - b (truncated)
+maths-notation "Nat.mul" (binary "⋅" 40 left-assoc).            % a * b
+maths-notation "Nat.pow" power.                                 % a ^ b
+maths-notation "Nat.div" (binary "div" 40 left-assoc).          % a / b, the quotient
+maths-notation "Nat.modulo" (binary "mod" 40 left-assoc).       % a mod b
+maths-notation "N.add" (binary "+" 50 left-assoc).              % a + b
+maths-notation "N.mul" (binary "⋅" 40 left-assoc).              % a * b
+maths-notation "Z.add" (binary "+" 50 left-assoc).              % a + b
+maths-notation "Z.sub" (binary "-" 50 left-assoc).              % a - b
+maths-notation "Z.mul" (binary "⋅" 40 left-assoc).              % a * b
+maths-notation "Z.opp" (sign "-" 35).                           % - a
+maths-notation "Z.pow" power.                                   % a ^ b
+maths-notation "Z.div" (binary "div" 40 left-assoc).            % a / b, the quotient
+maths-notation "Z.modulo" (binary "mod" 40 left-assoc).         % a mod b
+maths-notation "Z.abs" (enclosed "|" "|").                      % |a|
+maths-notation "Rplus" (binary "+" 50 left-assoc).              % a + b
+maths-notation "Rminus" (binary "-" 50 left-assoc).             % a - b
+maths-notation "Rmult" (binary "⋅" 40 left-assoc).              % a * b
+maths-notation "Ropp" (sign "-" 35).                            % - a
+maths-notation "Rdiv" fraction.                                 % a / b
+maths-notation "Rinv" reciprocal.                               % / a
+maths-notation "Rpow_def.pow" power.                            % a ^ n, n : nat
+maths-notation "powerRZ" power.                                 % a ^ z, z : Z
+maths-notation "Rpower" power.                                  % a ^ b, b : R
+maths-notation "Rsqr" (fixed-power "2").                        % a²
+maths-notation "Rabs" (enclosed "|" "|").                       % |a|
+maths-notation "R_sqrt.sqrt" root.                              % √a
+maths-notation "Rtrigo_def.exp" (function "exp").               % exp(a)
+maths-notation "Rpower.ln" (function "ln").                     % ln(a)
+maths-notation "Rtrigo_def.sin" (function "sin").               % sin(a)
+maths-notation "Rtrigo_def.cos" (function "cos").               % cos(a)
+maths-notation "Rmax" (function "max").                         % max(a, b)
+maths-notation "Rmin" (function "min").                         % min(a, b)
+maths-notation "Z.max" (function "max").                        % max(a, b)
+maths-notation "Z.min" (function "min").                        % min(a, b)
+maths-notation "Nat.max" (function "max").                      % max(a, b)
+maths-notation "Nat.min" (function "min").                      % min(a, b)
+maths-notation "Qplus" (binary "+" 50 left-assoc).              % a + b
+maths-notation "Qmult" (binary "⋅" 40 left-assoc).              % a * b
+maths-notation "Qdiv" fraction.                                 % a / b
+
+% the coercions between numbers, shown as their operand
+maths-notation "INR" hidden.                                    % nat -> R
+maths-notation "IZR" hidden.                                    % Z -> R
+maths-notation "Z.of_nat" hidden.                               % nat -> Z
+maths-notation "Z.of_N" hidden.                                 % N -> Z
+maths-notation "inject_Z" hidden.                               % Z -> Q
+
+% ------------------------------------------------------------------
+% Booleans, written with the symbols of logic
+
+maths-notation "Datatypes.andb" (binary "∧" 80 right-assoc).    % a && b
+maths-notation "Datatypes.orb" (binary "∨" 85 right-assoc).     % a || b
+maths-notation "Datatypes.negb" (unary "¬" 75).                 % negb a
+
+% ------------------------------------------------------------------
+% Lists
+
+maths-notation "Datatypes.nil" (glyph "[]").                    % []
+maths-notation "Datatypes.cons" (binary "::" 60 right-assoc).   % a :: l
+maths-notation "Datatypes.app" (binary "++" 60 right-assoc).    % l ++ m
+maths-notation "List.In" (relation "∈" "∉" 70).                 % In a l
+
+}

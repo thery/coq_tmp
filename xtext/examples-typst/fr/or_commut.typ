@@ -9,19 +9,19 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Soient "#var("A B : Prop")#". Supposons "#hyp("A \\/ B")#" "#name("h")#". Montrons "#claim("B \\/ A")#"."]
+#statement[#"Soient "#var($A , B : "Prop"$)#". Supposons "#hyp($A ∨ B$)#" "#name("h")#". Montrons "#claim($B ∨ A$)#"."]
 
 #steps((
-  step("1", [#"Montrons "#fact("B \\/ A")#" par analyse de cas sur "#fact("A \\/ B")#" "#name("h")#" (or, or_ind):"], ()),
-  step("2", [#"Cas 1: montrons "#claim("A -> B \\/ A")#"."], (
-    step("2.1", [#"Supposons "#hyp("A")#" "#name("i")#"."], (
-      step("2.1.1", [#"Par définition de or (or_intror), à partir de "#fact("A")#" "#name("i")#" nous en déduisons "#claim("B \\/ A")#" "#by("Corelib.Init.Logic.or_intror")#"."], ()),
+  step("1", [#"Montrons "#fact($B ∨ A$)#" par analyse de cas sur "#fact($A ∨ B$)#" "#name("h")#" (or, or_ind):"], ()),
+  step("2", [#"Cas 1: montrons "#claim($A → B ∨ A$)#"."], (
+    step("2.1", [#"Supposons "#hyp($A$)#" "#name("i")#"."], (
+      step("2.1.1", [#"Par définition de or (or_intror), à partir de "#fact($A$)#" "#name("i")#" nous en déduisons "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_intror")#"."], ()),
     )),
   )),
-  step("3", [#"Cas 2: montrons "#claim("B -> B \\/ A")#"."], (
-    step("3.1", [#"Supposons "#hyp("B")#" "#name("j")#"."], (
-      step("3.1.1", [#"Par définition de or (or_introl), à partir de "#fact("B")#" "#name("j")#" nous en déduisons "#claim("B \\/ A")#" "#by("Corelib.Init.Logic.or_introl")#"."], ()),
+  step("3", [#"Cas 2: montrons "#claim($B → B ∨ A$)#"."], (
+    step("3.1", [#"Supposons "#hyp($B$)#" "#name("j")#"."], (
+      step("3.1.1", [#"Par définition de or (or_introl), à partir de "#fact($B$)#" "#name("j")#" nous en déduisons "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_introl")#"."], ()),
     )),
   )),
-  step("4", [#"Nous avons "#claim("B \\/ A")#" dans tous les cas."], ()),
+  step("4", [#"Nous avons "#claim($B ∨ A$)#" dans tous les cas."], ()),
 ))

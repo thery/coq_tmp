@@ -5,24 +5,23 @@
 
 #title-block("add_0_r'", (
   ("require", "From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas."),
-  ("flags", "-R /home/thery/git/coq_tmp/xtext XText"),
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement(status: "ok")[#"Let "#var("n : nat")#". We prove "#claim("n + 0 = n")#"."]
+#statement(status: "ok")[#"Let "#var($n ∈ ℕ$)#". We prove "#claim($n + 0 = n$)#"."]
 
 #steps((
-  step("1", [#"To prove "#fact("n + 0 = n")#" by induction (nat, nat_ind), we generalise it to "#fact("forall n0 : nat, n0 + 0 = n0")#":"], (), status: "none"),
-  step("2", [#"Case 1 (base): we prove "#claim("0 = 0")#"."], (
-    step("2.1", [#"By definition of eq (eq_refl), we have "#claim("0 = 0")#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+  step("1", [#"To prove "#fact($n + 0 = n$)#" by induction (nat, nat_ind), we generalise it to "#fact($∀ n_(0) ∈ ℕ , n_(0) + 0 = n_(0)$)#":"], (), status: "none"),
+  step("2", [#"Case 1 (base): we prove "#claim($0 = 0$)#"."], (
+    step("2.1", [#"By definition of eq (eq_refl), we have "#claim($0 = 0$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
   ), status: "ok"),
-  step("3", [#"Case 2 (inductive): we prove "#claim("forall m : nat, m + 0 = m -> S m + 0 = S m")#"."], (
-    step("3.1", [#"Let us choose arbitrarily "#var("m : nat")#"; assume by induction hypothesis "#hyp("m + 0 = m")#" "#name("IH")#"."], (
-      step("3.1.1", [#"By definition of eq (eq_refl), we have "#claim("S m = S m")#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
-      step("3.1.2", [#"By IH we have "#claim("m + 0 = m")#"."], (), status: "ok"),
-      step("3.1.3", [#"Rewriting with "#fact("m + 0 = m")#" from right to left (eq_ind_r), we get "#claim("S (m + 0) = S m")#"."], (), status: "ok"),
+  step("3", [#"Case 2 (inductive): we prove "#claim($∀ m ∈ ℕ , m + 0 = m → "S"\(m\) + 0 = "S"\(m\)$)#"."], (
+    step("3.1", [#"Let us choose arbitrarily "#var($m ∈ ℕ$)#"; assume by induction hypothesis "#hyp($m + 0 = m$)#" "#name("IH")#"."], (
+      step("3.1.1", [#"By definition of eq (eq_refl), we have "#claim($"S"\(m\) = "S"\(m\)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+      step("3.1.2", [#"By IH we have "#claim($m + 0 = m$)#"."], (), status: "ok"),
+      step("3.1.3", [#"Rewriting with "#fact($m + 0 = m$)#" from right to left (eq_ind_r), we get "#claim($"S"\(m + 0\) = "S"\(m\)$)#"."], (), status: "ok"),
     ), status: "none"),
   ), status: "ok"),
-  step("4", [#"These cases being exhaustive, we deduce "#claim("forall n0 : nat, n0 + 0 = n0")#" "#by("Corelib.Init.Datatypes.nat_ind")#"."], (), status: "ok"),
-  step("5", [#"In particular "#claim("n + 0 = n")#"."], (), status: "ok"),
+  step("4", [#"These cases being exhaustive, we deduce "#claim($∀ n_(0) ∈ ℕ , n_(0) + 0 = n_(0)$)#" "#by("Corelib.Init.Datatypes.nat_ind")#"."], (), status: "ok"),
+  step("5", [#"In particular "#claim($n + 0 = n$)#"."], (), status: "ok"),
 ))

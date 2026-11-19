@@ -1,5 +1,5 @@
 % prooftext: the writer of a proof text in Typst, for a PDF.
-% (load after document.elpi, formulas.elpi and checked.elpi)
+% (load after document.elpi, formulas.elpi, checked.elpi and maths.elpi)
 %
 % [write-typst D Text] gives the Typst source of the document D: calls of
 % the functions of the template typst/local/prooftext/0.1.0/prooftext.typ
@@ -13,11 +13,11 @@
 %     ("require", "From Stdlib Require Import Lia."),
 %   ))
 %
-%   #statement[#"Let "#var("A B : Prop")#". We prove "#claim("A /\\ B -> B /\\ A")#"."]
+%   #statement[#"Let "#var($A, B : "Prop"$)#". We prove "#claim($A ∧ B → B ∧ A$)#"."]
 %
 %   #steps((
-%     step("1", [#"Assume "#hyp("A /\\ B")#" "#name("h")#"."], (
-%       step("1.1", [#"We have "#claim("B /\\ A")#" "#by("tauto")#"."], ()),
+%     step("1", [#"Assume "#hyp($A ∧ B$)#" "#name("h")#"."], (
+%       step("1.1", [#"We have "#claim($B ∧ A$)#" "#by("tauto")#"."], ()),
 %     )),
 %   ))
 %
@@ -26,24 +26,48 @@
 % shown without a role), the name (h) given to a formula, right after
 % it, the justification *by X*, and the plain text between them, each
 % written as a Typst string, so that no character of the text is read as
-% Typst markup.  In a text checked by cyp (checked.elpi), the status of
-% each text, the conditions left and cyp's message become arguments of
-% statement and step, and the steps are numbered as cyp numbers them.
+% Typst markup.  A formula is mathematics, $...$, printed from its Rocq
+% term (maths.elpi), or, in the code style or when it does not
+% elaborate, its Rocq text as a string, shown as code:
+% #claim("A /\\ B -> B /\\ A").  In a text checked by cyp (checked.elpi),
+% the status of each text, the conditions left and cyp's message become
+% arguments of statement and step, and the steps are numbered as cyp
+% numbers them.
 
 namespace prooftext {
 
 % ------------------------------------------------------------------
 % The document
 
-% [write-typst D Text]: the Typst source of the document D
+% how the formulas of a text are shown
+kind formula-style type.
+type maths formula-style.     % mathematics, from their terms (maths.elpi)
+type code formula-style.      % Rocq code, as written
+
+% what the writer knows of the formulas while it goes through a text: the
+% style; for mathematics, the notation scope of the text and the
+% declarations of the Lets before the current formula, under which it is
+% elaborated
+kind formulas type.
+type in-code formulas.
+type in-maths string -> list string -> formulas.
+
+% [write-typst D Text]: the Typst source of the document D, its formulas
+% in mathematics
 pred write-typst i:prooftext.document, o:string.
-write-typst (prooftext.document Fields Name _ Statement Steps) Text :-
+write-typst D Text :- write-typst-in maths D Text.
+
+% [write-typst-in Style D Text]: the Typst source of the document D, its
+% formulas in the style Style
+pred write-typst-in i:formula-style, i:prooftext.document, o:string.
+write-typst-in Style (prooftext.document Fields Name _ Statement Steps) Text :-
   text-language Fields Lang,
   (if (text-is-checked Statement) (Numbers = "true") (Numbers = "false")),
-  typst-string Name TName,
+  prooftext.typst-string Name TName,
   std.map Fields typst-field FieldLines,
-  statement-typst Statement StatementLine,
-  steps-typst "  " "" 1 Steps StepLines,
+  first-formulas Style Fields F0,
+  statement-typst F0 Statement StatementLine F1,
+  steps-typst F1 "  " "" 1 Steps StepLines,
   std.append [
     {calc ("// The proof text " ^ Name ^ ", written by prooftext (write-typst).")},
     "// Its PDF: prooftext/pdf.sh, or typst compile --package-path prooftext/typst.",
@@ -55,6 +79,14 @@ write-typst (prooftext.document Fields Name _ Statement Steps) Text :-
   std.append Lines0 ["))"] Lines,
   std.string.concat "\n" Lines Text0,
   Text is Text0 ^ "\n".
+
+% [first-formulas Style Fields F]: the formulas at the start of a text:
+% in mathematics, in the scope of its header (none if it has no scope
+% field), without declarations
+pred first-formulas i:formula-style, i:list prooftext.field, o:formulas.
+first-formulas code _ in-code.
+first-formulas maths Fields (in-maths Scope []) :-
+  (std.mem Fields (prooftext.field "scope" Scope), ! ; Scope = "").
 
 % [text-language Fields Lang]: the language of the text, from its lang
 % field (default-lang when it has none)
@@ -70,32 +102,37 @@ text-is-checked Statement :- prooftext.split-checked Statement _ _.
 % a field of the header, a pair (key, value)
 pred typst-field i:prooftext.field, o:string.
 typst-field (prooftext.field Key Value) Line :-
-  Line is "  (" ^ {typst-string Key} ^ ", " ^ {typst-string Value} ^ "),".
+  Line is "  (" ^ {prooftext.typst-string Key} ^ ", " ^ {prooftext.typst-string Value} ^ "),".
 
-% [statement-typst Statement Line]: the call of statement
-pred statement-typst i:string, o:string.
-statement-typst Statement Line :-
+% [statement-typst F0 Statement Line F]: the call of statement; F, the
+% formulas after it (with its declarations)
+pred statement-typst i:formulas, i:string, o:string, o:formulas.
+statement-typst F0 Statement Line F :-
   checked-text Statement Check Text, check-arguments Check Arguments,
   (if (Arguments = "") (Call = "#statement") (Call is "#statement(" ^ Arguments ^ ")")),
-  Line is Call ^ {text-content Text}.
+  text-content F0 Text Content F,
+  Line is Call ^ Content.
 
-% [steps-typst Indent Prefix K Steps Lines]: the calls of step for Steps,
-% the K-th, K+1-th, ... of their list, numbered in Dewey notation after
-% Prefix ("" at the top: 1, 2, ...; 2.1 is the first sub-step of 2, as cyp
-% numbers its conditions); each one's sub-steps in its list, indented
-pred steps-typst i:string, i:string, i:int, i:list prooftext.step, o:list string.
-steps-typst _ _ _ [] [].
-steps-typst Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
+% [steps-typst F Indent Prefix K Steps Lines]: the calls of step for
+% Steps, the K-th, K+1-th, ... of their list, numbered in Dewey notation
+% after Prefix ("" at the top: 1, 2, ...; 2.1 is the first sub-step of 2,
+% as cyp numbers its conditions); each one's sub-steps in its list,
+% indented.  The declarations of a step hold in its sub-steps and in the
+% steps after it in its list, as in cyp (the scope of a Let)
+pred steps-typst i:formulas, i:string, i:string, i:int, i:list prooftext.step, o:list string.
+steps-typst _ _ _ _ [] [].
+steps-typst F0 Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
   dewey-number Prefix K Number,
   checked-text Text0 Check Text, check-arguments Check Arguments,
   (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
-  Head is Indent ^ "step(" ^ {typst-string Number} ^ ", " ^ {text-content Text} ^ ", (",
+  text-content F0 Text Content F,
+  Head is Indent ^ "step(" ^ {prooftext.typst-string Number} ^ ", " ^ Content ^ ", (",
   (if (Sub = [])
      (Own = [{calc (Head ^ ")" ^ Tail ^ "),")}])
-     (steps-typst {calc (Indent ^ "  ")} Number 1 Sub SubLines,
+     (steps-typst F {calc (Indent ^ "  ")} Number 1 Sub SubLines,
       std.append [Head | SubLines] [{calc (Indent ^ ")" ^ Tail ^ "),")}] Own)),
   K1 is K + 1,
-  steps-typst Indent Prefix K1 Steps Next,
+  steps-typst F Indent Prefix K1 Steps Next,
   std.append Own Next Lines.
 
 % [dewey-number Prefix K Number]: the number of the K-th step of a list
@@ -121,12 +158,12 @@ check-arguments none "".
 check-arguments (some (prooftext.checked Status Conditions Message)) Arguments :-
   optional-argument "conditions" Conditions C,
   optional-argument "message" Message M,
-  std.filter [{calc ("status: " ^ {typst-string Status})}, C, M] (a\ not (a = "")) As,
+  std.filter [{calc ("status: " ^ {prooftext.typst-string Status})}, C, M] (a\ not (a = "")) As,
   std.string.concat ", " As Arguments.
 
 pred optional-argument i:string, i:option string, o:string.
 optional-argument _ none "".
-optional-argument Name (some V) A :- A is Name ^ ": " ^ {typst-string V}.
+optional-argument Name (some V) A :- A is Name ^ ": " ^ {prooftext.typst-string V}.
 
 % ------------------------------------------------------------------
 % The parts of a text
@@ -139,24 +176,53 @@ type formula-part string -> string -> text-part.
 type name-part string -> text-part.        % the name given to a formula, (h)
 type by-part string -> text-part.          % the justification, *by X*
 
-% [text-content Text Content]: the Typst content of a text, [...] with
-% one call per part
-pred text-content i:string, o:string.
-text-content Text Content :-
+% [text-content F0 Text Content F]: the Typst content of a text, [...]
+% with one call per part; F, the formulas after it
+pred text-content i:formulas, i:string, o:string, o:formulas.
+text-content F0 Text Content F :-
   text-parts Text Parts,
-  std.map Parts part-typst Calls,
+  parts-typst F0 Parts Calls F,
   std.string.concat "" Calls Inner,
   Content is "[" ^ Inner ^ "]".
 
-% [part-typst Part Call]: the Typst code of a part; a formula whose class
-% is a role's tag is shown with that role (var, hyp, claim, fact), other
-% formulas without a role (formula)
-pred part-typst i:text-part, o:string.
-part-typst (plain S) C :- C is "#" ^ {typst-string S}.
-part-typst (formula-part Tag F) C :- prooftext.role-tag _ Tag, !, C is "#" ^ Tag ^ "(" ^ {typst-string F} ^ ")".
-part-typst (formula-part _ F) C :- C is "#formula(" ^ {typst-string F} ^ ")".
-part-typst (name-part N) C :- C is "#name(" ^ {typst-string N} ^ ")".
-part-typst (by-part J) C :- C is "#by(" ^ {typst-string J} ^ ")".
+% [parts-typst F0 Parts Calls F]: the Typst code of each part, in order,
+% each formula under the declarations before it
+pred parts-typst i:formulas, i:list text-part, o:list string, o:formulas.
+parts-typst F [] [] F.
+parts-typst F0 [P | Ps] [C | Cs] F :- part-typst F0 P C F1, parts-typst F1 Ps Cs F.
+
+% [part-typst F0 Part Call F]: the Typst code of a part; a formula whose
+% class is a role's tag is shown with that role (var, hyp, claim, fact),
+% other formulas without a role (formula)
+pred part-typst i:formulas, i:text-part, o:string, o:formulas.
+part-typst F (plain S) C F :- C is "#" ^ {prooftext.typst-string S}.
+part-typst F0 (formula-part Tag Formula) C F :-
+  formula-typst F0 Tag Formula Shown F,
+  (if (prooftext.role-tag _ Tag) (Role = Tag) (Role = "formula")),
+  C is "#" ^ Role ^ "(" ^ Shown ^ ")".
+part-typst F (name-part N) C F :- C is "#name(" ^ {prooftext.typst-string N} ^ ")".
+part-typst F (by-part J) C F :- C is "#by(" ^ {prooftext.typst-string J} ^ ")".
+
+% [formula-typst F0 Tag Formula Shown F]: the formula of class Tag as the
+% argument of its role's function: mathematics $...$, or its Rocq text
+% as a string (shown as code) in the code style or when it does not
+% elaborate.  A declaration (a Let) is added to the declarations of the
+% formulas after it
+pred formula-typst i:formulas, i:string, i:string, o:string, o:formulas.
+formula-typst in-code _ Formula Shown in-code :- prooftext.typst-string Formula Shown.
+formula-typst (in-maths Scope Ds) Tag Formula Shown (in-maths Scope Ds1) :-
+  prooftext.is-declaration Tag Formula, !,
+  std.append Ds [Formula] Ds1,
+  maths-or-code (prooftext.declaration-maths Scope Ds Formula) Formula Shown.
+formula-typst (in-maths Scope Ds) _ Formula Shown (in-maths Scope Ds) :-
+  maths-or-code (prooftext.formula-maths Scope Ds Formula) Formula Shown.
+
+% [maths-or-code Print Formula Shown]: $M$ when Print E gives the formula
+% tree E of the formula (M, its Typst code), else its text as a Typst
+% string
+pred maths-or-code i:(prooftext.mexp -> prop), i:string, o:string.
+maths-or-code Print _ Shown :- Print E, !, Shown is "$" ^ {prooftext.maths-typst E} ^ "$".
+maths-or-code _ Formula Shown :- prooftext.typst-string Formula Shown.
 
 % [text-parts Text Parts]: the parts of a text, in order: the formulas
 % (between backticks, with an optional class {.tag}), each followed by
@@ -209,14 +275,6 @@ plain-parts Text Parts :-
   plain-parts After AfterParts,
   std.append BeforeParts [by-part J | AfterParts] Parts.
 plain-parts Text [plain Text].
-
-% [typst-string S T]: S as a Typst string literal, "...", with its
-% backslashes and double quotes escaped
-pred typst-string i:string, o:string.
-typst-string S T :-
-  rex.replace "\\\\" "\\\\\\\\" S S1,
-  rex.replace "\"" "\\\\\"" S1 S2,
-  T is "\"" ^ S2 ^ "\"".
 
 % ------------------------------------------------------------------
 % Choosing the writer

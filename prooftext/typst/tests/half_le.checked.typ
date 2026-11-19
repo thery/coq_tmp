@@ -5,74 +5,73 @@
 
 #title-block("half_le", (
   ("require", "From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.elim_type."),
-  ("flags", "-R /home/thery/git/coq_tmp/xtext XText"),
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement(status: "ok")[#"Let "#var("n : nat")#". We prove "#claim("n / 2 <= n")#"."]
+#statement(status: "ok")[#"Let "#var($n ∈ ℕ$)#". We prove "#claim($n class("binary", "div") 2 ≤ n$)#"."]
 
 #steps((
-  step("1", [#"By definition of nat (strong_induction), we prove "#claim("forall n0 : nat, n0 / 2 <= n0")#":"], (
-    step("1.1", [#"Let us choose arbitrarily "#var("n0 : nat")#"; assume by induction hypothesis "#hyp("forall m : nat, m < n0 -> m / 2 <= m")#" "#name("IH")#"."], (
-      step("1.1.1", [#"The element "#fact("n0")#" belongs to "#fact("nat")#"."], (), status: "none"),
-      step("1.1.2", [#"The element "#fact("2")#" belongs to "#fact("nat")#"."], (), status: "none"),
-      step("1.1.3", [#"The element "#fact("n0")#" belongs to "#fact("nat")#"."], (), status: "none"),
-      step("1.1.4", [#"Applying rew_iff_rev, we have "#claim("n0 <= 2 * n0")#"."], (
-        step("1.1.4.1", [#"The element "#fact("n0 <= 2 * n0")#" belongs to "#fact("Prop")#"."], (), status: "none"),
-        step("1.1.4.2", [#"The element "#fact("BinInt.Z.le (BinInt.Z.of_nat n0) (BinInt.Z.mul (BinNums.Zpos (BinNums.xO BinNums.xH)) (BinInt.Z.of_nat n0))")#" belongs to "#fact("Prop")#"."], (), status: "none"),
-        step("1.1.4.3", [#"Applying mkrel, we have "#claim("n0 <= 2 * n0 <-> BinInt.Z.le (BinInt.Z.of_nat n0) (BinInt.Z.mul (BinNums.Zpos (BinNums.xO BinNums.xH)) (BinInt.Z.of_nat n0))")#"."], (
-          step("1.1.4.3.1", [#"The element "#fact("nat")#" belongs to "#fact("Type")#"."], (), status: "none"),
-          step("1.1.4.3.2", [#"The element "#fact("BinNums.Z")#" belongs to "#fact("Type")#"."], (), status: "none"),
-          step("1.1.4.3.3", [#"The element "#fact("le")#" belongs to "#fact("nat -> nat -> Prop")#"."], (), status: "none"),
-          step("1.1.4.3.4", [#"The element "#fact("BinInt.Z.of_nat")#" belongs to "#fact("nat -> BinNums.Z")#"."], (), status: "none"),
-          step("1.1.4.3.5", [#"The element "#fact("BinInt.Z.le")#" belongs to "#fact("BinNums.Z -> BinNums.Z -> Prop")#"."], (), status: "none"),
-          step("1.1.4.3.6", [#"By inj_le we have "#claim("forall n00 m : nat, n00 <= m <-> BinInt.Z.le (BinInt.Z.of_nat n00) (BinInt.Z.of_nat m)")#"."], (), status: "ok"),
-          step("1.1.4.3.7", [#"The element "#fact("n0")#" belongs to "#fact("nat")#"."], (), status: "none"),
-          step("1.1.4.3.8", [#"The element "#fact("BinInt.Z.of_nat n0")#" belongs to "#fact("BinNums.Z")#"."], (), status: "none"),
-          step("1.1.4.3.9", [#"By definition of eq (eq_refl), we have "#claim("BinInt.Z.of_nat n0 = BinInt.Z.of_nat n0")#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
-          step("1.1.4.3.10", [#"The element "#fact("2 * n0")#" belongs to "#fact("nat")#"."], (), status: "none"),
-          step("1.1.4.3.11", [#"The element "#fact("BinInt.Z.mul (BinNums.Zpos (BinNums.xO BinNums.xH)) (BinInt.Z.of_nat n0)")#" belongs to "#fact("BinNums.Z")#"."], (), status: "none"),
-          step("1.1.4.3.12", [#"Applying mkapp2, we have "#claim("BinInt.Z.of_nat (2 * n0) = BinInt.Z.mul (BinNums.Zpos (BinNums.xO BinNums.xH)) (BinInt.Z.of_nat n0)")#"."], (
-            step("1.1.4.3.12.1", [#"The element "#fact("nat")#" belongs to "#fact("Type")#"."], (), status: "none"),
-            step("1.1.4.3.12.2", [#"The element "#fact("nat")#" belongs to "#fact("Type")#"."], (), status: "none"),
-            step("1.1.4.3.12.3", [#"The element "#fact("nat")#" belongs to "#fact("Type")#"."], (), status: "none"),
-            step("1.1.4.3.12.4", [#"The element "#fact("BinNums.Z")#" belongs to "#fact("Type")#"."], (), status: "none"),
-            step("1.1.4.3.12.5", [#"The element "#fact("BinNums.Z")#" belongs to "#fact("Type")#"."], (), status: "none"),
-            step("1.1.4.3.12.6", [#"The element "#fact("BinNums.Z")#" belongs to "#fact("Type")#"."], (), status: "none"),
-            step("1.1.4.3.12.7", [#"The element "#fact("Nat.mul")#" belongs to "#fact("nat -> nat -> nat")#"."], (), status: "none"),
-            step("1.1.4.3.12.8", [#"The element "#fact("BinInt.Z.of_nat")#" belongs to "#fact("nat -> BinNums.Z")#"."], (), status: "none"),
-            step("1.1.4.3.12.9", [#"The element "#fact("BinInt.Z.of_nat")#" belongs to "#fact("nat -> BinNums.Z")#"."], (), status: "none"),
-            step("1.1.4.3.12.10", [#"The element "#fact("BinInt.Z.of_nat")#" belongs to "#fact("nat -> BinNums.Z")#"."], (), status: "none"),
-            step("1.1.4.3.12.11", [#"The element "#fact("BinInt.Z.mul")#" belongs to "#fact("BinNums.Z -> BinNums.Z -> BinNums.Z")#"."], (), status: "none"),
-            step("1.1.4.3.12.12", [#"By inj_mul we have "#claim("forall n00 m : nat, BinInt.Z.of_nat (n00 * m) = BinInt.Z.mul (BinInt.Z.of_nat n00) (BinInt.Z.of_nat m)")#"."], (), status: "ok"),
-            step("1.1.4.3.12.13", [#"The element "#fact("2")#" belongs to "#fact("nat")#"."], (), status: "none"),
-            step("1.1.4.3.12.14", [#"The element "#fact("BinNums.Zpos (BinNums.xO BinNums.xH)")#" belongs to "#fact("BinNums.Z")#"."], (), status: "none"),
-            step("1.1.4.3.12.15", [#"By definition of eq (eq_refl), we have "#claim("BinNums.Zpos (BinNums.xO BinNums.xH) = BinNums.Zpos (BinNums.xO BinNums.xH)")#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
-            step("1.1.4.3.12.16", [#"The element "#fact("n0")#" belongs to "#fact("nat")#"."], (), status: "none"),
-            step("1.1.4.3.12.17", [#"The element "#fact("BinInt.Z.of_nat n0")#" belongs to "#fact("BinNums.Z")#"."], (), status: "none"),
-            step("1.1.4.3.12.18", [#"By definition of eq (eq_refl), we have "#claim("BinInt.Z.of_nat n0 = BinInt.Z.of_nat n0")#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+  step("1", [#"By definition of nat (strong_induction), we prove "#claim($∀ n_(0) ∈ ℕ , n_(0) class("binary", "div") 2 ≤ n_(0)$)#":"], (
+    step("1.1", [#"Let us choose arbitrarily "#var($n_(0) ∈ ℕ$)#"; assume by induction hypothesis "#hyp($∀ m ∈ ℕ , m < n_(0) → m class("binary", "div") 2 ≤ m$)#" "#name("IH")#"."], (
+      step("1.1.1", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
+      step("1.1.2", [#"The element "#fact($2$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
+      step("1.1.3", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
+      step("1.1.4", [#"Applying rew_iff_rev, we have "#claim($n_(0) ≤ 2 ⋅ n_(0)$)#"."], (
+        step("1.1.4.1", [#"The element "#fact($n_(0) ≤ 2 ⋅ n_(0)$)#" belongs to "#fact($"Prop"$)#"."], (), status: "none"),
+        step("1.1.4.2", [#"The element "#fact($n_(0) ≤ "Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#" belongs to "#fact($"Prop"$)#"."], (), status: "none"),
+        step("1.1.4.3", [#"Applying mkrel, we have "#claim($n_(0) ≤ 2 ⋅ n_(0) ↔ n_(0) ≤ "Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#"."], (
+          step("1.1.4.3.1", [#"The element "#fact($ℕ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+          step("1.1.4.3.2", [#"The element "#fact($ℤ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+          step("1.1.4.3.3", [#"The element "#fact($"le"$)#" belongs to "#fact($ℕ → ℕ → "Prop"$)#"."], (), status: "none"),
+          step("1.1.4.3.4", [#"The element "#fact($"of_nat"$)#" belongs to "#fact($ℕ → ℤ$)#"."], (), status: "none"),
+          step("1.1.4.3.5", [#"The element "#fact($"le"$)#" belongs to "#fact($ℤ → ℤ → "Prop"$)#"."], (), status: "none"),
+          step("1.1.4.3.6", [#"By inj_le we have "#claim($∀ n_(00) , m ∈ ℕ , n_(00) ≤ m ↔ n_(00) ≤ m$)#"."], (), status: "ok"),
+          step("1.1.4.3.7", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
+          step("1.1.4.3.8", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
+          step("1.1.4.3.9", [#"By definition of eq (eq_refl), we have "#claim($n_(0) = n_(0)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+          step("1.1.4.3.10", [#"The element "#fact($2 ⋅ n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
+          step("1.1.4.3.11", [#"The element "#fact($"Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
+          step("1.1.4.3.12", [#"Applying mkapp2, we have "#claim($2 ⋅ n_(0) = "Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#"."], (
+            step("1.1.4.3.12.1", [#"The element "#fact($ℕ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+            step("1.1.4.3.12.2", [#"The element "#fact($ℕ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+            step("1.1.4.3.12.3", [#"The element "#fact($ℕ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+            step("1.1.4.3.12.4", [#"The element "#fact($ℤ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+            step("1.1.4.3.12.5", [#"The element "#fact($ℤ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+            step("1.1.4.3.12.6", [#"The element "#fact($ℤ$)#" belongs to "#fact($"Type"$)#"."], (), status: "none"),
+            step("1.1.4.3.12.7", [#"The element "#fact($"mul"$)#" belongs to "#fact($ℕ → ℕ → ℕ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.8", [#"The element "#fact($"of_nat"$)#" belongs to "#fact($ℕ → ℤ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.9", [#"The element "#fact($"of_nat"$)#" belongs to "#fact($ℕ → ℤ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.10", [#"The element "#fact($"of_nat"$)#" belongs to "#fact($ℕ → ℤ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.11", [#"The element "#fact($"mul"$)#" belongs to "#fact($ℤ → ℤ → ℤ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.12", [#"By inj_mul we have "#claim($∀ n_(00) , m ∈ ℕ , n_(00) ⋅ m = n_(00) ⋅ m$)#"."], (), status: "ok"),
+            step("1.1.4.3.12.13", [#"The element "#fact($2$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.14", [#"The element "#fact($"Zpos"\("xO"\("xH"\)\)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.15", [#"By definition of eq (eq_refl), we have "#claim($"Zpos"\("xO"\("xH"\)\) = "Zpos"\("xO"\("xH"\)\)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+            step("1.1.4.3.12.16", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.17", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
+            step("1.1.4.3.12.18", [#"By definition of eq (eq_refl), we have "#claim($n_(0) = n_(0)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
           ), status: "ok"),
         ), status: "ok"),
-        step("1.1.4.4", [#"Applying __arith, we have "#claim("BinInt.Z.le (BinInt.Z.of_nat n0) (BinInt.Z.mul (BinNums.Zpos (BinNums.xO BinNums.xH)) (BinInt.Z.of_nat n0))")#"."], (
-          step("1.1.4.4.1", [#"Applying is_nonneg to n0, we have "#claim("BinInt.Z.le BinNums.Z0 (BinInt.Z.of_nat n0)")#" "#name("cstr")#"."], (), status: "ok"),
-          step("1.1.4.4.2", [#"We have proved "#claim("forall __x10 : BinNums.Z, Tauto.eval_bf (ZMicromega.Zeval_formula (VarMap.find BinNums.Z0 (VarMap.Elt __x10))) (Tauto.IMPL (Tauto.A Tauto.isProp {| RingMicromega.Flhs := EnvRing.PEc BinNums.Z0; RingMicromega.Fop := RingMicromega.OpLe; RingMicromega.Frhs := EnvRing.PEX BinNums.xH |} tt) None (Tauto.A Tauto.isProp {| RingMicromega.Flhs := EnvRing.PEX BinNums.xH; RingMicromega.Fop := RingMicromega.OpLe; RingMicromega.Frhs := EnvRing.PEmul (EnvRing.PEc (BinNums.Zpos (BinNums.xO BinNums.xH))) (EnvRing.PEX BinNums.xH) |} tt))")#" "#name("__arith")#"."], (
-            step("1.1.4.4.2.1", [#"Let us choose arbitrarily "#var("__x1 : BinNums.Z")#"."], (
-              step("1.1.4.4.2.1.1", [#"Let "#var("__wit : list ZMicromega.ZArithProof := nil")#"."], (), status: "none"),
-              step("1.1.4.4.2.1.2", [#"Let "#var("__varmap : VarMap.t BinNums.Z := VarMap.Elt __x1")#"."], (), status: "none"),
-              step("1.1.4.4.2.1.3", [#"Let "#var("__ff : Tauto.BFormula (RingMicromega.Formula BinNums.Z) Tauto.isProp := Tauto.IMPL (Tauto.A Tauto.isProp {| RingMicromega.Flhs := EnvRing.PEc BinNums.Z0; RingMicromega.Fop := RingMicromega.OpLe; RingMicromega.Frhs := EnvRing.PEX BinNums.xH |} tt) None (Tauto.A Tauto.isProp {| RingMicromega.Flhs := EnvRing.PEX BinNums.xH; RingMicromega.Fop := RingMicromega.OpLe; RingMicromega.Frhs := EnvRing.PEmul (EnvRing.PEc (BinNums.Zpos (BinNums.xO BinNums.xH))) (EnvRing.PEX BinNums.xH) |} tt)")#"."], (), status: "none"),
-              step("1.1.4.4.2.1.4", [#"The element "#fact("__ff")#" belongs to "#fact("Tauto.BFormula (RingMicromega.Formula BinNums.Z) Tauto.isProp")#"."], (), status: "none"),
-              step("1.1.4.4.2.1.5", [#"The element "#fact("__wit")#" belongs to "#fact("list ZMicromega.ZArithProof")#"."], (), status: "none"),
-              step("1.1.4.4.2.1.6", [#"By definition of eq (eq_refl), we have "#claim("true = true")#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
-              step("1.1.4.4.2.1.7", [#"The element "#fact("VarMap.find BinNums.Z0 __varmap")#" belongs to "#fact("RingMicromega.PolEnv BinNums.Z")#"."], (), status: "none"),
-              step("1.1.4.4.2.1.8", [#"Applying ZTautoChecker_sound, we have "#claim("Tauto.eval_bf (ZMicromega.Zeval_formula (VarMap.find BinNums.Z0 __varmap)) __ff")#"."], (), status: "ko", message: "not proved: Tauto.eval_bf (ZMicromega.Zeval_formula (VarMap.find BinNums.Z0 __varmap)) __ff"),
+        step("1.1.4.4", [#"Applying __arith, we have "#claim($n_(0) ≤ "Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#"."], (
+          step("1.1.4.4.1", [#"Applying is_nonneg to n0, we have "#claim($"Z0" ≤ n_(0)$)#" "#name("cstr")#"."], (), status: "ok"),
+          step("1.1.4.4.2", [#"We have proved "#claim($∀ italic("__x10") ∈ ℤ , "eval_bf"\("Zeval_formula"\("find"\("Z0", "Elt"\(italic("__x10")\)\)\), "IMPL"\("A"\("isProp", "Build_Formula"\("PEc"\("Z0"\), "OpLe", "PEX"\("xH"\)\), "tt"\), "None", "A"\("isProp", "Build_Formula"\("PEX"\("xH"\), "OpLe", "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\), "PEX"\("xH"\)\)\), "tt"\)\)\)$)#" "#name("__arith")#"."], (
+            step("1.1.4.4.2.1", [#"Let us choose arbitrarily "#var($italic("__x1") ∈ ℤ$)#"."], (
+              step("1.1.4.4.2.1.1", [#"Let "#var($italic("__wit") ≔ "[]"$)#"."], (), status: "none"),
+              step("1.1.4.4.2.1.2", [#"Let "#var($italic("__varmap") ≔ "Elt"\(italic("__x1")\)$)#"."], (), status: "none"),
+              step("1.1.4.4.2.1.3", [#"Let "#var($italic("__ff") ≔ "IMPL"\("A"\("isProp", "Build_Formula"\("PEc"\("Z0"\), "OpLe", "PEX"\("xH"\)\), "tt"\), "None", "A"\("isProp", "Build_Formula"\("PEX"\("xH"\), "OpLe", "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\), "PEX"\("xH"\)\)\), "tt"\)\)$)#"."], (), status: "none"),
+              step("1.1.4.4.2.1.4", [#"The element "#fact($italic("__ff")$)#" belongs to "#fact($"BFormula"\("Formula"\(ℤ\), "isProp"\)$)#"."], (), status: "none"),
+              step("1.1.4.4.2.1.5", [#"The element "#fact($italic("__wit")$)#" belongs to "#fact($"list"\("ZArithProof"\)$)#"."], (), status: "none"),
+              step("1.1.4.4.2.1.6", [#"By definition of eq (eq_refl), we have "#claim($"true" = "true"$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+              step("1.1.4.4.2.1.7", [#"The element "#fact($"find"\("Z0", italic("__varmap")\)$)#" belongs to "#fact($"PolEnv"\(ℤ\)$)#"."], (), status: "none"),
+              step("1.1.4.4.2.1.8", [#"Applying ZTautoChecker_sound, we have "#claim($"eval_bf"\("Zeval_formula"\("find"\("Z0", italic("__varmap")\)\), italic("__ff")\)$)#"."], (), status: "ko", message: "not proved: Tauto.eval_bf (ZMicromega.Zeval_formula (VarMap.find BinNums.Z0 __varmap)) __ff"),
             ), status: "none"),
           ), status: "ok"),
-          step("1.1.4.4.3", [#"The element "#fact("BinInt.Z.of_nat n0")#" belongs to "#fact("BinNums.Z")#"."], (), status: "none"),
-          step("1.1.4.4.4", [#"By cstr we have "#claim("BinInt.Z.le BinNums.Z0 (BinInt.Z.of_nat n0)")#"."], (), status: "ok"),
+          step("1.1.4.4.3", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
+          step("1.1.4.4.4", [#"By cstr we have "#claim($"Z0" ≤ n_(0)$)#"."], (), status: "ok"),
         ), status: "ok"),
       ), status: "ok"),
-      step("1.1.5", [#"Applying div_le_upper_bound, we have "#claim("n0 / 2 <= n0")#"."], (), status: "ko", message: "not proved: n0 / 2 <= n0"),
+      step("1.1.5", [#"Applying div_le_upper_bound, we have "#claim($n_(0) class("binary", "div") 2 ≤ n_(0)$)#"."], (), status: "ko", message: "not proved: n0 / 2 <= n0"),
     ), status: "none"),
   ), status: "ko", message: "not proved: forall n0 : nat, n0 / 2 <= n0"),
-  step("2", [#"In particular "#claim("n / 2 <= n")#"."], (), status: "ok"),
+  step("2", [#"In particular "#claim($n class("binary", "div") 2 ≤ n$)#"."], (), status: "ok"),
 ))
