@@ -1,10 +1,21 @@
 # lexicon: the words of proofs, per language
 
-The data shared by a reader of proofs written in natural language (cyp)
-and a writer of such proofs (xtext): what a formula is in a step (its
-*role*), and, for each language, the phrases that give a role, the
-writer's phrases, the capital letters, and the plural rule.  Pure data,
-with the few generic predicates over it; no reading or writing logic.
+The words of proof texts in each language, shared by a reader of proofs
+written in natural language (cyp) and a writer of such proofs (xtext):
+the phrases of the writer, the phrases that announce the role of a
+formula, the capital letters, and the plural rule.  Pure data, with the
+few generic predicates over it; no reading or writing logic.
+
+The phrases no longer give roles to formulas when a text is read: in the
+format of proof texts (the tree of the 2003 paper,
+[prooftext](../prooftext/README.md#the-format)) a formula has a role only
+by its tag, `{.claim}`, `{.hyp}`, ..., and cyp reads no word.  The
+reading table `phrase` is kept for what still uses it: the links of the
+PDF and the web page (a word of the lexicon is never taken for a name,
+`lexicon-words` in prooftext's `links.elpi`), the order of the Korean
+phrases that stand after their formula (xtext's `words.elpi`), and the
+check of xtext's vocabulary (`vocab_check.v`: every phrase of a role in
+lower case).
 
 Load with `-Q lexicon Lexicon` and, in Rocq-Elpi,
 
@@ -20,8 +31,9 @@ Elpi Accumulate File lex_en.        (* then the tables, in any order *)
 - roles: `rvar` (a variable or a definition introduced), `rhyp` (a
   hypothesis), `rclaim` (a claim, proved by the step), `rfact` (a fact
   used, a mention), `rback` (a claim that replaces the goal);
-- `phrase Lang Phrase Role`: a phrase (in lower case) that gives its role
-  to a formula; `phrase-after Lang Phrase`: the phrase stands after the
+- `phrase Lang Phrase Role`: a phrase (in lower case) that announces the role
+  of a formula (no reader takes the role from it now); `phrase-after Lang
+  Phrase`: the phrase stands after the
   formula (default: before);
 - `write-role Lang Use Phrase Role` and `write-word Lang Use Words`: the
   phrases of a writer, by their use (the same uses in every language); a
@@ -54,10 +66,11 @@ each language (textbook phrasing such as "Sei ...", "Пусть ...", "设 ...",
 "ليكن ...", "Sit ..."); none of them was checked by a native speaker.
 
 The tables below are made from the files by `sh tables.sh` (phrases that
-give a role are in lower case, as they are matched; the writer
-capitalises the start of a sentence).  "side": where the phrase stands
-with respect to the formula it governs; "(none)": a word that gives no
-role.
+announce a role are in lower case, as they were matched when cyp read
+them; the writer capitalises the start of a sentence).  "side": where the
+phrase stands with respect to the formula it governs; "(none)": a word
+that gives no role; "Read only": the phrases of the reading table that
+the writer does not use (they served cyp when it read the words).
 
 Tests: `rocq c -Q . Lexicon check.v` (plural categories of en, fr, ru, ar,
 zh on sample counts; case folding).
@@ -125,6 +138,21 @@ order), then the reader's or the writer's own files.  For cyp's commands
 | left-right | من اليسار إلى اليمين | (none) | before |
 | right-left | من اليمين إلى اليسار | (none) | before |
 | not-translated | غير مترجم | (none) | before |
+| applying | بتطبيق | (none) | before |
+| to | على | (none) | before |
+| by-application | بالتطبيق | (none) | before |
+| with | مع | (none) | before |
+| the-element | العنصر | (none) | before |
+| belongs-to | ينتمي إلى | (none) | before |
+| legend-var | متغير | (none) | before |
+| legend-hyp | فرضية | (none) | before |
+| legend-claim | ادعاء | (none) | before |
+| legend-fact | حقيقة | (none) | before |
+| legend-just | تبرير | (none) | before |
+| legend-ok | مثبت | (none) | before |
+| legend-ko | غير مثبت | (none) | before |
+| legend-todo | متروك لكتلة Proof | (none) | before |
+| legend-none | لا شيء للتحقق | (none) | before |
 
 Read only: إذا كان (hyp); إن (claim); يكفي أن نثبت أن (back); هذا يكافئ (back).
 
@@ -184,6 +212,21 @@ Writing system: `clitic "ar" "و".  clitic "ar" "ف". punctuation "ar" "،".  pu
 | left-right | von links nach rechts | (none) | before |
 | right-left | von rechts nach links | (none) | before |
 | not-translated | nicht übersetzt | (none) | before |
+| applying | durch Anwendung von | (none) | before |
+| to | auf | (none) | before |
+| by-application | durch Anwendung | (none) | before |
+| with | mit | (none) | before |
+| the-element | das Element | (none) | before |
+| belongs-to | gehört zu | (none) | before |
+| legend-var | Variable | (none) | before |
+| legend-hyp | Annahme | (none) | before |
+| legend-claim | Behauptung | (none) | before |
+| legend-fact | Tatsache | (none) | before |
+| legend-just | Begründung | (none) | before |
+| legend-ok | bewiesen | (none) | before |
+| legend-ko | nicht bewiesen | (none) | before |
+| legend-todo | einem Proof-Block überlassen | (none) | before |
+| legend-none | nichts zu prüfen | (none) | before |
 
 Read only: sei (var); seien (var); wenn (hyp); falls (hyp); dann (claim); folgt (claim); wir haben (claim); es genügt zu zeigen (back); es reicht zu zeigen (back); das ist gleichbedeutend mit (back).
 
@@ -241,6 +284,21 @@ Read only: sei (var); seien (var); wenn (hyp); falls (hyp); dann (claim); folgt 
 | left-right | from left to right | (none) | before |
 | right-left | from right to left | (none) | before |
 | not-translated | not translated | (none) | before |
+| applying | applying | (none) | before |
+| to | to | (none) | before |
+| by-application | by application | (none) | before |
+| with | with | (none) | before |
+| the-element | the element | (none) | before |
+| belongs-to | belongs to | (none) | before |
+| legend-var | variable | (none) | before |
+| legend-hyp | hypothesis | (none) | before |
+| legend-claim | claim | (none) | before |
+| legend-fact | fact | (none) | before |
+| legend-just | justification | (none) | before |
+| legend-ok | proved | (none) | before |
+| legend-ko | not proved | (none) | before |
+| legend-todo | left to a Proof block | (none) | before |
+| legend-none | nothing to check | (none) | before |
 
 Read only: let (var); if (hyp); assume (hyp); suppose (hyp); from (fact); using (fact); since (fact); because (fact); for (fact); then (claim); show (claim); prove (claim); have (claim); get (claim); thus (claim); hence (claim); so (claim); obtain (claim); deduce (claim); is (claim); that is (fact); suffices (back); enough (back); equivalent to prove (back); written as (back); amounts to (back); reduces to (back); suffices to prove (back); suffices to show (back); enough to prove (back); enough to show (back); suffices to check (back); enough to check (back).
 
@@ -298,6 +356,21 @@ Read only: let (var); if (hyp); assume (hyp); suppose (hyp); from (fact); using 
 | left-right | de gauche à droite | (none) | before |
 | right-left | de droite à gauche | (none) | before |
 | not-translated | non traduit | (none) | before |
+| applying | en appliquant | (none) | before |
+| to | à | (none) | before |
+| by-application | par application | (none) | before |
+| with | avec | (none) | before |
+| the-element | l'élément | (none) | before |
+| belongs-to | appartient à | (none) | before |
+| legend-var | variable | (none) | before |
+| legend-hyp | hypothèse | (none) | before |
+| legend-claim | affirmation | (none) | before |
+| legend-fact | fait | (none) | before |
+| legend-just | justification | (none) | before |
+| legend-ok | prouvé | (none) | before |
+| legend-ko | non prouvé | (none) | before |
+| legend-todo | laissé à un bloc Proof | (none) | before |
+| legend-none | rien à vérifier | (none) | before |
 
 Read only: soit (var); soient (var); considérons (var); si (hyp); supposons (hyp); posons par hypothèse (hyp); à partir de (fact); en utilisant (fact); puisque (fact); d'après (fact); grâce à (fact); ce qui est équivalent à (fact); alors (claim); montrons (claim); prouvons (claim); nous avons (claim); on a (claim); donc (claim); ainsi (claim); d'où (claim); nous en déduisons (claim); nous déduisons (claim); nous obtenons (claim); on obtient (claim); il suffit (back); revient à (back); se réduit à (back); équivaut à montrer (back); il suffit de montrer (back); il suffit de prouver (back).
 
@@ -355,6 +428,21 @@ Read only: soit (var); soient (var); considérons (var); si (hyp); supposons (hy
 | left-right | da sinistra a destra | (none) | before |
 | right-left | da destra a sinistra | (none) | before |
 | not-translated | non tradotto | (none) | before |
+| applying | applicando | (none) | before |
+| to | a | (none) | before |
+| by-application | per applicazione | (none) | before |
+| with | con | (none) | before |
+| the-element | l'elemento | (none) | before |
+| belongs-to | appartiene a | (none) | before |
+| legend-var | variabile | (none) | before |
+| legend-hyp | ipotesi | (none) | before |
+| legend-claim | affermazione | (none) | before |
+| legend-fact | fatto | (none) | before |
+| legend-just | giustificazione | (none) | before |
+| legend-ok | dimostrato | (none) | before |
+| legend-ko | non dimostrato | (none) | before |
+| legend-todo | lasciato a un blocco Proof | (none) | before |
+| legend-none | niente da verificare | (none) | before |
 
 Read only: sia (var); siano (var); consideriamo (var); se (hyp); supponiamo (hyp); assumiamo (hyp); da (fact); usando (fact); poiché (fact); grazie a (fact); cioè (fact); allora (claim); mostriamo (claim); dimostriamo (claim); abbiamo (claim); quindi (claim); dunque (claim); ne segue (claim); ne deduciamo (claim); otteniamo (claim); basta (back); è sufficiente (back); si riduce a (back); equivale a dimostrare (back); basta dimostrare (back); basta mostrare (back); è sufficiente dimostrare (back).
 
@@ -412,6 +500,21 @@ Read only: sia (var); siano (var); consideriamo (var); se (hyp); supponiamo (hyp
 | left-right | 왼쪽에서 오른쪽으로 | (none) | before |
 | right-left | 오른쪽에서 왼쪽으로 | (none) | before |
 | not-translated | 번역되지 않음 | (none) | before |
+| applying | 적용하여 | (none) | before |
+| to | 에 | (none) | before |
+| by-application | 적용에 의해 | (none) | before |
+| with | 와 함께 | (none) | before |
+| the-element | 원소 | (none) | before |
+| belongs-to | 에 속한다 | (none) | before |
+| legend-var | 변수 | (none) | before |
+| legend-hyp | 가정 | (none) | before |
+| legend-claim | 주장 | (none) | before |
+| legend-fact | 사실 | (none) | before |
+| legend-just | 근거 | (none) | before |
+| legend-ok | 증명됨 | (none) | before |
+| legend-ko | 증명되지 않음 | (none) | before |
+| legend-todo | Proof 블록에 남김 | (none) | before |
+| legend-none | 확인할 것 없음 | (none) | before |
 
 Read only: 이면 (hyp); 임을 보이면 충분하다 (back); 로 귀결된다 (back).
 
@@ -469,6 +572,21 @@ Read only: 이면 (hyp); 임을 보이면 충분하다 (back); 로 귀결된다 
 | left-right | a sinistra ad dextram | (none) | before |
 | right-left | a dextra ad sinistram | (none) | before |
 | not-translated | non translatum | (none) | before |
+| applying | applicando | (none) | before |
+| to | ad | (none) | before |
+| by-application | per applicationem | (none) | before |
+| with | cum | (none) | before |
+| the-element | elementum | (none) | before |
+| belongs-to | pertinet ad | (none) | before |
+| legend-var | variabilis | (none) | before |
+| legend-hyp | hypothesis | (none) | before |
+| legend-claim | propositio | (none) | before |
+| legend-fact | factum | (none) | before |
+| legend-just | ratio | (none) | before |
+| legend-ok | probatum | (none) | before |
+| legend-ko | non probatum | (none) | before |
+| legend-todo | bloco Proof relictum | (none) | before |
+| legend-none | nihil probandum | (none) | before |
 
 Read only: sit (var); sint (var); si (hyp); supponamus (hyp); tum (claim); igitur (claim); sufficit ostendere (back); quod idem est ac (back).
 
@@ -526,6 +644,21 @@ Read only: sit (var); sint (var); si (hyp); supponamus (hyp); tum (claim); igitu
 | left-right | van links naar rechts | (none) | before |
 | right-left | van rechts naar links | (none) | before |
 | not-translated | niet vertaald | (none) | before |
+| applying | door toepassing van | (none) | before |
+| to | op | (none) | before |
+| by-application | door toepassing | (none) | before |
+| with | met | (none) | before |
+| the-element | het element | (none) | before |
+| belongs-to | behoort tot | (none) | before |
+| legend-var | variabele | (none) | before |
+| legend-hyp | hypothese | (none) | before |
+| legend-claim | bewering | (none) | before |
+| legend-fact | feit | (none) | before |
+| legend-just | rechtvaardiging | (none) | before |
+| legend-ok | bewezen | (none) | before |
+| legend-ko | niet bewezen | (none) | before |
+| legend-todo | overgelaten aan een Proof-blok | (none) | before |
+| legend-none | niets te controleren | (none) | before |
 
 Read only: zij (var); laat (var); als (hyp); stel (hyp); dan (claim); hebben we (claim); geldt (claim); het volstaat te bewijzen dat (back); het volstaat te bewijzen (back); dit komt neer op (back).
 
@@ -583,6 +716,21 @@ Read only: zij (var); laat (var); als (hyp); stel (hyp); dan (claim); hebben we 
 | left-right | слева направо | (none) | before |
 | right-left | справа налево | (none) | before |
 | not-translated | не переведено | (none) | before |
+| applying | применяя | (none) | before |
+| to | к | (none) | before |
+| by-application | применением | (none) | before |
+| with | с | (none) | before |
+| the-element | элемент | (none) | before |
+| belongs-to | принадлежит | (none) | before |
+| legend-var | переменная | (none) | before |
+| legend-hyp | гипотеза | (none) | before |
+| legend-claim | утверждение | (none) | before |
+| legend-fact | факт | (none) | before |
+| legend-just | обоснование | (none) | before |
+| legend-ok | доказано | (none) | before |
+| legend-ko | не доказано | (none) | before |
+| legend-todo | оставлено блоку Proof | (none) | before |
+| legend-none | нечего проверять | (none) | before |
 
 Read only: если (hyp); то (claim); достаточно доказать, что (back); достаточно доказать (back); что равносильно (back).
 
@@ -642,6 +790,21 @@ Writing system: `punctuation "ru" "«".  punctuation "ru" "»". `
 | left-right | 从左到右 | (none) | before |
 | right-left | 从右到左 | (none) | before |
 | not-translated | 未翻译 | (none) | before |
+| applying | 将 | (none) | before |
+| to | 应用于 | (none) | before |
+| by-application | 由应用 | (none) | before |
+| with | 以 | (none) | before |
+| the-element | 元素 | (none) | before |
+| belongs-to | 属于 | (none) | before |
+| legend-var | 变量 | (none) | before |
+| legend-hyp | 假设 | (none) | before |
+| legend-claim | 断言 | (none) | before |
+| legend-fact | 事实 | (none) | before |
+| legend-just | 依据 | (none) | before |
+| legend-ok | 已证明 | (none) | before |
+| legend-ko | 未证明 | (none) | before |
+| legend-todo | 留给 Proof 块 | (none) | before |
+| legend-none | 无需检查 | (none) | before |
 
 Read only: 若 (hyp); 如果 (hyp); 则 (claim); 那么 (claim); 可得 (claim); 只需证明 (back); 即证 (back).
 
