@@ -13,7 +13,7 @@
 % [run Options Goal]: Goal interpreted under Options; one success per
 % solution; on the final failure, the explanation of the deepest failure.
 % When the program has CHR rules, the runner of their goals is suspended
-% first, under the local clauses of the run (chr.elpi).
+% first, under the local clauses of the run (chr-hooks.elpi).
 pred run i:list option, o:(pred).
 run Options Goal :-
   seed-random Options,

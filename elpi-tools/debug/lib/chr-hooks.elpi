@@ -1,0 +1,187 @@
+% chr-hooks.elpi: what elpi-debug needs from Elpi's CHR engine and does
+% not find there, as a small interface, written here as STAND-INS until
+% Elpi has it (../ELPI-WISHLIST.md, §4-§6).  The display of CHR at work
+% (chr.elpi) and the delay port (natives.elpi) go through this interface
+% only; with the requested features, this file and the rewriting of the
+% CHR rules by the driver (../bin/chr_in_view.ml) would go, or shrink to a
+% few lines.
+%
+% THE INTERFACE
+%
+% - [start-rule-runner-if-needed]: called once at the start of [run]
+%   (interpreter.elpi), under the local clauses of the run.  A goal of a
+%   rule that fires is then run by [run-rule-goal Loc G] (chr.elpi), in
+%   the interpreter, with the program of the run.  (§4: with a rule's goal
+%   run in the current program, the driver would write the goal N of a
+%   rule as [run-rule-goal Loc N] directly.)
+% - [take-rule-notes Ns]: the attempts of rules since the last call, oldest
+%   first: [tried Loc Kept Ks] (the rule at Loc tried on the constraints
+%   numbered Ks, keeping the first Kept), [guard-held] (the attempt just
+%   noted fires), [declared-at D] (a constraint declared at depth D, where
+%   the attempts after it are shown).  [note-declaration Ctx]: a
+%   constraint is about to be declared in the context Ctx (natives.elpi,
+%   [delay]).  (§5: an event on each attempt and its outcome.)
+% - [suspended-as K]: a local clause that [delay] installs around
+%   declare_constraint, so that the suspended goal carries its number K.
+%   [program-store Gs]: the goals of the store, each with its number, as
+%   pairs [pr K G], most recent first; [store-readable]: the driver can
+%   read the store.  (§6: the identity of a suspended goal, and the store
+%   readable from Elpi.)
+%
+% THE STAND-INS (below), and what they cost
+%
+% - §4.  Elpi runs the goal of a rule with its static program only (elpi
+%   4.0.0, runtime.ml, try_fire_rule: [initial_program]), where the local
+%   clauses of [run] (the compiled rules, the options, the state), and so
+%   the bridges, are missing.  The goal is handed to a runner: a goal
+%   suspended at the start of the run, so with the program of [run],
+%   which Elpi gives back to a woken goal.  The handing goes through CHR
+%   itself, since a rule's goal reaches nothing of the run but the store.
+%   Cost: the runner and its requests are constraints of the store
+%   (hidden by [program-store], seen by print_constraints).
+% - §5.  Elpi tells nothing of the rules it tries.  The driver rewrites
+%   the guard G of each rule as [rule-tried Loc Kept Contexts, G,
+%   rule-guard-held]: the notes of the attempt and of its outcome.  A
+%   guard runs in a runtime of its own, with the static program only and
+%   the variables of the constraints frozen: its notes go to a queue of
+%   the driver (OCaml builtins), which the interpreter takes after the
+%   propagation.  Not seen: the attempts whose heads do not match (Elpi
+%   filters them before the guard); seen late: a stop at an attempt comes
+%   after the propagation, the constraints removed already gone.
+% - §6.  A suspended goal has no identity that Elpi code can read.  The
+%   driver adds [suspended-as] to the context filter of each constraint
+%   block, so that the context of a constraint holds the number of its
+%   suspension: the guards read it there ([context-suspension]), and the
+%   store, read by an OCaml builtin of the driver (API.RawData.constraints)
+%   since Elpi has no builtin for it, gives it with each goal.  Cost: the
+%   context of a constraint holds [suspended-as K] (seen by
+%   print_constraints, and by a rule that names the context of a
+%   constraint).
+
+
+% ===== §6. The number of a suspension ===================================================
+
+% [suspended-as K]: the goal suspended in this context has the number K
+% (0 on the fast path, where suspensions are not numbered).  A local
+% clause installed by [delay] around declare_constraint, so that it is in
+% the context of the constraint: the guards of the rules and the store
+% read it there.
+pred suspended-as o:int.
+
+% [context-suspension C K]: the number K of the suspension of the
+% constraint whose context is C (the innermost [suspended-as]: Elpi lists
+% the most recent clause first); 0 when it has none (a constraint declared
+% by native code, or on the fast path).
+pred context-suspension i:list (pred), o:int.
+context-suspension C K :- std.mem C (suspended-as K1), !, K = K1.
+context-suspension _ 0.
+
+% ===== §4. The goals of the rules, handed to a runner =====================================
+%
+% The goal G of a rule becomes the constraint [rule-goal-request Loc G],
+% which the rule below matches with the runner [rule-runner T]; its goal
+% binds T, which wakes the runner, which runs G in the interpreter.  Both
+% are suspended on _ (all such constraints share one key, and CHR only
+% matches constraints that share a key), the runner also on T.
+
+data rule-order.
+symb run-goal reflect.srcloc -> (pred) -> rule-order.   % run the goal of the rule at Loc
+
+% [hand-rule-goal Loc G]: the goal G of the rule at Loc, handed to the
+% runner (the goal of each CHR rule of the program, as the driver writes it).
+func hand-rule-goal reflect.srcloc, (pred).
+hand-rule-goal Loc G :- declare_constraint (rule-goal-request Loc G) [_].
+
+% [rule-goal-request Loc G]: the request to run G (a constraint only).
+func rule-goal-request reflect.srcloc, (pred).
+
+% [rule-runner T]: the runner, suspended on T; woken with T bound to
+% [run-goal Loc G], it suspends itself again on a new variable (for the
+% next request: one may come while G runs) and runs G, to its first
+% solution (Elpi checks that the goal of a rule is a function: it has no
+% other).
+func rule-runner rule-order.
+rule-runner (run-goal Loc G) :- start-rule-runner, run-rule-goal Loc G, !.
+
+constraint rule-runner rule-goal-request {
+  rule (rule-runner T) \ (rule-goal-request Loc G) <=> (T = run-goal Loc G).
+}
+
+% [start-rule-runner]: suspend the runner (at the start of [run], when the
+% program has CHR rules).
+func start-rule-runner.
+start-rule-runner :- declare_constraint (rule-runner T) [T, _].
+
+% [start-rule-runner-if-needed]: the runner, if the program has CHR rules.
+pred start-rule-runner-if-needed.
+start-rule-runner-if-needed :- reflect.chr-rule _ _ _ _ _ _ _ _, !, start-rule-runner.
+start-rule-runner-if-needed.
+
+% [own-constraint G]: G is a constraint of the runner, not of the program.
+pred own-constraint i:any.
+own-constraint (rule-runner _).
+own-constraint (rule-goal-request _ _).
+
+% ===== §5. The attempts, noted by the guards =============================================
+%
+% The steps added to a guard read the contexts of the constraints (which
+% hold their numbers), bind nothing of the rule, declare no constraint,
+% and always succeed: the rule behaves as before.
+
+data rule-note.
+symb tried reflect.srcloc -> int -> list int -> rule-note.
+                    % the rule at Loc tried on the constraints numbered Ks,
+                    % of which it keeps the first Kept (and removes the others if it fires)
+symb guard-held rule-note.   % the guard of the attempt just noted held: the rule fires
+symb declared-at int -> rule-note.
+                    % a constraint is declared at this depth (the attempts after it
+                    % are shown there, [delay], natives.elpi)
+
+% [note-rule N], [take-rule-notes Ns]: keep a note, take the notes kept
+% (oldest first).  No clause here: the driver elpi-debug (../bin) adds
+% them, on its queue.
+pred note-rule i:rule-note.
+pred take-rule-notes o:list rule-note.
+
+% [rule-tried Loc Kept Contexts]: the first step of the guard of the rule
+% at Loc: the note of its attempt on the constraints whose contexts are
+% Contexts.
+pred rule-tried i:reflect.srcloc, i:int, i:list (list (pred)).
+rule-tried Loc Kept Contexts :- std.map Contexts context-suspension Ks, note-rule (tried Loc Kept Ks), !.
+rule-tried _ _ _.
+
+% [rule-guard-held]: the last step of the guard: it held.
+pred rule-guard-held.
+rule-guard-held :- note-rule guard-held, !.
+rule-guard-held.
+
+% [note-declaration Ctx]: a constraint is about to be declared in the
+% context Ctx (with events: its depth is where the attempts it leads to
+% are shown).
+:nooc
+pred note-declaration o:ctx.
+note-declaration _ :- quiet, !.
+note-declaration (ctx D _) :- note-rule (declared-at D), !.
+note-declaration _.
+
+% ===== §6. The store, read by the driver ==================================================
+
+% [constraint-store Gs]: the goals suspended in Elpi's store, each with
+% the number of its suspension ([suspended-as] in its context, 0 if none),
+% as pairs; a goal suspended under binders left since comes under as many
+% λs.  No clause here: the driver elpi-debug adds it, on its builtin.
+pred constraint-store o:list (pair int any).
+
+% [store-readable]: the driver gives the store.
+pred store-readable.
+store-readable :- not (not (constraint-store _)).
+
+% [program-store Gs]: the store, the runner left out.  Reading the store
+% may bind (Elpi lowers the level of a variable of a goal suspended deeper
+% than here): its callers undo that by failing ([show-store], [store-json]).
+pred program-store o:list (pair int any).
+program-store Gs :- constraint-store All, !, std.filter All program-constraint Gs.
+
+% [program-constraint G]: the stored goal G is one of the program.
+pred program-constraint i:pair int any.
+program-constraint (pr _ G) :- not (own-constraint G).

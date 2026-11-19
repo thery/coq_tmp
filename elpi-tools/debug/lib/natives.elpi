@@ -48,7 +48,7 @@ run-native Ctx Entry G :- (current-ctx Entry Ctx => G).
 % [delay Ctx G Keys]: G suspended on Keys by the real declare_constraint,
 % so that the CHR rules see the same constraints and fire natively.  The
 % suspension gets a number, in force as [suspended-as K] in its context
-% (chr.elpi); when G is woken, its bridge brings it back into the
+% (chr-hooks.elpi); when G is woken, its bridge brings it back into the
 % interpreter, where it enters through the resume port with that number
 % (ECLiPSe's DELAY and RESUME ports).  The attempts of the CHR rules that
 % the new constraint led to are shown after it (chr.elpi).
