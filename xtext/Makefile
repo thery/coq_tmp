@@ -1,7 +1,7 @@
 # Build the command and regenerate the examples (examples/*.md).
 ROCQ = rocq c -R . XText -Q ../lexicon Lexicon -Q ../prooftext ProofText
 
-all: ExtractText.vo paper.vo lemmas.vo inductive.vo thesis.vo stdlib.vo elim_type.vo partial.vo vocab_check.vo selection.vo subproofs.vo multilingual.vo typst_examples.vo implicit_motive.vo reals.vo
+all: ExtractText.vo paper.vo lemmas.vo inductive.vo thesis.vo stdlib.vo elim_type.vo partial.vo vocab_check.vo selection.vo subproofs.vo multilingual.vo typst_examples.vo implicit_motive.vo reals.vo printed.vo
 
 ../prooftext/Tactics.vo:
 	cd ../prooftext && rocq c -Q . ProofText Tactics.v
@@ -50,6 +50,9 @@ implicit_motive.vo: implicit_motive.v test-helpers.elpi ExtractText.vo lemmas.vo
 
 reals.vo: reals.v ExtractText.vo
 	$(ROCQ) reals.v
+
+printed.vo: printed.v ExtractText.vo lemmas.vo thesis.vo
+	$(ROCQ) printed.v
 
 clean:
 	rm -f *.vo *.vok *.vos *.glob .*.aux

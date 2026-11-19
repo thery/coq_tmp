@@ -15,7 +15,8 @@ papers (in development):
   lightweight approach to adding formal structure to proofs* (UITP).
 - [xtext/](xtext/README.md): **text from proofs**.  A Rocq-Elpi command,
   `ExtractText foo.`, that writes the proof term of `foo` as a coarse but
-  faithful text in cyp's format.  After Coscoy, Kahn and Théry,
+  faithful text: printed as plain text, written to a file (`ExtractText
+  foo to "foo.md".`) in cyp's format.  After Coscoy, Kahn and Théry,
   *Extracting Text from Proofs* (TLCA 1995), and Yann Coscoy's thesis
   (2000): its staged translation (chapters 2-4, up to the named
   intermediate results) and inductive types ([THESIS.md](xtext/THESIS.md)).

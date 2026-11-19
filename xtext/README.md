@@ -6,18 +6,43 @@ G. Kahn, L. Théry, TLCA 1995, section 3.1), extended to inductive types
 after chapter 6 of Y. Coscoy's thesis *Explication textuelle de preuves
 pour le calcul des constructions inductives* (Nice, 2000).  The text is
 coarse but faithful: one list item per step, every formula of the proof in
-backticks in Rocq syntax, and the rule or lemma used by each step.  It is
-meant to be rewritten into fluent prose later (by hand or by an LLM), and
-it is written in the Markdown format of [cyp](../cyp/README.md), so that
-cyp can check it again.
+Rocq syntax, and the rule or lemma used by each step.  It is meant to be
+rewritten into fluent prose later (by hand or by an LLM).  Written to a
+file, it is in the Markdown format of [cyp](../cyp/README.md), so that cyp
+can check it again.
 
 ```coq
 From XText Require Import ExtractText.
-ExtractText foo.                                (* prints the text *)
-ExtractText foo to "examples/foo.md".           (* writes it to a file *)
-ExtractText foo to "examples/fr/foo.md" in "fr".   (* in French; also it de nl ru zh ar ko la *)
+ExtractText foo.                                (* prints the text, as plain text *)
+ExtractText foo in "fr".                        (* in French; also it de nl ru zh ar ko la *)
+#[tags] ExtractText foo.                        (* prints it in the format of proof texts *)
+ExtractText foo to "examples/foo.md".           (* writes it to a file, in that format *)
+ExtractText foo to "examples/fr/foo.md" in "fr".   (* the same in French *)
 ExtractText foo to "foo.typ".                   (* in Typst, for a PDF: ../prooftext/pdf.sh foo.typ *)
 ```
+
+The two forms of a text.  The text that `ExtractText foo.` prints (in
+Rocq's messages, the goals panel) is for a reader, close to Coscoy's
+output: plain text, the formulas in Rocq syntax without backticks, the
+justifications without markup, no header and no title; the list of the
+steps stays:
+
+```
+Let n : nat. We prove n + 0 = n.
+
+- We prove n + 0 = n by induction on n (nat, nat_ind):
+  - Case 1 (base): we prove 0 = 0.
+    - By definition of eq (eq_refl), we have 0 = 0.
+```
+
+A file (`to "foo.md"`), and the text printed with the attribute
+`#[tags]` (`#[tags] ExtractText foo in "fr".` in French), are in the
+format of proof texts, with its header, its title and its classes
+(`` `n : nat`{.var} ``, `*eq_refl*{.just}`): the form that cyp, the Typst
+writer and the gallery read.  Both are written by the same writer
+(`prooftext.write-document-as`, the markup being a parameter);
+`printed.v` tests them, in the ten languages.  `ExtractText_partial`
+prints in the same way.
 
 Proofs ending with `Qed` work too: the body is read with
 `coq.env.const-body`, which rocq-elpi gives even for opaque
@@ -88,6 +113,8 @@ Examples and checks:
   see "The PDF of a text");
 - `vocab_check.v`: the vocabulary of each language, and the tactic names
   that xtext writes (they must be prooftext's);
+- `printed.v`: the two forms of a text, plain (printed) and tagged
+  (`#[tags]`, the files), in the ten languages;
 - `selection.v`: the selection of type annotations (thesis 4.3.1) on
   ABCD (Fig. 4.24), Trans_Inv and one term per rule (Fig. 4.11): each
   selected term is checked against the expected one;

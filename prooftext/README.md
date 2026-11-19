@@ -199,7 +199,8 @@ that names no formula in scope).
   Place Text Sub-steps Closing` with its closing paragraph, a `place` (`lines
   First Last`, the lines of a text in its file, numbered from 0, given by
   a reader; `unplaced` for a text being written), the writer
-  `write-document D Text`, and the number of a step, `step-number Parent
+  `write-document D Text` (and `write-document-as Markup D Text`, the
+  markup `tagged` or `untagged`: plain text), and the number of a step, `step-number Parent
   K Number` (Dewey notation, `2.1` the first sub-step of step 2: cyp
   numbers its nodes with it, the Typst writer its steps);
 - `tree.elpi`: the reader, `read-tree File T` and `lines-tree Lines T`,
@@ -262,8 +263,15 @@ header lines, an empty line, `# Name`, an empty line, the statement on one
 line, an empty line, then one line per step, `- Text`, the sub-steps of a
 step below it with two more spaces of indentation, and the closing
 paragraph of a `closed-step` after its sub-steps, after an empty line,
-indented as the text of its step; `Text` ends with a newline.  The places are not used.  A writer gives each step its text in
-one line; xtext also ends each with a punctuation mark.
+indented as the text of its step; `Text` ends with a newline.  The places
+are not used.  A writer gives each step its text in one line; xtext also
+ends each with a punctuation mark.
+
+`write-document-as untagged D Text` writes the same lines as plain text,
+for a reader (the text xtext prints): no header and no title, each
+formula without its backticks and its class, each justification without
+its emphasis (`plain-text`, formulas.elpi); `write-document D Text` is
+`write-document-as tagged D Text`.
 
 ## Reading a proof text (the reader's contract)
 

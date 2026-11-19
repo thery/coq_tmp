@@ -113,6 +113,17 @@ extract-text Name D :-
   coq.gref->path GR Path,
   proof-text Name Path Bo1 CTy D.
 
+% [say-document D]: the document D printed: as plain text (no header, no
+% title, no markup: prooftext.write-document-as untagged), or in Markdown
+% with its classes when the command has the attribute #[tags]; a file
+% is always written with them (cyp, the Typst writer and the gallery
+% read them)
+pred say-document i:prooftext.document.
+say-document D :-
+  attributes A, coq.parse-attributes A [att "tags" bool] Opts, !,
+  (if (std.mem! Opts (get-option "tags" tt)) (M = prooftext.tagged) (M = prooftext.untagged)),
+  prooftext.write-document-as M D T, coq.say T.
+
 % The vocabulary of the writer in language L (the lexicon): every use of
 % English has a phrase in L, and every phrase of a role is in lower case
 % (as the phrases of the lexicon are matched).  The failures are in Bad.

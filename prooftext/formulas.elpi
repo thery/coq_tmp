@@ -144,4 +144,26 @@ plain-parts Text Parts :-
   std.append BeforeParts [by-part J | AfterParts] Parts.
 plain-parts Text [plain Text].
 
+% ------------------------------------------------------------------
+% Plain text: a text without its markup (write-document-as untagged,
+% document.elpi), for a reader: each formula as it is written, without
+% its backticks and its class (the name given to it stays, (h)), each
+% tagged name and justification without its emphasis
+
+shown-text prooftext.untagged Text Shown :- plain-text Text Shown.
+
+% [plain-text Text Shown]: the text Text of a node without its markup
+pred plain-text i:string, o:string.
+plain-text Text Shown :-
+  text-parts Text Parts, std.map Parts plain-part Ss, std.string.concat "" Ss Shown.
+
+% [plain-part P S]: the part P without its markup
+pred plain-part i:text-part, o:string.
+plain-part (plain S) S.
+plain-part (formula-part _ F none) F.
+plain-part (formula-part _ F (some N)) S :- S is F ^ " (" ^ N ^ ")".
+plain-part (term-part _ T N) S :- coq.term->string T F, plain-part (formula-part "" F N) S.
+plain-part (tagged-name _ X) X.
+plain-part (by-part J) S :- S is "by " ^ J.
+
 }

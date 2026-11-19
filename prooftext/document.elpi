@@ -60,15 +60,53 @@ step-number P K N :- N is P ^ "." ^ {std.any->string K}.
 
 % ------------------------------------------------------------------
 % Writing
+%
+% A document is written with its markup (the files: cyp, the Typst
+% writer and the gallery read them), or as plain text, for a reader (the
+% text xtext prints): no header, no title, the formulas without backticks
+% and classes, the justifications without emphasis (plain-text,
+% formulas.elpi); the list of the steps stays.
+
+kind markup type.
+type tagged markup.     % Markdown with the classes of the format
+type untagged markup.   % plain text
 
 % [write-document D Text]: the Markdown text of D, ending with a newline
 pred write-document i:document, o:string.
-write-document (document Fields Name _ Statement Steps) Text :-
-  prooftext.header-lines Fields Header,
+write-document D Text :- write-document-as tagged D Text.
+
+% [write-document-as M D Text]: the text of D with the markup M, ending
+% with a newline
+pred write-document-as i:markup, i:document, o:string.
+write-document-as M (document Fields Name _ Statement0 Steps0) Text :-
+  shown-text M Statement0 Statement,
+  std.map Steps0 (shown-step M) Steps,
   step-lines "" Steps Lines,
-  std.append Header ["", {calc ("# " ^ Name)}, "", Statement, "" | Lines] All,
+  document-start M Fields Name Start,
+  std.append Start [Statement, "" | Lines] All,
   std.string.concat "\n" All Text0,
   Text is Text0 ^ "\n".
+
+% [document-start M Fields Name Lines]: the lines before the statement:
+% the header and the title for the markup, none for plain text
+pred document-start i:markup, i:list prooftext.field, i:string, o:list string.
+document-start tagged Fields Name Lines :-
+  prooftext.header-lines Fields Header,
+  std.append Header ["", {calc ("# " ^ Name)}, ""] Lines.
+document-start untagged _ _ [].
+
+% [shown-step M S T]: the step S with its texts in the markup M
+pred shown-step i:markup, i:step, o:step.
+shown-step M (step P Text0 Sub0) (step P Text Sub) :-
+  shown-text M Text0 Text, std.map Sub0 (shown-step M) Sub.
+shown-step M (closed-step P Text0 Sub0 Closing0) (closed-step P Text Sub Closing) :-
+  shown-text M Text0 Text, std.map Sub0 (shown-step M) Sub,
+  shown-text M Closing0 Closing.
+
+% [shown-text M Text Shown]: the text of a node in the markup M; plain
+% text has its clauses in formulas.elpi, which reads the formulas
+pred shown-text i:markup, i:string, o:string.
+shown-text tagged Text Text.
 
 % [step-lines Indent Steps Lines]: the list items of Steps, the sub-steps
 % of a step below it, indented by two more spaces, then its closing

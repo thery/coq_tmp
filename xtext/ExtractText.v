@@ -1,11 +1,14 @@
 (* The command [ExtractText foo.]: print the proof of [foo] as text, after the
-   basic transducer of "Extracting Text from Proofs" (TLCA 1995).
+   basic transducer of "Extracting Text from Proofs" (TLCA 1995): plain
+   text, formulas in Rocq syntax; [#[tags] ExtractText foo.] prints it in
+   the format of proof texts, its formulas and justifications tagged.
    [ExtractText foo to "foo.md".] writes the text to the file foo.md.
    [ExtractText foo to "foo.md" in "fr".]: the same in French (the languages of
    the lexicon: en, fr, it, de, nl, ru, zh, ar, ko, la).
    [ExtractText foo to "foo.typ".]: the text in Typst, for its PDF
    (../prooftext/pdf.sh foo.typ).
-   [ExtractText_partial.], inside a proof, prints the proof so far. *)
+   [ExtractText_partial.], inside a proof, prints the proof so far (with
+   #[tags], tagged). *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
 (* the bounded searches shared with cyp (bounded_firstorder) *)
@@ -164,9 +167,6 @@ Elpi Accumulate lp:{{
   % G with the switches, the language being L (the "in" of the command)
   pred in-language i:string, i:prop.
   in-language L G :- with-switches (with-switch "lang" "the command" L G).
-  % the document D printed in Markdown
-  pred say-document i:prooftext.document.
-  say-document D :- prooftext.write-document D T, coq.say T.
   % the document D written to the file F: in Typst if F ends with .typ,
   % else in Markdown (prooftext.write-as)
   pred write-text i:string, i:prooftext.document.
@@ -197,7 +197,7 @@ Elpi Accumulate lp:{{
     coq.say "ExtractText_partial: written" F.
   main-interp-qed _ _ P _ Name :-
     (if (var Name) (N = "proof") (N = Name)),
-    with-switches (extract-text-partial N P D), prooftext.write-document D T, coq.say T.
+    with-switches (extract-text-partial N P D), say-document D.
 }}.
 #[proof="end"]
 Elpi Export ExtractText_partial.
