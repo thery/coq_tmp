@@ -261,7 +261,7 @@ forced-fail Exited Box :- resumed-by-request Exited Box.
 :nooc
 pred box-ports i:safe, o:box.
 box-ports Exited Box :-
-  call-port-marked Box Mark, solutions Box, stash_in_safe Exited "exited", exit-or-redo Mark Box.
+  call-port-marked Box Mark, solutions-from Mark Box, stash_in_safe Exited "exited", exit-or-redo Mark Box.
 box-ports Exited Box :-
   port fail-port Box, note-failure-if-first Exited Box, fail.
 
