@@ -22,8 +22,13 @@
 # 7. the round, when cyp is built (../../cyp/_build/default/bin/cyp.exe):
 #    a text of xtext checked by cyp now, then its PDF; cyp's sqrt_square
 #    (real numbers) checked, then its PDF and HTML page.
+# 8. the links, on a small gallery (gallery.sh) of four pages: the names
+#    of ABCD link to their steps (HTML anchors, PDF destinations), a
+#    justification and a lemma link to their documentation, each page
+#    links to the index, to the same text in French and checked by cyp,
+#    and back; the legend.
 #
-# Needs: the opam switch elpi5, typst; xtext built (cd xtext && make).
+# Needs: the opam switch elpi5, typst, qpdf; xtext built (cd xtext && make).
 # typst (a snap) reads and writes only under the home directory, not /tmp.
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
@@ -153,4 +158,39 @@ if [ -x "$cyp" ] && [ -f "$repo/cyp/vernac/Cyp.vo" ]; then
 else
   echo "skipped: cyp is not built (cd cyp && dune build ./bin/cyp.exe; cd vernac && rocq c ... Cyp.v)"
 fi
+
+echo "8. the links: a small gallery (gallery.sh), in tests/out/gallery"
+gallery=$out/gallery
+sh "$prooftext/gallery.sh" "$gallery" \
+  "xtext:English:$xtext_flags:$repo/xtext/examples/ABCD.md $repo/xtext/examples/or_commut.md" \
+  "xtext-languages:Languages:$xtext_flags:$repo/xtext/examples/fr/or_commut.md" \
+  "xtext-checked:Checked:$xtext_flags:$repo/xtext/cyp-check/or_commut.checked.md" > "$out/gallery.log" 2>&1 \
+  || { cat "$out/gallery.log"; exit 1; }
+[ -s "$gallery/failures.txt" ] && { echo "FAIL gallery:"; cat "$gallery/failures.txt"; exit 1; }
+# [has FILE TEXT WHAT]: FILE has the text TEXT
+has() { grep -qF "$2" "$1" || { echo "FAIL $3: no $2 in ${1#$out/}"; exit 1; }; echo "ok   $3"; }
+# the names of ABCD (h1 ... h4, given in its statement) link to it: each
+# link #loc-N of the page has its anchor id="loc-N"
+page=$gallery/xtext/ABCD.html
+has "$page" 'href="#loc-' "names linked to their steps (HTML)"
+for target in $(grep -o 'href="#loc-[0-9]*"' "$page" | sed 's/href="#\(.*\)"/\1/' | sort -u); do
+  grep -q "id=\"$target\"" "$page" || { echo "FAIL HTML ABCD: no anchor $target"; exit 1; }
+done
+echo "ok   every link to a name has its anchor (HTML)"
+qpdf --qdf --object-streams=disable "$gallery/xtext/ABCD.pdf" "$out/ABCD.qdf.pdf"
+has "$out/ABCD.qdf.pdf" "/Dest" "names linked to their steps (PDF)"
+# a justification and a lemma of the corelib, linked to their documentation
+has "$gallery/xtext/or_commut.typ" '#by("Corelib.Init.Logic.or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")' \
+  "justification linked to its documentation"
+has "$gallery/xtext/or_commut.html" 'href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind"' \
+  "lemma in the text linked to its documentation (HTML)"
+# the links between the pages: index, other languages, checked by cyp, and back
+has "$gallery/xtext/or_commut.html" '<a href="../index.html">index</a>' "page to the index"
+has "$gallery/xtext/or_commut.html" '<a href="../xtext-languages/fr/or_commut.html">fr</a>' "page to its other languages"
+has "$gallery/xtext-languages/fr/or_commut.html" '<a href="../../xtext/or_commut.html">en</a>' "and back"
+has "$gallery/xtext/or_commut.html" '<a href="../xtext-checked/or_commut.checked.html">checked by cyp</a>' "page to its checked text"
+has "$gallery/xtext-checked/or_commut.checked.html" '<a href="../xtext/or_commut.html">not checked</a>' "and back"
+qpdf --qdf --object-streams=disable "$gallery/xtext/or_commut.pdf" "$out/or_commut.qdf.pdf"
+has "$out/or_commut.qdf.pdf" "/URI (../xtext-checked/or_commut.checked.pdf)" "PDF to the checked PDF"
+has "$gallery/xtext/or_commut.html" '<footer class="legend">' "legend (HTML)"
 echo "all ok"

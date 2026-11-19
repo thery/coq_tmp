@@ -8,19 +8,21 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∨ B$)#" "#name("h")#". We prove "#claim($B ∨ A$)#"."]
+#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∨ B$)#" "#name("h", label: "statement:h")#". We prove "#claim($B ∨ A$)#"."]
 
 #steps((
-  step("1", [#"We prove "#fact($B ∨ A$)#" by case analysis on "#fact($A ∨ B$)#" "#name("h")#" (or, or_ind):"], ()),
+  step("1", [#"We prove "#fact($B ∨ A$)#" by case analysis on "#fact($A ∨ B$)#" "#name("h", target: "statement:h")#" ("#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#", "#cited("or_ind", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind")#"):"], ()),
   step("2", [#"Case 1: we prove "#claim($A → B ∨ A$)#"."], (
-    step("2.1", [#"Assume "#hyp($A$)#" "#name("i")#"."], (
-      step("2.1.1", [#"By definition of or (or_intror), from "#fact($A$)#" "#name("i")#" we deduce "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_intror")#"."], ()),
+    step("2.1", [#"Assume "#hyp($A$)#" "#name("i", label: "2.1:i")#"."], (
+      step("2.1.1", [#"By definition of "#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#" ("#cited("or_intror", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")#"), from "#fact($A$)#" "#name("i", target: "2.1:i")#" we deduce "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")#"."], ()),
     )),
   )),
   step("3", [#"Case 2: we prove "#claim($B → B ∨ A$)#"."], (
-    step("3.1", [#"Assume "#hyp($B$)#" "#name("j")#"."], (
-      step("3.1.1", [#"By definition of or (or_introl), from "#fact($B$)#" "#name("j")#" we deduce "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_introl")#"."], ()),
+    step("3.1", [#"Assume "#hyp($B$)#" "#name("j", label: "3.1:j")#"."], (
+      step("3.1.1", [#"By definition of "#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#" ("#cited("or_introl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_introl")#"), from "#fact($B$)#" "#name("j", target: "3.1:j")#" we deduce "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_introl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_introl")#"."], ()),
     )),
   )),
   step("4", [#"We have "#claim($B ∨ A$)#" in all cases."], ()),
 ))
+
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),))

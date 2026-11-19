@@ -9,6 +9,7 @@ From Stdlib Require Import Reals ZArith List.
 From ProofText Extra Dependency "maths-table.elpi" as pt_maths_table.
 From ProofText Extra Dependency "maths.elpi" as pt_maths.
 From ProofText Extra Dependency "maths-typst.elpi" as pt_maths_typst.
+From ProofText Extra Dependency "links.elpi" as pt_links.
 From ProofText Extra Dependency "typst.elpi" as pt_typst.
 From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
 From ProofText Extra Dependency "header.elpi" as pt_header.
@@ -18,7 +19,7 @@ From ProofText Extra Dependency "checked.elpi" as pt_checked.
 
 Elpi Command prooftext_check_maths.
 Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_checked
-  pt_maths_table pt_maths pt_maths_typst pt_typst.
+  pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   % [formula Scope Declarations F Wanted]: F gives the code Wanted
   pred formula i:string, i:list string, i:string, i:string.

@@ -207,7 +207,10 @@ prooftext shares with xtext
 ([../prooftext](../prooftext/README.md#the-pdf-of-a-proof-text-typst)):
 each step has its status as a coloured mark (✔ proved, ✘ not proved, ◆
 left to a Proof block, ▫ nothing to check), cyp's message in a box under
-it, and its number in the margin, the number of its conditions.  The
+it, and its number in the margin, the number of its conditions; the
+legend at the end recalls the marks and the looks of the roles, and the
+names (h) and the lemmas are links (to their steps, to their
+documentation).  The
 formulas have the style of their role when the text gives their class
 (`{.claim}`, as xtext's texts do); a formula without a class is shown
 without a role, since the PDF does not guess roles from the words, as cyp

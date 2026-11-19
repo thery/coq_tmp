@@ -14,6 +14,16 @@
    rocq c -Q ../lexicon Lexicon -Q . ProofText Typst.v *)
 From elpi Require Import elpi.
 From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
+From Lexicon Extra Dependency "lang_en.elpi" as lex_en.
+From Lexicon Extra Dependency "lang_fr.elpi" as lex_fr.
+From Lexicon Extra Dependency "lang_it.elpi" as lex_it.
+From Lexicon Extra Dependency "lang_de.elpi" as lex_de.
+From Lexicon Extra Dependency "lang_nl.elpi" as lex_nl.
+From Lexicon Extra Dependency "lang_ru.elpi" as lex_ru.
+From Lexicon Extra Dependency "lang_zh.elpi" as lex_zh.
+From Lexicon Extra Dependency "lang_ar.elpi" as lex_ar.
+From Lexicon Extra Dependency "lang_ko.elpi" as lex_ko.
+From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
@@ -21,11 +31,13 @@ From ProofText Extra Dependency "checked.elpi" as pt_checked.
 From ProofText Extra Dependency "maths-table.elpi" as pt_maths_table.
 From ProofText Extra Dependency "maths.elpi" as pt_maths.
 From ProofText Extra Dependency "maths-typst.elpi" as pt_maths_typst.
+From ProofText Extra Dependency "links.elpi" as pt_links.
 From ProofText Extra Dependency "typst.elpi" as pt_typst.
 
 Elpi Command Typst.
-Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_checked
-  pt_maths_table pt_maths pt_maths_typst pt_typst.
+Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de lex_nl lex_ru lex_zh
+  lex_ar lex_ko lex_la pt_header pt_document pt_formulas pt_checked
+  pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   main [str In, str "to", str Out] :- !, typst-of In Out prooftext.maths.
   main [str In, str "to", str Out, str "as", str "maths"] :- !, typst-of In Out prooftext.maths.

@@ -69,3 +69,13 @@ write-word "zh" "by-application" "由应用".
 write-word "zh" "with" "以".
 write-word "zh" "the-element" "元素".
 write-word "zh" "belongs-to" "属于".
+% the legend of a PDF or HTML page of a proof text (prooftext/typst.elpi):
+% the names of the roles and of cyp's statuses
+write-word "zh" "legend-var" "变量".
+write-word "zh" "legend-hyp" "假设".
+write-word "zh" "legend-claim" "断言".
+write-word "zh" "legend-fact" "事实".
+write-word "zh" "legend-ok" "已证明".
+write-word "zh" "legend-ko" "未证明".
+write-word "zh" "legend-todo" "留给 Proof 块".
+write-word "zh" "legend-none" "无需检查".

@@ -28,9 +28,15 @@ papers (in development):
   powers, √, |x|), printed from their Rocq terms by a table of notations
   that a library can extend; `--code` keeps the Rocq code, `--html` makes
   an HTML page (MathML) instead of the PDF.  Each role of a formula has its
-  own style, the steps are indented as in the list, and cyp's statuses are
-  coloured marks; Arabic is laid out from right to left
+  own light background and a mark readable without colour (a frame, a
+  dashed or dotted line), with a legend at the end; the steps are indented
+  as in the list, and cyp's statuses are coloured marks; Arabic is laid out
+  from right to left.  The PDF and the page have links: a name (h) and its
+  uses lead to the step that introduced it, a lemma of the corelib or the
+  stdlib to its documentation, and the pages of the gallery
+  (`prooftext/gallery.sh`) to each other
   ([prooftext](prooftext/README.md#the-pdf-of-a-proof-text-typst),
+  [links](prooftext/README.md#links),
   [formulas as mathematics](prooftext/README.md#formulas-as-mathematics)).
 
 ## elpi-tools

@@ -12,8 +12,12 @@
 # A section is one argument "name:Title:rocq flags:files" (the files a
 # shell pattern); OUT must be under the home directory (typst is a snap).
 # Each text is copied to OUT/name/ and made there (prooftext/pdf.sh), so
-# that the repository is not written.  A text that fails is listed in
-# OUT/failures.txt and left out of the index.
+# that the repository is not written.  Each page links to the index, to
+# the same text in the other languages and to the same text checked by
+# cyp (or not checked), when the gallery has them: the same file name,
+# without .checked, in any section (the language is the lang field).
+# A text that fails is listed in OUT/failures.txt and left out of the
+# index.
 out=$1; shift
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(dirname "$here")
@@ -28,7 +32,13 @@ if [ $# -eq 0 ]; then
     "cyp:cyp's examples, checked:-Q $repo/cyp/examples CypExamples:$repo/cyp/examples/*.checked.md"
 fi
 : > "$out/failures.txt"
+: > "$out/.catalog"
 sections=""
+# 1. the Typst source of each text (prooftext/pdf.sh --source: the
+#    formulas elaborated in Rocq), and the catalog of the texts made,
+#    one line each: page|text|lang|checked (page: its path in OUT
+#    without extension; text: its name without .checked, which names
+#    the same text in every language and before and after cyp)
 for section in "$@"; do
   name=${section%%:*}; rest=${section#*:}
   title=${rest%%:*}; rest=${rest#*:}
@@ -45,15 +55,55 @@ for section in "$@"; do
     # the copy without its flags line: the load paths of this machine, which
     # the section's flags give instead
     grep -v '^ *flags:' "$f" > "$out/$name/$sub$base.md"
-    if nice sh "$here/pdf.sh" --html --flags "$flags" "$out/$name/$sub$base.md" > /dev/null 2>&1 &&
-       nice sh "$here/pdf.sh" --flags "$flags" "$out/$name/$sub$base.md" > /dev/null 2>&1; then
+    if nice sh "$here/pdf.sh" --source --flags "$flags" "$out/$name/$sub$base.md" > /dev/null 2>&1; then
       echo "$sub$base" >> "$out/$name/.list"
+      lang=$(sed -n -e '1{/^ *---/!q;}' -e '2,/^ *---/{/^ *---/q;s/^ *lang: *//p;}' "$f" | head -1)
+      case $base in *.checked) checked=yes ;; *) checked=no ;; esac
+      echo "$name/$sub$base|${base%.checked}|${lang:-en}|$checked" >> "$out/.catalog"
     else
       echo "$name/$sub$base" >> "$out/failures.txt"
     fi
   done
   sections="$sections$name:$title
 "
+done
+
+# [page_links PAGE]: the links of the page PAGE (a path of the catalog), a
+# JSON list of [text, target] pairs, each target relative to the page:
+# the index; the same text in the other languages (its language code);
+# the same text checked by cyp, or not checked, in the same language
+page_links() {
+  awk -F'|' -v page="$1" '
+    { pages[NR] = $1; texts[NR] = $2; langs[NR] = $3; checks[NR] = $4
+      if ($1 == page) { me = NR } }
+    END {
+      up = ""; n = split(page, parts, "/"); for (i = 1; i < n; i++) up = up "../"
+      out = "[[\"index\", \"" up "index.html\"]"
+      # the other languages, in the order of their codes
+      k = 0
+      for (i = 1; i <= NR; i++)
+        if (texts[i] == texts[me] && checks[i] == checks[me] && langs[i] != langs[me] && !(langs[i] in seen)) {
+          seen[langs[i]] = i; codes[++k] = langs[i] }
+      for (a = 1; a <= k; a++) for (b = a + 1; b <= k; b++) if (codes[b] < codes[a]) { t = codes[a]; codes[a] = codes[b]; codes[b] = t }
+      for (a = 1; a <= k; a++) out = out ", [\"" codes[a] "\", \"" up pages[seen[codes[a]]] "\"]"
+      # the other side of cyp
+      for (i = 1; i <= NR; i++)
+        if (texts[i] == texts[me] && langs[i] == langs[me] && checks[i] != checks[me]) {
+          out = out ", [\"" (checks[i] == "yes" ? "checked by cyp" : "not checked") "\", \"" up pages[i] "\"]"
+          break }
+      print out "]"
+    }' "$out/.catalog"
+}
+
+# 2. the web page and the PDF of each text, with its links
+cut -d'|' -f1 "$out/.catalog" | while read -r page; do
+  links=$(page_links "$page")
+  if ! { nice sh "$here/pdf.sh" --html --links "$links" "$out/$page.typ" > /dev/null 2>&1 &&
+         nice sh "$here/pdf.sh" --links "$links" "$out/$page.typ" > /dev/null 2>&1; }; then
+    echo "$page" >> "$out/failures.txt"
+    # left out of the index too
+    sed -i "\|^${page#*/}\$|d" "$out/${page%%/*}/.list"
+  fi
 done
 
 # the index: one section per group, one line per text (its page, its PDF,

@@ -36,6 +36,7 @@ From ProofText Extra Dependency "checked.elpi" as pt_checked.
 From ProofText Extra Dependency "maths-table.elpi" as pt_maths_table.
 From ProofText Extra Dependency "maths.elpi" as pt_maths.
 From ProofText Extra Dependency "maths-typst.elpi" as pt_maths_typst.
+From ProofText Extra Dependency "links.elpi" as pt_links.
 From ProofText Extra Dependency "typst.elpi" as pt_typst.
 (* xtext's writer, in elpi/, one file per subject, in the order they are
    loaded (README.md, "Files") *)
@@ -145,7 +146,7 @@ Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
-  pt_checked pt_maths_table pt_maths pt_maths_typst pt_typst.
+  pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
   xt_abstractions xt_applications xt_inductive_text xt_document
@@ -180,7 +181,7 @@ Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
-  pt_checked pt_maths_table pt_maths pt_maths_typst pt_typst.
+  pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
   xt_abstractions xt_applications xt_inductive_text xt_document

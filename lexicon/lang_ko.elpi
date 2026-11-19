@@ -68,3 +68,13 @@ write-word "ko" "by-application" "적용에 의해".
 write-word "ko" "with" "와 함께".
 write-word "ko" "the-element" "원소".
 write-word "ko" "belongs-to" "에 속한다".
+% the legend of a PDF or HTML page of a proof text (prooftext/typst.elpi):
+% the names of the roles and of cyp's statuses
+write-word "ko" "legend-var" "변수".
+write-word "ko" "legend-hyp" "가정".
+write-word "ko" "legend-claim" "주장".
+write-word "ko" "legend-fact" "사실".
+write-word "ko" "legend-ok" "증명됨".
+write-word "ko" "legend-ko" "증명되지 않음".
+write-word "ko" "legend-todo" "Proof 블록에 남김".
+write-word "ko" "legend-none" "확인할 것 없음".

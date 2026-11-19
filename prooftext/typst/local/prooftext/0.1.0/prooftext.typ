@@ -21,23 +21,41 @@
 // ------------------------------------------------------------------
 // Colours and fonts
 
-// the colour of each role of a formula, and of a formula without a role
-#let role-colours = (
-  var: rgb("#1f5fa8"),
-  hyp: rgb("#9a5b00"),
-  claim: rgb("#1d7a33"),
-  fact: rgb("#6b4f96"),
-  plain: rgb("#333333"),
-)
+// The look of the roles of a formula.  The text of every formula is
+// black, the colour of the text; its role is given twice, so that it can
+// be read without colour vision (and in black and white):
+// - a light background, a tint of a colour of the Okabe-Ito palette, which
+//   stays distinct for colour-blind readers: variables sky blue,
+//   hypotheses orange, claims yellow, facts grey;
+// - a mark that needs no colour: claims a thin frame, hypotheses a dashed
+//   underline, facts a dotted underline, variables the background alone.
+// A formula without a role (plain) has neither.
 
-// the background of the formulas of a role (none: no background)
+// the background of the formulas of each role (none: no background)
 #let role-backgrounds = (
-  var: none,
-  hyp: rgb("#fdf1dc"),
-  claim: rgb("#e3f4e6"),
-  fact: none,
+  var: rgb("#d4ebf9"),
+  hyp: rgb("#f8d49c"),
+  claim: rgb("#fcf6c6"),
+  fact: rgb("#e3e3e3"),
   plain: none,
 )
+
+// the mark of each role that needs no colour: a frame or an underline
+// ("solid", "dashed", "dotted"), none for none
+#let role-cues = (
+  var: none,
+  hyp: (line: "underline", dash: "dashed"),
+  claim: (line: "frame", dash: "solid"),
+  fact: (line: "underline", dash: "dotted"),
+  plain: none,
+)
+
+// the colour of the frames and underlines of the roles
+#let cue-colour = rgb("#4d4d4d")
+
+// the colour of the links (Okabe-Ito blue): to the step that introduced
+// a name, to the documentation of a lemma, between the pages of a gallery
+#let link-colour = rgb("#0072b2")
 
 // the mark and the colour of each status of a step checked by cyp: proved
 // (ok), not proved (ko), left to a Proof block (todo), nothing to check
@@ -98,19 +116,30 @@
 // [element(tag, class, body)]: an HTML element of a class
 #let element(tag, class, body) = html.elem(tag, attrs: (class: class), body)
 
-// the style sheet of an HTML page: the colours of the roles and of the
-// statuses (those of the PDF), the indentation of the steps
+// [css-cue(cue)]: the CSS of a role's mark that needs no colour: a
+// border (the box of the PDF), not a text decoration, which MathML does
+// not draw
+#let css-cue(cue) = {
+  if cue == none { "" }
+  else if cue.line == "frame" { " border: 1px " + cue.dash + " " + cue-colour.to-hex() + ";" }
+  else { " border-bottom: 1px " + cue.dash + " " + cue-colour.to-hex() + ";" }
+}
+
+// the style sheet of an HTML page: the backgrounds and marks of the roles
+// and the colours of the statuses (those of the PDF), the indentation of
+// the steps, the links, the legend
 #let html-style = {
   let rules = (
-    ".proof-text { font-family: 'Libertinus Serif', 'Noto Serif', serif; max-width: 48em; margin: 2em auto; padding: 0 1em; line-height: 1.6; }",
+    ".proof-text { font-family: 'Libertinus Serif', 'Noto Serif', serif; max-width: 48em; margin: 2em auto; padding: 0 1em; line-height: 1.6; color: #000; background: #fff; }",
     ".proof-text code { font-family: 'DejaVu Sans Mono', monospace; font-size: 0.9em; }",
     ".proof-text math { font-family: 'Latin Modern Math', 'STIX Two Math', math; }",
     ".proof-text header h1 { font-size: 1.5em; margin-bottom: 0.3em; }",
     ".proof-text table.fields { font-size: 0.8em; color: #505050; border-bottom: 1px solid #b4b4b4; padding-bottom: 0.5em; width: 100%; }",
     ".proof-text table.fields th { text-align: start; padding-inline-end: 0.8em; vertical-align: top; width: 1%; white-space: nowrap; }",
-    ".formula { border-radius: 2px; padding: 0 1px; }",
-    ".formula.fact { text-decoration: underline dotted; }",
-    ".name { color: " + role-colours.hyp.to-hex() + "; font-size: 0.9em; }",
+    ".proof-text a { color: " + link-colour.to-hex() + "; text-decoration: none; }",
+    ".proof-text a:hover { text-decoration: underline; }",
+    ".formula { border-radius: 2px; padding: 0 1px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }",
+    ".name { font-size: 0.9em; }",
     ".by { color: #5a5a5a; }",
     "ul.steps { list-style: none; padding-inline-start: " + repr(step-indent) + "; margin: 0; }",
     ".proof-text > ul.steps { padding-inline-start: 0; }",
@@ -119,11 +148,15 @@
     ".number { color: #828282; font-size: 0.75em; margin-inline-end: 0.6em; }",
     ".conditions { color: " + status-marks.todo.colour.to-hex() + "; font-size: 0.8em; }",
     ".message { margin: 0.4em 0 0 1.3em; padding: 0.35em 0.6em; font-size: 0.85em; border-inline-start: 2px solid; border-radius: 2px; }",
+    "nav.gallery { font-size: 0.8em; color: #6e6e6e; margin-bottom: 1em; }",
+    "nav.gallery a { margin-inline-end: 0.9em; }",
+    "footer.legend { margin-top: 2em; padding-top: 0.4em; border-top: 1px solid #d0d0d0; font-size: 0.75em; color: #505050; }",
+    "footer.legend span.entry { margin-inline-end: 1.2em; white-space: nowrap; }",
   )
-  for (role, colour) in role-colours {
-    let background = role-backgrounds.at(role)
-    rules.push(".formula." + role + " { color: " + colour.to-hex() + ";"
-      + (if background == none { "" } else { " background: " + background.to-hex() + ";" }) + " }")
+  for (role, background) in role-backgrounds {
+    rules.push(".formula." + role + " {"
+      + (if background == none { "" } else { " background: " + background.to-hex() + ";" })
+      + css-cue(role-cues.at(role)) + " }")
   }
   for (status, s) in status-marks {
     rules.push(".mark." + status + " { color: " + s.colour.to-hex() + "; }")
@@ -136,6 +169,29 @@
 // ------------------------------------------------------------------
 // The parts of the text of a step
 
+// [role-look(role, body)]: body in the PDF with the look of the role: a
+// box with its background and its mark (a frame, or a line under it).
+// Typst's highlights and underlines do not reach the symbols of maths,
+// hence a box.  A box does not break across lines: a formula wider than
+// the line is a box as wide as the line, where it breaks (on its own
+// lines)
+#let role-look(role, body) = {
+  let background = role-backgrounds.at(role)
+  let cue = role-cues.at(role)
+  let line = if cue == none { none } else { (paint: cue-colour, thickness: 0.5pt, dash: cue.dash) }
+  let stroke = if cue == none { none } else if cue.line == "frame" { line } else { (bottom: line) }
+  if background == none and stroke == none { body }
+  else {
+    box(layout(size => {
+      if measure(body).width <= size.width {
+        box(fill: background, stroke: stroke, inset: (x: 1.5pt), outset: (y: 2.5pt), radius: 1.5pt, body)
+      } else {
+        box(width: size.width, fill: background, stroke: stroke, inset: 3pt, radius: 1.5pt, body)
+      }
+    }))
+  }
+}
+
 // a formula of role Role ("var", "hyp", "claim", "fact" or "plain"):
 // mathematics (content, $...$, printed from its Rocq term), or its text
 // in Rocq syntax (a string), shown as code
@@ -143,18 +199,7 @@
   let written = if type(body) == str { raw(body) } else { body }
   on-html(
     () => element("span", "formula " + role, written),
-    () => {
-      let shown = std.text(fill: role-colours.at(role), written)
-      let background = role-backgrounds.at(role)
-      let highlighted = if background == none { shown }
-        else { highlight(fill: background, extent: 1pt, radius: 2pt, shown) }
-      // a fact is a mention: underlined, so that it differs from a
-      // variable without its colour
-      if role == "fact" {
-        underline(stroke: (paint: role-colours.fact, thickness: 0.5pt, dash: "dotted"),
-          offset: 2pt, highlighted)
-      } else { highlighted }
-    })
+    () => role-look(role, written))
 }
 
 // a variable, a hypothesis, a claim, a fact, a formula without a role
@@ -164,23 +209,78 @@
 #let fact(body) = formula-of("fact", body)
 #let formula(body) = formula-of("plain", body)
 
-// the name given to the formula before it (a hypothesis, a claim), (h)
-#let name(text) = on-html(
-  () => element("span", "name", [(#raw(text))]),
-  () => std.text(fill: role-colours.hyp, size: 0.9em,
-    [(#std.text(font: code-fonts, text))]))
+// [linked(destination, body)]: body as a link, in the colour of the
+// links: destination is a label (the step that introduced a name), an
+// address (the documentation of a lemma, a page) or none (no link)
+#let linked(destination, body) = {
+  if destination == none { body }
+  else { link(destination, on-html(() => body, () => std.text(fill: link-colour, body))) }
+}
 
-// the justification of a step, by X
-#let by(text) = on-html(
-  () => element("span", "by", [#emph[by] #raw(text)]),
-  () => std.text(fill: luma(90), [#emph[by] #raw(text)]))
+// [anchor(label)]: the place a link to the label leads to (nothing for
+// none).  In the HTML page, Typst writes it as an element with an id
+// (loc-N), and the links to it as href="#loc-N"
+#let anchor(label) = if label == none { [] } else { [#metadata(none)#std.label(label)] }
+
+// the name given to the formula before it, (h): label, when the name is
+// introduced here, the place the uses of the name lead to; target, when
+// the formula is a fact that names a hypothesis, the label of the step
+// that introduced it
+#let name(text, label: none, target: none) = {
+  anchor(label)
+  let shown = linked(if target == none { none } else { std.label(target) }, raw(text))
+  on-html(
+    () => element("span", "name", [(#shown)]),
+    () => std.text(size: 0.9em, [(#shown)]))
+}
+
+// a name used in the text ("by h4", "Applying h2 to h4"), linked to the
+// step that introduced it (its label target)
+#let named(text, target) = linked(std.label(target), raw(text))
+
+// a lemma, a constructor or a type named in the text ("Applying
+// f_equal_nat"), linked to its entry in the documentation of its library
+#let cited(text, url) = linked(url, raw(text))
+
+// the justification of a step, by X: X linked to the documentation of
+// the lemma (url) or to the step that introduced the name X (target)
+#let by(text, url: none, target: none) = {
+  let destination = if url != none { url } else if target != none { std.label(target) } else { none }
+  let shown = [#emph[by] #linked(destination, raw(text))]
+  on-html(
+    () => element("span", "by", shown),
+    () => std.text(fill: luma(90), shown))
+}
 
 // ------------------------------------------------------------------
 // The document
 
+// [page-links]: the links of a page of a gallery to its other pages,
+// given by the command line (typst compile --input links=JSON, gallery.sh
+// through pdf.sh --links): a list of (text, target) pairs, each target a
+// path relative to the page.  A target without an extension leads to
+// the page of the same kind, .html for the HTML page, .pdf for the PDF;
+// an empty list for a text outside a gallery
+#let page-links = json(bytes(sys.inputs.at("links", default: "[]")))
+
+// [gallery-links()]: the links of page-links, in a small line above the
+// text (nothing outside a gallery)
+#let gallery-links() = if page-links.len() > 0 {
+  let entry(extension, l) = {
+    let (text, target) = l
+    let path = if target.ends-with(".html") or target.ends-with(".pdf") { target } else { target + extension }
+    linked(path, text)
+  }
+  on-html(
+    () => html.elem("nav", attrs: (class: "gallery"), page-links.map(l => entry(".html", l)).join()),
+    () => block(below: 1em, std.text(size: 0.8em, fill: luma(110),
+      page-links.map(l => entry(".pdf", l)).join(h(0.9em)))))
+}
+
 // [proof-text(lang, numbers, body)]: the page and the fonts of the text in
 // the language lang; numbers: the numbers of the steps are shown (those
-// of cyp's conditions, in Dewey notation)
+// of cyp's conditions, in Dewey notation).  Above the text, the links
+// of a page of a gallery (page-links)
 #let show-numbers = state("prooftext-numbers", false)
 #let proof-text(lang: "en", numbers: false, body) = {
   set text(lang: lang, dir: if lang in rtl-languages { rtl } else { ltr })
@@ -189,7 +289,7 @@
     () => {
       html.elem("style", html-style)
       html.elem("div", attrs: (class: "proof-text", lang: lang,
-        dir: if lang in rtl-languages { "rtl" } else { "ltr" }), body)
+        dir: if lang in rtl-languages { "rtl" } else { "ltr" }), gallery-links() + body)
     },
     () => {
       set page(paper: "a4", margin: (x: 2cm, y: 2cm), numbering: "1")
@@ -199,6 +299,7 @@
       // language
       show raw: set text(font: code-fonts, size: 0.92em, dir: ltr)
       set par(justify: false, leading: 0.7em)
+      gallery-links()
       body
     })
 }
@@ -325,3 +426,25 @@
     text-line(depth, s.number, s.status, true, s.conditions, s.message, s.body)
     steps(s.sub, depth: depth + 1)
   })
+
+// ------------------------------------------------------------------
+// The legend
+
+// [legend(roles, statuses)]: the key of the look, at the end of the text:
+// each role's word (in the language of the text) with the look of the
+// role, then, for a text checked by cyp, each status mark with its
+// meaning; roles and statuses are lists of (role or status, word) pairs
+#let legend(roles, statuses: ()) = on-html(
+  () => html.elem("footer", attrs: (class: "legend"), {
+    for (role, word) in roles { element("span", "entry", element("span", "formula " + role, word)) }
+    for (status, word) in statuses {
+      element("span", "entry", status-mark(status, false) + word)
+    }
+  }),
+  () => block(above: 2em, {
+    line(length: 30%, stroke: 0.4pt + luma(190))
+    set std.text(size: 0.75em, fill: luma(70))
+    (roles.map(((role, word)) => role-look(role, word))
+      + statuses.map(((status, word)) => box(status-mark(status, false)) + " " + word))
+      .join(h(1.4em))
+  }))

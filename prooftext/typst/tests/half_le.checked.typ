@@ -11,8 +11,8 @@
 #statement(status: "ok")[#"Let "#var($n ∈ ℕ$)#". We prove "#claim($n class("binary", "div") 2 ≤ n$)#"."]
 
 #steps((
-  step("1", [#"By definition of nat (strong_induction) on "#fact($n$)#", we prove "#claim($n class("binary", "div") 2 ≤ n$)#":"], (
-    step("1.1", [#"Let us choose arbitrarily "#var($n_(0) ∈ ℕ$)#"; assume by induction hypothesis "#hyp($∀ m ∈ ℕ , m < n_(0) → m class("binary", "div") 2 ≤ m$)#" "#name("IH")#"."], (
+  step("1", [#"By definition of "#cited("nat", "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat")#" (strong_induction) on "#fact($n$)#", we prove "#claim($n class("binary", "div") 2 ≤ n$)#":"], (
+    step("1.1", [#"Let us choose arbitrarily "#var($n_(0) ∈ ℕ$)#"; assume by induction hypothesis "#hyp($∀ m ∈ ℕ , m < n_(0) → m class("binary", "div") 2 ≤ m$)#" "#name("IH", label: "1.1:IH")#"."], (
       step("1.1.1", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
       step("1.1.2", [#"The element "#fact($2$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
       step("1.1.3", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
@@ -28,7 +28,7 @@
           step("1.1.4.3.6", [#"By inj_le we have "#claim($∀ n_(00) , m ∈ ℕ , n_(00) ≤ m ↔ n_(00) ≤ m$)#"."], (), status: "ok"),
           step("1.1.4.3.7", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
           step("1.1.4.3.8", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
-          step("1.1.4.3.9", [#"By definition of eq (eq_refl), we have "#claim($n_(0) = n_(0)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+          step("1.1.4.3.9", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#cited("eq_refl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($n_(0) = n_(0)$)#" "#by("Corelib.Init.Logic.eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"."], (), status: "ok"),
           step("1.1.4.3.10", [#"The element "#fact($2 ⋅ n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
           step("1.1.4.3.11", [#"The element "#fact($"Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
           step("1.1.4.3.12", [#"Applying mkapp2, we have "#claim($2 ⋅ n_(0) = "Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#"."], (
@@ -46,31 +46,33 @@
             step("1.1.4.3.12.12", [#"By inj_mul we have "#claim($∀ n_(00) , m ∈ ℕ , n_(00) ⋅ m = n_(00) ⋅ m$)#"."], (), status: "ok"),
             step("1.1.4.3.12.13", [#"The element "#fact($2$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
             step("1.1.4.3.12.14", [#"The element "#fact($"Zpos"\("xO"\("xH"\)\)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
-            step("1.1.4.3.12.15", [#"By definition of eq (eq_refl), we have "#claim($"Zpos"\("xO"\("xH"\)\) = "Zpos"\("xO"\("xH"\)\)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+            step("1.1.4.3.12.15", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#cited("eq_refl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($"Zpos"\("xO"\("xH"\)\) = "Zpos"\("xO"\("xH"\)\)$)#" "#by("Corelib.Init.Logic.eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"."], (), status: "ok"),
             step("1.1.4.3.12.16", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
             step("1.1.4.3.12.17", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
-            step("1.1.4.3.12.18", [#"By definition of eq (eq_refl), we have "#claim($n_(0) = n_(0)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+            step("1.1.4.3.12.18", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#cited("eq_refl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($n_(0) = n_(0)$)#" "#by("Corelib.Init.Logic.eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"."], (), status: "ok"),
           ), status: "ok"),
         ), status: "ok"),
         step("1.1.4.4", [#"Applying __arith, we have "#claim($n_(0) ≤ "Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#"."], (
-          step("1.1.4.4.1", [#"Applying is_nonneg to n0, we have "#claim($"Z0" ≤ n_(0)$)#" "#name("cstr")#"."], (), status: "ok"),
-          step("1.1.4.4.2", [#"We have proved "#claim($∀ italic("__x10") ∈ ℤ , "eval_bf"\("Zeval_formula"\("find"\("Z0", "Elt"\(italic("__x10")\)\)\), "IMPL"\("A"\("isProp", "Build_Formula"\("PEc"\("Z0"\), "OpLe", "PEX"\("xH"\)\), "tt"\), "None", "A"\("isProp", "Build_Formula"\("PEX"\("xH"\), "OpLe", "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\), "PEX"\("xH"\)\)\), "tt"\)\)\)$)#" "#name("__arith")#"."], (
+          step("1.1.4.4.1", [#"Applying is_nonneg to n0, we have "#claim($"Z0" ≤ n_(0)$)#" "#name("cstr", label: "1.1.4.4.1:cstr")#"."], (), status: "ok"),
+          step("1.1.4.4.2", [#"We have proved "#claim($∀ italic("__x10") ∈ ℤ , "eval_bf"\("Zeval_formula"\("find"\("Z0", "Elt"\(italic("__x10")\)\)\), "IMPL"\("A"\("isProp", "Build_Formula"\("PEc"\("Z0"\), "OpLe", "PEX"\("xH"\)\), "tt"\), "None", "A"\("isProp", "Build_Formula"\("PEX"\("xH"\), "OpLe", "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\), "PEX"\("xH"\)\)\), "tt"\)\)\)$)#" "#name("__arith", label: "1.1.4.4.2:__arith")#"."], (
             step("1.1.4.4.2.1", [#"Let us choose arbitrarily "#var($italic("__x1") ∈ ℤ$)#"."], (
               step("1.1.4.4.2.1.1", [#"Let "#var($italic("__wit") ≔ "[]"$)#"."], (), status: "none"),
               step("1.1.4.4.2.1.2", [#"Let "#var($italic("__varmap") ≔ "Elt"\(italic("__x1")\)$)#"."], (), status: "none"),
               step("1.1.4.4.2.1.3", [#"Let "#var($italic("__ff") ≔ "IMPL"\("A"\("isProp", "Build_Formula"\("PEc"\("Z0"\), "OpLe", "PEX"\("xH"\)\), "tt"\), "None", "A"\("isProp", "Build_Formula"\("PEX"\("xH"\), "OpLe", "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\), "PEX"\("xH"\)\)\), "tt"\)\)$)#"."], (), status: "none"),
               step("1.1.4.4.2.1.4", [#"The element "#fact($italic("__ff")$)#" belongs to "#fact($"BFormula"\("Formula"\(ℤ\), "isProp"\)$)#"."], (), status: "none"),
               step("1.1.4.4.2.1.5", [#"The element "#fact($italic("__wit")$)#" belongs to "#fact($"list"\("ZArithProof"\)$)#"."], (), status: "none"),
-              step("1.1.4.4.2.1.6", [#"By definition of eq (eq_refl), we have "#claim($"true" = "true"$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], (), status: "ok"),
+              step("1.1.4.4.2.1.6", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#cited("eq_refl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($"true" = "true"$)#" "#by("Corelib.Init.Logic.eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"."], (), status: "ok"),
               step("1.1.4.4.2.1.7", [#"The element "#fact($"find"\("Z0", italic("__varmap")\)$)#" belongs to "#fact($"PolEnv"\(ℤ\)$)#"."], (), status: "none"),
               step("1.1.4.4.2.1.8", [#"Applying ZTautoChecker_sound, we have "#claim($"eval_bf"\("Zeval_formula"\("find"\("Z0", italic("__varmap")\)\), italic("__ff")\)$)#"."], (), status: "ko", message: "not proved: Tauto.eval_bf (ZMicromega.Zeval_formula (VarMap.find BinNums.Z0 __varmap)) __ff"),
             ), status: "none"),
           ), status: "ok"),
           step("1.1.4.4.3", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℤ$)#"."], (), status: "none"),
-          step("1.1.4.4.4", [#"By cstr we have "#claim($"Z0" ≤ n_(0)$)#"."], (), status: "ok"),
+          step("1.1.4.4.4", [#"By "#named("cstr", "1.1.4.4.1:cstr")#" we have "#claim($"Z0" ≤ n_(0)$)#"."], (), status: "ok"),
         ), status: "ok"),
       ), status: "ok"),
       step("1.1.5", [#"Applying div_le_upper_bound, we have "#claim($n_(0) class("binary", "div") 2 ≤ n_(0)$)#"."], (), status: "ko", message: "not proved: n0 / 2 <= n0"),
     ), status: "none"),
   ), status: "ko", message: "not proved: n / 2 <= n"),
 ))
+
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),), statuses: (("ok", "proved"), ("ko", "not proved"), ("todo", "left to a Proof block"), ("none", "nothing to check"),))
