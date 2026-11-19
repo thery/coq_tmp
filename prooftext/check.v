@@ -278,6 +278,39 @@ Elpi Accumulate lp:{{
 }}.
 Elpi prooftext_check_links.
 
+(* The Typst writer on a tree (typst.elpi): a checked free text, its
+   spans (node) with their marks inline, cyp's messages in the order of
+   the nodes, each with the status of its node (todo before ko here); a
+   checked list item, its closing paragraph after its sub-item. *)
+Elpi Command prooftext_check_typst_tree.
+Elpi Accumulate File lex_core lex_en pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
+  pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
+Elpi Accumulate lp:{{
+  pred expect-in i:string, i:string, i:string.
+  expect-in What Text Part :-
+    if (rex.split Part Text [_, _ | _]) (coq.say What ": ok")
+      (coq.error What ": no" Part "in" Text).
+  main [] :-
+    rex.split "\n" {std.string.concat "\n" [
+      "# free", "",
+      "✅ Let `A : Prop`{.var}. Assume `A`{.hyp} (a). We prove `A`{.claim}.", "",
+      "[🔶 **[1]** We have `A`{.claim} (P)]{.p} and [❌ by *P*{.just} `A`{.claim}]{.p}.", "",
+      "<details><summary>left: A</summary></details>", "",
+      "<details><summary>not proved: A</summary></details>", "",
+      "- ✅ Assume `A`{.hyp} (b).", "  - ✅ We have `A`{.claim}.", "",
+      "  Hence `A`{.claim}."]} Lines,
+    prooftext.lines-tree Lines T,
+    prooftext.write-typst-tree prooftext.code T Text,
+    expect-in "statement, checked" Text "), status: \"ok\")",
+    expect-in "a span, its mark inline" Text "#node(\"1\").#mark(\"todo\", conditions: \"1\")#\"We have \"",
+    expect-in "the name of a span's conclusion, after it" Text "#just(\"P\", target: \"1:P\")",
+    expect-in "the first message, of the first node" Text "message(\"todo\", \"left: A\"),",
+    expect-in "the second message, of the second node" Text "message(\"ko\", \"not proved: A\"),",
+    expect-in "the closing paragraph after the sub-item" Text
+      "We have \"#claim(\"A\")#\".\"., (), status: \"ok\"),\n      )),\n      paragraph.#\"Hence \"".
+}}.
+Elpi prooftext_check_typst_tree.
+
 (* A lemma of the stdlib, in a module (Nat) of its file (PeanoNat) *)
 From Stdlib Require Import Arith.
 Elpi Command prooftext_check_stdlib_links.
