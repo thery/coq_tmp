@@ -106,8 +106,8 @@ uuid X N :- var X H _, term_to_string H S, printer-number S N.
 
 % [printer-number S N]: S is the printer's name of a variable, "X<N>"
 % followed by its depth ("^1") if any.
-pred printer-number i:string, o:int.
-printer-number S N :- rex.match "^X[0-9]+" S, rex.replace "^X\\([0-9]+\\).*$" "\\1" S Digits, N is string_to_int Digits.
+func printer-number string -> int.
+printer-number S N :- rex.replace "^X\\([0-9]+\\).*$" "\\1" S Digits, N is string_to_int Digits.
 
 % [uuid-name X S]: "X<uuid>", the name elpi-debug shows for the variable X.
 func uuid-name any -> string.
@@ -124,7 +124,14 @@ uuid-label N S :- S is "X" ^ {std.any->string N}.
 % the printer naming each variable by its identity (Elpi's printer has
 % the line, commented out: "X" ^ string_of_int (uvar_id r)).
 func term-string any -> string.
-term-string T S :- term_to_string T S0, rex.replace "\\bX\\([0-9]+\\)\\^[0-9]+" "X\\1" S0 S.
+term-string T S :- term_to_string T S0, without-depths S0 S.
+
+% [without-depths S0 S]: S0 without the depths of its variables ("X12^1"
+% becomes X12); most texts have none, and looking for a "^" is cheaper
+% than the replacement.
+func without-depths string -> string.
+without-depths S0 S :- rex.match ".*\\^" S0, !, rex.replace "\\bX\\([0-9]+\\)\\^[0-9]+" "X\\1" S0 S.
+without-depths S S.
 
 % ===== 3. The trail ========================================================================
 

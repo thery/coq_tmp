@@ -17,7 +17,9 @@
 %   its number (a command that only shows something prompts again with the
 %   same number), why it stops, the event, the stack of calls (each with
 %   the clause it runs, its arguments and the scope of its variables), the
-%   bindings of a unify step, the local program, the eigenvariables.
+%   bindings of a unify step or of an exit port, the local program, the
+%   eigenvariables, the variables of the query by their source names.
+%   Variables are named X<uuid> (primitives.elpi).
 % Everything else (the events shown, the output of commands such as p or
 % e, the prints of the program, the solutions) is text for a person.
 
