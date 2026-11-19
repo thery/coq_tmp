@@ -332,7 +332,46 @@ holding it are `:nooc`).
   master 631d14a; minimal form in
   [`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi));
   it is why the bridges are static rules.
-- The driver hands the parsed program to the compiler with `Obj.magic`:
-  Elpi's API has no function for a program built from parsed units, but its
-  type of parsed programs is the parser's own (`type program =
-  Ast.Program.t` in elpi 4.0.0's `API.ml`).
+- **The driver uses `Obj.magic` once** (`to_api` in
+  [`bin/elpi_debug_main.ml`](bin/elpi_debug_main.ml)), the one place
+  where it goes around Elpi's API.
+  - *Why*: the debugger must compile FILE **without its rules** (they are
+    given to the interpreter as data; Elpi must not run them), together
+    with the interpreter, the rules as facts and the bridges.  So it parses
+    FILE, removes the rules, and compiles the result with other units.
+    Elpi's API can parse and compile a file, but its parsed program
+    (`API.Ast.program`) is abstract: it cannot be edited, nor joined with
+    other units.  The driver therefore parses with the parser library
+    (`Elpi_parser`), whose type it sees, and passes the edited program to
+    `API.Compile.program` through `Obj.magic`.
+  - *Why it works*: in elpi 4.0.0 the two types are one (`type program =
+    Ast.Program.t` in `API.ml`), so the conversion is the identity.
+  - *The risk*: nothing checks it.  If a later Elpi changes that type, the
+    driver still compiles and then crashes or misbehaves at run time.  To
+    be checked again with each new version of Elpi.
+  - *The fix needs Elpi's API* (asked of its author): a function from the
+    parser's program to the API's (`API.Ast.program_of_parsed`, say), or a
+    way to compile a file without its rules, or to compile a program made
+    of several parsed units.  The minimal example of the request:
+
+    ```ocaml
+    (* parse, drop the rules, compile: the last step has no API *)
+    module PAst = Elpi_parser.Ast
+    let without_rules (p : PAst.Program.t) =
+      { p with ast = List.filter (function PAst.Program.Clause _ -> false | _ -> true) p.ast }
+    let () =
+      let elpi = API.Setup.init ~builtins:[ Builtin.std_builtins ] () in
+      let module P = Elpi_parser.Parse.Make (struct
+        let versions = Elpi_util.Util.StrMap.empty
+        let resolver = API.Parse.std_resolver ~paths:[] ()
+      end) in
+      let parsed, _, _ = P.program_from ~loc:(Elpi_util.Util.Loc.initial "(source)")
+          ~digest:(Digest.string source) (Lexing.from_string source) in
+      let program : API.Ast.program = Obj.magic (without_rules parsed) in  (* no API for this *)
+      ignore (API.Compile.program ~elpi program)
+    ```
+
+  - *Without an API change*, the other way is to give the declarations and
+    the rules in two files (the user writes FILE's declarations apart), so
+    that the driver compiles the file of declarations as it is: no cast,
+    but a constraint on how programs are written.

@@ -198,11 +198,24 @@ function replayConfiguration(result, options) {
     goal: result.replay,
     args,
     cwd: path.dirname(result.file),
-    stopOnEntry: true
+    stopOnEntry: true,
+    // the first stop, before the first call, is shown on the property
+    queryPath: result.file,
+    queryLine: result.line
   };
 }
 
+// [debugHeaderText(result)]: what the Debug Console says when the debugger
+// starts on a counterexample: the property and the values (the adapter
+// then says the goal and how to go on).
+function debugHeaderText(result) {
+  const lines = [`Debugging the counterexample of the property ${result.name} (${path.basename(result.file)}:${result.line}):`];
+  lines.push(bindingsText(result.shrunk, '  '));
+  return lines.join('\n') + '\n';
+}
+
 module.exports = {
+  debugHeaderText,
   listArguments,
   checkArguments,
   includeDirectories,

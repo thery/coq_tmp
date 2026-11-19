@@ -10,6 +10,7 @@ const path = require('path');
 const recorded = {
   runs: [],              // the test runs created (StandInTestRun)
   debugSessions: [],     // the configurations given to debug.startDebugging
+  debugConsole: [],      // what was written to the Debug Console
   commands: new Map(),   // command name -> handler
   informationMessages: []
 };
@@ -196,6 +197,10 @@ module.exports = {
     startDebugging(_folder, configuration) {
       recorded.debugSessions.push(configuration);
       return Promise.resolve(true);
+    },
+    activeDebugConsole: {
+      append(text) { recorded.debugConsole.push(text); },
+      appendLine(text) { recorded.debugConsole.push(text + '\n'); }
     }
   },
   commands: {

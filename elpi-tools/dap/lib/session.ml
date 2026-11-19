@@ -43,6 +43,10 @@ type t = {
   expectations : expectation Queue.t;
   mutable launch : P.request option;  (* answered at the stop Start *)
   mutable stop_on_entry : bool;
+  mutable query : string;  (* the goal of the launch *)
+  mutable query_place : (string * int) option;
+      (* where the query is written (launch's queryPath and queryLine): the
+         place of the frames that run no clause yet *)
   mutable lines_start_at_1 : bool;
   mutable errors_text : Buffer.t;  (* what elpi-debug wrote on stderr *)
   clause_breakpoints : (string, int list) Hashtbl.t;  (* file -> the rules with a breakpoint *)
@@ -61,6 +65,8 @@ let create ~write =
     expectations = Queue.create ();
     launch = None;
     stop_on_entry = false;
+    query = "";
+    query_place = None;
     lines_start_at_1 = true;
     errors_text = Buffer.create 256;
     clause_breakpoints = Hashtbl.create 7;
@@ -214,7 +220,10 @@ let stack_frame s stop index f =
   match frame_location stop.frames index with
   | Rule_at at -> `Assoc ((("name", `String name) :: common) @ [ ("source", source_of at.file); ("line", `Int (client_line s at.line)) ])
   | Hypothesis origin -> `Assoc ((("name", `String (name ^ "   (" ^ origin ^ ")")) :: common) @ [ ("line", `Int 0) ])
-  | No_clause -> `Assoc ((("name", `String name) :: common) @ [ ("line", `Int 0) ])
+  | No_clause -> (
+      match s.query_place with
+      | Some (file, line) -> `Assoc ((("name", `String name) :: common) @ [ ("source", source_of file); ("line", `Int (client_line s line)) ])
+      | None -> `Assoc ((("name", `String name) :: common) @ [ ("line", `Int 0) ]))
 
 (* The scopes of a frame: references index * 3 + 1, + 2, + 3 (index: its
    place in the stack, from 0); valid while the stop lasts. *)
@@ -313,6 +322,11 @@ let launch s (r : P.request) =
       let options = List.filter_map Yojson.Safe.Util.to_string_option (P.list_argument "args" r) in
       let cwd = P.string_argument "cwd" r in
       s.stop_on_entry <- P.bool_argument "stopOnEntry" ~default:false r;
+      s.query <- goal;
+      s.query_place <-
+        (match P.string_argument "queryPath" r, P.int_argument "queryLine" r with
+         | Some file, Some line -> Some (file, line)
+         | _ -> None);
       s.launch <- Some r;
       s.debuggee <- Some (Debuggee.start ~exe ~cwd ~options ~program ~goal);
       Queue.add Initial_stop s.expectations
@@ -403,11 +417,19 @@ let restart_frame s (r : P.request) =
           resume s (Printf.sprintf "r %d" id)
       | _ -> fail s r "the query itself cannot be restarted")
 
+(* [configuration_done s r]: the run starts: it stops before the first call
+   (stopOnEntry), else it runs to the first breakpoint; the Debug Console
+   says which, so that the first stop is not mistaken for nothing. *)
 let configuration_done s r =
   respond s r `Null;
   match s.stop with
-  | Some stop when s.stop_on_entry -> report_stop s stop
-  | Some _ -> resume s "l"
+  | Some stop when s.stop_on_entry ->
+      output s "console"
+        (Printf.sprintf "Start: %s   (stopped before the first call: F11 steps into it, F5 runs to a breakpoint or to the end)\n" s.query);
+      report_stop s stop
+  | Some _ ->
+      output s "console" (Printf.sprintf "Start: %s   (running to the first breakpoint, or to the end)\n" s.query);
+      resume s "l"
   | None -> ()
 
 (* [end_session s r ~exit]: terminate or disconnect: elpi-debug is ended;

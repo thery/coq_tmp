@@ -30,13 +30,15 @@
         "languages": ["elpi"],
         "configurationAttributes": {
           "launch": {
-            "required": ["program", "goal"],
+            "required": ["program"],
             "properties": {
               "program": { "type": "string", "description": "The Elpi file of the program.", "default": "${file}" },
-              "goal": { "type": "string", "description": "The goal to run, as for elpi-debug (e.g. main, or append [1] [2] L)." },
+              "goal": { "type": "string", "description": "The goal to run, as for elpi-debug (e.g. main, or append [1] [2] L); when it is missing, it is asked when the session starts." },
               "args": { "type": "array", "items": { "type": "string" }, "description": "More options of elpi-debug, e.g. [\"-I\", \"dir\"] or [\"-all\"].", "default": [] },
               "cwd": { "type": "string", "description": "The directory where elpi-debug runs.", "default": "${workspaceFolder}" },
               "stopOnEntry": { "type": "boolean", "description": "Stop before the first event of the run.", "default": false },
+              "queryPath": { "type": "string", "description": "The file where the goal is written (with queryLine): the place shown for the stops before the first clause, e.g. the property of a counterexample." },
+              "queryLine": { "type": "number", "description": "The line of the goal in queryPath." },
               "elpiDebug": { "type": "string", "description": "The path of elpi-debug (default: the setting elpiTools.elpiDebugPath, else next to elpi-dap)." }
             }
           }

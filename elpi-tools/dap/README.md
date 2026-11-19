@@ -60,8 +60,10 @@ A launch configuration (`.vscode/launch.json` of the folder):
 ```
 
 `args` are more options of elpi-debug (`-I DIR`, `-all` for all the
-solutions, `-profile`...).  Without a launch.json, F5 on an `.elpi` file
-asks for the goal.
+solutions, `-profile`...).  A configuration with no `goal` asks for it
+when it starts (with `"program": "${file}"`, a goal of the file being
+edited: the demo's configuration 0); without a launch.json, F5 on an
+`.elpi` file does the same.
 
 **What one should see** (from the protocol, not seen): with a breakpoint
 on line 6 of [`tests/append.elpi`](tests/append.elpi) (its second clause),
@@ -80,7 +82,7 @@ of elpi-debug in the debug console (`g`, `p`, `scope`, `hyps`, `e`, `f`,
 |---|---|
 | setBreakpoints (file, line) | `+ clause N`: N is the rule that holds the line; the run stops at the unify step of that rule (when it is selected for a call) |
 | setFunctionBreakpoints (name) | `+ P`: the run stops at the call port of each call of P (and at the resume of a goal of P woken by CHR) |
-| configurationDone | `l` (leap to the first breakpoint), or with `stopOnEntry` a stop before the first event |
+| configurationDone | `l` (leap to the first breakpoint), or with `stopOnEntry` a stop before the first event (shown at `queryPath`:`queryLine` when the launch gives them, e.g. the property of a counterexample; else with no line) |
 | stepIn | `c` (creep: the next event) |
 | next | `s` (skip the call) at the ports of a call; `c` at a step inside a call (unify, pi, `=>`, cut, delay), where skip would leave the call |
 | stepOut | `o`: to the exit or fail port of the call whose body runs the event (at a port of a call: the call above) |

@@ -14,11 +14,19 @@ and runs this command.
 
 It needs the opam switch `elpi5` (Rocq 9.1.1, Elpi 4.0.0, rocq-elpi master
 4a8efd9: `coq.parse.argument`, coq-elpi pull request #1133, and
-`coq.ltac.name-uvar`, which names the goals of a Proof block):
+`coq.ltac.name-uvar`, which names the goals of a Proof block), and
+coq-itauto, which cyp runs for the name `tauto` (`tauto` may run for
+minutes on small goals that itauto closes at once).  The released
+coq-itauto 9.1.0 needs two fixes for Rocq 9, in the copy pinned in
+`elpi5` (`~/git/itauto-rocq9`): its opam file depends on `rocq-core` and
+`rocq-stdlib` instead of the `coq` meta-package (which would bring the
+standard library down to 9.0.0), and its classical mode (`Itauto
+Classic`, which cyp sets) looks for `Stdlib.Logic.Classical_Prop`, the
+name of the classical library since Rocq 9:
 
 ```sh
 dune build
-(cd vernac && rocq c -Q . CypV Cyp.v)                     # the cyp library
+(cd vernac && rocq c -Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText Gaps.v Cyp.v)   # the cyp library
 export CYP_LIB=$PWD/vernac
 dune exec cyp -- examples/square_pos.md   # writes square_pos.checked.md and square_pos.cyp.json
 dune exec cyp -- --conditions examples/square_pos.md   # prints the conditions, tries nothing

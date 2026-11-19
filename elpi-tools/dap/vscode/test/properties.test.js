@@ -122,8 +122,13 @@ test('Debug this counterexample, from the failure message: the replay goal under
     goal: 'sort [0, 0] S, std.length [0, 0] N, std.length S M, N = M',
     args: ['-I', checkLibrary],
     cwd: demo,
-    stopOnEntry: true
+    stopOnEntry: true,
+    queryPath: lists,
+    queryLine: 44
   });
+  // the Debug Console says what is debugged, before the first step
+  const header = recorded.debugConsole[recorded.debugConsole.length - 1];
+  assert.match(header, /^Debugging the counterexample of the property sort-length \(lists\.elpi:44\):\n  L = \[0, 0\]\n/);
 });
 
 test('Debug this counterexample on a property that holds: a message, no debugging', async () => {

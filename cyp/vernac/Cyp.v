@@ -30,6 +30,12 @@ From Stdlib Require Import PrimString List Lia Lra Ring Field.
 From elpi Require Import elpi.
 (* the coarse gap tactic cyp_gap, tried on a condition nothing else closes *)
 From CypV Require Export Gaps.
+(* itauto (coq-itauto): a reflexive SAT solver for propositional logic, run
+   for the name tauto: tauto may run for minutes on goals that itauto closes
+   at once.  With the flag Itauto Classic, itauto reasons classically when
+   the classical axiom is loaded, as tauto does *)
+From Cdcl Require Import Itauto.
+#[export] Set Itauto Classic.
 
 (* a claim C of the text, proved by p, is a hypothesis of the rest k *)
 Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
@@ -40,13 +46,17 @@ Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
 Ltac cyp_lia := lia.            Ltac cyp_nia := nia.
 Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
 Ltac cyp_ring := ring.          Ltac cyp_field := field.
-Ltac cyp_tauto := tauto.        Ltac cyp_auto := auto.
+Ltac cyp_tauto := itauto auto.        Ltac cyp_auto := auto.
 Ltac cyp_easy := easy.          Ltac cyp_reflexivity := reflexivity.
 Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
 (* firstorder, bounded (prooftext/Tactics.v, shared with xtext): firstorder has no bound (on a condition
    of xtext's half_le it ran over 30 s and took up to 7 GB) *)
 Ltac cyp_firstorder := bounded_firstorder.
 (* used by cyp itself *)
+(* a hypothesis that is the goal, when the goal has no existential variable
+   (on a premise of a lemma still to be found, a hypothesis would fix it) *)
+Ltac cyp_hypothesis :=
+  lazymatch goal with |- ?g => tryif has_evar g then fail else assumption end.
 Ltac cyp_intros := progress intros.
 Ltac cyp_eapply t := eapply t.
 Ltac cyp_split := split.
