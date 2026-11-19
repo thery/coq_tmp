@@ -27,13 +27,23 @@ type step string -> list element -> option string -> list step -> step.
 % the notation scope of the formulas (header's scope:), "" for none
 % ------------------------------------------------------------------ %
 % Declarations: each variable, hypothesis, claim or definition of the
-% proof is declared with its name recorded, (decl X N T, name-in-scope S)
-% => G, so that a hypothesis with no name gets one that nothing in scope
-% has (hyp-name).  (Rocq-Elpi's decl cannot be listed: its first argument
-% is an input.)
+% proof is declared with its name recorded (under-decl, under-def), so
+% that a hypothesis with no name gets one that nothing in scope has
+% (hyp-name).  (Rocq-Elpi's decl cannot be listed: its first argument is
+% an input.)
 
 % [name-in-scope S]: S is the name of something declared in scope
 pred name-in-scope o:string.
+
+% [under-decl Nm T G]: G x, for a new variable x : T named Nm, declared in
+% the context with its name recorded
+pred under-decl i:name, i:term, i:(term -> prop).
+under-decl Nm T G :- coq.name->id Nm Id, pi x\ (decl x Nm T, name-in-scope Id) => G x.
+
+% [under-def Nm T B G]: G x, for a new local definition x : T := B named
+% Nm, declared in the context with its name recorded
+pred under-def i:name, i:term, i:term, i:(term -> prop).
+under-def Nm T B G :- coq.name->id Nm Id, pi x\ (def x Nm T B, name-in-scope Id) => G x.
 
 pred current-scope o:string.
 
@@ -97,14 +107,14 @@ elaborate-context (context-item Id Imp T0 none R) (context-item Id Imp T none C)
   coq.elaborate-ty-skeleton T0 _ T D0,
   if (D0 = ok)
      (coq.id->name Id N,
-      coq.name->id N DeclaredName, pi x\ (decl x N T, name-in-scope DeclaredName) => elaborate-context (R x) (C x) D)
+      under-decl N T (x\ elaborate-context (R x) (C x) D))
      (D = D0).
 elaborate-context (context-item Id Imp T0 (some B0) R) (context-item Id Imp T (some B) C) D :-
   coq.elaborate-ty-skeleton T0 _ T D0,
   if (D0 = ok) (coq.elaborate-skeleton B0 T B D1) (D1 = D0),
   if (D1 = ok)
      (coq.id->name Id N,
-      coq.name->id N DeclaredName, pi x\ (def x N T B, name-in-scope DeclaredName) => elaborate-context (R x) (C x) D)
+      under-def N T B (x\ elaborate-context (R x) (C x) D))
      (D = D1).
 
 pred is-prop i:term.
@@ -235,7 +245,7 @@ claims-then S J N Tac [C | Cs] Own OTac Rest G {{ cyp_have lp:C lp:G lp:P1 lp:K 
   step-proof Tac Id C P1 R,
   claim-name Id Nm, J1 is J + 1,
   K = fun Nm C P2,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm C, name-in-scope DeclaredName) => claims-then S J1 N Tac Cs Own OTac Rest G (P2 x) Rs.
+  under-decl Nm C (x\ claims-then S J1 N Tac Cs Own OTac Rest G (P2 x) Rs).
 
 % ------------------------------------------------------------------ %
 % Scopes
@@ -253,14 +263,14 @@ scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :- rex.match ".*:=" S, !,
     {msg "definition-not-parsed" [S]},
   coq.arity->term Ar T, coq.id->name Id Nm,
   Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
-  coq.name->id Nm DeclaredName, pi x\ (def x Nm T Bo, name-in-scope DeclaredName) => scope Vs Hs Body (TyR x) (PfR x) N Rs.
+  under-def Nm T Bo (x\ scope Vs Hs Body (TyR x) (PfR x) N Rs).
 scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :-
   std.assert-ok! (variables S C) {msg "variables-not-parsed" [S]},
   scope-ctx C Vs Hs Body Ty Pf N Rs.
 scope [] [pr E Nm0 | Hs] Body (prod Nm A TyR) (fun Nm A PfR) N Rs :-
   std.assert-ok! (parse E A) {msg "hypothesis-not-parsed" []},
   hyp-name Nm0 Nm,
-  coq.name->id Nm DeclaredName, pi h\ (decl h Nm A, name-in-scope DeclaredName) => scope [] Hs Body (TyR h) (PfR h) N Rs.
+  under-decl Nm A (h\ scope [] Hs Body (TyR h) (PfR h) N Rs).
 
 pred scope-ctx i:context-decl, i:list element,
   i:list (pair element (option string)), i:list step, o:term, o:term, o:int,
@@ -268,7 +278,7 @@ pred scope-ctx i:context-decl, i:list element,
 scope-ctx context-end Vs Hs Body Ty Pf N Rs :- scope Vs Hs Body Ty Pf N Rs.
 scope-ctx (context-item Id _ T _ C) Vs Hs Body (prod Nm T TyR) (fun Nm T PfR) N Rs :-
   coq.id->name Id Nm,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => scope-ctx (C x) Vs Hs Body (TyR x) (PfR x) N Rs.
+  under-decl Nm T (x\ scope-ctx (C x) Vs Hs Body (TyR x) (PfR x) N Rs).
 
 % [hyp-name Given Name]: the name of a hypothesis: the one the text gives
 % it, else the first of H1, H2, ... that no variable, hypothesis or claim
@@ -331,7 +341,7 @@ open-claims S J NC Tac [C | Cs] Acc Rest Ty {{ cyp_have lp:C lp:Ty lp:P1 lp:K }}
   step-proof Tac Id C P1 R,
   claim-name Id Nm, J1 is J + 1,
   K = fun Nm C Pf,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm C, name-in-scope DeclaredName) => open-claims S J1 NC Tac Cs [pr C x | Acc] Rest Ty (Pf x) N Rs.
+  under-decl Nm C (x\ open-claims S J1 NC Tac Cs [pr C x | Acc] Rest Ty (Pf x) N Rs).
 
 pred conj-proof i:list term, i:list term, o:term.
 conj-proof [_] [P] P :- !.
@@ -357,7 +367,7 @@ pred proj-proof i:term, i:term, i:int, i:int, o:term.
 proj-proof (prod Nm A B) E I N (fun Nm A P) :- !,
   pi x\ proj-proof (B x) {coq.mk-app E [x]} I N (P x).
 proj-proof (let Nm A V B) E I N (let Nm A V P) :- !,
-  coq.name->id Nm DeclaredName, pi x\ (def x Nm A V, name-in-scope DeclaredName) => proj-proof (B x) E I N (P x).
+  under-def Nm A V (x\ proj-proof (B x) E I N (P x)).
 proj-proof B E I N P :- component-proof B E I N P.
 
 pred component-proof i:term, i:term, i:int, i:int, o:term.
@@ -391,7 +401,7 @@ exports S Own OTac ExTy ExPf I N Rest G {{ cyp_have lp:T lp:G lp:Pi lp:K }} Rs :
   proj-type ExTy I N T, proj-proof ExTy ExPf I N Pi,
   condition-id S I N Id, claim-name Id Nm, I1 is I + 1,
   K = fun Nm T P,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => exports S Own OTac ExTy ExPf I1 N Rest G (P x) Rs.
+  under-decl Nm T (x\ exports S Own OTac ExTy ExPf I1 N Rest G (P x) Rs).
 
 pred open-exports i:string, i:list (pair term term), i:term, i:term, i:int, i:int,
   i:list step, o:term, o:term, o:int, o:list report.
@@ -400,7 +410,7 @@ open-exports S Acc ExTy ExPf I N0 Rest Ty {{ cyp_have lp:T lp:Ty lp:Pi lp:K }} N
   proj-type ExTy I N0 T, proj-proof ExTy ExPf I N0 Pi,
   condition-id S I N0 Id, claim-name Id Nm, I1 is I + 1,
   K = fun Nm T Pf,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => open-exports S [pr T x | Acc] ExTy ExPf I1 N0 Rest Ty (Pf x) N Rs.
+  under-decl Nm T (x\ open-exports S [pr T x | Acc] ExTy ExPf I1 N0 Rest Ty (Pf x) N Rs).
 
 % ------------------------------------------------------------------ %
 % The statement
@@ -421,7 +431,7 @@ pred statement-ctx i:context-decl, i:list element,
 statement-ctx context-end Vs Hs Gs Steps Ty Pf Rs :- statement Vs Hs Gs Steps Ty Pf Rs.
 statement-ctx (context-item Id _ T _ C) Vs Hs Gs Steps (prod Nm T TyR) (fun Nm T PfR) Rs :-
   coq.id->name Id Nm,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => statement-ctx (C x) Vs Hs Gs Steps (TyR x) (PfR x) Rs.
+  under-decl Nm T (x\ statement-ctx (C x) Vs Hs Gs Steps (TyR x) (PfR x) Rs).
 
 pred statement-hyps i:list (pair element (option string)), i:list element,
   i:list step, o:term, o:term, o:list report.
@@ -432,4 +442,4 @@ statement-hyps [] Gs Steps G Pf Rs :-
 statement-hyps [pr E Nm0 | Hs] Gs Steps (prod Nm A TyR) (fun Nm A PfR) Rs :-
   std.assert-ok! (parse E A) {msg "statement-hypothesis-not-parsed" []},
   hyp-name Nm0 Nm,
-  coq.name->id Nm DeclaredName, pi h\ (decl h Nm A, name-in-scope DeclaredName) => statement-hyps Hs Gs Steps (TyR h) (PfR h) Rs.
+  under-decl Nm A (h\ statement-hyps Hs Gs Steps (TyR h) (PfR h) Rs).

@@ -249,7 +249,7 @@ Elpi Accumulate lp:{{
   % the binders of the statement and of the body, in parallel
   pred lemma i:term, i:term, o:term, o:list report.
   lemma (prod N T A) (fun _ _ B) (fun N T S) Rs :- !,
-    coq.name->id N DeclaredName, pi x\ (decl x N T, name-in-scope DeclaredName) => lemma (A x) (B x) (S x) Rs.
+    under-decl N T (x\ lemma (A x) (B x) (S x) Rs).
   lemma G Body P Rs :-
     list-of Body Ts, numbered 1 Ts Steps, level "0" none Steps G P Rs.
 
