@@ -99,7 +99,10 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
   announced by *so*, and the step goes forward.  At the end, the last goal must follow from all the claims.
 - **A justification** is written `*by X*` in the step, as a paper says
   "by Lemma 3".  When X is made of words, it is a name: the rules of that
-  name (see `named` below) if there are any, and only them; else the lemma
+  name (see `named` below) if there are any, and only them; else the
+  hypothesis X (a name `(h)` of the text, the claim `c2` of step 2, a
+  variable), applied like a lemma (example
+  [examples/by_hyp_demo.md](examples/by_hyp_demo.md)); else the lemma
   X, applied, its premises closed by the rules or the default tactics;
   else the tactic X (an Ltac name, or `lia`, `lra`, `nia`, `nra`, `ring`,
   `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
