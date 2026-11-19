@@ -123,9 +123,9 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     error.  X cannot be tactic code (`interval with (i_prec 100)`):
     Rocq-Elpi cannot yet turn a string into a tactic; name an Ltac
     definition instead (`tactic-name`).
-- **The transition.**  The texts written before the tree (xtext's, until
-  they are written again) name a justification `*by X*`: it is read as
-  `*X*{.just}`.
+- **Old texts.**  The texts written before the tree name a justification
+  `*by X*`: it is still read as `*X*{.just}` (xtext and cyp's examples
+  are written in the new format).
 - **Errors** of the tree, reported at their node and line (in the checked
   Markdown and the JSON), and the node is not proved: a node with tags but
   no conclusion, two conclusions, a name out of scope or given twice in
@@ -247,8 +247,8 @@ makes the PDF of a checked text with Typst, in the template that
 prooftext shares with xtext
 ([../prooftext](../prooftext/README.md#the-pdf-of-a-proof-text-typst)):
 each step has its status as a coloured mark (✔ proved, ✘ not proved, ◆
-left to a Proof block, ▫ nothing to check), cyp's message in a box under
-it, and its number in the margin, the number of its conditions; the
+left to a Proof block, ▫ nothing to check: a remark), cyp's message in a box under
+it, and its number in the margin, the number of its condition; the
 legend at the end recalls the marks and the looks of the roles, and the
 names (h) and the lemmas are links (to their steps, to their
 documentation).  The
