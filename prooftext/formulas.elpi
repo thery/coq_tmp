@@ -1,16 +1,19 @@
-% prooftext: formulas and justifications inside the text of a step.
+% prooftext: formulas and justifications inside the text of a node.
 % (load after lexicon/lexicon.elpi, which defines the roles)
 %
 % A formula is written between backticks, in Rocq syntax, with its role
-% as a Pandoc class right after it: `n + 0 = n`{.claim}.  A step names
-% what justifies it in italics, *by X*: a lemma, a constructor, a rule or
-% a tactic (tactics.elpi).
+% as a Pandoc class right after it: `n + 0 = n`{.claim}.  A justification
+% is an emphasised name with the class just, *Nat.add_comm*{.just}: a
+% hypothesis, a node, a lemma, a rule or a tactic (tactics.elpi).  The
+% form of the texts written before the tree, *by X*, is still read, as
+% the justification X (README, "The transition").
 
 namespace prooftext {
 
 % [role-tag Role Tag]: the class of a formula of role Role.  A backward
-% claim (it replaces the goal) has the class of a claim: reading the
-% class claim gives rclaim, the first role with that class.
+% claim (a role of the lexicon that the format no longer has) has the
+% class of a claim: reading the class claim gives rclaim, the first role
+% with that class.
 pred role-tag o:role, o:string.
 role-tag rvar "var".
 role-tag rhyp "hyp".
@@ -18,48 +21,61 @@ role-tag rclaim "claim".
 role-tag rfact "fact".
 role-tag rback "claim".
 
+% [justification-class C]: C is the class of a justification, *X*{.C}
+pred justification-class o:string.
+justification-class "just".
+
 % [formula Role F S]: the formula F (its text in Rocq syntax) with the
 % class of Role
 pred formula i:role, i:string, o:string.
 formula Role F S :- role-tag Role Tag, !, S is "`" ^ F ^ "`{." ^ Tag ^ "}".
 
-% [justification J S]: the justification J of a step, *by J*
+% [justification J S]: the justification J in the form of the texts
+% written before the tree, *by J* (xtext writes it until its texts are
+% written as trees)
 pred justification i:string, o:string.
 justification J S :- S is "*by " ^ J ^ "*".
 
-% [split-justification S J Rest]: the justification *by X* in the text S
-% of a step (J = some X, X trimmed) and the text without it; J = none
-% when S has none
-pred split-justification i:string, o:option string, o:string.
-split-justification S (some X) Rest :-
-  rex.match ".*[*]by [^*]+[*]" S, !,
-  rex.replace ".*[*]by \\([^*]+\\)[*].*" "\\1" S X0,
-  rex.replace "[*]by [^*]+[*]" "" S Rest,
-  rex.replace "^ +\\| +$" "" X0 X.
-split-justification S none S.
+% [justification-name J S]: the justification J, *J*{.just}
+pred justification-name i:string, o:string.
+justification-name J S :- justification-class C, S is "*" ^ J ^ "*{." ^ C ^ "}".
 
-% [is-justification S]: S is a justification, *by J*
+% [is-justification S]: S is a justification in the form *by J*
 pred is-justification i:string.
 is-justification S :- rex.match "^[*]by .*[*]$" S.
 
-% ------------------------------------------------------------------
-% Reading the text of a statement or a step: its parts, for every reader
-% (cyp, the Typst writer).  A formula is between backticks (a backtick
-% with no other after it is text); right after it may come its class,
-% {.tag}, then, after spaces, the name given to it, (h)
+% [is-name S]: S has the form of a name, possibly qualified: h4,
+% Nat.add_comm, Corelib.Init.Logic.conj, x'
+pred is-name i:string.
+is-name S :- rex.match "^[A-Za-z_][A-Za-z0-9_']*\\([.][A-Za-z_][A-Za-z0-9_']*\\)*$" S.
 
-% a part of the text of a statement or a step, as it is written
+% ------------------------------------------------------------------
+% Reading the text of a node: its parts, for every reader (cyp, the
+% Typst writer).  A formula is between backticks (a backtick with no
+% other after it is text); right after it may come its class, {.tag},
+% then, after spaces, the name given to it, (h).  An emphasised text
+% followed by a class, *X*{.tag}, is a tagged name.
+
+% a part of the text of a node, as it is written
 kind text-part type.
 type plain string -> text-part.         % words
 type formula-part string -> string -> option string -> text-part.
                                         % a formula: its class ("" for
                                         % none), its text, the name (h)
                                         % written after it (none for none)
-type by-part string -> text-part.       % a justification, *by X*
+type term-part string -> term -> option string -> text-part.
+                                        % a formula given as a Rocq term
+                                        % (cyp's Cyp Lemma): its class,
+                                        % the term, its name
+type tagged-name string -> string -> text-part.
+                                        % *X*{.tag}: the class and X; a
+                                        % justification for the class just
+type by-part string -> text-part.       % *by X*, the justification X of
+                                        % the texts written before the tree
 
 % [text-parts Text Parts]: the parts of Text, in order: each formula
 % (with what follows it, after-formula) and the text between them, where
-% the justifications are (plain-parts)
+% the tagged names and the justifications are (plain-parts)
 pred text-parts i:string, o:list text-part.
 text-parts Text Parts :-
   rex.match "^[^`]*`[^`]*`" Text, !,
@@ -98,18 +114,42 @@ formula-name S (some N) Rest :-
   rex.replace "^ *([A-Za-z_][A-Za-z0-9_']*)" "" S Rest.
 formula-name S none S.
 
-% [plain-parts Text Parts]: a text without formulas: plain text and the
-% justifications *by X* in it (no part for an empty text)
+% [plain-parts Text Parts]: a text without formulas: plain text, the
+% tagged names *X*{.tag} and the justifications *by X* in it (no part for
+% an empty text)
 pred plain-parts i:string, o:list text-part.
 plain-parts "" [] :- !.
 plain-parts Text Parts :-
+  rex.match "^.*[*][^*]+[*]{[.][A-Za-z]+}" Text, !,
+  rex.replace "^\\(.*\\)[*][^*]+[*]{[.][A-Za-z]+}.*" "\\1" Text Before,
+  rex.replace "^.*[*]\\([^*]+\\)[*]{[.][A-Za-z]+}.*" "\\1" Text X,
+  rex.replace "^.*[*][^*]+[*]{[.]\\([A-Za-z]+\\)}.*" "\\1" Text Class,
+  rex.replace "^.*[*][^*]+[*]{[.][A-Za-z]+}" "" Text After,
+  plain-parts Before BeforeParts,
+  plain-parts After AfterParts,
+  std.append BeforeParts [tagged-name Class X | AfterParts] Parts.
+plain-parts Text Parts :-
   rex.match "^.*[*]by [^*]+[*]" Text, !,
   rex.replace "^\\(.*\\)[*]by [^*]+[*].*" "\\1" Text Before,
-  rex.replace "^.*[*]by \\([^*]+\\)[*].*" "\\1" Text J,
+  rex.replace "^.*[*]by \\([^*]+\\)[*].*" "\\1" Text J0,
   rex.replace "^.*[*]by [^*]+[*]" "" Text After,
+  prooftext.trim J0 J,
   plain-parts Before BeforeParts,
   plain-parts After AfterParts,
   std.append BeforeParts [by-part J | AfterParts] Parts.
 plain-parts Text [plain Text].
 
+}
+
+namespace prooftext {
+% [split-justification S J Rest]: the justification *by X* in the text S
+% of a step (J = some X) and the text without it (cyp's reading before
+% the tree; removed with it)
+pred split-justification i:string, o:option string, o:string.
+split-justification S (some X) Rest :-
+  rex.match ".*[*]by [^*]+[*]" S, !,
+  rex.replace ".*[*]by \\([^*]+\\)[*].*" "\\1" S X0,
+  rex.replace "[*]by [^*]+[*]" "" S Rest,
+  rex.replace "^ +\\| +$" "" X0 X.
+split-justification S none S.
 }

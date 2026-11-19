@@ -122,6 +122,7 @@ From Lexicon Extra Dependency "lang_la.elpi" as lexicon_la.
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "tree.elpi" as pt_tree.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
@@ -143,7 +144,7 @@ Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
   lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_checked pt_tactics.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
   cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
   cyp_command.
@@ -175,7 +176,7 @@ Elpi Export CypFile.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
   lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_checked pt_tactics.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
   cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
   cyp_command.

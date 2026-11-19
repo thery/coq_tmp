@@ -232,7 +232,17 @@ part-typst (context F0 Names Words) Where (prooftext.formula-part Tag Formula Na
   (if (prooftext.role-tag _ Tag) (Role = Tag) (Role = "formula")),
   name-typst (context F Names Words) Where Tag Name NameCall C,
   Call is "#" ^ Role ^ "(" ^ Shown ^ ")" ^ NameCall.
-part-typst (context F Names Words) _ (prooftext.by-part J) Call (context F Names Words) :-
+part-typst C _ (prooftext.by-part J) Call C :- justification-typst C J Call.
+part-typst C _ (prooftext.tagged-name Class J) Call C :-
+  prooftext.justification-class Class, !, justification-typst C J Call.
+% a tagged name of another class (an error for a checker): its text
+part-typst C _ (prooftext.tagged-name Class X) Call C :-
+  Call is "#" ^ {prooftext.typst-string {calc ("*" ^ X ^ "*{." ^ Class ^ "}")}}.
+
+% [justification-typst C J Call]: the Typst code of the justification J,
+% *J*{.just} or *by J*, a link to what it names
+pred justification-typst i:context, i:string, o:string.
+justification-typst (context _ Names _) J Call :-
   justification-link Names J Arguments,
   Call is "#by(" ^ {prooftext.typst-string J} ^ Arguments ^ ")".
 

@@ -1,0 +1,300 @@
+% prooftext: what the nodes of a tree say, their numbers, and the errors
+% of a tree.  (load after tree.elpi)
+%
+% A node of the tree (tree.elpi) says, by the tags of its own text: one
+% conclusion `C`{.claim}, with at most one name (n) after it, the name of
+% the node; its variables `x : T`{.var} and its hypotheses `A`{.hyp} (h),
+% which hold in it and in its subnodes; the facts `F`{.fact} it uses; its
+% justifications *X*{.just} (and *by X*, in the texts written before the
+% tree).  A node whose text has no tag at all is a remark: it is shown,
+% it is no node of the proof, and its subnodes are those of the node
+% around it.  Seen from outside, a node is ∀ V, H → C; it can be used
+% by the nodes after it in its list (R1, the paper's rule) and by the
+% node around it.
+
+namespace prooftext {
+
+% ------------------------------------------------------------------
+% The parts of a node
+
+% [contents-parts Cs Parts]: the parts of the own text of a node whose
+% contents are Cs (not those of its subnodes), in order
+pred contents-parts i:list prooftext.content, o:list prooftext.text-part.
+contents-parts [] [].
+contents-parts [prooftext.run _ Ps | Cs] Parts :- !, contents-parts Cs Ps1, std.append Ps Ps1 Parts.
+contents-parts [_ | Cs] Parts :- contents-parts Cs Parts.
+
+% [node-parts N Parts]: the parts of the own text of the node N
+pred node-parts i:prooftext.node, o:list prooftext.text-part.
+node-parts (prooftext.node _ _ _ _ Cs) Parts :- contents-parts Cs Parts.
+
+% [part-class P Class]: the class of a formula or of a tagged name
+pred part-class i:prooftext.text-part, o:string.
+part-class (prooftext.formula-part C _ _) C.
+part-class (prooftext.term-part C _ _) C.
+part-class (prooftext.tagged-name C _) C.
+
+% [is-tag P]: the part P is a tag: a formula with a class, a tagged name,
+% a justification *by X*
+pred is-tag i:prooftext.text-part.
+is-tag (prooftext.by-part _) :- !.
+is-tag P :- part-class P C, not (C = "").
+
+% [is-remark N]: the own text of N has no tag
+pred is-remark i:prooftext.node.
+is-remark N :- node-parts N Ps, not (std.exists Ps is-tag).
+
+% [claim-parts Parts Claims]: the conclusions among the parts
+pred claim-parts i:list prooftext.text-part, o:list prooftext.text-part.
+claim-parts Ps Cs :- std.filter Ps (p\ part-class p C, prooftext.role-tag rclaim C) Cs.
+
+% [part-name P Name]: the name (n) written after a formula
+pred part-name i:prooftext.text-part, o:option string.
+part-name (prooftext.formula-part _ _ N) N.
+part-name (prooftext.term-part _ _ N) N.
+
+% [justification-names Parts Names]: the names of the justifications
+pred justification-names i:list prooftext.text-part, o:list string.
+justification-names Ps Ns :- std.map-filter Ps justification-of Ns.
+
+% [justification-of P Name]: the part P is a justification of the name
+% Name: *Name*{.just}, or *by Name*
+pred justification-of i:prooftext.text-part, o:string.
+justification-of (prooftext.tagged-name C X) X :- prooftext.justification-class C.
+justification-of (prooftext.by-part X) X.
+
+% [hypothesis-names Parts Names]: the names written after the hypotheses
+pred hypothesis-names i:list prooftext.text-part, o:list string.
+hypothesis-names Ps Ns :-
+  std.map-filter Ps (p\ n\ part-class p C, prooftext.role-tag rhyp C, part-name p (some n)) Ns.
+
+% [variable-names Parts Names]: the names of the variables (x y : T,
+% u := e, u : T := e)
+pred variable-names i:list prooftext.text-part, o:list string.
+variable-names Ps Ns :-
+  std.map-filter Ps (p\ n\ sigma C F\ p = prooftext.formula-part C F _, prooftext.role-tag rvar C, n = F) Fs,
+  std.map Fs declared-names Nss, std.flatten Nss Ns.
+
+% [declared-names F Ns]: the names declared by the variables F, the words
+% before its first colon
+pred declared-names i:string, o:list string.
+declared-names F Ns :-
+  rex.replace ":.*" "" F Before, rex.split " +" Before Ws,
+  std.filter Ws (w\ rex.match "^[A-Za-z_][A-Za-z0-9_']*$" w) Ns.
+
+% [auto-name Id Name]: the name of the conclusion of node Id when the
+% text gives it none: c and its number, dots written _ (2.1 gives c2_1)
+pred auto-name i:string, o:string.
+auto-name Id N :- rex.replace "[.]" "_" Id S, N is "c" ^ S.
+
+% [node-name Id Parts Name]: the name of the conclusion of node Id: the
+% one written after it, else its auto-name
+pred node-name i:string, i:list prooftext.text-part, o:string.
+node-name _ Ps N :- claim-parts Ps [C], part-name C (some N), !.
+node-name Id _ N :- auto-name Id N.
+
+% ------------------------------------------------------------------
+% Numbers
+
+% [child-number Id K Number]: the number of the K-th subnode of node Id,
+% in Dewey notation; the top node is 0, its subnodes 1, 2, ...
+pred child-number i:string, i:int, o:string.
+child-number "0" K N :- !, prooftext.step-number "" K N.
+child-number Id K N :- prooftext.step-number Id K N.
+
+% [numbered-subnodes Id N Subs]: the subnodes of node Id, in order, with
+% their numbers (remarks too)
+pred numbered-subnodes i:string, i:prooftext.node, o:list (pair string prooftext.node).
+numbered-subnodes Id (prooftext.node _ _ _ _ Cs) Subs :-
+  std.map-filter Cs (c\ n\ c = prooftext.sub n) Ns, number-from Id 1 Ns Subs.
+
+% [number-from Id K Ns Subs]: the nodes Ns numbered as the K-th, K+1-th,
+% ... subnodes of node Id
+pred number-from i:string, i:int, i:list prooftext.node, o:list (pair string prooftext.node).
+number-from _ _ [] [].
+number-from Id K [N | Ns] [pr Number N | Subs] :-
+  child-number Id K Number, K1 is K + 1, number-from Id K1 Ns Subs.
+
+% [node-children Id N Children]: the subnodes of node Id that are nodes of
+% the proof, in order, with their numbers: a remark is replaced by its
+% own children
+pred node-children i:string, i:prooftext.node, o:list (pair string prooftext.node).
+node-children Id N Children :-
+  numbered-subnodes Id N Subs, std.map Subs proof-children Css, std.flatten Css Children.
+
+% [proof-children Sub Children]: the numbered subnode Sub, or its
+% children if it is a remark
+pred proof-children i:pair string prooftext.node, o:list (pair string prooftext.node).
+proof-children (pr Id N) Children :- is-remark N, !, node-children Id N Children.
+proof-children S [S].
+
+% [all-nodes Id N All]: the node N numbered Id and all the nodes inside
+% it, remarks too, in the order of the text
+pred all-nodes i:string, i:prooftext.node, o:list (pair string prooftext.node).
+all-nodes Id N [pr Id N | All] :-
+  numbered-subnodes Id N Subs,
+  std.map Subs (s\ a\ sigma I M\ s = pr I M, all-nodes I M a) Alls, std.flatten Alls All.
+
+% ------------------------------------------------------------------
+% Errors
+
+% an error of a tree: the number of its node, its line, what it is
+kind node-error type.
+type node-error string -> int -> prooftext.text-error -> node-error.
+
+% [error-template Key Template]: the English message of an error, %1, %2
+% its arguments
+pred error-template o:string, o:string.
+error-template "no-conclusion" "a node with no conclusion: it has tags, but no {.claim}".
+error-template "two-conclusions" "a node with two conclusions, %1 and %2".
+error-template "statement-no-conclusion" "the statement has no conclusion, no {.claim}".
+error-template "unknown-class" "an unknown class, {.%1}".
+error-template "not-a-name" "a justification is a name, not *%1*{.just}".
+error-template "out-of-scope" "%1 is out of scope here".
+error-template "name-twice" "the name %1 is given twice in one scope".
+error-template "unclosed-span" "a [ with no ]{.p} after it: an unclosed span".
+error-template "unopened-span" "a ]{.p} with no [ before it".
+error-template "unclosed-div" "a ::: p with no ::: after it: an unclosed div".
+error-template "unopened-div" "a ::: that closes no div".
+
+% [fill-template I Args T S]: the template T with %I, %I+1, ... replaced
+% by the arguments (their backslashes protected, since rex.replace reads
+% them in the replacement)
+pred fill-template i:int, i:list string, i:string, o:string.
+fill-template _ [] T T.
+fill-template I [A | As] T S :-
+  rex.replace "\\\\" "\\\\\\\\" A A1,
+  P is "%" ^ {std.any->string I}, rex.replace P A1 T T1,
+  I1 is I + 1, fill-template I1 As T1 S.
+
+% [error-message E S]: the English message of the error E, with its line
+% (numbered from 1, as editors number them)
+pred error-message i:node-error, o:string.
+error-message (node-error _ L (prooftext.text-error K As)) S :-
+  error-template K T, fill-template 1 As T M,
+  S is "line " ^ {std.any->string {calc (L + 1)}} ^ ": " ^ M.
+
+% [tree-errors Top Errors]: the errors of the tree of the top node Top:
+% the errors of the reader (flaws), then those of each node of the proof
+pred tree-errors i:prooftext.node, o:list node-error.
+tree-errors Top Errors :-
+  all-nodes "0" Top All,
+  std.map All node-flaws Fss, std.flatten Fss Flaws,
+  std.map All (n\ ns\ sigma I N\ n = pr I N, node-names I N ns) Nss, std.flatten Nss Names,
+  node-errors "0" Top [] Names Es,
+  std.append Flaws Es Errors.
+
+% [node-flaws Node Errors]: the errors of the reader in the own text of a
+% numbered node
+pred node-flaws i:pair string prooftext.node, o:list node-error.
+node-flaws (pr Id (prooftext.node _ _ _ _ Cs)) Es :-
+  std.map-filter Cs (c\ e\ sigma L E\ c = prooftext.flaw L E, e = node-error Id L E) Es.
+
+% [node-names Id N Names]: the names that the node N numbered Id gives:
+% its variables, its hypotheses, its conclusion's
+pred node-names i:string, i:prooftext.node, o:list string.
+node-names Id N Names :-
+  node-parts N Ps, variable-names Ps Vs, hypothesis-names Ps Hs,
+  (if (claim-parts Ps [_]) (Own = [{node-name Id Ps}]) (Own = [])),
+  std.flatten [Vs, Hs, Own] Names.
+
+% [node-errors Id N Scope All Es]: the errors of the node N numbered Id
+% and of the nodes inside it.  Scope: the names visible in N (each with
+% its kind, "var", "hyp" or "node"), from the nodes around it and before
+% it; All: the names given anywhere in the text
+pred node-errors i:string, i:prooftext.node, i:list (pair string string), i:list string,
+  o:list node-error.
+node-errors Id N Scope All Es :-
+  node-line N L, node-parts N Ps,
+  class-errors Id L Ps E1,
+  conclusion-errors Id L Ps E2,
+  variable-names Ps Vs, hypothesis-names Ps Hs,
+  twice-errors Id L Hs Scope E3,
+  std.map Vs (v\ p\ p = pr v "var") VScope, std.map Hs (h\ p\ p = pr h "hyp") HScope,
+  std.flatten [HScope, VScope, Scope] Inner,
+  node-children Id N Children,
+  children-errors Children All Inner Visible E4,
+  justification-names Ps Js,
+  scope-errors Id L Js Visible All E5,
+  std.flatten [E1, E2, E3, E4, E5] Es.
+
+% [class-errors Id L Parts Es]: the classes that the format does not have,
+% and the justifications that are not names
+pred class-errors i:string, i:int, i:list prooftext.text-part, o:list node-error.
+class-errors Id L Ps Es :- std.map-filter Ps (class-error Id L) Es.
+
+% [class-error Id L P E]: the error of the part P, if it has one
+pred class-error i:string, i:int, i:prooftext.text-part, o:node-error.
+class-error Id L (prooftext.tagged-name C X) (node-error Id L (prooftext.text-error "not-a-name" [X])) :-
+  prooftext.justification-class C, !, not (prooftext.is-name X).
+class-error Id L (prooftext.by-part X) (node-error Id L (prooftext.text-error "not-a-name" [X])) :- !, not (prooftext.is-name X).
+class-error Id L P (node-error Id L (prooftext.text-error "unknown-class" [C])) :-
+  part-class P C, not (C = ""), not (prooftext.role-tag _ C), not (prooftext.justification-class C).
+
+% [conclusion-errors Id L Parts Es]: a node of the proof has one
+% conclusion
+pred conclusion-errors i:string, i:int, i:list prooftext.text-part, o:list node-error.
+conclusion-errors Id L Ps Es :-
+  claim-parts Ps Cs,
+  if (Cs = [], Id = "0") (Es = [node-error Id L (prooftext.text-error "statement-no-conclusion" [])])
+  (if (Cs = []) (Es = [node-error Id L (prooftext.text-error "no-conclusion" [])])
+  (if (Cs = [A, B | _])
+      (Es = [node-error Id L (prooftext.text-error "two-conclusions" [{part-text A}, {part-text B}])])
+      (Es = []))).
+
+% [part-text P S]: the text of a formula, for a message
+pred part-text i:prooftext.text-part, o:string.
+part-text (prooftext.formula-part _ F _) F :- !.
+part-text (prooftext.term-part _ T _) S :- !, S = {std.any->string T}.
+part-text _ "".
+
+% [twice-errors Id L Hs Scope Es]: the hypotheses Hs of a node named by a
+% hypothesis or a conclusion visible, or by another of Hs
+pred twice-errors i:string, i:int, i:list string, i:list (pair string string),
+  o:list node-error.
+twice-errors _ _ [] _ [].
+twice-errors Id L [H | Hs] Scope Es :-
+  (if (given-name Scope H ; std.mem! Hs H)
+      (Es = [node-error Id L (prooftext.text-error "name-twice" [H]) | Es1])
+      (Es = Es1)),
+  twice-errors Id L Hs Scope Es1.
+
+% [given-name Scope N]: N names a hypothesis or a conclusion in Scope
+pred given-name i:list (pair string string), i:string.
+given-name Scope N :- std.mem Scope (pr N K), not (K = "var"), !.
+
+% [children-errors Children All Scope Visible Es]: the errors of the
+% children of a node, each one seeing Scope (what holds in the node) and
+% the conclusions of the children before it; Visible: Scope with the
+% conclusions of all the children (what the node's own justifications see)
+pred children-errors i:list (pair string prooftext.node),
+  i:list string, i:list (pair string string), o:list (pair string string), o:list node-error.
+children-errors [] _ Scope Scope [].
+children-errors [pr Id N | Ns] All Scope Visible Es :-
+  node-errors Id N Scope All E1,
+  node-parts N Ps,
+  (if (claim-parts Ps [C])
+     (node-name Id Ps Name,
+      (if (part-name C (some _), given-name Scope Name)
+          (E2 = [node-error Id {node-line N} (prooftext.text-error "name-twice" [Name])])
+          (E2 = [])),
+      Scope1 = [pr Name "node" | Scope])
+     (E2 = [], Scope1 = Scope)),
+  children-errors Ns All Scope1 Visible E3,
+  std.flatten [E1, E2, E3] Es.
+
+% [node-line N L]: the first line of the node N
+pred node-line i:prooftext.node, o:int.
+node-line (prooftext.node _ (prooftext.lines L _) _ _ _) L.
+node-line (prooftext.node _ prooftext.unplaced _ _ _) 0.
+
+% [scope-errors Id L Js Visible All Es]: the justifications Js that name
+% something of the text that is not visible here (a name that the text
+% does not give is left to the checker: a lemma, a rule, a tactic)
+pred scope-errors i:string, i:int, i:list string, i:list (pair string string),
+  i:list string, o:list node-error.
+scope-errors Id L Js Visible All Es :-
+  std.map-filter Js (j\ e\ not (std.exists Visible (v\ fst v j)), std.mem! All j,
+    e = node-error Id L (prooftext.text-error "out-of-scope" [j])) Es.
+
+}

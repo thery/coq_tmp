@@ -4,10 +4,10 @@ A *proof text* is a proof written as a Markdown file, with its formulas in
 Rocq syntax.  Two tools share the format: [xtext](../xtext/README.md)
 writes proof texts from Rocq proofs, [cyp](../cyp/README.md) reads them and
 checks them step by step.  This library holds what the two must agree on,
-so that each tool does not keep its own copy: the document tree and its
-writer, the header and its fields, how a formula carries its role, how a
-step names its justification, fresh names, and the tactics a text may
-name.  The words of the texts (the phrases of each language) are in the
+so that each tool does not keep its own copy: the reader of a text into
+the tree of its nodes, the document of a writer and its writing, the
+header and its fields, how a formula carries its role, how a node names
+its justifications, fresh names, and the tactics a text may name.  The words of the texts (the phrases of each language) are in the
 [lexicon](../lexicon/README.md).
 
 ## Loading
@@ -18,6 +18,8 @@ From Lexicon Extra Dependency "lang_en.elpi" as lex_en.   (* and the other table
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "tree.elpi" as pt_tree.
+From ProofText Extra Dependency "nodes.elpi" as pt_nodes.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
@@ -26,13 +28,15 @@ From ProofText Extra Dependency "maths.elpi" as pt_maths.
 From ProofText Extra Dependency "maths-typst.elpi" as pt_maths_typst.
 From ProofText Extra Dependency "links.elpi" as pt_links.
 From ProofText Extra Dependency "typst.elpi" as pt_typst.
-Elpi Accumulate File lex_core lex_en pt_header pt_document pt_formulas pt_names pt_tactics
+Elpi Accumulate File lex_core lex_en pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_tactics
   pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 ```
 
 with `-Q prooftext ProofText` and `-Q lexicon Lexicon`.  `lexicon.elpi`
 comes first (`formulas.elpi` uses its roles), `header.elpi` before
-`document.elpi`, `document.elpi` before `checked.elpi`, the table of
+`document.elpi`, `document.elpi` before `formulas.elpi`, `tree.elpi`
+(the reader) and `nodes.elpi` (what its nodes say) in this order, and
+before `checked.elpi`, the table of
 notations, `maths-table.elpi`, before the printer, `maths.elpi`, before its
 Typst writer, `maths-typst.elpi`, then `links.elpi` and `typst.elpi`
 last (they use the tables of the lexicon, `lang_xx.elpi`, for the words of
@@ -46,29 +50,129 @@ Typst back end, `sh typst/check.sh` (below, "The PDF of a proof text").
 
 ## The format
 
+A proof text is the tree of the 2006 paper (§2.2, its tags `p`, `c`, `h`,
+`v`, `n`, `f`, `j`), written in Markdown.  Its proposal, with the paper's
+examples in both syntaxes, is [../proposal/PROPOSAL.md](../proposal/PROPOSAL.md).
+
 ```markdown
 ---
-require: From Stdlib Require Import Arith Lia. Require Import MyFile.
-by: tauto | lia
+require: From Stdlib Require Import Arith.
 ---
 
-# and_swap
+# praeclarum
 
-Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
+Let `x y z t : Prop`{.var}. If `x -> z`{.hyp} and `y -> t`{.hyp} then `(x /\ y) -> (z /\ t)`{.claim}.
 
-- Assume `A /\ B`{.hyp} (h).
-  - We have `B /\ A`{.claim} *by tauto*.
-- We have proved `A /\ B -> B /\ A`{.claim}.
+- Suppose `x /\ y`{.hyp}.
+  - We get `z`{.claim} by `x -> z`{.fact}, since
+    - we have `x`{.claim}.
+  - We get `t`{.claim} by `y -> t`{.fact}, since
+    - we have `y`{.claim}.
+
+  Altogether we have `z /\ t`{.claim}.
 ```
 
 - the **header**, between two lines `---`, one field `key: value` per line;
 - the **title**, `# name`, the name of the theorem;
-- the **statement**, the text between the title and the first step;
-- the **steps**, a nested Markdown list: a step's sub-steps are the items
-  indented below it;
-- in the text of a statement or a step, each **formula** between
-  backticks, with its role as a Pandoc class right after it, and the
-  **justification** of a step, `*by X*`.
+- everything after the title is the **top node**: the statement and its
+  proof.
+
+**The tree.**  A node (the paper's `<p>`) has, in its own text:
+
+| tag (paper) | Markdown | in a node |
+|---|---|---|
+| conclusion `<c>` | `` `C`{.claim} `` | exactly one |
+| name `<n>` of the node | `(n)` right after its conclusion | at most one; the name later nodes use (else `c` and its number, `c2_1` for node 2.1) |
+| variable `<v>` | `` `x y : T`{.var} ``, `` `u := e`{.var} `` | any; they hold in the node and its subnodes |
+| hypothesis `<h>` | `` `A`{.hyp} (h) `` | any, each with at most one name; they hold in the node and its subnodes |
+| fact `<f>` | `` `F`{.fact} `` | any: formulas the node uses, each a hypothesis or a conclusion it can see |
+| justification `<j>` | `*X*{.just}` | any: names of hypotheses, nodes, lemmas, rules or tactics |
+
+and its **subnodes**, in the order of the text.  The parts may come in any
+order: the conclusion first ("We prove C: ...") or last ("..., so we get
+C").  A formula with no class, and any emphasis without `{.just}`, are
+plain text: shown, without colour, and not used.  The word "by" is an
+ordinary word.
+
+**Two syntaxes for the same tree**, which may be mixed at any depth:
+
+- *structured*: a list item is a node; its sub-items are its subnodes;
+  the text of the item up to its first sub-item, and the paragraphs
+  indented under the item after its sub-items (the *closing paragraph*,
+  "Altogether we have ..." above), are its own text;
+- *free*: a span `[ ... ]{.p}` inside a paragraph is a node; spans nest.
+  A node of several paragraphs is a div, the lines between `::: p` and
+  `:::`.  The marks `[`, `]{.p}`, `:::` are not shown in the PDF and the
+  web page.
+
+A part of the text belongs to the innermost node opened around it (by an
+item, a span or a div).  The same proof, free:
+
+```markdown
+[Suppose `x /\ y`{.hyp}. [[We have `x`{.claim}]{.p}, so by `x -> z`{.fact}
+we get `z`{.claim}.]{.p} [[We have `y`{.claim}]{.p}, so by `y -> t`{.fact}
+we get `t`{.claim}.]{.p} Altogether we have `z /\ t`{.claim}.]{.p}
+```
+
+and mixed, a list item holding a span: `- [We have `x`{.claim}]{.p}, so
+by `x -> z`{.fact} we get `z`{.claim}.` is one node (conclusion `z`) with
+one subnode (conclusion `x`).
+
+**Remarks.**  An item, a span or a div whose own text has no tag at all
+is a *remark*: it is shown, it is no node of the proof, and its subnodes
+(if any) are subnodes of the node around it.
+
+**Scope, and what a node proves.**  For a node P with variables V,
+hypotheses H, conclusion C and subnodes P1 ... Pk:
+
+- V and H hold in P and in its subnodes, nowhere else;
+- seen from outside (from the node around it, and from the nodes after it
+  in its list), P is the formula ∀ V, H → C;
+- what a checker proves for P is C, in the context of the variables and
+  hypotheses of P and of the nodes around it, of P1 ... Pk seen from
+  outside, and of the nodes before P in its list and before each node
+  around it, seen from outside (the paper's rule, end of §2.3: "the
+  conclusion of p_i is visible inside p_j for i < j").  The justifications
+  and the facts of P say how (cyp: [../cyp/README.md](../cyp/README.md)).
+
+The top node is the statement with its proof: its variables, hypotheses
+and conclusion are those of the theorem, its subnodes the steps of the
+proof.  There are no backward words any more ("it suffices to prove"):
+going backwards is nesting, the conclusion of a node follows from its
+subnodes.
+
+**Errors** of the tree, each at its node and its line (`tree-errors`,
+`nodes.elpi`; cyp reports them):
+
+| error | example |
+|---|---|
+| a node with no conclusion (it has tags, but no `{.claim}`) | `- Assume `x`{.hyp} (k).` with sub-items and no closing paragraph |
+| a node with two conclusions | `we have `A`{.claim}, hence `B`{.claim}` in one node |
+| a statement with no conclusion | no `{.claim}` after the title, outside every node |
+| a name out of scope | `*k*{.just}` outside the node that assumes `k` |
+| a name given twice in one scope | two hypotheses `(h)` both visible |
+| an unknown class | `` `F`{.clam} ``, `*h*{.jsut}`, `]{.q}`, `::: q` |
+| a justification that is not a name | `*by lia*{.just}` |
+| an unclosed span or div, a span or div closed but not opened | `[...` with no `]{.p}`, `::: p` with no `:::` |
+
+Two errors need the meaning of the names, and are the checker's: a
+justification that names nothing known (no hypothesis, node, lemma, rule
+or tactic), and a fact that is no hypothesis or conclusion in scope.
+
+**Departures from the 2006 paper.**
+
+- A node may have several justifications, each one name, written where
+  the sentence mentions it ("Applying *i*{.just} to *k*{.just}"): the paper
+  has at most one `<j>` per `<p>`, which may hold several names.
+- Two syntaxes for one tree (the paper has the tags only), and the
+  closing paragraph of a list item.
+- Remarks: a text with no tag is shown and not checked.
+
+**The transition.**  The texts written before the tree (xtext's, until
+they are written again) name their justification `*by X*`, after the
+sentence: it is read as the justification X (`by-part`).  Its other
+departures from the tree are errors (a scope with no conclusion, a fact
+that names no formula in scope).
 
 ## The files
 
@@ -90,15 +194,19 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   for the default language), `by-field Tactics Field`, and its reading:
   `field-value Fields Key Value` (`""` for a field the header has not),
   `header-lang Fields Lang` (`default-lang` without a `lang` field);
-- `document.elpi`: the document tree, `document Fields Name Place
+- `document.elpi`: the document of a writer, `document Fields Name Place
   Statement Steps`, a step `step Place Text Sub-steps`, a `place` (`lines
   First Last`, the lines of a text in its file, numbered from 0, given by
   a reader; `unplaced` for a text being written), the writer
-  `write-document D Text`, a reader, `read-document File D` (the
-  reader's contract below; cyp's and the Typst writer's), and the number
-  of a step, `step-number Parent K Number` (Dewey notation, `2.1` the
-  first sub-step of step 2: cyp numbers its conditions with it, the Typst
-  writer its steps);
+  `write-document D Text`, and the number of a step, `step-number Parent
+  K Number` (Dewey notation, `2.1` the first sub-step of step 2: cyp
+  numbers its nodes with it, the Typst writer its steps);
+- `tree.elpi`: the reader, `read-tree File T` and `lines-tree Lines T`,
+  into the tree of nodes (below, the reader's contract), and
+  `read-document File D`, the document of a writer from the tree (the
+  Typst back end's);
+- `nodes.elpi`: what the nodes of a tree say, their numbers, and the
+  errors of a tree, `tree-errors` (below, the reader's contract);
 - `checked.elpi`: what a checker adds to the text of a step (cyp's
   `.checked.md`): `status-mark Status Mark` (`ok` ✅, `ko` ❌, `todo` 🔶,
   `none` ▫️, cyp's names of the statuses), `message-block M S` (the
@@ -120,20 +228,20 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   mathematics, the table of notations, the printer of Rocq terms and its
   Typst writer; see "Formulas as mathematics";
 - `formulas.elpi`: `role-tag Role Tag` (`rvar` `var`, `rhyp` `hyp`,
-  `rclaim` `claim`, `rfact` `fact`, and `rback`, a claim that replaces
-  the goal, written as a claim: read back, the class `claim` gives
-  `rclaim`, the first role with it), `formula Role F S` (`` `F`{.tag} ``),
-  `justification J S` (`*by J*`), `is-justification S`, the reading
-  of a step's justification, `split-justification S J Rest`, and the
-  reading of the text of a statement or a step, `text-parts Text Parts`
-  (below, the reader's contract), the one reader of cyp and of the Typst
-  writer;
+  `rclaim` `claim`, `rfact` `fact`, and `rback`, a backward claim of the
+  lexicon, which the format no longer has, written as a claim: read back,
+  the class `claim` gives `rclaim`, the first role with it),
+  `justification-class C` (`just`), `formula Role F S` (`` `F`{.tag} ``),
+  `justification-name J S` (`*J*{.just}`), `justification J S` (`*by J*`,
+  the form xtext writes until its texts are written as trees),
+  `is-justification S`, `is-name S`, and the reading of the text of a
+  node, `text-parts Text Parts` (below, the reader's contract);
 - `names.elpi`: `fresh-name Used Wanted Name`, `Wanted` if it is not in
   use, else `Wanted0`, `Wanted1`, ...: the names a text introduces must
   differ from the names in use, so that `*by h*` names one hypothesis
   (xtext names its binders with it, `binder-name` in
   `xtext/elpi/printing.elpi`; cyp can name its hypotheses with it);
-- `tactics.elpi`: `tactic Name`, the tactics a text may name in `*by X*`
+- `tactics.elpi`: `tactic Name`, the tactics a text may name in a justification
   or in its `by` field, and `unknown-tactics Names Unknown`.  Each tool
   runs a name its own way: cyp runs the Ltac definition `cyp_Name`
   (`cyp/vernac/Cyp.v`; the rules of a proof may add tactics,
@@ -154,9 +262,10 @@ one line; xtext also ends each with a punctuation mark.
 
 ## Reading a proof text (the reader's contract)
 
-A reader gives, from the lines of a file (numbered from 0), the same
-`document`, with places (`read-document` in `document.elpi`, the reader
-of cyp and of the Typst back end):
+`read-tree File T` (`tree.elpi`) gives `proof-text Fields Name Top`, the
+fields of the header, the name, and the top node, from the lines of the
+file (numbered from 0); `lines-tree Lines T` does it from the lines.  It
+is the one reader of cyp and of the Typst back end.
 
 - **header**: if the first line is `---` (spaces around it ignored), the
   lines up to the next line `---` are fields; a field line is `key:
@@ -165,32 +274,65 @@ of cyp and of the Typst back end):
   Without a first line `---`, the header is empty;
 - **title**: the first line after the header that starts with `# `; the
   rest of the line, trimmed, is the name;
-- **statement**: the lines between the title and the first item that are
-  not empty, trimmed and joined by one space; its place is that of its
-  first and last lines (`lines 0 0` when there is none);
-- **steps**: an item is a line that starts, after spaces, with `- ` or
-  `* `.  Its text is the rest of the line and the lines after it up to
-  the next item (continuation lines), trimmed, the empty ones left out,
-  joined by one space; its place is its first line and its last
-  continuation line.  Its indentation is the number of spaces before
-  `-`; its sub-steps are the items after it with a larger indentation, up
-  to the first item that has not;
-- within the text of a statement or a step (`text-parts` in
-  `formulas.elpi`): a **formula** is the text between two backticks (a
-  backtick with no other after it is text); right after it may come its
-  **class**, `{.tag}` (letters; a class that is no role's tag gives no
-  role, but is not text either), then, after any number of spaces, the
-  **name** given to it, `(h)` (an identifier); the **justification** is
-  `*by X*`.  A part is `plain Words`, `formula-part Class Formula Name`
-  (`Name` is `some h` or `none`) or `by-part X`.  The role of a formula is
-  that of its class; a formula with no class takes its role from the
-  phrases of the lexicon around it (cyp: `cyp/vernac/elpi/text.elpi`).
-  A name after a hypothesis names it; after a fact it is the name of the
-  hypothesis the fact is; after a claim, the name a later step uses (the
-  Typst writer links them).
+- **the top node**: all the lines after the title;
+- **blocks**: the text of a node is a sequence of blocks, separated by
+  empty lines or not:
+  - a *list item* is a line that starts, after spaces, with `- ` or `* `;
+    it is a node, whose text is the rest of the line, the lines after it
+    up to an empty line, an item or a fence (continuation lines), and then
+    every block indented more than its `-` (its sub-items, and its closing
+    paragraphs);
+  - a *div* starts with a line `::: p` (or `::: {.p}`) and ends with the
+    next line `:::` of its level; it is a node, whose text is the blocks
+    between them;
+  - a *paragraph* is any other line and the lines after it up to an empty
+    line, an item or a fence; its lines are trimmed and joined by one
+    space;
+  - a block less indented than the item it would belong to ends that
+    item;
+- **spans**: in a paragraph, a `[` opens a span, closed by the next
+  `]{.p}`; the span is a node.  The text between backticks is a formula,
+  whatever it holds (a `]` there does not count); a `[` closed by a `]`
+  with no class is text (`[0, 1]`);
+- **parts**: the own text of a node (`run`, its text and its parts) is
+  read by `text-parts` (`formulas.elpi`): a **formula** is the text
+  between two backticks (a backtick with no other after it is text);
+  right after it may come its **class**, `{.tag}` (letters), then, after
+  any number of spaces, the **name** given to it, `(h)` (an identifier);
+  an emphasised text followed by a class, `*X*{.tag}`, is a **tagged
+  name**, a justification for the class `just`; `*by X*` is the
+  justification X of the texts written before the tree.  A part is `plain
+  Words`, `formula-part Class Formula Name` (`Name` is `some h` or
+  `none`), `tagged-name Class X` or `by-part X` (and `term-part Class Term
+  Name`, a formula given as a Rocq term, for cyp's `Cyp Lemma`).  A name
+  after a hypothesis names it; after the conclusion it names the node;
+  after a fact it is shown only.
 
-What a document written by `write-document` gives when read back is the
-same document, with places.
+A node is `node Origin Place Mark Message Contents`: how it is opened
+(`whole-text`, `list-item`, `bracketed`, `fenced`), its lines (from its
+opening to its end), where its own text starts (a `spot Line Column`,
+where a checker writes its status mark), where a message about it goes
+(after that line, at that column), and its contents in the order of the
+text: `run Text Parts`, `sub Node`, `para-end` (the end of a paragraph)
+and `flaw Line Error` (an error of the reader: a span or a div left open
+or closed but not opened, an unknown class of a span or a div).
+`nodes.elpi` says what a node says: `node-parts`, `claim-parts`,
+`hypothesis-names`, `variable-names`, `justification-names`, `node-name`,
+`is-remark`, its numbers (`numbered-subnodes`, `node-children`, which
+replaces a remark by its subnodes, `all-nodes`; the top node is `0`, its
+subnodes `1`, `2`, ..., the subnodes of `2` are `2.1`, ...), and the
+errors, `tree-errors Top Errors`, each `node-error Number Line Error`
+(`error-message E S`, its English message).
+
+**For a writer** (the Typst back end), `read-document File D` gives the
+`document` of the tree: the statement is the text of the top node (its
+first lines are its place), the steps are its list items, and the text of
+a step is its own text with that of its spans and divs, their marks left
+out, its paragraphs joined.  A text written by `write-document` gives
+back the same document, with places.  The PDF of a free text so shows no
+structure (decision 7 of the proposal); a closing paragraph is shown with
+the text of its item, before its sub-steps, until the Typst writer reads
+the tree itself.
 
 ## The PDF of a proof text (Typst)
 
