@@ -34,3 +34,8 @@ is-closed (app M N) :- is-closed M, is-closed N.
 constraint wait {
   rule (wait A _) \ (wait B X) | (A < B) <=> (C is B - A, wait C X).
 }
+
+% premises: a nested conjunction is flattened, a goal may span lines
+pred both i:tm.
+both T :- is-closed T, (is-closed T, is-closed
+    T).

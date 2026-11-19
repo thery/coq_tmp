@@ -32,6 +32,7 @@ All names live in the namespace `reflect`.  Excerpt of
 
 ```elpi
 symb srcloc string -> int -> int -> srcloc.      % file, line (from 1), column (from 0)
+symb span string -> int -> int -> int -> int -> span.   % file, line, column, end line, end column
 
 symb tcon string -> list ty -> ty.               % int = tcon "int" [], list A = tcon "list" [A]
 symb tarrow ty -> ty -> ty.                      % A -> B
@@ -45,6 +46,7 @@ pred constructor o:string, o:any, o:ty, o:srcloc.                % symb app tm -
 pred signature   o:string, o:any, o:functionality, o:list arg, o:bool, o:srcloc.
 pred type-abbrev o:ty, o:ty, o:srcloc.
 pred clause      o:any, o:int, o:srcloc, o:list attribute, o:(pred), o:(pred).
+pred premises    o:srcloc, o:list span.                              % the places of the goals of a body
 pred closed-clause o:int, o:any.                                    % with -closed
 pred chr-rule    o:int, o:srcloc, o:list attribute, o:list any,
                  o:list sequent, o:list sequent, o:option (pred), o:option sequent.
@@ -66,6 +68,7 @@ reflect.data-type "tm" 0 (reflect.srcloc "f.elpi" 1 0).
 reflect.constructor "lam" lam (reflect.tarrow (reflect.tarrow (reflect.tcon "tm" []) (reflect.tcon "tm" [])) (reflect.tcon "tm" [])) (reflect.srcloc "f.elpi" 2 0).
 reflect.signature "rev" rev reflect.functional [(reflect.arg reflect.in (reflect.tcon "list" [Ty_A])), (reflect.arg reflect.out (reflect.tcon "list" [Ty_A]))] ff (reflect.srcloc "f.elpi" 3 0).
 reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [(reflect.binders [])] (rev L R) (std.rev L R).
+reflect.premises (reflect.srcloc "f.elpi" 4 0) [(reflect.span "f.elpi" 4 11 4 22)].
 ```
 
 ### Conventions
@@ -101,6 +104,17 @@ reflect.clause rev 1 (reflect.srcloc "f.elpi" 4 0) [(reflect.binders [])] (rev L
   variable `Spill_N` replaces it and the goal `f X Spill_N` runs just before
   the goal that contained it (before the whole body for a spill in the
   head).  `:autospill` is not desugared (the attribute `auto-spill` says so).
+- **Premises**: `premises Loc Places` gives, for the rule whose `clause`
+  fact has the location `Loc`, the place in the source of each goal of its
+  body, in order: the goals of its top-level conjunction, nested
+  conjunctions flattened as Elpi reads them (`a, (b, c)` has three
+  goals), so that the N-th place is the N-th goal of the body as a tool
+  sees it; none for a fact.  A place is `span File Line Column EndLine
+  EndColumn`, its end the position just after the last character (lines
+  from 1, columns from 0).  Elpi's parser keeps for each sub-term its
+  start (line and column) and the offset of its end, not the line of the
+  end: elpi-reflect reads the file again to find it.  The goal of a
+  spill `{f X}` (above) is placed at `f X`, inside the braces.
 - **Head patterns** `uvar` and `P as X` become `reflect.uvar-pattern` and
   `reflect.as-pattern P X`: in a fact they would match, not be returned.
 - **Body** of a fact is `true`; a body is a goal of type `(pred)` built

@@ -9,6 +9,7 @@ wait 2 line 27 : wait X8 X9 :- true
 is-closed 1 line 31 : is-closed (lam X10) :- 
  pi c0 \ (is-closed c0) ==> is-closed (X10 c0)
 is-closed 2 line 32 : is-closed (app X11 X12) :- is-closed X11 , is-closed X12
+both 1 line 40 : both X13 :- is-closed X13 , is-closed X13 , is-closed X13
 -- the rules of arith.plus2, run from the facts:
 plus2 5 = 7
 -- constructors of tm:
@@ -18,7 +19,17 @@ lam
 app 
  reflect.tarrow (reflect.tcon tm []) 
   (reflect.tarrow (reflect.tcon tm []) (reflect.tcon tm []))
+-- the places of the premises (line, column to line, column):
+line 9 : [9:14-9:24]
+line 15 : [16:15-16:16]
+line 12 : [13:21-13:27, 13:15-13:30]
+line 22 : [22:11-22:19]
+line 26 : [26:22-26:23, 26:25-26:58]
+line 27 : []
+line 31 : [31:21-31:63]
+line 32 : [32:23-32:34, 32:36-32:47]
+line 40 : [40:10-40:21, 40:24-40:35, 40:37-41:5]
 -- CHR:
-rule 1 [] [wait] [reflect.sequent X13 X14 (wait X15 X16)] 
- [reflect.sequent X17 X18 (wait X19 X20)] some (X15 < X19) 
- some (reflect.sequent X21 X22 (X23 is X19 - X15 , wait X23 X20))
+rule 1 [] [wait] [reflect.sequent X14 X15 (wait X16 X17)] 
+ [reflect.sequent X18 X19 (wait X20 X21)] some (X16 < X20) 
+ some (reflect.sequent X22 X23 (X24 is X20 - X16 , wait X24 X21))

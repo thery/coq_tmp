@@ -14,6 +14,12 @@ data srcloc.
 % [srcloc File Line Column]: the line counts from 1, the column from 0.
 symb srcloc string -> int -> int -> srcloc.
 
+data span.
+% [span File Line Column EndLine EndColumn]: a piece of the source, from
+% Line, Column to EndLine, EndColumn, the position just after its last
+% character (lines from 1, columns from 0).
+symb span string -> int -> int -> int -> int -> span.
+
 % -- Types -------------------------------------------------------------------
 %
 % A type parameter (an uppercase name in the source, as A in `list A`) is
@@ -101,6 +107,12 @@ pred type-abbrev o:ty, o:ty, o:srcloc.
 % order Elpi tries them.  The variables of the rule are the variables of the
 % fact: each lookup gives a fresh copy of the rule.
 pred clause o:any, o:int, o:srcloc, o:list attribute, o:(pred), o:(pred).
+
+% [premises Loc Places]: for the rule at Loc (the Loc of its fact [clause]),
+% the places of the goals of its body, in order: the goals of its top-level
+% conjunction, nested conjunctions flattened as Elpi reads them, the goal
+% of a spill {f X} where it is written; none for a fact.
+pred premises o:srcloc, o:list span.
 
 % [closed-clause N Clause] (printed with option -closed): for each rule,
 % its fact [clause] under N binders, one per variable of the rule, in order

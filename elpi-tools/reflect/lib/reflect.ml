@@ -175,6 +175,62 @@ let fact ?(untyped = false) name args =
   (if untyped then ":untyped\n" else "")
   ^ discard_linear_type_variables ("reflect." ^ name ^ " " ^ String.concat " " args) ^ ".\n"
 
+
+(* ------------------------------------------------------------------------ *)
+(* The places of the premises of a rule *)
+
+(* The text of each source file, read once, to find the line where a place
+   ends: Elpi's locations give the line where it starts and the offset
+   where it ends, not the line of that offset. *)
+let source_texts : (string, string option) Hashtbl.t = Hashtbl.create 7
+
+let source_text file =
+  match Hashtbl.find_opt source_texts file with
+  | Some text -> text
+  | None ->
+      let text = try Some (In_channel.with_open_bin file In_channel.input_all) with Sys_error _ -> None in
+      Hashtbl.add source_texts file text;
+      text
+
+(* [span l]: the place of the text at l, (reflect.span File Line Column
+   EndLine EndColumn), its end the position just after its last character
+   (lines from 1, columns from 0).  When the file cannot be read, the end
+   is computed as if the text held on one line. *)
+let span (l : Loc.t) =
+  let end_line, end_column =
+    match source_text l.source_name with
+    | Some text when l.source_stop <= String.length text ->
+        let line = ref l.line and line_start = ref l.line_starts_at in
+        for i = l.source_start to l.source_stop - 1 do
+          if text.[i] = '\n' then (incr line; line_start := i + 1)
+        done;
+        (!line, l.source_stop - !line_start)
+    | _ -> (l.line, l.source_stop - l.line_starts_at)
+  in
+  Printf.sprintf "(reflect.span %s %d %d %d %d)" (Print.string_literal l.source_name) l.line
+    (l.source_start - l.line_starts_at) end_line end_column
+
+(* [premises body]: the goals of the top-level conjunction of a body, in
+   order, as Elpi reads them: nested conjunctions and parentheses are
+   flattened (a, (b, c) has three goals, as for Elpi's parser); a body
+   true has none, any other goal is the only one. *)
+let premises (body : Term.t) =
+  let rec strip (t : Term.t) = match t.it with Term.Parens u -> strip u | _ -> t in
+  let rec goals (t : Term.t) =
+    match (strip t).it with
+    | Term.App ({ it = Term.Const c; _ }, gs) when Func.equal c Func.andf -> List.concat_map goals gs
+    | _ -> [ t ]
+  in
+  match (strip body).it with
+  | Term.Const c when Func.equal c Func.truef -> []
+  | _ -> goals body
+
+(* [premises_fact r]: the fact [premises Loc Places] of the rule r: the
+   places of the goals of its body, in order (the goals of its spills
+   included, where they are written). *)
+let premises_fact (r : rule) =
+  fact "premises" [ srcloc r.loc; "[" ^ String.concat ", " (List.map (fun (g : Term.t) -> span g.loc) (premises r.body)) ^ "]" ]
+
 (* [rule_variables ts]: the variables of the terms ts, in order of
    appearance, once each, and the terms with each discard _ named
    (Reflect_discard_N), so that it can be bound.  A variable is a name the
@@ -203,7 +259,8 @@ let rule_variables (ts : Term.t list) : string list * Term.t list =
   in
   List.fold_left_map (walk []) [] ts
 
-(* [rule_fact ~overloaded ~closed index r]: the fact [clause] of the rule;
+(* [rule_fact ~overloaded ~closed index r]: the facts [clause] and
+   [premises] of the rule;
    with [closed], also its fact [closed-clause N (V1\ .. VN\ clause ...)],
    the same under a binder per variable of the rule. *)
 let rule_fact ~overloaded ~closed index (r : rule) =
@@ -212,7 +269,7 @@ let rule_fact ~overloaded ~closed index (r : rule) =
   let args head body =
     [ Print.constant r.pred; string_of_int index; srcloc r.loc;
       "[" ^ String.concat ", " attrs ^ "]"; Print.term head; Print.term body ] in
-  let plain = fact ~untyped "clause" (args r.head r.body) in
+  let plain = fact ~untyped "clause" (args r.head r.body) ^ premises_fact r in
   if not closed then plain
   else
     match rule_variables [ r.head; r.body ] with
