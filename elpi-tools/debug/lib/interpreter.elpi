@@ -249,20 +249,22 @@ forced-fail _ Box :- port fail-port Box, fail.
 forced-fail Exited Box :- resumed-by-request Exited Box.
 
 % [box-ports Exited Box]: call port, backchaining, exit port (redo port on
-% backtracking); the fail port when all is exhausted.  (Alternatives are
+% backtracking); the fail port when all is exhausted.  A call port seen
+% marks the trail, and the exit port shows the bindings made since
+% (ports.elpi, "What a call computed").  (Alternatives are
 % clauses, not ;, whose arguments are inputs: Elpi would match them, and
 % they hold the whole stack of frames.)
 :nooc
 pred box-ports i:safe, o:box.
 box-ports Exited Box :-
-  port call-port Box, solutions Box, stash_in_safe Exited "exited", exit-or-redo Box.
+  call-port-marked Box Mark, solutions Box, stash_in_safe Exited "exited", exit-or-redo Mark Box.
 box-ports Exited Box :-
   port fail-port Box, note-failure-if-first Exited Box, fail.
 
 :nooc
-pred exit-or-redo o:box.
-exit-or-redo Box :- port exit-port Box.
-exit-or-redo Box :- port redo-port Box, fail.
+pred exit-or-redo i:call-mark, o:box.
+exit-or-redo Mark Box :- exit-port-with-bindings Mark Box.
+exit-or-redo _ Box :- port redo-port Box, fail.
 
 % [backchain Box]: the candidate clauses of the goal, compiled
 % (compiled.elpi), in the order of the strategy: Elpi selects those whose

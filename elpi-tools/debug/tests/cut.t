@@ -28,15 +28,19 @@ The cut port: first commits to its clause after the first element > 1.
     Unify: #2 with cut.elpi:4: mem 0 [0, 3, 5]
         X0 := 0
     Exit: #2 mem 0 [0, 3, 5]
+        X0 := 0
     Redo: #2 mem 0 [0, 3, 5]
     Unify: #2 with cut.elpi:5: mem X0 [0, 3, 5]
       Call: #3 mem X0 [3, 5]
       Unify: #3 with cut.elpi:4: mem 3 [3, 5]
         X0 := 3
       Exit: #3 mem 3 [3, 5]
+        X0 := 3
     Exit: #2 mem 3 [0, 3, 5]
+        X0 := 3
   Cut: #1 commits to its current clause
   Exit: #1 first 1 [0, 3, 5] 3
+        X0 := 3
   Solution 1:
     X = 3
 

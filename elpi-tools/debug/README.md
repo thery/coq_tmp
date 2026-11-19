@@ -13,7 +13,10 @@ and shows what the real engine does not:
   **pruning** included), the entry into **pi** (a new eigenvariable, shown
   with its source name, `x#3`, and its scope), the entry into **=>** (the
   clause added to the local program), the cut, and the **delay** of a goal
-  by `declare_constraint` and its **resume** by CHR, numbered (`[S2]`);
+  by `declare_constraint` and its **resume** by CHR, numbered (`[S2]`); at
+  the **exit** port, what the whole call computed (the bindings it made
+  since its call port); a logic variable keeps one name, `X3`, for the
+  whole run;
 - **interactive stepping** (`-i`), as in the box-model tracers of Prolog:
   creep, skip, leap, retry, fail, print, the scope of each logic variable,
   the local program, breakpoints set at the prompt;
@@ -65,6 +68,7 @@ Unify: #1 with chr.elpi:18: double 3 X0
     Unify: #3 with chr.elpi:11: even 6
     Exit: [S1] #3 even 6
 Exit: #1 double 3 6
+      X0 := 6
 Solution 1:
   Y = 6
 ```
@@ -166,6 +170,14 @@ no event is shown or stops until the exit or fail port of call N
 local program and the scope included: the call runs as without the
 debugger, unseen.  `o` (out) is a skip of the call whose body runs the event.
 
+**What a call computed.**  When the call port of a call is shown or
+stopped at, the debugger marks the trail there; its exit port then shows
+the bindings made since, by its unify steps and by the calls of its body
+(`Exit: #1 double 3 6` above, with `X0 := 6`: the variable of the goal at
+the call port, bound by a call inside, after a CHR resume).  A call that
+is not seen at its call port takes no mark (its exit, if shown, has no
+bindings): with `-profile`, or between breakpoints, nothing of this runs.
+
 **For a front end** (`-machine`, [`lib/machine.elpi`](lib/machine.elpi)): besides the
 usual text, elpi-debug prints lines `@@elpi-debug {JSON}`: first the
 listing of the rules (numbered, with file and line) and of the lines of
@@ -173,7 +185,10 @@ the declarations; then, at each stop and in place of the prompt, the
 description of the stop (its number, why it stops: `start`, `step`,
 `breakpoint`, `pause`; the event; the stack of calls, each with the clause
 it runs, its arguments and what each of its logic variables may depend on;
-the bindings of a unify step; the local program; the eigenvariables).  The
+the bindings of a unify step or of an exit port; the local program;
+the eigenvariables; the variables of the query by their source names,
+`L` of `append [1] [2] L`, with their values, which the driver finds in
+the goal and passes to `debug.run` as the option `debug.query-vars`).  The
 run waits at a stop `Start` before its first event, where breakpoints can
 be set.  The signal SIGUSR1 asks for a pause: the run stops at the next
 event.  Only with `-machine`, the body of each clause runs under a local
@@ -206,7 +221,9 @@ resolves names block by block).  Read them in this order:
    rules, which run natively); the rules, as facts
    `reflect.clause P Index Loc Attrs Head Body` and, closed, as facts
    `reflect.closed-clause N F` (elpi-reflect `-closed`: F is the rule under
-   N binders, one per variable); and one **bridge** per
+   N binders, one per variable: the debugger cannot close a rule itself,
+   its walk does not see the variables inside applications of builtins;
+   "The primitives" below); and one **bridge** per
    predicate, `P X1..Xn :- !, debug.bridge (P X1..Xn)`, its only native
    rule, written by `write-bridges`.  They are static rules, not local
    clauses `pi x1..xn\ ...`: with those, Elpi crashes when a CHR rule fires
@@ -283,28 +300,130 @@ resolves names block by block).  Read them in this order:
    CHR rules would then not match the constraint.)
 6. **[`lprolog.elpi`](lib/lprolog.elpi): λProlog in view.**  `shape-of`
    takes any term apart (Elpi has no builtin for λ-terms and connectives),
-   for every walk: binders, logic variables, the clash of the explanation.
-   `show-term` prints a term with the names of its eigenvariables (`x#3`,
-   from the `eigen` clause in force in the scope of each `pi`);
-   `can-depend` and `show-scope` tell which eigenvariables a logic variable
-   may depend on.
-7. **[`ports.elpi`](lib/ports.elpi): the events.**  `event` shows an event
+   for every walk: binders, the stand-in of `vars-of`, the clash of the
+   explanation.  `show-term` prints a term with its logic variables named
+   `X<uuid>` and its eigenvariables by their source names (`x#3`, from the
+   `eigen` clause in force in the scope of each `pi`); `can-depend` and
+   `show-scope` tell which eigenvariables a logic variable may depend on.
+7. **[`primitives.elpi`](lib/primitives.elpi): the variables of a run**,
+   through three primitives (four predicates) that Elpi's core could
+   offer, written in Elpi as stand-ins for now (below, "The
+   primitives"): `vars-of`, `uuid`, `trail-mark` and `bindings-since`.  The other files know the variables
+   of a run only through them.
+8. **[`ports.elpi`](lib/ports.elpi): the events.**  `event` shows an event
    and stops there if needed; its text is made only then (a closure:
-   `port-text`, `unify-text` ...); `port` for the ports of calls,
-   `unify-port` for the unify step (with the bindings and the pruning
-   it made), `pi-port`, `assume-port`, `delay-port`, `cut-port`,
+   `port-text`, `unify-text` ...); `port` for the ports of calls
+   (`call-port-marked` marks the trail at a call port seen, and
+   `exit-port-with-bindings` shows what the call computed),
+   `unify-port` for the unify step (a mark of the trail before the end of
+   the head unification, the bindings since after it, the pruning
+   included), `pi-port`, `assume-port`, `delay-port`, `cut-port`,
    `native-port`.
-8. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
+9. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
    stepping modes, the requests of retry and fail, the breakpoints, the
    command loop (how retry and skip work: above, and in the file).
-9. **[`machine.elpi`](lib/machine.elpi): the machine-readable channel** of
+10. **[`machine.elpi`](lib/machine.elpi): the machine-readable channel** of
    `-machine` (above, "For a front end"), with a small JSON writer.
-10. **[`explain.elpi`](lib/explain.elpi): the explanation of a failure.**
+11. **[`explain.elpi`](lib/explain.elpi): the explanation of a failure.**
    At the fail port of a call that never exited, where the goal is back as
    it was called: each candidate retried, the first argument that does not
    match and the smallest clashing subterms (`subterm-clash`), the occurs
    check and the scope of eigenvariables (`flex-clash`).
-11. **[`profile.elpi`](lib/profile.elpi): the outcome and the profile.**
+12. **[`profile.elpi`](lib/profile.elpi): the outcome and the profile.**
+
+## The primitives (what Elpi's core could offer)
+
+Everything the debugger knows about the logic variables of a run goes
+through three primitives (four predicates) of
+[`lib/primitives.elpi`](lib/primitives.elpi), a small interface that
+Elpi's core could provide as builtins (the wish list, for Elpi's author: [`ELPI-WISHLIST.md`](ELPI-WISHLIST.md)).  Until
+then they are written in Elpi, as **stand-ins**; the switch to real
+builtins would touch that file only.
+
+| primitive | contract | used by |
+|---|---|---|
+| `vars-of T Vs` | the logic variables of T, each once, in order, under binders and inside applications of builtins; binds nothing | the trail mark (the variables in reach), `scope`, the scopes of `-machine`, the occurs check of the explanation |
+| `uuid X N` | a number for the variable X, the same at every event and across backtracking; elpi-debug shows X as `X<N>` everywhere (traces, explanations, `-machine`) | every name of a variable (`show-term`, `uuid-name`) |
+| `trail-mark M`, `bindings-since M Bs` | the bindings made since the mark M and still in force, keyed by uuid, the pruning reported (a variable replaced by one with fewer arguments, or a smaller scope of eigenvariables) | the unify step (mark, the end of the head unification, bindings since); the exit port (mark at the call port, bindings at the exit) |
+
+Before, these were three workarounds spread over the files: a walk for the
+variables of a term (`logic-vars`), a variable known only by how Elpi
+prints it, and the bindings of a unification found by printing every
+variable of the goal before and after and comparing the strings (the
+pruning by comparing scopes).
+
+**The stand-ins, and their limits** (in the file, at the top):
+
+- `vars-of` is the walk of `shape-of`.  It cannot look inside an
+  application of a builtin (`X is Y + 1` is one node for Elpi), nor into a
+  conjunction of more than 16 goals.  The head of an applied variable is
+  got with the builtin `var`; on a variable that Elpi keeps in a compact
+  form (`G x`, x the binder just above, printed `X0^1` by Elpi) that head
+  is a new variable, bound in place of the old one, so the variable then
+  shows under a second number (`same X0 (X1 x#1 x#2)` at the call port,
+  `X2 := ...` at the unify step, in `tests/interactive.t`).
+- `uuid` reads the number of the variable in Elpi's printer: the printer
+  keeps for the whole run a table from Elpi's internal identity of a
+  variable to the number it gives at its first print, the one place where
+  a program sees that identity.  A table of the debugger's own cannot do
+  it: a safe refuses a term with variables, a local clause does not
+  outlive the goal that adds it, and `same_var` cannot tell a variable
+  from one bound to it.  Inside `std.findall` the stand-in is wrong (the
+  goal is copied, and printed with a table of its own from `X0`): the
+  debugger no longer prints variables inside `std.findall` (the local
+  program of `-machine` was printed there, with wrong names: fixed).
+  The depth suffix of Elpi's names (`X3^1`) is dropped: `X3` is the name.
+- `trail-mark` cannot see Elpi's trail: it is a snapshot of the variables
+  in reach, which the caller gives (`trail-mark Reach M`, Reach a closure
+  that the real builtin would not call), and `bindings-since` compares
+  them with what they are now.  In reach of a goal: its variables and
+  those of the hypothetical clauses in scope (a clause added by `=>`
+  shares its variables with the goal that added it; the frames above give
+  no other access to a variable).  Missed: a variable reached only through
+  a goal suspended in the constraint store, or inside an application of a
+  builtin.  Cost: a walk of the goal and the hypotheses at the mark, and a
+  test per variable at `bindings-since`; only for an event shown or
+  stopped at.
+
+Nothing of this runs on the fast path (no option), and a call port that
+is neither shown nor stopped at takes no mark.
+
+**What the real builtins would bring.**
+
+- `vars-of` in OCaml: the variables inside applications of builtins, no
+  binding when it looks (the names would not drift as above), and a walk
+  at the speed of the runtime instead of several interpreted goals per
+  node (`shape-of` tries its clauses in turn).
+  With it the debugger could close the rules of the program itself (fetch
+  a rule under `pi x1..xn\`, bind its n variables to the x's), and the
+  detour through elpi-reflect's option `-closed` (each rule printed a
+  second time, closed, as `reflect.closed-clause N F`) would go.
+- `uuid`: the identity without printing (the stand-in prints each
+  variable it names); right inside copies too.  The printer itself could
+  name variables by it: Elpi's printer has the line, commented out
+  (`"X" ^ string_of_int (uvar_id r)`, runtime.ml), so `show-term` would
+  be one builtin call.
+- `trail-mark` and `bindings-since` on the real trail: exact (every
+  variable bound since the mark, whatever reaches it: the constraint
+  store, builtins), and a cost proportional to the bindings made, not to
+  the size of the goal and of the hypotheses: the mark would cost nothing,
+  so every call could take one (today only the calls seen at their call
+  port do).
+
+**Could retry use the trail?**  Today `r` unwinds by failing: a pending
+request makes every event fail, so backtracking goes through every choice
+point inside the call until the second clause of `attempt` (above, "How
+retry and fail work").  Undoing the bindings to the mark of the call port
+is not enough: the choice points created since would still be there, and
+backtracking into them would redo the work with bindings in an
+inconsistent state.  What retry needs is a "backtrack to this point"
+primitive: a mark that also records the choice-point stack, and a builtin
+that drops the choice points created since and undoes the trail to the
+mark in one step (a cut-and-fail to a given choice point, as Prolog's
+catch/throw does).  With it, retry would be immediate and would not run
+the builtins with several solutions met while unwinding.  This is not in
+the wish list's first three items: it touches the core of Elpi's machine,
+not only its data.
 
 ## Cost
 
@@ -380,6 +499,28 @@ Configuration 7 of [`../demo/.vscode/launch.json`](../demo/.vscode/launch.json)
 `-machine` 10.3 -> 6.4 -> 2.1 s, `-profile` 12.1 -> 8.1 -> 4.0 s,
 `-break nowhere` 9.8 -> 5.4 -> 1.4 s; no option 1.6 -> 0.46 s.
 
+**The primitives and the Exit bindings** (2026-11-19, load 2.3-4.4,
+minimum of 10 runs alternated with main of the same day, interpreted time
+of `-time`):
+
+| run | before | after |
+|---|---|---|
+| `count 6400` | 0.155 s | 0.147 s |
+| `bench 200` | 0.309 s | 0.296 s |
+| `queens 8 Q` | 0.102 s | 0.098 s |
+| `lookups 2000` | 0.116 s | 0.110 s |
+| `-profile`, configuration 7 | 3.80 s | 3.85 s |
+| `-machine`, configuration 7, no stop asked | 1.79 s | 1.85 s |
+| `-trace bench 30` (465 calls on lists, output to /dev/null) | 0.42 s | 0.63 s |
+
+The fast path is unchanged (within the noise).  `-profile` and
+`-machine` without stops: about 2 % (an extra goal per event).  `-trace`
+is about 50 % slower: each call port shown now takes a mark (a walk of the
+goal and of the hypotheses in scope) and its exit prints the bindings
+made since (about 0.15 s of the 0.21 s, measured by switching the mark
+off); the rest is the stand-in of `uuid` (a print per variable named) in
+the unify step.  The real builtins would remove most of it.
+
 **What is left.**  A call still runs about 26 goals of the interpreter
 (`app`), a builtin about 14 more than its own: a box with an invocation
 number, a safe for the explanation (needed for the warning of a predicate
@@ -403,10 +544,14 @@ here.  `-trace` still costs the printing of each goal.
   goals; a refused constraint is explained as such).
 - **Explanations** name the deepest failure, which is not always the
   culprit; failures inside `not` count as failures.
-- Logic variables print as Elpi prints them (`X12`; Elpi's printer may give
-  one variable different names in two lines), not with their source names.
-  Eigenvariables get their source name (`x#3`) only when events are shown
-  (`-trace`, `-i`, `-break`): on the fast path (no option) the explanation
+- Logic variables are named `X<uuid>` (`X12`), one name per variable for
+  the whole run, not with their source names (except the variables of the
+  query, by their names in the stop description of `-machine`).  With the
+  stand-in of `vars-of`, a variable kept by Elpi in a compact form gets a
+  second number when the debugger first looks at it (above, "The
+  primitives").  Eigenvariables get their source name (`x#3`) only when
+  events are shown (`-trace`, `-i`, `-break`): on the fast path (no
+  option) the explanation
   of a failure shows them as `c0`, `c1`.  The binder names come from
   reflect's `binders` attribute, matched with the binders of the rule in
   textual order; for a hypothetical clause or the query the name is `x`.

@@ -75,12 +75,18 @@ box-name Id S :- S is "#" ^ {std.any->string Id}.
 % stack of frames.)
 :nooc
 pred event i:event-kind, i:int, o:focus, i:(pred o:list string).
-event _ _ _ _ :- pending, !, fail.
-event Kind Ind F Text :- event-shown Kind F, !,
+event Kind Ind F Text :- event-seen Kind Ind F Text _.
+
+% [event-seen Kind Indent Focus Text Seen]: the event, as [event]; Seen
+% is tt when it was shown or stopped at, ff otherwise.
+:nooc
+pred event-seen i:event-kind, i:int, o:focus, i:(pred o:list string), o:bool.
+event-seen _ _ _ _ _ :- pending, !, fail.
+event-seen Kind Ind F Text tt :- event-shown Kind F, !,
   Text T, say Ind [{event-label Kind}, " " | T],
   stop-if-stopping Kind F T.
-event Kind _ F Text :- stop-reason Kind F Reason, !, Text T, stop Reason Kind F T.
-event _ _ _ _.
+event-seen Kind _ F Text tt :- stop-reason Kind F Reason, !, Text T, stop Reason Kind F T.
+event-seen _ _ _ _ ff.
 
 :nooc
 pred stop-if-stopping i:event-kind, o:focus, i:list string.
@@ -101,18 +107,80 @@ event-shown Kind (focus (frame _ _ P _) _) :- box-event Kind, breakpoint-on P.
 % resume-port for a woken goal, with the number of its suspension).
 :nooc
 pred port i:event-kind, o:box.
-port _ _ :- quiet, !.
-port Kind Box :-
+port Kind Box :- port-seen Kind Box [] _.
+
+% [port-seen Kind Box Lines Seen]: the port Kind of Box, with the lines
+% Lines after its text (the bindings of an exit); Seen is tt when the port
+% was shown or stopped at.
+:nooc
+pred port-seen i:event-kind, o:box, i:list string, o:bool.
+port-seen _ _ _ ff :- quiet, !.
+port-seen Kind Box Lines Seen :-
   record-event Kind Box,
   box-split Box Frame Above Entry,
   entry-port Kind Entry Kind1 Tag,
   frame-depth Frame D,
-  event Kind1 D (focus Frame Above) (port-text Tag Frame).
+  event-seen Kind1 D (focus Frame Above) (port-text Tag Frame Lines) Seen.
 
-% [port-text Tag Frame T]: the text of a port, "[Sn] #Id goal".
+% [port-text Tag Frame Lines T]: the text of a port, "[Sn] #Id goal",
+% then Lines.
 :nooc
-pred port-text i:string, i:frame, o:list string.
-port-text Tag Frame [Tag | T] :- frame-text Frame T.
+pred port-text i:string, i:frame, i:list string, o:list string.
+port-text Tag Frame Lines [Tag | T] :- frame-text Frame T0, std.append T0 Lines T.
+
+% ===== What a call computed ==========================================================
+%
+% A call port that is shown or stopped at takes a mark of the trail
+% (primitives.elpi), and the exit port of the call shows the bindings made
+% since: what the whole call computed, by its unify steps and the calls
+% of its body.  A call that is not seen at its call port costs nothing
+% more (its exit, if shown later, has no bindings).
+
+data call-mark.
+symb unmarked call-mark.
+symb marked trail-mark -> call-mark.
+
+% [call-port-marked Box Mark]: the call port of Box, and its mark.
+:nooc
+pred call-port-marked o:box, o:call-mark.
+call-port-marked Box Mark :- port-seen call-port Box [] Seen, mark-if-seen Seen Box Mark.
+
+:nooc
+pred mark-if-seen i:bool, o:box, o:call-mark.
+mark-if-seen tt Box (marked M) :- !, box-parts Box _ _ _ G _, trail-mark (in-reach G) M.
+mark-if-seen _ _ unmarked.
+
+% [exit-port-with-bindings Mark Box]: the exit port of Box; when its call
+% port was marked, with the bindings made since the mark (in the text,
+% and in force as [made-bindings] for the stepper and the machine-readable
+% channel).
+:nooc
+pred exit-port-with-bindings i:call-mark, o:box.
+exit-port-with-bindings unmarked Box :- port exit-port Box.
+exit-port-with-bindings (marked M) Box :-
+  bindings-since M Bindings,
+  std.map Bindings binding-line Lines,
+  (made-bindings Bindings => port-seen exit-port Box Lines _).
+
+% [in-reach G R]: R holds what the goals run for G may bind: G and the
+% hypothetical clauses in scope, which share their variables with the
+% goals that added them (what the stand-in of trail-mark must be told,
+% primitives.elpi).
+pred in-reach i:(pred), o:any.
+in-reach G (pr G Vs) :- hyps-vars [] Vs.
+
+% [hyps-vars Acc Vs]: Acc and the variables of the hypothetical clauses in
+% scope, gathered one clause at a time (std.findall would copy them).
+pred hyps-vars i:list any, o:list any.
+hyps-vars Acc Vs :- hyp _ _ C, vars-of C CVs, new-vars CVs Acc New, not (New = []), !,
+  std.append Acc New Acc1, hyps-vars Acc1 Vs.
+hyps-vars Acc Acc.
+
+% [new-vars Vs Known New]: the variables of Vs not in Known.
+pred new-vars i:list any, i:list any, o:list any.
+new-vars [] _ [].
+new-vars [V|Vs] Known New :- std.exists Known (same_var V), !, new-vars Vs Known New.
+new-vars [V|Vs] Known [V|New] :- new-vars Vs Known New.
 
 % [entry-port Kind Entry Kind1 Tag]: a woken goal enters through
 % resume-port, all its ports tagged [Sn].
@@ -146,20 +214,20 @@ try-port (ctx _ [Frame | Above]) :- record-event try-step (box Frame Above calle
 % the clause from Origin with head Head (Post: what follows the prefix that
 % Elpi matched when it selected the clause, compiled.elpi), for the call
 % whose body runs in Ctx, with its unify event when it is shown or when a
-% breakpoint is set on the clause: the variables of the goal are looked at
-% before and after, for the bindings it makes (the matching of the prefix
-% binds none).  The event runs in the context of the clause: [runs Id
-% Origin] and [made-bindings Bindings] are in force, for the stepper and
-% the machine-readable channel (stepper.elpi, machine.elpi).
+% breakpoint is set on the clause: a mark of the trail before Post, the
+% bindings made since after it (the matching of the prefix binds none).
+% The event runs in the context of the clause: [runs Id Origin] and
+% [made-bindings Bindings] are in force, for the stepper and the
+% machine-readable channel (stepper.elpi, machine.elpi).
 :nooc
 pred unify-port i:ctx, i:origin, i:(pred), i:(pred).
 unify-port (ctx _ [Frame | Above]) Origin _ Post :-
   not (event-shown unify-step (focus Frame Above)), not (clause-breakpoint-on Origin), !,
   Post.
 unify-port (ctx _ [frame Id D P G | Above]) Origin Head Post :-
-  logic-vars G Vs, snapshot Vs Before,
+  trail-mark (in-reach G) Mark,
   Post,
-  bindings-made Before Bindings,
+  bindings-since Mark Bindings,
   std.map Bindings binding-line Lines,
   [runs Id Origin, made-bindings Bindings] =>
     event unify-step D (focus (frame Id D P G) Above) (unify-text Id Origin Head Lines).
@@ -172,64 +240,25 @@ unify-text Id Origin Head Lines [{box-name Id}, " with ", {origin-string Origin}
 % the body of the clause, with option machine, and at its unify event).
 pred runs o:int, o:origin.
 
-% [made-bindings Bindings]: the bindings made by the head unification of
-% the unify event in progress.
+% [made-bindings Bindings]: the bindings made by the event in progress:
+% the head unification at a unify step, the whole call at an exit port
+% (primitives.elpi: [binding]).
 pred made-bindings o:list binding.
 
-% A logic variable before the unification: itself, as printed, and the
-% eigenvariables it may depend on.
-data snap.
-symb snap any -> string -> list any -> snap.
-
-pred snapshot i:list any, o:list snap.
-snapshot [] [].
-snapshot [V|Vs] [snap V Name Vis | Ss] :- show-term V Name, visible-eigens V Vis, snapshot Vs Ss.
-
-% A binding made by a unification: the variable (as printed before), its
-% value, and the pruning Elpi made ("" if none).
-data binding.
-symb binding string -> string -> string -> binding.
-
-% [bindings-made Before Bindings]: a binding per variable assigned, with
-% the pruning Elpi made if any.
-pred bindings-made i:list snap, o:list binding.
-bindings-made [] [].
-bindings-made [snap V Name Vis | Ss] [binding Name Now Pruned | Bs] :-
-  show-term V Now, not (Now = Name), !,
-  pruning V Vis Pruned,
-  bindings-made Ss Bs.
-bindings-made [_ | Ss] Bs :- bindings-made Ss Bs.
-
-% [binding-line B Line]: "\n      X := t", as the trace shows a binding.
+% [binding-line B Line]: "\n      X3 := t", as the trace shows a binding.
 func binding-line binding -> string.
-binding-line (binding Name Value Pruned) Line :-
-  std.string.concat "" ["\n      ", Name, " := ", Value, Pruned] Line.
+binding-line (binding N Value P) Line :-
+  std.string.concat "" ["\n      ", {uuid-label N}, " := ", {show-term Value}, {pruning-text P}] Line.
 
-% [pruning V Vis S]: what Elpi pruned when it assigned V: V is now
-% x1..xn\ H a1..ak with k < n (H does not get all the arguments), or V is
-% (headed by) a variable that may depend on fewer eigenvariables than Vis.
-pred pruning i:any, i:list any, o:string.
-pruning V _ S :- lambda-prefix V 0 N K H, N > 0, K < N, !,
-  S is "   (pruned: " ^ {show-term H} ^ " gets " ^ {std.any->string K} ^ " of the "
+% [pruning-text P S]: what Elpi pruned, as the trace shows it ("" if nothing).
+func pruning-text pruning -> string.
+pruning-text not-pruned "".
+pruning-text (pruned-arguments U K N) S :-
+  S is "   (pruned: " ^ {uuid-label U} ^ " gets " ^ {std.any->string K} ^ " of the "
        ^ {std.any->string N} ^ " arguments)".
-pruning V Vis S :- var V H _, visible-eigens H Now, lost-eigens Vis Now Lost, not (Lost = []), !,
+pruning-text (pruned-scope Lost) S :-
   eigen-names Lost Ns,
   S is "   (pruned: may no longer depend on " ^ {std.string.concat ", " Ns} ^ ")".
-pruning _ _ "".
-
-% [lambda-prefix T N0 N K H]: T is N-N0 binders around H a1..ak (H a
-% variable, k = K); the test is made under the binders, where the body
-% lives (H itself is older, so it can be returned).
-pred lambda-prefix i:any, i:int, o:int, o:int, o:any.
-lambda-prefix T N0 N K H :- shape-of T S, S = binder F, !, N1 is N0 + 1,
-  pi x\ sigma B\ binder-body F x B, lambda-prefix B N1 N K H.
-lambda-prefix T N N K H :- var T H Args, std.length Args K.
-
-% [lost-eigens Before Now Lost]: the eigenvariables of Before not in Now.
-pred lost-eigens i:list any, i:list any, o:list any.
-lost-eigens [] _ [].
-lost-eigens [E|Es] Now Lost :- std.exists Now (same_term E), !, lost-eigens Es Now Lost.
-lost-eigens [E|Es] Now [E|Lost] :- lost-eigens Es Now Lost.
 
 % [pi-port Ctx Name X Body N]: entering pi: X is a new eigenvariable, named
 % N (its source name and a number), whose scope is Body.

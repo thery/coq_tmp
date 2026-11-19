@@ -22,6 +22,7 @@ a woken goal enters the interpreter through its Wake port.
       Unify: #3 with chr.elpi:11: even 6
       Exit: [S1] #3 even 6
   Exit: #1 double 3 6
+        X0 := 6
   Solution 1:
     Y = 6
 

@@ -57,15 +57,20 @@ development), in [elpi-tools/](elpi-tools):
   Elpi: ports (call, exit, redo, fail, cut, CHR wake-up), breakpoints and
   stepping, counts and time per predicate, and on failure the deepest
   failing goal with each clause tried and why it did not apply (or that the
-  predicate has no clause at all).  50 to 150 times slower than the real
-  engine.  Its strategy can be random: elpi-check uses it to generate.
+  predicate has no clause at all); the bindings made by each unify step and
+  by each call (at its exit).  About 20 times slower than the real engine
+  on the benchmarks of its README.  Its strategy can be random:
+  elpi-check uses it to generate.  What it knows of the variables of a
+  run goes through three primitives that Elpi's core could provide,
+  written in Elpi for now ([debug/ELPI-WISHLIST.md](elpi-tools/debug/ELPI-WISHLIST.md)).
 - [dap/](elpi-tools/dap/README.md): **the debugger in VS Code**.  `elpi-dap`,
   a debug adapter (Debug Adapter Protocol) on `elpi-debug -machine`, and a
   small VS Code extension: breakpoints on clause lines and on predicates,
   step in, over, out, continue, pause, restart a call, the stack of calls
-  at their clauses, and three scopes (the goal, the local program, the
-  eigenvariables).  The same extension shows the properties of elpi-check
-  in the Test Explorer (run buttons on their lines, the shrunk
+  at their clauses, four scopes (the goal, the variables of the query by
+  their names, the local program, the eigenvariables), watch expressions.
+  The same extension shows the properties of elpi-check in the Test
+  Explorer (run buttons on their lines, the shrunk
   counterexample on failure, "Debug this counterexample").  Tested by
   scripted DAP sessions and in Node with a stand-in for VS Code, not by
   clicking.

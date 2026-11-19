@@ -250,10 +250,38 @@ let normalize s =
       | None -> let n = Printf.sprintf "_V%d" (Hashtbl.length names) in Hashtbl.add names v n; n)
     s
 
+(* [query_variables goal]: the source names of the variables of the query,
+   in the order of their first occurrence (the names of "Solution: X =
+   ..."): the names that start with a capital letter and are not bound by
+   a λ of the goal; none if the goal does not parse (its compilation then
+   reports the error). *)
+let query_variables goal =
+  let module T = PAst.Term in
+  let found = ref [] in
+  let rec walk bound (t : T.t) =
+    match t.it with
+    | T.Const f ->
+        let name = PAst.Func.show f in
+        if PAst.Func.is_uvar_name f && not (List.mem name bound || List.mem name !found) then found := name :: !found
+    | T.App (head, args) -> walk bound head; List.iter (walk bound) args
+    | T.Lam (x, _, _, body) -> walk (PAst.Func.show x :: bound) body
+    | T.Cast (t, _) | T.Parens t -> walk bound t
+    | T.CData _ | T.Quoted _ -> ()
+  in
+  let (module P : Parser) = parser () in
+  (try walk [] (P.goal ~loc:(Elpi_util.Util.Loc.initial "(goal)") ~text:goal) with _ -> ());
+  List.rev !found
+
+(* [query_vars_option goal]: the option debug.query-vars of the variables
+   of the query, by their source names (shown at each stop of -machine). *)
+let query_vars_option goal =
+  let pair name = Printf.sprintf "pr %S %s" name name in
+  Printf.sprintf "debug.query-vars [%s]" (String.concat ", " (List.map pair (query_variables goal)))
+
 let interpreted file goal ~limit ~print =
   let elpi, flags = setup ~det:false in
   let units = interpreted_units ~elpi ~flags file in
-  let opts = String.concat ", " !elpi_options in
+  let opts = String.concat ", " (!elpi_options @ [ query_vars_option goal ]) in
   let exe = compile ~elpi ~flags units (Printf.sprintf "debug.run [%s] (%s)." opts goal) in
   run exe ~limit ~print
 

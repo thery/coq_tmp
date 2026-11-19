@@ -26,8 +26,8 @@
 {"await":"stopped"}
 {"command":"stackTrace","arguments":{"threadId":1}}
 {"command":"variables","arguments":{"variablesReference":1}}
-{"command":"variables","arguments":{"variablesReference":2}}
 {"command":"variables","arguments":{"variablesReference":3}}
+{"command":"variables","arguments":{"variablesReference":4}}
 {"command":"continue","arguments":{"threadId":1}}
 {"await":"terminated"}
 {"command":"disconnect"}

@@ -1,0 +1,207 @@
+% primitives.elpi: what elpi-debug needs to know about the unification
+% variables of a run, as a small interface of primitives that Elpi's core
+% could offer (the wish list below, and ../ELPI-WISHLIST.md), written here
+% in Elpi as STAND-INS until Elpi has them.  The other files of the
+% interpreter go through this interface only: switching to the real
+% builtins touches this file only.
+%
+% THE WISH LIST
+%
+% 1. [vars-of T Vs]: Vs are the unification variables occurring in T, each
+%    once, in the order of their first occurrence (left to right, depth
+%    first), under binders and inside applications of builtins.  A
+%    variable applied to arguments (X a b) is given by its head X.  It
+%    binds nothing.
+%
+% 2. [uuid X N]: N identifies the unification variable X for the whole
+%    run: two variables have different numbers, and a variable keeps its
+%    number at every event and across backtracking.  X must be a variable
+%    (it fails otherwise); a variable bound to another one has the number
+%    of that one (Elpi dereferences it).  elpi-debug names X "X<N>" in all
+%    it shows ([uuid-name], [term-string]: the printer naming each
+%    variable so).
+%
+% 3. The trail.  [trail-mark M]: M marks the current point of the trail.
+%    [bindings-since M Bs]: Bs are the bindings made since M and still in
+%    force, one [binding N V P] per variable that existed at M and is
+%    bound now: N its uuid, V its value now, P the pruning Elpi made when
+%    it bound it: [not-pruned]; [pruned-arguments U K N], it was replaced
+%    by the variable of uuid U applied to K of its N arguments;
+%    [pruned-scope Es], by a variable that may no longer depend on the
+%    eigenvariables Es.  The variables created after M are not listed:
+%    they are parts of the values.  (The order of Bs: the stand-in gives
+%    the order of vars-of at the mark; the real builtin may give the order
+%    of the trail.)  [debug-unif T1 T2 Bs] (mark, T1 = T2, bindings since
+%    the mark) is not needed by elpi-debug: its head unification is split
+%    between Elpi's own matching and the goals of compiled.elpi.
+%
+% THE STAND-INS (below), and their limits
+%
+% - vars-of walks the term ([shape-of], lprolog.elpi).  Elpi has no
+%   builtin to take apart an application of a builtin (X is Y + 1 is one
+%   node), so the walk does not see the variables there; nor those of a
+%   conjunction of more than 16 goals.  Hence reflect's option -closed:
+%   the debugger cannot abstract the variables of a rule itself, reflect
+%   gives each rule closed (compiled.elpi).  The walk gets the head of an
+%   applied variable with the builtin var; on a variable that Elpi keeps
+%   in a compact form (G x, x the binder above, printed X0^1 by Elpi) that
+%   head is a new variable, bound in place of the old one: from then on
+%   the variable shows under a second number.
+% - uuid reads the number Elpi's printer gives the variable.  The printer
+%   keeps, for the whole run, a table from Elpi's internal identity of a
+%   variable to a number given at its first print ("X12", "X12^1" for a
+%   variable created under one binder): it is the one place where Elpi
+%   lets a program see that identity.  A table kept by the debugger
+%   cannot do it: a safe refuses a term with variables ("expected: closed
+%   term"), local clauses do not outlive the goal that adds them, and
+%   same_var cannot tell a variable from one bound to it (both dereference
+%   to the same).  The stand-in is wrong inside a copy (std.findall copies
+%   its goal and prints with a table of its own, from X0): the debugger
+%   names no variable inside std.findall.
+% - trail-mark cannot see the trail: it takes a snapshot of the variables
+%   in reach, which it is told ([trail-mark Reach M], Reach a closure that
+%   gives them; the real builtin needs no Reach and would not call it),
+%   and bindings-since compares them with what they are now: O(variables
+%   in reach) at the mark and again at bindings-since.  What is in reach
+%   of a goal: the variables of the goal, and those of the hypothetical
+%   clauses in scope (a clause added by => shares its variables with the
+%   goal that added it; the frames above give no other access).  Missed:
+%   a variable reached only through a suspended goal of the constraint
+%   store (CHR), or inside an application of a builtin (vars-of above).
+%   The eigenvariables a variable may depend on are found by trying to
+%   bind it to each one (can-depend, lprolog.elpi).
+%
+% Nothing here runs on the fast path (no event shown or recorded).
+
+
+% ===== 1. The variables of a term ==============================================
+
+% [vars-of T Vs]: the unification variables of T (stand-in: the walk of
+% [shape-of], which does not look into applications of builtins).
+pred vars-of i:any, o:list any.
+vars-of T Vs :- vars-acc T [] Rev, std.rev Rev Vs.
+
+% [vars-acc T Acc Acc1]: Acc1 is Acc and, most recent first, the variables
+% of T not in Acc.
+pred vars-acc i:any, i:list any, o:list any.
+vars-acc T Acc Acc1 :- shape-of T S, shape-vars S Acc Acc1.
+
+pred shape-vars i:shape, i:list any, o:list any.
+shape-vars (flexible H) Acc Acc :- std.exists Acc (same_var H), !.
+shape-vars (flexible H) Acc [H|Acc].
+shape-vars leaf Acc Acc.
+shape-vars (node _ Ts) Acc Acc1 :- vars-acc-all Ts Acc Acc1.
+shape-vars (binder F) Acc Acc1 :- pi x\ sigma B\ binder-body F x B, vars-acc B Acc Acc1.
+
+pred vars-acc-all i:list any, i:list any, o:list any.
+vars-acc-all [] Acc Acc.
+vars-acc-all [T|Ts] Acc Acc2 :- vars-acc T Acc Acc1, vars-acc-all Ts Acc1 Acc2.
+
+% ===== 2. The identity of a variable ================================================
+
+% [uuid X N]: the number of the variable X for the whole run (stand-in:
+% the number of Elpi's printer, "X12^1" for 12).
+pred uuid i:any, o:int.
+uuid X N :- var X H _, term_to_string H S, printer-number S N.
+
+% [printer-number S N]: S is the printer's name of a variable, "X<N>"
+% followed by its depth ("^1") if any.
+func printer-number string -> int.
+printer-number S N :- rex.replace "^X\\([0-9]+\\).*$" "\\1" S Digits, N is string_to_int Digits.
+
+% [uuid-name X S]: "X<uuid>", the name elpi-debug shows for the variable X.
+func uuid-name any -> string.
+uuid-name X S :- uuid X N, !, uuid-label N S.
+uuid-name X S :- term-string X S.       % (not a variable: printed)
+
+% [uuid-label N S]: "X<N>", the name of the variable of uuid N.
+func uuid-label int -> string.
+uuid-label N S :- S is "X" ^ {std.any->string N}.
+
+% [term-string T S]: T printed, each of its variables named X<uuid>
+% (stand-in: the printer's text, whose numbers are the uuids, without the
+% depth of each variable, "X12^1" printed X12).  The real builtin would be
+% the printer naming each variable by its identity (Elpi's printer has
+% the line, commented out: "X" ^ string_of_int (uvar_id r)).
+func term-string any -> string.
+term-string T S :- term_to_string T S0, without-depths S0 S.
+
+% [without-depths S0 S]: S0 without the depths of its variables ("X12^1"
+% becomes X12); most texts have none, and looking for a "^" is cheaper
+% than the replacement.
+func without-depths string -> string.
+without-depths S0 S :- rex.match ".*\\^" S0, !, rex.replace "\\bX\\([0-9]+\\)\\^[0-9]+" "X\\1" S0 S.
+without-depths S S.
+
+% ===== 3. The trail ========================================================================
+
+% A mark of the trail (stand-in: a snapshot of the variables in reach).
+data trail-mark.
+symb snapshot list var-snapshot -> trail-mark.
+
+% A variable at the mark: itself, its uuid, and the eigenvariables it may
+% depend on (to tell a pruning of its scope).
+data var-snapshot.
+symb var-snapshot any -> int -> list any -> var-snapshot.
+
+% A binding made since a mark: the uuid of the variable, its value now,
+% and the pruning Elpi made when it bound it.
+data binding.
+symb binding int -> any -> pruning -> binding.
+
+data pruning.
+symb not-pruned pruning.
+symb pruned-arguments int -> int -> int -> pruning.  % the variable of uuid U gets K of the N arguments
+symb pruned-scope list any -> pruning.               % may no longer depend on these eigenvariables
+
+% [trail-mark Reach M]: a mark of the trail now.  Reach R gives a term R
+% holding the variables that the goals run until bindings-since may bind:
+% the stand-in needs it, the real builtin would not call it.
+pred trail-mark i:(pred o:any), o:trail-mark.
+trail-mark Reach (snapshot Ss) :- Reach R, vars-of R Vs, std.map Vs snapshot-of Ss.
+
+pred snapshot-of i:any, o:var-snapshot.
+snapshot-of V (var-snapshot V N Vis) :- uuid V N, visible-eigens V Vis.
+
+% [bindings-since M Bs]: the bindings made since the mark M, still in
+% force (stand-in: each variable of the snapshot that is no longer
+% itself).
+pred bindings-since i:trail-mark, o:list binding.
+bindings-since (snapshot Ss) Bs :- bindings-of-snapshots Ss Bs.
+
+pred bindings-of-snapshots i:list var-snapshot, o:list binding.
+bindings-of-snapshots [] [].
+bindings-of-snapshots [var-snapshot V N Vis | Ss] [binding N V P | Bs] :- bound-since V N, !,
+  pruning-of V Vis P,
+  bindings-of-snapshots Ss Bs.
+bindings-of-snapshots [_ | Ss] Bs :- bindings-of-snapshots Ss Bs.
+
+% [bound-since V N]: the variable of uuid N, V, is bound: it is now a
+% term, or (headed by) another variable.
+pred bound-since i:any, i:int.
+bound-since V N :- not (uuid V N).
+
+% [pruning-of V Vis P]: what Elpi pruned when it bound V: V is now
+% x1..xn\ H a1..ak with k < n (H does not get all the arguments), or V
+% is now a variable (applied or not) that may depend on fewer
+% eigenvariables than Vis, those V might depend on at the mark.
+pred pruning-of i:any, i:list any, o:pruning.
+pruning-of V _ (pruned-arguments U K N) :- lambda-prefix V 0 N K U, N > 0, K < N, !.
+pruning-of V Vis (pruned-scope Lost) :- var V, visible-eigens V Now, lost-eigens Vis Now Lost, not (Lost = []), !.
+pruning-of _ _ not-pruned.
+
+% [lambda-prefix T N0 N K U]: T is N-N0 binders around H a1..ak, H the
+% variable of uuid U, k = K; the test is made under the binders, where
+% the body lives.  (The builtin var is asked for the arguments only: asked
+% for the head and the arguments together, it binds the variable to a new
+% one, which would then show under another number.)
+pred lambda-prefix i:any, i:int, o:int, o:int, o:int.
+lambda-prefix T N0 N K U :- shape-of T S, S = binder F, !, N1 is N0 + 1,
+  pi x\ sigma B\ binder-body F x B, lambda-prefix B N1 N K U.
+lambda-prefix T N N K U :- var T _ Args, std.length Args K, uuid T U.
+
+% [lost-eigens Before Now Lost]: the eigenvariables of Before not in Now.
+pred lost-eigens i:list any, i:list any, o:list any.
+lost-eigens [] _ [].
+lost-eigens [E|Es] Now Lost :- std.exists Now (same_term E), !, lost-eigens Es Now Lost.
+lost-eigens [E|Es] Now [E|Lost] :- lost-eigens Es Now Lost.
