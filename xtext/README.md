@@ -883,15 +883,24 @@ claim, and fewer timeouts.
 - cyp proves each claim again with its own tactics, so a green step says
   that the claim follows, not that it follows the way the text says.
 
-Measured on the direct texts, not rerun yet: the texts in the other
-languages (12 per language, 9 languages) give the same results, step by step, as the English ones (same roles and statuses
-in each `.cyp.json`): 90 steps proved, 4 not proved, 30 not checked per
-language (`cyp-check/results_fr_it.tsv`, `cyp-check/results_langs.tsv`).
-The 27 texts in other languages that 6.4.1 changes (`ADD0`, `add_0_r`,
-`plus_n_Sm` in 9 languages), checked again on 2026-11-19 (staged
-texts, their files in `cyp-check/<lang>/`), have the same statuses, line
-by line, as their English texts (6, 7 and 7 steps proved, none not
-proved); `results_fr_it.tsv` and `results_langs.tsv` are not rerun.
+The texts in the other languages (12 texts per language, 9 languages:
+`fr it de nl ru zh ar ko la`), all 108 rerun 2026-11-19 on the staged
+texts, 300 s per text (`cyp-check/results_langs.tsv`, one file for the 9
+languages; it replaces `results_fr_it.tsv`; the checked texts in
+`cyp-check/<lang>/`):
+
+- all 108 texts are checked, none times out, in 21 to 26 s per language;
+- each language gives 77 steps proved, 1 not proved, 38 not checked, as
+  the same 12 texts in English;
+- step by step, the roles and statuses in each `.cyp.json` are those of
+  the English text, in all 108 texts: no step is proved in one language
+  and not in another;
+- the step not proved is the same in every language, in `drinker`:
+  "Applying not_all_ex_not to A, P and H, we have `exists n : A, ~ P n`"
+  (French "En appliquant not_all_ex_not à A, P et H, nous avons ...");
+- the formulas are those of English too, except in `length_app_fix`,
+  where two claims print the empty list `nil` in the other languages and
+  `[]` in English (`length (nil ++ l2) = length (nil ++ l2)`), both proved.
 
 ## The staged translation (thesis chapters 2 and 3, `elpi/staged.elpi`)
 

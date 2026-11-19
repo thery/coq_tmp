@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 lang: nl
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -13,10 +13,6 @@ Laat `x y z t : Prop`{.var}. Stel `(x -> z) /\ (y -> t)`{.hyp} (h1) en `x /\ y`{
   - Stel `x -> z`{.hyp} (i) en `y -> t`{.hyp} (j).
     - Terug naar de definitie van and (and_ind) in `x /\ y`{.fact} (h2), we bewijzen `z /\ t`{.claim}:
       - Stel `x`{.hyp} (k) en `y`{.hyp} (l).
-        - Hieruit volgt `z`{.claim}.
-          - Volgens k er geldt `x`{.claim}.
-          - Volgens i er geldt `x -> z`{.claim}.
-        - Hieruit volgt `t`{.claim}.
-          - Volgens l er geldt `y`{.claim}.
-          - Volgens j er geldt `y -> t`{.claim}.
+        - Door toepassing van i op k, er geldt `z`{.claim}.
+        - Door toepassing van j op l, er geldt `t`{.claim}.
         - Dus volgens de definitie van and (conj), er geldt `z /\ t`{.claim} *by Corelib.Init.Logic.conj*.
