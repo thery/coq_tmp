@@ -1,12 +1,12 @@
 (* Tests of the implicit arguments of eliminations (Coscoy's thesis,
    6.4.1; elpi/applications.elpi, instance-without-motive): a dependent
    elimination of x0 that proves (P x0) is written "We prove (P x0) by
-   cases on x0", without its generalised statement P, when the reader of
-   the text finds P again from (P x0) and x0 (its step *by C_ind*, cyp's
-   eapply); else the text generalises (P x0) first (6.3.3).  The examples
-   are the schemes of 6.3.3 and 6.3.4 (booleans, pairs, lists), whose
-   statement is a predicate P applied to x0.  Each test fails if a text is
-   not the expected one. *)
+   cases on x0", without its generalised statement P, when P is found
+   again from (P x0) and x0, by abstracting x0 (and the indices) in
+   (P x0), as Rocq's elim does; else the text generalises (P x0) first
+   (6.3.3).  The examples are the schemes of 6.3.3 and 6.3.4 (booleans,
+   pairs, lists), a lemma of lemmas.v, and a motive that is not found.
+   Each test fails if a text is not the expected one. *)
 From XText Require Import Explain lemmas.
 
 (* [check-text Name Lang Lines] (for this file only): the text of Name in
@@ -83,13 +83,12 @@ Elpi Query Explain lp:{{ check-text "list_P" "en" [
   "  - By h1 we have `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.claim}.",
   "- These cases being exhaustive, we deduce `P l0`{.claim} *by Corelib.Init.Datatypes.list_ind*."] }}.
 
-(* Where the motive stays: in add_0_r' (lemmas.v), the instance
-   n + 0 = n is not a predicate applied to n, and the reader's eapply
-   nat_ind finds another motive (fun n0 => n + 0 = n0); the text keeps
-   the generalisation of 6.3.3 *)
+(* add_0_r' (lemmas.v): the motive fun n0 => n0 + 0 = n0 is n abstracted
+   in n + 0 = n, as elim finds it; the text proves n + 0 = n by
+   induction on n *)
 Elpi Query Explain lp:{{ check-text "add_0_r'" "en" [
   "Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.",
-  "- To prove `n + 0 = n`{.fact} by induction (nat, nat_ind), we generalise it to `forall n0 : nat, n0 + 0 = n0`{.fact}:",
+  "- We prove `n + 0 = n`{.fact} by induction on `n`{.fact} (nat, nat_ind):",
   "- Case 1 (base): we prove `0 = 0`{.claim}.",
   "  - By definition of eq (eq_refl), we have `0 = 0`{.claim} *by Corelib.Init.Logic.eq_refl*.",
   "- Case 2 (inductive): we prove `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.",
@@ -97,5 +96,20 @@ Elpi Query Explain lp:{{ check-text "add_0_r'" "en" [
   "    - By definition of eq (eq_refl), we have `S m = S m`{.claim} *by Corelib.Init.Logic.eq_refl*.",
   "    - By IH we have `m + 0 = m`{.claim}.",
   "    - Rewriting with `m + 0 = m`{.fact} from right to left (eq_ind_r), we get `S (m + 0) = S m`{.claim}.",
-  "- These cases being exhaustive, we deduce `forall n0 : nat, n0 + 0 = n0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.",
+  "- These cases being exhaustive, we deduce `n + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*."] }}.
+
+(* Where the motive stays: the motive fun m => m + 0 = n abstracts only
+   one of the occurrences of n in n + 0 = n, so it is not found from the
+   instance and n; the text keeps the generalisation of 6.3.3 *)
+Definition partial_motive (n : nat) (h0 : 0 + 0 = n)
+  (hS : forall m, m + 0 = n -> S m + 0 = n) : n + 0 = n :=
+  nat_ind (fun m => m + 0 = n) h0 hS n.
+Elpi Query Explain lp:{{ check-text "partial_motive" "en" [
+  "Let `n : nat`{.var}. Assume `0 + 0 = n`{.hyp} (h0) and `forall m : nat, m + 0 = n -> S m + 0 = n`{.hyp} (hS). We prove `n + 0 = n`{.claim}.",
+  "- To prove `n + 0 = n`{.fact} by induction (nat, nat_ind), we generalise it to `forall n0 : nat, n0 + 0 = n`{.fact}:",
+  "- Case 1 (base): we prove `0 + 0 = n`{.claim}.",
+  "  - By h0 we have `0 + 0 = n`{.claim}.",
+  "- Case 2 (inductive): we prove `forall m : nat, m + 0 = n -> S m + 0 = n`{.claim}.",
+  "  - By hS we have `forall m : nat, m + 0 = n -> S m + 0 = n`{.claim}.",
+  "- These cases being exhaustive, we deduce `forall n0 : nat, n0 + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*.",
   "- In particular `n + 0 = n`{.claim}."] }}.

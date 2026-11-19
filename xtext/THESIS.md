@@ -148,7 +148,7 @@ Where the code departs from the thesis:
 | 6.2.2 (Elim*) | elimination theorems, first and second kind | `tr-elim1`, `tr-elim2` in `inductive-text.elpi` |
 | 6.3.1, 6.3.2 | eliminations with one case, with zero cases | `inductive-text.elpi` |
 | 6.3.3, 6.3.4 | dependent eliminations, eliminations with recursion (base and inductive cases) | `inductive-text.elpi` (`recursive`) |
-| 6.4.1 | implicit arguments in eliminations: the generalised predicate (the motive) of a dependent elimination left out when it follows from the instance and the object, "Montrons (P x0) par une preuve par cas sur x0"; decided as 6.4.1 asks, by the pragmatic method of 5.4 (generate and test): the reader's step *by C_ind* (cyp's eapply) run on the instance must give back the motive and the object; always on, as 5.4's inferable arguments (`XTEXT_OFF=motive` for measurements) | `instance-without-motive`, `reader-applies` in `applications.elpi`; `implicit_motive.v` (the schemes of 6.3.3-6.3.4: booleans, pairs, lists) |
+| 6.4.1 | implicit arguments in eliminations: the generalised predicate (the motive) of a dependent elimination left out when it follows from the instance and the object, "Montrons (P x0) par une preuve par cas sur x0"; the motive is found as Rocq's elim finds it, the indices and the object abstracted in the instance, and must be the motive of the proof; always on, as 5.4's inferable arguments (`XTEXT_OFF=motive` for measurements) | `instance-without-motive`, `abstract-terms` in `applications.elpi`; `implicit_motive.v` (the schemes of 6.3.3-6.3.4: booleans, pairs, lists; `add_0_r'`; a motive not found, `partial_motive`) |
 | 6.4.2 | elimination theorems recognised by their type, whatever their name | `elim-info` in `inductive.elpi` |
 | (end of 6.4.2) | rewriting: the thesis asks for a specific rule but gives none | `tr-rewrite` in `inductive-text.elpi`; the rewriting principles recognised by their type, `rewrite-info` in `inductive.elpi` |
 
@@ -164,18 +164,22 @@ Where 6.4.1 is followed or not:
   instance, so there is no "In particular").  An elimination with one
   case has no announcement (6.3.3): its line becomes "Par définition de
   prod (prod_ind) sur `p0`, montrons `P p0`:".
-- 6.4.1 asks for two steps: the evaluation extended, with an external
-  unification, so that ElimOpen can be evaluated without the predicate,
-  then the production of the script changed, with a test.  The
-  evaluation of a text is its reader's, cyp's, and its step *by C_ind* is
-  Rocq's eapply; the first step is not done (cyp is not changed), and the
-  test is that step as it is.  Rocq's eapply finds the motive only when
-  the instance is a predicate applied to the object (P x0, as in the
-  thesis's schemes); for n + 0 = n it finds fun n0 => n + 0 = n0.  So no
-  text of `examples/` other than the three new ones changes.  A test
-  that abstracts the object in the instance, as elim does, would
-  lighten 50 generated texts, but cyp would not prove their closing
-  step (tried on `le_add_r`).
+- 6.4.1 says that finding the predicate is higher-order unification,
+  undecidable, and asks for an external unification.  The one used is
+  Rocq's for elim: abstract the object (and the indices) in the
+  instance; the predicate is left out when this gives the motive of the
+  proof, which is the generate-and-test of 5.4 with this unification.
+  All 20 English texts of `examples/` that generalised before now leave
+  the motive out (with `half_le`, an elimination with one case: 21).
+- A limit of cyp, the reader of the texts: its step *by C_ind* is
+  Rocq's eapply, which does not find the motive as elim does (on
+  n <= n + m it finds le n).  In 14 English texts, cyp no longer proves
+  the closing step of the elimination (README, "Checking the texts with
+  cyp"); the texts are still read.  The change cyp needs, a separate
+  task: for a claim announced "by induction on x0" (or "by case analysis
+  on x0"), abstract x0 in the goal before applying the theorem (elim x0
+  using C_ind).  That is the first step 6.4.1 asks for, the evaluation
+  extended so that ElimOpen can be evaluated without the predicate.
 
 ## Not implemented
 

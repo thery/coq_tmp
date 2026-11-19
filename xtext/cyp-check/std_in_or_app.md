@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l m : list A`{.var}. Let `a : A`{.var}. We prove `In a l \/ In a m -> In a (l ++ m)`{.claim}.
 
-- To prove `In a l \/ In a m -> In a (l ++ m)`{.fact} by induction (list, list_ind), we generalise it to `forall l0 : list A, In a l0 \/ In a m -> In a (l0 ++ m)`{.fact}:
+- We prove `In a l \/ In a m -> In a (l ++ m)`{.fact} by induction on `l`{.fact} (list, list_ind):
 - Case 1 (base): we prove `In a nil \/ In a m -> In a (nil ++ m)`{.claim}.
   - Assume `False \/ In a m`{.hyp} (H).
     - We prove `In a m`{.fact} by case analysis on `False \/ In a m`{.fact} (H) (or, or_ind):
@@ -22,5 +22,4 @@ Let `A : Type`{.var}. Let `l m : list A`{.var}. Let `a : A`{.var}. We prove `In 
 - Case 2 (inductive): we prove `forall (a0 : A) (l0 : list A), (In a l0 \/ In a m -> In a (l0 ++ m)) -> In a (a0 :: l0) \/ In a m -> In a ((a0 :: l0) ++ m)`{.claim}.
   - Let `a0 : A`{.var} and `l0 : list A`{.var}; assume by induction hypothesis `In a l0 \/ In a m -> In a (l0 ++ m)`{.hyp} (IHl).
     - We have `(a0 = a \/ In a l0) \/ In a m -> a0 = a \/ In a (l0 ++ m)`{.claim} *by tauto*.
-- These cases being exhaustive, we deduce `forall l0 : list A, In a l0 \/ In a m -> In a (l0 ++ m)`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- In particular `In a l \/ In a m -> In a (l ++ m)`{.claim}.
+- These cases being exhaustive, we deduce `In a l \/ In a m -> In a (l ++ m)`{.claim} *by Corelib.Init.Datatypes.list_ind*.

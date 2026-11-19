@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sit `m : nat`{.var}. Ostendamus `m + 0 = m`{.claim}.
 
-- Ut ostendamus `m + 0 = m`{.fact} per inductionem (nat, nat_ind), generalizamus ad `forall n : nat, n + 0 = n`{.fact}:
+- Ostendamus `m + 0 = m`{.fact} per inductionem in `m`{.fact} (nat, nat_ind):
 - Casus 1 (basis): ostendamus `0 + 0 = 0 + 0`{.claim}.
   - Ex definitione eq (eq_refl), habemus `0 + 0 = 0 + 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Casus 2 (gradus): ostendamus `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.
@@ -20,5 +20,4 @@ Sit `m : nat`{.var}. Ostendamus `m + 0 = m`{.claim}.
     - Elementum `m0`{.fact} pertinet ad `nat`{.fact}.
     - Per IH habemus `m0 + 0 = m0`{.claim}.
     - Applicando f_equal, habemus `S (m0 + 0) = S m0`{.claim}.
-- His casibus exhaustis, unde sequitur `forall n : nat, n + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-- Speciatim `m + 0 = m`{.claim}.
+- His casibus exhaustis, unde sequitur `m + 0 = m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.

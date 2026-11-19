@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.claim}.
 
-- ▫️ To prove `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.fact} by induction (list, list_ind), we generalise it to `forall l0 l' : list A, map f (l0 ++ l') = map f l0 ++ map f l'`{.fact}:
+- ▫️ We prove `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.fact} by induction on `l`{.fact} (list, list_ind):
 - ✅ Case 1 (base): we prove `forall l' : list A, map f (nil ++ l') = map f nil ++ map f l'`{.claim}.
   - ▫️ Let `l' : list A`{.var}.
     - ✅ By definition of eq (eq_refl), we have `map f l' = map f l'`{.claim} *by Corelib.Init.Logic.eq_refl*.
@@ -18,5 +18,7 @@ by: tauto | congruence | lia | firstorder | auto
       - ✅ By definition of eq (eq_refl), we have `f a :: map f l0 ++ map f l' = f a :: map f l0 ++ map f l'`{.claim} *by Corelib.Init.Logic.eq_refl*.
       - ✅ Applying IHl to l', we have `map f (l0 ++ l') = map f l0 ++ map f l'`{.claim}.
       - ✅ Rewriting with `map f (l0 ++ l') = map f l0 ++ map f l'`{.fact} from right to left (eq_ind_r), we get `f a :: map f (l0 ++ l') = f a :: map f l0 ++ map f l'`{.claim}.
-- ✅ These cases being exhaustive, we deduce `forall l0 l' : list A, map f (l0 ++ l') = map f l0 ++ map f l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- ✅ In particular `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.claim}.
+- ❌ These cases being exhaustive, we deduce `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.
+
+  <details><summary>not proved: forall l' : list A, map f (l ++ l') = map f l ++ map f l'</summary></details>
+

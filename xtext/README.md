@@ -94,9 +94,9 @@ Examples and checks:
   inside an application;
 - `implicit_motive.v`: the motive of a dependent elimination left out
   (thesis 6.4.1) on the schemes of 6.3.3-6.3.4 (booleans, pairs, lists,
-  `examples/bool_P.md`, `prod_P.md`, `list_P.md`), and kept where the
-  reader would not find it (`add_0_r'`): each text is checked against
-  the expected one;
+  `examples/bool_P.md`, `prod_P.md`, `list_P.md`), on `add_0_r'`, and
+  kept where it is not found again (`partial_motive`): each text is
+  checked against the expected one;
 - `examples-staged-none/`, `examples-staged-maximal/`,
   `examples-staged-selection/` (with `XTEXT_SELECTION=thesis`),
   `examples-staged-naming/` and `examples-staged-shared/` (with
@@ -286,28 +286,29 @@ They replace the paper's rules for introduction and elimination theorems.
   case analysis`.  All of this is read from the type of the elimination
   theorem, so it works for `nat_ind`, `list_ind`, `le_ind`, ...
 - **Implicit arguments in eliminations** (6.4.1): the generalised
-  statement (the motive) of a dependent elimination is left out when the
-  reader can find it again: `We prove P l0 by induction on l0 (list,
-  list_ind):`, the cases, `These cases being exhaustive, we deduce P l0`,
-  with no generalisation and no `In particular` (the thesis's "Montrons
-  (P x0) par une preuve par cas sur x0").  As the thesis asks, after the
-  pragmatic method of 5.4, a test decides it: the reader's own step *by
-  list_ind* (cyp's `eapply list_ind`) is run on the instance `P l0`, and
-  it must give back the motive of the proof and `l0`
-  (`instance-without-motive` in `applications.elpi`).  It is always on,
-  as the inferable arguments of 5.4, since the test keeps every text
-  checkable; `XTEXT_OFF=motive` switches it off.  Rocq's `eapply` finds
-  the motive only when the instance is a predicate applied to the object
-  (`P l0`); for `n + 0 = n` it finds `fun n0 => n + 0 = n0`, so the texts
-  of `examples/` keep their generalisation, and only the thesis's
-  schemes (`implicit_motive.v`: `bool_P`, `prod_P`, `list_P`) are
-  lightened.  A trial with a test that finds the motive as `elim` does
-  (abstracting the object in the goal) lightened 50 generated texts, in
-  all languages, but cyp then fails on their closing step (`le_add_r`:
-  `we deduce n <= n + m *by nat_ind*` not proved), since its step is
-  `eapply`.  Those texts need the thesis's first step, the reader's
-  evaluation extended (an elimination step of cyp that finds the motive
-  as `elim` does), which is not done here.
+  statement (the motive) of a dependent elimination is left out when it
+  can be found again from the instance proved and the object eliminated:
+  `We prove n + 0 = n by induction on n (nat, nat_ind):`, the cases,
+  `These cases being exhaustive, we deduce n + 0 = n`, with no
+  generalisation and no `In particular` (the thesis's "Montrons (P x0)
+  par une preuve par cas sur x0").  The motive is found as Rocq's `elim`
+  (and `pattern`) find it: the indices and the object are abstracted in
+  the instance, and the result must be the motive of the proof
+  (`instance-without-motive`, `abstract-terms` in `applications.elpi`).
+  A motive that abstracts only some occurrences of the object is not
+  found, and the text generalises first, as above (`partial_motive` in
+  `implicit_motive.v`).  It is always on, as the inferable arguments of
+  5.4; `XTEXT_OFF=motive` switches it off.  It shortens every dependent
+  elimination of `examples/`: 50 generated texts change (21 in English,
+  27 in the other languages, 2 in Typst), and 21 in each variant.  cyp still reads them all, but
+  its step *by nat_ind* is `eapply nat_ind`, which does not find the
+  motive as `elim` does (for `n <= n + m` it unifies `?P ?x` with
+  `le n (n + m)` first-order, giving `le n`): in 14 English texts the
+  closing step is no longer proved (see "Checking the texts with cyp").
+  This is a limit of cyp; the change it needs (a separate task) is an
+  elimination step that, for a claim announced "by induction on x0",
+  abstracts x0 in the goal before applying the theorem (`elim x0 using
+  C_ind`, or `pattern x0; eapply C_ind`).
 
 ## Departures from the paper and the thesis
 
@@ -608,6 +609,7 @@ it may use `u`.
 ### Measurements
 
 All 76 texts, generated with each mechanism alone and with all of them
+(measured before 6.4.1, the motive left out, which is not in the table)
 (`XTEXT_OFF`; generation time is the sum of Rocq's `Time` over the texts):
 
 | mechanisms on | list items | characters | generation time (s) |
@@ -850,20 +852,35 @@ at most 8 GB of memory per text.  It prints, per text, the time and the
 list items proved / not proved / not checked (`cyp-check/results.tsv`).
 
 The 80 English texts written by default (staged translation), 300 s per
-text (2026-11-18, `cyp-check/results.tsv`; the three texts of
-`implicit_motive.v` added 2026-11-19, the other texts unchanged by it):
+text (`cyp-check/results.tsv`: 2026-11-18; the three texts of
+`implicit_motive.v` and the 21 texts changed by 6.4.1, the motive left
+out, rerun 2026-11-19):
 
-- all 80 texts are checked, in 235 s in all: 687 steps proved, 17 not
+- all 80 texts are checked, in 229 s in all: 652 steps proved, 31 not
   proved, 504 not checked (lines with no claim: `Let`, `Assume`, the
   announcement of an induction, and the staged texts' "The element x
   belongs to T");
 - none times out (`std_or_assoc` did, until cyp tried first whether a
   goal is one of its hypotheses: `tauto` runs for minutes on one of its
   goals, two hypotheses long);
-- the 17 steps not proved are in 7 texts (`std_Nat_le_trans` 6,
-  `half_le` 3, `std_Nat_lt_irrefl` 3, `std_rev_app_distr` 2, `drinker`,
-  `std_length_rev`, `std_rev_involutive` 1 each); e.g. in `drinker`,
+- the 31 steps not proved are in 18 texts (`std_Nat_le_trans` 6,
+  `half_le` 3, `std_Nat_lt_irrefl` 3, `std_rev_app_distr` 3,
+  `std_length_rev` 2, `std_rev_involutive` 2, and 1 each in `drinker`,
+  `app_nil_r`, `even_or_odd`, `le_add_r`, `std_app_assoc`,
+  `std_app_nil_r`, `std_in_app_or`, `std_in_map`, `std_in_or_app`,
+  `std_length_app`, `std_map_app`, `std_map_map`); e.g. in `drinker`,
   "Applying not_all_ex_not to A, P and H, we have `exists n : A, ~ P n`";
+- 14 of them are the closing step of an elimination whose motive the
+  text leaves out (6.4.1, e.g. `le_add_r`: "These cases being
+  exhaustive, we deduce `n <= n + m` *by nat_ind*"): cyp's `eapply
+  nat_ind` does not find the motive (see "Rules of the thesis").  Before
+  6.4.1 these texts proved the generalised statement and then "In
+  particular" the instance, both proved by cyp.  In the 7 other texts
+  that 6.4.1 changes (`ADD0`, `add_0_r`, `plus_n_Sm`, `std_plus_n_O`,
+  `std_plus_n_Sm`, `add_0_r_partial`, `half_le`) no new step fails: cyp
+  proves the closing step of the first six, and `half_le` (one case,
+  no closing step) keeps its 3 steps not proved; each has one step
+  fewer, the "In particular".
 - no text stops on the universe anomaly reported before.
 
 With the direct translation (`examples-direct/`, the default before;
@@ -880,6 +897,11 @@ Measured on the direct texts, not rerun yet: the texts in the other
 languages (12 per language, 9 languages) give the same results, step by step, as the English ones (same roles and statuses
 in each `.cyp.json`): 90 steps proved, 4 not proved, 30 not checked per
 language (`cyp-check/results_fr_it.tsv`, `cyp-check/results_langs.tsv`).
+The 27 texts in other languages that 6.4.1 changes (`ADD0`, `add_0_r`,
+`plus_n_Sm` in 9 languages), checked again on 2026-11-19 (staged
+texts, their files in `cyp-check/<lang>/`), have the same statuses, line
+by line, as their English texts (6, 7 and 7 steps proved, none not
+proved); `results_fr_it.tsv` and `results_langs.tsv` are not rerun.
 
 ## The staged translation (thesis chapters 2 and 3, `elpi/staged.elpi`)
 
@@ -1078,10 +1100,7 @@ the same annotations (it is in the history, commit 56a84ef).
   Otherwise`).
 - From the thesis: the scripts of its chapter 4 (4.2, 4.3.4: a text that
   can be read back into a proof term); the selection of type annotations
-  and the subproofs (4.3.1-4.3.3) are done.  Of 6.4.1 (the generalised
-  predicate left out), the first step, a reader that finds the motive as
-  `elim` does: the motive is left out only where cyp's eapply finds it
-  (see "Rules of the thesis").
+  and the subproofs (4.3.1-4.3.3) are done.
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.
 - The `require` line of the header is the same for every text (the

@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n m : nat`{.var}. We prove `S (n + m) = n + S m`{.claim}.
 
-- To prove `S (n + m) = n + S m`{.fact} by induction (nat, nat_ind), we generalise it to `forall n0 : nat, S (n0 + m) = n0 + S m`{.fact}:
+- We prove `S (n + m) = n + S m`{.fact} by induction on `n`{.fact} (nat, nat_ind):
 - Case 1 (base): we prove `S (0 + m) = 0 + S m`{.claim}.
   - By definition of eq (eq_refl), we have `S m = S m`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Case 2 (inductive): we prove `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.
@@ -15,5 +15,4 @@ Let `n m : nat`{.var}. We prove `S (n + m) = n + S m`{.claim}.
     - The element `S (n0 + m)`{.fact} belongs to `nat`{.fact}.
     - The element `n0 + S m`{.fact} belongs to `nat`{.fact}.
     - Applying f_equal_nat to nat, S and IHn, we have `S (S (n0 + m)) = S (n0 + S m)`{.claim}.
-- These cases being exhaustive, we deduce `forall n0 : nat, S (n0 + m) = n0 + S m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-- In particular `S (n + m) = n + S m`{.claim}.
+- These cases being exhaustive, we deduce `S (n + m) = n + S m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.

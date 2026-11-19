@@ -64,9 +64,6 @@ Ltac xtext_g_congruence := timeout 1 congruence.
 Ltac xtext_g_lia := timeout 1 lia.
 Ltac xtext_g_firstorder := bounded_firstorder.   (* the one cyp runs *)
 Ltac xtext_g_auto := timeout 1 auto.
-(* the reader's step *by T* (cyp_eapply, cyp/vernac/Cyp.v): the test of
-   thesis 6.4.1, an elimination whose motive is left out *)
-Ltac xtext_eapply t := eapply t.
 
 Elpi Db xtext.db lp:{{
   % [xtext-tactic Ltac Text]: the Ltac definition Ltac is tried on a long
