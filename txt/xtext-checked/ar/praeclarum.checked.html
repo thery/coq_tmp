@@ -1,0 +1,109 @@
+<!DOCTYPE html><html lang="ar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>/* Alignment */
+mtable.right-align mtd,
+mtable mtd.right-align,
+mtable.left-align mtd.right-align,
+mtable.aligned mtd:nth-child(odd) {
+  justify-items: end;
+  text-align: right;
+}
+mtable.cases mtd,
+mtable.left-align mtd,
+mtable mtd.left-align,
+mtable.aligned mtd:nth-child(even),
+math:is(:not([display])) > mtable.multiline-equation mtd {
+  justify-items: start;
+  text-align: left;
+}
+mtable.cases mtd,
+mtable.aligned mtd,
+mtable mtd.flushed,
+mtable mtd.left-flush {
+  padding-left: 0;
+}
+mtable.cases mtd,
+mtable.aligned mtd,
+mtable mtd.flushed,
+mtable mtd.right-flush {
+  padding-right: 0;
+}
+
+/* Tables */
+mtable {
+  math-style: inherit;
+}
+mtd {
+  math-depth: auto-add;
+  math-style: compact;
+  math-shift: compact;
+}
+
+/* Equations */
+mtable.multiline-equation mtd {
+  math-depth: inherit;
+  math-style: inherit;
+  math-shift: inherit;
+  padding: 0;
+}
+math > mtable.multiline-equation mtr:not(:last-child) mtd {
+  padding-bottom: 0.5em;
+}
+
+/* Fractions */
+mfrac {
+  padding-inline: 0;
+  margin-inline: 0.1em;
+}
+
+/* Accents */
+mover[accent="true" i] > :first-child {
+  font-feature-settings: "dtls";
+}
+mover.dotted[accent="true" i] > :first-child {
+  font-feature-settings: "dtls" 0;
+}
+
+/* Other rules for scriptlevel, displaystyle and math-shift */
+munder > :nth-child(2),
+munderover > :nth-child(2) {
+  math-shift: compact
+}
+munder[accentunder="true" i] > :not(:first-child),
+mover[accent="true" i] > :not(:first-child) {
+  math-depth: inherit;
+  math-style: inherit;
+  math-shift: inherit;
+}</style></head><body><style>.proof-text { font-family: 'Libertinus Serif', 'Noto Serif', serif; max-width: 48em; margin: 2em auto; padding: 0 1em; line-height: 1.6; color: #000; background: #fff; }
+.proof-text code { font-family: 'DejaVu Sans Mono', monospace; font-size: 0.9em; }
+.proof-text math { font-family: 'Latin Modern Math', 'STIX Two Math', math; }
+.proof-text header h1 { font-size: 1.5em; margin-bottom: 0.3em; }
+.proof-text table.fields { font-size: 0.8em; color: #505050; border-bottom: 1px solid #b4b4b4; padding-bottom: 0.5em; width: 100%; }
+.proof-text table.fields th { text-align: start; padding-inline-end: 0.8em; vertical-align: top; width: 1%; white-space: nowrap; }
+.proof-text a { color: #0072b2; text-decoration: none; }
+.proof-text a:hover { text-decoration: underline; }
+.formula { border-radius: 2px; padding: 0 1px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.name { font-size: 0.9em; }
+.by { color: #5a5a5a; }
+ul.steps { list-style: none; padding-inline-start: 1.4em; margin: 0; }
+.proof-text > ul.steps { padding-inline-start: 0; }
+li.step, p.statement { margin: 0.5em 0; }
+.mark { display: inline-block; width: 1.3em; font-family: 'DejaVu Sans', sans-serif; font-weight: bold; color: #6e6e6e; }
+.number { color: #828282; font-size: 0.75em; margin-inline-end: 0.6em; }
+.conditions { color: #d9822b; font-size: 0.8em; }
+.message { margin: 0.4em 0 0 1.3em; padding: 0.35em 0.6em; font-size: 0.85em; border-inline-start: 2px solid; border-radius: 2px; }
+nav.gallery { font-size: 0.8em; color: #6e6e6e; margin-bottom: 1em; }
+nav.gallery a { margin-inline-end: 0.9em; }
+footer.legend { margin-top: 2em; padding-top: 0.4em; border-top: 1px solid #d0d0d0; font-size: 0.75em; color: #505050; }
+footer.legend span.entry { margin-inline-end: 1.2em; white-space: nowrap; }
+.formula.var { background: #d4ebf9; }
+.formula.hyp { background: #f8d49c; border-bottom: 1px dashed #4d4d4d; }
+.formula.claim { background: #fcf6c6; border: 1px solid #4d4d4d; }
+.formula.fact { background: #e3e3e3; border-bottom: 1px dotted #4d4d4d; }
+.formula.plain { }
+.mark.ok { color: #1d7a33; }
+.message.ok { border-color: #1d7a33; background: #e8f2eb; }
+.mark.ko { color: #c62828; }
+.message.ko { border-color: #c62828; background: #f9eaea; }
+.mark.todo { color: #d9822b; }
+.message.todo { border-color: #d9822b; background: #fbf3ea; }
+.mark.none { color: #9e9e9e; }
+.message.none { border-color: #9e9e9e; background: #f5f5f5; }</style><div class="proof-text" lang="ar" dir="rtl"><nav class="gallery"><a href="../../index.html">index</a><a href="../../xtext-checked/de/praeclarum.checked.html">de</a><a href="../../xtext-checked/praeclarum.checked.html">en</a><a href="../../xtext-checked/fr/praeclarum.checked.html">fr</a><a href="../../xtext-checked/it/praeclarum.checked.html">it</a><a href="../../xtext-checked/ko/praeclarum.checked.html">ko</a><a href="../../xtext-checked/la/praeclarum.checked.html">la</a><a href="../../xtext-checked/nl/praeclarum.checked.html">nl</a><a href="../../xtext-checked/ru/praeclarum.checked.html">ru</a><a href="../../xtext-checked/zh/praeclarum.checked.html">zh</a><a href="../../xtext-languages/ar/praeclarum.html">not checked</a></nav><header><h1><code>praeclarum</code></h1><table class="fields"><tr><th>require</th><td><code>From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.</code></td></tr><tr><th>lang</th><td><code>ar</code></td></tr><tr><th>by</th><td><code>tauto | congruence | lia | firstorder | auto</code></td></tr></table></header><p class="statement"><span class="mark ok">✔</span>لتكن <span class="formula var"><math><mi>𝑥</mi><mo>,</mo><mi>𝑦</mi><mo>,</mo><mi>𝑧</mi><mo>,</mo><mi>𝑡</mi><mo lspace="0.2777777777777778em" rspace="0.2777777777777778em">:</mo><mtext>Prop</mtext></math></span>. لنفرض أن <span class="formula hyp"><math><mo stretchy="false">(</mo><mi>𝑥</mi><mo stretchy="false">→</mo><mi>𝑧</mi><mo form="postfix" stretchy="false">)</mo><mo>∧</mo><mo form="prefix" stretchy="false">(</mo><mi>𝑦</mi><mo stretchy="false">→</mo><mi>𝑡</mi><mo stretchy="false">)</mo></math></span> <span id="loc-1"></span><span class="name">(<code>h1</code>)</span> و <span class="formula hyp"><math><mi>𝑥</mi><mo>∧</mo><mi>𝑦</mi></math></span> <span id="loc-2"></span><span class="name">(<code>h2</code>)</span>. سنثبت أن <span class="formula claim"><math><mi>𝑧</mi><mo>∧</mo><mi>𝑡</mi></math></span>.</p><ul class="steps"><li class="step"><span class="number">1</span><span class="mark ok">✔</span>بالعودة إلى تعريف <a href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#and"><code>and</code></a> (<a href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#and_ind"><code>and_ind</code></a>) في <span class="formula fact"><math><mo stretchy="false">(</mo><mi>𝑥</mi><mo stretchy="false">→</mo><mi>𝑧</mi><mo form="postfix" stretchy="false">)</mo><mo>∧</mo><mo form="prefix" stretchy="false">(</mo><mi>𝑦</mi><mo stretchy="false">→</mo><mi>𝑡</mi><mo stretchy="false">)</mo></math></span> <span class="name">(<a href="#loc-1"><code>h1</code></a>)</span>, سنثبت أن <span class="formula claim"><math><mi>𝑧</mi><mo>∧</mo><mi>𝑡</mi></math></span>:<ul class="steps"><li class="step"><span class="number">1.1</span><span class="mark none">▫</span>لنفرض أن <span class="formula hyp"><math><mi>𝑥</mi><mo stretchy="false">→</mo><mi>𝑧</mi></math></span> <span id="loc-3"></span><span class="name">(<code>i</code>)</span> و <span class="formula hyp"><math><mi>𝑦</mi><mo stretchy="false">→</mo><mi>𝑡</mi></math></span> <span id="loc-4"></span><span class="name">(<code>j</code>)</span>.<ul class="steps"><li class="step"><span class="number">1.1.1</span><span class="mark ok">✔</span>بالعودة إلى تعريف <a href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#and"><code>and</code></a> (<a href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#and_ind"><code>and_ind</code></a>) في <span class="formula fact"><math><mi>𝑥</mi><mo>∧</mo><mi>𝑦</mi></math></span> <span class="name">(<a href="#loc-2"><code>h2</code></a>)</span>, سنثبت أن <span class="formula claim"><math><mi>𝑧</mi><mo>∧</mo><mi>𝑡</mi></math></span>:<ul class="steps"><li class="step"><span class="number">1.1.1.1</span><span class="mark none">▫</span>لنفرض أن <span class="formula hyp"><math><mi>𝑥</mi></math></span> <span id="loc-5"></span><span class="name">(<code>k</code>)</span> و <span class="formula hyp"><math><mi>𝑦</mi></math></span> <span id="loc-6"></span><span class="name">(<code>l</code>)</span>.<ul class="steps"><li class="step"><span class="number">1.1.1.1.1</span><span class="mark ok">✔</span>بتطبيق <a href="#loc-3"><code>i</code></a> على <a href="#loc-5"><code>k</code></a>, لدينا <span class="formula claim"><math><mi>𝑧</mi></math></span>.</li><li class="step"><span class="number">1.1.1.1.2</span><span class="mark ok">✔</span>بتطبيق <a href="#loc-4"><code>j</code></a> على <a href="#loc-6"><code>l</code></a>, لدينا <span class="formula claim"><math><mi>𝑡</mi></math></span>.</li><li class="step"><span class="number">1.1.1.1.3</span><span class="mark ok">✔</span>إذن حسب تعريف <a href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#and"><code>and</code></a> (<a href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj"><code>conj</code></a>), لدينا <span class="formula claim"><math><mi>𝑧</mi><mo>∧</mo><mi>𝑡</mi></math></span> <span class="by"><em>by</em> <a href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj"><code>Corelib.Init.Logic.conj</code></a></span>.</li></ul></li></ul></li></ul></li></ul></li></ul><footer class="legend"><span class="entry"><span class="formula var">متغير</span></span><span class="entry"><span class="formula hyp">فرضية</span></span><span class="entry"><span class="formula claim">ادعاء</span></span><span class="entry"><span class="formula fact">حقيقة</span></span><span class="entry"><span class="mark ok">✔</span>مثبت</span><span class="entry"><span class="mark ko">✘</span>غير مثبت</span><span class="entry"><span class="mark todo">◆</span>متروك لكتلة Proof</span><span class="entry"><span class="mark none">▫</span>لا شيء للتحقق</span></footer></div></body></html>
