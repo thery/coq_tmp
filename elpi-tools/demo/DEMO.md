@@ -1,7 +1,7 @@
 # A demo of `elpi-check` and `elpi-debug`
 
-Two tools for standalone Elpi 4.0.0 (opam switch `elpi5`, the released
-Elpi, no patch), on two small programs.  The first is the simply typed λ-calculus, with
+Two tools for standalone Elpi 4.0.0 (the released Elpi, no patch;
+`opam install elpi.4.0.0 yojson dune`), on two small programs.  The first is the simply typed λ-calculus, with
 binders as Elpi lambdas and the typing context as hypotheses (`pi`, `=>`).
 Its reduction has one wrong rule.  The second (at the end) is insertion
 sort on lists, as in Prolog.  `elpi-check` finds it from a property;
