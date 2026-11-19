@@ -3,7 +3,7 @@
 This document describes the design of elpi-tools: what each tool does, how
 it is implemented, and the reasons for the main choices.  It is intended
 for developers of Elpi and of tools built on it.  The tools target
-standalone Elpi 4.0.0 (opam switch `elpi5`), not Rocq-Elpi.  All outputs
+standalone Elpi 4.0.0, not Rocq-Elpi.  All outputs
 shown were produced by the tools in this repository; absolute paths are
 shortened to the file name, and long lines are cut and marked `…`.
 
@@ -107,8 +107,9 @@ the API (signature), its contract, where it would be used
 ## Running the tests
 
 ```sh
-eval $(opam env --switch=elpi5)       # Elpi 4.0.0, yojson
-cd elpi-tools
+opam install elpi.4.0.0 yojson dune   # in any opam switch (OCaml 4.14 or 5)
+git clone https://github.com/thery/coq_tmp.git
+cd coq_tmp/elpi-tools
 dune build @runtest                   # reflect, check, debug, dap (and the
                                       # extension's tests when node is installed)
 dune promote                          # accept a new output of a cram test
