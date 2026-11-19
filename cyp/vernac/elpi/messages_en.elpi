@@ -28,3 +28,11 @@ message "en" "name-unknown" "%1 names nothing known: no hypothesis, node, lemma,
 message "en" "at-line" "line %1: %2".
 % the errors of the tree are prooftext's (prooftext/nodes.elpi,
 % error-template), in English; their keys may be translated here
+% the open goals of a text ({.goal}) and the fixed methods (*match*,
+% *induction*)
+message "en" "goal-line" "  🔶 open goal %1 of the text: %2".
+message "en" "md-goal" "open goal of the text, not tried: condition %1, to prove in the Proof block: %2".
+message "en" "method-no-object" "*%1*{.just} names nothing to eliminate: name the hypothesis or the variable (*h*{.just}), or its type (*T*{.just})".
+message "en" "type-objects" "no single hypothesis or variable of type %1 in scope to eliminate (%2 found): name it".
+message "en" "not-of-type" "%1 is not of type %2".
+message "en" "type-alone" "%1 is an inductive type: it justifies a step only with *match*{.just} or *induction*{.just}".

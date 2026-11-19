@@ -115,7 +115,7 @@ Definition nested_cases : forall A B C D E : Prop,
     k (match hab with or_introl a => f (u a) | or_intror b => g b end).
 Elpi Query ExtractText lp:{{ check-text "nested_cases" "all" "en" [
   "Let `A B C D E : Prop`{.var}. Assume `A \\/ B`{.hyp} (hab), `A -> E`{.hyp} (u), `E -> C`{.hyp} (f), `B -> C`{.hyp} (g) and `C -> D`{.hyp} (k). We prove `D`{.claim}.",
-  "- We prove `C` by case analysis on *hab*{.just} (or, match):",
+  "- We prove `C` by case analysis on *hab*{.just} (*or*{.just}, *match*{.just}):",
   "  - Case 1: we prove `A -> C`{.claim}.",
   "    - Assume `A`{.hyp} (a).",
   "      - Applying *u*{.just} to *a*{.just}, we have `E`{.claim} (P1.1).",

@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: la
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -10,7 +10,7 @@ by: tauto | congruence | lia | firstorder | auto
 Ostendamus `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim}.
 
 - Ostendamus `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} per recursionem in `l1` (fix length_app'):
-  - Sit `A : Type`{.var} et `l1 l2 : list A`{.var}. Ostendamus `length (l1 ++ l2) = length l1 + length l2` per inductionem in `l1` (list, match):
+  - Sit `A : Type`{.var} et `l1 l2 : list A`{.var}. Ostendamus `length (l1 ++ l2) = length l1 + length l2` per inductionem in *l1*{.just} (*list*{.just}, *induction*{.just}):
     - Casus 1 (basis): ostendamus `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
       - Ex definitione eq (*eq_refl*{.just}), habemus `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
     - Casus 2 (gradus): ostendamus `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim}.

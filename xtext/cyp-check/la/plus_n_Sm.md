@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: la
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sint `n m : nat`{.var}. Ostendamus `S (n + m) = n + S m`{.claim}.
 
-- Ostendamus `S (n + m) = n + S m` per inductionem in `n` (nat, *nat_ind*{.just}):
+- Ostendamus `S (n + m) = n + S m` per inductionem in *n*{.just} (*nat*{.just}, *induction*{.just}):
   - Casus 1 (basis): ostendamus `0 + S m = 0 + S m`{.claim}.
     - Ex definitione eq (*eq_refl*{.just}), habemus `0 + S m = 0 + S m`{.claim}.
   - Casus 2 (gradus): ostendamus `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

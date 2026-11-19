@@ -21,7 +21,7 @@ Elpi Query ExtractText lp:{{
   Expected = {std.string.concat "\n" [
     "Let n : nat. We prove n + 0 = n.",
     "",
-    "- We prove n + 0 = n by induction on n (nat, nat_ind):",
+    "- We prove n + 0 = n by induction on n (nat, induction):",
     "  - Case 1 (base): we prove 0 = 0.",
     "    - By definition of eq (eq_refl), we have 0 = 0.",
     "  - Case 2 (inductive): we prove forall m : nat, m + 0 = m -> S m + 0 = S m.",

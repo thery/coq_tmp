@@ -19,11 +19,7 @@ pred with-attributes i:prop.
 with-attributes P :- attributes A, std.mem A (attribute "bare" _), !, bare-mode => P.
 with-attributes P :- P.
 
-% a list without its repetitions
-pred undup i:list string, o:list string.
-undup [] [].
-undup [X | L] R :- std.mem L X, !, undup L R.
-undup [X | L] [X | R] :- undup L R.
+% (undup, a list without its repetitions: text.elpi)
 
 % [check-file F Lang Name Ty Proof Rs Stated]: the proof in the Markdown file F, in
 % the language Lang, checked; writes F.checked.md and F.cyp.json next to it,
@@ -82,13 +78,14 @@ in-text-order Ids Rs Sorted :-
   std.map Ids (i\ rs\ std.filter Rs (r\ sigma S\ r = rep i S) rs) Rss, std.flatten Rss Sorted.
 
 % the nodes of the reports, and those with a condition not proved or an
-% error (Ko) or left to the Proof block (Todo)
+% error (Ko) or left to the Proof block (Todo: the open goals of the text
+% too)
 pred count i:list report, o:list string, o:list string, o:list string.
 count Rs Steps Ko Todo :-
   std.map Rs (r\ s\ sigma St\ r = rep s St) S0, undup S0 Steps,
   std.filter Rs (r\ sigma I S\ r = rep I S, (S = ko _ ; S = bad _ ; S = unread _)) Ko0,
   std.map Ko0 (r\ s\ sigma St\ r = rep s St) K0, undup K0 Ko,
-  std.filter Rs (r\ sigma I G\ r = rep I (todo G)) T0,
+  std.filter Rs (r\ sigma I G\ r = rep I (todo G) ; r = rep I (goal G)) T0,
   std.map T0 (r\ i\ sigma St\ r = rep i St) Todo.
 
 % the goals of the conditions, each with its context
@@ -111,7 +108,8 @@ say-hyp _.
 % the conditions left, one line each
 pred say-todo i:list report.
 say-todo Rs :- std.forall Rs (r\ (sigma I G\ r = rep I (todo G), !,
-  say "left-line" [I, G]) ; true).
+  say "left-line" [I, G]) ; (sigma I G\ r = rep I (goal G), !,
+  say "goal-line" [I, G]) ; true).
 
 % [say-reports Rs]: the report of each node, one line each: ✅ proved, ❌
 % an error or not proved, with its message (a goal left: say-todo)
@@ -121,6 +119,7 @@ say-reports Rs :- std.forall Rs say-report.
 pred say-report i:report.
 say-report (rep I ok) :- !, coq.say {calc ("  ✅ " ^ I)}.
 say-report (rep _ (todo _)) :- !.
+say-report (rep _ (goal _)) :- !.
 say-report (rep I (ko G)) :- !, say-error I {msg "md-not-proved" [G]}.
 say-report (rep I (bad M)) :- !, say-error I M.
 say-report (rep I (unread M)) :- say-error I M.

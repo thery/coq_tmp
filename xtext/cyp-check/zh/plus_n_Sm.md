@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: zh
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 设 `n m : nat`{.var}. 我们证明 `S (n + m) = n + S m`{.claim}.
 
-- 我们证明 `S (n + m) = n + S m` 用归纳法，对 `n` (nat, *nat_ind*{.just}):
+- 我们证明 `S (n + m) = n + S m` 用归纳法，对 *n*{.just} (*nat*{.just}, *induction*{.just}):
   - 情形 1 (基础): 我们证明 `0 + S m = 0 + S m`{.claim}.
     - 根据定义 eq (*eq_refl*{.just}), 我们有 `0 + S m = 0 + S m`{.claim}.
   - 情形 2 (归纳): 我们证明 `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

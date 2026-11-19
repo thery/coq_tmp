@@ -5,17 +5,26 @@
 % formulas with their class, and justifications.  A formula's role is its
 % class ({.var}, {.hyp}, {.claim}, {.fact}); a formula with no class is
 % plain text, and so are all the words: no word gives a role.  A
+% conclusion {.goal} is an open goal that the author leaves to prove
+% (proof.elpi: it is not tried, it is left to the Proof block).  A
 % justification is *X*{.just} (or *by X*, the form of the texts written
 % before the tree).  The name in parentheses after a hypothesis, `P` (h),
 % is its name; the name after the conclusion, the name of the node
 % (prooftext/nodes.elpi, node-name).
+
+% a list without its repetitions
+pred undup i:list string, o:list string.
+undup [] [].
+undup [X | L] R :- std.mem L X, !, undup L R.
+undup [X | L] [X | R] :- undup L R.
 
 % the language of the text being read (cyp's messages, messages_xx.elpi)
 pred current-lang o:string.
 
 % the elements of a node, once its text is read
 kind element type.
-type elt role -> string -> element.     % a formula and its role
+type elt role -> string -> element.     % a formula and its role (rgoal:
+                                        % an open goal, not tried)
 type eltt role -> term -> element.      % a formula already a Rocq term (Cyp Lemma), and its role
 type hname string -> element.           % the name of the hypothesis before it
 type just string -> element.            % a justification: the name it gives
@@ -50,9 +59,13 @@ type given-local string -> given.       % a hypothesis, a conclusion or a variab
 type given-lemma gref -> given.         % a lemma
 
 % how a condition is closed: the names of rules and tactics, the names
-% given, and the names of the hypotheses that the facts are
+% given, and the names of the hypotheses that the facts are; or, for a
+% node justified by one of the fixed methods *match* or *induction*
+% (prooftext's method), the method, the names of the hypotheses or
+% variables it eliminates, and how the cases are then closed
 kind method type.
 type method list string -> list given -> list string -> method.
+type eliminating string -> list string -> method -> method.
 
 % The names in scope while a proof is checked (declared by under-decl,
 % proof.elpi), which the justifications and the facts look up:

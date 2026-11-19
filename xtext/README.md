@@ -215,8 +215,8 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 - **justifications**: the names that justify a step are emphasised and
   tagged where the sentence names them, `*X*{.just}`: hypotheses ("By
   *h4*{.just} we have", "Applying *i*{.just} to *k*{.just}"), lemmas,
-  constructors ("By definition of or (*or_intror*{.just})"), elimination
-  theorems ("(nat, *nat_ind*{.just})"), intermediate results
+  constructors ("By definition of or (*or_intror*{.just})"), the
+  eliminations, intermediate results
   (*P1*{.just}), and the tactic of a tactic-built step ("By
   *lia*{.just} we have", see ["Tactic-built subproofs"](doc/generic-mechanisms.md#5-tactic-built-subproofs-thesis-54-the-pragmatic-method));
   a node may have several.  cyp applies them (`*X*{.just}`: cyp runs no
@@ -224,10 +224,26 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
   keeps the name of its library unless the text imports that library (the
   prelude, the file of the theorem): `Classical_Prop.classic`,
   `PeanoNat.Nat.add_comm`, since cyp reads the text with its `require`
-  line only.  A term that is no proof (`Applying f to A and P`), a `match`
-  and a first-kind elimination on a type with indices (`le_ind`: its
-  motive is not found from the goal by unification) are not
-  justifications; cyp's default tactics close those steps when they can;
+  line only.  A term that is no proof (`Applying f to A and P`) is no
+  justification; cyp's default tactics close those steps when they can;
+- **eliminations**: a `match`, or the standard elimination scheme of a
+  type (`T_ind`, `T_rec`, `T_rect`, `T_sind`), on an object that the
+  text names (a hypothesis or a variable, as a justification, or a fact)
+  is justified by one of the two fixed justifications of the format
+  ([prooftext](../prooftext/README.md#the-format)), with the type
+  eliminated: `*match*{.just}` for a case analysis ("Going back to the
+  definition of *and*{.just} (*match*{.just}) in *H0*{.just}", "by case
+  analysis on *h*{.just} (*or*{.just}, *match*{.just})", `or_ind` used
+  without induction hypotheses too), `*induction*{.just}` when a case has
+  an induction hypothesis ("by induction on *n*{.just} (*nat*{.just},
+  *induction*{.just})").  The scheme's name is not written: it is the
+  type's own (the plain text reads "(nat, induction)").  A non-standard
+  principle stays a lemma that cyp applies ("(nat, *two_step*{.just})"),
+  and an elimination on an object the text does not name keeps the name
+  of its rule, untagged for a `match`;
+- **open goals** (`ExtractText_partial`): ``Prove `G`{.goal}.``, the role
+  of an open goal, which cyp does not try (it leaves it to the Proof
+  block) and which the PDF frames;
 - the lines "The element `t` belongs to `T`" (the terms an application
   is given) are untagged remarks, and are left out when `t` is a variable,
   whose type the text gave where it introduced it;

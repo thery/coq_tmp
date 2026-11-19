@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -11,7 +11,7 @@ by: tauto | congruence | lia | firstorder | auto
 - ✅ We have proved `forall n1 m0 : nat, n1 < m0 \/ n1 = m0 -> n1 <= m0`{.claim} (H).
   - ✅ Let us choose arbitrarily `n0 m : nat`{.var}.
     - ✅ Applying *PeanoNat.Nat.lt_eq_cases*{.just} to n0 and m, we have `n0 <= m <-> n0 < m \/ n0 = m`{.claim}.
-    - ✅ Going back to the definition of and (match) in `n0 <= m <-> n0 < m \/ n0 = m`{.fact}, we prove `n0 < m \/ n0 = m -> n0 <= m`{.claim}:
+    - ✅ Going back to the definition of *and*{.just} (*match*{.just}) in `n0 <= m <-> n0 < m \/ n0 = m`{.fact}, we prove `n0 < m \/ n0 = m -> n0 <= m`{.claim}:
       - ✅ Assume `n0 <= m -> n0 < m \/ n0 = m`{.hyp} (h) and `n0 < m \/ n0 = m -> n0 <= m`{.hyp} (h0). By *h0*{.just} we have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.
 
     We have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.

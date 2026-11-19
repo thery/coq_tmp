@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 lang: de
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Seien `A B : Prop`{.var}. Angenommen `A \/ B`{.hyp} (h). Wir zeigen `B \/ A`{.claim}.
 
-- ✅ Wir zeigen `B \/ A` durch Fallunterscheidung über *h*{.just} (or, *or_ind*{.just}):
+- ✅ Wir zeigen `B \/ A` durch Fallunterscheidung über *h*{.just} (*or*{.just}, *match*{.just}):
   - ✅ Fall 1: wir zeigen `A -> B \/ A`{.claim}.
     - ✅ Angenommen `A`{.hyp} (i). Nach Definition von or (*or_intror*{.just}), aus *i*{.just} daraus folgt `B \/ A`{.claim}.
   - ✅ Fall 2: wir zeigen `B -> B \/ A`{.claim}.

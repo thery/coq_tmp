@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.thesis.
 lang: ar
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ليكن `m : nat`{.var}. سنثبت أن `m + 0 = m`{.claim}.
 
-- سنثبت أن `m + 0 = m` بالاستقراء على `m` (nat, *nat_ind*{.just}):
+- سنثبت أن `m + 0 = m` بالاستقراء على *m*{.just} (*nat*{.just}, *induction*{.just}):
   - الحالة 1 (الأساس): سنثبت أن `0 + 0 = 0 + 0`{.claim}.
     - حسب تعريف eq (*eq_refl*{.just}), لدينا `0 + 0 = 0 + 0`{.claim}.
   - الحالة 2 (الاستقرائية): سنثبت أن `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.

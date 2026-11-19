@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 ✅ We prove `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim}.
 
 - ✅ We prove `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} by recursion on `l1` (fix length_app'):
-  - ✅ Let `A : Type`{.var} and `l1 l2 : list A`{.var}. We prove `length (l1 ++ l2) = length l1 + length l2` by induction on `l1` (list, match):
+  - ✅ Let `A : Type`{.var} and `l1 l2 : list A`{.var}. We prove `length (l1 ++ l2) = length l1 + length l2` by induction on *l1*{.just} (*list*{.just}, *induction*{.just}):
     - ✅ Case 1 (base): we prove `length ([] ++ l2) = length ([] ++ l2)`{.claim}.
       - ✅ By definition of eq (*eq_refl*{.just}), we have `length ([] ++ l2) = length ([] ++ l2)`{.claim}.
     - ✅ Case 2 (inductive): we prove `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim}.

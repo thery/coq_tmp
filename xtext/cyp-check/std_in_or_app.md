@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,11 +8,11 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l m : list A`{.var}. Let `a : A`{.var}. We prove `In a l \/ In a m -> In a (l ++ m)`{.claim}.
 
-- We prove `In a l \/ In a m -> In a (l ++ m)` by induction on `l` (list, *list_ind*{.just}):
+- We prove `In a l \/ In a m -> In a (l ++ m)` by induction on *l*{.just} (*list*{.just}, *induction*{.just}):
   - Case 1 (base): we prove `In a nil \/ In a m -> In a (nil ++ m)`{.claim}.
-    - Assume `False \/ In a m`{.hyp} (H). We prove `In a m` by case analysis on *H*{.just} (or, *or_ind*{.just}):
+    - Assume `False \/ In a m`{.hyp} (H). We prove `In a m` by case analysis on *H*{.just} (*or*{.just}, *match*{.just}):
       - Case 1.1: we prove `False -> In a m`{.claim}.
-        - Assume `False`{.hyp} (H0). By contradiction (False, *False_ind*{.just}), from *H0*{.just} we can deduce `In a m`{.claim}.
+        - Assume `False`{.hyp} (H0). By contradiction (*False*{.just}, *match*{.just}), from *H0*{.just} we can deduce `In a m`{.claim}.
       - Case 1.2: we prove `In a m -> In a m`{.claim}.
         - Assume `In a m`{.hyp} (H0). By *H0*{.just} we have `In a m`{.claim}.
 

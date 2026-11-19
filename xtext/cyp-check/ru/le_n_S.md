@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: ru
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Пусть `n m : nat`{.var}. Предположим, что `n <= m`{.hyp} (H). Докажем, что `S n <= S m`{.claim}.
 
-- Докажем, что `S n <= S m` индукцией по *H*{.just} (le, le_ind):
+- Докажем, что `S n <= S m` индукцией по *H*{.just} (*le*{.just}, *induction*{.just}):
   - Случай 1 (база): докажем, что `S n <= S n`{.claim}.
     - По определению le (*le_n*{.just}), имеем `S n <= S n`{.claim}.
   - Случай 2 (шаг): докажем, что `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.

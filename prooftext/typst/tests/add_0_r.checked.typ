@@ -10,7 +10,7 @@
 
 #proof([#"Let "#var($n ∈ ℕ$)#". We prove "#claim($n + 0 = n$)#"."], (
   steps((
-    step("1", [#"We prove "#formula($n + 0 = n$)#" by induction on "#formula($n$)#" ("#cited("nat", "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat")#", "#just("nat_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"):"], (
+    step("1", [#"We prove "#formula($n + 0 = n$)#" by induction on "#just("n")#" ("#just("nat", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat")#", "#just("induction")#"):"], (
       steps((
         step("1.1", [#"Case 1 (base): we prove "#claim($0 = 0$)#"."], (
           steps((

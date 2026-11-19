@@ -29,7 +29,8 @@ Elpi Accumulate File lex_en.        (* then the tables, in any order *)
 ## lexicon.elpi
 
 - roles: `rvar` (a variable or a definition introduced), `rhyp` (a
-  hypothesis), `rclaim` (a claim, proved by the step), `rfact` (a fact
+  hypothesis), `rclaim` (a claim, proved by the step), `rgoal` (an open
+  goal: the claim of a step left to prove, in a proof in progress), `rfact` (a fact
   used, a mention), `rback` (a claim that replaces the goal);
 - `phrase Lang Phrase Role`: a phrase (in lower case) that announces the role
   of a formula (no reader takes the role from it now); `phrase-after Lang
@@ -38,7 +39,8 @@ Elpi Accumulate File lex_en.        (* then the tables, in any order *)
 - `write-role Lang Use Phrase Role` and `write-word Lang Use Words`: the
   phrases of a writer, by their use (the same uses in every language); a
   `write-role` phrase is also a `phrase` (one clause); the uses
-  `legend-var`, `legend-hyp`, `legend-claim`, `legend-fact`, `legend-just`
+  `legend-var`, `legend-hyp`, `legend-claim`, `legend-goal` (an open goal,
+  listed only in a text that has one), `legend-fact`, `legend-just`
   (the justifications) and `legend-ok`, `legend-ko`, `legend-todo`, `legend-none` are the words of
   the legend of a PDF or a web page of a proof text (the names of the
   roles and of cyp's statuses, [prooftext](../prooftext/README.md#the-legend));
@@ -147,6 +149,7 @@ order), then the reader's or the writer's own files.  For cyp's commands
 | legend-var | متغير | (none) | before |
 | legend-hyp | فرضية | (none) | before |
 | legend-claim | ادعاء | (none) | before |
+| legend-goal | هدف مفتوح | (none) | before |
 | legend-fact | حقيقة | (none) | before |
 | legend-just | تبرير | (none) | before |
 | legend-ok | مثبت | (none) | before |
@@ -221,6 +224,7 @@ Writing system: `clitic "ar" "و".  clitic "ar" "ف". punctuation "ar" "،".  pu
 | legend-var | Variable | (none) | before |
 | legend-hyp | Annahme | (none) | before |
 | legend-claim | Behauptung | (none) | before |
+| legend-goal | offenes Ziel | (none) | before |
 | legend-fact | Tatsache | (none) | before |
 | legend-just | Begründung | (none) | before |
 | legend-ok | bewiesen | (none) | before |
@@ -293,6 +297,7 @@ Read only: sei (var); seien (var); wenn (hyp); falls (hyp); dann (claim); folgt 
 | legend-var | variable | (none) | before |
 | legend-hyp | hypothesis | (none) | before |
 | legend-claim | claim | (none) | before |
+| legend-goal | open goal | (none) | before |
 | legend-fact | fact | (none) | before |
 | legend-just | justification | (none) | before |
 | legend-ok | proved | (none) | before |
@@ -365,6 +370,7 @@ Read only: let (var); if (hyp); assume (hyp); suppose (hyp); from (fact); using 
 | legend-var | variable | (none) | before |
 | legend-hyp | hypothèse | (none) | before |
 | legend-claim | affirmation | (none) | before |
+| legend-goal | but à prouver | (none) | before |
 | legend-fact | fait | (none) | before |
 | legend-just | justification | (none) | before |
 | legend-ok | prouvé | (none) | before |
@@ -437,6 +443,7 @@ Read only: soit (var); soient (var); considérons (var); si (hyp); supposons (hy
 | legend-var | variabile | (none) | before |
 | legend-hyp | ipotesi | (none) | before |
 | legend-claim | affermazione | (none) | before |
+| legend-goal | obiettivo aperto | (none) | before |
 | legend-fact | fatto | (none) | before |
 | legend-just | giustificazione | (none) | before |
 | legend-ok | dimostrato | (none) | before |
@@ -509,6 +516,7 @@ Read only: sia (var); siano (var); consideriamo (var); se (hyp); supponiamo (hyp
 | legend-var | 변수 | (none) | before |
 | legend-hyp | 가정 | (none) | before |
 | legend-claim | 주장 | (none) | before |
+| legend-goal | 열린 목표 | (none) | before |
 | legend-fact | 사실 | (none) | before |
 | legend-just | 근거 | (none) | before |
 | legend-ok | 증명됨 | (none) | before |
@@ -581,6 +589,7 @@ Read only: 이면 (hyp); 임을 보이면 충분하다 (back); 로 귀결된다 
 | legend-var | variabilis | (none) | before |
 | legend-hyp | hypothesis | (none) | before |
 | legend-claim | propositio | (none) | before |
+| legend-goal | propositio demonstranda | (none) | before |
 | legend-fact | factum | (none) | before |
 | legend-just | ratio | (none) | before |
 | legend-ok | probatum | (none) | before |
@@ -653,6 +662,7 @@ Read only: sit (var); sint (var); si (hyp); supponamus (hyp); tum (claim); igitu
 | legend-var | variabele | (none) | before |
 | legend-hyp | hypothese | (none) | before |
 | legend-claim | bewering | (none) | before |
+| legend-goal | open doel | (none) | before |
 | legend-fact | feit | (none) | before |
 | legend-just | rechtvaardiging | (none) | before |
 | legend-ok | bewezen | (none) | before |
@@ -725,6 +735,7 @@ Read only: zij (var); laat (var); als (hyp); stel (hyp); dan (claim); hebben we 
 | legend-var | переменная | (none) | before |
 | legend-hyp | гипотеза | (none) | before |
 | legend-claim | утверждение | (none) | before |
+| legend-goal | открытая цель | (none) | before |
 | legend-fact | факт | (none) | before |
 | legend-just | обоснование | (none) | before |
 | legend-ok | доказано | (none) | before |
@@ -799,6 +810,7 @@ Writing system: `punctuation "ru" "«".  punctuation "ru" "»". `
 | legend-var | 变量 | (none) | before |
 | legend-hyp | 假设 | (none) | before |
 | legend-claim | 断言 | (none) | before |
+| legend-goal | 待证目标 | (none) | before |
 | legend-fact | 事实 | (none) | before |
 | legend-just | 依据 | (none) | before |
 | legend-ok | 已证明 | (none) | before |

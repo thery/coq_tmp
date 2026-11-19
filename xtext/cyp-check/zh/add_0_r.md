@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.lemmas.
 lang: zh
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 设 `n : nat`{.var}. 我们证明 `n + 0 = n`{.claim}.
 
-- 我们证明 `n + 0 = n` 用归纳法，对 `n` (nat, *nat_ind*{.just}):
+- 我们证明 `n + 0 = n` 用归纳法，对 *n*{.just} (*nat*{.just}, *induction*{.just}):
   - 情形 1 (基础): 我们证明 `0 = 0`{.claim}.
     - 根据定义 eq (*eq_refl*{.just}), 我们有 `0 = 0`{.claim}.
   - 情形 2 (归纳): 我们证明 `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.

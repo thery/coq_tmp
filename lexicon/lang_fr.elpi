@@ -98,6 +98,7 @@ write-word "fr" "belongs-to" "appartient à".
 write-word "fr" "legend-var" "variable".
 write-word "fr" "legend-hyp" "hypothèse".
 write-word "fr" "legend-claim" "affirmation".
+write-word "fr" "legend-goal" "but à prouver".
 write-word "fr" "legend-fact" "fait".
 write-word "fr" "legend-just" "justification".
 write-word "fr" "legend-ok" "prouvé".

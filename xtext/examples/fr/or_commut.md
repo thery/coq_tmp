@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Soient `A B : Prop`{.var}. Supposons `A \/ B`{.hyp} (h). Montrons `B \/ A`{.claim}.
 
-- Montrons `B \/ A` par analyse de cas sur *h*{.just} (or, *or_ind*{.just}):
+- Montrons `B \/ A` par analyse de cas sur *h*{.just} (*or*{.just}, *match*{.just}):
   - Cas 1: montrons `A -> B \/ A`{.claim}.
     - Supposons `A`{.hyp} (i). Par définition de or (*or_intror*{.just}), à partir de *i*{.just} nous en déduisons `B \/ A`{.claim}.
   - Cas 2: montrons `B -> B \/ A`{.claim}.

@@ -11,7 +11,7 @@
 
 #proof([#"设 "#var($A , B : "Prop"$)#". 假设 "#hyp($A ∨ B$)#" "#name("h", label: "statement:h")#". 我们证明 "#claim($B ∨ A$)#"."], (
   steps((
-    step("1", [#"我们证明 "#formula($B ∨ A$)#" 分情形讨论，对 "#just("h", target: "statement:h")#" ("#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#", "#just("or_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind")#"):"], (
+    step("1", [#"我们证明 "#formula($B ∨ A$)#" 分情形讨论，对 "#just("h", target: "statement:h")#" ("#just("or", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#", "#just("match")#"):"], (
       steps((
         step("1.1", [#"情形 1: 我们证明 "#claim($A → B ∨ A$)#"."], (
           steps((

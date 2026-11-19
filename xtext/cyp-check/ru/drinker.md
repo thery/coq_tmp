@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 lang: ru
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -11,7 +11,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 - Применяя *Classical_Prop.classic*{.just}, имеем `(forall z : A, P z) \/ ~ (forall z : A, P z)`{.claim} (o).
   - Элемент `forall z : A, P z` принадлежит `Prop`.
-- Докажем, что `exists x : A, P x -> forall z : A, P z` разбором случаев по *o*{.just} (or, match):
+- Докажем, что `exists x : A, P x -> forall z : A, P z` разбором случаев по *o*{.just} (*or*{.just}, *match*{.just}):
   - Случай 1: докажем, что `(forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
     - Предположим, что `forall z : A, P z`{.hyp} (H).
       - Предположим, что `P y`{.hyp} (_H). По *H*{.just} имеем `forall z : A, P z`{.claim}.
@@ -21,13 +21,13 @@ by: tauto | congruence | lia | firstorder | auto
   - Случай 2: докажем, что `~ (forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
     - Предположим, что `~ (forall z : A, P z)`{.hyp} (H).
       - Применяя *Classical_Pred_Type.not_all_ex_not*{.just} к A, P и *H*{.just}, имеем `exists n : A, ~ P n`{.claim} (e).
-      - Возвращаясь к определению ex (match) в *e*{.just}, докажем, что `exists x : A, P x -> forall z : A, P z`{.claim}:
+      - Возвращаясь к определению *ex*{.just} (*match*{.just}) в *e*{.just}, докажем, что `exists x : A, P x -> forall z : A, P z`{.claim}:
         - Выберем произвольно `t : A`{.var}; предположим, что `~ P t`{.hyp} (i).
           - Предположим, что `P t`{.hyp} (h).
             - Применением, с *h*{.just}, имеем `False`{.claim} (f).
               - По *i*{.just} имеем `~ P t`, то есть `P t -> False`{.claim}.
 
-            От противного (False, match), из *f*{.just} можно вывести `forall z : A, P z`{.claim}.
+            От противного (*False*{.just}, *match*{.just}), из *f*{.just} можно вывести `forall z : A, P z`{.claim}.
           - Мы доказали `P t -> forall z : A, P z`{.claim}.
 
           По определению ex (*ex_intro*{.just}) со свидетелем `t`, имеем `exists x : A, P x -> forall z : A, P z`{.claim}.

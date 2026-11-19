@@ -69,19 +69,51 @@ pred how-on i:bool, o:part.
 how-on tt (wd "by-induction-on").
 how-on ff (wd "by-cases-on").
 
-% the words that name an elimination: (C, R)
-pred elim-name i:string, i:string, o:list part.
-elim-name C R [tx "(", tx C, tx ",", RP, tx ")"] :- elim-rule R RP.
+% the words that name an elimination: (C, R), C the type eliminated and
+% R its rule (elim-parts)
+pred elim-name i:string, i:string, i:bool, i:bool, o:list part.
+elim-name C R Rec Named [tx "(", CP, tx ",", RP, tx ")"] :- elim-parts C R Rec Named CP RP.
 
 % the words that name the type of an elimination and its rule: C (R)
-pred elim-type-rule i:string, i:string, o:list part.
-elim-type-rule C R [tx C, tx "(", RP, tx ")"] :- elim-rule R RP.
+pred elim-type-rule i:string, i:string, i:bool, i:bool, o:list part.
+elim-type-rule C R Rec Named [CP, tx "(", RP, tx ")"] :- elim-parts C R Rec Named CP RP.
 
-% [elim-rule R P]: the rule R of an elimination, as a part: the
-% elimination theorem is the justification of the step (elim-app: its
-% name, which cyp applies, the cases being its subproofs); a match is no
-% name (its closing would be tactic code, destruct x, which cyp cannot
-% run), and cyp's default tactics close it from the cases
+% [elim-type-rule-of CR Ws]: the words (C, R) of an elimination as C (R)
+pred elim-type-rule-of i:list part, o:list part.
+elim-type-rule-of [tx "(", CP, tx ",", RP, tx ")"] [CP, tx "(", RP, tx ")"].
+
+% [elim-parts C R Rec Named CP RP]: the type C and the rule R of an
+% elimination, as parts.  A match, or the standard elimination scheme of
+% the type (T_ind, T_rec, T_rect, T_sind: elim-standard), on an object
+% that the text names (Named = tt: a hypothesis or a variable, as a
+% justification, or a fact) is justified by one of cyp's two fixed
+% methods: *induction*{.just} when the elimination is recursive (Rec = tt:
+% a case has an induction hypothesis), else *match*{.just} (a case
+% analysis), with the type, *T*{.just}, which says the type of the object
+% (elim-type-just); the scheme's name is not written (it is the type's
+% own).  Otherwise the rule as before (elim-rule): the theorem of a
+% non-standard principle (two_step), which cyp applies, or the word
+% match for an object the text does not name
+pred elim-parts i:string, i:string, i:bool, i:bool, o:part, o:part.
+elim-parts _ R Rec tt (jst Q) (jst M) :-
+  (R = "match" ; elim-standard R), elim-type-just Q, !, elim-method Rec M.
+elim-parts C R _ _ (tx C) RP :- elim-rule R RP.
+
+% [elim-method Rec M]: the fixed justification of an elimination, by
+% whether it is recursive
+pred elim-method i:bool, o:string.
+elim-method tt "induction".
+elim-method ff "match".
+
+% (elim-standard and elim-type-just, set by tr-app and tr-match:
+% declarations.elpi)
+
+% [elim-rule R P]: the rule R of an elimination that elim-parts does not
+% justify by *match* or *induction*, as a part: the elimination theorem
+% is the justification of the step (elim-app: its name, which cyp
+% applies, the cases being its subproofs); a match on an object the text
+% does not name is no name, and cyp's default tactics close it from the
+% cases
 pred elim-rule i:string, o:part.
 elim-rule R (jst Q) :- elim-app R Q, !.
 elim-rule R (tx R).
@@ -97,19 +129,20 @@ major M Path L [tx F] :- tr M nostar Path PM, flatten PM L, type-formula rfact M
 
 % zero case (thesis 6.3.2): a proof by contradiction
 tr-elim1 C R Tau Maj [] _ Path (prf LM (some (it S []))) :- !,
-  major Maj Path LM W, formula rclaim Tau F, elim-name C R CR,
+  major Maj Path LM W, formula rclaim Tau F, elim-name C R ff tt CR,
   sentence {std.append [wd "contradiction" | CR] [tx ",", wd "from" | {std.append W [wd "can-deduce", tx F]}]} S.
 % one case (thesis 6.3.1): back to the definition
 tr-elim1 C R Tau Maj [N] Cis Path (prf LM (some (it H LN))) :- !,
   major Maj Path LM W, formula rclaim Tau F,
   next-case Cis (ci _ Fl) _,
   ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-  sentence {std.append [wd "back" | {std.append {elim-type-rule C R} [wd "in" | W]}] [tx ",", wd "we-prove", tx F, tx ":"]} H.
+  recursive Cis Rec,
+  sentence {std.append [wd "back" | {std.append {elim-type-rule C R Rec tt} [wd "in" | W]}] [tx ",", wd "we-prove", tx F, tx ":"]} H.
 % several cases: one node, the goal announced (untagged), the cases, and
 % the conclusion in the closing paragraph
 tr-elim1 C R Tau Maj Ns Cis Path (prf LM (some (with-closing H LC S))) :-
   major Maj Path LM W, formula rclaim Tau F,
-  recursive Cis Rec, how-on Rec HowOn, elim-name C R CR,
+  recursive Cis Rec, how-on Rec HowOn, elim-name C R Rec tt CR,
   sentence {std.append [wd "we-prove", untagged Tau, HowOn | W] {std.append CR [tx ":"]}} H,
   cases Ns Cis Rec Path 1 LC,
   sentence [wd "have", tx F, wd "all-cases"] S.
@@ -121,23 +154,36 @@ tr-elim1 C R Tau Maj Ns Cis Path (prf LM (some (with-closing H LC S))) :-
 % cases, in the closing paragraph
 
 tr-elim2 C R Tau _ _ [] _ _ P :- !,
-  formula rclaim Tau F, sentence [wd "no-element" | {std.append {elim-type-rule C R} [tx ",", wd "so", tx F]}] S, conclusion-only S P.
+  formula rclaim Tau F, sentence [wd "no-element" | {std.append {elim-type-rule C R ff ff} [tx ",", wd "so", tx F]}] S, conclusion-only S P.
 tr-elim2 C R Tau Fin On Ns Cis Path P :-
-  formula rclaim Tau F, recursive Cis Rec, how Rec How, elim-name C R CR,
-  (if (On = some O) (OnS = [wd "on", untagged O]) (OnS = [])),
+  formula rclaim Tau F, recursive Cis Rec, how Rec How,
+  % the object eliminated: a variable is named as a justification
+  object-part On Rec C R CR OP,
+  (if (On = some _) (OnS = [wd "on", OP]) (OnS = [])),
   (if (Fin = some TF)
       (sentence {std.append [wd "to-prove", untagged TF, How | CR] [tx ",", wd "generalise", untagged Tau, tx ":"]} H)
-      (if (On = some O) (how-on Rec HowOn, Hw = [HowOn, untagged O]) (Hw = [How]),
+      (if (On = some _) (how-on Rec HowOn, Hw = [HowOn, OP]) (Hw = [How]),
        sentence {std.append [wd "we-prove", untagged Tau | Hw] {std.append CR [tx ":"]}} H)),
   (if (Ns = [N])
       (% one case: no case header, no conclusion
        next-case Cis (ci _ Fl) _,
        ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-       sentence {std.append [wd "definition" | {std.append {elim-type-rule C R} OnS}] [tx ",", wd "we-prove", tx F, tx ":"]} H1,
+       sentence {std.append [wd "definition" | {std.append {elim-type-rule-of CR} OnS}] [tx ",", wd "we-prove", tx F, tx ":"]} H1,
        P = prf [] (some (it H1 LN)))
       (cases Ns Cis Rec Path 1 LC,
        sentence [wd "exhaustive", tx ",", wd "deduce", tx F] S,
        P = prf [] (some (with-closing H LC S)))).
+
+% [object-part On Rec C R CR P]: the words CR that name a dependent
+% elimination of rule R on the type C (elim-name), and the object On it
+% eliminates, as words P: a variable named as a justification when the
+% elimination is one of cyp's fixed methods (*match*, *induction*: the
+% method eliminates the object named), else the term, untagged
+pred object-part i:option term, i:bool, i:string, i:string, o:list part, o:part.
+object-part (some O) Rec C R CR P :- name O, elim-name C R Rec tt CR,
+  std.exists CR (p\ sigma M\ p = jst M, prooftext.method M), !, justification-of O P.
+object-part (some O) Rec C R CR (untagged O) :- !, elim-name C R Rec ff CR.
+object-part none Rec C R CR (tx "") :- elim-name C R Rec ff CR.
 
 % a match is the primitive form of an elimination; inside a fix, a case
 % that calls the recursive function is an inductive case
@@ -145,13 +191,14 @@ tr-elim2 C R Tau Fin On Ns Cis Path P :-
 tr-match M S Bs Path P :-
   typ S TS, whnf TS TSw,
   (TSw = app [HI|_] ; TSw = HI), gr-of HI (indt I), !,
-  typ M Tau, ind-name I C,
+  typ M Tau, ind-name I C, short-name (indt I) QI,
   std.findall (rec-var _) RVs,
   std.map Bs (b\ c\ sigma Ind\
     (if (std.exists RVs (r\ sigma F\ r = rec-var F, occurs F b)) (Ind = tt) (Ind = ff)),
     c = ci Ind []) Cis,
+  (elim-type-just QI :- !) => (
   if (ind-in-prop I) (tr-elim1 C "match" Tau S Bs Cis Path P)
-                     (tr-elim2 C "match" Tau none (some S) Bs Cis Path P).
+                     (tr-elim2 C "match" Tau none (some S) Bs Cis Path P)).
 tr-match M _ _ _ P :- unchanged M P.
 
 % --- fix: a proof by recursion; the recursive calls are induction

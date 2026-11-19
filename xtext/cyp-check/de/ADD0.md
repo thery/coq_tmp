@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.thesis.
 lang: de
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sei `m : nat`{.var}. Wir zeigen `m + 0 = m`{.claim}.
 
-- Wir zeigen `m + 0 = m` durch Induktion über `m` (nat, *nat_ind*{.just}):
+- Wir zeigen `m + 0 = m` durch Induktion über *m*{.just} (*nat*{.just}, *induction*{.just}):
   - Fall 1 (Anfang): wir zeigen `0 + 0 = 0 + 0`{.claim}.
     - Nach Definition von eq (*eq_refl*{.just}), es gilt `0 + 0 = 0 + 0`{.claim}.
   - Fall 2 (Schritt): wir zeigen `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.

@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `P : nat -> nat -> Prop`{.var}. Assume `exists x : nat, forall y : nat, P x y`{.hyp} (H0). We prove `forall y : nat, exists x : nat, P x y`{.claim}.
 
-- Going back to the definition of ex (match) in *H0*{.just}, we prove `forall y : nat, exists x : nat, P x y`{.claim}:
+- Going back to the definition of *ex*{.just} (*match*{.just}) in *H0*{.just}, we prove `forall y : nat, exists x : nat, P x y`{.claim}:
   - Let us choose arbitrarily `x : nat`{.var}. Assume `forall y : nat, P x y`{.hyp} (H). Let us choose arbitrarily `y : nat`{.var}.
     - By *H*{.just} we have `forall y0 : nat, P x y0`{.claim}.
     - By application, we have `P x y`{.claim}.

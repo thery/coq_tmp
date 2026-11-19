@@ -114,6 +114,7 @@ write-word "en" "belongs-to" "belongs to".
 write-word "en" "legend-var" "variable".
 write-word "en" "legend-hyp" "hypothesis".
 write-word "en" "legend-claim" "claim".
+write-word "en" "legend-goal" "open goal".
 write-word "en" "legend-fact" "fact".
 write-word "en" "legend-just" "justification".
 write-word "en" "legend-ok" "proved".

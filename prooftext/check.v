@@ -270,7 +270,7 @@ Elpi Accumulate lp:{{
     expect-in "a tactic" T "#just(\"tauto\")",
     expect-in "legend" T
       "#legend(((\"var\", \"variable\"), (\"hyp\", \"hypothesis\"), (\"claim\", \"claim\"), (\"fact\", \"fact\"), (\"just\", \"justification\"),))",
-    prooftext.legend-typst "fr" tt LegendFr,
+    prooftext.legend-typst "fr" tt ff LegendFr,
     expect-in "legend in French, checked" LegendFr "(\"hyp\", \"hypothèse\")",
     expect-in "legend of the statuses" LegendFr "statuses: ((\"ok\", \"prouvé\")".
 }}.
@@ -308,6 +308,47 @@ Elpi Accumulate lp:{{
       "We have \"#claim(\"A\")#\".\"., (), status: \"ok\"),\n      )),\n      paragraph.#\"Hence \"".
 }}.
 Elpi prooftext_check_typst_tree.
+
+(* An open goal of a proof in progress, `G`{.goal}: the conclusion of its
+   node (claim-parts, the name of the node), a goal node (is-goal-node),
+   written #goal by the Typst writer, and the legend has its entry only in
+   a text with a goal.  The fixed justifications, match and induction,
+   are no tactics. *)
+Elpi Command prooftext_check_goals.
+Elpi Accumulate File lex_core lex_en pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
+  pt_tactics pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
+Elpi Accumulate lp:{{
+  pred expect-in i:string, i:string, i:string.
+  expect-in What Text Part :-
+    if (rex.split Part Text [_, _ | _]) (coq.say What ": ok")
+      (coq.error What ": no" Part "in" Text).
+  main [] :-
+    prooftext.role-tag R "goal", !,
+    (R = rgoal, coq.say "tag goal: ok" ; coq.error "tag goal gives" R),
+    rex.split "\n" {std.string.concat "\n" [
+      "# partial", "",
+      "Let `A : Prop`{.var}. Assume `A`{.hyp} (a). We prove `A /\\ A`{.claim}.", "",
+      "- Prove `A`{.goal} (g).",
+      "- By *g*{.just} we have `A /\\ A`{.claim}."]} Lines,
+    prooftext.lines-tree Lines T,
+    T = prooftext.proof-text _ _ Top,
+    prooftext.all-nodes "0" Top [_, pr "1" N1, pr "2" N2],
+    (prooftext.is-goal-node N1, coq.say "goal node: ok" ; coq.error "node 1 is no goal node"),
+    (prooftext.is-goal-node N2, coq.error "node 2 is a goal node" ; coq.say "claim node: ok"),
+    prooftext.node-parts N1 Ps1, prooftext.node-name "1" Ps1 Name1,
+    (Name1 = "g", coq.say "name of a goal node: ok" ; coq.error "name of node 1:" Name1),
+    prooftext.tree-errors Top Errors,
+    (Errors = [], coq.say "a goal is a conclusion, no error: ok" ; coq.error "errors:" Errors),
+    prooftext.write-typst-tree prooftext.code T Text,
+    expect-in "the goal, #goal" Text "#\"Prove \"#goal(\"A\")",
+    expect-in "the legend of a text with a goal" Text "(\"goal\", \"open goal\")",
+    prooftext.legend-typst "en" ff ff Legend,
+    (rex.match ".*goal" Legend, coq.error "a legend without goals lists goal" ; coq.say "no goal in the legend of a text without one: ok"),
+    (prooftext.method "match", prooftext.method "induction", not (prooftext.tactic "match"),
+     not (prooftext.tactic "induction"), coq.say "fixed justifications: ok" ;
+     coq.error "match and induction are fixed justifications, no tactics").
+}}.
+Elpi prooftext_check_goals.
 
 (* A lemma of the stdlib, in a module (Nat) of its file (PeanoNat) *)
 From Stdlib Require Import Arith.

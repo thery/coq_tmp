@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: nl
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -10,7 +10,7 @@ by: tauto | congruence | lia | firstorder | auto
 We bewijzen `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim}.
 
 - We bewijzen `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} met recursie naar `l1` (fix length_app'):
-  - Laat `A : Type`{.var} en `l1 l2 : list A`{.var}. We bewijzen `length (l1 ++ l2) = length l1 + length l2` met inductie naar `l1` (list, match):
+  - Laat `A : Type`{.var} en `l1 l2 : list A`{.var}. We bewijzen `length (l1 ++ l2) = length l1 + length l2` met inductie naar *l1*{.just} (*list*{.just}, *induction*{.just}):
     - Geval 1 (basis): we bewijzen `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
       - Volgens de definitie van eq (*eq_refl*{.just}), er geldt `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
     - Geval 2 (inductief): we bewijzen `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim}.

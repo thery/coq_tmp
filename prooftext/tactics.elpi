@@ -18,6 +18,21 @@ tactic "easy".         tactic "reflexivity".
 tactic "assumption".   tactic "congruence".
 tactic "firstorder".
 
+% [method Name]: Name is one of the two fixed justifications of a proof
+% text, which state how a step eliminates the objects that its other
+% justifications name (cyp: check.elpi, cyp_match and cyp_induction of
+% Cyp.v; xtext writes them for its eliminations, inductive-text.elpi):
+%   *match*{.just}      a case analysis (no induction hypotheses);
+%   *induction*{.just}  an induction;
+% with the type of the object, if the text names it (*nat*{.just}).  They
+% are no tactics: the by field of a header does not name them.  match is
+% a keyword of Rocq, no name; induction may be the name of a lemma or of a
+% hypothesis (Rocq accepts it), but a justification *induction*{.just}
+% always means the method
+pred method o:string.
+method "match".
+method "induction".
+
 % [unknown-tactics Names Unknown]: the names of Names that are not tactics
 pred unknown-tactics i:list string, o:list string.
 unknown-tactics Names Unknown :- std.filter Names (n\ not (tactic n)) Unknown.

@@ -114,6 +114,23 @@ are the tests.  `CypFile` (no Proof block) and the program `cyp` treat a
 node with an error as a node not proved: the checked Markdown and the
 JSON are written, and the lemma is not defined.
 
+**Open goals.**  A node whose conclusion is an open goal of the text,
+`` `C`{.goal} `` (a proof in progress, as xtext's `ExtractText_partial`
+writes it), is not tried: its conclusion is the goal of the Proof block
+named after the node, reported `🔶 open goal 1.1.1 of the text: B`, and
+the nodes after it use it.  [goal_file.md](goal_file.md) with
+[goal_file.v](goal_file.v): its two open goals are `?c1_1_1` and
+`?c1_1_2` (`Show.`), proved in the Proof block.  `CypFile` and the
+program `cyp` do not define the lemma (exit code 1).
+
+**Fixed justifications.**  `*match*{.just}` and `*induction*{.just}`
+(a case analysis, an induction, by the Ltac `cyp_match` and
+`cyp_induction` of [Cyp.v](Cyp.v)) on the hypotheses or variables named
+in the node, or on the one of the type named (`*and*{.just}`);
+[match_v.v](match_v.v) tests them and their errors (an object of
+another type, a type alone, no object, several of the type), each node
+with an error left as a goal.
+
 **Bare mode.**  With `#[bare]` (`#[bare] Cyp File "p.md".`, `#[bare] Cyp
 Lemma ...`), nothing is tried: every condition is a goal of the Proof
 block ([bare_demo.v](bare_demo.v)).  `#[bare] CypFile "p.md".` only

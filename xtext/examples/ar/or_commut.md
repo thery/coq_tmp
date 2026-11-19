@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 لتكن `A B : Prop`{.var}. لنفرض أن `A \/ B`{.hyp} (h). سنثبت أن `B \/ A`{.claim}.
 
-- سنثبت أن `B \/ A` بدراسة الحالات على *h*{.just} (or, *or_ind*{.just}):
+- سنثبت أن `B \/ A` بدراسة الحالات على *h*{.just} (*or*{.just}, *match*{.just}):
   - الحالة 1: سنثبت أن `A -> B \/ A`{.claim}.
     - لنفرض أن `A`{.hyp} (i). حسب تعريف or (*or_intror*{.just}), من *i*{.just} نستنتج أن `B \/ A`{.claim}.
   - الحالة 2: سنثبت أن `B -> B \/ A`{.claim}.

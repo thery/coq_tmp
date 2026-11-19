@@ -80,6 +80,7 @@ write-word "ar" "belongs-to" "ينتمي إلى".
 write-word "ar" "legend-var" "متغير".
 write-word "ar" "legend-hyp" "فرضية".
 write-word "ar" "legend-claim" "ادعاء".
+write-word "ar" "legend-goal" "هدف مفتوح".
 write-word "ar" "legend-fact" "حقيقة".
 write-word "ar" "legend-just" "تبرير".
 write-word "ar" "legend-ok" "مثبت".

@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: ar
-flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
+flags: -R /home/thery/git/coq_tmp-goals/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ لتكن `n m : nat`{.var}. سنثبت أن `S (n + m) = n + S m`{.claim}.
 
-- ✅ سنثبت أن `S (n + m) = n + S m` بالاستقراء على `n` (nat, *nat_ind*{.just}):
+- ✅ سنثبت أن `S (n + m) = n + S m` بالاستقراء على *n*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ الحالة 1 (الأساس): سنثبت أن `0 + S m = 0 + S m`{.claim}.
     - ✅ حسب تعريف eq (*eq_refl*{.just}), لدينا `0 + S m = 0 + S m`{.claim}.
   - ✅ الحالة 2 (الاستقرائية): سنثبت أن `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

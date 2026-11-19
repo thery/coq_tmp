@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `x y : list A`{.var}. We prove `rev (x ++ y) = rev y ++ rev x`{.claim}.
 
-- We prove `rev (x ++ y) = rev y ++ rev x` by induction on `x` (list, *list_ind*{.just}):
+- We prove `rev (x ++ y) = rev y ++ rev x` by induction on *x*{.just} (*list*{.just}, *induction*{.just}):
   - Case 1 (base): we prove `rev (nil ++ y) = rev y ++ rev nil`{.claim}.
     - By definition of eq (*eq_refl*{.just}), we have `rev y = rev y`{.claim}.
     - By application, we have `rev y ++ nil = rev y`{.claim}.

@@ -11,7 +11,7 @@
 
 #proof([#var($A , B : "Prop"$)#" 라 하자. "#hyp($A ∨ B$)#" "#name("h", label: "statement:h")#" 라고 가정하자. "#claim($B ∨ A$)#" 임을 보이자."], (
   steps((
-    step("1", [#formula($B ∨ A$)#" 임을 보이자 "#just("h", target: "statement:h")#" ("#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#", "#just("or_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind")#") 에 대한 경우 분석으로:"], (
+    step("1", [#formula($B ∨ A$)#" 임을 보이자 "#just("h", target: "statement:h")#" ("#just("or", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#", "#just("match")#") 에 대한 경우 분석으로:"], (
       steps((
         step("1.1", [#"경우 1: "#claim($A → B ∨ A$)#" 임을 보이자."], (
           steps((

@@ -87,6 +87,7 @@ write-word "it" "belongs-to" "appartiene a".
 write-word "it" "legend-var" "variabile".
 write-word "it" "legend-hyp" "ipotesi".
 write-word "it" "legend-claim" "affermazione".
+write-word "it" "legend-goal" "obiettivo aperto".
 write-word "it" "legend-fact" "fatto".
 write-word "it" "legend-just" "giustificazione".
 write-word "it" "legend-ok" "dimostrato".

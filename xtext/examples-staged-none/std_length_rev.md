@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `length (rev l) = length l`{.claim}.
 
-- We prove `length (rev l) = length l` by induction on `l` (list, *list_ind*{.just}):
+- We prove `length (rev l) = length l` by induction on *l*{.just} (*list*{.just}, *induction*{.just}):
   - Case 1 (base): we prove `length (rev (@nil A)) = length (@nil A)`{.claim}.
     - By definition of eq (*eq_refl*{.just}), we have `0 = 0`{.claim}.
   - Case 2 (inductive): we prove `forall (a : A) (l0 : list A), length (rev l0) = length l0 -> length (rev (a :: l0)) = length (a :: l0)`{.claim}.

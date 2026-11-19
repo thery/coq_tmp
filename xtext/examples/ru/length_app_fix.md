@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 Докажем, что `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim}.
 
 - Докажем, что `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} рекурсией по `l1` (fix length_app'):
-  - Пусть `A : Type`{.var} и `l1 l2 : list A`{.var}. Докажем, что `length (l1 ++ l2) = length l1 + length l2` индукцией по `l1` (list, match):
+  - Пусть `A : Type`{.var} и `l1 l2 : list A`{.var}. Докажем, что `length (l1 ++ l2) = length l1 + length l2` индукцией по *l1*{.just} (*list*{.just}, *induction*{.just}):
     - Случай 1 (база): докажем, что `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
       - По определению eq (*eq_refl*{.just}), имеем `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
     - Случай 2 (шаг): докажем, что `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim}.

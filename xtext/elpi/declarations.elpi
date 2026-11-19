@@ -22,6 +22,16 @@ pred tr-elim2 i:string, i:string, i:term, i:option term, i:option term, i:list t
 % defined in inductive-text.elpi, used in applications.elpi
 pred elim-app o:string, o:string.
 
+% assumed by tr-app (applications.elpi), used in inductive-text.elpi:
+% [elim-standard R], the elimination theorem R is the standard scheme of
+% the type being eliminated (T_ind, T_rect, ...)
+pred elim-standard i:string.
+
+% assumed by tr-app and tr-match, used in inductive-text.elpi:
+% [elim-type-just Q], the name of the type being eliminated, as a
+% justification names it
+pred elim-type-just o:string.
+
 % defined in inductive-text.elpi, used in transducer.elpi
 pred tr-match i:term, i:term, i:list term, i:list int, o:pf.
 

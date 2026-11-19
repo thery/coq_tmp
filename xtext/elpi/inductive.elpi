@@ -25,6 +25,15 @@ count-prods _ 0.
 pred ind-name i:inductive, o:string.
 ind-name I S :- coq.gref->id (indt I) S.
 
+% [standard-scheme GR I]: the constant GR is a standard elimination
+% scheme of the inductive type I, T_ind, T_rec, T_rect or T_sind, made
+% with I in its module
+pred standard-scheme i:gref, i:inductive.
+standard-scheme GR I :-
+  coq.gref->id GR Id, coq.gref->id (indt I) T,
+  std.exists ["_ind", "_rec", "_rect", "_sind"] (s\ Id is T ^ s),
+  coq.gref->path GR P, coq.gref->path (indt I) P, !.
+
 % H is an introduction theorem (a constructor of a proposition C)
 % that takes NC arguments
 pred intro-info i:term, o:inductive, o:int.

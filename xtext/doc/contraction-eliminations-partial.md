@@ -80,7 +80,11 @@ byte, as before this round.
 `ExtractText_partial.` (or `ExtractText_partial to "f.md".`), inside a proof,
 prints the text of the proof so far, as `ExtractText` does (plain text,
 the tagged format with `#[tags]` or in a file).  Each open goal is written `Prove
-G` at its place, as the thesis's `Prouvez G`.  The open goals are the holes
+G` at its place, as the thesis's `Prouvez G`, in the tagged format
+``Prove `G`{.goal}.``: the role of an open goal (prooftext's format,
+"Open goals"), which cyp does not try and leaves as a goal of the Proof
+block, and which the PDF and the web page frame.  The plain text keeps
+`Prove G.`.  The open goals are the holes
 of the partial proof term; their statements are their types.
 
 Limit: rocq-elpi gives the partial proof term only to a command that
@@ -142,4 +146,5 @@ Texts that change with the strategy:
   step, which is why `guarded` is the default.
 
 The texts in progress (`*_partial*.md`) have one `Prove G` step per open
-goal.  They are not counted above.
+goal.  They are not counted above.  Checked by cyp, each open goal is ◆
+(not tried, left to a Proof block), and the lemma is not defined.
