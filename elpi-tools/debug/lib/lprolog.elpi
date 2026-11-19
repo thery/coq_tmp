@@ -1,63 +1,17 @@
-% lprolog.elpi: λProlog in view: the shape of terms, the names of the
-% eigenvariables, the scope of the logic variables.
+% lprolog.elpi: λProlog in view: the binders of terms, the names of the
+% eigenvariables, the scope of the logic variables (command scope).
 %
 % Elpi prints an eigenvariable as c0, c1, ... (its level).  Each pi entered
 % by the interpreter names its eigenvariable after the binder of the source
 % and a number, x#3: the local clause [eigen X "x#3"] is in force in the
-% scope of the pi, and printing replaces c<level> by the name.  A logic
-% variable may depend on the eigenvariables that were in scope when it was
-% created; [can-depend V E] tests it by trying V = E without keeping the
-% binding (Elpi refuses the binding when E is younger than V).
+% scope of the pi, and printing replaces c<level> by the name
+% ([show-term]).  A logic variable may depend on the eigenvariables that
+% were in scope when it was created ([can-depend], [visible-eigens]).
+% What these walks need of Elpi's terms (the shape of a term, its
+% variables, the scope of a variable, printing) goes through the
+% interface of primitives.elpi.
 
-
-% ===== The shape of a term ============================================================
-%
-% Elpi has no builtin to take a λ-term or a connective apart; [shape-of]
-% does it once for all the walks of this file, of the explanation and of
-% the stand-in of vars-of (primitives.elpi).
-
-data shape.
-symb flexible any -> shape.        % a logic variable (its head, for an applied one)
-symb leaf shape.                   % a primitive datum, [], !, or a builtin application
-symb node any -> list any -> shape.  % a head (constant, eigenvariable, list-cell
-                                   % or connective-node) and its arguments
-symb binder any -> shape.          % pi, sigma or a λ-term, with its body as a λ-term
-
-% the heads given to list cells and to connectives
-symb list-cell any.
-symb connective-node any.
-
-% [shape-of T S]: the shape of T.  (Call it with S unknown: its clauses are
-% guarded by cuts.)
-pred shape-of i:any, o:shape.
-shape-of T (flexible H) :- var T H _, !.
-shape-of T leaf :- is_cdata T _, !.
-shape-of (pi x\ F x) (binder F) :- !.
-shape-of (sigma x\ F x) (binder F) :- !.
-shape-of G (node connective-node Gs) :- conjuncts G Gs, !.
-shape-of (A => B) (node connective-node [A, B]) :- !.
-shape-of (A :- B) (node connective-node [A, B]) :- !.
-shape-of (A = B) (node connective-node [A, B]) :- !.
-shape-of (pattern_match A B) (node connective-node [A, B]) :- !.
-shape-of (findall_solutions A B) (node connective-node [A, B]) :- !.
-shape-of (declare_constraint G K) (node connective-node [G, K]) :- !.
-shape-of ! leaf :- !.
-shape-of T (node H Args) :- constant T H Args, !.
-shape-of T (node H Args) :- name T H Args, !.
-shape-of [] leaf :- !.
-shape-of T (node list-cell [X, L1]) :- T = [X|L], !, std.unsafe-cast L L1.
-shape-of T (binder T) :- is-lambda T, !.
-shape-of _ leaf.          % an application of a builtin (var X ...): not looked into
-
-% [is-lambda T]: T is a λ-term.  Elpi has no builtin for it, and unifying
-% T with x\ F x would eta-expand anything; a λ-term prints as "cN \ ...".
-pred is-lambda i:any.
-is-lambda T :- term_to_string T S, rex.match "^c[0-9]+ \\\\" S.
-
-% [binder-body F X B]: B is the body of the λ-term F for the eigenvariable X.
-pred binder-body i:any, i:any, o:any.
-:untyped
-binder-body F X (F X).
+% ===== Walks of a term ===================================================================
 
 % [binder-count T N]: the number of binders (pi, sigma, λ) in T, in the
 % order in which reflect lists their source names (textual order).
@@ -102,44 +56,12 @@ body-binder-names _ _ _ [].
 % [eigen X Name]: the eigenvariable X is shown as Name.
 pred eigen o:any, o:string.
 
-% [show-term T S]: T printed on one line, its unification variables named
-% X<uuid> (term-string, primitives.elpi), its eigenvariables by their
-% source names.
-func show-term any -> string.
-show-term T S :- term-string T S1, names Es, rename-eigens Es 0 S1 S.
-
-% [rename-eigens Es L S0 S]: Es are the eigenvariables in scope from level
-% L on, the oldest first (as [names] gives them, whatever its documentation
-% says: its code is list_init 0 depth).
-func rename-eigens list any, int, string -> string.
-rename-eigens [] _ S S.
-rename-eigens [E|Es] L S0 S :- rename-eigen E L S0 S1, L1 is L + 1, rename-eigens Es L1 S1 S.
-
-func rename-eigen any, int, string -> string.
-rename-eigen E L S0 S :- eigen E Name, !,
-  Rex is "\\bc" ^ {std.any->string L} ^ "\\b", rex.replace Rex Name S0 S.
-rename-eigen _ _ S S.
-
 % [eigen-names Es Ns]: the names of the eigenvariables Es.
 func eigen-names list any -> list string.
 eigen-names [] [].
 eigen-names [E|Es] [N|Ns] :- show-term E N, eigen-names Es Ns.
 
 % ===== Scopes ==================================================================================
-
-% [can-depend V E]: the logic variable V may be assigned a term mentioning
-% the eigenvariable E.
-pred can-depend i:any, i:any.
-can-depend V E :- not (not (V = E)).
-
-% [visible-eigens V Es]: the eigenvariables in scope that V may depend on.
-pred visible-eigens i:any, o:list any.
-visible-eigens V Es :- names All, keep-visible V All Es.
-
-pred keep-visible i:any, i:list any, o:list any.
-keep-visible _ [] [].
-keep-visible V [E|Es] [E|Vs] :- can-depend V E, !, keep-visible V Es Vs.
-keep-visible V [_|Es] Vs :- keep-visible V Es Vs.
 
 % [show-scope G]: the eigenvariables in force and, for each logic variable
 % of G, the ones it may depend on (command scope).

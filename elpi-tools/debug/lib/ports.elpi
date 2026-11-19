@@ -170,7 +170,7 @@ call-port-marked Box Mark :- port-seen call-port Box [] Seen, mark-if-seen Seen 
 
 :nooc
 pred mark-if-seen i:bool, o:box, o:call-mark.
-mark-if-seen tt Box (marked M) :- !, box-parts Box _ _ _ G _, trail-mark (in-reach G) M.
+mark-if-seen tt Box (marked M) :- !, box-parts Box _ _ _ G _, trail-mark G M.
 mark-if-seen _ _ unmarked.
 
 % [solutions-from Mark Box]: the solutions of Box; when its call port was
@@ -198,26 +198,6 @@ exit-port-with-bindings (marked M) Box :-
   bindings-since M Bindings,
   std.map Bindings binding-line Lines,
   (made-bindings Bindings => port-seen exit-port Box Lines _).
-
-% [in-reach G R]: R holds what the goals run for G may bind: G and the
-% hypothetical clauses in scope, which share their variables with the
-% goals that added them (what the stand-in of trail-mark must be told,
-% primitives.elpi).
-pred in-reach i:(pred), o:any.
-in-reach G (pr G Vs) :- hyps-vars [] Vs.
-
-% [hyps-vars Acc Vs]: Acc and the variables of the hypothetical clauses in
-% scope, gathered one clause at a time (std.findall would copy them).
-pred hyps-vars i:list any, o:list any.
-hyps-vars Acc Vs :- hyp _ _ C, vars-of C CVs, new-vars CVs Acc New, not (New = []), !,
-  std.append Acc New Acc1, hyps-vars Acc1 Vs.
-hyps-vars Acc Acc.
-
-% [new-vars Vs Known New]: the variables of Vs not in Known.
-pred new-vars i:list any, i:list any, o:list any.
-new-vars [] _ [].
-new-vars [V|Vs] Known New :- std.exists Known (same_var V), !, new-vars Vs Known New.
-new-vars [V|Vs] Known [V|New] :- new-vars Vs Known New.
 
 % [entry-port Kind Entry Kind1 Tag]: a woken goal enters through
 % resume-port, all its ports tagged [Sn].
@@ -281,7 +261,7 @@ unify-port (ctx _ [frame Id D P G E | Above]) Origin Head Post :-
 % clause).
 pred unify-mark i:int, i:(pred), o:trail-mark.
 unify-mark Id _ M :- call-mark Id M, !.
-unify-mark _ G M :- trail-mark (in-reach G) M.
+unify-mark _ G M :- trail-mark G M.
 
 % [unify-text Id Origin Head Lines T]: the text of a unify event.
 pred unify-text i:int, i:origin, i:(pred), i:list string, o:list string.

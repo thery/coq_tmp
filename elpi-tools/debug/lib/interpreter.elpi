@@ -131,32 +131,13 @@ drop-names _ [] [] :- !.
 drop-names T Ns Ns1 :- binder-count T N, std.length Ns L, N =< L, !, std.drop N Ns Ns1.
 drop-names _ _ [].
 
-% [mk-conj Goals G]: G is the conjunction of Goals.
+% [mk-conj Goals G]: G is the conjunction of Goals (taken apart by
+% [conjuncts], primitives.elpi).
 :nooc
 pred mk-conj i:list (pred), o:(pred).
 mk-conj [] true.
 mk-conj [G] G :- !.
 mk-conj [G|Gs] (G, C) :- mk-conj Gs C.
-
-% [conjuncts G Gs]: G is a conjunction of the goals Gs.  Elpi represents
-% (A, B, C) as one n-ary node and has no builtin to take it apart, so each
-% arity needs its own pattern; up to 16 goals at the same level.
-pred conjuncts i:(pred), o:list (pred).
-conjuncts (A1,A2) [A1,A2].
-conjuncts (A1,A2,A3) [A1,A2,A3].
-conjuncts (A1,A2,A3,A4) [A1,A2,A3,A4].
-conjuncts (A1,A2,A3,A4,A5) [A1,A2,A3,A4,A5].
-conjuncts (A1,A2,A3,A4,A5,A6) [A1,A2,A3,A4,A5,A6].
-conjuncts (A1,A2,A3,A4,A5,A6,A7) [A1,A2,A3,A4,A5,A6,A7].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8) [A1,A2,A3,A4,A5,A6,A7,A8].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9) [A1,A2,A3,A4,A5,A6,A7,A8,A9].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15].
-conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16].
 
 % [connective G]: G is a connective, which [compile] keeps native.
 pred connective i:(pred).
