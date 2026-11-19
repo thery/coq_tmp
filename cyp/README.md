@@ -65,7 +65,11 @@ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
 - **Formulas** are written between backticks, in Rocq syntax.  The word
   before a formula gives its role:
   - after *let*: variables (`a b : Z`);
-  - after *if*, *assume*, *suppose*: hypotheses;
+  - after *if*, *assume*, *suppose*: hypotheses; a name in parentheses
+    after one, `` `P n`{.hyp} (h) ``, is its name (for *by h*), else cyp
+    names it with the first of `H1`, `H2`, ... that nothing in scope has
+    (example `examples/unnamed_hyps.md`), so that each name in scope names
+    one hypothesis;
   - after *from*, *using*, *since*: facts used (shown, not checked);
   - after *then*, *have*, *show*, *prove*, *hence*, *so*, ...: claims;
   - in French: *soit*, *soient*, *considérons* (variables); *si*,
