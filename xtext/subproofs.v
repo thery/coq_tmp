@@ -64,8 +64,8 @@ Elpi Query Explain lp:{{ check-naming "dependent_argument" "all"
    an element (Fig. 4.12) *)
 Elpi Query Explain lp:{{ check-text "dependent_argument" "all" "en" [
   "Let `A B : Prop`{.var}. Let `P : A -> Prop`{.var}. Let `g : B -> A`{.var}. Let `b : B`{.var}. Assume `forall a : A, P a`{.hyp} (f). We prove `P (g b)`{.claim}.",
-  "- The element `g b`{.fact} belongs to `A`{.fact}.",
-  "- Applying f, we have `P (g b)`{.claim}."] }}.
+  "- The element `g b` belongs to `A`.",
+  "- Applying *f*{.just}, we have `P (g b)`{.claim}."] }}.
 
 (* Fig. 4.30, the text of ABCD in French (the thesis's language; the
    thesis writes "Preuve P1 : montrons C. Nous appliquons h3 à h4. Fin
@@ -73,23 +73,23 @@ Elpi Query Explain lp:{{ check-text "dependent_argument" "all" "en" [
    English *)
 Elpi Query Explain lp:{{ check-text "ABCD" "all" "fr" [
   "Soient `A B C D : Prop`{.var}. Supposons `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) et `A`{.hyp} (h4). Montrons `D`{.claim}.",
-  "- En appliquant h3 à h4, nous avons `C`{.claim} (P1).",
-  "- En appliquant h2 à h4 et P1, nous avons `B`{.claim} (P2).",
-  "- En appliquant h3 à h4, nous avons `C`{.claim} (P3).",
-  "- En appliquant h1 à h4, P2 et P3, nous avons `D`{.claim}."] }}.
+  "- En appliquant *h3*{.just} à *h4*{.just}, nous avons `C`{.claim} (P1).",
+  "- En appliquant *h2*{.just} à *h4*{.just} et *P1*{.just}, nous avons `B`{.claim} (P2).",
+  "- En appliquant *h3*{.just} à *h4*{.just}, nous avons `C`{.claim} (P3).",
+  "- En appliquant *h1*{.just} à *h4*{.just}, *P2*{.just} et *P3*{.just}, nous avons `D`{.claim}."] }}.
 Elpi Query Explain lp:{{ check-text "ABCD" "all" "en" [
   "Let `A B C D : Prop`{.var}. Assume `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) and `A`{.hyp} (h4). We prove `D`{.claim}.",
-  "- Applying h3 to h4, we have `C`{.claim} (P1).",
-  "- Applying h2 to h4 and P1, we have `B`{.claim} (P2).",
-  "- Applying h3 to h4, we have `C`{.claim} (P3).",
-  "- Applying h1 to h4, P2 and P3, we have `D`{.claim}."] }}.
+  "- Applying *h3*{.just} to *h4*{.just}, we have `C`{.claim} (P1).",
+  "- Applying *h2*{.just} to *h4*{.just} and *P1*{.just}, we have `B`{.claim} (P2).",
+  "- Applying *h3*{.just} to *h4*{.just}, we have `C`{.claim} (P3).",
+  "- Applying *h1*{.just} to *h4*{.just}, *P2*{.just} and *P3*{.just}, we have `D`{.claim}."] }}.
 
 (* Fig. 4.17, the text of ABCD with a result proved once per type *)
 Elpi Query Explain lp:{{ check-text "ABCD" "shared" "en" [
   "Let `A B C D : Prop`{.var}. Assume `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) and `A`{.hyp} (h4). We prove `D`{.claim}.",
-  "- Applying h3 to h4, we have `C`{.claim} (P1).",
-  "- Applying h2 to h4 and P1, we have `B`{.claim} (P2).",
-  "- Applying h1 to h4, P2 and P1, we have `D`{.claim}."] }}.
+  "- Applying *h3*{.just} to *h4*{.just}, we have `C`{.claim} (P1).",
+  "- Applying *h2*{.just} to *h4*{.just} and *P1*{.just}, we have `B`{.claim} (P2).",
+  "- Applying *h1*{.just} to *h4*{.just}, *P2*{.just} and *P1*{.just}, we have `D`{.claim}."] }}.
 
 (* A named abstraction (rule Abs of Fig. 4.14): its results are numbered
    after its own name, P1.1, and stay under its binder *)
@@ -103,9 +103,9 @@ Elpi Query Explain lp:{{ check-text "named_abstraction" "all" "en" [
   "Let `A B C D : Prop`{.var}. Assume `(A -> C) -> D`{.hyp} (h), `B -> C`{.hyp} (k) and `A -> B`{.hyp} (g). We prove `D`{.claim}.",
   "- We have proved `A -> C`{.claim} (P1).",
   "  - Assume `A`{.hyp} (a).",
-  "    - Applying g to a, we have `B`{.claim} (P1.1).",
-  "    - Applying k to P1.1, we have `C`{.claim}.",
-  "- Applying h to P1, we have `D`{.claim}."] }}.
+  "    - Applying *g*{.just} to *a*{.just}, we have `B`{.claim} (P1.1).",
+  "    Applying *k*{.just} to P1.1, we have `C`{.claim}.",
+  "- Applying *h*{.just} to *P1*{.just}, we have `D`{.claim}."] }}.
 
 (* A form of the direct writer inside an application (a case analysis):
    the results of its cases are numbered after the next index, P1.1 *)
@@ -115,13 +115,12 @@ Definition nested_cases : forall A B C D E : Prop,
     k (match hab with or_introl a => f (u a) | or_intror b => g b end).
 Elpi Query Explain lp:{{ check-text "nested_cases" "all" "en" [
   "Let `A B C D E : Prop`{.var}. Assume `A \\/ B`{.hyp} (hab), `A -> E`{.hyp} (u), `E -> C`{.hyp} (f), `B -> C`{.hyp} (g) and `C -> D`{.hyp} (k). We prove `D`{.claim}.",
-  "- We have `C`{.claim} in all cases.",
-  "  - We prove `C`{.fact} by case analysis on `A \\/ B`{.fact} (hab) (or, match):",
+  "- We prove `C` by case analysis on *hab*{.just} (or, match):",
   "  - Case 1: we prove `A -> C`{.claim}.",
   "    - Assume `A`{.hyp} (a).",
-  "      - Applying u to a, we have `E`{.claim} (P1.1).",
-  "      - Applying f to P1.1, we have `C`{.claim}.",
+  "      - Applying *u*{.just} to *a*{.just}, we have `E`{.claim} (P1.1).",
+  "      Applying *f*{.just} to P1.1, we have `C`{.claim}.",
   "  - Case 2: we prove `B -> C`{.claim}.",
-  "    - Assume `B`{.hyp} (b).",
-  "      - Applying g to b, we have `C`{.claim}.",
-  "- Applying k, we have `D`{.claim}."] }}.
+  "    - Assume `B`{.hyp} (b). Applying *g*{.just} to *b*{.just}, we have `C`{.claim}.",
+  "  We have `C`{.claim} in all cases.",
+  "- Applying *k*{.just}, we have `D`{.claim}."] }}.

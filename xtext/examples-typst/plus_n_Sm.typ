@@ -11,18 +11,17 @@
 #statement[#"Let "#var($n , m ∈ ℕ$)#". We prove "#claim($"S"\(n + m\) = n + "S"\(m\)$)#"."]
 
 #steps((
-  step("1", [#"We prove "#fact($"S"\(n + m\) = n + "S"\(m\)$)#" by induction on "#fact($n$)#" ("#cited("nat", "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat")#", "#cited("nat_ind", "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"):"], ()),
-  step("2", [#"Case 1 (base): we prove "#claim($0 + "S"\(m\) = 0 + "S"\(m\)$)#"."], (
-    step("2.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#cited("eq_refl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($0 + "S"\(m\) = 0 + "S"\(m\)$)#" "#by("Corelib.Init.Logic.eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"."], ()),
-  )),
-  step("3", [#"Case 2 (inductive): we prove "#claim($∀ n_(0) ∈ ℕ , "S"\(n_(0) + m\) = n_(0) + "S"\(m\) → "S"\("S"\(n_(0)\) + m\) = "S"\(n_(0)\) + "S"\(m\)$)#"."], (
-    step("3.1", [#"Let us choose arbitrarily "#var($n_(0) ∈ ℕ$)#"; assume by induction hypothesis "#hyp($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#" "#name("IH", label: "3.1:IH")#"."], (
-      step("3.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#cited("eq_refl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($"S"\(n_(0) + "S"\(m\)\) = "S"\(n_(0) + "S"\(m\)\)$)#" "#by("Corelib.Init.Logic.eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"."], ()),
-      step("3.1.2", [#"By "#named("IH", "3.1:IH")#" we have "#claim($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#"."], ()),
-      step("3.1.3", [#"Rewriting with "#fact($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#" from right to left ("#cited("eq_ind_r", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_ind_r")#"), we get "#claim($"S"\("S"\(n_(0) + m\)\) = "S"\(n_(0) + "S"\(m\)\)$)#"."], ()),
+  step("1", [#"We prove "#formula($"S"\(n + m\) = n + "S"\(m\)$)#" by induction on "#formula($n$)#" ("#cited("nat", "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat")#", "#by("nat_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"): These cases being exhaustive, we deduce "#claim($"S"\(n + m\) = n + "S"\(m\)$)#"."], (
+    step("1.1", [#"Case 1 (base): we prove "#claim($0 + "S"\(m\) = 0 + "S"\(m\)$)#"."], (
+      step("1.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#by("eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($0 + "S"\(m\) = 0 + "S"\(m\)$)#"."], ()),
+    )),
+    step("1.2", [#"Case 2 (inductive): we prove "#claim($∀ n_(0) ∈ ℕ , "S"\(n_(0) + m\) = n_(0) + "S"\(m\) → "S"\("S"\(n_(0)\) + m\) = "S"\(n_(0)\) + "S"\(m\)$)#"."], (
+      step("1.2.1", [#"Let us choose arbitrarily "#var($n_(0) ∈ ℕ$)#"; assume by induction hypothesis "#hyp($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#" "#name("IH", label: "1.2.1:IH")#". Rewriting with "#fact($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#" from right to left ("#cited("eq_ind_r", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_ind_r")#"), we get "#claim($"S"\("S"\(n_(0) + m\)\) = "S"\(n_(0) + "S"\(m\)\)$)#"."], (
+        step("1.2.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#by("eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($"S"\(n_(0) + "S"\(m\)\) = "S"\(n_(0) + "S"\(m\)\)$)#"."], ()),
+        step("1.2.1.2", [#"By "#by("IH", target: "1.2.1:IH")#" we have "#claim($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#"."], ()),
+      )),
     )),
   )),
-  step("4", [#"These cases being exhaustive, we deduce "#claim($"S"\(n + m\) = n + "S"\(m\)$)#" "#by("Corelib.Init.Datatypes.nat_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"."], ()),
 ))
 
 #legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))

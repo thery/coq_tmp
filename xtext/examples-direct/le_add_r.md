@@ -7,17 +7,18 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n m : nat`{.var}. We prove `n <= n + m`{.claim}.
 
-- We prove `n <= n + m`{.fact} by induction on `m`{.fact} (nat, nat_ind):
-- Case 1 (base): we prove `n <= n + 0`{.claim}.
-  - By definition of le (le_n), we have `n <= n`{.claim} *by Corelib.Init.Peano.le_n*.
-  - In particular `n + 0 = n`{.claim}.
-    - Using add_0_r we get `forall n0 : nat, n0 + 0 = n0`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_0_r*.
-  - Rewriting with `n + 0 = n`{.fact} from right to left (eq_ind_r), we get `n <= n + 0`{.claim}.
-- Case 2 (inductive): we prove `forall m0 : nat, n <= n + m0 -> n <= n + S m0`{.claim}.
-  - Let us consider an arbitrary `m0 : nat`{.var}.
-    - Assume by induction hypothesis `n <= n + m0`{.hyp} (IH).
-      - By definition of le (le_S) with witness `n + m0`{.fact}, from `n <= n + m0`{.fact} (IH) we deduce `n <= S (n + m0)`{.claim} *by Corelib.Init.Peano.le_S*.
+- We prove `n <= n + m` by induction on `m` (nat, *nat_ind*{.just}):
+  - Case 1 (base): we prove `n <= n + 0`{.claim}.
+    - By definition of le (*le_n*{.just}), we have `n <= n`{.claim}.
+    - In particular `n + 0 = n`{.claim}.
+      - Using *PeanoNat.Nat.add_0_r*{.just} we get `forall n0 : nat, n0 + 0 = n0`{.claim}.
+    - Rewriting with `n + 0 = n`{.fact} from right to left (eq_ind_r), we get `n <= n + 0`{.claim}.
+  - Case 2 (inductive): we prove `forall m0 : nat, n <= n + m0 -> n <= n + S m0`{.claim}.
+    - Let us consider an arbitrary `m0 : nat`{.var}. Assume by induction hypothesis `n <= n + m0`{.hyp} (IH).
+      - By definition of le (*le_S*{.just}) with witness `n + m0`, from *IH*{.just} we deduce `n <= S (n + m0)`{.claim}.
       - In particular `n + S m0 = S (n + m0)`{.claim}.
-        - Using add_succ_r we get `forall n0 m1 : nat, n0 + S m1 = S (n0 + m1)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.add_succ_r*.
-      - Rewriting with `n + S m0 = S (n + m0)`{.fact} from right to left (eq_ind_r), we get `n <= n + S m0`{.claim}.
-- These cases being exhaustive, we deduce `n <= n + m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
+        - Using *PeanoNat.Nat.add_succ_r*{.just} we get `forall n0 m1 : nat, n0 + S m1 = S (n0 + m1)`{.claim}.
+
+      Rewriting with `n + S m0 = S (n + m0)`{.fact} from right to left (eq_ind_r), we get `n <= n + S m0`{.claim}.
+
+  These cases being exhaustive, we deduce `n <= n + m`{.claim}.

@@ -53,6 +53,7 @@ From XText Extra Dependency "elpi/expected-types.elpi" as xt_expected_types.
 From XText Extra Dependency "elpi/abstractions.elpi" as xt_abstractions.
 From XText Extra Dependency "elpi/applications.elpi" as xt_applications.
 From XText Extra Dependency "elpi/inductive-text.elpi" as xt_inductive_text.
+From XText Extra Dependency "elpi/conclusions.elpi" as xt_conclusions.
 From XText Extra Dependency "elpi/document.elpi" as xt_document.
 From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
 From XText Extra Dependency "elpi/staged.elpi" as xt_staged.
@@ -72,7 +73,7 @@ Ltac xtext_g_auto := timeout 1 auto.
 
 Elpi Db xtext.db lp:{{
   % [xtext-tactic Ltac Text]: the Ltac definition Ltac is tried on a long
-  % subproof; if it closes it, the step reads "We have P *by Text*".
+  % subproof; if it closes it, the step reads "By *Text*{.just} we have P".
   % Add yours with: Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra". }}.
   pred xtext-tactic o:string, o:string.
   xtext-tactic "xtext_tauto" "tauto".
@@ -85,7 +86,7 @@ Elpi Db xtext.db lp:{{
   xtext-threshold 300.
   % [xtext-guard-tactic Ltac Text]: the tactics that check a guarded
   % contraction (the step must still follow from its premises); the one
-  % that succeeds becomes the step's justification, *by Text*.
+  % that succeeds becomes the step's justification, *Text*{.just}.
   pred xtext-guard-tactic o:string, o:string.
   xtext-guard-tactic "xtext_g_tauto" "tauto".
   xtext-guard-tactic "xtext_g_congruence" "congruence".
@@ -149,7 +150,7 @@ Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
   pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
-  xt_abstractions xt_applications xt_inductive_text xt_document
+  xt_abstractions xt_applications xt_inductive_text xt_conclusions xt_document
   xt_type_expressions xt_staged xt_subproofs.
 Elpi Accumulate lp:{{
   main [str N] :- !, with-switches (explain N D), say-document D.
@@ -167,7 +168,7 @@ Elpi Accumulate lp:{{
   % the document D written to the file F: in Typst if F ends with .typ,
   % else in Markdown (prooftext.write-as)
   pred write-text i:string, i:prooftext.document.
-  write-text F D :- prooftext.write-as F D T,
+  write-text F D :- for-file F D D1, prooftext.write-as F D1 T,
     open_out F O, output O T, close_out O, coq.say "Explain: written" F.
 }}.
 Elpi Export Explain.
@@ -184,12 +185,12 @@ Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
   pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
-  xt_abstractions xt_applications xt_inductive_text xt_document
+  xt_abstractions xt_applications xt_inductive_text xt_conclusions xt_document
   xt_type_expressions xt_staged xt_subproofs.
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
-    with-switches (explain-partial N P D), prooftext.write-as F D T,
+    with-switches (explain-partial N P D), for-file F D D1, prooftext.write-as F D1 T,
     open_out F O, output O T, close_out O,
     coq.say "Explain_partial: written" F.
   main-interp-qed _ _ P _ Name :-

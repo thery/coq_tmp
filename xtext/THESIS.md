@@ -173,7 +173,7 @@ Where 6.4.1 is followed or not:
   the motive out (with `half_le`, an elimination with one case: 21).
 - The reader, cyp, is extended as 6.4.1 asks (its first step: the
   evaluation extended so that ElimOpen can be evaluated without the
-  predicate): a step *by C_ind*, C_ind an elimination principle, is
+  predicate): a justification *C_ind*{.just}, C_ind an elimination principle, is
   applied directly, else with the goal abstracted over one of its
   variables first, as Rocq's elim does (cyp's `apply-lemma`,
   `cyp/vernac/elpi/check.elpi`; eapply alone finds le n as the motive of

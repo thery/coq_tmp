@@ -8,11 +8,12 @@ by: tauto | congruence | lia | firstorder | auto
 
 Soit `b : bool`{.var}. Montrons `b = true \/ b = false`{.claim}.
 
-- Montrons `b = true \/ b = false`{.fact} par analyse de cas sur `b`{.fact} (bool, match):
-- Cas 1: montrons `true = true \/ true = false`{.claim}.
-  - Par définition de eq (eq_refl), nous avons `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
-  - Par définition de or (or_introl), nous avons `true = true \/ true = false`{.claim} *by Corelib.Init.Logic.or_introl*.
-- Cas 2: montrons `false = true \/ false = false`{.claim}.
-  - Par définition de eq (eq_refl), nous avons `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
-  - Par définition de or (or_intror), nous avons `false = true \/ false = false`{.claim} *by Corelib.Init.Logic.or_intror*.
-- Ces cas étant exhaustifs, nous en déduisons `b = true \/ b = false`{.claim}.
+- Montrons `b = true \/ b = false` par analyse de cas sur `b` (bool, match):
+  - Cas 1: montrons `true = true \/ true = false`{.claim}.
+    - Par définition de eq (*eq_refl*{.just}), nous avons `true = true`{.claim}.
+    - Par définition de or (*or_introl*{.just}), nous avons `true = true \/ true = false`{.claim}.
+  - Cas 2: montrons `false = true \/ false = false`{.claim}.
+    - Par définition de eq (*eq_refl*{.just}), nous avons `false = false`{.claim}.
+    - Par définition de or (*or_intror*{.just}), nous avons `false = true \/ false = false`{.claim}.
+
+  Ces cas étant exhaustifs, nous en déduisons `b = true \/ b = false`{.claim}.

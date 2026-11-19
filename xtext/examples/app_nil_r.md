@@ -7,12 +7,14 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ [] = l`{.claim}.
 
-- We prove `l ++ [] = l`{.fact} by induction on `l`{.fact} (list, list_ind):
-- Case 1 (base): we prove `[] = (@nil A)`{.claim}.
-  - By definition of eq (eq_refl), we have `[] = (@nil A)`{.claim} *by Corelib.Init.Logic.eq_refl*.
-- Case 2 (inductive): we prove `forall (x : A) (l0 : list A), l0 ++ [] = l0 -> (x :: l0) ++ [] = x :: l0`{.claim}.
-  - Let `x : A`{.var} and `l0 : list A`{.var}; assume by induction hypothesis `l0 ++ [] = l0`{.hyp} (IH).
-    - By definition of eq (eq_refl), we have `x :: l0 = x :: l0`{.claim} *by Corelib.Init.Logic.eq_refl*.
-    - By IH we have `l0 ++ [] = l0`{.claim}.
-    - Rewriting with `l0 ++ [] = l0`{.fact} from right to left (eq_ind_r), we get `x :: l0 ++ [] = x :: l0`{.claim}.
-- These cases being exhaustive, we deduce `l ++ [] = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
+- We prove `l ++ [] = l` by induction on `l` (list, *list_ind*{.just}):
+  - Case 1 (base): we prove `[] = (@nil A)`{.claim}.
+    - By definition of eq (*eq_refl*{.just}), we have `[] = (@nil A)`{.claim}.
+  - Case 2 (inductive): we prove `forall (x : A) (l0 : list A), l0 ++ [] = l0 -> (x :: l0) ++ [] = x :: l0`{.claim}.
+    - Let `x : A`{.var} and `l0 : list A`{.var}; assume by induction hypothesis `l0 ++ [] = l0`{.hyp} (IH).
+      - By definition of eq (*eq_refl*{.just}), we have `x :: l0 = x :: l0`{.claim}.
+      - By *IH*{.just} we have `l0 ++ [] = l0`{.claim}.
+
+      Rewriting with `l0 ++ [] = l0`{.fact} from right to left (eq_ind_r), we get `x :: l0 ++ [] = x :: l0`{.claim}.
+
+  These cases being exhaustive, we deduce `l ++ [] = l`{.claim}.

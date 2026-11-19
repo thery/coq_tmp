@@ -30,6 +30,11 @@ justification-class "just".
 pred formula i:role, i:string, o:string.
 formula Role F S :- role-tag Role Tag, !, S is "`" ^ F ^ "`{." ^ Tag ^ "}".
 
+% [untagged-formula F S]: the formula F with no class, `F`: plain text,
+% shown and not used by a checker
+pred untagged-formula i:string, o:string.
+untagged-formula F S :- S is "`" ^ F ^ "`".
+
 % [justification J S]: the justification J in the form of the texts
 % written before the tree, *by J* (xtext writes it until its texts are
 % written as trees)

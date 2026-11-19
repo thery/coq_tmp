@@ -338,9 +338,9 @@ write (anested D I Scope M) Ctx Path P :-
 
 % a variable or a constant used alone: "By h we have T"
 write (aid M A) _ _ P :-
-  head-name M N,
+  justification-of M J,
   conclusion-parts A Concl,
-  sentence [wd "by", nm N, wd "have" | Concl] S,
+  sentence [wd "by", J, wd "have" | Concl] S,
   conclusion-only S P.
 
 write (aapp F Args A) _ Path (prf Lines (some (it Sentence []))) :-
@@ -355,10 +355,12 @@ write (alam N T Joined Body A) Ctx Path P :-
   abstraction-series [] (alam N T Joined Body A) A Ty Flags Ctx Path P.
 
 % A conclusion says the constrained type, and the required one when they
-% differ (3.4.1: "Nous avons montré T, ce qui est équivalent à Tr").
+% differ (3.4.1: "Nous avons montré T, ce qui est équivalent à Tr"); the
+% required one is then the conclusion, the form the steps after it use,
+% and the constrained one is shown untagged (decision 3 of the proposal).
 pred conclusion-parts i:annot, o:list part.
 conclusion-parts (single T) [fml rclaim T].
-conclusion-parts (double Tc Tr) [fml rclaim Tc, tx ",", wd "that-is", fml rfact Tr1] :-
+conclusion-parts (double Tc Tr) [untagged Tc, tx ",", wd "that-is", fml rclaim Tr1] :-
   beta-ty Tr Tr1.
 conclusion-parts merged [].
 % (naming of intermediate results) the conclusion of a named result ends
@@ -377,41 +379,57 @@ lines-before Ls (prf L C) (prf L1 C) :- std.append Ls L L1.
 % when it is an identifier, and its own text.  An element is an
 % identifier when it is a variable or a constant whose annotation is
 % single after contraction (a double one is a conversion, which must be
-% said in its own sentence).
+% said in its own sentence).  The name of a proof (a hypothesis, a lemma,
+% an intermediate result) is a justification of the step, *h*{.just}; the
+% name of a term that is no proof is plain text.
 kind app-element type.
-type app-element option string -> line -> app-element.
+type app-element option part -> line -> app-element.
 % an identifier whose type the selection left out (Fig. 4.10): it has no
 % text of its own, only its name
-type named-only string -> app-element.
+type named-only part -> app-element.
+% a term whose text would say nothing ("The element x belongs to A", x a
+% variable, whose type was said where it was introduced): no text, and
+% its name if it is an identifier
+type unwritten option part -> app-element.
 
 pred head-element i:aterm, i:list int, o:app-element.
-head-element (aid M merged) _ (named-only N) :- !, head-name M N.
-head-element (aresult N) _ (named-only N) :- !.
+head-element (aid M merged) _ (named-only J) :- !, justification-of M J.
+head-element (aresult N) _ (named-only J) :- !, result-justification N J.
 head-element F Path (app-element Name Line) :-
   identifier-name F Name,
   write F nostar Path P, dashed P Line.
 
 pred argument-element i:list int, i:aarg, o:app-element.
-argument-element _ (aproof (aid M merged)) (named-only N) :- !, head-name M N.
-argument-element _ (aproof (aresult N)) (named-only N) :- !.
+argument-element _ (aproof (aid M merged)) (named-only J) :- !, justification-of M J.
+argument-element _ (aproof (aresult N)) (named-only J) :- !, result-justification N J.
 % (a term is named as formulas print it: le and BinInt.Z.le differ)
-argument-element _ (aelem M merged) (named-only N) :- !, ppf M N.
+argument-element _ (aelem M merged) (named-only (nm N)) :- !, ppf M N.
 argument-element Path (aproof A) (app-element Name Line) :-
   identifier-name A Name,
   write A nostar Path P, dashed P Line.
+argument-element _ (aelem M (single _)) (unwritten Name) :- name M, !,
+  term-name M Name.
+% a remark, untagged: a term is no formula that cyp could use
 argument-element _ (aelem M (single T)) (app-element Name (it S [])) :-
   term-name M Name,
-  sentence [wd "the-element", fml rfact M, wd "belongs-to", fml rfact T] S.
+  sentence [wd "the-element", untagged M, wd "belongs-to", untagged T] S.
+
+% [result-justification N J]: the intermediate result named N (thesis
+% 4.3.3), as a justification; a result inside another one, P1.1, has no
+% name that a reader can read (a name is an identifier), and is plain text
+pred result-justification i:string, o:part.
+result-justification N (jst N) :- prooftext.is-name N, !.
+result-justification N (nm N).
 
 % Only a contracted text names an element in the sentence of the
 % application (rules 1-3 of Fig. 2.10 are the contracted forms, 2.3.3); with
 % no contraction, every element has its own text (rule 4, Fig. 3.10).
-pred identifier-name i:aterm, o:option string.
-identifier-name (aid M (single _)) (some N) :- contracted-text, head-name M N, !.
+pred identifier-name i:aterm, o:option part.
+identifier-name (aid M (single _)) (some J) :- contracted-text, justification-of M J, !.
 identifier-name _ none.
 
-pred term-name i:term, o:option string.
-term-name M (some N) :- contracted-text, head-name M N, !.
+pred term-name i:term, o:option part.
+term-name M (some (nm N)) :- contracted-text, head-name M N, !.
 term-name _ none.
 
 pred contracted-text.
@@ -433,7 +451,7 @@ pred application-text i:app-element, i:list app-element, i:list part,
 application-text Head Args Concl [] S :-
   element-name Head F,
   all-names Args Names, !,
-  sentence {std.append [wd "applying", nm F, wd "to", enum Names, tx ",", wd "have"] Concl} S.
+  sentence {std.append [wd "applying", F, wd "to", enum Names, tx ",", wd "have"] Concl} S.
 
 % (2) the function is an identifier: the texts of the arguments, then
 %     "Applying M0, we have T"
@@ -441,7 +459,7 @@ application-text Head Args Concl Lines S :-
   element-name Head F, !,
   texts-and-names Args Lines Names,
   named-after [wd "to"] Names To,
-  sentence {std.append [wd "applying", nm F | To] [tx ",", wd "have" | Concl]} S.
+  sentence {std.append [wd "applying", F | To] [tx ",", wd "have" | Concl]} S.
 
 % (3) the arguments are identifiers: the text of the function, then
 %     "By application, with M1, .. and Mn, we have T"
@@ -457,20 +475,23 @@ application-text (app-element none FLine) Args Concl [FLine | Lines] S :-
   sentence {std.append [wd "by-application" | With] [tx ",", wd "have" | Concl]} S.
 
 % the name of an element that is an identifier
-pred element-name i:app-element, o:string.
+pred element-name i:app-element, o:part.
 element-name (app-element (some N) _) N.
 element-name (named-only N) N.
+element-name (unwritten (some N)) N.
 
 % the names of the elements, when they are all identifiers
 pred all-names i:list app-element, o:list (list part).
 all-names [] [].
-all-names [E | Es] [[nm N] | Ns] :- element-name E N, all-names Es Ns.
+all-names [E | Es] [[N] | Ns] :- element-name E N, all-names Es Ns.
 
-% the texts of the elements that have one, and the names of the others
+% the texts of the elements that have one, and the names of the others (an
+% unwritten element has neither)
 pred texts-and-names i:list app-element, o:list line, o:list (list part).
 texts-and-names [] [] [].
 texts-and-names [app-element _ L | Es] [L | Ls] Ns :- texts-and-names Es Ls Ns.
-texts-and-names [named-only N | Es] Ls [[nm N] | Ns] :- texts-and-names Es Ls Ns.
+texts-and-names [named-only N | Es] Ls [[N] | Ns] :- texts-and-names Es Ls Ns.
+texts-and-names [unwritten _ | Es] Ls Ns :- texts-and-names Es Ls Ns.
 
 % "Words N1, .. and Nn", nothing when there are no names
 pred named-after i:list part, i:list (list part), o:list part.

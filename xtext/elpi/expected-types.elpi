@@ -7,12 +7,28 @@
 pred that-is i:term, i:term, i:pf, o:pf.
 that-is T Exp (prfp P Ps) Q :- !, that-is T Exp P P1,
   (if (P1 = P) (Q = prfp P Ps) (Q = P1)).
-that-is T Exp (prf L (some (it S Ch))) (prf L (some (it S1 Ch))) :-
+that-is T Exp (prf L (some C)) (prf L (some C1)) :-
   not (off "thatis"), typ T Syn, not (Syn = Exp), coq.unify-eq Syn Exp ok, !,
-  % the second form is shown, not claimed: Rocq checked the conversion,
-  % and the step's justification is about the first form
-  formula rfact Exp F, sentence [tx S, tx ",", wd "that-is", tx F] S1.
+  formula rclaim Exp F, restated-line C F C1.
 that-is _ _ P P.
+
+% [restated-line C F C1]: the line C, its conclusion restated as the
+% formula F, `F`{.claim}: "A, that is B".  B is the conclusion, the form
+% the steps after it use (decision 3 of the proposal); A, the form the
+% step's justification is about, is shown untagged (Rocq checked the
+% conversion); the name of the conclusion, if any, goes after B
+pred restated-line i:line, i:string, o:line.
+restated-line (it S Ch) F (it S1 Ch) :- restated S F S1.
+restated-line (with-closing O Ch S) F (with-closing O Ch S1) :- restated S F S1.
+
+pred restated i:string, i:string, o:string.
+restated S F S1 :-
+  (if (rex.match ".*`{[.]claim} ([A-Za-z0-9_']+)" S)
+      (rex.replace "^.*`{[.]claim} (\\([A-Za-z0-9_']+\\)).*$" "\\1" S N,
+       rex.replace "`{[.]claim} ([A-Za-z0-9_']+)" "`" S S0,
+       Name = [tx "(", tx N, tx ")"])
+      (rex.replace "`{[.]claim}" "`" S S0, Name = [])),
+  sentence [tx S0, tx ",", wd "that-is", tx F | Name] S1.
 
 % [at-expected T E P0 P]: the text P0 of the subproof T, at a place where
 % the type E is expected: "that is" E, if E is known (not a hole)

@@ -19,8 +19,8 @@ l'application" (Fig. 3.11), applied to the text.  Three strategies:
   follows from its new premises, checked by one of the tactics of
   `xtext-guard-tactic` (cyp's default ones: `tauto`, `congruence`, `lia`,
   `firstorder`, `auto`, 1 s each).  The tactic that closes the last
-  accepted configuration becomes the step's justification (`We deduce C
-  *by auto*`), so that cyp runs the same tactic.  (2) Its line has no "that
+  accepted configuration becomes the step's justification (`By
+  *auto*{.just} we deduce C`), so that cyp runs the same tactic.  (2) Its line has no "that
   is", so
   no conversion step is hidden (the thesis's guarded contraction keeps the
   type expressions that belong to a conversion, Fig. 3.13).

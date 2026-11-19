@@ -67,7 +67,7 @@ They replace the paper's rules for introduction and elimination theorems.
   5.4; `XTEXT_OFF=motive` switches it off.  It shortens every dependent
   elimination of `examples/`: 50 generated texts change (21 in English,
   27 in the other languages, 2 in Typst), and 21 in each variant.  cyp
-  reads and proves them: its step *by nat_ind* applies an elimination
+  reads and proves them: its justification *nat_ind*{.just} applies an elimination
   principle as `elim` does, the goal abstracted over the variable first
   (`eapply nat_ind` alone unifies `?P ?x` with `le n (n + m)`
   first-order and gives `le n`).
@@ -108,11 +108,13 @@ They replace the paper's rules for introduction and elimination theorems.
   recursive call f) we have τ`, and a `match` whose case calls `f` is an
   inductive case.  Nothing checks that the calls are on smaller
   arguments, since Rocq already did.
-- The closing step of a dependent elimination (`These cases being
-  exhaustive, we deduce ...`) is justified by the elimination theorem
-  (`*by Corelib.Init.Datatypes.nat_ind*`), which cyp applies to the case
-  claims; the closing step of a first-kind elimination or of a `match`
-  (`We have τ in all cases`) has no justification (see ["The output"](../README.md#the-output)).
+- An elimination with several cases is one node of the tree: the goal
+  announced (untagged), the cases below it, and the conclusion in its
+  closing paragraph (`These cases being exhaustive, we deduce ...`).  It
+  is justified by the elimination theorem, named where the text names it
+  (`(nat, *nat_ind*{.just})`), which cyp applies to the cases; a `match`,
+  and a first-kind elimination on a type with indices (`le_ind`), have no
+  justification (see ["The output"](../README.md#the-output)).
 - Intro patterns leave redexes `fun h => (fun i => M) h`; they are reduced
   and the user's name `i` is kept.  Other redexes are cuts and are
   rendered with the application rules.  Casts are skipped; `let x := N in

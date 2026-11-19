@@ -7,7 +7,8 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Set`{.var}. Let `R : A -> A -> Prop`{.var}. Assume `forall x y : A, R x y -> R y x`{.hyp} (symmetry) and `forall x y z : A, R x y -> R y z -> R x z`{.hyp} (transitivity). Let `x : A`{.var}. Assume `exists y0 : A, R x y0`{.hyp} (h). We prove `R x x`{.claim}.
 
-- Going back to the definition of ex (ex_ind) in `exists y0 : A, R x y0`{.fact} (h), we prove `R x x`{.claim}:
+- Going back to the definition of ex (*ex_ind*{.just}) in *h*{.just}, we prove `R x x`{.claim}:
   - Let us choose arbitrarily `y0 : A`{.var}; assume `R x y0`{.hyp} (i).
-    - Applying symmetry to x, y0 and i, we have `R y0 x`{.claim}.
-    - Applying transitivity to x, y0, x and i, we have `R x x`{.claim}.
+    - Applying *symmetry*{.just} to x, y0 and *i*{.just}, we have `R y0 x`{.claim}.
+
+    Applying *transitivity*{.just} to x, y0, x and *i*{.just}, we have `R x x`{.claim}.

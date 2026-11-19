@@ -8,5 +8,6 @@ by: tauto | congruence | lia | firstorder | auto
 Let `A : Prop`{.var}. Assume `A`{.hyp} (a). We prove `~ ~ A`{.claim}.
 
 - Assume `~ A`{.hyp} (na).
-  - By na we have `~ A`{.claim}, that is `A -> False`{.fact} (P1).
-  - Applying P1 to a, we have `False`{.claim}.
+  - By *na*{.just} we have `~ A`, that is `A -> False`{.claim} (P1).
+
+  Applying *P1*{.just} to *a*{.just}, we have `False`{.claim}.

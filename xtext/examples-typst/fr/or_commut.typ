@@ -12,18 +12,14 @@
 #statement[#"Soient "#var($A , B : "Prop"$)#". Supposons "#hyp($A ∨ B$)#" "#name("h", label: "statement:h")#". Montrons "#claim($B ∨ A$)#"."]
 
 #steps((
-  step("1", [#"Montrons "#fact($B ∨ A$)#" par analyse de cas sur "#fact($A ∨ B$)#" "#name("h", target: "statement:h")#" ("#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#", "#cited("or_ind", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind")#"):"], ()),
-  step("2", [#"Cas 1: montrons "#claim($A → B ∨ A$)#"."], (
-    step("2.1", [#"Supposons "#hyp($A$)#" "#name("i", label: "2.1:i")#"."], (
-      step("2.1.1", [#"Par définition de "#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#" ("#cited("or_intror", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")#"), à partir de "#fact($A$)#" "#name("i", target: "2.1:i")#" nous en déduisons "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")#"."], ()),
+  step("1", [#"Montrons "#formula($B ∨ A$)#" par analyse de cas sur "#by("h", target: "statement:h")#" ("#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#", "#by("or_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind")#"): Nous avons "#claim($B ∨ A$)#" dans tous les cas."], (
+    step("1.1", [#"Cas 1: montrons "#claim($A → B ∨ A$)#"."], (
+      step("1.1.1", [#"Supposons "#hyp($A$)#" "#name("i", label: "1.1.1:i")#". Par définition de "#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#" ("#by("or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")#"), à partir de "#by("i", target: "1.1.1:i")#" nous en déduisons "#claim($B ∨ A$)#"."], ()),
+    )),
+    step("1.2", [#"Cas 2: montrons "#claim($B → B ∨ A$)#"."], (
+      step("1.2.1", [#"Supposons "#hyp($B$)#" "#name("j", label: "1.2.1:j")#". Par définition de "#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#" ("#by("or_introl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_introl")#"), à partir de "#by("j", target: "1.2.1:j")#" nous en déduisons "#claim($B ∨ A$)#"."], ()),
     )),
   )),
-  step("3", [#"Cas 2: montrons "#claim($B → B ∨ A$)#"."], (
-    step("3.1", [#"Supposons "#hyp($B$)#" "#name("j", label: "3.1:j")#"."], (
-      step("3.1.1", [#"Par définition de "#cited("or", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or")#" ("#cited("or_introl", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_introl")#"), à partir de "#fact($B$)#" "#name("j", target: "3.1:j")#" nous en déduisons "#claim($B ∨ A$)#" "#by("Corelib.Init.Logic.or_introl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_introl")#"."], ()),
-    )),
-  )),
-  step("4", [#"Nous avons "#claim($B ∨ A$)#" dans tous les cas."], ()),
 ))
 
 #legend((("var", "variable"), ("hyp", "hypothèse"), ("claim", "affirmation"), ("fact", "fait"), ("by", "justification"),))

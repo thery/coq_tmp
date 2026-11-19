@@ -11,7 +11,7 @@ pred tr-let i:bool, i:name, i:term, i:term, i:(term -> term), i:ctx, i:list int,
 pred tr-app i:term, i:list term, i:list int, o:pf.
 
 % defined in inductive-text.elpi, used in applications.elpi
-pred tr-intro i:list part, i:string, i:term, i:list term, i:list term, i:list int, o:pf.
+pred tr-intro i:list part, i:term, i:list term, i:list term, i:list int, o:pf.
 
 % defined in inductive-text.elpi, used in applications.elpi
 pred tr-elim1 i:string, i:string, i:term, i:term, i:list term, i:list case-info, i:list int, o:pf.

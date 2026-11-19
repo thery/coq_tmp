@@ -168,9 +168,9 @@ or tactic), and a fact that is no hypothesis or conclusion in scope.
   closing paragraph of a list item.
 - Remarks: a text with no tag is shown and not checked.
 
-**The transition.**  The texts written before the tree (xtext's, until
-they are written again) name their justification `*by X*`, after the
-sentence: it is read as the justification X (`by-part`).  Its other
+**The transition.**  The texts written before the tree (xtext writes the
+tree now) name their justification `*by X*`, after the sentence: it is
+still read as the justification X (`by-part`).  Its other
 departures from the tree are errors (a scope with no conclusion, a fact
 that names no formula in scope).
 
@@ -195,12 +195,16 @@ that names no formula in scope).
   `field-value Fields Key Value` (`""` for a field the header has not),
   `header-lang Fields Lang` (`default-lang` without a `lang` field);
 - `document.elpi`: the document of a writer, `document Fields Name Place
-  Statement Steps`, a step `step Place Text Sub-steps`, a `place` (`lines
+  Statement Steps`, a step `step Place Text Sub-steps`, or `closed-step
+  Place Text Sub-steps Closing` with its closing paragraph, a `place` (`lines
   First Last`, the lines of a text in its file, numbered from 0, given by
   a reader; `unplaced` for a text being written), the writer
   `write-document D Text`, and the number of a step, `step-number Parent
   K Number` (Dewey notation, `2.1` the first sub-step of step 2: cyp
-  numbers its nodes with it, the Typst writer its steps);
+  numbers its nodes with it, the Typst writer its steps), and
+  `closings-joined D D1`, each closing paragraph joined to the text of its
+  step, as `read-document` gives it, for a writer that does not show
+  closing paragraphs (the Typst writer);
 - `tree.elpi`: the reader, `read-tree File T` and `lines-tree Lines T`,
   into the tree of nodes (below, the reader's contract), and
   `read-document File D`, the document of a writer from the tree (the
@@ -232,8 +236,9 @@ that names no formula in scope).
   lexicon, which the format no longer has, written as a claim: read back,
   the class `claim` gives `rclaim`, the first role with it),
   `justification-class C` (`just`), `formula Role F S` (`` `F`{.tag} ``),
-  `justification-name J S` (`*J*{.just}`), `justification J S` (`*by J*`,
-  the form xtext writes until its texts are written as trees),
+  `justification-name J S` (`*J*{.just}`), `untagged-formula F S` (`` `F` ``, plain text),
+  `justification J S` (`*by J*`, the form of the texts written before the
+  tree, read still),
   `is-justification S`, `is-name S`, and the reading of the text of a
   node, `text-parts Text Parts` (below, the reader's contract);
 - `names.elpi`: `fresh-name Used Wanted Name`, `Wanted` if it is not in
@@ -256,8 +261,9 @@ that names no formula in scope).
 `write-document (document Fields Name _ Statement Steps) Text` gives the
 header lines, an empty line, `# Name`, an empty line, the statement on one
 line, an empty line, then one line per step, `- Text`, the sub-steps of a
-step below it with two more spaces of indentation; `Text` ends with a
-newline.  The places are not used.  A writer gives each step its text in
+step below it with two more spaces of indentation, and the closing
+paragraph of a `closed-step` after its sub-steps, after an empty line,
+indented as the text of its step; `Text` ends with a newline.  The places are not used.  A writer gives each step its text in
 one line; xtext also ends each with a punctuation mark.
 
 ## Reading a proof text (the reader's contract)

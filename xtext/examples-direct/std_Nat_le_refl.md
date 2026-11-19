@@ -9,16 +9,17 @@ Let `n : nat`{.var}. We prove `n <= n`{.claim}.
 
 - Thus we have `forall n0 m : nat, n0 < m \/ n0 = m -> n0 <= m`{.claim} (H).
   - Let us choose arbitrarily `n0 : nat`{.var} and `m : nat`{.var}.
-    - Using lt_eq_cases we get `forall n1 m0 : nat, n1 <= m0 <-> n1 < m0 \/ n1 = m0`{.claim} *by Stdlib.Arith.PeanoNat.Nat.lt_eq_cases*.
+    - Using *PeanoNat.Nat.lt_eq_cases*{.just} we get `forall n1 m0 : nat, n1 <= m0 <-> n1 < m0 \/ n1 = m0`{.claim}.
     - In particular `n0 <= m <-> n0 < m \/ n0 = m`{.claim}.
     - Going back to the definition of and (match) in `n0 <= m <-> n0 < m \/ n0 = m`{.fact}, we prove `n0 < m \/ n0 = m -> n0 <= m`{.claim}:
-      - Assume `n0 <= m -> n0 < m \/ n0 = m`{.hyp} (h) and `n0 < m \/ n0 = m -> n0 <= m`{.hyp} (h0).
-        - By h0 we have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.
-- By definition of or (or_intror), we have `n < n \/ n = n`{.claim} *by Corelib.Init.Logic.or_intror*.
-  - Using eq_equiv we get `RelationClasses.Equivalence (@eq nat)`{.claim} *by Stdlib.Arith.PeanoNat.Nat.eq_equiv*.
-  - Using Equivalence_Reflexive we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim} *by Corelib.Classes.RelationClasses.Equivalence_Reflexive*.
-  - Using reflexivity we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim} *by Corelib.Classes.RelationClasses.reflexivity*.
-  - We deduce `forall x : nat, x = x`{.claim} *by tauto*.
-  - In particular `n = n`{.claim}, that is `n = n`{.fact}.
-- By H we have `forall n0 m : nat, n0 < m \/ n0 = m -> n0 <= m`{.claim}.
+      - Assume `n0 <= m -> n0 < m \/ n0 = m`{.hyp} (h) and `n0 < m \/ n0 = m -> n0 <= m`{.hyp} (h0). By *h0*{.just} we have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.
+
+    We have `n0 < m \/ n0 = m -> n0 <= m`{.claim}.
+- By definition of or (*or_intror*{.just}), we have `n < n \/ n = n`{.claim}.
+  - Using *PeanoNat.Nat.eq_equiv*{.just} we get `RelationClasses.Equivalence (@eq nat)`{.claim}.
+  - Using *RelationClasses.Equivalence_Reflexive*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Equivalence R -> RelationClasses.Reflexive R`{.claim}.
+  - Using *RelationClasses.reflexivity*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x : A, R x x`{.claim}.
+  - By *tauto*{.just} we deduce `forall x : nat, x = x`{.claim}.
+  - In particular `n = n`, that is `n = n`{.claim}.
+- By *H*{.just} we have `forall n0 m : nat, n0 < m \/ n0 = m -> n0 <= m`{.claim}.
 - We deduce `n <= n`{.claim}.

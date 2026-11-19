@@ -1,0 +1,75 @@
+% xtext: Every node has its conclusion (the tree of the 2003 paper; the
+% format of proof texts, ../prooftext/README.md, "The format"; decision 2
+% of ../proposal/PROPOSAL.md).
+% (part of xtext's writer; the files are loaded in the order of Explain.v)
+%
+% A line is a node of the proof (a list item) when its text has tags.  A
+% line whose text has tags but no conclusion, `F`{.claim}, introduces
+% variables or hypotheses that scope over its sub-lines ("Let `x : A`{.var};
+% assume `B`{.hyp} (h)."): it gets the conclusion of its sub-lines, which
+% is what it proves:
+%   - with a single sub-line that has a conclusion, it is merged with it
+%     ("Assume `B`{.hyp} (h). By *h*{.just} we have `C`{.claim}.");
+%   - else, when the last sub-line that has a conclusion is the last
+%     sub-line and has no sub-line of its own, that line becomes its
+%     closing paragraph, after the other sub-lines (the forward style);
+%   - else its closing paragraph says the conclusion of that sub-line
+%     ("We have `C`{.claim}.").
+% A line with no tag at all is a remark (it is shown, not checked) and is
+% kept as it is.  The sub-lines get their conclusions first.
+
+% [with-conclusions Lines Lines1]: the lines, each node with its conclusion
+pred with-conclusions i:list line, o:list line.
+with-conclusions Ls Ls1 :- std.map Ls with-conclusion Ls1.
+
+pred with-conclusion i:line, o:line.
+with-conclusion (it S Ch) L :- with-conclusions Ch Ch1, node-with-conclusion S Ch1 L.
+with-conclusion (with-closing S Ch C) (with-closing S Ch1 C) :- with-conclusions Ch Ch1.
+
+% [node-with-conclusion S Ch L]: the line of text S and sub-lines Ch (each
+% with its conclusion), as a node with its conclusion
+pred node-with-conclusion i:string, i:list line, o:line.
+node-with-conclusion S Ch (it S Ch) :- not (needs-conclusion S), !.
+node-with-conclusion S [it S1 Ch1] (it S2 Ch1) :- line-claim (it S1 Ch1) _, !,
+  merged-text S S1 S2.
+node-with-conclusion S [with-closing S1 Ch1 C1] (with-closing S2 Ch1 C1) :- !, merged-text S S1 S2.
+node-with-conclusion S Ch (with-closing S Init C) :-
+  Ch = [_ | _], std.last Ch Last, Last = it C [], line-claim Last _, !, std.drop-last 1 Ch Init.
+node-with-conclusion S Ch (with-closing S Ch C) :-
+  last-claim Ch F, !, sentence [wd "have", tx F, tx "."] C.
+% no sub-line has a conclusion: left as it is (cyp reports the node)
+node-with-conclusion S Ch (it S Ch).
+
+% [merged-text S S1 S2]: the text S, then the text S1, as two sentences
+pred merged-text i:string, i:string, o:string.
+merged-text S S1 S2 :- end-dot S S0, S2 is S0 ^ " " ^ S1.
+
+% [needs-conclusion S]: the text S has tags (formulas with a class,
+% justifications) but no conclusion
+pred needs-conclusion i:string.
+needs-conclusion S :-
+  prooftext.text-parts S Ps, std.exists Ps tagged-part, not (std.exists Ps claim-part).
+
+% a part with a tag: a formula with a class, a justification
+pred tagged-part i:prooftext.text-part.
+tagged-part (prooftext.formula-part C _ _) :- not (C = "").
+tagged-part (prooftext.tagged-name _ _).
+tagged-part (prooftext.by-part _).
+
+pred claim-part i:prooftext.text-part.
+claim-part (prooftext.formula-part "claim" _ _).
+
+% [line-claim L F]: the conclusion of the line L (in its text, or in its
+% closing paragraph), as written with its tag, `C`{.claim}
+pred line-claim i:line, o:string.
+line-claim (it S _) F :- text-claim S F.
+line-claim (with-closing _ _ C) F :- text-claim C F.
+
+pred text-claim i:string, o:string.
+text-claim S F :-
+  prooftext.text-parts S Ps, std.mem Ps (prooftext.formula-part "claim" C _), !,
+  prooftext.formula rclaim C F.
+
+% [last-claim Ls F]: the conclusion of the last of the lines Ls that has one
+pred last-claim i:list line, o:string.
+last-claim Ls F :- std.rev Ls Rs, std.mem Rs L, line-claim L F, !.

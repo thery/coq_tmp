@@ -50,7 +50,7 @@ A proper subproof whose proof term has at least `xtext-threshold` nodes
 (default 300) is first tried with the tactics of `xtext-tactic`, in
 order, on its statement in its own context.  The defaults are
 `tauto` then `lia`, each with a 2 s time limit.  The first tactic that
-closes it gives one step, `We have P *by lia*`, instead of the walk
+closes it gives one step, `By *lia*{.just} we have P`, instead of the walk
 through the term.  The success of the tactic is the guarantee; no
 constant is recognised by its name.
 

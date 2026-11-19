@@ -61,7 +61,8 @@ let-run [] [] [].
 pred proof-text i:string, i:list string, i:term, i:term, o:prooftext.document.
 proof-text Title Path Body Type
     (prooftext.document Fields Title prooftext.unplaced Statement Steps) :-
-  top-run [] Body Type Statement Lines,
+  top-run [] Body Type Statement Lines0,
+  with-conclusions Lines0 Lines,
   std.map Lines document-step Steps,
   header-fields Path Fields.
 
@@ -70,10 +71,8 @@ proof-text Title Path Body Type
 pred document-step i:line, o:prooftext.step.
 document-step (it S Ch) (prooftext.step prooftext.unplaced S1 Steps) :-
   end-dot S S1, std.map Ch document-step Steps.
-
-pred end-dot i:string, o:string.
-end-dot S S :- rex.match "^.*[:.,]$" S, !.
-end-dot S S1 :- S1 is S ^ ".".
+document-step (with-closing S Ch C) (prooftext.closed-step prooftext.unplaced S1 Steps C1) :-
+  end-dot S S1, end-dot C C1, std.map Ch document-step Steps.
 
 % The fields of the header, for cyp: the libraries (xtext-header-require)
 % and the module of the theorem, so that the lemmas it uses are known
@@ -129,3 +128,11 @@ vocab-check L Bad :-
   std.map-filter Us (u\ m\ not (write-role L u _ _ ; write-word L u _),
      m is "no phrase for " ^ u) B2,
   std.append B1 B2 Bad.
+
+% [for-file F D D1]: the document D as it is written to the file F: in a
+% Typst file, each closing paragraph is joined to the text of its step
+% (prooftext.closings-joined), as the Typst writer does not show closing
+% paragraphs yet
+pred for-file i:string, i:prooftext.document, o:prooftext.document.
+for-file F D D1 :- rex.match ".*[.]typ$" F, !, prooftext.closings-joined D D1.
+for-file _ D D.

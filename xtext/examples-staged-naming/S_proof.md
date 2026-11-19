@@ -7,5 +7,5 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B C : Prop`{.var}. Assume `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) and `A`{.hyp} (h1). We prove `C`{.claim}.
 
-- Applying h0 to h1, we have `B`{.claim} (P1).
-- Applying h to h1 and P1, we have `C`{.claim}.
+- Applying *h0*{.just} to *h1*{.just}, we have `B`{.claim} (P1).
+- Applying *h*{.just} to *h1*{.just} and *P1*{.just}, we have `C`{.claim}.

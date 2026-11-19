@@ -7,5 +7,5 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `x y z : A`{.var}. Assume `x = y`{.hyp} (H) and `y = z`{.hyp} (H0). We prove `x = z`{.claim}.
 
-- Going back to the definition of eq (match) in `y = z`{.fact} (H0), we prove `x = z`{.claim}:
-  - By H we have `x = y`{.claim}.
+- Going back to the definition of eq (match) in *H0*{.just}, we prove `x = z`{.claim}:
+  - By *H*{.just} we have `x = y`{.claim}.

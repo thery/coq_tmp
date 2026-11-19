@@ -57,7 +57,22 @@ Elpi Accumulate lp:{{
       "- Assume `A /\\ B`{.hyp} (h).",
       "  - We have `B /\\ A`{.claim} *by tauto*.",
       "- We have proved `A /\\ B -> B /\\ A`{.claim}.",
-      ""]}.
+      ""]},
+    % a step with a closing paragraph, after its sub-steps
+    DC = prooftext.document [] "and_swap" prooftext.unplaced "We prove `B /\\ A`{.claim}."
+          [prooftext.closed-step prooftext.unplaced "Assume `A /\\ B`{.hyp} (h)."
+             [prooftext.step prooftext.unplaced "By *h*{.just} we have `A`{.claim}." []]
+             "So we have `B /\\ A`{.claim}."],
+    prooftext.write-document DC TC,
+    expect "closing paragraph" TC {std.string.concat "\n" [
+      "---", "---", "", "# and_swap", "", "We prove `B /\\ A`{.claim}.", "",
+      "- Assume `A /\\ B`{.hyp} (h).",
+      "  - By *h*{.just} we have `A`{.claim}.",
+      "",
+      "  So we have `B /\\ A`{.claim}.",
+      ""]},
+    prooftext.closings-joined DC (prooftext.document _ _ _ _ [prooftext.step _ JT _]),
+    expect "closing joined" JT "Assume `A /\\ B`{.hyp} (h). So we have `B /\\ A`{.claim}.".
 }}.
 Elpi prooftext_check.
 
