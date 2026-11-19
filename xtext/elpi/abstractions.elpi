@@ -7,6 +7,9 @@ tr-lam (fun _ A _ as T) Ctx Path P :-
   induction-flags Fl,
   binder-kind A K, typ T Tau0, formula rclaim Tau0 FT, lam-run K [] T FT Fl Ctx Path P.
 
+% [lam-run K Acc T FT Fl Ctx Path P]: the text P of the abstraction T of
+% conclusion FT: its leading binders of kind K gathered in Acc (an induction
+% hypothesis where the flags Fl say so), then its body translated under them
 pred lam-run i:bk, i:list binder, i:term, i:string, i:list bool, i:ctx, i:list int, o:pf.
 lam-run K Acc (fun N A F) FT Fl Ctx Path P :- binder-kind A K1, K1 = K, !,
   (if (Fl = [F0|Fr]) true (F0 = ff, Fr = [])),
@@ -19,6 +22,9 @@ lam-run K Acc Body FT Fl Ctx Path P :-
   ((cur-ih Fl :- !) => tr Body Ctx Path PB), flatten PB LB,
   lam-text K Bs FT LB Ctx P.
 
+% [lam-text K Bs FT LB Ctx P]: the text of binders Bs of kind K over the
+% lines LB of the body: a Let, an Assume, a Consider or a Choose line with
+% LB as sub-lines, and the conclusion FT (none under a star)
 pred lam-text i:bk, i:list binder, i:string, i:list line, i:ctx, o:pf.
 lam-text bk-let Bs FT LB Ctx (prf [it H LB] C) :-
   let-lines Bs Ls, std.map Ls (l\ s\ sigma T\ l = it T [], end-dot T s) Ss,
@@ -39,10 +45,14 @@ lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
   sentence [wd "choose", enum L1] H,
   concl Ctx [wd "thus-have", tx FT] C.
 
+% [assume-text B Ps]: the hypothesis of the binder B, with its name, as it
+% is written in an Assume line ("the induction hypothesis" for an ih)
 pred assume-text i:binder, o:list part.
 assume-text (b _ Id FA) Ps :- prooftext.formula rhyp FA F, with-name F Id Ps.
 assume-text (bih Id FA) [wd "ih" | Ps] :- prooftext.formula rhyp FA F, with-name F Id Ps.
 
+% [concl Ctx Ps C]: the closing sentence Ps of a node, or none when the
+% context is star (the conclusion is said by the caller)
 pred concl i:ctx, i:list part, o:option line.
 concl star _ none.
 concl nostar Ps (some (it S [])) :- sentence Ps S.
@@ -56,6 +66,8 @@ let-lines [b _ Id FA|Bs] [it S []|Ls] :-
   (if (Ids = []) (U = "let") (U = "let-plural")), sentence [wd U, tx V] S,
   let-lines Rest Ls.
 
+% [same-type FA Bs Ids Rest]: the names Ids of the binders at the head of Bs
+% whose type is FA, and the binders after them
 pred same-type i:string, i:list binder, o:list string, o:list binder.
 same-type FA [b _ Id FA|Bs] [Id|Ids] Rest :- !, same-type FA Bs Ids Rest.
 same-type _ Bs [] Bs.
@@ -85,6 +97,8 @@ pred named-line i:line, i:string, o:line.
 named-line (it S Ch) N (it S1 Ch) :- named-claim S N S1.
 named-line (with-closing S Ch C) N (with-closing S Ch C1) :- named-claim C N C1.
 
+% [named-claim S N S1]: the sentence S with the name (N) right after its
+% conclusion `C`{.claim}, or at its end when it has none
 pred named-claim i:string, i:string, o:string.
 named-claim S N S1 :- rex.match ".*`{[.]claim}" S, !,
   rex.replace "`{[.]claim}" {calc ("`{.claim} (" ^ N ^ ")")} S S1.

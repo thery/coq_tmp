@@ -9,17 +9,21 @@
 pred is-set-sort i:term.
 is-set-sort (sort (typ U)) :- {{ Set }} = sort (typ SetUniverse), U == SetUniverse.
 
+% [binder-kind A K]: the kind of a binder of type A, from the sort of A: an
+% Assume for a proposition, a Consider for a set, a Let otherwise
 pred binder-kind i:term, o:bk.  % call it with a fresh output
 binder-kind A K :-
   typ A S0, whnf S0 S, !, sort-kind S K.
 binder-kind _ bk-let.
 
+% [sort-kind S K]: the kind of a binder whose type has the sort S
 pred sort-kind i:term, o:bk.
 sort-kind (sort prop) bk-assume :- !.
 sort-kind (sort sprop) bk-assume :- !.
 sort-kind S bk-set :- is-set-sort S, !.
 sort-kind _ bk-let.
 
+% [is-prop D]: the type D is a proposition (its sort is Prop)
 pred is-prop i:term.
 is-prop D :- typ D S0, whnf S0 (sort prop).
 
@@ -43,6 +47,8 @@ kinds _ As Ks :- std.map As (_\ k\ k = ak-all) Ks.
 % the maximal prefix of arguments with the same kind
 pred run i:list ak, i:list term, o:ak, o:list term, o:list term.
 run [K|Ks] [A|As] K [A|R] Rest :- run-same K Ks As R Rest.
+% [run-same K Ks As R Rest]: the arguments R at the head of As whose kinds
+% Ks are K, and the arguments after them
 pred run-same i:ak, i:list ak, i:list term, o:list term, o:list term.
 run-same K [K|Ks] [A|As] [A|R] Rest :- !, run-same K Ks As R Rest.
 run-same _ _ As [] As.

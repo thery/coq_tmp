@@ -8,6 +8,7 @@
 % the names of the variables of the context (decl cannot be enumerated)
 pred ctx-name o:string.
 
+% [context-names Used]: the names of all the variables of the context
 pred context-names o:list string.
 context-names Used :- std.findall (ctx-name _) Ds, std.map Ds (d\ i\ d = ctx-name i) Used.
 
@@ -25,6 +26,8 @@ away-from-context T T1 :- context-names Used, rename Used T T1.
 pred whnf i:term, o:term.
 whnf T W :- away-from-context T T1, coq.reduction.lazy.whd T1 W.
 
+% [pp T S]: the term T printed by Rocq on one line (its bound names away
+% from the context, newlines and runs of spaces made one space)
 pred pp i:term, o:string.
 pp T0 S :-
   away-from-context T0 T,
@@ -93,9 +96,12 @@ beta-ty T R :- beta.aux tt T R.
 % that receives x
 pred redex-name i:(term -> term), o:name.
 redex-name F M :- pi x\ find-redex (F x) x M.
+% [find-redex T X M]: redex-name inside T, under its abstractions
 pred find-redex i:term, i:term, o:name.
 find-redex (app [Hd|As]) X M :- nth-fun-name Hd As X M.
 find-redex (fun _ _ G) X M :- pi z\ find-redex (G z) X M.
+% [nth-fun-name F As X M]: the name M of the binder of the function F that
+% receives the argument X of As
 pred nth-fun-name i:term, i:list term, i:term, o:name.
 nth-fun-name (fun M _ _) [X|_] Y M :- X == Y, !.
 nth-fun-name (fun _ _ G) [_|As] Y M :- pi z\ nth-fun-name (G z) As Y M.

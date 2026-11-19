@@ -4,19 +4,24 @@
 % ------------------------------------------------------------------
 % Inductive types: introduction and elimination theorems
 
+% [final-sort Ty S]: the sort S at the end of the type Ty, after its products
 pred final-sort i:term, o:sort.
 final-sort (prod N D B) S :- !, pi x\ decl x N D => final-sort (B x) S.
 final-sort (sort S) S.
 
+% [ind-in-prop I]: the inductive type I is a proposition (its arity ends in
+% Prop or SProp)
 pred ind-in-prop i:inductive.
 ind-in-prop I :- coq.env.indt I _ _ _ Ar _ _, final-sort Ar S, !,
   (S = prop ; S = sprop).
 
+% [count-prods Ty N]: the number N of products at the head of the type Ty
 pred count-prods i:term, o:int.
 count-prods (prod N D B) M :- !,
   pi x\ decl x N D => (count-prods (B x) M0, M is M0 + 1).
 count-prods _ 0.
 
+% [ind-name I S]: the name S of the inductive type I
 pred ind-name i:inductive, o:string.
 ind-name I S :- coq.gref->id (indt I) S.
 
@@ -41,6 +46,8 @@ scheme-info (prod N D B) M I MV [K|Ks] [Fl|Fls] :- !,
     scheme-info (B x) M I1 MV1 Ks Fls.
 scheme-info _ _ _ _ [] [].
 
+% [ih-flags D P Fs]: for each binder of the branch type D, whether its type
+% mentions the motive P (an induction hypothesis)
 pred ih-flags i:term, i:term, o:list bool.
 ih-flags (prod N D B) P [F|Fs] :- !,
   (if (occurs P D) (F = tt) (F = ff)),
@@ -78,9 +85,14 @@ instance-arity I NS :- coq.env.indt I _ NP _ Ar _ _, count-prods Ar NA, NS is NA
 pred motive-position i:term, o:int.
 motive-position H M :- gr-of H (const C), coq.env.const C _ Ty, elim-shape Ty M _ _.
 
+% [elim-shape Ty M I K]: the type Ty is that of an elimination principle
+% (elim-info): its motive at position M, its inductive type I, its kind K
 pred elim-shape i:term, o:int, o:inductive, o:int.
 elim-shape Ty M I K :- eshape Ty [] [] M I K.
 
+% [eshape Ty Vs Ds M I K]: elim-shape, the binders Vs (and their types Ds)
+% already crossed; at the conclusion, the motive, the object eliminated and
+% the checks of elim-info
 pred eshape i:term, i:list term, i:list term, o:int, o:inductive, o:int.
 eshape (prod N D B) Vs Ds M I K :- !,
   pi x\ decl x N D => sigma Vs1 Ds1\
@@ -100,10 +112,12 @@ eshape Concl Vs Ds M I K :-
   std.drop M1 Ds Ds2, std.take {calc (L1 - M1)} Ds2 Mid,
   std.forall Mid (d\ (concl-head d P ; not (is-prop d))).
 
+% [index-of X L I J]: the position J of the term X in L, counting from I
 pred index-of i:term, i:list term, i:int, o:int.
 index-of X [Y|_] I I :- X == Y, !.
 index-of X [_|L] I J :- I1 is I + 1, index-of X L I1 J.
 
+% [ind-head Ty I]: the type Ty is the inductive type I, possibly applied
 pred ind-head i:term, o:inductive.
 ind-head (app [G|_]) I :- gr-of G (indt I), !.
 ind-head G I :- gr-of G (indt I).
@@ -117,6 +131,9 @@ concl-head Q P :- Q == P.
 % the IH flags of the branches (the premises), as cases
 kind case-info type.
 type ci bool -> list bool -> case-info.
+% [branch-infos Ks Fls Cs]: the cases of the branches (the premises, ak-imp,
+% among the kinds Ks): inductive when one of their flags Fls is an induction
+% hypothesis, with those flags
 pred branch-infos i:list ak, i:list (list bool), o:list case-info.
 branch-infos [] _ [].
 branch-infos [ak-imp|Ks] [Fl|Fls] [ci Ind Fl|Cs] :- !,

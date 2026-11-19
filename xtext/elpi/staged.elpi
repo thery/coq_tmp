@@ -169,6 +169,8 @@ annotate (app L as M) Tr (aapp F [Arg] (double Tc Tr)) :-
 % anything else is written by the direct writer
 annotate M _ (aother M).
 
+% [annotate-argument M T A]: the annotated argument M of expected type T: a
+% proof annotated for a proposition, an element otherwise
 pred annotate-argument i:term, i:term, o:aarg.
 annotate-argument M1 T1 (aproof A) :- is-prop T1, !, annotate M1 T1 A.
 annotate-argument M1 T1 (aelem M1 (single T1)).
@@ -219,6 +221,8 @@ contract Strategy (alam N T Joined Body A) (alam N T Joined Body1 A1) :-
 
 contract _ Other Other.
 
+% [contract-argument Strategy A A1]: the argument A contracted: a proof by
+% contract, an element as it is
 pred contract-argument i:string, i:aarg, o:aarg.
 contract-argument Strategy (aproof A) (aproof A1) :- contract Strategy A A1.
 contract-argument _ (aelem M T) (aelem M T).
@@ -392,6 +396,8 @@ type named-only part -> app-element.
 % its name if it is an identifier
 type unwritten option part -> app-element.
 
+% [head-element F Path E]: the element of the head F of an application: its
+% justification only when it is merged, else its line and its name
 pred head-element i:aterm, i:list int, o:app-element.
 head-element (aid M merged) _ (named-only J) :- !, justification-of M J.
 head-element (aresult N) _ (named-only J) :- !, result-justification N J.
@@ -399,6 +405,9 @@ head-element F Path (app-element Name Line) :-
   identifier-name F Name,
   write F nostar Path P, dashed P Line.
 
+% [argument-element Path A E]: the element of the argument A of an
+% application: a justification or a name only, its own line, nothing for a
+% variable, or a remark "The element M belongs to T"
 pred argument-element i:list int, i:aarg, o:app-element.
 argument-element _ (aproof (aid M merged)) (named-only J) :- !, justification-of M J.
 argument-element _ (aproof (aresult N)) (named-only J) :- !, result-justification N J.
@@ -428,10 +437,13 @@ pred identifier-name i:aterm, o:option part.
 identifier-name (aid M (single _)) (some J) :- contracted-text, justification-of M J, !.
 identifier-name _ none.
 
+% [term-name M N]: the name of the term M in a contracted text, none otherwise
 pred term-name i:term, o:option part.
 term-name M (some (nm N)) :- contracted-text, head-name M N, !.
 term-name _ none.
 
+% [contracted-text]: the text is contracted (the selection of the thesis,
+% or a contraction strategy other than none)
 pred contracted-text.
 contracted-text :- switch "selection" "thesis", !.
 contracted-text :- switch "contraction" S, not (S = "none").
@@ -548,10 +560,14 @@ pred series-binder-kind i:term, i:option term, o:bk.
 series-binder-kind T (some Ty) K :- whnf Ty (prod _ _ B), !, abstraction-binder-kind T B K.
 series-binder-kind T _ K :- binder-kind T K.
 
+% [next-flag Fs F Fs1]: the first induction flag F of Fs (ff when there is
+% none left) and the flags after it
 pred next-flag i:list bool, o:bool, o:list bool.
 next-flag [F | Fs] F Fs :- !.
 next-flag [] ff [].
 
+% [binder-of K Flag Id FT B]: the binder of kind K, name Id and formula FT:
+% an induction hypothesis for an Assume whose flag is tt
 pred binder-of i:bk, i:bool, i:string, i:string, o:binder.
 binder-of bk-assume tt Id FT (bih Id FT) :- !.
 binder-of K _ Id FT (b K Id FT).
@@ -574,14 +590,20 @@ binder-groups [B | Bs] [[B | Same] | Groups] :-
   same-kind K Bs Same Rest,
   binder-groups Rest Groups.
 
+% [same-kind K Bs Same Rest]: the binders Same of kind K at the head of Bs,
+% and the binders after them
 pred same-kind i:bk, i:list binder, o:list binder, o:list binder.
 same-kind K [B | Bs] [B | Same] Rest :- binder-kind-of B K, !, same-kind K Bs Same Rest.
 same-kind _ Bs [] Bs.
 
+% [binder-kind-of B K]: the kind K of the binder B (an Assume for an
+% induction hypothesis)
 pred binder-kind-of i:binder, o:bk.
 binder-kind-of (b K _ _) K.
 binder-kind-of (bih _ _) bk-assume.
 
+% [group-phrase Bs Ps]: the phrase of a group of binders of the same kind:
+% assume its hypotheses, choose its elements of a set, let its variables
 pred group-phrase i:list binder, o:list part.
 group-phrase [B | Bs] [wd "assume", enum Hs] :-
   binder-kind-of B bk-assume, !,
@@ -604,12 +626,15 @@ variable-parts Bs [enum Fs] :-
   type-runs Bs Runs,
   std.map Runs run-formula Fs.
 
+% [type-runs Bs Runs]: the binders Bs cut into runs of consecutive binders
+% of the same type: their names and that type
 pred type-runs i:list binder, o:list (pair (list string) string).
 type-runs [] [].
 type-runs [b _ Id FT | Bs] [pr [Id | Ids] FT | Runs] :-
   same-type FT Bs Ids Rest,
   type-runs Rest Runs.
 
+% [run-formula Run Ps]: the declaration `x y : T`{.var} of a run of binders
 pred run-formula i:pair (list string) string, o:list part.
 run-formula (pr Ids FT) [tx F] :- declaration-formula Ids FT F.
 
@@ -625,6 +650,8 @@ run-formula (pr Ids FT) [tx F] :- declaration-formula Ids FT F.
 
 pred show-translatable.
 
+% [aterm-string A S]: the annotated term A printed as the thesis prints it,
+% with its mark ♡ when asked (show-translatable)
 pred aterm-string i:aterm, o:string.
 aterm-string A S :- node-string A S0, translatable-mark A S0 S.
 
@@ -635,6 +662,7 @@ translatable-mark (alam _ _ _ _ _) S S :- !.
 translatable-mark _ S S1 :- show-translatable, !, S1 is S ^ "♡".
 translatable-mark _ S S.
 
+% [node-string A S]: the annotated term A printed, without its mark ♡
 pred node-string i:aterm, o:string.
 node-string (aid M A) S :- pp M S0, annotated S0 A S.
 node-string (aapp F Args A) S :-
@@ -663,14 +691,19 @@ definition-string M S :-
   aterm-string M1 SM, pp T ST,
   S is P ^ " : " ^ ST ^ " = " ^ SM.
 
+% [definition-annotation A T A1]: from the annotation A of a named result,
+% the type T it is required to prove and the annotation A1 left on its term
 pred definition-annotation i:annot, o:term, o:annot.
 definition-annotation (single T) T merged.
 definition-annotation (double Tc Tr) Tr (single Tc).
 
+% [aarg-string A S]: the annotated argument A printed
 pred aarg-string i:aarg, o:string.
 aarg-string (aproof A) S :- aterm-string A S.
 aarg-string (aelem M A) S :- pp M S0, annotated S0 A S.
 
+% [annotated S A R]: the printed term S with its annotation A: (S : T),
+% ((S : Tc) : Tr), or S alone when merged
 pred annotated i:string, i:annot, o:string.
 annotated S (single T) R :- pp T ST, R is "(" ^ S ^ " : " ^ ST ^ ")".
 annotated S (double Tc Tr) R :- pp Tc SC, pp Tr SR,

@@ -24,6 +24,8 @@ same-ty A B :- norm-ty A A1, norm-ty B B1, A1 = B1, !.
 % instances, print the same: the reader sees one formula)
 same-ty A B :- beta-ty A A1, beta-ty B B1, ppf A1 S, ppf B1 S.
 
+% [norm-ty A B]: the type A beta-normalised, its nested applications
+% flattened, to compare types
 pred norm-ty i:term, o:term.
 norm-ty A B :- beta-ty A A1, flat-app A1 B.
 

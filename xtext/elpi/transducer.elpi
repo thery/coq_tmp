@@ -22,6 +22,7 @@ dashed (prf L none) (it S L) :- sentence [wd "have"] S.
 pred conclusion-only i:string, o:pf.
 conclusion-only S (prf [] (some (it S []))).
 
+% [dewey Path S]: the number Path in Dewey notation, "2.1"
 pred dewey i:list int, o:string.
 dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S.
 
@@ -47,10 +48,15 @@ pred rec-var o:term.
 pred tr i:term, i:ctx, i:list int, o:pf.
 tr T Ctx Path P :- tr-p T Ctx Path P0, unwrap P0 P.
 
+% [unwrap P P1]: the text P without the types that an application step
+% keeps for its contraction (prfp)
 pred unwrap i:pf, o:pf.
 unwrap (prfp P _) P :- !.
 unwrap P P.
 
+% [tr-p T Ctx Path P]: the text of T, possibly still with its types (prfp):
+% a goal left open, a step closed by a tactic, the staged translation, or
+% the rules of tr-root
 pred tr-p i:term, i:ctx, i:list int, o:pf.
 tr-p T _ _ P :- open-goal T P, !.
 tr-p T _ _ P :- tactic-step T P, !.
@@ -61,6 +67,7 @@ tr-p T Ctx Path P :- tr-root T Ctx Path P.
 % the whole proof (no tactic is tried on it): the body of the theorem,
 % and the body of a cast or a let that is the whole proof
 pred root-term o:term.
+% [is-root T]: T is the whole proof (root-term)
 pred is-root i:term.
 is-root T :- root-term R, R == T, !.
 
@@ -90,6 +97,8 @@ tactic-step T P :- not (off "tactics"),
   xtext-tactic L Txt, try-tactic L Ty, !,
   formula rclaim Ty F, sentence [wd "by", jst Txt, wd "have", tx F] S, conclusion-only S P.
 
+% [try-tactic L Ty]: the Ltac tactic L closes a goal of type Ty in the
+% current context
 pred try-tactic i:string, i:term.
 try-tactic L Ty :-
   coq.elaborate-skeleton _ Ty E ok,
@@ -99,6 +108,8 @@ try-tactic L Ty :-
 % the proof term has at least N nodes
 pred size-ge i:term, i:int.
 size-ge T N :- tsize T N 0 S, S >= N.
+% [tsize T Cap A R]: R is A plus the number of nodes of T, counting stopped
+% once it reaches Cap
 pred tsize i:term, i:int, i:int, o:int.
 tsize _ Cap A A :- A >= Cap, !.
 tsize (app L) Cap A R :- !, A1 is A + 1, tsize-list L Cap A1 R.
@@ -110,14 +121,20 @@ tsize (match T Rt Bs) Cap A R :- !, A1 is A + 1, tsize T Cap A1 A2, tsize Rt Cap
   tsize-list Bs Cap A3 R.
 tsize (fix _ _ T F) Cap A R :- !, A1 is A + 1, tsize T Cap A1 A2, pi x\ tsize (F x) Cap A2 R.
 tsize _ _ A R :- R is A + 1.
+% [tsize-list Ts Cap A R]: tsize on each term of Ts in turn
 pred tsize-list i:list term, i:int, i:int, o:int.
 tsize-list [] _ A A.
 tsize-list [T|Ts] Cap A R :- tsize T Cap A A1, tsize-list Ts Cap A1 R.
 
+% [tr.aux T Ctx Path P]: the text of T by the rules of the transducer: an
+% abstraction, else the other forms (tr-other), outside any branch
 pred tr.aux i:term, i:ctx, i:list int, o:pf.
 tr.aux (fun _ _ _ as T) Ctx Path P :- !, tr-lam T Ctx Path P.
 tr.aux T Ctx Path P :- (cur-ih [] :- !) => tr-other T Ctx Path P.
 
+% [tr-other T Ctx Path P]: the text of T other than an abstraction: a cast,
+% a local definition, an application, a match, a fix, a constant, or T
+% left unchanged
 pred tr-other i:term, i:ctx, i:list int, o:pf.
 % a cast (T : A) is read by Elpi as let _ : A := T in _
 tr-other (let _ _ V (x\ x) as T) Ctx Path P :- !,

@@ -41,11 +41,15 @@ statement Bs [S|Ss] :-
   std.string.concat " " L S,
   statement Rest Ss.
 
+% [assume-run Bs Hs Rest]: the hypotheses Hs of the Assume binders at the
+% head of Bs, as written in an Assume sentence, and the binders after them
 pred assume-run i:list binder, o:list (list part), o:list binder.
 assume-run [b bk-assume Id FA|Bs] [H|Hs] Rest :- !,
   assume-text (b bk-assume Id FA) H, assume-run Bs Hs Rest.
 assume-run Bs [] Bs.
 
+% [let-run Bs Ls Rest]: the binders Ls at the head of Bs up to the first
+% Assume binder (a Let sentence), and the binders from it on
 pred let-run i:list binder, o:list binder, o:list binder.
 let-run [b bk-assume Id FA|Bs] [] [b bk-assume Id FA|Bs] :- !.
 let-run [B|Bs] [B|Ls] Rest :- !, let-run Bs Ls Rest.

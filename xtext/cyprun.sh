@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run cyp (the driver cyp/bin/cyp.ml, Cyp File, switch elpi5) on the given
 # examples, copied to cyp-check/, with a time limit per text; print: name,
-# seconds, proved, not proved, not checked (or "timeout").
+# seconds, the nodes proved, not proved, and the remarks (▫️), or "timeout".
 #   usage: sh cyprun.sh LIMIT name...
 # The copy gets a flags: line, so that the require: line written by xtext
 # (Require Import XText.<file>) finds the compiled example files.

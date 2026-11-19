@@ -36,10 +36,14 @@ skel D I (match T R Bs) J (match T1 R1 Bs1) :- !,
   skel D I T I1 T1, skel D I1 R I2 R1, skel-list D I2 Bs J Bs1.
 skel _ I X I Y :- copy X Y.
 
+% [skel-list D I Ts J Ss]: skel on each term of Ts, the numbering of the
+% applications going on from I to J
 pred skel-list i:list int, i:int, i:list term, o:int, o:list term.
 skel-list _ I [] I [].
 skel-list D I [T|Ts] J [S|Ss] :- skel D I T I1 S, skel-list D I1 Ts J Ss.
 
+% [holes Mask As Hs]: the arguments As, each one replaced by a hole where
+% the mask says tt (an implicit argument left out)
 pred holes i:list bool, i:list term, o:list term.
 holes [tt|M] [_|As] [_|Hs] :- !, holes M As Hs.
 holes [ff|M] [A|As] [A|Hs] :- !, holes M As Hs.
@@ -54,6 +58,7 @@ elab-back D T :-
       (if (typ T TT1) (coq.elaborate-skeleton S TT1 T1 ok) (coq.elaborate-skeleton S _ T1 ok))),
   ground_term T1, coq.unify-eq T T1 ok, !.
 
+% [ints I N L]: the integers I, I+1, ..., N-1
 pred ints i:int, i:int, o:list int.
 ints I N [] :- I >= N, !.
 ints I N [I|L] :- I1 is I + 1, ints I1 N L.
@@ -65,6 +70,9 @@ droppable T D N :-
   (if (N = 0 ; elab-back All T) (D = All)
       (if (xtext-implicit-choice-limit Max, N > Max) (D = []) (greedy T 0 N [] D))).
 
+% [greedy T I N D0 D]: the applications D (with D0) that can be dropped,
+% tried one at a time from I to N-1, each kept dropped if T still
+% elaborates back
 pred greedy i:term, i:int, i:int, i:list int, o:list int.
 greedy _ I N D D :- I >= N, !.
 greedy T I N D0 D :-
@@ -92,6 +100,7 @@ subst-kept K I _ (match T R Bs) J (match T1 R1 Bs1) :- !,
   subst-kept K I tt T I1 T1, subst-kept K I1 tt R I2 R1, subst-list K I2 tt Bs J Bs1.
 subst-kept _ I _ X I Y :- copy X Y.
 
+% [subst-list K I B Ts J Ss]: subst-kept on each term of Ts, numbering on
 pred subst-list i:list kept, i:int, i:bool, i:list term, o:int, o:list term.
 subst-list _ I _ [] I [].
 subst-list K I B [T|Ts] J [S|Ss] :- subst-kept K I B T I1 S, subst-list K I1 B Ts J Ss.
@@ -103,13 +112,16 @@ nodes I (app [H|As] as T) J [pr I T|L] :- imp-mask H _, !,
 nodes I (app L) J R :- !, nodes-list I L J R.
 % (under a binder, the applications are only counted)
 nodes I T J [] :- skel [] I T J _.
+% [nodes-list I Ts J L]: nodes on each term of Ts, numbering on
 pred nodes-list i:int, i:list term, o:int, o:list (pair int term).
 nodes-list I [] I [].
 nodes-list I [T|Ts] J L :- nodes I T I1 L1, nodes-list I1 Ts J L2, std.append L1 L2 L.
 
+% [kept-ph I K C]: the placeholder C of the application numbered I in K
 pred kept-ph i:int, i:list kept, o:term.
 kept-ph I [kp I C _|_] C :- !.
 kept-ph I [_|L] C :- kept-ph I L C.
+% [node-at I Ns A]: the application A numbered I in Ns
 pred node-at i:int, i:list (pair int term), o:term.
 node-at I [pr I A|_] A :- !.
 node-at I [_|L] A :- node-at I L A.
@@ -129,6 +141,9 @@ pp-keep T Keep S :- nodes 0 T _ Ns,
   pp-ph KA [] T S, !.
 pp-keep T _ S :- (@ppall! => pp T S).
 
+% [pp-ph KAs Acc T S]: T printed with each kept application of KAs written
+% in full: a fresh placeholder for each, T printed with them, then each
+% placeholder replaced by its application, @f a1 .. an
 pred pp-ph i:list (pair int term), i:list kept, i:term, o:string.
 pp-ph [pr K A|KAs] Acc T S :-
   Nm is "xtxtph" ^ {std.any->string K} ^ "q",
@@ -183,11 +198,14 @@ typ T Ty :- away-from-context T T1, coq.typecheck T1 Ty0 ok, !, beta-ty Ty0 Ty.
 pred type-formula i:role, i:term, o:string.
 type-formula Role T F :- typ T Ty, formula Role Ty F.
 
+% [var-name X S]: the name of the variable X of the context ("h" for an
+% anonymous one)
 pred var-name i:term, o:string.
 var-name X S :- decl X N _, coq.name->id N S0, !,
   if (S0 = "_") (S = "h") (S = S0).
 var-name X S :- def X N _ _, coq.name->id N S, !.
 
+% [gr-of T GR]: the global reference GR of the constant T
 pred gr-of i:term, o:gref.
 gr-of (global GR) GR.
 gr-of (pglobal GR _) GR.
@@ -197,6 +215,7 @@ pred head-name i:term, o:string.
 head-name X S :- name X, !, var-name X S.
 head-name H S :- gr-of H GR, coq.gref->id GR S.
 
+% [is-sym T]: T is a variable of the context or a global constant
 pred is-sym i:term.
 is-sym X :- name X, !.
 is-sym H :- gr-of H _.

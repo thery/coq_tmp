@@ -22,6 +22,8 @@
 pred with-conclusions i:list line, o:list line.
 with-conclusions Ls Ls1 :- std.map Ls with-conclusion Ls1.
 
+% [with-conclusion L L1]: the line L with its conclusion, its sub-lines
+% first; a line with a closing paragraph has one already
 pred with-conclusion i:line, o:line.
 with-conclusion (it S Ch) L :- with-conclusions Ch Ch1, node-with-conclusion S Ch1 L.
 with-conclusion (with-closing S Ch C) (with-closing S Ch1 C) :- with-conclusions Ch Ch1.
@@ -56,6 +58,7 @@ tagged-part (prooftext.formula-part C _ _) :- not (C = "").
 tagged-part (prooftext.tagged-name _ _).
 tagged-part (prooftext.by-part _).
 
+% [claim-part P]: the part P is a formula of class claim, a conclusion
 pred claim-part i:prooftext.text-part.
 claim-part (prooftext.formula-part "claim" _ _).
 
@@ -65,6 +68,8 @@ pred line-claim i:line, o:string.
 line-claim (it S _) F :- text-claim S F.
 line-claim (with-closing _ _ C) F :- text-claim C F.
 
+% [text-claim S F]: the first conclusion of the text S, written with its
+% tag, `C`{.claim}
 pred text-claim i:string, o:string.
 text-claim S F :-
   prooftext.text-parts S Ps, std.mem Ps (prooftext.formula-part "claim" C _), !,

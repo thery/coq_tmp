@@ -26,6 +26,8 @@ type jst string -> part.
 % an enumeration, "A, B and C", each element a list of parts
 type enum list (list part) -> part.
 
+% [word U S]: the phrase S of the key U in the language of the text (a
+% phrase of a role or another word of the lexicon); an error if it has none
 pred word i:string, o:string.
 word U S :- switch "lang" L, (write-role L U S _ ; write-word L U S), !.
 word U _ :- switch "lang" L, coq.error "xtext: no phrase for" U "in the vocabulary of" L.
@@ -56,6 +58,8 @@ place [wd U | Ps] Out :- after-use U, !,
   std.append In1 [wd U | Rest1] Out.
 place [P | Ps] [P | Qs] :- place Ps Qs.
 
+% [after-use U]: the phrase of key U stands after its formula in the
+% language of the text
 pred after-use i:string.
 after-use U :- switch "lang" L, word U S, phrase-after L S.
 
@@ -67,10 +71,14 @@ scope [tx "(" | Ps] D [tx "(" | In] Rest :- !, D1 is D + 1, scope Ps D1 In Rest.
 scope [tx ")" | Ps] D [tx ")" | In] Rest :- D > 0, !, D1 is D - 1, scope Ps D1 In Rest.
 scope [P | Ps] D [P | In] Rest :- scope Ps D In Rest.
 
+% [scope-end P]: the part P ends the scope of an after-phrase: a phrase of
+% a role, or a punctuation mark , . : ;
 pred scope-end i:part.
 scope-end (wd U) :- switch "lang" L, write-role L U _ _.
 scope-end (tx S) :- std.mem! [",", ".", ":", ";"] S.
 
+% [part-text P S]: the text of the part P: a phrase, a formula with its tag
+% or untagged, a name, a justification *X*{.just}, an enumeration
 pred part-text i:part, o:string.
 part-text (wd U) S :- word U S.
 part-text (tx S) S.
@@ -80,6 +88,8 @@ part-text (nm N) N.
 part-text (jst N) S :- prooftext.justification-name N S.
 part-text (enum Ls) S :- enumeration Ls Ps, text-of-parts Ps S.
 
+% [join-words Ss S]: the strings Ss joined by spaces, none before , . : ; )
+% nor after (
 pred join-words i:list string, o:string.
 join-words [] "".
 join-words [S] S :- !.
