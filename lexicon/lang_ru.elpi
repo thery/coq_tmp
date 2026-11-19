@@ -88,6 +88,7 @@ write-word "ru" "legend-var" "переменная".
 write-word "ru" "legend-hyp" "гипотеза".
 write-word "ru" "legend-claim" "утверждение".
 write-word "ru" "legend-fact" "факт".
+write-word "ru" "legend-by" "обоснование".
 write-word "ru" "legend-ok" "доказано".
 write-word "ru" "legend-ko" "не доказано".
 write-word "ru" "legend-todo" "оставлено блоку Proof".

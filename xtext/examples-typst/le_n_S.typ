@@ -23,4 +23,4 @@
   step("4", [#"We have "#claim($"S"\(n\) ≤ "S"\(m\)$)#" in all cases."], ()),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))

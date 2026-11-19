@@ -75,4 +75,4 @@
   ), status: "ko", message: "not proved: n / 2 <= n"),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),), statuses: (("ok", "proved"), ("ko", "not proved"), ("todo", "left to a Proof block"), ("none", "nothing to check"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),), statuses: (("ok", "proved"), ("ko", "not proved"), ("todo", "left to a Proof block"), ("none", "nothing to check"),))

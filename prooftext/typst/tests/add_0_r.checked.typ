@@ -25,4 +25,4 @@
   step("4", [#"These cases being exhaustive, we deduce "#claim($n + 0 = n$)#" "#by("Corelib.Init.Datatypes.nat_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"."], (), status: "ok"),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),), statuses: (("ok", "proved"), ("ko", "not proved"), ("todo", "left to a Proof block"), ("none", "nothing to check"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),), statuses: (("ok", "proved"), ("ko", "not proved"), ("todo", "left to a Proof block"), ("none", "nothing to check"),))

@@ -25,4 +25,4 @@
   step("4", [#"These cases being exhaustive, we deduce "#claim($"S"\(n + m\) = n + "S"\(m\)$)#" "#by("Corelib.Init.Datatypes.nat_ind", url: "https://rocq-prover.org/corelib/Corelib.Init.Datatypes.html#nat_ind")#"."], ()),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))

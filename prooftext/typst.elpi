@@ -184,7 +184,7 @@ optional-argument Name (some V) A :- A is Name ^ ": " ^ {prooftext.typst-string 
 % (Checked = tt); the words of the lexicon, legend-var, legend-ok, ...
 pred legend-typst i:string, i:bool, o:string.
 legend-typst Lang Checked Line :-
-  std.map ["var", "hyp", "claim", "fact"] (legend-pair Lang) Roles,
+  std.map ["var", "hyp", "claim", "fact", "by"] (legend-pair Lang) Roles,
   (if (Checked = tt)
      (std.map ["ok", "ko", "todo", "none"] (legend-pair Lang) Statuses,
       Tail is ", statuses: (" ^ {std.string.concat ", " Statuses} ^ ",)")

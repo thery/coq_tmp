@@ -25,4 +25,4 @@
   step("4", [#"We have "#claim($B ∨ A$)#" in all cases."], ()),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))

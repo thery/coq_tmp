@@ -25,7 +25,10 @@
 // black, the colour of the text; its role is given by a light background,
 // a tint of a colour of the Okabe-Ito palette, which stays distinct for
 // colour-blind readers: variables sky blue, hypotheses orange, claims
-// yellow, facts grey.  A formula without a role (plain) has none.  The
+// yellow, facts grey; the name in a justification (the paper's <j>)
+// reddish purple, darker, so that it stays apart from the variables and
+// the facts for red-green colour blindness.  A formula without a role
+// (plain) has none.  The
 // legend also shows each role's mark that needs no colour (claims a thin
 // frame, hypotheses a dashed underline, facts a dotted underline); the
 // formulas of the text have their background only.
@@ -36,6 +39,7 @@
   hyp: rgb("#f8d49c"),
   claim: rgb("#fcf6c6"),
   fact: rgb("#e3e3e3"),
+  by: rgb("#d9a9cb"),
   plain: none,
 )
 
@@ -46,6 +50,7 @@
   hyp: (line: "underline", dash: "dashed"),
   claim: (line: "frame", dash: "solid"),
   fact: (line: "underline", dash: "dotted"),
+  by: (line: "underline", dash: "solid"),
   plain: none,
 )
 
@@ -248,10 +253,11 @@
 // the lemma (url) or to the step that introduced the name X (target)
 #let by(text, url: none, target: none) = {
   let destination = if url != none { url } else if target != none { std.label(target) } else { none }
-  let shown = [#emph[by] #linked(destination, raw(text))]
+  // the name in the justification's colour (a role, "by", as a formula's)
+  let name = linked(destination, raw(text))
   on-html(
-    () => element("span", "by", shown),
-    () => std.text(fill: luma(90), shown))
+    () => element("span", "by", [#emph[by] #element("span", "formula by", name)]),
+    () => [#emph[by] #role-look("by", name)])
 }
 
 // ------------------------------------------------------------------

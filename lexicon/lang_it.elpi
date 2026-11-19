@@ -88,6 +88,7 @@ write-word "it" "legend-var" "variabile".
 write-word "it" "legend-hyp" "ipotesi".
 write-word "it" "legend-claim" "affermazione".
 write-word "it" "legend-fact" "fatto".
+write-word "it" "legend-by" "giustificazione".
 write-word "it" "legend-ok" "dimostrato".
 write-word "it" "legend-ko" "non dimostrato".
 write-word "it" "legend-todo" "lasciato a un blocco Proof".

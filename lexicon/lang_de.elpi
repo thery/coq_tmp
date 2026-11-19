@@ -77,6 +77,7 @@ write-word "de" "legend-var" "Variable".
 write-word "de" "legend-hyp" "Annahme".
 write-word "de" "legend-claim" "Behauptung".
 write-word "de" "legend-fact" "Tatsache".
+write-word "de" "legend-by" "Begründung".
 write-word "de" "legend-ok" "bewiesen".
 write-word "de" "legend-ko" "nicht bewiesen".
 write-word "de" "legend-todo" "einem Proof-Block überlassen".

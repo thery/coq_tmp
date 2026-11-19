@@ -115,6 +115,7 @@ write-word "en" "legend-var" "variable".
 write-word "en" "legend-hyp" "hypothesis".
 write-word "en" "legend-claim" "claim".
 write-word "en" "legend-fact" "fact".
+write-word "en" "legend-by" "justification".
 write-word "en" "legend-ok" "proved".
 write-word "en" "legend-ko" "not proved".
 write-word "en" "legend-todo" "left to a Proof block".

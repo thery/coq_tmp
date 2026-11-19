@@ -74,6 +74,7 @@ write-word "ko" "legend-var" "변수".
 write-word "ko" "legend-hyp" "가정".
 write-word "ko" "legend-claim" "주장".
 write-word "ko" "legend-fact" "사실".
+write-word "ko" "legend-by" "근거".
 write-word "ko" "legend-ok" "증명됨".
 write-word "ko" "legend-ko" "증명되지 않음".
 write-word "ko" "legend-todo" "Proof 블록에 남김".

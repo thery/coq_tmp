@@ -159,7 +159,7 @@ Elpi Accumulate lp:{{
     expect-in "name after a fact" T "#name(\"a\", target: \"statement:a\")",
     expect-in "a tactic" T "#by(\"tauto\")",
     expect-in "legend" T
-      "#legend(((\"var\", \"variable\"), (\"hyp\", \"hypothesis\"), (\"claim\", \"claim\"), (\"fact\", \"fact\"),))",
+      "#legend(((\"var\", \"variable\"), (\"hyp\", \"hypothesis\"), (\"claim\", \"claim\"), (\"fact\", \"fact\"), (\"by\", \"justification\"),))",
     prooftext.legend-typst "fr" tt LegendFr,
     expect-in "legend in French, checked" LegendFr "(\"hyp\", \"hypothèse\")",
     expect-in "legend of the statuses" LegendFr "statuses: ((\"ok\", \"prouvé\")".
