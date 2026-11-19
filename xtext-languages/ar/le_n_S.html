@@ -1,0 +1,104 @@
+<!DOCTYPE html><html lang="ar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>/* Alignment */
+mtable.right-align mtd,
+mtable mtd.right-align,
+mtable.left-align mtd.right-align,
+mtable.aligned mtd:nth-child(odd) {
+  justify-items: end;
+  text-align: right;
+}
+mtable.cases mtd,
+mtable.left-align mtd,
+mtable mtd.left-align,
+mtable.aligned mtd:nth-child(even),
+math:is(:not([display])) > mtable.multiline-equation mtd {
+  justify-items: start;
+  text-align: left;
+}
+mtable.cases mtd,
+mtable.aligned mtd,
+mtable mtd.flushed,
+mtable mtd.left-flush {
+  padding-left: 0;
+}
+mtable.cases mtd,
+mtable.aligned mtd,
+mtable mtd.flushed,
+mtable mtd.right-flush {
+  padding-right: 0;
+}
+
+/* Tables */
+mtable {
+  math-style: inherit;
+}
+mtd {
+  math-depth: auto-add;
+  math-style: compact;
+  math-shift: compact;
+}
+
+/* Equations */
+mtable.multiline-equation mtd {
+  math-depth: inherit;
+  math-style: inherit;
+  math-shift: inherit;
+  padding: 0;
+}
+math > mtable.multiline-equation mtr:not(:last-child) mtd {
+  padding-bottom: 0.5em;
+}
+
+/* Fractions */
+mfrac {
+  padding-inline: 0;
+  margin-inline: 0.1em;
+}
+
+/* Accents */
+mover[accent="true" i] > :first-child {
+  font-feature-settings: "dtls";
+}
+mover.dotted[accent="true" i] > :first-child {
+  font-feature-settings: "dtls" 0;
+}
+
+/* Other rules for scriptlevel, displaystyle and math-shift */
+munder > :nth-child(2),
+munderover > :nth-child(2) {
+  math-shift: compact
+}
+munder[accentunder="true" i] > :not(:first-child),
+mover[accent="true" i] > :not(:first-child) {
+  math-depth: inherit;
+  math-style: inherit;
+  math-shift: inherit;
+}</style></head><body><style>.proof-text { font-family: 'Libertinus Serif', 'Noto Serif', serif; max-width: 48em; margin: 2em auto; padding: 0 1em; line-height: 1.6; }
+.proof-text code { font-family: 'DejaVu Sans Mono', monospace; font-size: 0.9em; }
+.proof-text math { font-family: 'Latin Modern Math', 'STIX Two Math', math; }
+.proof-text header h1 { font-size: 1.5em; margin-bottom: 0.3em; }
+.proof-text table.fields { font-size: 0.8em; color: #505050; border-bottom: 1px solid #b4b4b4; padding-bottom: 0.5em; width: 100%; }
+.proof-text table.fields th { text-align: start; padding-inline-end: 0.8em; vertical-align: top; width: 1%; white-space: nowrap; }
+.formula { border-radius: 2px; padding: 0 1px; }
+.formula.fact { text-decoration: underline dotted; }
+.name { color: #9a5b00; font-size: 0.9em; }
+.by { color: #5a5a5a; }
+ul.steps { list-style: none; padding-inline-start: 1.4em; margin: 0; }
+.proof-text > ul.steps { padding-inline-start: 0; }
+li.step, p.statement { margin: 0.5em 0; }
+.mark { display: inline-block; width: 1.3em; font-family: 'DejaVu Sans', sans-serif; font-weight: bold; color: #6e6e6e; }
+.number { color: #828282; font-size: 0.75em; margin-inline-end: 0.6em; }
+.conditions { color: #d9822b; font-size: 0.8em; }
+.message { margin: 0.4em 0 0 1.3em; padding: 0.35em 0.6em; font-size: 0.85em; border-inline-start: 2px solid; border-radius: 2px; }
+.formula.var { color: #1f5fa8; }
+.formula.hyp { color: #9a5b00; background: #fdf1dc; }
+.formula.claim { color: #1d7a33; background: #e3f4e6; }
+.formula.fact { color: #6b4f96; }
+.formula.plain { color: #333333; }
+.mark.ok { color: #1d7a33; }
+.message.ok { border-color: #1d7a33; background: #e8f2eb; }
+.mark.ko { color: #c62828; }
+.message.ko { border-color: #c62828; background: #f9eaea; }
+.mark.todo { color: #d9822b; }
+.message.todo { border-color: #d9822b; background: #fbf3ea; }
+.mark.none { color: #9e9e9e; }
+.message.none { border-color: #9e9e9e; background: #f5f5f5; }</style><div class="proof-text" lang="ar" dir="rtl"><header><h1><code>le_n_S'</code></h1><table class="fields"><tr><th>require</th><td><code>From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.</code></td></tr><tr><th>lang</th><td><code>ar</code></td></tr><tr><th>by</th><td><code>tauto | congruence | lia | firstorder | auto</code></td></tr></table></header><p class="statement">لتكن <span class="formula var"><math><mi>𝑛</mi><mo>,</mo><mi>𝑚</mi><mo>∈</mo><mi>ℕ</mi></math></span>. لنفرض أن <span class="formula hyp"><math><mi>𝑛</mi><mo>≤</mo><mi>𝑚</mi></math></span> <span class="name">(<code>H</code>)</span>. سنثبت أن <span class="formula claim"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑚</mi><mo stretchy="false">)</mo></math></span>.</p><ul class="steps"><li class="step"><span class="mark bullet">•</span>سنثبت أن <span class="formula fact"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑚</mi><mo stretchy="false">)</mo></math></span> بالاستقراء على <span class="formula fact"><math><mi>𝑛</mi><mo>≤</mo><mi>𝑚</mi></math></span> <span class="name">(<code>H</code>)</span> (le, le_ind):</li><li class="step"><span class="mark bullet">•</span>الحالة 1 (الأساس): سنثبت أن <span class="formula claim"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo stretchy="false">)</mo></math></span>.<ul class="steps"><li class="step"><span class="mark bullet">•</span>حسب تعريف le (le_n), لدينا <span class="formula claim"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo stretchy="false">)</mo></math></span> <span class="by"><em>by</em> <code>Corelib.Init.Peano.le_n</code></span>.</li></ul></li><li class="step"><span class="mark bullet">•</span>الحالة 2 (الاستقرائية): سنثبت أن <span class="formula claim"><math><mo>∀</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo>∈</mo><mi>ℕ</mi><mo>,</mo><mi>𝑛</mi><mo>≤</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo stretchy="false">→</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo form="postfix" stretchy="false">)</mo><mo stretchy="false">→</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo form="postfix" stretchy="false">)</mo><mo stretchy="false">)</mo></math></span>.<ul class="steps"><li class="step"><span class="mark bullet">•</span>لنختر اختياريا <span class="formula var"><math><msub><mi>𝑚</mi><mn>0</mn></msub><mo>∈</mo><mi>ℕ</mi></math></span>; لنفرض أن <span class="formula hyp"><math><mi>𝑛</mi><mo>≤</mo><msub><mi>𝑚</mi><mn>0</mn></msub></math></span> <span class="name">(<code>H0</code>)</span> و حسب فرضية الاستقراء <span class="formula hyp"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo stretchy="false">)</mo></math></span> <span class="name">(<code>IH</code>)</span>.<ul class="steps"><li class="step"><span class="mark bullet">•</span>حسب تعريف le (le_S) مع الشاهد <span class="formula fact"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo stretchy="false">)</mo></math></span>, من <span class="formula fact"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo stretchy="false">)</mo></math></span> <span class="name">(<code>IH</code>)</span> نستنتج أن <span class="formula claim"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><msub><mi>𝑚</mi><mn>0</mn></msub><mo form="postfix" stretchy="false">)</mo><mo stretchy="false">)</mo></math></span> <span class="by"><em>by</em> <code>Corelib.Init.Peano.le_S</code></span>.</li></ul></li></ul></li><li class="step"><span class="mark bullet">•</span>لدينا <span class="formula claim"><math><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑛</mi><mo form="postfix" stretchy="false">)</mo><mo>≤</mo><mtext>S</mtext><mo form="prefix" stretchy="false">(</mo><mi>𝑚</mi><mo stretchy="false">)</mo></math></span> في جميع الحالات.</li></ul></div></body></html>
