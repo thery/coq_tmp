@@ -14,6 +14,7 @@ name.  The words of the texts (the phrases of each language) are in the
 
 ```coq
 From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
+From Lexicon Extra Dependency "lang_en.elpi" as lex_en.   (* and the other tables *)
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
@@ -23,16 +24,19 @@ From ProofText Extra Dependency "checked.elpi" as pt_checked.
 From ProofText Extra Dependency "maths-table.elpi" as pt_maths_table.
 From ProofText Extra Dependency "maths.elpi" as pt_maths.
 From ProofText Extra Dependency "maths-typst.elpi" as pt_maths_typst.
+From ProofText Extra Dependency "links.elpi" as pt_links.
 From ProofText Extra Dependency "typst.elpi" as pt_typst.
-Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_names pt_tactics
-  pt_checked pt_maths_table pt_maths pt_maths_typst pt_typst.
+Elpi Accumulate File lex_core lex_en pt_header pt_document pt_formulas pt_names pt_tactics
+  pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 ```
 
 with `-Q prooftext ProofText` and `-Q lexicon Lexicon`.  `lexicon.elpi`
 comes first (`formulas.elpi` uses its roles), `header.elpi` before
 `document.elpi`, `document.elpi` before `checked.elpi`, the table of
 notations, `maths-table.elpi`, before the printer, `maths.elpi`, before its
-Typst writer, `maths-typst.elpi`, and `typst.elpi` last.  A tool loads only the files it uses.  Every name is in the namespace `prooftext`
+Typst writer, `maths-typst.elpi`, then `links.elpi` and `typst.elpi`
+last (they use the tables of the lexicon, `lang_xx.elpi`, for the words of
+the texts and of the legend).  A tool loads only the files it uses.  Every name is in the namespace `prooftext`
 (`prooftext.write-document`, `prooftext.step`, ...), so that it does not
 meet the names of the tools.
 
@@ -101,6 +105,12 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   mathematics), `write-typst-in Style D Text` (`maths` or `code`), and
   `write-as File D Text` (Typst for a file `.typ`, Markdown otherwise);
   see "The PDF of a proof text";
+- `links.elpi`: the links of the PDF and of the web page: `name-label
+  Where Name Label`, the label of the step that introduces a name,
+  `documentation-url Name Url`, the documentation of a lemma, from
+  `library-documentation Root Base`, `text-pieces Text Pieces`, the words
+  of a text, and `lexicon-words Lang Words`, the words of the lexicon,
+  which are never names; see "Links";
 - `maths-table.elpi`, `maths.elpi`, `maths-typst.elpi`: the formulas as
   mathematics, the table of notations, the printer of Rocq terms and its
   Typst writer; see "Formulas as mathematics";
@@ -175,6 +185,8 @@ prooftext/pdf.sh --code proof.md                      # the formulas as Rocq cod
 prooftext/pdf.sh --html proof.md                      # an HTML page, proof.html, not a PDF
 prooftext/pdf.sh --flags "-R xtext XText" proof.md    # a load path for the require line
 prooftext/pdf.sh --source proof.md                    # the Typst source only
+prooftext/pdf.sh --links '[["index", "../index.html"]]' proof.typ   # links above the text (gallery.sh)
+sh prooftext/gallery.sh ~/gallery                      # every text of the repository, with an index
 ```
 
 `pdf.sh` writes the Typst source of each text next to it (`proof.md` gives
@@ -220,20 +232,23 @@ A Typst source (xtext's `and_swap`, shortened):
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H")#". We prove "#claim($B ∧ A$)#"."]
+#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H", label: "statement:H")#". We prove "#claim($B ∧ A$)#"."]
 
 #steps((
-  step("1", [#"Going back to the definition of and (match) in "#fact($A ∧ B$)#" "#name("H")#", we prove "#claim($B ∧ A$)#":"], (
-    step("1.1", [#"Assume "#hyp($A$)#" "#name("a")#" and "#hyp($B$)#" "#name("b")#"."], (
-      step("1.1.1", [... #claim($B ∧ A$)#" "#by("Corelib.Init.Logic.conj")#"."], ()),
+  step("1", [#"Going back to the definition of and (match) in "#fact($A ∧ B$)#" "#name("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
+    step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#"."], (
+      step("1.1.1", [#"By definition of and ("#cited("conj", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), ... "#by("Corelib.Init.Logic.conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"."], ()),
     )),
   )),
 ))
+
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),))
 ```
 
 The text of a statement or of a step is cut into its parts: the formulas
 with their roles, the name `(h)` given to a formula (right after it), the
-justification `*by X*`, and the plain text between them.  Each part is
+justification `*by X*`, and the plain text between them, where the names
+and the lemmas are links (`named`, `cited`; see "Links").  Each part is
 written as a Typst string, so that no character of the text is read as
 Typst markup; a formula is Typst maths, `$...$`, made by the printer, or,
 as code, a string: `#claim("B /\\ A")`.
@@ -245,19 +260,34 @@ as code, a string: `#claim("B /\\ A")`.
   its value as code.
 - **Formulas** are mathematics (∀ n ∈ ℕ, n + 0 = n), printed from their
   Rocq terms (see "Formulas as mathematics"); with `--code`, or when a
-  formula does not elaborate, Rocq code in a monospace font.  Each role
-  has its own style, the same in every text:
+  formula does not elaborate, Rocq code in a monospace font.  The text of
+  every formula is black; its role is given twice, by a light background
+  and by a mark that needs no colour, so that the roles can be told apart
+  by colour-blind readers and in black and white:
 
-  | role | class | style |
-  |---|---|---|
-  | variable | `{.var}` | blue |
-  | hypothesis | `{.hyp}` | amber, on a light amber background |
-  | claim | `{.claim}` | green, on a light green background |
-  | fact (a mention) | `{.fact}` | purple, with a dotted underline |
-  | no class | | dark grey |
+  | role | class | background | mark |
+  |---|---|---|---|
+  | variable | `{.var}` | light sky blue `#d4ebf9` | none |
+  | hypothesis | `{.hyp}` | light orange `#f8d49c` | a dashed line under it |
+  | claim | `{.claim}` | light yellow `#fcf6c6` | a thin frame |
+  | fact (a mention) | `{.fact}` | light grey `#e3e3e3` | a dotted line under it |
+  | no class | | none | none |
 
-  The name `(h)` of a formula is amber.  The justification is grey,
-  *by* `X`.
+  The backgrounds are light tints of the Okabe-Ito palette (sky blue,
+  orange, yellow; grey), whose colours stay apart for the common kinds
+  of colour blindness; there is no red and green pair.  Orange and yellow
+  look alike for red-green colour blindness: the hypothesis's tint is
+  darker, and the marks differ.  The page was checked through the
+  simulations of protanopia, deuteranopia and tritanopia (Machado et al.'s
+  matrices, ImageMagick's `-color-matrix`, on the PDF and on the web
+  page of `drinker`): the four roles stay distinct.  In the PDF a formula
+  is a box (Typst's highlights and underlines do not reach the symbols of
+  maths); a formula wider than its line is a box as wide as the line,
+  where it breaks.
+
+  The name `(h)` of a formula is in black, in monospace.  The
+  justification is grey, *by* `X`.  The links are blue (Okabe-Ito blue,
+  `#0072b2`): a name and a lemma that link somewhere (see "Links").
 - **The steps** are one paragraph each, indented by their depth, with a
   bullet.  A long step wraps under its own text, not under the bullet.
 - **A text checked by cyp** has a coloured mark in place of the bullet:
@@ -271,6 +301,95 @@ as code, a string: `#claim("B /\\ A")`.
 - **The language** is the `lang` field.  Arabic is written from right to
   left: the bullets, the indentation and the wrapped lines are on the
   right; formulas stay left to right.
+
+### Links
+
+The PDF and the web page have the same links, made with Typst's `link`
+and `label` (`links.elpi`, `typst.elpi`, the template's `linked`).  There
+are three kinds; the writer finds the first two while it reads the text,
+with no table of names.
+
+1. **A name and its uses.**  A name given to a formula, `` `A`{.hyp}
+   (h) `` (a hypothesis, or a claim that a later step names, `(P1)`),
+   introduces it: the writer gives it a label, `statement:h` or `1.2:h`
+   (the number of its step).  Its uses link back to it: the name after a
+   fact, `` `A`{.fact} (h) `` (the hypothesis the fact is), a word of the
+   text ("By h4 we have", "Applying h2 to h4 and P1", "By IH we have")
+   and a justification, `*by h*`.  A name holds where a declaration does
+   (a `Let`): in the rest of its step, the step's sub-steps and the steps
+   after it in its list; the names of the statement in the whole proof;
+   the latest introduction wins.  A word is a name only when it is not a
+   word of the lexicon of the text's language, so that "a" in French
+   "il y a" never links to a hypothesis `(a)`.  This is the same for the
+   texts of xtext and for the texts checked by cyp: both are read by
+   `read-document`.
+2. **A lemma and its documentation.**  A justification, `*by
+   Corelib.Init.Datatypes.nat_ind*`, and a word of the text that Rocq
+   locates as a lemma, a constructor or a type ("Applying f_equal_nat",
+   "(nat, nat_ind)") link to its entry in the online documentation of
+   its library, when the library has one: the corelib and the stdlib
+   (`library-documentation`), at
+   `https://rocq-prover.org/corelib/<file>.html#<name>` and
+   `https://rocq-prover.org/stdlib/<file>.html#<name>`.  The file is the
+   library that holds the name (`coq.modpath->library`), the anchor the
+   rest of its full name: `Nat.add_succ_r` of `Stdlib.Arith.PeanoNat` is
+   `.../stdlib/Stdlib.Arith.PeanoNat.html#Nat.add_succ_r`.  A name is
+   located in the context of the command `Typst`, after the `require`
+   line of the text (with `--code`, without it: only the names that the
+   prelude has, or given in full).  A name of another library (a lemma
+   of the user, of xtext's examples) has no link: the gallery does not
+   know where its source is published.  A tactic (`*by lia*`) has none.
+   Another library adds its documentation with a clause, as the
+   notations are added: `prooftext.library-documentation "MyLib"
+   "https://.../"`, if its pages follow rocqdoc's scheme.
+3. **The pages of a gallery** (`gallery.sh`): see "The gallery".
+
+The addresses without a version, `rocq-prover.org/corelib/...` and
+`rocq-prover.org/stdlib/...`, lead to the latest documentation (checked
+with `curl` in November 2026: `/corelib/` redirects to `doc/V9.2.0/corelib/`,
+`/stdlib/` to `doc/V9.1.0/stdlib/`).  The addresses with the version of
+this machine do not all exist: Rocq 9.1.1's corelib does
+(`doc/V9.1.1/corelib/`), its stdlib 9.2.0's does not
+(`doc/V9.2.0/stdlib/` is a 404).  The pages have one anchor per name
+defined in the file (`id="eq_refl"`, `id="nat_ind"`, `id="Nat.eq_equiv"`;
+seen in the pages of `Corelib.Init.Logic`, `Corelib.Init.Datatypes`,
+`Corelib.Init.Peano`, `Stdlib.Reals.RIneq`, `Stdlib.Arith.PeanoNat`).  A
+name that a file gets from a functor (`Nat.add_succ_r`, `Nat.lt_eq_cases`
+in `PeanoNat`, made by `Include`) has no anchor: its link leads to the
+top of the page of its file.
+
+In the PDF, a link to a name is an internal link (a destination), a link
+to the documentation or to another page an address.  In the web page,
+Typst 0.15's HTML export writes a labelled place as an element with an
+`id` of its own (`id="loc-3"`, not the label's name) and a link to it as
+`href="#loc-3"`; links to addresses are `<a href>`.  Labels are therefore
+good within a page, not as addresses from other pages.
+
+### The legend
+
+At the end of the text, a small legend recalls the look of the roles:
+the words variable, hypothesis, claim and fact, each in the look of its
+role, and, for a text checked by cyp, the status marks with their
+meanings (✔ proved, ✘ not proved, ◆ left to a Proof block, ▫ nothing to
+check).  Its words are in the language of the text: the uses
+`legend-var`, ..., `legend-none` of the lexicon, in its ten languages
+(`write-word`).  In the web page it is a `footer class="legend"`.
+
+### The gallery
+
+`sh prooftext/gallery.sh OUT` makes the web page and the PDF of each text
+of the repository, and an index (the published gallery,
+https://thery.github.io/coq_tmp/txt/).  It first writes the Typst source
+of every text, then compiles each page with its links, given on the
+command line (`pdf.sh --links`, Typst's `--input links=...`, the
+template's `page-links`), above the text: the index, the same text in the
+other languages (by their codes, `fr`, `ar`, ...), and the same text
+checked by cyp ("checked by cyp") or not checked ("not checked"), when
+the gallery has them.  The same text is the same file name, without
+`.checked`, in any section of the gallery; its language is the `lang`
+field of its header.  A link without an extension leads to a page of the
+same kind: the web page links to web pages, the PDF to PDFs (relative
+addresses, which a browser's PDF viewer follows).
 
 ### Fonts
 
@@ -300,8 +419,10 @@ template has an HTML version of each of its functions (`on-html`): a
 formula is a `span` with the classes `formula` and its role (`formula
 claim`), a step an item of nested lists (`ul class="steps"`, `li
 class="step"`), a status a `span class="mark ok"`, cyp's message a `div
-class="message ko"`, and a small style sheet, made from the template's
-colours, gives them their look.  The page needs nothing else: no
+class="message ko"`, the legend a `footer class="legend"`, the links of
+a gallery a `nav class="gallery"`, and a small style sheet, made from the
+template's colours, gives them their look (the mark of a role is a
+border: browsers draw no text decoration under MathML).  The page needs nothing else: no
 JavaScript, no file beside it.
 
 What Typst's HTML export does not do, so that the template does it
@@ -309,8 +430,9 @@ itself:
 
 - the layout of the PDF (grids, padding, the page): ignored, with a
   warning each time; hence the lists and the style sheet;
-- the colours of text (`text(fill: ...)`), highlights and underlines:
-  dropped; hence the classes;
+- the colours of text (`text(fill: ...)`), highlights, underlines and
+  boxes: dropped; hence the classes;
+- labels: kept, but as ids of Typst's own (`loc-N`), see "Links";
 - the style sheet goes in the body (`html.elem("style")`), as Typst gives
   no way to add to the `head`; browsers accept it;
 - Chrome draws Typst's stretchy parentheses `(x)` with wide gaps; the
@@ -319,11 +441,12 @@ itself:
 
 The page was looked at in Chrome (headless screenshots) for a text of
 xtext, a checked text with its statuses and messages, and the unit tests
-of the printer.  Firefox was not tried.
+of the printer; with the links and the new look of the roles, for
+`drinker`, `or_commut` in French and the pages of a small gallery.  Firefox was not tried.
 
 ### Tests
 
-`sh prooftext/typst/check.sh` (about 50 s, with cyp built):
+`sh prooftext/typst/check.sh` (about 80 s, with cyp built; needs `qpdf`):
 
 1. for the ten texts that xtext writes in Typst (`xtext/examples-typst/`:
    five in English, one each in French, Arabic, Chinese, Russian and
@@ -344,10 +467,23 @@ of the printer.  Firefox was not tried.
    they have MathML and the classes of the roles and statuses;
 7. the round, when cyp is built: xtext's `or_commut` checked by cyp, then
    the PDF of the checked text; cyp's `sqrt_square` (real numbers)
-   checked, then its PDF and its HTML page.
+   checked, then its PDF and its HTML page;
+8. the links, on a small gallery of four pages built in
+   `typst/tests/out/gallery` (`ABCD` and `or_commut` in English,
+   `or_commut` in French and checked by cyp): the names of `ABCD` link
+   to their steps (every `href="#loc-N"` of the page has its `id`, the
+   PDF has destinations), a justification and a lemma of the text link
+   to their documentation, each page links to the index, to the same
+   text in French and checked by cyp, and back (in the HTML and in the
+   PDF), and the page has its legend.
 
 `check.v` tests the reader (places, a text read and written back), the
-marks of a checked step, the parts of a text and the Typst strings.
+marks of a checked step, the parts of a text and the Typst strings, and
+the links: the labels of the names, their uses in the text, after a
+fact and in a justification, a name out of its scope and a word of the
+lexicon (not linked), the documentation of a lemma of the corelib and of
+the stdlib (`Nat.lt_eq_cases`), a tactic (no link), and the legend in
+English and French.
 
 ### Limits
 
@@ -364,6 +500,17 @@ marks of a checked step, the parts of a text and the Typst strings.
   Arabic, Chinese, Russian and Korean texts, two checked texts, and the
   texts in mathematics of the tests.  No reader of these languages has
   reviewed them.
+- Links: a name is a word between spaces and ASCII punctuation; in a
+  text written without spaces (Chinese by hand, "由h4得") a name glued to
+  its neighbours is not found (xtext puts spaces around names in every
+  language).  A word of the lexicon is never a name, even when it is one
+  (`and` in "the definition of and" is not linked to `Logic.and`); a word
+  of a text written by hand that is not in the lexicon and is the name of
+  a constant of the corelib or the stdlib (`not`, `pred`) is linked.  A
+  lemma known only by a short name that the `require` line does not
+  import (`subrelation_proper` in `Nat.le_trans`) is not linked.
+- A formula wider than its line is a box of its own lines in the PDF (a
+  box, unlike a highlight, does not break inside a paragraph).
 
 ## Formulas as mathematics
 

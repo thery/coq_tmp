@@ -187,8 +187,10 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 (the same document, written by prooftext's `write-typst`), and
 `../prooftext/pdf.sh foo.typ` makes `foo.pdf`.  `../prooftext/pdf.sh
 examples/foo.md` does both steps from a Markdown text.  The PDF shows each
-role of a formula in its own style, the steps indented as in the list, and
-the header as a small title block; a text in Arabic is laid out from right
+role of a formula in its own style (and a legend), the steps indented as
+in the list, and the header as a small title block; the names (h) link to
+the steps that introduced them, the lemmas of the corelib and the stdlib
+to their documentation; a text in Arabic is laid out from right
 to left.  The formulas are mathematics (∀ n ∈ ℕ, n + 0 = n), printed from
 their Rocq terms by prooftext's table of notations (`pdf.sh --code` keeps
 the Rocq code; `pdf.sh --html` makes an HTML page); `reals.v` sets the
