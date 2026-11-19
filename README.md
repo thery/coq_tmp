@@ -14,8 +14,9 @@ papers (in development):
   paper) is kept in a private branch.  After *Colouring proofs: a
   lightweight approach to adding formal structure to proofs* (UITP).
 - [xtext/](xtext/README.md): **text from proofs**.  A Rocq-Elpi command,
-  `Explain foo.`, that writes the proof term of `foo` as a coarse but
-  faithful text in cyp's format.  After Coscoy, Kahn and Théry,
+  `ExtractText foo.`, that writes the proof term of `foo` as a coarse but
+  faithful text: printed as plain text, written to a file (`ExtractText
+  foo to "foo.md".`) in cyp's format.  After Coscoy, Kahn and Théry,
   *Extracting Text from Proofs* (TLCA 1995), and Yann Coscoy's thesis
   (2000): its staged translation (chapters 2-4, up to the named
   intermediate results) and inductive types ([THESIS.md](xtext/THESIS.md)).
@@ -23,15 +24,18 @@ papers (in development):
   libraries the two tools share, the words of proofs in each language and
   the format of proof texts.
 - **The PDF of a proof text**, with Typst: `prooftext/pdf.sh proof.md`, for
-  a text written by xtext (also `Explain foo to "foo.typ".`) or checked by
+  a text written by xtext (also `ExtractText foo to "foo.typ".`) or checked by
   cyp.  The formulas are mathematics (∀ n ∈ ℕ, n + 0 = n; fractions,
   powers, √, |x|), printed from their Rocq terms by a table of notations
   that a library can extend; `--code` keeps the Rocq code, `--html` makes
   an HTML page (MathML) instead of the PDF.  Each role of a formula has its
   own light background and a mark readable without colour (a frame, a
-  dashed or dotted line), with a legend at the end; the steps are indented
-  as in the list, and cyp's statuses are coloured marks; Arabic is laid out
-  from right to left.  The PDF and the page have links: a name (h) and its
+  dashed or dotted line), with a legend at the end; a structured text keeps
+  its list, a free text its paragraphs (no structure shown, decision 7 of
+  the [proposal](proposal/PROPOSAL.md)), and cyp's statuses are coloured
+  marks; on the web page, the pointer over a node highlights what it rests
+  on (its conclusion, hypotheses, subnodes and the formulas its names point
+  to); Arabic is laid out from right to left.  The PDF and the page have links: a name (h) and its
   uses lead to the step that introduced it, a lemma of the corelib or the
   stdlib to its documentation, and the pages of the gallery
   (`prooftext/gallery.sh`) to each other

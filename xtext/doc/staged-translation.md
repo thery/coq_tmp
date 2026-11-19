@@ -33,7 +33,7 @@ the direct writer; their subproofs come back to the stages.
 The direct translation (`XTEXT_TRANSLATION=direct`, texts in
 `examples-direct/`) writes a proof in one walk.  Its contraction of
 application steps (`applications.elpi`) is not the thesis's: a merge is
-kept when a tactic (`xtext-guard-tactic`, `Explain.v`) proves the merged
+kept when a tactic (`xtext-guard-tactic`, `ExtractText.v`) proves the merged
 step from its new premises, and the tactic's name becomes the step's
 justification.
 

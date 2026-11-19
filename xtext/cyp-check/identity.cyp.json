@@ -1,1 +1,1 @@
-{"steps":[{"id":"0","first":8,"last":8,"status":"ok","formulas":[{"role":"var","text":"A : Prop"},{"role":"hyp","text":"A"},{"role":"claim","text":"A"}],"message":""},{"id":"1","first":10,"last":10,"status":"ok","formulas":[{"role":"claim","text":"A"}],"message":""}]}
+{"steps":[{"id":"0","first":8,"last":10,"status":"ok","formulas":[{"role":"var","text":"A : Prop"},{"role":"hyp","text":"A"},{"role":"claim","text":"A"}],"message":""},{"id":"1","first":10,"last":10,"status":"ok","formulas":[{"role":"claim","text":"A"}],"message":""}]}

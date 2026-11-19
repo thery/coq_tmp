@@ -1,0 +1,10 @@
+<p>Proposition <n>praeclarum</n>:
+Let <v>x</v>, <v>y</v>, <v>z</v>, <v>t</v> four propositions,
+ If <h>x -> z</h> and <h>y -> t</h> then <c>(x and y) -> (z and t)</c>
+  <p>Suppose <h>x and y</h>
+     <p><p> we have <c>x</c></p>, so <j>by <f>x -> z</f></j>, we get <c>z</c></p>
+     <p><p> we have <c>y</c></p>, so <j>by <f>y -> t</f></j>, we get <c>t</c></p>
+   Altogether we have <c>z and t</c>
+</p>
+</p>
+     

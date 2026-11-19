@@ -1,1 +1,1 @@
-{"steps":[{"id":"0","first":8,"last":8,"status":"ok","formulas":[{"role":"var","text":"n m : nat"},{"role":"claim","text":"n + S m = S (n + m)"}],"message":""},{"id":"1","first":10,"last":10,"status":"ok","formulas":[{"role":"claim","text":"n + S m = S (n + m)"}],"message":""}]}
+{"steps":[{"id":"0","first":8,"last":10,"status":"ok","formulas":[{"role":"var","text":"n m : nat"},{"role":"claim","text":"n + S m = S (n + m)"}],"message":""},{"id":"1","first":10,"last":10,"status":"ok","formulas":[{"role":"claim","text":"n + S m = S (n + m)"}],"message":""}]}

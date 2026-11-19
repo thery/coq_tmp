@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: ar
-flags: -R /home/thery/git/coq_tmp/xtext XText
+flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,11 +9,12 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ ليكن `b : bool`{.var}. سنثبت أن `b = true \/ b = false`{.claim}.
 
-- ▫️ سنثبت أن `b = true \/ b = false`{.fact} بدراسة الحالات على `b`{.fact} (bool, match):
-- ✅ الحالة 1: سنثبت أن `true = true \/ true = false`{.claim}.
-  - ✅ حسب تعريف eq (eq_refl), لدينا `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
-  - ✅ حسب تعريف or (or_introl), لدينا `true = true \/ true = false`{.claim} *by Corelib.Init.Logic.or_introl*.
-- ✅ الحالة 2: سنثبت أن `false = true \/ false = false`{.claim}.
-  - ✅ حسب تعريف eq (eq_refl), لدينا `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
-  - ✅ حسب تعريف or (or_intror), لدينا `false = true \/ false = false`{.claim} *by Corelib.Init.Logic.or_intror*.
-- ✅ هذه الحالات شاملة, نستنتج أن `b = true \/ b = false`{.claim}.
+- ✅ سنثبت أن `b = true \/ b = false` بدراسة الحالات على `b` (bool, match):
+  - ✅ الحالة 1: سنثبت أن `true = true \/ true = false`{.claim}.
+    - ✅ حسب تعريف eq (*eq_refl*{.just}), لدينا `true = true`{.claim}.
+    - ✅ حسب تعريف or (*or_introl*{.just}), لدينا `true = true \/ true = false`{.claim}.
+  - ✅ الحالة 2: سنثبت أن `false = true \/ false = false`{.claim}.
+    - ✅ حسب تعريف eq (*eq_refl*{.just}), لدينا `false = false`{.claim}.
+    - ✅ حسب تعريف or (*or_intror*{.just}), لدينا `false = true \/ false = false`{.claim}.
+
+  هذه الحالات شاملة, نستنتج أن `b = true \/ b = false`{.claim}.

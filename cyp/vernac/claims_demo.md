@@ -5,21 +5,19 @@ by: lia
 
 # claims_demo
 
-Let `a b : nat`. Assume `a <= b` (hab). We prove `a <= b + 2 /\ a <= b + 3`.
+Let `a b : nat`{.var}. Assume `a <= b`{.hyp} (hab). We prove `a <= b + 2 /\ a <= b + 3`{.claim}.
 
-- We have `a <= b + 1` and `a <= b + 2` and `0 <= a`.
-- We have `a <= b + 3` and `a <= S b`.
-  - We have `a <= b + 4`.
-  - We have `a <= b + 5`.
-- Let `x y : nat`.
-  - Assume `x <= y` (hxy).
-    - We have `x <= y + 1` and `x <= y + 2`.
-    - We have `x <= y + 3` and `x + 0 <= y + 3`.
-      - We have `x <= y + 4`.
-    - Let `z : nat`.
-      - Assume `y <= z`.
-        - We have `x <= z` and `x <= z + 1`.
-    - We have `x <= y + 6`.
-- Let `u : nat`.
-  - We have `u <= u + 1`.
-- Hence `a <= b + 2 /\ a <= b + 3`.
+- We have `a <= b + 1`{.claim}.
+- We have `a <= b + 2`{.claim}, from the node before it.
+- We have `a <= b + 3 /\ a <= S b`{.claim}, since
+  - we have `a <= b + 4`{.claim} (h4),
+  - and `a <= b + 5`{.claim}.
+- Let `x y : nat`{.var}; assume `x <= y`{.hyp} (hxy).
+  - We have `x <= y + 1 /\ x <= y + 2`{.claim}.
+  - We have `x <= y + 3`{.claim} (h3), since
+    - `x <= y + 4`{.claim}.
+  - Let `z : nat`{.var}; assume `y <= z`{.hyp}. Then `x <= z /\ x <= z + 1`{.claim}.
+
+  So by *h3*{.just} and *lia*{.just} we have `x <= y + 6`{.claim}.
+- Let `u : nat`{.var}. We have `u <= u + 1`{.claim}.
+- Hence `a <= b + 2 /\ a <= b + 3`{.claim}.

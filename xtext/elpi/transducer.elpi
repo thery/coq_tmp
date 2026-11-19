@@ -1,6 +1,6 @@
 % xtext: Assembling text, and the transducer: the text of a proof term, by the
 % form of the term (the dispatch; the forms are in the files below).
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Assembling text
@@ -15,6 +15,7 @@ flatten (prf L (some C)) R :- std.append L [C] R.
 pred dashed i:pf, o:line.
 dashed (prfp P _) D :- !, dashed P D.
 dashed (prf L (some (it C Ch))) (it C L1) :- std.append L Ch L1.
+dashed (prf L (some (with-closing O Ch C))) (with-closing O L1 C) :- std.append L Ch L1.
 dashed (prf L none) (it S L) :- sentence [wd "have"] S.
 
 % a proof whose text is a single conclusion
@@ -69,7 +70,7 @@ tr-root T _ _ P :- open-goal T P, !.
 tr-root T Ctx Path P :- staged-mode, not (is-direct-only T), !, staged-text T Ctx Path P.
 tr-root T Ctx Path P :- tr.aux T Ctx Path P, !.
 tr-root T _ _ P :- unchanged T P, !.
-tr-root T _ _ P :- pp T S0, prooftext.formula rfact S0 F,
+tr-root T _ _ P :- pp T S0, prooftext.untagged-formula S0 F,
   sentence [wd "the-term", tx F, tx "(", wd "not-translated", tx ")"] S, conclusion-only S P.
 
 % an open goal of a proof in progress (a hole of the partial proof term)
@@ -87,7 +88,7 @@ tactic-step T P :- not (off "tactics"),
   xtext-threshold N, size-ge T N,
   typ T Ty, binder-kind Ty K, K = bk-assume,
   xtext-tactic L Txt, try-tactic L Ty, !,
-  formula rclaim Ty F, by-part Txt J, sentence [wd "have", tx F, J] S, conclusion-only S P.
+  formula rclaim Ty F, sentence [wd "by", jst Txt, wd "have", tx F] S, conclusion-only S P.
 
 pred try-tactic i:string, i:term.
 try-tactic L Ty :-
@@ -132,5 +133,5 @@ tr-other T _ _ P :- unchanged T P.
 % expressions that match no rule are left unchanged
 pred unchanged i:term, o:pf.
 unchanged T (prf [] (some (it S []))) :-
-  formula rfact T FT, type-formula rclaim T F,
-  sentence [wd "using", tx FT, wd "get", tx F] S.
+  type-formula rclaim T F,
+  sentence [wd "using", untagged T, wd "get", tx F] S.

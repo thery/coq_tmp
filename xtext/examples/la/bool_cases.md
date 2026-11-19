@@ -8,11 +8,12 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sit `b : bool`{.var}. Ostendamus `b = true \/ b = false`{.claim}.
 
-- Ostendamus `b = true \/ b = false`{.fact} per casus in `b`{.fact} (bool, match):
-- Casus 1: ostendamus `true = true \/ true = false`{.claim}.
-  - Ex definitione eq (eq_refl), habemus `true = true`{.claim} *by Corelib.Init.Logic.eq_refl*.
-  - Ex definitione or (or_introl), habemus `true = true \/ true = false`{.claim} *by Corelib.Init.Logic.or_introl*.
-- Casus 2: ostendamus `false = true \/ false = false`{.claim}.
-  - Ex definitione eq (eq_refl), habemus `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
-  - Ex definitione or (or_intror), habemus `false = true \/ false = false`{.claim} *by Corelib.Init.Logic.or_intror*.
-- His casibus exhaustis, unde sequitur `b = true \/ b = false`{.claim}.
+- Ostendamus `b = true \/ b = false` per casus in `b` (bool, match):
+  - Casus 1: ostendamus `true = true \/ true = false`{.claim}.
+    - Ex definitione eq (*eq_refl*{.just}), habemus `true = true`{.claim}.
+    - Ex definitione or (*or_introl*{.just}), habemus `true = true \/ true = false`{.claim}.
+  - Casus 2: ostendamus `false = true \/ false = false`{.claim}.
+    - Ex definitione eq (*eq_refl*{.just}), habemus `false = false`{.claim}.
+    - Ex definitione or (*or_intror*{.just}), habemus `false = true \/ false = false`{.claim}.
+
+  His casibus exhaustis, unde sequitur `b = true \/ b = false`{.claim}.

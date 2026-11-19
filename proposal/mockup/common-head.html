@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TITLE</title>
+<style>
+body { background: #fff; color: #000; }
+.proof-text { font-family: 'Libertinus Serif', 'Noto Serif', serif; max-width: 48em; margin: 1.5em auto; padding: 0 1em; line-height: 1.75; }
+.proof-text code { font-family: 'DejaVu Sans Mono', monospace; font-size: 0.85em; }
+.m { font-family: 'Latin Modern Math', 'STIX Two Math', serif; font-style: italic; }
+h2 { font-size: 1.15em; margin: 1.2em 0 0.3em; } h2 small { font-weight: normal; color: #6e6e6e; font-size: 0.75em; }
+.intro { font-size: 0.85em; color: #505050; }
+.formula, .just { border-radius: 2px; padding: 0 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.formula.var { background: #d4ebf9; } .formula.hyp { background: #f8d49c; }
+.formula.claim { background: #fcf6c6; } .formula.fact { background: #e3e3e3; }
+.just { background: BYCOLOUR; cursor: pointer; }
+.name { font-size: 0.9em; }
+ul.steps { list-style: none; padding-inline-start: 1.4em; margin: 0; }
+section > ul.steps { padding-inline-start: 0; }
+li.step { margin: 0.35em 0; } li.step::before { content: "•"; display: inline-block; width: 1.3em; margin-left: -1.3em; color: #6e6e6e; font-family: 'DejaVu Sans', sans-serif; }
+li.step { padding-left: 1.3em; } .closing { margin: 0.35em 0; }
+/* the hover: the node under the pointer (cur), its conclusion framed, its
+   subproofs tinted, its hypotheses underlined; a justification's target */
+.p { border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: background 0.1s; }
+.p.sub { background: rgba(0, 114, 178, 0.10); }
+li.p.cur { background: rgba(0, 0, 0, 0.03); }
+.formula.claim.c-cur { outline: 1.5px solid #333; }
+.formula.hyp.h-cur { outline: 1.5px dashed #333; }
+.ref-target { outline: 2px solid #0072b2; border-radius: 2px; }
+footer.legend { margin-top: 2em; padding-top: 0.4em; border-top: 1px solid #d0d0d0; font-size: 0.8em; color: #505050; }
+footer.legend span { margin-right: 1.2em; }
+footer.legend .hyp { border-bottom: 1px dashed #4d4d4d; } footer.legend .claim { border: 1px solid #4d4d4d; } footer.legend .fact { border-bottom: 1px dotted #4d4d4d; } footer.legend .just { border-bottom: 1px solid #4d4d4d; }
+</style></head><body><div class="proof-text">

@@ -1,0 +1,25 @@
+<p class="intro">Mock-up of the <b>free</b> syntax as a web page: proof nodes are spans inside the paragraphs, with no visible mark. Move the pointer over a sentence: its proof node's conclusion is framed, its hypotheses dashed, its direct subproofs tinted blue. Over a justification name (purple), the hypothesis it names is outlined; over a fact (grey), the hypothesis or conclusion it repeats. Hand-written HTML, not produced by a reader.</p>
+<section>
+{EX|praeclarum|(UITP 2003)}
+<p>Let {v|x, y, z, t : Prop}. If {h|x → z} and {h|y → t} then {c|(x ∧ y) → (z ∧ t)}.</p>
+<p><<p1:Suppose {h|x ∧ y}. <<p1.1:<<p1.1.1:We have {c|x}>>, so by {f|x → z} we get {c|z}.>> <<p1.2:<<p1.2.1:We have {c|y}>>, so by {f|y → t} we get {c|t}.>> Altogether we have {c|z ∧ t}.>></p>
+</section>
+<section>
+{EX|square_pos|(UITP 2003)}
+<p>Let {v|a, b ∈ ℤ}. If {h|0 &lt; a &lt; b} then {c|a a &lt; b b}.</p>
+<p><<s1:It is equivalent to prove {c|0 &lt; b b − a a}. <<s1.1:That can also be written as {c|0 &lt; (b + a)(b − a)}. <<s1.1.1:From {f|0 &lt; a &lt; b} we have {c|0 &lt; b + a ∧ 0 &lt; b − a}.>>>>>></p>
+</section>
+<section>
+{EX|exp_pos|(UITP 2003)}
+<p>Let {v|x ∈ ℝ} and {v|y ∈ ℤ}. If {h|0 &lt; x}, to prove {c|0 &lt; x<sup>y</sup>}, we have three cases: <<e1:if {h|0 &lt; y} then {c|x<sup>1</sup> ≤ x<sup>y</sup>}>>; <<e2:if {h|0 = y} then {c|x<sup>y</sup> = 1}>>; <<e3:if {h|y &lt; 0} then {c|x<sup>y</sup> = 1 / x<sup>−y</sup>}>>.</p>
+</section>
+<section>
+{EX|praeclarum|(xtext)}
+<p>Let {v|x, y, z, t : Prop}. Assume {h|(x → z) ∧ (y → t)} {n|h1} and {h|x ∧ y} {n|h2}. We prove {c|z ∧ t}.</p>
+<p><<x1:Going back to the definition of and ({b|and_ind}) in {b|h1}, we prove {c|z ∧ t}: <<x1.1:assume {h|x → z} {n|i} and {h|y → t} {n|j}; going back to the definition of and ({b|and_ind}) in {b|h2}, we prove {c|z ∧ t}: <<x1.1.1:assume {h|x} {n|k} and {h|y} {n|l}; <<x1.1.1.1:applying {b|i} to {b|k}, we have {c|z}>>; <<x1.1.1.2:applying {b|j} to {b|l}, we have {c|t}>>; so by definition of and ({b|conj}), we have {c|z ∧ t}.>>>>>></p>
+</section>
+<section>
+{EX|Trans_Inv|(xtext)}
+<p>Let {v|E : Set}. Let {v|R : Rel E}. Assume {h|Trans E R} {n|h}. We prove {c|Trans E (Inv E R)}.</p>
+<p><<t1:Let us choose arbitrarily {v|x, y, z ∈ E}; assume {h|Inv E R x y} {n|h1} and {h|Inv E R y z} {n|h2}. <<t1.1:By {b|h} we have {m|Trans E R}, that is {c|∀ x₀ y₀ z₀ ∈ E, R x₀ y₀ → R y₀ z₀ → R x₀ z₀}.>> <<t1.2:By {b|h2} we have {m|Inv E R y z}, that is {c|R z y}.>> <<t1.3:By {b|h1} we have {m|Inv E R x y}, that is {c|R y x}.>> By application, we have {m|R z x}, that is {c|Inv E R x z}.>> <<t2:We have proved {c|∀ x₀ y₀ z₀ ∈ E, Inv E R x₀ y₀ → Inv E R y₀ z₀ → Inv E R x₀ z₀}>>, that is {m|Trans E (Inv E R)}.</p>
+</section>

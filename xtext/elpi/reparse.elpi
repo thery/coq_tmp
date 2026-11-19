@@ -1,6 +1,6 @@
 % xtext: Formulas that type-check again: the implicit arguments that must be
 % printed so that a formula, read back, means the same.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Formulas that type-check again (Coscoy's thesis 5.4, applied to the
@@ -200,3 +200,48 @@ head-name H S :- gr-of H GR, coq.gref->id GR S.
 pred is-sym i:term.
 is-sym X :- name X, !.
 is-sym H :- gr-of H _.
+
+% [justification-of H P]: the justification that names the proof H, a
+% hypothesis or a constant (a lemma, a constructor): *h*{.just}
+pred justification-of i:term, o:part.
+justification-of H (jst N) :- name H, !, var-name H N.
+justification-of H (jst N) :- gr-of H GR, short-name GR N.
+
+% [short-name GR N]: the name by which a text names the global reference GR
+% (a lemma, a constructor) in a justification, as short as Rocq finds it
+% again here (rev_unit, Nat.add_comm), but qualified by its library
+% (Classical_Prop.classic, PeanoNat.Nat.add_comm) unless that library is
+% imported wherever the text is read: the prelude (Corelib.Init) and the
+% library of the theorem, which the require line of the text imports.  The
+% other libraries are loaded there, not imported, and Rocq finds a name of
+% a library loaded but not imported only with that library's name in it
+pred short-name i:gref, o:string.
+short-name GR N :-
+  coq.gref->path GR Path, coq.gref->id GR Id,
+  library-qualifiers Path K,
+  std.rev Path Modules, std.take K Modules Required0, std.rev Required0 Required,
+  std.drop K Modules Others,
+  std.append Required [Id] Ids,
+  shortest-suffix Others Ids GR N.
+
+% [library-qualifiers Path K]: the number of modules of Path, the
+% innermost first, that a name must keep: none for a library imported
+% wherever the text is read, else up to the name of the library
+pred library-qualifiers i:list string, o:int.
+library-qualifiers ["Corelib", "Init" | _] 0 :- !.
+library-qualifiers Path 0 :-
+  coq.env.current-path Here, std.length Here LH, std.length Path LP, LP >= LH,
+  std.take LH Path Prefix, Prefix = Here, !.
+library-qualifiers Path K :-
+  std.string.concat "." Path Name, coq.locate-all Name L, std.mem L (loc-modpath MP), !,
+  coq.modpath->path {coq.modpath->library MP} LibPath,
+  K is {std.length Path} - {std.length LibPath} + 1.
+library-qualifiers _ 0.
+
+% [shortest-suffix Modules Ids GR N]: the name Ids, qualified by as few of
+% the modules (the innermost first) as it takes to name GR
+pred shortest-suffix i:list string, i:list string, i:gref, o:string.
+shortest-suffix _ Ids GR N :-
+  std.string.concat "." Ids N, coq.locate-all N L, std.mem L (loc-gref G), !, G = GR.
+shortest-suffix [M | Ms] Ids GR N :- !, shortest-suffix Ms [M | Ids] GR N.
+shortest-suffix [] Ids _ N :- std.string.concat "." Ids N.

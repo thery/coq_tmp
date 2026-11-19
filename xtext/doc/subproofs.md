@@ -33,10 +33,10 @@ hypothesis is named, and the steps after it use the name.  ABCD
 Nous appliquons h3 à h4. Fin de P1. ..."):
 
 ```markdown
-- Applying h3 to h4, we have `C`{.claim} (P1).
-- Applying h2 to h4 and P1, we have `B`{.claim} (P2).
-- Applying h3 to h4, we have `C`{.claim} (P3).
-- Applying h1 to h4, P2 and P3, we have `D`{.claim}.
+- Applying *h3*{.just} to *h4*{.just}, we have `C`{.claim} (P1).
+- Applying *h2*{.just} to *h4*{.just} and *P1*{.just}, we have `B`{.claim} (P2).
+- Applying *h3*{.just} to *h4*{.just}, we have `C`{.claim} (P3).
+- Applying *h1*{.just} to *h4*{.just}, *P2*{.just} and *P3*{.just}, we have `D`{.claim}.
 ```
 
 and with `shared` (`examples-staged-shared/ABCD.md`) the third step goes

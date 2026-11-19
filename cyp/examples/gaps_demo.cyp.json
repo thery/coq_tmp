@@ -1,1 +1,1 @@
-{"steps":[{"id":"0","first":6,"last":6,"status":"ok","formulas":[{"role":"var","text":"b1 b2 : bool"},{"role":"claim","text":"b1 && b2 = b2 && b1"}],"message":""},{"id":"1","first":8,"last":8,"status":"ok","formulas":[{"role":"claim","text":"b1 && b2 = b2 && b1"}],"message":""}]}
+{"steps":[{"id":"0","first":6,"last":8,"status":"ok","formulas":[{"role":"var","text":"b1 b2 : bool"},{"role":"claim","text":"b1 && b2 = b2 && b1"}],"message":""},{"id":"1","first":8,"last":8,"status":"ok","formulas":[{"role":"claim","text":"b1 && b2 = b2 && b1"}],"message":""}]}

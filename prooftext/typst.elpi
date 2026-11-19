@@ -1,11 +1,12 @@
-% prooftext: the writer of a proof text in Typst, for a PDF.
-% (load after document.elpi, formulas.elpi, checked.elpi, maths.elpi and
-% links.elpi, and the tables of the lexicon, lang_xx.elpi)
+% prooftext: the writer of a proof text in Typst, for a PDF and a web page.
+% (load after document.elpi, formulas.elpi, tree.elpi, nodes.elpi,
+% checked.elpi, maths.elpi and links.elpi, and the tables of the lexicon,
+% lang_xx.elpi)
 %
-% [write-typst D Text] gives the Typst source of the document D: calls of
-% the functions of the template typst/local/prooftext/0.1.0/prooftext.typ
-% (the Typst package @local/prooftext), which gives each role, step and
-% status its look:
+% [write-typst-tree Style T Text] gives the Typst source of the proof text
+% read into the tree T (tree.elpi): calls of the functions of the template
+% typst/local/prooftext/0.1.0/prooftext.typ (the Typst package
+% @local/prooftext), which gives each role, node and status its look:
 %
 %   #import "@local/prooftext:0.1.0": *
 %   #show: proof-text.with(lang: "en", numbers: false)
@@ -14,31 +15,50 @@
 %     ("require", "From Stdlib Require Import Lia."),
 %   ))
 %
-%   #statement[#"Let "#var($A, B : "Prop"$)#". We prove "#claim($A ∧ B → B ∧ A$)#"."]
-%
-%   #steps((
-%     step("1", [#"Assume "#hyp($A ∧ B$)#" "#name("h", label: "1:h")#"."], (
-%       step("1.1", [#"By "#named("h", "1:h")#" we have "#claim($B ∧ A$)#" "#by("tauto")#"."], ()),
+%   #proof([#"Let "#var($A, B : "Prop"$)#". We prove "#claim($A ∧ B → B ∧ A$)#"."], (
+%     steps((
+%       step("1", [#"Assume "#hyp($A ∧ B$)#" "#name("h", label: "1:h")#"."], (
+%         steps((
+%           step("1.1", [#"By "#named("h", "1:h")#" we have "#claim($B ∧ A$)#"."], ()),
+%         )),
+%       )),
 %     )),
 %   ))
 %
 %   #legend((("var", "variable"), ("hyp", "hypothesis"), ...))
 %
-% The text of a statement or of a step is cut into its parts (text-parts,
-% formulas.elpi): the formulas with their roles (a formula without a class is
-% shown without a role), the name (h) given to a formula, right after
-% it, the justification *by X*, and the plain text between them, each
-% written as a Typst string, so that no character of the text is read as
-% Typst markup.  A formula is mathematics, $...$, printed from its Rocq
-% term (maths.elpi), or, in the code style or when it does not
+% proof is the top node: the first paragraph after the title (the
+% statement), then the blocks of the node.  The blocks of a node are its
+% paragraphs (paragraph[...]), its lists of items (steps((...)), each
+% item a step: its number, its first paragraph, its blocks), its divs
+% (division(number, (...))) and the messages of a checker
+% (message(status, text)).  A span [ ... ]{.p} is a call inside the text
+% of a paragraph, node(number)[...].  The numbers are those of the nodes
+% (nodes.elpi, cyp's numbers).  The PDF shows the items as a list, and the
+% spans and the divs not at all (the paragraphs the author wrote); the web
+% page marks every node (class p, its number), for its hover.
+%
+% The text of a paragraph is cut into its parts (text-parts,
+% formulas.elpi): the formulas with their roles (a formula without a class
+% is shown without a role), the name (h) given to a formula, right after
+% it, the justifications *X*{.just}, and the plain text between them,
+% each written as a Typst string, so that no character of the text is
+% read as Typst markup.  A formula is mathematics, $...$, printed from
+% its Rocq term (maths.elpi), or, in the code style or when it does not
 % elaborate, its Rocq text as a string, shown as code:
 % #claim("A /\\ B -> B /\\ A").  The names and the lemmas are links
 % (links.elpi): a name given to a formula is a label, its uses link to
 % it; a lemma links to its documentation.  In a text checked by cyp
-% (checked.elpi), the status of each text, the conditions left and cyp's
-% message become arguments of statement and step, and the steps are
-% numbered as cyp numbers them.  The legend at the end gives the words
-% of the roles (and of the statuses) in the language of the text.
+% (checked.elpi), the status of each node (the mark at the start of its
+% text) and the conditions left become arguments of proof and step, or an
+% inline mark(...) at the start of a span or a div; cyp's messages are
+% message blocks, where cyp put them, and the items are numbered.  The
+% legend at the end gives the words of the roles (and of the statuses) in
+% the language of the text.
+%
+% [write-typst D Text] writes a document that xtext has just built: its
+% Markdown (write-document), read back into its tree, gives the same
+% Typst source as the Markdown file.
 
 namespace prooftext {
 
@@ -59,11 +79,18 @@ type in-code formulas.
 type in-maths string -> list string -> formulas.
 
 % what the writer knows while it goes through a text: its formulas (above),
-% the names in scope, each with the label of the step that introduced it
+% the names in scope, each with the label of the node that introduced it
 % (the latest first), and the words of the lexicon of the text's
 % language, which are never names (links.elpi)
 kind context type.
 type context formulas -> list (pair string string) -> list string -> context.
+
+% what the writer carries through the whole text, in the order of the
+% text: the context, and the statuses of the nodes whose message is still
+% to come (the oldest first: cyp writes the messages in the order of the
+% nodes, after the paragraph where each node starts)
+kind walk type.
+type walk context -> list string -> walk.
 
 % [write-typst D Text]: the Typst source of the document D, its formulas
 % in mathematics
@@ -71,17 +98,30 @@ pred write-typst i:prooftext.document, o:string.
 write-typst D Text :- write-typst-in maths D Text.
 
 % [write-typst-in Style D Text]: the Typst source of the document D, its
-% formulas in the style Style
+% formulas in the style Style: the source of its Markdown text, read
 pred write-typst-in i:formula-style, i:prooftext.document, o:string.
-write-typst-in Style (prooftext.document Fields Name _ Statement Steps) Text :-
+write-typst-in Style D Text :-
+  prooftext.write-document D Markdown,
+  rex.split "\n" Markdown Lines,
+  prooftext.lines-tree Lines T,
+  write-typst-tree Style T Text.
+
+% [write-typst-tree Style T Text]: the Typst source of the proof text T,
+% its formulas in the style Style
+pred write-typst-tree i:formula-style, i:prooftext.proof-text, o:string.
+write-typst-tree Style (prooftext.proof-text Fields Name (prooftext.node _ _ _ _ Cs0)) Text :-
   prooftext.header-lang Fields Lang,
-  (if (text-is-checked Statement) (Checked = tt, Numbers = "true") (Checked = ff, Numbers = "false")),
+  node-check Cs0 Check Cs,
+  (if (Check = some _) (Checked = tt, Numbers = "true") (Checked = ff, Numbers = "false")),
   prooftext.typst-string Name TName,
   std.map Fields typst-field FieldLines,
   first-context Style Fields Lang C0,
-  statement-typst C0 Statement StatementLine C1,
-  steps-typst C1 "  " "" 1 Steps StepLines,
-  legend-typst Lang Checked LegendLine,
+  waiting Check [] Q0,
+  contents-blocks Cs Blocks,
+  (if (Blocks = [paragraph P | Rest]) true (P = [], Rest = Blocks)),
+  inline-typst (walk C0 Q0) "0" 1 P Statement W1 K1,
+  blocks-typst W1 "0" K1 "  " Rest BlockLines _ _,
+  check-arguments Check Arguments,
   std.append [
     {calc ("// The proof text " ^ Name ^ ", written by prooftext (write-typst).")},
     "// Its PDF: prooftext/pdf.sh, or typst compile --package-path prooftext/typst.",
@@ -89,8 +129,9 @@ write-typst-in Style (prooftext.document Fields Name _ Statement Steps) Text :-
     {calc ("#show: proof-text.with(lang: \"" ^ Lang ^ "\", numbers: " ^ Numbers ^ ")")},
     "",
     {calc ("#title-block(" ^ TName ^ ", (")} | FieldLines]
-    ["))", "", StatementLine, "", "#steps((" | StepLines] Lines0,
-  std.append Lines0 ["))", "", LegendLine] Lines,
+    ["))", "", {calc ("#proof([" ^ Statement ^ "], (")} | BlockLines] Lines0,
+  (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
+  std.append Lines0 [{calc (")" ^ Tail ^ ")")}, "", {legend-typst Lang Checked}] Lines,
   std.string.concat "\n" Lines Text0,
   Text is Text0 ^ "\n".
 
@@ -110,67 +151,228 @@ first-formulas code _ in-code.
 first-formulas maths Fields (in-maths Scope []) :-
   prooftext.field-value Fields "scope" Scope.
 
-% [text-is-checked Statement]: the text was checked (by cyp): its
-% statement has a status mark
-pred text-is-checked i:string.
-text-is-checked Statement :- prooftext.split-checked Statement _ _.
-
 % a field of the header, a pair (key, value)
 pred typst-field i:prooftext.field, o:string.
 typst-field (prooftext.field Key Value) Line :-
   Line is "  (" ^ {prooftext.typst-string Key} ^ ", " ^ {prooftext.typst-string Value} ^ "),".
 
-% [statement-typst C0 Statement Line C]: the call of statement; C, the
-% context after it (with its declarations and its names)
-pred statement-typst i:context, i:string, o:string, o:context.
-statement-typst C0 Statement Line C :-
-  checked-text Statement Check Text, check-arguments Check Arguments,
-  (if (Arguments = "") (Call = "#statement") (Call is "#statement(" ^ Arguments ^ ")")),
-  text-content C0 "statement" Text Content C,
-  Line is Call ^ Content.
+% ------------------------------------------------------------------
+% The blocks of a node
 
-% [steps-typst C Indent Prefix K Steps Lines]: the calls of step for
-% Steps, the K-th, K+1-th, ... of their list, numbered in Dewey notation
-% after Prefix ("" at the top: 1, 2, ...; 2.1 is the first sub-step of 2,
-% as cyp numbers its conditions); each one's sub-steps in its list,
-% indented.  The declarations and the names of a step hold in its
-% sub-steps and in the steps after it in its list, as in cyp (the scope
-% of a Let)
-pred steps-typst i:context, i:string, i:string, i:int, i:list prooftext.step, o:list string.
-steps-typst _ _ _ _ [] [].
-steps-typst C0 Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
-  prooftext.step-number Prefix K Number,
-  checked-text Text0 Check Text, check-arguments Check Arguments,
-  (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
-  text-content C0 Number Text Content C,
-  Head is Indent ^ "step(" ^ {prooftext.typst-string Number} ^ ", " ^ Content ^ ", (",
-  (if (Sub = [])
-     (Own = [{calc (Head ^ ")" ^ Tail ^ "),")}])
-     (steps-typst C {calc (Indent ^ "  ")} Number 1 Sub SubLines,
-      std.append [Head | SubLines] [{calc (Indent ^ ")" ^ Tail ^ "),")}] Own)),
-  K1 is K + 1,
-  steps-typst C Indent Prefix K1 Steps Next,
+% a block of the contents of a node
+kind block type.
+type paragraph list prooftext.content -> block.  % a paragraph: its runs and spans
+type items list prooftext.node -> block.         % list items, one after the other
+type division prooftext.node -> block.           % a div, ::: p ... :::
+
+% [contents-blocks Cs Blocks]: the contents of a node, as its blocks
+pred contents-blocks i:list prooftext.content, o:list block.
+contents-blocks Cs Blocks :- gather-blocks Cs [] Blocks.
+
+% [gather-blocks Cs Acc Blocks]: the blocks of Cs, Acc being the contents
+% of the paragraph being read (the latest first).  The items one after the
+% other form one block; the errors of the reader are left to the checker
+pred gather-blocks i:list prooftext.content, i:list prooftext.content, o:list block.
+gather-blocks [] Acc Blocks :- paragraph-block Acc Blocks.
+gather-blocks [prooftext.para-end | Cs] Acc Blocks :- !,
+  paragraph-block Acc B, gather-blocks Cs [] Bs, std.append B Bs Blocks.
+gather-blocks [prooftext.sub (prooftext.node prooftext.list-item _ _ _ _ as N) | Cs] Acc Blocks :- !,
+  paragraph-block Acc B, gather-blocks Cs [] Bs,
+  (if (Bs = [items Ns | Bs1]) (Next = [items [N | Ns] | Bs1]) (Next = [items [N] | Bs])),
+  std.append B Next Blocks.
+gather-blocks [prooftext.sub (prooftext.node prooftext.fenced _ _ _ _ as N) | Cs] Acc Blocks :- !,
+  paragraph-block Acc B, gather-blocks Cs [] Bs, std.append B [division N | Bs] Blocks.
+gather-blocks [prooftext.flaw _ _ | Cs] Acc Blocks :- !, gather-blocks Cs Acc Blocks.
+gather-blocks [C | Cs] Acc Blocks :- gather-blocks Cs [C | Acc] Blocks.
+
+% [paragraph-block Acc B]: the paragraph of the contents Acc (the latest
+% first), none if it is empty
+pred paragraph-block i:list prooftext.content, o:list block.
+paragraph-block [] [] :- !.
+paragraph-block Acc [paragraph Cs] :- std.rev Acc Cs.
+
+% [blocks-typst W0 Id K0 Indent Blocks Lines W K]: the Typst code of the
+% blocks of node Id, one per line or more, indented by Indent; K0, the
+% number of the next subnode of Id (K after them); W, the walk after them
+pred blocks-typst i:walk, i:string, i:int, i:string, i:list block, o:list string, o:walk, o:int.
+blocks-typst W _ K _ [] [] W K.
+blocks-typst W0 Id K0 Indent [B | Bs] Lines W K :-
+  block-typst W0 Id K0 Indent B Own W1 K1,
+  blocks-typst W1 Id K1 Indent Bs Next W K,
   std.append Own Next Lines.
+
+% [block-typst W0 Id K0 Indent B Lines W K]: the Typst code of one block
+% of node Id.  A paragraph that holds a message of cyp, a folded block
+% <details>, is that message, with the status of the node it is about
+pred block-typst i:walk, i:string, i:int, i:string, i:block, o:list string, o:walk, o:int.
+block-typst (walk C [S | Q]) _ K Indent (paragraph Cs) [Line] (walk C Q) K :-
+  message-paragraph Cs M, !,
+  Line is Indent ^ "message(" ^ {prooftext.typst-string S} ^ ", " ^ {prooftext.typst-string M} ^ "),".
+block-typst (walk C []) _ K Indent (paragraph Cs) [Line] (walk C []) K :-
+  message-paragraph Cs M, !,
+  Line is Indent ^ "message(\"ko\", " ^ {prooftext.typst-string M} ^ "),".
+block-typst W0 Id K0 Indent (paragraph Cs) [Line] W K :-
+  inline-typst W0 Id K0 Cs Inner W K,
+  Line is Indent ^ "paragraph[" ^ Inner ^ "],".
+block-typst W0 Id K0 Indent (items Ns) Lines W K :-
+  items-typst W0 Id K0 {calc (Indent ^ "  ")} Ns ItemLines W K,
+  std.append [{calc (Indent ^ "steps((")} | ItemLines] [{calc (Indent ^ ")),")}] Lines.
+block-typst (walk C0 Q0) Id K0 Indent (division (prooftext.node _ _ _ _ Cs0 as N)) Lines (walk C Q) K :-
+  prooftext.child-number Id K0 Sub, K is K0 + 1,
+  node-check Cs0 Check Cs, waiting Check Q0 Q1,
+  (if (Check = some Ch) (inline-mark Ch Mark) (Mark = "")),
+  led-blocks-typst (walk C0 Q1) Sub {calc (Indent ^ "  ")} Mark {contents-blocks Cs} Inner (walk C1 Q),
+  after-subnode C0 C1 Sub N C,
+  Head is Indent ^ "division(" ^ {prooftext.typst-string Sub} ^ ", (",
+  std.append [Head | Inner] [{calc (Indent ^ ")),")}] Lines.
+
+% [led-blocks-typst W0 Id Indent Mark Blocks Lines W]: the blocks of the
+% div numbered Id, the mark of its status Mark (a call, "" for none) at
+% the start of its first paragraph
+pred led-blocks-typst i:walk, i:string, i:string, i:string, i:list block, o:list string, o:walk.
+led-blocks-typst W Id Indent "" Bs Lines W1 :- !, blocks-typst W Id 1 Indent Bs Lines W1 _.
+led-blocks-typst W0 Id Indent Mark [paragraph Cs | Bs] [Line | Lines] W :-
+  not (message-paragraph Cs _), !,
+  inline-typst W0 Id 1 Cs Inner W1 K1,
+  Line is Indent ^ "paragraph[" ^ Mark ^ Inner ^ "],",
+  blocks-typst W1 Id K1 Indent Bs Lines W _.
+led-blocks-typst W0 Id Indent Mark Bs [Line | Lines] W :-
+  Line is Indent ^ "paragraph[" ^ Mark ^ "],",
+  blocks-typst W0 Id 1 Indent Bs Lines W _.
+% [items-typst W0 Id K0 Indent Ns Lines W K]: the calls of step for the
+% list items Ns, subnodes of node Id from the K0-th: the first paragraph
+% of an item is its text, its other blocks follow it (its sub-items, its
+% closing paragraph)
+pred items-typst i:walk, i:string, i:int, i:string, i:list prooftext.node, o:list string, o:walk, o:int.
+items-typst W _ K _ [] [] W K.
+items-typst (walk C0 Q0) Id K0 Indent [(prooftext.node _ _ _ _ Cs0 as N) | Ns] Lines W K :-
+  prooftext.child-number Id K0 Sub, K1 is K0 + 1,
+  node-check Cs0 Check Cs, waiting Check Q0 Q1,
+  check-arguments Check Arguments,
+  (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
+  contents-blocks Cs Blocks,
+  (if (Blocks = [paragraph P | Rest]) true (P = [], Rest = Blocks)),
+  inline-typst (walk C0 Q1) Sub 1 P Text W1 KS,
+  blocks-typst W1 Sub KS {calc (Indent ^ "  ")} Rest Inner (walk C1 Q2) _,
+  after-subnode C0 C1 Sub N C2,
+  Head is Indent ^ "step(" ^ {prooftext.typst-string Sub} ^ ", [" ^ Text ^ "], (",
+  (if (Inner = [])
+     (Own = [{calc (Head ^ ")" ^ Tail ^ "),")}])
+     (std.append [Head | Inner] [{calc (Indent ^ ")" ^ Tail ^ "),")}] Own)),
+  items-typst (walk C2 Q2) Id K1 Indent Ns Next W K,
+  std.append Own Next Lines.
+
+% [inline-typst W0 Id K0 Cs Text W K]: the Typst code of the contents Cs
+% of a paragraph of node Id: its runs of text (their parts) and its spans,
+% each a call node(number)[...], with the mark of its status first in a
+% checked text.  K0 is the number of the next subnode of Id (K after them)
+pred inline-typst i:walk, i:string, i:int, i:list prooftext.content, o:string, o:walk, o:int.
+inline-typst W _ K [] "" W K.
+inline-typst (walk C0 Q) Id K0 [prooftext.run _ Parts | Cs] Text W K :- !,
+  parts-typst C0 {node-where Id} Parts Calls C1,
+  inline-typst (walk C1 Q) Id K0 Cs Rest W K,
+  Text is {std.string.concat "" Calls} ^ Rest.
+inline-typst (walk C0 Q0) Id K0 [prooftext.sub (prooftext.node _ _ _ _ Cs0 as N) | Cs] Text W K :- !,
+  prooftext.child-number Id K0 Sub, K1 is K0 + 1,
+  node-check Cs0 Check Cs1, waiting Check Q0 Q1,
+  (if (Check = some Ch) (inline-mark Ch Mark) (Mark = "")),
+  inline-typst (walk C0 Q1) Sub 1 Cs1 Inner (walk C1 Q2) _,
+  after-subnode C0 C1 Sub N C2,
+  inline-typst (walk C2 Q2) Id K1 Cs Rest W K,
+  Text is "#node(" ^ {prooftext.typst-string Sub} ^ ")[" ^ Mark ^ Inner ^ "]" ^ Rest.
+inline-typst W Id K0 [_ | Cs] Text W1 K :- inline-typst W Id K0 Cs Text W1 K.
+
+% [node-where Id Where]: the prefix of the labels of the names introduced
+% by node Id: "statement" for the top node, its number for the others
+pred node-where i:string, o:string.
+node-where "0" "statement" :- !.
+node-where Id Id.
+
+% [after-subnode C0 C1 Id N C]: the context of a node after its subnode N
+% (numbered Id), C0 before it, C1 at its end: that of C0 (the variables
+% and hypotheses of N hold only inside N), with the name of the
+% conclusion of N, which the nodes after N use (and those of the
+% subnodes of N, when N is a remark)
+pred after-subnode i:context, i:context, i:string, i:prooftext.node, o:context.
+after-subnode (context F Names Words) _ Id N (context F Names1 Words) :-
+  conclusion-names Id N Given, std.append Given Names Names1.
+
+% [conclusion-names Id N Names]: the names given to the conclusion of the
+% node N numbered Id, with their labels (none if it has no name); for a
+% remark, those of its subnodes
+pred conclusion-names i:string, i:prooftext.node, o:list (pair string string).
+conclusion-names Id N Names :- prooftext.is-remark N, !,
+  prooftext.numbered-subnodes Id N Subs,
+  std.map Subs (s\ ns\ sigma I M\ s = pr I M, conclusion-names I M ns) Nss,
+  std.flatten Nss Names0, std.rev Names0 Names.
+conclusion-names Id N [pr Name Label] :-
+  prooftext.node-parts N Ps, prooftext.claim-parts Ps [Claim],
+  prooftext.part-name Claim (some Name), !,
+  prooftext.name-label {node-where Id} Name Label.
+conclusion-names _ _ [].
 
 % ------------------------------------------------------------------
 % Checked texts
 
-% [checked-text Text Check Rest]: the status, conditions and message of a
-% checked text (some C), none for a text that is not checked; Rest is the
-% text without them
-pred checked-text i:string, o:option prooftext.check, o:string.
-checked-text Text (some C) Rest :- prooftext.split-checked Text C Rest, !.
-checked-text Text none Text.
+% [node-check Cs Check Cs1]: the status and the conditions of a node of
+% a checked text, the mark at the start of its first run of text (some
+% C), none for a node that is not checked; Cs1 is Cs without the mark
+pred node-check i:list prooftext.content, o:option prooftext.check, o:list prooftext.content.
+node-check [prooftext.flaw L E | Cs] Check [prooftext.flaw L E | Cs1] :- !, node-check Cs Check Cs1.
+node-check [prooftext.para-end | Cs] Check [prooftext.para-end | Cs1] :- !, node-check Cs Check Cs1.
+node-check [prooftext.run S _ | Cs] (some Check) Cs1 :- node-mark S Check Rest, !,
+  (if (Rest = "") (Cs1 = Cs) (Cs1 = [prooftext.run Rest {prooftext.text-parts Rest} | Cs])).
+node-check Cs none Cs.
 
-% [check-arguments Check Arguments]: the named arguments of statement or
-% step that give a status, its conditions and its message ("" for none)
+% [node-mark S Check Rest]: the status mark at the start of S, and the
+% conditions left after it (**[2.1]**), and the text after them (its
+% spaces at the end kept: a span may follow it)
+pred node-mark i:string, o:prooftext.check, o:string.
+node-mark S (prooftext.checked Status Conditions none) Rest :-
+  prooftext.status-mark Status Mark, prooftext.string-starts-with Mark S, !,
+  rex.replace "^ +" "" {calc (substring S (size Mark) (size S - size Mark))} S1,
+  prooftext.split-conditions S1 Conditions Rest.
+
+% [waiting Check Q0 Q]: the statuses of the nodes whose message is to
+% come, Q0, and the node of status Check after them when it has a
+% message (not proved, or left to a Proof block)
+pred waiting i:option prooftext.check, i:list string, o:list string.
+waiting (some (prooftext.checked S _ _)) Q0 Q :- (S = "ko" ; S = "todo"), !, std.append Q0 [S] Q.
+waiting _ Q Q.
+
+% [message-paragraph Cs M]: the paragraph of contents Cs is a message of
+% the checker, <details><summary>M</summary></details>
+pred message-paragraph i:list prooftext.content, o:string.
+message-paragraph Cs M :-
+  written-inline Cs Text,
+  rex.match "^ *<details><summary>.*</summary></details> *$" Text,
+  prooftext.split-message Text (some M) _.
+
+% [written-inline Cs Text]: the text of the contents of a paragraph as
+% written, its spans with their marks (a message may hold [ and ]{.p})
+pred written-inline i:list prooftext.content, o:string.
+written-inline [] "".
+written-inline [prooftext.run S _ | Cs] T :- !, T is S ^ {written-inline Cs}.
+written-inline [prooftext.sub (prooftext.node _ _ _ _ Sub) | Cs] T :- !,
+  T is "[" ^ {written-inline Sub} ^ "]{.p}" ^ {written-inline Cs}.
+written-inline [_ | Cs] T :- written-inline Cs T.
+
+% [check-arguments Check Arguments]: the named arguments of proof or step
+% that give a status and its conditions ("" for none)
 pred check-arguments i:option prooftext.check, o:string.
 check-arguments none "".
-check-arguments (some (prooftext.checked Status Conditions Message)) Arguments :-
+check-arguments (some (prooftext.checked Status Conditions _)) Arguments :-
   optional-argument "conditions" Conditions C,
-  optional-argument "message" Message M,
-  std.filter [{calc ("status: " ^ {prooftext.typst-string Status})}, C, M] (a\ not (a = "")) As,
+  std.filter [{calc ("status: " ^ {prooftext.typst-string Status})}, C] (a\ not (a = "")) As,
   std.string.concat ", " As Arguments.
+
+% [inline-mark Check Call]: the mark of the status of a span or a div,
+% at the start of its text
+pred inline-mark i:prooftext.check, o:string.
+inline-mark (prooftext.checked Status Conditions _) Call :-
+  optional-argument "conditions" Conditions C,
+  (if (C = "") (Tail = "") (Tail is ", " ^ C)),
+  Call is "#mark(" ^ {prooftext.typst-string Status} ^ Tail ^ ")".
 
 pred optional-argument i:string, i:option string, o:string.
 optional-argument _ none "".
@@ -184,7 +386,7 @@ optional-argument Name (some V) A :- A is Name ^ ": " ^ {prooftext.typst-string 
 % (Checked = tt); the words of the lexicon, legend-var, legend-ok, ...
 pred legend-typst i:string, i:bool, o:string.
 legend-typst Lang Checked Line :-
-  std.map ["var", "hyp", "claim", "fact", "by"] (legend-pair Lang) Roles,
+  std.map ["var", "hyp", "claim", "fact", "just"] (legend-pair Lang) Roles,
   (if (Checked = tt)
      (std.map ["ok", "ko", "todo", "none"] (legend-pair Lang) Statuses,
       Tail is ", statuses: (" ^ {std.string.concat ", " Statuses} ^ ",)")
@@ -201,16 +403,6 @@ legend-pair Lang Key Pair :-
 
 % ------------------------------------------------------------------
 % The parts of a text (text-parts, formulas.elpi)
-
-% [text-content C0 Where Text Content C]: the Typst content of the text
-% of the statement (Where = "statement") or of the step numbered Where,
-% [...] with one call per part; C, the context after it
-pred text-content i:context, i:string, i:string, o:string, o:context.
-text-content C0 Where Text Content C :-
-  prooftext.text-parts Text Parts,
-  parts-typst C0 Where Parts Calls C,
-  std.string.concat "" Calls Inner,
-  Content is "[" ^ Inner ^ "]".
 
 % [parts-typst C0 Where Parts Calls C]: the Typst code of each part, in
 % order, each formula under the declarations before it, each name under
@@ -232,9 +424,21 @@ part-typst (context F0 Names Words) Where (prooftext.formula-part Tag Formula Na
   (if (prooftext.role-tag _ Tag) (Role = Tag) (Role = "formula")),
   name-typst (context F Names Words) Where Tag Name NameCall C,
   Call is "#" ^ Role ^ "(" ^ Shown ^ ")" ^ NameCall.
-part-typst (context F Names Words) _ (prooftext.by-part J) Call (context F Names Words) :-
+part-typst C _ (prooftext.by-part J) Call C :-
+  justification-typst C J Just, Call is "#emph(\"by\")#\" \"" ^ Just.
+part-typst C _ (prooftext.tagged-name Class J) Call C :-
+  prooftext.justification-class Class, !, justification-typst C J Call.
+% a tagged name of another class (an error for a checker): its text
+part-typst C _ (prooftext.tagged-name Class X) Call C :-
+  Call is "#" ^ {prooftext.typst-string {calc ("*" ^ X ^ "*{." ^ Class ^ "}")}}.
+
+% [justification-typst C J Call]: the Typst code of the justification J,
+% *J*{.just} (or *by J*, after the word by), the name J in the colour of
+% the justifications, a link to what it names
+pred justification-typst i:context, i:string, o:string.
+justification-typst (context _ Names _) J Call :-
   justification-link Names J Arguments,
-  Call is "#by(" ^ {prooftext.typst-string J} ^ Arguments ^ ")".
+  Call is "#just(" ^ {prooftext.typst-string J} ^ Arguments ^ ")".
 
 % [name-typst C0 Where Tag Name Call C]: the Typst code of the name (h)
 % written after a formula of class Tag, after one space ("" for none).
@@ -258,7 +462,7 @@ name-typst (context F Names Words) Where _ (some N) Call (context F Names1 Words
   Call is "#\" \"#name(" ^ {prooftext.typst-string N} ^ Arguments ^ ")".
 
 % [justification-link Names J Arguments]: the link of the justification J,
-% as arguments of by: to the documentation of a lemma, or to the step that
+% as arguments of just: to the documentation of a lemma, or to the step that
 % introduced the name J ("" for none)
 pred justification-link i:list (pair string string), i:string, o:string.
 justification-link _ J Arguments :- prooftext.documentation-url J Url, !,

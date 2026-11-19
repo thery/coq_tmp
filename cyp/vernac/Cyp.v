@@ -1,9 +1,11 @@
-(* cyp: a proof written as text, checked step by step, inside Rocq.
+(* cyp: a proof written as text, checked node by node, inside Rocq.
 
-   A text is a verification condition generator: each step gives
-   conditions, numbered after the step (2.1 the first sub-step of step 2,
-   2a and 2b the two claims of step 2, 0 the statement after the steps).
-   cyp discharges them by its rules and default tactics.
+   A text is the tree of the 2003 paper (prooftext/README.md, "The
+   format"), and a verification condition generator: each node gives one
+   condition, its conclusion, numbered like the node (2.1 the first
+   subnode of node 2, 0 the top node, the statement).  cyp discharges
+   them by the justifications and facts of the nodes, its rules and its
+   default tactics.
 
      CypFile "proof.md".
        reads a cyp proof in Markdown, checks it, writes proof.checked.md
@@ -15,16 +17,21 @@
      Proof. tactics. CypQed.
        the same, but the conditions not discharged are the goals of the
        Proof block, in the order of the text; each goal is named after its
-       condition (?c2a for 2a, ?c2_1b for 2.1b), so that [c2a]: tac. proves
-       it.  In Cyp Lemma a step is words (strings) and formulas (terms),
-       "by X" for its justification.
+       node (?c2 for 2, ?c2_1 for 2.1), so that [c2]: tac. proves it.  They
+       always succeed when the statement can be read: an error of a node
+       is printed, and the node's conclusion is a goal all the same.  In
+       Cyp Lemma a step is a node: words (strings, with *X*{.just} for a
+       justification), formulas (terms, each followed by its class,
+       "{.claim}"), and its subnodes (a list of steps).
 
-   What a proof means is in the Elpi files of elpi/: text.elpi (words,
-   formulas and their roles), lexicon/ (the vocabulary of each
-   language), check.elpi (closing a goal), gaps.elpi (the gap tactic, a last
-   try on a condition left open, cyp_gap of Gaps.v), proof.elpi (the proof of a
-   statement from its steps), markdown.elpi (the Markdown).  The rules of a
-   field are added to the database cyp.db (justify, justify_first, named). *)
+   What a proof means is in the Elpi files of elpi/: text.elpi (what cyp
+   takes from the text of a node: its tags), check.elpi (closing a goal: the
+   justifications, the facts, the rules), gaps.elpi (the gap tactic, a
+   last try on a condition left open, cyp_gap of Gaps.v), proof.elpi (the
+   proof of a statement from its tree), markdown.elpi (the checked Markdown
+   and the JSON).  The tree is read by prooftext's reader
+   (prooftext/tree.elpi, nodes.elpi).  The rules of a field are added to
+   the database cyp.db (justify, justify_first, named). *)
 
 From Stdlib Require Import PrimString List Lia Lra Ring Field.
 From elpi Require Import elpi.
@@ -40,7 +47,8 @@ From Cdcl Require Import Itauto.
 (* a claim C of the text, proved by p, is a hypothesis of the rest k *)
 Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
 
-(* The tactics a proof may name in *by X* or in its header's by:, those of
+(* The tactics a proof may name in a justification *X*{.just} or in its
+   header's by:, those of
    prooftext/tactics.elpi: the name N runs cyp_N, below.  More with
      Ltac my_tac := ...  Elpi Accumulate cyp.db lp:{{ tactic-name "my" "my_tac". }}. *)
 Ltac cyp_lia := lia.            Ltac cyp_nia := nia.
@@ -58,13 +66,23 @@ Ltac cyp_firstorder := bounded_firstorder.
 Ltac cyp_hypothesis :=
   lazymatch goal with |- ?g => tryif has_evar g then fail else assumption end.
 Ltac cyp_intros := progress intros.
+(* the goal in weak head normal form, if that changes it *)
+Ltac cyp_head_unfolded := progress hnf.
+(* the goal has no existential variable *)
+Ltac cyp_evar_free := match goal with |- ?g => tryif has_evar g then fail else idtac end.
 Ltac cyp_eapply t := eapply t.
+Ltac cyp_exact t := exact t.
 (* an elimination principle t on the variable x: the goal abstracted over x
    first, so that the motive is that abstraction (as elim does) *)
 Ltac cyp_elim_on t x := pattern x; eapply t.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.
+(* a name given by a justification, or the hypothesis a fact is, put first:
+   a hypothesis moved last in the context (where tactics look first), a
+   lemma added to it *)
+Ltac cyp_first t :=
+  first [ is_var t; move t at bottom | is_var t | let h := fresh "lem" in pose proof t as h ].
 
 Elpi Db cyp.db lp:{{
   % the tactics of a rule: [ltac N] the Ltac tactic N, which must close the
@@ -81,7 +99,7 @@ Elpi Db cyp.db lp:{{
   % [justify_first Pattern Tac]: the same, tried before every [justify]
   pred justify_first i:term, o:cyptac.
   % [named Name Pattern Tac]: a rule with a name, tried like the others,
-  % and the only ones tried when a step says *by Name*
+  % and the only ones tried when a node is justified by *Name*{.just}
   pred named o:string, o:term, o:cyptac.
 
   % [tactic-name Name Ltac]: a tactic that the rules of a proof add to
@@ -104,24 +122,17 @@ Elpi Db cyp.db lp:{{
   default-ltac "cyp_lra".
 }}.
 
-(* the language data, shared with xtext: lexicon/ *)
+(* the roles of the formulas, shared with xtext: lexicon/ (cyp reads no
+   phrase of it: a formula has the role of its class) *)
 From Lexicon Extra Dependency "lexicon.elpi" as lexicon.
-From Lexicon Extra Dependency "lang_en.elpi" as lexicon_en.
-From Lexicon Extra Dependency "lang_fr.elpi" as lexicon_fr.
-From Lexicon Extra Dependency "lang_it.elpi" as lexicon_it.
-From Lexicon Extra Dependency "lang_de.elpi" as lexicon_de.
-From Lexicon Extra Dependency "lang_nl.elpi" as lexicon_nl.
-From Lexicon Extra Dependency "lang_ru.elpi" as lexicon_ru.
-From Lexicon Extra Dependency "lang_zh.elpi" as lexicon_zh.
-From Lexicon Extra Dependency "lang_ar.elpi" as lexicon_ar.
-From Lexicon Extra Dependency "lang_ko.elpi" as lexicon_ko.
-From Lexicon Extra Dependency "lang_la.elpi" as lexicon_la.
 (* the format of proof texts, shared with xtext: prooftext/ (the header and
    the document are loaded for checked.elpi, the marks of a checked text;
    names.elpi gives the names H1, H2, ... of unnamed hypotheses) *)
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "tree.elpi" as pt_tree.
+From ProofText Extra Dependency "nodes.elpi" as pt_nodes.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
@@ -141,26 +152,27 @@ From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
 
 Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
-Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
-  lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_checked pt_tactics.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
   cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   % #[bare]: the conditions are printed, nothing is tried or defined
   main [str F] :- attributes A, std.mem A (attribute "bare" _), !,
-    (proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs),
+    (proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs Stated),
     (current-lang Lang :- !) => (
+      say-reports Rs, check-statement Name Stated Rs,
       std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []},
       coq.ltac.collect-goals Proof GL _, say-goals GL,
       count Rs Steps _ Todo, std.length Steps NS, std.length Todo NT,
       say "conditions" [Name, {std.any->string NS}, {std.any->string NT}]).
   main [str F] :-
-    check-file F Lang Name Ty Proof Rs,
+    check-file F Lang Name Ty Proof Rs Stated,
     count Rs Steps Ko _,
     std.length Steps NR, std.length Ko NK, NP is NR - NK,
     (current-lang Lang :- !) => (
+    check-statement Name Stated Rs,
     if (Ko = [])
        (define Name Ty Proof, say "proved" [Name, {std.any->string NP}])
        (rex.replace "[.]md$" ".checked.md" F OutMd,
@@ -173,41 +185,51 @@ Elpi Export CypFile.
 
 #[arguments(raw)] Elpi Command Cyp.
 Elpi Accumulate Db cyp.db.
-Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
-  lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_checked pt_tactics.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
   cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
-  % a step written in Rocq: words (primitive strings) and terms, read into
-  % pieces, whose elements are found as in a Markdown text (elements,
-  % elpi/text.elpi); its justification is a word "by X"
-  pred raw-step i:string, i:term, o:step.
-  raw-step I T (step I Es Tac []) :-
-    raw-items T Ps, elements Ps rclaim Es0,
-    (std.mem Es0 (txt W), rex.match "^by " W, !,
-     rex.replace "^by +" "" W X, Tac = some X,
-     std.filter Es0 (e\ not (e = txt W)) Es ; Tac = none, Es = Es0).
+  % A step written in Rocq is a node of the tree, as a list item of a
+  % Markdown text: its words are strings, read as the text of a node
+  % (prooftext's text-parts: *X*{.just} is a justification); its formulas
+  % are terms, and the string right after a term may give its class and
+  % its name, "{.claim} (n)", as in a Markdown text (prooftext's
+  % after-formula); a list among its arguments is the list of its
+  % subnodes:
+  %   "We have" (0 < b + a) "{.claim}, since" [ "From" (0 < a) "{.fact}" ... ]
 
-  % [raw-items T Pieces]: the words (strings) and the formulas (terms) of
-  % a step written in Rocq, "We have" (x = 1) "by lia"
-  pred raw-items i:term, o:list piece.
-  raw-items (app [primitive (pstring P) | As]) [ptext S | L] :- !,
-    coq.pstring->string P S, raw-args As L.
-  raw-items (primitive (pstring P)) [ptext S] :- !, coq.pstring->string P S.
-  raw-items T [pterm T "" none].
-  % [raw-args Ts Pieces]: the arguments Ts of a step written in Rocq, each a
-  % word (a string) or a formula (a term); the words right after a formula
-  % may give its class and its name, "{.hyp} (h)", as in a Markdown text
-  % (prooftext's after-formula)
-  pred raw-args i:list term, o:list piece.
-  raw-args [] [].
-  raw-args [primitive (pstring P) | R] [ptext S | L] :- !,
-    coq.pstring->string P S, raw-args R L.
-  raw-args [T, primitive (pstring P) | R] [pterm T C N, ptext S1 | L] :- !,
-    coq.pstring->string P S, prooftext.after-formula S C N S1, raw-args R L.
-  raw-args [T | R] [pterm T "" none | L] :- raw-args R L.
+  % [raw-node T N]: the node of the step T
+  pred raw-node i:term, o:prooftext.node.
+  raw-node T (prooftext.node prooftext.list-item prooftext.unplaced
+      (prooftext.spot 0 0) (prooftext.spot 0 0) Cs) :-
+    step-arguments T Args, raw-contents Args Cs.
+
+  % [step-arguments T Args]: the words, formulas and lists of a step
+  pred step-arguments i:term, o:list term.
+  step-arguments (app [primitive (pstring P) | As]) [primitive (pstring P) | As] :- !.
+  step-arguments T [T].
+
+  % [raw-contents Args Cs]: the contents of a node of these arguments
+  pred raw-contents i:list term, o:list prooftext.content.
+  raw-contents [] [].
+  raw-contents [primitive (pstring P) | R] [prooftext.run S Ps | Cs] :- !,
+    coq.pstring->string P S, prooftext.text-parts S Ps, raw-contents R Cs.
+  raw-contents [L | R] Cs :- is-list L, !,
+    list-of L Ts, std.map Ts raw-node Ns, std.map Ns (n\ c\ c = prooftext.sub n) Subs,
+    raw-contents R Cs1, std.append Subs Cs1 Cs.
+  raw-contents [T, primitive (pstring P) | R] [prooftext.run S Ps | Cs] :- !,
+    coq.pstring->string P S, prooftext.after-formula S C N S1,
+    prooftext.text-parts S1 Ps1, raw-contents R Cs,
+    Ps = [prooftext.term-part C T N | Ps1].
+  raw-contents [T | R] [prooftext.run "" [prooftext.term-part "" T none] | Cs] :-
+    raw-contents R Cs.
+
+  % [is-list T]: T is a Rocq list, written [ ... ; ... ]
+  pred is-list i:term.
+  is-list (app [global (indc K) | _]) :-
+    (coq.locate "cons" (indc K) ; coq.locate "nil" (indc K)), !.
 
   % [list-of T Ts]: the Rocq list T as an Elpi list (a term that is not a
   % list: itself, alone)
@@ -217,28 +239,33 @@ Elpi Accumulate lp:{{
   list-of (app [global (indc Nil), _]) [] :- coq.locate "nil" (indc Nil), !.
   list-of T [T].
 
-  % [numbered I Ts Steps]: the steps of the terms Ts, numbered from I
-  pred numbered i:int, i:list term, o:list step.
-  numbered _ [] [].
-  numbered I [T | L] [S | Ss] :-
-    raw-step {std.any->string I} T S, I1 is I + 1, numbered I1 L Ss.
+  % [lemma Ty Body P Rs Stated]: the binders of the statement and of the
+  % body, in parallel; then the top node: the conclusion of the statement,
+  % the steps of the body as its subnodes (Stated: check-tree)
+  pred lemma i:term, i:term, o:term, o:list report, o:bool.
+  lemma (prod N T A) (fun _ _ B) (fun N T S) Rs Stated :- !,
+    under-decl N T (x\ lemma (A x) (B x) (S x) Rs Stated).
+  lemma G Body P Rs Stated :-
+    list-of Body Ts, std.map Ts raw-node Ns, std.map Ns (n\ c\ c = prooftext.sub n) Subs,
+    Top = prooftext.node prooftext.whole-text prooftext.unplaced (prooftext.spot 0 0) (prooftext.spot 0 0)
+      [prooftext.run "" [prooftext.term-part "claim" G none] | Subs],
+    check-tree Top _ P Rs Stated.
 
-  % the binders of the statement and of the body, in parallel
-  pred lemma i:term, i:term, o:term, o:list report.
-  lemma (prod N T A) (fun _ _ B) (fun N T S) Rs :- !,
-    under-decl N T (x\ lemma (A x) (B x) (S x) Rs).
-  lemma G Body P Rs :-
-    list-of Body Ts, numbered 1 Ts Steps, level "0" none Steps G P Rs.
-
-  % the proof is opened with the conditions left as its goals
-  pred open i:string, i:term, i:term, i:list report, o:list sealed-goal.
-  open Name Ty Proof Rs GL :-
+  % [open Name Ty Proof Rs Stated GL]: the proof is opened with the
+  % conditions left as its goals, GL, whatever the errors of the nodes
+  % (each printed, its condition one of the goals when the node has a
+  % conclusion); only a statement that cannot be read stops it
+  pred open i:string, i:term, i:term, i:list report, i:bool, o:list sealed-goal.
+  open Name Ty Proof Rs Stated GL :-
+    say-reports Rs,
+    check-statement Name Stated Rs,
     count Rs Steps Ko Todo,
-    if (Ko = []) true
-       (std.string.concat ", " Ko KoS, coq.error {msg "steps-not-parsed" [Name, KoS]}),
     std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []},
     coq.ltac.collect-goals Proof GL _,
     std.length Steps NS, std.length Todo NT,
+    if (Ko = []) true
+       (std.string.concat ", " Ko KoS,
+        say "errors" [Name, {std.any->string {std.length Ko} }, KoS]),
     if (Todo = [])
        (say "all-discharged" [Name, {std.any->string NS}])
        (std.string.concat ", " Todo TS,
@@ -257,23 +284,21 @@ Elpi Accumulate lp:{{
       coq.arity->term Arity Ty0,
       std.assert-ok! (coq.elaborate-ty-skeleton Ty0 _ Ty) {msg "statement-no-typecheck" []},
       coq.say "cyp:" Name,
-      ((current-scope "" :- !) => proof-mode => with-attributes (lemma Ty Body Proof Rs)),
-      std.forall Rs (r\ sigma I S\ r = rep I S,
-        (S = ok, coq.say "  ✅" I ; S = todo _, true ; coq.say "  ❌" I S)),
-      open Name Ty Proof Rs GL).
+      ((current-scope "" :- !) => proof-mode => with-attributes (lemma Ty Body Proof Rs Stated)),
+      open Name Ty Proof Rs Stated GL).
   main-interp-proof [str "File", str F] _ Proof GL (qed-data Name Lang Ty) :-
-    (proof-mode => with-attributes (check-file F Lang Name Ty Proof Rs)),
-    (current-lang Lang :- !) => open Name Ty Proof Rs GL.
+    (proof-mode => with-attributes (check-file F Lang Name Ty Proof Rs Stated)),
+    (current-lang Lang :- !) => open Name Ty Proof Rs Stated GL.
 }}.
 #[proof="begin"] Elpi Export Cyp.
 
 (* the end of the Proof block of Cyp File or Cyp Lemma *)
 Elpi Command CypQed.
-Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
-  lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
-Elpi Accumulate File pt_formulas pt_tactics.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_command.
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+  cyp_command.
 Elpi Accumulate lp:{{
   main-interp-qed _ _ Proof _ (qed-data Name Lang Ty) :-
     (current-lang Lang :- !) => (

@@ -1,29 +1,30 @@
 % xtext: The text of introductions, eliminations, recursion (fix) and rewriting.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % --- introduction theorems (thesis 6.2.1, tactic Constr); CD: the words
-% that name the constructor; the justification of the step is the
-% constructor K (cyp applies it and proves its premises)
+% that name the constructor, which is the justification of the step (cyp
+% applies it and proves its premises)
 
-tr-intro CD K Tau [] _ _ P :- !,
-  formula rclaim Tau F, by-part K J,
-  sentence {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S,
+tr-intro CD Tau [] _ _ P :- !,
+  formula rclaim Tau F,
+  sentence {std.append [wd "definition" | CD] [tx ",", wd "have", tx F]} S,
   conclusion-only S P.
-% all premises are hypotheses: "By definition, from H0 we deduce B \/ A"
-tr-intro CD K Tau Ns _ _ P :- std.forall Ns name, !,
-  std.map Ns (h\ s\ sigma N F\ var-name h N, type-formula rfact h F, with-name F N s) Hs,
-  formula rclaim Tau F, by-part K J,
-  sentence {std.append [wd "definition" | CD] [tx ",", wd "from", enum Hs, wd "deduce", tx F, J]} S,
+% all premises are hypotheses: "By definition of or (or_intror), from i
+% we deduce B \/ A", the hypotheses named as justifications
+tr-intro CD Tau Ns _ _ P :- std.forall Ns name, !,
+  std.map Ns (h\ s\ sigma J\ justification-of h J, s = [J]) Hs,
+  formula rclaim Tau F,
+  sentence {std.append [wd "definition" | CD] [tx ",", wd "from", enum Hs, wd "deduce", tx F]} S,
   conclusion-only S P.
-tr-intro CD K Tau [N] Es Path (prf L (some (it S []))) :- !,
+tr-intro CD Tau [N] Es Path (prf L (some (it S []))) :- !,
   tr N nostar Path PN0,
   next-expected Es E _, at-expected N E PN0 PN, flatten PN L,
-  formula rclaim Tau F, by-part K J,
-  sentence {std.append [wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
-tr-intro CD K Tau Ns Es Path (prf Ds (some (it S []))) :-
+  formula rclaim Tau F,
+  sentence {std.append [wd "definition" | CD] [tx ",", wd "have", tx F]} S.
+tr-intro CD Tau Ns Es Path (prf Ds (some (it S []))) :-
   dashed-exp Ns Es Path Ds,
-  formula rclaim Tau F, by-part K J,
-  sentence {std.append [wd "so", wd "definition" | CD] [tx ",", wd "have", tx F, J]} S.
+  formula rclaim Tau F,
+  sentence {std.append [wd "so", wd "definition" | CD] [tx ",", wd "have", tx F]} S.
 
 % --- elimination theorems (thesis 6.2.2, tactics ElimOpen, ElimCase,
 % ElimClose, and 6.3)
@@ -68,13 +69,26 @@ how-on ff (wd "by-cases-on").
 
 % the words that name an elimination: (C, R)
 pred elim-name i:string, i:string, o:list part.
-elim-name C R [tx "(", tx C, tx ",", tx R, tx ")"].
+elim-name C R [tx "(", tx C, tx ",", RP, tx ")"] :- elim-rule R RP.
+
+% the words that name the type of an elimination and its rule: C (R)
+pred elim-type-rule i:string, i:string, o:list part.
+elim-type-rule C R [tx C, tx "(", RP, tx ")"] :- elim-rule R RP.
+
+% [elim-rule R P]: the rule R of an elimination, as a part: the
+% elimination theorem is the justification of the step (elim-app: its
+% name, which cyp applies, the cases being its subproofs); a match is no
+% name (its closing would be tactic code, destruct x, which cyp cannot
+% run), and cyp's default tactics close it from the cases
+pred elim-rule i:string, o:part.
+elim-rule R (jst Q) :- elim-app R Q, !.
+elim-rule R (tx R).
 
 % the object eliminated: its subproof (if it is not a hypothesis) and
-% the words that name it
+% the words that name it: the hypothesis, as a justification, or the
+% conclusion of the subproof, a fact
 pred major i:term, i:list int, o:list line, o:list part.
-major M _ [] W :- name M, !,
-  var-name M N, type-formula rfact M F, with-name F N W.
+major M _ [] [J] :- name M, !, justification-of M J.
 major M Path L [tx F] :- tr M nostar Path PM, flatten PM L, type-formula rfact M F.
 
 % first kind: the eliminated object is a proof of (C u1 .. uk)
@@ -88,53 +102,40 @@ tr-elim1 C R Tau Maj [N] Cis Path (prf LM (some (it H LN))) :- !,
   major Maj Path LM W, formula rclaim Tau F,
   next-case Cis (ci _ Fl) _,
   ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-  sentence {std.append [wd "back" | {std.append {with-name C R} [wd "in" | W]}] [tx ",", wd "we-prove", tx F, tx ":"]} H.
-tr-elim1 C R Tau Maj Ns Cis Path (prf L (some (it S []))) :-
-  major Maj Path LM W, formula rclaim Tau F, formula rfact Tau Ff,
+  sentence {std.append [wd "back" | {std.append {elim-type-rule C R} [wd "in" | W]}] [tx ",", wd "we-prove", tx F, tx ":"]} H.
+% several cases: one node, the goal announced (untagged), the cases, and
+% the conclusion in the closing paragraph
+tr-elim1 C R Tau Maj Ns Cis Path (prf LM (some (with-closing H LC S))) :-
+  major Maj Path LM W, formula rclaim Tau F,
   recursive Cis Rec, how-on Rec HowOn, elim-name C R CR,
-  sentence {std.append [wd "we-prove", tx Ff, HowOn | W] {std.append CR [tx ":"]}} H,
+  sentence {std.append [wd "we-prove", untagged Tau, HowOn | W] {std.append CR [tx ":"]}} H,
   cases Ns Cis Rec Path 1 LC,
-  std.append LM [it H []|LC] L,
   sentence [wd "have", tx F, wd "all-cases"] S.
 
 % second kind (dependent elimination, thesis 6.3.3 and 6.3.4): Tau is
 % the generalised statement; Fin, if any, the instance finally proved;
-% On, if any, the object eliminated (for a match)
+% On, if any, the object eliminated (for a match).  The statements
+% announced and the object are untagged: the conclusion is said after the
+% cases, in the closing paragraph
 
 tr-elim2 C R Tau _ _ [] _ _ P :- !,
-  formula rclaim Tau F, sentence [wd "no-element" | {std.append {with-name C R} [tx ",", wd "so", tx F]}] S, conclusion-only S P.
+  formula rclaim Tau F, sentence [wd "no-element" | {std.append {elim-type-rule C R} [tx ",", wd "so", tx F]}] S, conclusion-only S P.
 tr-elim2 C R Tau Fin On Ns Cis Path P :-
-  formula rclaim Tau F, formula rfact Tau Ff, recursive Cis Rec, how Rec How, elim-name C R CR,
-  (if (On = some O) (formula rfact O FO, OnS = [wd "on", tx FO]) (OnS = [])),
+  formula rclaim Tau F, recursive Cis Rec, how Rec How, elim-name C R CR,
+  (if (On = some O) (OnS = [wd "on", untagged O]) (OnS = [])),
   (if (Fin = some TF)
-      (formula rfact TF FF,
-       sentence {std.append [wd "to-prove", tx FF, How | CR] [tx ",", wd "generalise", tx Ff, tx ":"]} H)
-      (if (On = some O) (formula rfact O FO, how-on Rec HowOn, Hw = [HowOn, tx FO]) (Hw = [How]),
-       sentence {std.append [wd "we-prove", tx Ff | Hw] {std.append CR [tx ":"]}} H)),
+      (sentence {std.append [wd "to-prove", untagged TF, How | CR] [tx ",", wd "generalise", untagged Tau, tx ":"]} H)
+      (if (On = some O) (how-on Rec HowOn, Hw = [HowOn, untagged O]) (Hw = [How]),
+       sentence {std.append [wd "we-prove", untagged Tau | Hw] {std.append CR [tx ":"]}} H)),
   (if (Ns = [N])
       (% one case: no case header, no conclusion
        next-case Cis (ci _ Fl) _,
        ((cur-ih Fl :- !) => tr N star Path PN), flatten PN LN,
-       sentence {std.append [wd "definition" | {std.append {with-name C R} OnS}] [tx ",", wd "we-prove", tx F, tx ":"]} H1,
+       sentence {std.append [wd "definition" | {std.append {elim-type-rule C R} OnS}] [tx ",", wd "we-prove", tx F, tx ":"]} H1,
        P = prf [] (some (it H1 LN)))
       (cases Ns Cis Rec Path 1 LC,
-       (if (On = some O) true (O = sort prop)),
-       close-by R O J,
-       sentence [wd "exhaustive", tx ",", wd "deduce", tx F, J] S,
-       P = prf [it H []|LC] (some (it S [])))).
-
-% The justification of the closing step of a dependent elimination (the
-% generalised statement): the elimination theorem T, by its full name
-% (elim-app), which cyp applies, the case claims being in the context.
-% None for a match (its closing would be tactic code, destruct x, which
-% cyp cannot run) and for the first kind (tr-elim1: the motive cannot be
-% found from the goal by unification when the type has indices); cyp's
-% default tactics then close the step from the cases, when they can.
-
-pred close-by i:string, i:term, o:part.
-close-by "match" _ (tx "") :- !.
-close-by T _ J :- elim-app T Q, !, by-part Q J.
-close-by _ _ (tx "").
+       sentence [wd "exhaustive", tx ",", wd "deduce", tx F] S,
+       P = prf [] (some (with-closing H LC S)))).
 
 % a match is the primitive form of an elimination; inside a fix, a case
 % that calls the recursive function is an inductive case
@@ -162,7 +163,7 @@ tr-fix N Rno Ty F Path (prf [] (some (it H LB))) :-
 
 % the name of the n-th binder of a lambda
 pred nth-binder i:term, i:int, o:list part.
-nth-binder (fun N _ _) 0 [tx S] :- !, coq.name->id N S0, prooftext.formula rfact S0 S.
+nth-binder (fun N _ _) 0 [tx S] :- !, coq.name->id N S0, prooftext.untagged-formula S0 S.
 nth-binder (fun N T F) K S :- !, K1 is K - 1,
   pi x\ decl x N T => nth-binder (F x) K1 S.
 nth-binder _ K [wd "argument", tx {std.any->string K}].

@@ -8,9 +8,9 @@ by: tauto | congruence | lia | firstorder | auto
 Let `A B C : Prop`{.var}. Assume `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) and `A`{.hyp} (h1). We prove `C`{.claim}.
 
 - By application, we have `B -> C`{.claim}.
-  - By h we have `A -> B -> C`{.claim}.
-  - By h1 we have `A`{.claim}.
+  - By *h*{.just} we have `A -> B -> C`{.claim}.
+  - By *h1*{.just} we have `A`{.claim}.
 - By application, we have `B`{.claim}.
-  - By h0 we have `A -> B`{.claim}.
-  - By h1 we have `A`{.claim}.
+  - By *h0*{.just} we have `A -> B`{.claim}.
+  - By *h1*{.just} we have `A`{.claim}.
 - By application, we have `C`{.claim}.

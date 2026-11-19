@@ -8,11 +8,13 @@ by: tauto | congruence | lia | firstorder | auto
 Let `A : Prop`{.var}. We prove `~ ~ (A \/ ~ A)`{.claim}.
 
 - Assume `~ (A \/ ~ A)`{.hyp} (H).
-  - By H we have `~ (A \/ ~ A)`{.claim}, that is `A \/ ~ A -> False`{.fact} (P1).
-  - By definition of or (or_intror), we have `A \/ ~ A`{.claim} *by Corelib.Init.Logic.or_intror*.
+  - By *H*{.just} we have `~ (A \/ ~ A)`, that is `A \/ ~ A -> False`{.claim} (P1).
+  - By definition of or (*or_intror*{.just}), we have `A \/ ~ A`{.claim}.
     - Assume `A`{.hyp} (a).
-      - By H we have `~ (A \/ ~ A)`{.claim}, that is `A \/ ~ A -> False`{.fact} (P2.1).
-      - By definition of or (or_introl), from `A`{.fact} (a) we deduce `A \/ ~ A`{.claim} *by Corelib.Init.Logic.or_introl*.
-      - Applying P2.1, we have `False`{.claim}.
+      - By *H*{.just} we have `~ (A \/ ~ A)`, that is `A \/ ~ A -> False`{.claim} (P2.1).
+      - By definition of or (*or_introl*{.just}), from *a*{.just} we deduce `A \/ ~ A`{.claim}.
+
+      Applying P2.1, we have `False`{.claim}.
     - We have proved `A -> False`{.claim}.
-  - Applying P1, we have `False`{.claim}.
+
+  Applying *P1*{.just}, we have `False`{.claim}.

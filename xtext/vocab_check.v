@@ -4,19 +4,19 @@
      phrases of roles are in lower case.  How a reader reads them is
      checked by cyp-check/roles_check.sh (optional, with cyp).
    - The tactics: every name written after *by* or in the header's by
-     field (the texts of xtext-tactic and xtext-guard-tactic, Explain.v) is
+     field (the texts of xtext-tactic and xtext-guard-tactic, ExtractText.v) is
      a tactic a proof text may name (../prooftext/tactics.elpi), so that
      cyp can run it. *)
-From XText Require Import Explain.
+From XText Require Import ExtractText.
 
-Elpi Query Explain lp:{{
+Elpi Query ExtractText lp:{{
   switch-values "lang" Langs,
   std.forall Langs (l\ sigma Bad\ vocab-check l Bad,
     if (Bad = []) (coq.say "vocabulary" l ": ok")
        (coq.error "vocabulary" l ":" Bad))
 }}.
 
-Elpi Query Explain lp:{{
+Elpi Query ExtractText lp:{{
   std.findall (xtext-tactic _ _) Ts, std.findall (xtext-guard-tactic _ _) Gs,
   std.map Ts (t\ n\ sigma L\ t = xtext-tactic L n) Ns1,
   std.map Gs (g\ n\ sigma L\ g = xtext-guard-tactic L n) Ns2,

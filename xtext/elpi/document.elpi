@@ -1,5 +1,5 @@
 % xtext: The top level: the statement, the document and its header.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Top level: the abstractions at the top of the proof make the
@@ -61,7 +61,8 @@ let-run [] [] [].
 pred proof-text i:string, i:list string, i:term, i:term, o:prooftext.document.
 proof-text Title Path Body Type
     (prooftext.document Fields Title prooftext.unplaced Statement Steps) :-
-  top-run [] Body Type Statement Lines,
+  top-run [] Body Type Statement Lines0,
+  with-conclusions Lines0 Lines,
   std.map Lines document-step Steps,
   header-fields Path Fields.
 
@@ -70,10 +71,8 @@ proof-text Title Path Body Type
 pred document-step i:line, o:prooftext.step.
 document-step (it S Ch) (prooftext.step prooftext.unplaced S1 Steps) :-
   end-dot S S1, std.map Ch document-step Steps.
-
-pred end-dot i:string, o:string.
-end-dot S S :- rex.match "^.*[:.,]$" S, !.
-end-dot S S1 :- S1 is S ^ ".".
+document-step (with-closing S Ch C) (prooftext.closed-step prooftext.unplaced S1 Steps C1) :-
+  end-dot S S1, end-dot C C1, std.map Ch document-step Steps.
 
 % The fields of the header, for cyp: the libraries (xtext-header-require)
 % and the module of the theorem, so that the lemmas it uses are known
@@ -94,17 +93,17 @@ header-fields Path Fields :-
   prooftext.by-field Tactics By,
   std.append [prooftext.field "require" Require | LangFields] [By] Fields.
 
-% the document of a proof in progress (Explain_partial): its partial
+% the document of a proof in progress (ExtractText_partial): its partial
 % proof term P, where the open goals are holes (thesis of L. Théry, 3.3.3)
-pred explain-partial i:string, i:term, o:prooftext.document.
-explain-partial Name P D :-
+pred extract-text-partial i:string, i:term, o:prooftext.document.
+extract-text-partial Name P D :-
   beta P P1, coq.typecheck P Ty0 ok, beta-ty Ty0 Ty,
   coq.env.current-path Path,
   proof-text {calc (Name ^ " (proof in progress)")} Path P1 Ty D.
 
 % the document of the proof of the constant Name
-pred explain i:string, o:prooftext.document.
-explain Name D :-
+pred extract-text i:string, o:prooftext.document.
+extract-text Name D :-
   coq.locate Name GR,
   ((GR = const C, coq.env.const-body C (some Bo)), !
    ; coq.error "xtext:" Name "is not a constant with a body"),
@@ -113,6 +112,17 @@ explain Name D :-
   coq.env.const C _ CTy,
   coq.gref->path GR Path,
   proof-text Name Path Bo1 CTy D.
+
+% [say-document D]: the document D printed: as plain text (no header, no
+% title, no markup: prooftext.write-document-as untagged), or in Markdown
+% with its classes when the command has the attribute #[tags]; a file
+% is always written with them (cyp, the Typst writer and the gallery
+% read them)
+pred say-document i:prooftext.document.
+say-document D :-
+  attributes A, coq.parse-attributes A [att "tags" bool] Opts, !,
+  (if (std.mem! Opts (get-option "tags" tt)) (M = prooftext.tagged) (M = prooftext.untagged)),
+  prooftext.write-document-as M D T, coq.say T.
 
 % The vocabulary of the writer in language L (the lexicon): every use of
 % English has a phrase in L, and every phrase of a role is in lower case

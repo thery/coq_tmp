@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 lang: ar
-flags: -R /home/thery/git/coq_tmp/xtext XText
+flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -9,6 +9,6 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ لتكن `A B C : Prop`{.var}. لنفرض أن `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) و `A`{.hyp} (h1). سنثبت أن `C`{.claim}.
 
-- ✅ حسب h1 لدينا `A`{.claim}.
-- ✅ بتطبيق h0 على h1, لدينا `B`{.claim}.
-- ✅ بتطبيق h, لدينا `C`{.claim}.
+- ✅ حسب *h1*{.just} لدينا `A`{.claim}.
+- ✅ بتطبيق *h0*{.just} على *h1*{.just}, لدينا `B`{.claim}.
+- ✅ بتطبيق *h*{.just}, لدينا `C`{.claim}.

@@ -1,4 +1,4 @@
-% prooftext: the document tree of a proof text, and its writer.
+% prooftext: the document of a writer, and its writing.
 %
 % A proof text is a Markdown file:
 %
@@ -14,14 +14,17 @@
 %   - a step                      the steps: a nested list, two spaces of
 %     - a sub-step                indentation per level, each item one line
 %
+%     So we have ...              the closing paragraph of a step, after its
+%                                 sub-steps, indented as its text
+%
 % (load after header.elpi)
 %
 % The writer (xtext) builds a [document] and writes it with
-% [write-document].  A reader reads a file into the same [document]; its
-% contract is in README.md ("Reading a proof text"), and [read-document]
-% below follows it (cyp reads its texts with it).
-% The Typst writer, for a PDF, is in typst.elpi.
-% The formulas and justifications inside the texts are in formulas.elpi.
+% [write-document].  The reader (tree.elpi) reads a file into the tree of
+% its nodes, the paper's tree (README.md, "The format"); [read-document]
+% (tree.elpi) gives the same [document] from that tree, for the Typst
+% writer (typst.elpi).  The formulas and justifications inside the texts
+% are in formulas.elpi.
 
 namespace prooftext {
 
@@ -36,6 +39,11 @@ type unplaced place.
 % lines joined by spaces) and its sub-steps
 kind step type.
 type step place -> string -> list step -> step.
+% a step written with a closing paragraph: its place, its text, its
+% sub-steps, then the closing paragraph, which belongs to the step (the
+% forward style of the 2003 paper: the conclusion after the subproofs;
+% README.md, "The format")
+type closed-step place -> string -> list step -> string -> step.
 
 % a proof text: the fields of its header, the name of the theorem (its
 % title), the place and the text of its statement, its steps
@@ -52,18 +60,57 @@ step-number P K N :- N is P ^ "." ^ {std.any->string K}.
 
 % ------------------------------------------------------------------
 % Writing
+%
+% A document is written with its markup (the files: cyp, the Typst
+% writer and the gallery read them), or as plain text, for a reader (the
+% text xtext prints): no header, no title, the formulas without backticks
+% and classes, the justifications without emphasis (plain-text,
+% formulas.elpi); the list of the steps stays.
+
+kind markup type.
+type tagged markup.     % Markdown with the classes of the format
+type untagged markup.   % plain text
 
 % [write-document D Text]: the Markdown text of D, ending with a newline
 pred write-document i:document, o:string.
-write-document (document Fields Name _ Statement Steps) Text :-
-  prooftext.header-lines Fields Header,
+write-document D Text :- write-document-as tagged D Text.
+
+% [write-document-as M D Text]: the text of D with the markup M, ending
+% with a newline
+pred write-document-as i:markup, i:document, o:string.
+write-document-as M (document Fields Name _ Statement0 Steps0) Text :-
+  shown-text M Statement0 Statement,
+  std.map Steps0 (shown-step M) Steps,
   step-lines "" Steps Lines,
-  std.append Header ["", {calc ("# " ^ Name)}, "", Statement, "" | Lines] All,
+  document-start M Fields Name Start,
+  std.append Start [Statement, "" | Lines] All,
   std.string.concat "\n" All Text0,
   Text is Text0 ^ "\n".
 
+% [document-start M Fields Name Lines]: the lines before the statement:
+% the header and the title for the markup, none for plain text
+pred document-start i:markup, i:list prooftext.field, i:string, o:list string.
+document-start tagged Fields Name Lines :-
+  prooftext.header-lines Fields Header,
+  std.append Header ["", {calc ("# " ^ Name)}, ""] Lines.
+document-start untagged _ _ [].
+
+% [shown-step M S T]: the step S with its texts in the markup M
+pred shown-step i:markup, i:step, o:step.
+shown-step M (step P Text0 Sub0) (step P Text Sub) :-
+  shown-text M Text0 Text, std.map Sub0 (shown-step M) Sub.
+shown-step M (closed-step P Text0 Sub0 Closing0) (closed-step P Text Sub Closing) :-
+  shown-text M Text0 Text, std.map Sub0 (shown-step M) Sub,
+  shown-text M Closing0 Closing.
+
+% [shown-text M Text Shown]: the text of a node in the markup M; plain
+% text has its clauses in formulas.elpi, which reads the formulas
+pred shown-text i:markup, i:string, o:string.
+shown-text tagged Text Text.
+
 % [step-lines Indent Steps Lines]: the list items of Steps, the sub-steps
-% of a step below it, indented by two more spaces
+% of a step below it, indented by two more spaces, then its closing
+% paragraph, if any, after an empty line, indented as the text of the step
 pred step-lines i:string, i:list step, o:list string.
 step-lines _ [] [].
 step-lines Indent [step _ Text Sub | Steps] [Line | Lines] :-
@@ -71,140 +118,10 @@ step-lines Indent [step _ Text Sub | Steps] [Line | Lines] :-
   step-lines {calc (Indent ^ "  ")} Sub SubLines,
   step-lines Indent Steps Next,
   std.append SubLines Next Lines.
-
-% ------------------------------------------------------------------
-% Reading (the reader's contract, README.md "Reading a proof text")
-
-% [read-document File D]: the proof text in File, with the places of its
-% texts
-pred read-document i:string, o:document.
-read-document File D :- read-lines File Lines, lines-document Lines D.
-
-% [read-lines File Lines]: the lines of File
-pred read-lines i:string, o:list string.
-read-lines File Lines :- open_in File I, input-lines I Lines, close_in I.
-
-% [input-lines I Lines]: the lines of the input stream I, up to its end
-pred input-lines i:in_stream, o:list string.
-input-lines I [] :- eof I, !.
-input-lines I [L | Ls] :- input_line I L, input-lines I Ls.
-
-% a line of the file and its number, from 0
-kind numbered-line type.
-type nl int -> string -> numbered-line.
-
-% [lines-document Lines D]: the document of the lines of a file
-pred lines-document i:list string, o:document.
-lines-document Lines (document Fields Name StatementPlace Statement Steps) :-
-  number-lines 0 Lines Numbered,
-  header-of Numbered Fields Body,
-  title-of Body Name AfterTitle,
-  statement-of AfterTitle StatementPlace Statement Items,
-  item-tree Items Steps.
-
-% [number-lines N Lines Numbered]: the lines numbered from N
-pred number-lines i:int, i:list string, o:list numbered-line.
-number-lines _ [] [].
-number-lines N [L | Ls] [nl N L | Ns] :- N1 is N + 1, number-lines N1 Ls Ns.
-
-% [header-of Lines Fields Body]: the fields of the header (between a first
-% line --- and the next one; the keys that are not header-keys left out)
-% and the lines after it
-pred header-of i:list numbered-line, o:list prooftext.field, o:list numbered-line.
-header-of [nl _ L | Ls] Fields Body :- trim L "---", !, header-fields Ls Fields Body.
-header-of Ls [] Ls.
-
-% [header-fields Lines Fields Body]: the fields of the header, up to its
-% closing line ---, and the lines after it; a line that is not a field "key:
-% value" of a header-key is skipped
-pred header-fields i:list numbered-line, o:list prooftext.field, o:list numbered-line.
-header-fields [] [] [].
-header-fields [nl _ L | Ls] [] Ls :- trim L "---", !.
-header-fields [nl _ L | Ls] [prooftext.field Key Value | Fs] Body :-
-  rex.match "^ *[A-Za-z_-]+ *:" L,
-  rex.replace "^ *\\([A-Za-z_-]+\\) *:.*" "\\1" L Key, prooftext.header-key Key, !,
-  rex.replace "^ *[A-Za-z_-]+ *:" "" L V, trim V Value,
-  header-fields Ls Fs Body.
-header-fields [_ | Ls] Fs Body :- header-fields Ls Fs Body.
-
-% [title-of Lines Name After]: the name in the first line "# name", and
-% the lines after it
-pred title-of i:list numbered-line, o:string, o:list numbered-line.
-title-of [nl _ L | Ls] Name Ls :- rex.match "^# " L, !,
-  rex.replace "^# " "" L N, trim N Name.
-title-of [_ | Ls] Name After :- title-of Ls Name After.
-title-of [] _ _ :- std.fatal-error "prooftext: a proof text has a title, # name".
-
-% [statement-of Lines Place Statement Items]: the statement, the lines
-% before the first item, and the lines from it
-pred statement-of i:list numbered-line, o:place, o:string, o:list numbered-line.
-statement-of Lines Place Statement Items :-
-  split-before item-line Lines Before Items,
-  std.filter Before (l\ not (blank-line l)) Text,
-  line-texts Text Statement,
-  text-place Text Place.
-
-% [item-line L]: L is a list item, "- " or "* " after spaces
-pred item-line i:numbered-line.
-item-line (nl _ L) :- rex.match "^ *[-*] " L.
-
-% [blank-line L]: the line L has only spaces and tabs
-pred blank-line i:numbered-line.
-blank-line (nl _ L) :- trim L "".
-
-% [line-texts Lines Text]: the lines trimmed, the empty ones left out,
-% joined by one space
-pred line-texts i:list numbered-line, o:string.
-line-texts Lines Text :-
-  std.map Lines (l\ t\ sigma N L\ l = nl N L, trim L t) Ts,
-  std.filter Ts (t\ not (t = "")) Ts1,
-  std.string.concat " " Ts1 Text.
-
-% [text-place Lines Place]: the place of a text from its first to its last
-% line (lines 0 0 for no line)
-pred text-place i:list numbered-line, o:place.
-text-place [] (lines 0 0).
-text-place [nl First _ | Ls] (lines First Last) :- std.last [nl First "" | Ls] (nl Last _).
-
-% an item of the list: its indentation and its step, without its
-% sub-steps
-kind item type.
-type item int -> place -> string -> item.
-
-% [item-tree Lines Steps]: the steps of the items in Lines, each with the
-% items after it that are more indented as its sub-steps
-pred item-tree i:list numbered-line, o:list step.
-item-tree Lines Steps :- items Lines Items, item-steps Items Steps.
-
-% [items Lines Items]: the list items of Lines (each starts at a line "- "
-% or "* "), each with its indentation, its place and its text, continuation
-% lines joined
-pred items i:list numbered-line, o:list item.
-items [] [].
-items [nl N L | Ls] [item Indent Place Text | Is] :-
-  rex.replace "[^ ].*" "" L Spaces, Indent is size Spaces,
-  rex.replace "^ *[-*] " "" L First,
-  split-before item-line Ls Continuation Rest,
-  line-texts [nl N First | Continuation] Text,
-  std.filter Continuation (l\ not (blank-line l)) Filled,
-  text-place [nl N L | Filled] Place,
-  items Rest Is.
-
-% [item-steps Items Steps]: the steps of the items, each with the items
-% after it that are more indented as its sub-steps
-pred item-steps i:list item, o:list step.
-item-steps [] [].
-item-steps [item Indent Place Text | Is] [step Place Text Sub | Steps] :-
-  split-before (i\ sigma J P T\ i = item J P T, J =< Indent) Is Deeper Rest,
-  item-steps Deeper Sub,
-  item-steps Rest Steps.
-
-% [split-before P L Before From]: L cut before its first element
-% that satisfies P (From = [] if none does)
-pred split-before i:(pred i:A), i:list A, o:list A, o:list A.
-split-before _ [] [] [].
-split-before P [X | Xs] [] [X | Xs] :- P X, !.
-split-before P [X | Xs] [X | Before] From :- split-before P Xs Before From.
+step-lines Indent [closed-step P Text Sub Closing | Steps] Lines :-
+  step-lines Indent [step P Text Sub] ItemLines,
+  step-lines Indent Steps Next,
+  std.append ItemLines ["", {calc (Indent ^ "  " ^ Closing)} | Next] Lines.
 
 % [trim S T]: S without the spaces and tabs at its ends
 pred trim i:string, o:string.

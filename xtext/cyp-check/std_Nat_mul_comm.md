@@ -1,6 +1,6 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations.
-flags: -R /home/thery/git/coq_tmp/xtext XText
+flags: -R /home/thery/git/coq_tmp-fxtext/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -8,4 +8,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n m : nat`{.var}. We prove `n * m = m * n`{.claim}.
 
-- We have `n * m = m * n`{.claim} *by lia*.
+- By *lia*{.just} we have `n * m = m * n`{.claim}.

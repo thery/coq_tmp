@@ -7,8 +7,8 @@ Open Scope Z_scope.
 Open Scope pstring_scope.
 
 Cyp Lemma wrong (a b : Z) (H : 0 < a < b) : a * a < b * b :=
-  [ "From" (0 < a < b) "we have" (0 < a - b) ;
-    "Hence" (0 < b + a) ].
+  [ "From" (0 < a < b) "{.fact} we have" (0 < a - b) "{.claim}" ;
+    "Hence" (0 < b + a) "{.claim}" ].
 Proof.
   Fail lia.
 Abort.

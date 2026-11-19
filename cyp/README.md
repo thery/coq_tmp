@@ -1,10 +1,10 @@
 # cyp: coloured proofs
 
-A proof is written in Markdown, as on paper.  cyp turns each step into a
+A proof is written in Markdown, as on paper.  cyp turns each node of its tree into a
 Rocq goal, tries to prove it, and writes the proof back in Markdown, with
-✅ in front of each proved step and ❌ in front of the others; under a ❌, a
-folded block gives the goal and Rocq's message.  When every step is
-proved, the lemma is defined in Rocq.
+✅ in front of each proved node and ❌ in front of the others; under a ❌, a
+folded block gives the goal and Rocq's message, or the error.  When every
+node is proved, the lemma is defined in Rocq.
 
 cyp is written in Rocq-Elpi ([vernac/](vernac/README.md)): the command
 `CypFile "proof.md".` reads the Markdown, checks it and writes the
@@ -34,6 +34,10 @@ dune exec cyp -- --conditions examples/square_pos.md   # prints the conditions, 
 
 ## The format
 
+The format of proof texts is prooftext's
+([../prooftext/README.md](../prooftext/README.md#the-format)): the tree of
+the 2003 paper, in Markdown.
+
 ```markdown
 ---
 require: From Stdlib Require Import ZArith Lia.
@@ -43,112 +47,146 @@ by: lia | nia
 
 # square_pos
 
-Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
+Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
 
-- It is equivalent to prove `0 < b * b - a * a`.
-- That can also be written as `0 < (b + a) * (b - a)`.
-- From `0 < a < b` we have `0 < b + a` and `0 < b - a`.
+- It is equivalent to prove `0 < b * b - a * a`{.claim}.
+  - That can also be written as `0 < (b + a) * (b - a)`{.claim}.
+    - From `0 < a < b`{.fact} we have `0 < b + a /\ 0 < b - a`{.claim}.
 ```
 
 - **The header** (between the two `---`): `require`, the Rocq preamble;
-  `scope`, a scope to open; `by`, the tactics tried on a step with no
-  justification; `rules`, files of rules (below), separated by spaces,
-  copied in order after the preamble; `flags`, options given to
+  `scope`, a scope to open; `by`, the tactics tried on a node with no
+  rule or tactic name; `rules`, files of rules (below), separated by
+  spaces, copied in order after the preamble; `flags`, options given to
   `rocq c` (e.g. `-Q dir Name`; the directories of `-Q`, `-R`, `-I` and
   the rule files are relative to the directory of the proof, and
   `${NAME}` is the environment variable NAME, so that a proof does not
-  name the directories of one machine); `lang`, the language of the text,
-  `en` (default), `fr` or `it`, which gives the role words below; `gaps:
-  off`, no gap tactic (below).  There is no time limit per step.
-- **A proposition** starts with `# name`.  Its statement is the text that
-  follows, up to the first list item.
-- **Formulas** are written between backticks, in Rocq syntax.  The word
-  before a formula gives its role:
-  - after *let*: variables (`a b : Z`);
-  - after *if*, *assume*, *suppose*: hypotheses; a name in parentheses
-    after one, `` `P n`{.hyp} (h) ``, is its name (for *by h*), else cyp
-    names it with the first of `H1`, `H2`, ... that nothing in scope has
-    (example `examples/unnamed_hyps.md`), so that each name in scope names
-    one hypothesis;
-  - after *from*, *using*, *since*: facts used (shown, not checked);
-  - after *then*, *have*, *show*, *prove*, *hence*, *so*, ...: claims;
-  - in French: *soit*, *soient*, *considérons* (variables); *si*,
-    *supposons*, *posons par hypothèse* (hypotheses); *à partir de*, *en
-    utilisant*, *puisque*, *d'après*, *grâce à* (facts); *alors*,
-    *montrons*, *nous avons*, *donc*, *ainsi*, *d'où*, *nous en déduisons*,
-    *nous obtenons*, *c'est-à-dire*, ... (claims); a backward step says *il
-    suffit*, *revient à* or *se réduit à*;
-  - in Italian: *sia*, *siano*, *consideriamo*; *se*, *supponiamo*,
-    *assumiamo*; *da*, *usando*, *poiché*, *grazie a*; *allora*,
-    *mostriamo*, *dimostriamo*, *abbiamo*, *quindi*, *dunque*, *ne segue*,
-    *ne deduciamo*, *otteniamo*, *cioè*; backward: *basta*, *è
-    sufficiente*, *si riduce a*;
-  - a formula with no such word keeps the role of the one before it;
-  - a tag written right after a formula gives its role explicitly, whatever
-    the words: `` `0 <= a * a`{.claim} `` (also `{.var}`, `{.hyp}`,
-    `{.fact}`).  The tag is the attribute syntax of Pandoc; it does not
-    appear in the output.
-- **A step** is a list item.  Its claims are proved from the hypotheses
-  and the claims of the steps before it, and each claim also from the
-  claims before it in the same step (*we have `0 < b` and hence
-  `0 < b + b`*).  A step that says *suffices*,
-  *enough*, *equivalent to prove* or *written as* goes backwards: its
-  claim replaces the goal, and the step checks that the new goal implies
-  the old one.  It is the last phrase before the claim that counts: in
-  *it is enough to check all the cases, so we have `C`*, the claim is
-  announced by *so*, and the step goes forward.  At the end, the last goal must follow from all the claims.
-- **A justification** is written `*by X*` in the step, as a paper says
-  "by Lemma 3".  When X is made of words, it is a name: the rules of that
-  name (see `named` below) if there are any, and only them; else the
-  hypothesis X (a name `(h)` of the text, the claim `c2` of step 2, a
-  variable), applied like a lemma (example
-  [examples/by_hyp_demo.md](examples/by_hyp_demo.md)); else the lemma
-  X, applied, its premises closed by the rules or the default tactics;
-  else the tactic X (an Ltac name, or `lia`, `lra`, `nia`, `nra`, `ring`,
-  `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
-  `congruence`, `firstorder`; `firstorder` is run bounded, as
-  `bounded_firstorder` of [../prooftext/Tactics.v](../prooftext/Tactics.v), shared with xtext: the tactic
-  itself has no bound: more than 30 s and 7 GB on one step of a text).  X
-  cannot be tactic code (`interval with (i_prec 100)`): Rocq-Elpi cannot
-  yet turn a string into a tactic; name an Ltac definition instead.  A
-  step with no `*by*` is closed by all the rules, then the tactics of
-  `by`.
-- **The gap tactic.**  A condition that its justification, the rules and
+  name the directories of one machine); `lang`, the language of cyp's
+  messages (`en`, `fr`, `it`; the text itself may be in any language);
+  `gaps: off`, no gap tactic (below).  There is no time limit per node.
+- **cyp uses only what is tagged.**  A formula's role is its class:
+  `` `x y : T`{.var} `` (variables; `` `u := e`{.var} `` a local
+  definition), `` `A`{.hyp} (h) `` (a hypothesis and its name; without a
+  name, cyp names it with the first of `H1`, `H2`, ... that nothing in
+  scope has, example `examples/unnamed_hyps.md`), `` `C`{.claim} (n) ``
+  (the conclusion of the node and its name), `` `F`{.fact} `` (a fact the
+  node uses), and `*X*{.just}` is a justification.  A formula with no
+  class and every word are plain text: no word gives a role (the lexicon
+  of xtext's writing is not read).  A tag is Pandoc's attribute syntax; it
+  does not appear in the PDF or the web page.
+- **A node** is a list item (its sub-items and its closing paragraph are
+  its own), a span `[ ... ]{.p}` or a div `::: p` ... `:::`, mixed at any
+  depth (prooftext's two syntaxes).  It has one conclusion.  An item with
+  no tag at all is a remark: shown (▫️), not checked; its sub-items belong
+  to the node around it.
+- **What a node proves** (its *condition*): its conclusion C, from the
+  variables and hypotheses of the node and of the nodes around it, from
+  its subnodes, and from the nodes before it in its list and before each
+  node around it (the paper's rule).  A node is known outside as ∀ V, H →
+  C, its variables V and hypotheses H generalised, whatever its proof: a
+  case of an induction is a node *Let `m`{.var}; assume `P m`{.hyp} (IH).*
+  with its conclusion.  There are no backward words (*it suffices to
+  prove*): going backwards is nesting (square_pos above).
+- **A fact** `` `F`{.fact} `` must be a hypothesis or a conclusion that the
+  node sees, up to conversion (a fact that is none is an error); the
+  hypothesis it is, is put first for the proof of the node.
+- **Justifications**, `*X*{.just}`, any number in a node, written where
+  the sentence mentions them ("Applying *i*{.just} to *k*{.just}"):
+  - a name of rules (`named`, below) or of a tactic (`lia`, `lra`, `nia`,
+    `nra`, `ring`, `field`, `tauto`, `auto`, `easy`, `reflexivity`,
+    `assumption`, `congruence`, `firstorder`, or one that the rules of the
+    proof add with `tactic-name Name Ltac`) chooses the method; several are
+    tried in turn.  `firstorder` is run bounded, as `bounded_firstorder` of
+    [../prooftext/Tactics.v](../prooftext/Tactics.v), shared with xtext: the
+    tactic itself has no bound (more than 30 s and 7 GB on one step of a
+    text);
+  - a name of a hypothesis, of a node (`n`, or `c2` for node 2 when it has
+    none) or of a variable, or of a lemma (possibly qualified,
+    `Nat.add_comm`) is handed to the method: put first in the context, a
+    lemma added to it (Ltac `cyp_first`);
+  - with no rule or tactic name, the names handed are applied one after
+    the other, like a lemma, the premises that are one of the other names
+    closed by it first, the others by the rules or the default tactics
+    ("*and_ind*{.just} in *h1*{.just}"); a single `*X*{.just}` so means
+    what `*by X*` meant; when none of them applies, the rules and the
+    default tactics run, the names given first (a text may name the lemma
+    a step comes from without its conclusion being the step's: "Applying
+    *proj1*{.just}, we have `z`{.claim}", from `proj1 H1` applied to `x`);
+  - with no justification, all the rules, then the tactics of `by`, then
+    cyp's own (`tauto`, `lia`, `nia`, `lra`), the facts first; the tactics
+    only on a goal with no existential variable (a premise of a lemma not
+    yet determined: `firstorder` runs for very long on `z /\ ?B`), and at
+    last, once, on the goal with its head unfolded (its weak head normal
+    form: a conclusion `Inv E R x z`{.claim} that the steps before prove as
+    `R z x`);
+  - a name that is none of these (and no name of the text in scope) is an
+    error.  X cannot be tactic code (`interval with (i_prec 100)`):
+    Rocq-Elpi cannot yet turn a string into a tactic; name an Ltac
+    definition instead (`tactic-name`).
+- **The transition.**  The texts written before the tree (xtext's, until
+  they are written again) name a justification `*by X*`: it is read as
+  `*X*{.just}`.
+- **Errors** of the tree, reported at their node and line (in the checked
+  Markdown and the JSON), and the node is not proved: a node with tags but
+  no conclusion, two conclusions, a name out of scope or given twice in
+  one scope, an unknown class, an unclosed span or div (prooftext's
+  table); a fact that is no visible hypothesis or conclusion; a
+  justification that names nothing known; a formula that does not parse
+  ([examples/errors_demo.md](examples/errors_demo.md),
+  [vernac/errors_file.md](vernac/errors_file.md)).  An error never stops
+  the check: the node is not tried, and the nodes after it use its
+  conclusion all the same.  A node with no conclusion (none, two, or one
+  that does not parse) is used by nothing; its subnodes are checked all
+  the same, and each is used by the subnodes after it.  A hypothesis or a
+  variable that does not parse is left out of its node.
+- **The gap tactic.**  A condition that its justifications, the rules and
   the default tactics leave open gets a last, coarse try: `cyp_gap`
   ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (the goal and
   the hypotheses taken apart, then a proof search of depth 4 or
   `congruence`; a case analysis on the booleans; an induction on a binder
   of the goal; a case analysis on a variable; a constructor whose arguments
   the search finds), with no time limit: a condition it cannot close costs
-  a bounded search (at most 0.06 s measured).  On the conditions cyp leaves
+  a bounded search (at most 0.06 s measured).  On the conditions cyp left
   open in xtext's texts (closing steps of case analyses and inductions,
-  steps that follow from earlier claims by a few applications) it closes
-  99% ([../xtext/gaps/](../xtext/gaps/README.md)).  It
-  is not tried on a step justified by named rules (*by monotonicity*:
-  those rules only).  The header line `gaps: off` turns it off
+  steps that follow from earlier claims by a few applications) it closed
+  99% ([../xtext/gaps/](../xtext/gaps/README.md)).  It is not tried on a
+  node justified by named rules (*monotonicity*{.just}: those rules only).
+  The header line `gaps: off` turns it off
   ([examples/gaps_demo.md](examples/gaps_demo.md) is proved with it, not
   without).
-- **A local definition**: *Let `u := e`* introduces `u`, equal to `e`, for
-  the steps that follow (a `let` in their goals).
-- **A local scope**: a step that only introduces variables or hypotheses
-  (*Let `n : nat`*, *Assume `P n`*) adds them for its sub-steps, or, if it
-  has none, for the steps that follow it.  Its claims C are then known to the steps after it as `forall n, P n -> C`.
-  Every claim of the scope is known after it in this generalised form.
-  This is how a case of an induction is written.
-- **Sub-steps** (an indented list) prove their parent's claim; the parent's
-  justification then closes it from the sub-steps.
 
-A claim that does not hold makes the following steps easier to prove, as
-on paper: a red step is the one to look at first.
+A conclusion that does not hold makes the nodes after it easier to prove,
+as on paper: a red node is the one to look at first.
 
 **Conditions.**  The text is a verification condition generator: each
-step gives conditions (its claims, numbered `2`, or `2a`, `2b` for several,
-`2.1` for a sub-step), which cyp discharges by its rules and default
-tactics.  Inside Rocq, the conditions it does not discharge can be left to
-a Proof block of ordinary tactics, `Cyp File "proof.md". Proof. ...
-CypQed.` (marked 🔶 with their numbers), where each is a goal named after
-its number (`?c2a` for 2a, `?c2_1b` for 2.1b) and proved by `[c2a]: tac.`,
-see [vernac/](vernac/README.md).
+node gives one condition, numbered like the node (`2`, `2.1` for the first
+subnode of node 2, `0` for the statement), which cyp discharges.  Inside
+Rocq, the conditions it does not discharge can be left to a Proof block
+of ordinary tactics, `Cyp File "proof.md". Proof. ... CypQed.` (marked 🔶
+with their numbers), where each is a goal named after its node (`?c2` for
+2, `?c2_1` for 2.1) and proved by `[c2]: tac.`, see
+[vernac/](vernac/README.md).
+
+**cyp always succeeds, and leaves goals.**  cyp is not a yes/no check:
+what it proves is proved, and the rest is left as goals.  `Cyp File` and
+`Cyp Lemma` succeed whatever the nodes say: a condition not discharged
+and the conclusion of a node with an error are goals of the Proof block,
+and each error is printed with its node (❌).  They fail only when the
+statement itself cannot be read (the conclusion or a hypothesis of the
+statement does not parse, or it does not type-check), or on an error of
+Rocq outside cyp (a library that is not found, a proof term that Rocq
+rejects).  The program `cyp` always writes the checked Markdown and the
+JSON, with the status of every node; its exit code is 0 when the lemma is
+defined (every node proved), 1 when it is not (a node not proved or with
+an error, or a statement that cannot be read: the messages say which), 2
+when it cannot run (usage, `CYP_LIB` not set).
+
+**The checked Markdown** is the text itself, with the mark of each node's
+status at the start of its own text (`- ✅ ...` for an item, `[✅ ...]{.p}`
+for a span) and its message in a folded block after the paragraph where it
+starts.  **The JSON** (`cyp --json`) gives, for each node, its number,
+its first and last lines (numbered from 0), its status, its formulas and
+its message.
 
 ## Rules: choosing the justification with Elpi
 
@@ -179,13 +217,13 @@ justify {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat }}).
 - `justify_first Pattern Tac`: a rule tried before every `justify` rule,
   for the rules of one proof that must win over shared ones.
 - `named "name" Pattern Tac`: a rule with a name, tried like the others,
-  and the only kind tried when a step says `*by name*`: the text says why
-  a step holds (*by monotonicity*), the rule file says what that means,
+  and the only kind tried when a node is justified by `*name*{.just}`: the
+  text says why a node holds (*monotonicity*{.just}), the rule file says what that means,
   and Rocq checks that this reason, and no other, closes the step
   ([examples/named_demo.md](examples/named_demo.md)).
 
 A rule is an Elpi clause, so it may have a body, for example to fire only
-when another rule applies.  On a step with no `*by ...*`, the rules are
+when another rule applies.  On a node with no rule or tactic name, the rules are
 tried in order, then the default tactics.  Conjunctions and disjunctions
 are split by cyp itself.  A rule file may also be a `.v` file of Rocq
 text, copied into the proof as it is.  The lemmas of a field go in a
@@ -195,7 +233,7 @@ compiled library, never in a file loaded with `Load`: a lemma proved by
 
 Example: [examples/rules_demo.md](examples/rules_demo.md) with
 [examples/rules_demo.elpi](examples/rules_demo.elpi) proves its three
-steps; without the rule file, `lra` proves only one.
+nodes; without the rule file, `lra` proves only one.
 A larger case study, a floating-point paper with a library of lemmas and
 shared rules, is kept in a private branch.
 
@@ -216,8 +254,7 @@ names (h) and the lemmas are links (to their steps, to their
 documentation).  The
 formulas have the style of their role when the text gives their class
 (`{.claim}`, as xtext's texts do); a formula without a class is shown
-without a role, since the PDF does not guess roles from the words, as cyp
-does.  The marks of a checked text are prooftext's (`checked.elpi`), so
+without a role, as cyp reads it: plain text.  The marks of a checked text are prooftext's (`checked.elpi`), so
 that the Typst writer reads back exactly what cyp writes.  The formulas are
 mathematics (√x², fractions, |x|, ≤), printed from the terms they elaborate
 to, as cyp reads them (`--code` keeps the Rocq code, `--html` makes an HTML
@@ -233,35 +270,39 @@ directory into `~/.vscode/extensions/`; set `cyp.command` to the command
 that runs cyp (for instance `opam exec --switch=elpi5 -- env
 CYP_LIB=/path/to/cyp/vernac cyp`).
 
-## Departures from the 2006 paper
+## Departures from the 2003 paper
 
 cyp revives *Colouring proofs: a lightweight approach to adding formal
-structure to proofs* (UITP).  It keeps its idea, a proof written as text
-with formulas whose role is marked, each step checked by the prover, and
-changes the rest where there is an obvious improvement.  The paper's format
-has seven XML tags (its section 2.2); each has its Markdown form in cyp:
+structure to proofs* (UITP 2003; ENTCS 103, 2004).  It keeps its tree: a
+proof is a node with one conclusion, its hypotheses and variables
+scoping over its subnodes, its justifications and facts; a node is used
+from outside as ∀ V, H → C, and sees the nodes before it.  Each of the
+seven tags of the paper (its section 2.2) has its Markdown form:
 
-| paper (2006) | cyp |
+| paper (2003) | cyp |
 |---|---|
-| `<p>` a proof or a subproof | a list item, its sub-steps indented below it |
-| `<n>` a name | the title `# name`; for a hypothesis, `(h)` after its formula |
-| `<c>` the conclusion | `` `F`{.claim} ``, or after *we have*, *we prove*, ... |
-| `<h>` an assumption | `` `F`{.hyp} ``, or after *assume*, *if*, ... |
-| `<v>` a local variable `name:type` | `` `x : T`{.var} ``, or after *let* |
-| `<f>` a formula (of an assumption, or a fact in a justification) | `` `F`{.fact} ``, or after *from*, *using*, ... |
-| `<j>` a justification, which holds names (other proofs, local assumptions) | `*by X*`: X a lemma, a hypothesis, a rule or a tactic |
+| `<p>` a proof or a subproof | a list item, a span `[ ... ]{.p}`, or a div `::: p` |
+| `<n>` a name | the title `# name`; `(h)` after a hypothesis; `(n)` after the conclusion of a node |
+| `<c>` the conclusion | `` `F`{.claim} `` |
+| `<h>` an assumption | `` `F`{.hyp} `` |
+| `<v>` a local variable `name:type` | `` `x : T`{.var} `` |
+| `<f>` a formula (a fact in a justification) | `` `F`{.fact} ``, checked to be a hypothesis or a conclusion in scope |
+| `<j>` a justification, which holds names | `*X*{.just}`, one name each, any number per node |
 
-The changes:
+The departures:
 
-- Markdown instead of XML tags, so that a proof reads as a normal document;
-- the role of a formula is guessed from the words before it, with an
-  optional tag `{.role}`, instead of a tag around every formula;
-- backward steps (*it suffices to prove*) and sub-steps;
-- the justification of a step is chosen by Elpi rules from the shape of
-  its goal, written per field in a rule file;
-- under a failing step, its goal and Rocq's message, in the Markdown
+- Markdown instead of XML tags, so that a proof reads as a normal
+  document, in two syntaxes for the same tree, structured (list items,
+  with a closing paragraph after the sub-items) and free (spans and divs
+  in the prose), mixed at any depth;
+- several justifications per node, each one name, where the sentence
+  mentions it (the paper has at most one `<j>` per `<p>`, which may hold
+  several names); rule and tactic names choose the method, the other
+  names are handed to it;
+- remarks: a text with no tag is shown and not checked;
+- the method of a node may also be chosen by Elpi rules from the shape
+  of its goal, written per field in a rule file;
+- under a failing node, its goal and Rocq's message, in the Markdown
   output and in the editor;
-- the text may be in any of the ten languages of the lexicon (English,
-  French, Italian, German, Dutch, Russian, Chinese, Arabic, Korean, Latin);
 - the whole checker runs inside Rocq (Rocq-Elpi), and the same proof can
   also be written as a Rocq command, `Cyp Lemma` ([vernac/](vernac/README.md)).

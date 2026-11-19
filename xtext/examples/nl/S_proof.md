@@ -8,6 +8,6 @@ by: tauto | congruence | lia | firstorder | auto
 
 Laat `A B C : Prop`{.var}. Stel `A -> B -> C`{.hyp} (h), `A -> B`{.hyp} (h0) en `A`{.hyp} (h1). We bewijzen `C`{.claim}.
 
-- Volgens h1 er geldt `A`{.claim}.
-- Door toepassing van h0 op h1, er geldt `B`{.claim}.
-- Door toepassing van h, er geldt `C`{.claim}.
+- Volgens *h1*{.just} er geldt `A`{.claim}.
+- Door toepassing van *h0*{.just} op *h1*{.just}, er geldt `B`{.claim}.
+- Door toepassing van *h*{.just}, er geldt `C`{.claim}.

@@ -1,0 +1,5 @@
+<p>Property <n>exp_pos</n>:
+Let <v>x</v> and <v>y</v> be two integers, if <h>0 < x</h>, to prove <c>0 < x^y</c>, we have three cases:
+      <p>If <h>0 < y</h>  then <c>x^1 <= x^y</c> </p>
+      <p>If <h>0 = y</h>  then <c>x^y = 1</c> </p>
+      <p>If <h>y < 0</h>  then <c>x^y = 1/(x^(-y))</c></p></p>

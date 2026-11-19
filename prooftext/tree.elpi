@@ -1,0 +1,432 @@
+% prooftext: the reader.  A proof text is read into the tree of its
+% nodes, the tree of the 2003 paper (README.md, "The format").
+% (load after header.elpi, document.elpi and formulas.elpi)
+%
+% Everything after the title is the top node: the statement and its
+% proof.  A node is opened by a list item (its sub-items and the
+% paragraphs indented under it are its own), by a span [ ... ]{.p} inside
+% a paragraph, or by a div, the lines between ::: p and :::.  A part of the
+% text belongs to the innermost node opened around it.  What each node
+% says (its conclusion, hypotheses, ...) and the errors of the tree are
+% in nodes.elpi.
+
+namespace prooftext {
+
+% ------------------------------------------------------------------
+% The tree
+
+% how a node is opened
+kind origin type.
+type whole-text origin.         % the top node: everything after the title
+type list-item origin.          % a list item, "- ..." or "* ..."
+type bracketed origin.          % a span [ ... ]{.p}
+type fenced origin.             % a div, ::: p ... :::
+
+% a place in the file: a line and a column (in bytes), numbered from 0
+kind spot type.
+type spot int -> int -> spot.
+
+% an error of the text: its key and its arguments (the English messages:
+% error-template, nodes.elpi)
+kind text-error type.
+type text-error string -> list string -> text-error.
+
+% what a node holds, in the order of the text
+kind content type.
+type run string -> list prooftext.text-part -> content.
+                                % a run of its own text: as written, and
+                                % its parts (text-parts, formulas.elpi)
+type sub node -> content.       % a subnode
+type para-end content.          % the end of one of its paragraphs
+type flaw int -> text-error -> content.
+                                % an error of the reader, at a line
+
+% a node: how it is opened, its lines (from its opening to its end),
+% where its own text starts (the status mark of a checker goes there),
+% where a message about it goes (after that line, at that indentation),
+% what it holds
+kind node type.
+type node origin -> prooftext.place -> spot -> spot -> list content -> node.
+
+% a proof text read: the fields of its header, its name (the title), its
+% top node
+kind proof-text type.
+type proof-text list prooftext.field -> string -> node -> proof-text.
+
+% ------------------------------------------------------------------
+% The lines of a file
+
+% [read-tree File T]: the proof text in File, as a tree
+pred read-tree i:string, o:proof-text.
+read-tree File T :- read-lines File Lines, lines-tree Lines T.
+
+% [read-lines File Lines]: the lines of File
+pred read-lines i:string, o:list string.
+read-lines File Lines :- open_in File I, input-lines I Lines, close_in I.
+
+% [input-lines I Lines]: the lines of the input stream I, up to its end
+pred input-lines i:in_stream, o:list string.
+input-lines I [] :- eof I, !.
+input-lines I [L | Ls] :- input_line I L, input-lines I Ls.
+
+% a line of the file and its number, from 0
+kind numbered-line type.
+type nl int -> string -> numbered-line.
+
+% [lines-tree Lines T]: the proof text of the lines of a file
+pred lines-tree i:list string, o:proof-text.
+lines-tree Lines (proof-text Fields Name Top) :-
+  number-lines 0 Lines Numbered,
+  header-of Numbered Fields Body,
+  title-of Body Name AfterTitle,
+  top-node AfterTitle Top.
+
+% [number-lines N Lines Numbered]: the lines numbered from N
+pred number-lines i:int, i:list string, o:list numbered-line.
+number-lines _ [] [].
+number-lines N [L | Ls] [nl N L | Ns] :- N1 is N + 1, number-lines N1 Ls Ns.
+
+% [header-of Lines Fields Body]: the fields of the header (between a first
+% line --- and the next one; the keys that are not header-keys left out)
+% and the lines after it
+pred header-of i:list numbered-line, o:list prooftext.field, o:list numbered-line.
+header-of [nl _ L | Ls] Fields Body :- prooftext.trim L "---", !, header-fields Ls Fields Body.
+header-of Ls [] Ls.
+
+% [header-fields Lines Fields Body]: the fields of the header, up to its
+% closing line ---, and the lines after it; a line that is not a field "key:
+% value" of a header-key is skipped
+pred header-fields i:list numbered-line, o:list prooftext.field, o:list numbered-line.
+header-fields [] [] [].
+header-fields [nl _ L | Ls] [] Ls :- prooftext.trim L "---", !.
+header-fields [nl _ L | Ls] [prooftext.field Key Value | Fs] Body :-
+  rex.match "^ *[A-Za-z_-]+ *:" L,
+  rex.replace "^ *\\([A-Za-z_-]+\\) *:.*" "\\1" L Key, prooftext.header-key Key, !,
+  rex.replace "^ *[A-Za-z_-]+ *:" "" L V, prooftext.trim V Value,
+  header-fields Ls Fs Body.
+header-fields [_ | Ls] Fs Body :- header-fields Ls Fs Body.
+
+% [title-of Lines Name After]: the name in the first line "# name", and
+% the lines after it
+pred title-of i:list numbered-line, o:string, o:list numbered-line.
+title-of [nl _ L | Ls] Name Ls :- rex.match "^# " L, !,
+  rex.replace "^# " "" L N, prooftext.trim N Name.
+title-of [_ | Ls] Name After :- title-of Ls Name After.
+title-of [] _ _ :- std.fatal-error "prooftext: a proof text has a title, # name".
+
+% the kinds of lines that end a paragraph
+% [blank-line L]: the line L has only spaces and tabs
+pred blank-line i:numbered-line.
+blank-line (nl _ L) :- prooftext.trim L "".
+
+% [item-line L]: L opens a list item, "- " or "* " after spaces
+pred item-line i:numbered-line.
+item-line (nl _ L) :- rex.match "^ *[-*] " L.
+
+% [fence-open L Class]: L opens a div, ::: followed by its class (p,
+% {.p} or .p; Class is the name of the class)
+pred fence-open i:numbered-line, o:string.
+fence-open (nl _ L) Class :-
+  prooftext.trim L T, rex.match "^:::+ *[^ :]" T,
+  rex.replace "^:::+ *" "" T A, rex.replace "[{}. ]" "" A Class.
+
+% [fence-close L]: L closes a div, ::: alone
+pred fence-close i:numbered-line.
+fence-close (nl _ L) :- prooftext.trim L T, rex.match "^:::+$" T.
+
+% [line-indent L J]: the number of spaces at the start of the line L
+pred line-indent i:numbered-line, o:int.
+line-indent (nl _ L) J :- text-indent L J.
+
+% [text-indent S J]: the number of spaces at the start of S
+pred text-indent i:string, o:int.
+text-indent S J :- rex.replace "[^ ].*" "" S Spaces, J is size Spaces.
+
+% ------------------------------------------------------------------
+% Blocks: paragraphs, list items, divs
+
+% [top-node Lines N]: the top node, the lines after the title
+pred top-node i:list numbered-line, o:node.
+top-node Lines (node whole-text Place Mark Message Contents) :-
+  blocks 0 ff Lines Contents First _,
+  text-lines Lines Filled,
+  text-place Filled Place,
+  first-spots First Filled 0 Mark Message.
+
+% [blocks I InDiv Lines Contents First Rest]: the blocks of a node whose
+% text is indented by at least I, up to a line less indented or, in a
+% div (InDiv = tt), up to the line that closes it; Rest: the lines after
+% them.  First: where the first paragraph of these blocks starts and where
+% a message after it goes (none if they have no paragraph)
+pred blocks i:int, i:bool, i:list numbered-line, o:list content,
+  o:option (pair spot spot), o:list numbered-line.
+blocks _ _ [] [] none [].
+blocks I D [L | Ls] Cs First Rest :- blank-line L, !, blocks I D Ls Cs First Rest.
+blocks I _ [L | Ls] [] none [L | Ls] :- line-indent L J, J < I, !.
+blocks _ tt [L | Ls] [] none [L | Ls] :- fence-close L, !.
+blocks I ff [nl N S | Ls] [flaw N (text-error "unopened-div" []) | Cs] First Rest :-
+  fence-close (nl N S), !, blocks I ff Ls Cs First Rest.
+blocks I D [L | Ls] [sub Div | Cs] First Rest :- fence-open L Class, !,
+  div-node I L Class Ls Div After, blocks I D After Cs First Rest.
+blocks I D [L | Ls] [sub Item | Cs] First Rest :- item-line L, !,
+  item-node L Ls Item After, blocks I D After Cs First Rest.
+blocks I D [L | Ls] Cs (some (pr Mark Message)) Rest :-
+  paragraph-rest Ls More After,
+  line-indent L K,
+  paragraph-contents K [L | More] PCs Mark Message,
+  blocks I D After Cs1 _ Rest,
+  std.append PCs [para-end | Cs1] Cs.
+
+% [paragraph-rest Lines More Rest]: the lines that continue a paragraph
+% (up to a blank line, a list item or a fence), and the lines after them.
+% A continuation line may be less indented than the first one (a lazy
+% line, as in Markdown)
+pred paragraph-rest i:list numbered-line, o:list numbered-line, o:list numbered-line.
+paragraph-rest [] [] [].
+paragraph-rest [L | Ls] [] [L | Ls] :-
+  (blank-line L ; item-line L ; fence-open L _ ; fence-close L), !.
+paragraph-rest [L | Ls] [L | More] Rest :- paragraph-rest Ls More Rest.
+
+% [item-node L Lines N After]: the list item that starts at the line L,
+% its first paragraph (from the column after its "- ") followed by the
+% lines indented under its "-", and the lines after it
+pred item-node i:numbered-line, i:list numbered-line, o:node, o:list numbered-line.
+item-node (nl N S) Ls (node list-item Place Mark Message Cs) After :-
+  text-indent S J,
+  rex.replace "^\\( *[-*] +\\).*" "\\1" S Marker, K is size Marker,
+  paragraph-rest Ls More Rest0,
+  paragraph-contents K [nl N S | More] PCs Mark Message,
+  J1 is J + 1,
+  blocks J1 ff Rest0 Body _ After,
+  std.append PCs [para-end | Body] Cs,
+  consumed [nl N S | Ls] After Used,
+  text-place {text-lines Used} Place.
+
+% [div-node I L Class Lines N After]: the div opened at the line L, with
+% the class Class, up to the line that closes it, and the lines after it
+pred div-node i:int, i:numbered-line, i:string, i:list numbered-line, o:node,
+  o:list numbered-line.
+div-node I (nl N S) Class Ls (node fenced Place Mark Message Cs) After :-
+  blocks I tt Ls Body First Rest,
+  (if (Rest = [L | After0], fence-close L)
+      (After = After0, Unclosed = [])
+      (After = Rest, Unclosed = [flaw N (text-error "unclosed-div" [])])),
+  (if (Class = "p") (Unknown = []) (Unknown = [flaw N (text-error "unknown-class" [Class])])),
+  std.append Unknown Unclosed Errors, std.append Errors Body Cs,
+  consumed [nl N S | Ls] After Used,
+  text-lines Used Filled, text-place Filled Place,
+  first-spots First Filled I Mark Message.
+
+% [consumed Lines After Used]: the lines of Lines before its tail After
+pred consumed i:list numbered-line, i:list numbered-line, o:list numbered-line.
+consumed Lines After Used :-
+  std.length Lines N, std.length After M, K is N - M, std.take K Lines Used.
+
+% [text-lines Lines Filled]: the lines that are not blank
+pred text-lines i:list numbered-line, o:list numbered-line.
+text-lines Lines Filled :- std.filter Lines (l\ not (blank-line l)) Filled.
+
+% [text-place Lines Place]: the place of a text from its first to its last
+% line (lines 0 0 for no line)
+pred text-place i:list numbered-line, o:prooftext.place.
+text-place [] (prooftext.lines 0 0).
+text-place [nl First _ | Ls] (prooftext.lines First Last) :- std.last [nl First "" | Ls] (nl Last _).
+
+% [first-spots First Lines I Mark Message]: the spots of the first
+% paragraph of a node; for a node with no paragraph, its first line (at
+% the indentation I)
+pred first-spots i:option (pair spot spot), i:list numbered-line, i:int, o:spot, o:spot.
+first-spots (some (pr Mark Message)) _ _ Mark Message.
+first-spots none [nl N _ | _] I (spot N I) (spot N I) :- !.
+first-spots none [] I (spot 0 I) (spot 0 I).
+
+% ------------------------------------------------------------------
+% Paragraphs and spans
+
+% a piece of the text of a paragraph, with its offset in the paragraph
+kind inline type.
+type text-at int -> string -> inline.             % text, as written
+type span-at int -> int -> list inline -> inline. % a span: the offsets of
+                                                  % its [ and its ], what
+                                                  % it holds
+type error-at int -> text-error -> inline.        % an error
+
+% a span being read: the offset of its [ and what it holds so far, the
+% latest first (the bottom frame, the paragraph itself, at offset -1)
+kind frame type.
+type frame int -> list inline -> frame.
+
+% where a line of a paragraph starts in the text of the paragraph: its
+% offset in the text, its line and its column in the file
+kind segment type.
+type segment int -> int -> int -> segment.
+
+% [paragraph-contents K Lines Cs Mark Message]: the contents of the
+% paragraph of Lines, whose first line starts at the column K (after the
+% "- " of an item): its runs, spans and errors; Mark, where it starts;
+% Message, where a message about a node it opens goes (after its last
+% line, at the column K)
+pred paragraph-contents i:int, i:list numbered-line, o:list content, o:spot, o:spot.
+paragraph-contents K [nl N S | Ls] Cs (spot N K) (spot Last K) :-
+  std.last [nl N S | Ls] (nl Last _),
+  line-from S K First,
+  joined-lines First Ls Text Segments0, Segments = [segment 0 N K | Segments0],
+  scan Text 0 [frame -1 []] Inlines,
+  inline-contents Segments (spot Last K) Inlines Cs.
+
+% [line-from S K T]: the line S from the column K, without the spaces at
+% its end
+pred line-from i:string, i:int, o:string.
+line-from S K T :-
+  L is size S, (K < L, T0 is substring S K (L - K) ; T0 = ""), !,
+  rex.replace "[ \t]+$" "" T0 T.
+
+% [joined-lines Acc Lines Text Segments]: the text Acc followed by the
+% lines, each from its indentation, joined by one space; where each line
+% starts in it
+pred joined-lines i:string, i:list numbered-line, o:string, o:list segment.
+joined-lines Acc [] Acc [].
+joined-lines Acc [nl N S | Ls] Text [segment Off N C | Segs] :-
+  text-indent S C, line-from S C T,
+  Off is size Acc + 1, Acc1 is Acc ^ " " ^ T,
+  joined-lines Acc1 Ls Text Segs.
+
+% [scan Text Pos Frames Inlines]: the pieces of Text from the offset Pos;
+% Frames, the spans open at Pos, the innermost first.  A formula between
+% backticks is text, whatever it holds; a [ opens a span, closed by the
+% next ]{.p}; a [ closed by a ] with no class, or another class, is text
+% (another class is an error: there is no other kind of span), and so is a
+% [ that nothing closes
+pred scan i:string, i:int, i:list frame, o:list inline.
+scan T P Frames Is :- P >= size T, !, close-all Frames Is.
+scan T P Frames Is :-
+  Rest is substring T P (size T - P),
+  rex.replace "^\\([^][`]*\\).*" "\\1" Rest Prefix,
+  (if (Prefix = "") (Char is substring Rest 0 1) (Char = "")),
+  scan-at T P Rest Prefix Char Frames Is.
+
+% [scan-at T P Rest Prefix Char Frames Is]: as scan, Rest being the text
+% from P, Prefix its start before the first backtick or bracket, and Char
+% that backtick or bracket when Prefix is empty
+pred scan-at i:string, i:int, i:string, i:string, i:string, i:list frame, o:list inline.
+scan-at T P _ Prefix _ Frames Is :- not (Prefix = ""), !,
+  add-inline Frames (text-at P Prefix) Frames1, scan T {calc (P + size Prefix)} Frames1 Is.
+scan-at T P Rest _ "`" Frames Is :- !,
+  After is substring Rest 1 (size Rest - 1),
+  (if (rex.match "^[^`]*`" After)
+      (rex.replace "^\\([^`]*`\\).*" "\\1" After F, Formula is "`" ^ F)
+      (Formula = "`")),
+  add-inline Frames (text-at P Formula) Frames1,
+  scan T {calc (P + size Formula)} Frames1 Is.
+scan-at T P _ _ "[" Frames Is :- !,
+  scan T {calc (P + 1)} [frame P [] | Frames] Is.
+scan-at T P Rest _ "]" Frames Is :-
+  closing-class Rest Class Close,
+  close-at P Class Close Frames Frames1,
+  scan T {calc (P + size Close)} Frames1 Is.
+
+% [closing-class Rest Class Close]: the ] at the start of Rest and the
+% class right after it, {.Class} (Class = "" if there is none); Close: the
+% text of both
+pred closing-class i:string, o:string, o:string.
+closing-class Rest Class Close :-
+  rex.match "^.{[.][A-Za-z]+}" Rest, !,
+  rex.replace "^.{[.]\\([A-Za-z]+\\)}.*" "\\1" Rest Class,
+  Close is "]{." ^ Class ^ "}".
+closing-class _ "" "]".
+
+% [close-at P Class Close Frames Frames1]: the ] at the offset P, of class
+% Class, read: it closes the innermost span (Class = "p"), or the
+% innermost [ as text; a ]{.p} with no [ open is an error
+pred close-at i:int, i:string, i:string, i:list frame, o:list frame.
+close-at P "p" _ [frame Open Is, frame O2 Is2 | Fs] [frame O2 [span-at Open P {std.rev Is} | Is2] | Fs] :- !.
+close-at P "p" Close [F] Fs :- !,
+  add-inline [F] (error-at P (text-error "unopened-span" [])) F1,
+  add-inline F1 (text-at P Close) Fs.
+close-at P Class Close [frame Open Is, frame O2 Is2 | Fs] Frames :- !,
+  (if (Class = "") (Errors = []) (Errors = [error-at P (text-error "unknown-class" [Class])])),
+  std.append [text-at P Close | Is] [text-at Open "[" | Is2] Is3,
+  std.append Errors Is3 Is4,
+  Frames = [frame O2 Is4 | Fs].
+close-at P _ Close Fs Fs1 :- add-inline Fs (text-at P Close) Fs1.
+
+% [close-all Frames Is]: the pieces of a paragraph once read: a [ that no
+% ]{.p} closes is text, as any other bracket (an interval [0, 1) in prose)
+pred close-all i:list frame, o:list inline.
+close-all [frame _ Is] Inlines :- !, std.rev Is Is1, merge-texts Is1 Inlines.
+close-all [frame Open Is, frame O2 Is2 | Fs] Inlines :-
+  std.append Is [text-at Open "[" | Is2] Is3,
+  close-all [frame O2 Is3 | Fs] Inlines.
+
+% [add-inline Frames I Frames1]: the piece I added to the innermost frame
+pred add-inline i:list frame, i:inline, o:list frame.
+add-inline [frame O Is | Fs] I [frame O [I | Is] | Fs].
+
+% [merge-texts Is Ms]: the pieces, the texts next to each other joined
+pred merge-texts i:list inline, o:list inline.
+merge-texts [] [].
+merge-texts [text-at O A, text-at _ B | Is] Ms :- !,
+  merge-texts [text-at O {calc (A ^ B)} | Is] Ms.
+merge-texts [span-at O C Sub | Is] [span-at O C Sub1 | Ms] :- !,
+  merge-texts Sub Sub1, merge-texts Is Ms.
+merge-texts [I | Is] [I | Ms] :- merge-texts Is Ms.
+
+% [inline-contents Segments Message Is Cs]: the contents of the pieces of
+% a paragraph; Message, where a message about a span goes (after the
+% paragraph)
+pred inline-contents i:list segment, i:spot, i:list inline, o:list content.
+inline-contents _ _ [] [].
+inline-contents Segs M [text-at _ S | Is] [run S Parts | Cs] :-
+  prooftext.text-parts S Parts, inline-contents Segs M Is Cs.
+inline-contents Segs M [span-at O C Sub | Is] [sub (node bracketed (prooftext.lines L1 L2) Mark M Cs1) | Cs] :-
+  offset-spot Segs O (spot L1 _), offset-spot Segs C (spot L2 _),
+  offset-spot Segs {calc (O + 1)} Mark,
+  inline-contents Segs M Sub Cs1, inline-contents Segs M Is Cs.
+inline-contents Segs M [error-at O E | Is] [flaw L E | Cs] :-
+  offset-spot Segs O (spot L _), inline-contents Segs M Is Cs.
+
+% [offset-spot Segments O Spot]: the line and the column, in the file, of
+% the offset O of a paragraph
+pred offset-spot i:list segment, i:int, o:spot.
+offset-spot Segs O (spot L C) :-
+  std.filter Segs (s\ sigma Off N K\ s = segment Off N K, Off =< O) Before,
+  std.last Before (segment Off L K), C is K + O - Off.
+
+% ------------------------------------------------------------------
+% The document of a writer, from the tree
+
+% [read-document File D]: the proof text in File as the document of a
+% writer (document.elpi), for the Typst writer: the statement is the text
+% of the top node, the steps its list items; the text of a step is its
+% own text with that of its spans and divs, their marks [ ]{.p} left out,
+% and its paragraphs joined (decision 7 of the proposal: the PDF of a free
+% text shows no structure)
+pred read-document i:string, o:prooftext.document.
+read-document File D :- read-tree File T, tree-document T D.
+
+% [tree-document T D]: the document of the tree T
+pred tree-document i:proof-text, o:prooftext.document.
+tree-document (proof-text Fields Name (node _ _ (spot L1 _) (spot L2 _) Cs))
+    (prooftext.document Fields Name (prooftext.lines L1 L2) Statement Steps) :-
+  written-text Cs Statement Steps.
+
+% [written-text Cs Text Steps]: the text of the contents Cs and the steps
+% of their list items
+pred written-text i:list content, o:string, o:list prooftext.step.
+written-text Cs Text Steps :-
+  written-pieces Cs Texts Steps, std.string.concat "" Texts Text0, prooftext.trim Text0 Text.
+
+% [written-pieces Cs Texts Steps]: the pieces of the text of Cs (one
+% space for the end of a paragraph), and the steps of their list items
+pred written-pieces i:list content, o:list string, o:list prooftext.step.
+written-pieces [] [] [].
+written-pieces [run S _ | Cs] [S | Ts] Ss :- !, written-pieces Cs Ts Ss.
+written-pieces [para-end | Cs] [" " | Ts] Ss :- !, written-pieces Cs Ts Ss.
+written-pieces [sub (node list-item _ (spot F _) (spot L _) Sub) | Cs] Ts [prooftext.step (prooftext.lines F L) T S | Ss] :- !,
+  written-text Sub T S, written-pieces Cs Ts Ss.
+written-pieces [sub (node _ _ _ _ Sub) | Cs] Ts Ss :- !,
+  written-pieces Sub T1 S1, written-pieces Cs T2 S2,
+  std.append T1 T2 Ts, std.append S1 S2 Ss.
+written-pieces [_ | Cs] Ts Ss :- written-pieces Cs Ts Ss.
+
+}

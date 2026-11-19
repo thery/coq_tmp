@@ -1,15 +1,15 @@
 % xtext: the switches, the choices that change how a text is written.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 %
 % A switch has a name, an environment variable that sets it, a default
-% value (xtext-switch in xtext.db, Explain.v, where the default can be
+% value (xtext-switch in xtext.db, ExtractText.v, where the default can be
 % changed) and the values the writer knows (switch-values, below).  Its
 % value is the variable's, if the variable is set, else the default.  A
 % value the writer does not know, an empty one included, is an error: a
 % misspelt XTEXT_CONTRACTION=gaurded must not give the texts of another
 % strategy without a word.
 %
-% The switches are read when the command Explain runs, from the
+% The switches are read when the command ExtractText runs, from the
 % environment of the Rocq process that runs it.  make does not see the
 % environment: after changing a variable, the example files must be
 % compiled again (make_variant.sh does it in a copy of the directory).
@@ -69,7 +69,7 @@ with-values-of [Name | Names] G :-
   read-switch Name V, (switch Name V :- !) => with-values-of Names G.
 
 % [with-switch Name Origin V G]: G, with the switch Name set to V (the
-% language given to the command: Explain foo in "fr"), whatever value it
+% language given to the command: ExtractText foo in "fr"), whatever value it
 % had before (the new clause answers for every value asked)
 pred with-switch i:string, i:string, i:string, i:prop.
 with-switch Name Origin V G :- known-value Name Origin V,

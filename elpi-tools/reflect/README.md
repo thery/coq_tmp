@@ -27,7 +27,7 @@ the signature of `std.rev`.  With `-closed` it also prints each rule
 closed, its variables bound: `closed-clause` below (elpi-debug and
 elpi-check use it).
 
-Standalone Elpi 4 only (opam switch `elpi5`), not Rocq-Elpi.
+Standalone Elpi 4 only, not Rocq-Elpi.
 
 ## The format
 

@@ -7,8 +7,8 @@ lang: nl
 
 # square_pos
 
-Laat `a b : Z`. Als `0 < a < b`, dan `a * a < b * b`.
+Laat `a b : Z`{.var}. Als `0 < a < b`{.hyp}, dan `a * a < b * b`{.claim}.
 
-- Het volstaat te bewijzen dat `0 < b * b - a * a`.
-- Dit komt neer op `0 < (b + a) * (b - a)`.
-- Omdat `0 < a < b`, hebben we `0 < b + a` en `0 < b - a`.
+- Het volstaat te bewijzen dat `0 < b * b - a * a`{.claim}.
+  - Dit komt neer op `0 < (b + a) * (b - a)`{.claim}.
+    - Omdat `0 < a < b`{.fact}, hebben we `0 < b + a /\ 0 < b - a`{.claim}.

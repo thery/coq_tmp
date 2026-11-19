@@ -15,10 +15,12 @@ From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "tree.elpi" as pt_tree.
+From ProofText Extra Dependency "nodes.elpi" as pt_nodes.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
 
 Elpi Command prooftext_check_maths.
-Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_checked
+Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
   pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   % [formula Scope Declarations F Wanted]: F gives the code Wanted
@@ -34,6 +36,14 @@ Elpi Accumulate lp:{{
     (prooftext.declaration-maths Scope Ds D E, !, prooftext.maths-typst E Got ; Got = "(not a declaration)"),
     if (Got = Wanted) (coq.say "ok  " D "  ⟶  " Got, typst-paragraph Got)
        (coq.error "FAIL" D ": got" Got "wanted" Wanted).
+
+  % [untagged F Wanted]: a formula F without a class is a declaration
+  % (Wanted = tt) or a formula (Wanted = ff)
+  pred untagged i:string, i:bool.
+  untagged F Wanted :-
+    (prooftext.is-declaration "" F, !, Got = tt ; Got = ff),
+    if (Got = Wanted) (coq.say "ok  " F "  ⟶  declaration:" Got)
+       (coq.error "FAIL" F ": declaration" Got "wanted" Wanted).
 
   % [typst-paragraph Code]: the maths Code, a paragraph of check_maths.typ
   pred typst-paragraph i:string.
@@ -105,6 +115,15 @@ Elpi Accumulate lp:{{
     declaration "" [] "x y : R" "x , y ∈ ℝ",
     declaration "R_scope" ["x : R"] "y := x * x" "y ≔ x ⋅ x",
     declaration "" [] "f : nat -> nat" "f : ℕ → ℕ",
-    declaration "" [] "p : nat * nat" "p ∈ ℕ × ℕ".
+    declaration "" [] "p : nat * nat" "p ∈ ℕ × ℕ",
+    % formulas without a class: declarations, or formulas with binders
+    untagged "n : nat" tt,
+    untagged "a b : Z" tt,
+    untagged "y := x * x" tt,
+    untagged "forall z : nat, z = z" ff,
+    untagged "fun f : nat -> nat => f 0" ff,
+    untagged "exists x : nat, x = 0" ff,
+    untagged "n + 0 = n" ff,
+    formula "" ["A : Type", "l : list A"] "fun f : list A -> list A => f l" "f ↦ f\\(l\\)".
 }}.
 Elpi prooftext_check_maths.

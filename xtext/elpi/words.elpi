@@ -1,5 +1,5 @@
 % xtext: Words and sentences in the language of the text (from the lexicon).
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Words.  The writer takes its phrases from the lexicon
@@ -14,8 +14,15 @@ type wd string -> part.
 type tx string -> part.
 % a formula, from its term, with its role for cyp: `F`{.claim}
 type fml role -> term -> part.
+% a formula, from its term, with no role: `F`, shown and not used by cyp
+% (a witness, the object of an induction, the first form of "A, that is
+% B")
+type untagged term -> part.
 % a name (of a hypothesis, a constant, ...), as it is
 type nm string -> part.
+% a justification, written where the sentence names it: the name of a
+% hypothesis, a lemma, a constructor or a tactic, *h4*{.just}
+type jst string -> part.
 % an enumeration, "A, B and C", each element a list of parts
 type enum list (list part) -> part.
 
@@ -63,13 +70,14 @@ scope [P | Ps] D [P | In] Rest :- scope Ps D In Rest.
 pred scope-end i:part.
 scope-end (wd U) :- switch "lang" L, write-role L U _ _.
 scope-end (tx S) :- std.mem! [",", ".", ":", ";"] S.
-scope-end (tx S) :- prooftext.is-justification S.
 
 pred part-text i:part, o:string.
 part-text (wd U) S :- word U S.
 part-text (tx S) S.
 part-text (fml R T) S :- formula R T S.
+part-text (untagged T) S :- ppf T F, prooftext.untagged-formula F S.
 part-text (nm N) N.
+part-text (jst N) S :- prooftext.justification-name N S.
 part-text (enum Ls) S :- enumeration Ls Ps, text-of-parts Ps S.
 
 pred join-words i:list string, o:string.
@@ -100,7 +108,8 @@ separated _ [] [].
 separated _ [L] L :- !.
 separated Sep [L | Ls] Ps :- separated Sep Ls Ps1, std.append L Sep L1, std.append L1 Ps1 Ps.
 
-% a justification *by J* as a part ("" for none)
-pred by-part i:string, o:part.
-by-part "" (tx "") :- !.
-by-part J (tx S) :- prooftext.justification J S.
+% [end-dot S S1]: the text S ending with a punctuation mark (a period
+% added if it has none)
+pred end-dot i:string, o:string.
+end-dot S S :- rex.match "^.*[:.,]$" S, !.
+end-dot S S1 :- S1 is S ^ ".".

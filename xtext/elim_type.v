@@ -1,7 +1,7 @@
 (* Elimination principles recognised by their type (Coscoy's thesis,
    6.4.2), not by their name: two user-defined induction principles. *)
 From Stdlib Require Import Arith Lia.
-From XText Require Import Explain.
+From XText Require Import ExtractText.
 
 (* course-of-values induction *)
 Lemma strong_induction (P : nat -> Prop) :
@@ -27,7 +27,7 @@ Proof.
   induction n as [n IH] using strong_induction.
   apply Nat.Div0.div_le_upper_bound. lia.
 Qed.
-Time Explain half_le to "examples/half_le.md".
+Time ExtractText half_le to "examples/half_le.md".
 
 Lemma even_or_odd (n : nat) : exists k, n = 2 * k \/ n = 2 * k + 1.
 Proof.
@@ -36,4 +36,4 @@ Proof.
   - exists 0. right. reflexivity.
   - destruct IH as [k [Hk|Hk]]; exists (S k); [left|right]; lia.
 Qed.
-Time Explain even_or_odd to "examples/even_or_odd.md".
+Time ExtractText even_or_odd to "examples/even_or_odd.md".

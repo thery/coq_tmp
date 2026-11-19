@@ -7,5 +7,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Prop`{.var}. Assume `A`{.hyp} (a). We prove `~ ~ A`{.claim}.
 
-- Assume `~ A`{.hyp} (na).
-  - Applying na to a, we have `False`{.claim}.
+- Assume `~ A`{.hyp} (na). Applying *na*{.just} to *a*{.just}, we have `False`{.claim}.

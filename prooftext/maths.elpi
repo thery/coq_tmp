@@ -106,11 +106,20 @@ declared-maths Scope D E :-
 
 % [is-declaration Role F]: the formula F of role Role declares variables:
 % a variable (Let), or a formula without a role that has the form of a
-% declaration, names : type or name := term
+% declaration, names : type or name := term.  A formula that starts with
+% a binder (forall z : A, P z; fun f : A => t) is a formula, not the
+% declaration of the names forall z or fun f
 pred is-declaration i:string, i:string.
 is-declaration "var" _ :- !.
+is-declaration "" F :- binder-formula F, !, fail.
 is-declaration "" F :- rex.match "^ *[A-Za-z_][A-Za-z0-9_' ]* *:[^:=]" F, !.
 is-declaration "" F :- definition-declaration F.
+
+% [binder-formula F]: the formula F starts with a keyword of Rocq that
+% binds variables
+pred binder-formula i:string.
+binder-formula F :-
+  rex.match "^ *\\(forall\\|fun\\|exists2?\\|let\\|fix\\|cofix\\|match\\)[^A-Za-z0-9_']" F.
 
 % [definition-declaration D]: D is a definition, name := term (or name :
 % type := term)

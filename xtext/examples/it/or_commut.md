@@ -8,11 +8,10 @@ by: tauto | congruence | lia | firstorder | auto
 
 Siano `A B : Prop`{.var}. Supponiamo `A \/ B`{.hyp} (h). Dimostriamo `B \/ A`{.claim}.
 
-- Dimostriamo `B \/ A`{.fact} per casi su `A \/ B`{.fact} (h) (or, or_ind):
-- Caso 1: dimostriamo `A -> B \/ A`{.claim}.
-  - Supponiamo `A`{.hyp} (i).
-    - Per definizione di or (or_intror), da `A`{.fact} (i) ne deduciamo `B \/ A`{.claim} *by Corelib.Init.Logic.or_intror*.
-- Caso 2: dimostriamo `B -> B \/ A`{.claim}.
-  - Supponiamo `B`{.hyp} (j).
-    - Per definizione di or (or_introl), da `B`{.fact} (j) ne deduciamo `B \/ A`{.claim} *by Corelib.Init.Logic.or_introl*.
-- Abbiamo `B \/ A`{.claim} in tutti i casi.
+- Dimostriamo `B \/ A` per casi su *h*{.just} (or, *or_ind*{.just}):
+  - Caso 1: dimostriamo `A -> B \/ A`{.claim}.
+    - Supponiamo `A`{.hyp} (i). Per definizione di or (*or_intror*{.just}), da *i*{.just} ne deduciamo `B \/ A`{.claim}.
+  - Caso 2: dimostriamo `B -> B \/ A`{.claim}.
+    - Supponiamo `B`{.hyp} (j). Per definizione di or (*or_introl*{.just}), da *j*{.just} ne deduciamo `B \/ A`{.claim}.
+
+  Abbiamo `B \/ A`{.claim} in tutti i casi.

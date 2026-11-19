@@ -13,7 +13,7 @@ rsync -a --exclude examples --exclude examples-thesis --exclude cyp-check --excl
 mkdir -p "$d/examples"
 cd "$d" || exit 1
 export XTEXT_CONTRACTION=$1 XTEXT_ANNOTATION=$2
-rocq c -R . XText -Q "$lex" Lexicon Explain.v || exit 1
+rocq c -R . XText -Q "$lex" Lexicon ExtractText.v || exit 1
 for f in paper lemmas inductive thesis stdlib elim_type; do
   rocq c -R . XText -Q "$lex" Lexicon $f.v > log.txt 2>&1 || { echo "FAIL $f"; cat log.txt; }
 done

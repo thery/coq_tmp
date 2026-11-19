@@ -8,24 +8,29 @@ by: tauto | congruence | lia | firstorder | auto
 
 设 `A : Set`{.var}. 设 `P : A -> Prop`{.var}. 设 `y : A`{.var}. 我们证明 `exists x : A, P x -> forall z : A, P z`{.claim}.
 
-- 将 classic, 我们有 `(forall z : A, P z) \/ ~ (forall z : A, P z)`{.claim} (o).
-  - 元素 `forall z : A, P z`{.fact} 属于 `Prop`{.fact}.
-- 我们证明 `exists x : A, P x -> forall z : A, P z`{.fact} 分情形讨论，对 `(forall z : A, P z) \/ ~ (forall z : A, P z)`{.fact} (o) (or, match):
-- 情形 1: 我们证明 `(forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
-  - 假设 `forall z : A, P z`{.hyp} (H).
-    - 假设 `P y`{.hyp} (_H).
-      - 根据 H 我们有 `forall z : A, P z`{.claim}.
-    - 我们已证明 `P y -> forall z : A, P z`{.claim}.
-    - 根据定义 ex (ex_intro) 取见证 `y`{.fact}, 我们有 `exists x : A, P x -> forall z : A, P z`{.claim} *by Corelib.Init.Logic.ex_intro*.
-- 情形 2: 我们证明 `~ (forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
-  - 假设 `~ (forall z : A, P z)`{.hyp} (H).
-    - 将 not_all_ex_not 应用于 A, P 且 H, 我们有 `exists n : A, ~ P n`{.claim} (e).
-    - 回到定义 ex (match) 于 `exists n : A, ~ P n`{.fact} (e), 我们证明 `exists x : A, P x -> forall z : A, P z`{.claim}:
-      - 任意选取 `t : A`{.var}; 假设 `~ P t`{.hyp} (i).
-        - 假设 `P t`{.hyp} (h).
-          - 由应用, 以 h, 我们有 `False`{.claim} (f).
-            - 根据 i 我们有 `~ P t`{.claim}, 即 `P t -> False`{.fact}.
-          - 根据矛盾 (False, match), 由 `False`{.fact} (f) 可以推出 `forall z : A, P z`{.claim}.
-        - 我们已证明 `P t -> forall z : A, P z`{.claim}.
-        - 根据定义 ex (ex_intro) 取见证 `t`{.fact}, 我们有 `exists x : A, P x -> forall z : A, P z`{.claim} *by Corelib.Init.Logic.ex_intro*.
-- 我们有 `exists x : A, P x -> forall z : A, P z`{.claim} 在所有情形下.
+- 将 *Classical_Prop.classic*{.just}, 我们有 `(forall z : A, P z) \/ ~ (forall z : A, P z)`{.claim} (o).
+  - 元素 `forall z : A, P z` 属于 `Prop`.
+- 我们证明 `exists x : A, P x -> forall z : A, P z` 分情形讨论，对 *o*{.just} (or, match):
+  - 情形 1: 我们证明 `(forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
+    - 假设 `forall z : A, P z`{.hyp} (H).
+      - 假设 `P y`{.hyp} (_H). 根据 *H*{.just} 我们有 `forall z : A, P z`{.claim}.
+      - 我们已证明 `P y -> forall z : A, P z`{.claim}.
+
+      根据定义 ex (*ex_intro*{.just}) 取见证 `y`, 我们有 `exists x : A, P x -> forall z : A, P z`{.claim}.
+  - 情形 2: 我们证明 `~ (forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
+    - 假设 `~ (forall z : A, P z)`{.hyp} (H).
+      - 将 *Classical_Pred_Type.not_all_ex_not*{.just} 应用于 A, P 且 *H*{.just}, 我们有 `exists n : A, ~ P n`{.claim} (e).
+      - 回到定义 ex (match) 于 *e*{.just}, 我们证明 `exists x : A, P x -> forall z : A, P z`{.claim}:
+        - 任意选取 `t : A`{.var}; 假设 `~ P t`{.hyp} (i).
+          - 假设 `P t`{.hyp} (h).
+            - 由应用, 以 *h*{.just}, 我们有 `False`{.claim} (f).
+              - 根据 *i*{.just} 我们有 `~ P t`, 即 `P t -> False`{.claim}.
+
+            根据矛盾 (False, match), 由 *f*{.just} 可以推出 `forall z : A, P z`{.claim}.
+          - 我们已证明 `P t -> forall z : A, P z`{.claim}.
+
+          根据定义 ex (*ex_intro*{.just}) 取见证 `t`, 我们有 `exists x : A, P x -> forall z : A, P z`{.claim}.
+
+      我们有 `exists x : A, P x -> forall z : A, P z`{.claim}.
+
+  我们有 `exists x : A, P x -> forall z : A, P z`{.claim} 在所有情形下.

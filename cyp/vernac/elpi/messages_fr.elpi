@@ -8,16 +8,28 @@ message "fr" "left" "cyp: %1, %2 étapes, %3 condition(s) laissée(s) au bloc Pr
 message "fr" "left-line" "  🔶 condition %1 : %2".
 message "fr" "no-typecheck" "cyp: la preuve n'est pas bien typée".
 message "fr" "holes" "cyp: des conditions ne sont pas démontrées".
-message "fr" "steps-not-parsed" "cyp: étapes de %1 qui ne s'analysent pas : %2".
+message "fr" "errors" "cyp: %1, %2 nœud(s) avec une erreur (❌ ci-dessus) : %3".
+message "fr" "statement-not-read" "cyp: l'énoncé de %1 ne peut pas être lu : %2".
 message "fr" "statement-no-typecheck" "cyp: l'énoncé n'est pas bien typé".
-message "fr" "definition-not-parsed" "cyp: la définition ne s'analyse pas : %1".
-message "fr" "variables-not-parsed" "cyp: les variables ne s'analysent pas : %1".
-message "fr" "hypothesis-not-parsed" "cyp: une hypothèse ne s'analyse pas".
-message "fr" "statement-variables-not-parsed" "cyp: les variables de l'énoncé ne s'analysent pas : %1".
-message "fr" "conclusion-not-parsed" "cyp: la conclusion de l'énoncé ne s'analyse pas".
-message "fr" "statement-hypothesis-not-parsed" "cyp: une hypothèse de l'énoncé ne s'analyse pas".
 message "fr" "md-not-proved" "non démontré : %1".
 message "fr" "md-not-parsed" "ne s'analyse pas : %1".
 message "fr" "md-todo" "condition %1, à démontrer dans le bloc Proof : %2".
-message "fr" "backward-no-goal" "une étape en arrière demande un but : pas dans un Soit/Supposons".
 message "fr" "time" "cyp: temps %1 %2 ms".
+message "fr" "definition-not-parsed" "la définition %1 ne s'analyse pas".
+message "fr" "variables-not-parsed" "les variables %1 ne s'analysent pas : %2".
+message "fr" "hypothesis-not-parsed" "l'hypothèse %1 ne s'analyse pas : %2".
+message "fr" "conclusion-not-prop" "la conclusion %1 n'est pas une proposition".
+message "fr" "fact-unknown" "le fait %1 n'est ni une hypothèse ni une conclusion visible ici".
+message "fr" "name-unknown" "%1 ne nomme rien de connu : ni hypothèse, ni nœud, ni lemme, ni règle, ni tactique".
+message "fr" "at-line" "ligne %1 : %2".
+message "fr" "no-conclusion" "un nœud sans conclusion : il a des balises, mais pas de {.claim}".
+message "fr" "two-conclusions" "un nœud à deux conclusions, %1 et %2".
+message "fr" "statement-no-conclusion" "l'énoncé n'a pas de conclusion, pas de {.claim}".
+message "fr" "unknown-class" "une classe inconnue, {.%1}".
+message "fr" "not-a-name" "une justification est un nom, pas *%1*{.just}".
+message "fr" "out-of-scope" "%1 n'est pas visible ici".
+message "fr" "name-twice" "le nom %1 est donné deux fois dans une même portée".
+message "fr" "unclosed-span" "un [ sans ]{.p} après lui : un span non fermé".
+message "fr" "unopened-span" "un ]{.p} sans [ avant lui".
+message "fr" "unclosed-div" "un ::: p sans ::: après lui : un div non fermé".
+message "fr" "unopened-div" "un ::: qui ne ferme aucun div".

@@ -1,23 +1,48 @@
 # xtext: proofs as text
 
-`Explain foo.` prints the proof of the constant `foo` as text.  It follows
+`ExtractText foo.` prints the proof of the constant `foo` as text.  It follows
 the *basic transducer* of *Extracting Text from Proofs* (Y. Coscoy,
 G. Kahn, L. Théry, TLCA 1995, section 3.1), extended to inductive types
 after chapter 6 of Y. Coscoy's thesis *Explication textuelle de preuves
 pour le calcul des constructions inductives* (Nice, 2000).  The text is
 coarse but faithful: one list item per step, every formula of the proof in
-backticks in Rocq syntax, and the rule or lemma used by each step.  It is
-meant to be rewritten into fluent prose later (by hand or by an LLM), and
-it is written in the Markdown format of [cyp](../cyp/README.md), so that
-cyp can check it again.
+Rocq syntax, and the rule or lemma used by each step.  It is meant to be
+rewritten into fluent prose later (by hand or by an LLM).  Written to a
+file, it is in the Markdown format of [cyp](../cyp/README.md), so that cyp
+can check it again.
 
 ```coq
-From XText Require Import Explain.
-Explain foo.                                (* prints the text *)
-Explain foo to "examples/foo.md".           (* writes it to a file *)
-Explain foo to "examples/fr/foo.md" in "fr".   (* in French; also it de nl ru zh ar ko la *)
-Explain foo to "foo.typ".                   (* in Typst, for a PDF: ../prooftext/pdf.sh foo.typ *)
+From XText Require Import ExtractText.
+ExtractText foo.                                (* prints the text, as plain text *)
+ExtractText foo in "fr".                        (* in French; also it de nl ru zh ar ko la *)
+#[tags] ExtractText foo.                        (* prints it in the format of proof texts *)
+ExtractText foo to "examples/foo.md".           (* writes it to a file, in that format *)
+ExtractText foo to "examples/fr/foo.md" in "fr".   (* the same in French *)
+ExtractText foo to "foo.typ".                   (* in Typst, for a PDF: ../prooftext/pdf.sh foo.typ *)
 ```
+
+The two forms of a text.  The text that `ExtractText foo.` prints (in
+Rocq's messages, the goals panel) is for a reader, close to Coscoy's
+output: plain text, the formulas in Rocq syntax without backticks, the
+justifications without markup, no header and no title; the list of the
+steps stays:
+
+```
+Let n : nat. We prove n + 0 = n.
+
+- We prove n + 0 = n by induction on n (nat, nat_ind):
+  - Case 1 (base): we prove 0 = 0.
+    - By definition of eq (eq_refl), we have 0 = 0.
+```
+
+A file (`to "foo.md"`), and the text printed with the attribute
+`#[tags]` (`#[tags] ExtractText foo in "fr".` in French), are in the
+format of proof texts, with its header, its title and its classes
+(`` `n : nat`{.var} ``, `*eq_refl*{.just}`): the form that cyp, the Typst
+writer and the gallery read.  Both are written by the same writer
+(`prooftext.write-document-as`, the markup being a parameter);
+`printed.v` tests them, in the ten languages.  `ExtractText_partial`
+prints in the same way.
 
 Proofs ending with `Qed` work too: the body is read with
 `coq.env.const-body`, which rocq-elpi gives even for opaque
@@ -31,27 +56,27 @@ nothing of cyp itself: the lexicon, `../lexicon` (logical name `Lexicon`,
 the words of each language), and prooftext, `../prooftext` (logical name
 `ProofText`, [the format of proof texts](../prooftext/README.md): the
 document and its writer, the header, formulas with their roles, the
-justification `*by X*`, fresh names, the tactics a text may name):
+justifications `*X*{.just}`, fresh names, the tactics a text may name):
 
 ```sh
 eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5)"
-make          # builds Explain.vo, then the example files, which write examples/*.md
+make          # builds ExtractText.vo, then the example files, which write examples/*.md
 ```
 
 ## Files
 
-`Explain.v` defines the commands `Explain` and `Explain_partial`, the
+`ExtractText.v` defines the commands `ExtractText` and `ExtractText_partial`, the
 database `xtext.db` (the parameters: tactics, thresholds, switches, the
 header's libraries) and loads the lexicon, prooftext and the writer.  The
 writer is in `elpi/`, one file per subject, loaded in this order:
 
 | file | what it does |
 |---|---|
-| `text-tree.elpi` | the data of a text: lines with sub-lines, the text of a proof (its lines and its conclusion), kinds of binders and of arguments, the \* context |
+| `text-tree.elpi` | the data of a text: lines with sub-lines (and a closing paragraph), the text of a proof (its lines and its conclusion), kinds of binders and of arguments, the \* context |
 | `printing.elpi` | terms: the names of the context, the terms sent to Rocq (`away-from-context`, `whnf`), printing (`pp`, bound names renamed, fresh names of binders), formulas with their roles (`formula`), beta-reduction |
 | `switches.elpi` | the switches (`switch`, see "Switches"), and `XTEXT_OFF` |
 | `words.elpi` | sentences: a sentence is a list of parts (phrases of the lexicon, text, formulas, enumerations "A, B and C"), `sentence` writes it in the language of the text |
-| `reparse.elpi` | formulas that type-check again (the implicit arguments to print); the type of a term (`typ`) |
+| `reparse.elpi` | formulas that type-check again (the implicit arguments to print); the type of a term (`typ`); the name of a justification (`justification-of`, `short-name`) |
 | `kinds.elpi` | the kind of a binder (`Let`, `Assume`, arbitrary element) and of an argument (specialisation, modus ponens); with the switch `naming`, a binder the rest of the type depends on is a variable (thesis Fig. 4.13) |
 | `inductive.elpi` | introduction, elimination and rewriting theorems, recognised by their type |
 | `declarations.elpi` | the predicates that a file uses and a later one defines |
@@ -60,6 +85,7 @@ writer is in `elpi/`, one file per subject, loaded in this order:
 | `abstractions.elpi` | series of abstractions, local definitions |
 | `applications.elpi` | specialisations and modus ponens, inferable arguments, the contraction of application steps |
 | `inductive-text.elpi` | the text of introductions, eliminations (cases), `match`, `fix`, rewriting |
+| `conclusions.elpi` | every node has its conclusion: a line that only introduces variables or hypotheses merged with its only sub-line, or given a closing paragraph (the tree of the 2003 paper) |
 | `document.elpi` | the statement, the document and its header (written by prooftext), the check of the vocabulary |
 | `type-expressions.elpi` | type expressions after chapter 3 of the thesis: synthesis, equality, the type required of the proof |
 | `staged.elpi` | the translation in three stages of the thesis, and the selection of type annotations (see ["The staged translation"](doc/staged-translation.md)) |
@@ -87,6 +113,8 @@ Examples and checks:
   see "The PDF of a text");
 - `vocab_check.v`: the vocabulary of each language, and the tactic names
   that xtext writes (they must be prooftext's);
+- `printed.v`: the two forms of a text, plain (printed) and tagged
+  (`#[tags]`, the files), in the ten languages;
 - `selection.v`: the selection of type annotations (thesis 4.3.1) on
   ABCD (Fig. 4.24), Trans_Inv and one term per rule (Fig. 4.11): each
   selected term is checked against the expected one;
@@ -116,7 +144,7 @@ Examples and checks:
 
 Five switches change how a text is written (`elpi/switches.elpi`).  Each
 has an environment variable that sets it and a default, in `xtext.db`
-(`xtext-switch Name Variable Default`, `Explain.v`):
+(`xtext-switch Name Variable Default`, `ExtractText.v`):
 
 | switch | variable | values | default |
 |---|---|---|---|
@@ -126,10 +154,10 @@ has an environment variable that sets it and a default, in `xtext.db`
 | `naming` | `XTEXT_NAMING` | `none`, `all` (after the selection, each subproof used in an application is named, P1, P2, ..., and proved before the step that uses it; thesis 4.3.2-4.3.3), `shared` (the same, a result proved once for each type in scope); needs `selection` = `thesis` (see ["The subproofs"](doc/subproofs.md)) | `none` |
 | `lang` | `XTEXT_LANG` | the languages of the lexicon: `en`, `fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la` | `en` |
 
-The language given to the command (`Explain foo in "fr"`) comes before
+The language given to the command (`ExtractText foo in "fr"`) comes before
 the variable.  A value that is not in the list, an empty one included,
 is an error, so that a misspelt value does not silently give the texts of
-another setting.  The switches are read when `Explain` runs, from the
+another setting.  The switches are read when `ExtractText` runs, from the
 environment of the Rocq process that runs it: `make` does not see the
 variables, so after changing one, compile the example files again
 (`make_variant.sh` does it in a copy of the directory).  `XTEXT_OFF`
@@ -148,44 +176,67 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 
-- We prove `B \/ A`{.fact} by case analysis on `A \/ B`{.fact} (h) (or, or_ind):
-- Case 1: we prove `A -> B \/ A`{.claim}.
-  - Assume `A`{.hyp} (i).
-    - By definition of or (or_intror), from `A`{.fact} (i) we deduce `B \/ A`{.claim} *by Corelib.Init.Logic.or_intror*.
-- Case 2: we prove `B -> B \/ A`{.claim}.
-  ...
-- We have `B \/ A`{.claim} in all cases.
+- We prove `B \/ A` by case analysis on *h*{.just} (or, *or_ind*{.just}):
+  - Case 1: we prove `A -> B \/ A`{.claim}.
+    - Assume `A`{.hyp} (i). By definition of or (*or_intror*{.just}), from *i*{.just} we deduce `B \/ A`{.claim}.
+  - Case 2: we prove `B -> B \/ A`{.claim}.
+    - Assume `B`{.hyp} (j). By definition of or (*or_introl*{.just}), from *j*{.just} we deduce `B \/ A`{.claim}.
+
+  We have `B \/ A`{.claim} in all cases.
 ```
 
 - the text is in the format of proof texts ([prooftext](../prooftext/README.md)),
-  which cyp reads;
+  the tree of the 2003 paper (*Colouring proofs*, UITP 2003), which cyp
+  reads: a list item is a node, with one conclusion, its variables and
+  hypotheses scope over its sub-items, and only what is tagged is used;
 - the header: `require` loads the libraries (`xtext-header-require` in
   `xtext.db`) and the file that defines the theorem; a text in another
   language has `lang: fr`, `lang: ko`, ...; `by` lists the tactics that
   check a guarded contraction (`xtext-guard-tactic`), which cyp then tries
   on the steps that name none;
 - the abstractions at the top of the proof make the statement (`Let`,
-  `Assume`, `We prove`);
-- each formula carries its cyp role (`{.var}`, `{.hyp}`, `{.claim}`,
-  `{.fact}`), so that cyp does not have to guess it from the words;
+  `Assume`, `We prove`), the top node;
+- each formula that cyp uses carries its role (`{.var}`, `{.hyp}`,
+  `{.claim}`, `{.fact}`); a fact is a hypothesis or a conclusion in scope
+  (the conclusion of an earlier step that the sentence repeats: "Rewriting
+  with `m + 0 = m`{.fact}"); the other formulas are untagged, shown and not
+  used: a goal announced before its cases, the object of an induction, a
+  witness, the first form of "A, that is B" (the second, the one the steps
+  after it use, is the conclusion);
+- **every node has its conclusion** (`elpi/conclusions.elpi`): a line that
+  only introduces variables or hypotheses (`Let`, `Assume`) is merged with
+  its only sub-item ("Assume `A`{.hyp} (i). By definition ..."), or its
+  last sub-item becomes its closing paragraph, after the other sub-items
+  (the forward style of the paper), or, when that sub-item has sub-items
+  of its own, a closing paragraph says its conclusion again ("We have
+  `C`{.claim}."); an elimination with several cases is one node, the goal
+  announced, the cases, and the conclusion in its closing paragraph ("We
+  have ... in all cases");
+- **justifications**: the names that justify a step are emphasised and
+  tagged where the sentence names them, `*X*{.just}`: hypotheses ("By
+  *h4*{.just} we have", "Applying *i*{.just} to *k*{.just}"), lemmas,
+  constructors ("By definition of or (*or_intror*{.just})"), elimination
+  theorems ("(nat, *nat_ind*{.just})"), intermediate results
+  (*P1*{.just}), and the tactic of a tactic-built step ("By
+  *lia*{.just} we have", see ["Tactic-built subproofs"](doc/generic-mechanisms.md#5-tactic-built-subproofs-thesis-54-the-pragmatic-method));
+  a node may have several.  cyp applies them (`*X*{.just}`: cyp runs no
+  tactic code).  The name of a lemma is as short as Rocq finds it, but
+  keeps the name of its library unless the text imports that library (the
+  prelude, the file of the theorem): `Classical_Prop.classic`,
+  `PeanoNat.Nat.add_comm`, since cyp reads the text with its `require`
+  line only.  A term that is no proof (`Applying f to A and P`), a `match`
+  and a first-kind elimination on a type with indices (`le_ind`: its
+  motive is not found from the goal by unification) are not
+  justifications; cyp's default tactics close those steps when they can;
+- the lines "The element `t` belongs to `T`" (the terms an application
+  is given) are untagged remarks, and are left out when `t` is a variable,
+  whose type the text gave where it introduced it;
 - a subproof is a list item: its conclusion, with the lines that lead to
-  it indented below;
-- each step names its rule or lemma, and its justification for cyp is a
-  name, which cyp applies (`*by X*`: cyp runs no tactic code): a theorem
-  step and a constructor step carry the full name of the theorem or of the
-  constructor, `*by Stdlib.Lists.List.rev_unit*`; the closing step of a
-  dependent elimination (the generalised statement, or the instance
-  when the motive is left out, 6.4.1) the elimination theorem,
-  `*by Corelib.Init.Datatypes.nat_ind*`; a step proved by a tactic
-  (see ["Tactic-built subproofs"](doc/generic-mechanisms.md#5-tactic-built-subproofs-thesis-54-the-pragmatic-method)) the tactic's name, `*by lia*`.  The closing steps of a
-  `match` and of a first-kind elimination (`or_ind`, `le_ind`) have none:
-  the motive is not found from the goal by unification when the type has
-  indices, and a `match` would need `destruct`; cyp's default tactics
-  close them when they can.
+  it indented below.
 
 ### The PDF of a text
 
-`Explain foo to "foo.typ".` writes the text in Typst instead of Markdown
+`ExtractText foo to "foo.typ".` writes the text in Typst instead of Markdown
 (the same document, written by prooftext's `write-typst`), and
 `../prooftext/pdf.sh foo.typ` makes `foo.pdf`.  `../prooftext/pdf.sh
 examples/foo.md` does both steps from a Markdown text.  The PDF shows each
@@ -237,10 +288,11 @@ English order of the words that give no role (`` `B \/ A`{.claim} 모든
 
 - `vocab_check.v` checks that each language has a phrase for every use
   of the English table and that the phrases of roles are in lower case.
-- `cyp-check/roles_check.sh` (optional, with cyp) reads every text with
-  cyp's reader twice, with the tags
-  and without them, and lists the formulas whose role comes only from
-  the tag.  Over the 82 English texts (1933 lines), 94 lines: the goal
+- `cyp-check/roles_check.sh` (optional, with cyp) read every text with
+  cyp's reader twice, with the tags and without them, and listed the
+  formulas whose role came only from the tag.  It no longer runs: cyp
+  reads only the tags now (no word gives a role), so the question is
+  gone.  The last figures, before the tree: over the 82 English texts (1933 lines), 94 lines: the goal
   announced before a proof by cases (``We prove `G`{.fact} by case
   analysis on ...``, a mention after a claim phrase, 65 lines) and the
   object in ``Going back to the definition of and (match) in `A /\ B`{.fact}``

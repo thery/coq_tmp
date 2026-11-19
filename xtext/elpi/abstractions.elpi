@@ -1,5 +1,5 @@
 % xtext: Abstractions (series of binders) and local definitions.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % --- abstraction: iterated abstraction rules
 
@@ -20,15 +20,16 @@ lam-run K Acc Body FT Fl Ctx Path P :-
   lam-text K Bs FT LB Ctx P.
 
 pred lam-text i:bk, i:list binder, i:string, i:list line, i:ctx, o:pf.
-lam-text bk-let Bs FT LB Ctx (prf L C) :-
-  let-lines Bs Ls, std.append Ls LB L,
+lam-text bk-let Bs FT LB Ctx (prf [it H LB] C) :-
+  let-lines Bs Ls, std.map Ls (l\ s\ sigma T\ l = it T [], end-dot T s) Ss,
+  std.string.concat " " Ss H,
   concl Ctx [wd "proved", tx FT] C.
 lam-text bk-assume Bs FT LB Ctx (prf [it H LB] C) :-
   std.map Bs assume-text L,
   sentence [wd "assume", enum L] H,
   concl Ctx [wd "proved", tx FT] C.
 lam-text bk-set [b _ Id FA] FT LB Ctx (prf [it H LB] C) :- !,
-  declaration-formula [Id] FA V, prooftext.formula rfact Id X,
+  declaration-formula [Id] FA V, prooftext.untagged-formula Id X,
   sentence [wd "consider", tx V] H,
   concl Ctx [wd "have", tx FT, tx ",", wd "since", tx X, wd "arbitrary"] C.
 lam-text bk-set Bs FT LB Ctx (prf [it H LB] C) :-
@@ -64,15 +65,27 @@ same-type _ Bs [] Bs.
 % convertible).  A proof V of a proposition A is a lemma proved on the
 % way (a cut): its subproof, then the rest; otherwise x names a value.
 
-tr-let R N Ty V F Ctx Path (prf [L1|LB] C) :-
+tr-let R N Ty V F Ctx Path P :-
   binder-name N N1 Id,
-  (if (binder-kind Ty KL, KL = bk-assume)
-      (tr V nostar Path PV, dashed PV (it S0 Ch),
-       L1 = it {calc (S0 ^ " (" ^ Id ^ ")")} Ch)
-      (ppf V FV, ppf Ty FTy,
-       prooftext.formula rvar {calc (Id ^ " : " ^ FTy ^ " := " ^ FV)} LV,
-       sentence [wd "let", tx LV] SL, L1 = it SL [])),
   (pi x\ (def x N1 Ty V, ctx-name Id) =>
      if (R = tt) ((root-term (F x) :- !) => tr-root (F x) Ctx Path PB)
                  (tr (F x) Ctx Path PB)),
-  unwrap PB (prf LB C).
+  (if (binder-kind Ty KL, KL = bk-assume)
+      (tr V nostar Path PV, dashed PV L0, named-line L0 Id L1,
+       unwrap PB (prf LB C), P = prf [L1|LB] C)
+      % the variable scopes over the text of the rest, its sub-lines
+      (ppf V FV, ppf Ty FTy,
+       prooftext.formula rvar {calc (Id ^ " : " ^ FTy ^ " := " ^ FV)} LV,
+       sentence [wd "let", tx LV] SL, flatten PB LB,
+       P = prf [] (some (it SL LB)))).
+
+% [named-line L N L1]: the line L, its conclusion named N, the name right
+% after the formula: `C`{.claim} (N)
+pred named-line i:line, i:string, o:line.
+named-line (it S Ch) N (it S1 Ch) :- named-claim S N S1.
+named-line (with-closing S Ch C) N (with-closing S Ch C1) :- named-claim C N C1.
+
+pred named-claim i:string, i:string, o:string.
+named-claim S N S1 :- rex.match ".*`{[.]claim}" S, !,
+  rex.replace "`{[.]claim}" {calc ("`{.claim} (" ^ N ^ ")")} S S1.
+named-claim S N S1 :- S1 is S ^ " (" ^ N ^ ")".

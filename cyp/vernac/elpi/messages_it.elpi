@@ -8,16 +8,28 @@ message "it" "left" "cyp: %1, %2 passi, %3 condizione/i lasciata/e al blocco Pro
 message "it" "left-line" "  🔶 condizione %1: %2".
 message "it" "no-typecheck" "cyp: la dimostrazione non è ben tipata".
 message "it" "holes" "cyp: alcune condizioni non sono dimostrate".
-message "it" "steps-not-parsed" "cyp: passi di %1 che non si analizzano: %2".
+message "it" "errors" "cyp: %1, %2 nodo/i con un errore (❌ sopra): %3".
+message "it" "statement-not-read" "cyp: l'enunciato di %1 non si può leggere: %2".
 message "it" "statement-no-typecheck" "cyp: l'enunciato non è ben tipato".
-message "it" "definition-not-parsed" "cyp: la definizione non si analizza: %1".
-message "it" "variables-not-parsed" "cyp: le variabili non si analizzano: %1".
-message "it" "hypothesis-not-parsed" "cyp: un'ipotesi non si analizza".
-message "it" "statement-variables-not-parsed" "cyp: le variabili dell'enunciato non si analizzano: %1".
-message "it" "conclusion-not-parsed" "cyp: la conclusione dell'enunciato non si analizza".
-message "it" "statement-hypothesis-not-parsed" "cyp: un'ipotesi dell'enunciato non si analizza".
 message "it" "md-not-proved" "non dimostrato: %1".
 message "it" "md-not-parsed" "non si analizza: %1".
 message "it" "md-todo" "condizione %1, da dimostrare nel blocco Proof: %2".
-message "it" "backward-no-goal" "un passo all'indietro richiede un obiettivo: non dentro Sia/Supponiamo".
 message "it" "time" "cyp: tempo %1 %2 ms".
+message "it" "definition-not-parsed" "la definizione %1 non si analizza".
+message "it" "variables-not-parsed" "le variabili %1 non si analizzano: %2".
+message "it" "hypothesis-not-parsed" "l'ipotesi %1 non si analizza: %2".
+message "it" "conclusion-not-prop" "la conclusione %1 non è una proposizione".
+message "it" "fact-unknown" "il fatto %1 non è né un'ipotesi né una conclusione visibile qui".
+message "it" "name-unknown" "%1 non nomina niente di noto: né ipotesi, né nodo, né lemma, né regola, né tattica".
+message "it" "at-line" "riga %1: %2".
+message "it" "no-conclusion" "un nodo senza conclusione: ha dei tag, ma nessun {.claim}".
+message "it" "two-conclusions" "un nodo con due conclusioni, %1 e %2".
+message "it" "statement-no-conclusion" "l'enunciato non ha conclusione, nessun {.claim}".
+message "it" "unknown-class" "una classe sconosciuta, {.%1}".
+message "it" "not-a-name" "una giustificazione è un nome, non *%1*{.just}".
+message "it" "out-of-scope" "%1 non è visibile qui".
+message "it" "name-twice" "il nome %1 è dato due volte nello stesso ambito".
+message "it" "unclosed-span" "una [ senza ]{.p} dopo: uno span non chiuso".
+message "it" "unopened-span" "una ]{.p} senza [ prima".
+message "it" "unclosed-div" "un ::: p senza ::: dopo: un div non chiuso".
+message "it" "unopened-div" "un ::: che non chiude nessun div".

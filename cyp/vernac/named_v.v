@@ -8,12 +8,12 @@ Elpi Accumulate cyp.db lp:{{
 }}.
 Open Scope pstring_scope.
 Cyp Lemma named_v (a b c d : R) (Ha : 0 <= a <= b) (Hc : 0 <= c <= d) : a * c <= b * d :=
-  [ "we have" (a * c <= b * c) "by monotonicity" ;
-    "and" (b * c <= b * d) "by monotonicity" ].
+  [ "we have" (a * c <= b * c) "{.claim} by *monotonicity*{.just}" ;
+    "and" (b * c <= b * d) "{.claim} by *monotonicity*{.just}" ].
 Proof. CypQed.
 (* the reason given does not prove the step: its condition is left *)
 Cyp Lemma named_bad (a : R) (Ha : 0 <= a) : 0 <= a :=
-  [ "we have" (0 <= a) "by monotonicity" ].
+  [ "we have" (0 <= a) "{.claim} by *monotonicity*{.just}" ].
 Proof.
 Fail CypQed.
 Abort.

@@ -1,128 +1,140 @@
-% A cyp proof in Markdown: reading it, and writing it back checked.
+% A cyp proof in Markdown: writing it back checked.
 %
 %   ---
 %   scope: Z            the notation scope of the formulas (name or key)
 %   by: lia | nia       the default tactics of the proof
-%   lang: en            the language of the text (one of the lexicon's)
+%   lang: en            the language of cyp's messages
 %   gaps: off           no gap tactic (gaps.elpi)
 %   ---
 %   # name
-%   The statement: Let `x : T`. If `A` (h) then `C`.
-%   - a step
-%     - a sub-step
+%   the statement and its proof: the tree of nodes
 %
 % The other fields of the header (require:, rules:, flags:) are for the
 % driver: the libraries and the rules are loaded by the .v file.  The keys
-% are those of prooftext/header.elpi.
-
-% The text is read by prooftext's reader (prooftext/document.elpi,
-% read-document), into its document: the fields of the header, the name,
-% the statement, the tree of steps (prooftext.step), with their lines.
-
-% the steps of a tree, numbered in Dewey notation (prooftext.step-number)
-pred steps-of i:string, i:int, i:list prooftext.step, o:list step.
-steps-of _ _ [] [].
-steps-of P K [prooftext.step _ T Ch | Ns] [step Id Es Tac Sub | Ss] :-
-  text-elements T Tac Es,
-  prooftext.step-number P K Id, steps-of Id 1 Ch Sub, K1 is K + 1, steps-of P K1 Ns Ss.
+% are those of prooftext/header.elpi.  The text is read by prooftext's
+% reader (prooftext/tree.elpi, read-tree), into its tree of nodes, with
+% their lines.
 
 % ------------------------------------------------------------------ %
-% The checked Markdown and the JSON
+% The status of a node
 
-% the status of step S: of its conditions (S, or S with a letter), the worst
+% [status-of Rs Id Status M]: the status of node Id and its message: its
+% errors (with the goal left to the Proof block, if any), a condition not
+% proved, left to the Proof block, proved, or nothing to check (a remark)
 pred status-of i:list report, i:string, o:string, o:string.
-status-of Rs S "ko" M :- std.mem Rs (rep I (ko G)), step-of I S, !, msg "md-not-proved" [G] M.
-status-of Rs S "ko" M :- std.mem Rs (rep I (bad E)), step-of I S, !, msg "md-not-parsed" [E] M.
-status-of Rs S "todo" M :-
-  std.findall (std.mem Rs (rep I (todo _)), step-of I S) L, L = [_ | _], !,
-  std.map L (x\ m\ sigma I G\ x = (std.mem Rs (rep I (todo G)), step-of I S),
-    msg "md-todo" [I, G] m) Ms,
-  std.string.concat "; " Ms M.
-status-of Rs S "ok" "" :- std.mem Rs (rep I ok), step-of I S, !.
+status-of Rs Id "ko" M :- report-errors Rs Id [E | Es], !,
+  std.string.concat "; " [E | Es] E1,
+  if (std.mem Rs (rep Id (todo G))) (M is E1 ^ "; " ^ {msg "md-todo" [Id, G]}) (M = E1).
+status-of Rs Id "ko" M :- std.mem Rs (rep Id (ko G)), !, msg "md-not-proved" [G] M.
+status-of Rs Id "todo" M :- std.mem Rs (rep Id (todo G)), !, msg "md-todo" [Id, G] M.
+status-of Rs Id "ok" "" :- std.mem Rs (rep Id ok), !.
 status-of _ _ "none" "".
 
-% the conditions of step S left to the Proof block
-pred todo-ids i:list report, i:string, o:list string.
-todo-ids Rs S Ts :-
-  std.filter Rs (r\ sigma I G\ r = rep I (todo G), step-of I S) L,
-  std.map L (r\ i\ sigma G\ r = rep i G) Ts.
+% [report-errors Rs Id Es]: the messages of the errors of node Id, in order
+pred report-errors i:list report, i:string, o:list string.
+report-errors Rs Id Es :-
+  std.map-filter Rs (r\ e\ r = rep Id (bad e) ; r = rep Id (unread e)) Es.
 
-% [write-md Out Fields Name Stmt Steps Rs]: the checked text written to the
-% file Out: the header, the title, the statement and the steps, each with
-% the mark of its status and its message (details)
-pred write-md i:string, i:list prooftext.field, i:string, i:string,
-  i:list prooftext.step, i:list report.
-write-md Out H Name Stmt Ns Rs :-
+% ------------------------------------------------------------------ %
+% The checked Markdown: the lines of the text, each node with the mark of
+% its status at the start of its own text (and, for a condition left to
+% the Proof block, its number), and its message in a folded block after
+% the paragraph where it starts
+
+% a change to the lines of the text
+kind insertion type.
+type mark-at int -> int -> string -> insertion.   % a text at a line and a column
+type message-after int -> string -> insertion.    % a line after a line
+
+% [write-md Out Lines Top Rs]: the checked text of the lines of a file,
+% whose top node is Top, written to the file Out
+pred write-md i:string, i:list string, i:prooftext.node, i:list report.
+write-md Out Lines Top Rs :-
+  prooftext.all-nodes "0" Top All,
+  std.map All (node-insertions Rs) Inss, std.flatten Inss Ins,
+  prooftext.number-lines 0 Lines Numbered,
+  std.map Numbered (checked-lines Ins) Outs, std.flatten Outs OutLines,
   open_out Out O,
-  prooftext.header-lines H HeaderLines,
-  std.forall HeaderLines (l\ output O {calc (l ^ "\n")}), output O "\n",
-  output O {calc ("# " ^ Name ^ "\n\n")},
-  status-of Rs "0" S M, prooftext.status-mark S Mk,
-  output O {calc (Mk ^ " " ^ Stmt ^ "\n")}, details O "" M,
-  output O "\n",
-  write-nodes O "" "" 1 Ns Rs,
+  std.forall OutLines (l\ output O {calc (l ^ "\n")}),
   close_out O.
 
-% [details O Pad M]: the message M of a step in a folded block, indented by
-% Pad; nothing for no message
-pred details i:out_stream, i:string, i:string.
-details _ _ "" :- !.
-details O Pad M :-
-  output O {calc ("\n" ^ Pad ^ {prooftext.message-block M} ^ "\n\n")}.
+% [node-insertions Rs Node Ins]: the mark and the message of a numbered
+% node
+pred node-insertions i:list report, i:pair string prooftext.node, o:list insertion.
+node-insertions Rs (pr Id (prooftext.node _ _ (prooftext.spot L C) (prooftext.spot ML MC) _)) Ins :-
+  status-of Rs Id S M, prooftext.status-mark S Mk,
+  (if (S = "todo") (Num is " " ^ {prooftext.conditions-mark Id}) (Num = "")),
+  Mark = mark-at L C {calc (Mk ^ Num ^ " ")},
+  (if (M = "") (Ins = [Mark])
+     (spaces MC Pad, Ins = [Mark, message-after ML {calc (Pad ^ {prooftext.message-block M})}])).
 
-% [write-nodes O Pad P K Ns Rs]: the nodes, numbered as in steps-of; a step
-% with a condition left shows its number
-pred write-nodes i:out_stream, i:string, i:string, i:int, i:list prooftext.step, i:list report.
-write-nodes _ _ _ _ [] _.
-write-nodes O Pad P K [prooftext.step _ T Ch | Ns] Rs :-
-  prooftext.step-number P K Id, status-of Rs Id S M, prooftext.status-mark S Mk,
-  (S = "todo", todo-ids Rs Id Ts, std.string.concat ", " Ts TS,
-   Num is " " ^ {prooftext.conditions-mark TS} ; Num = ""), !,
-  output O {calc (Pad ^ "- " ^ Mk ^ Num ^ " " ^ T ^ "\n")},
-  details O {calc (Pad ^ "  ")} M,
-  write-nodes O {calc (Pad ^ "  ")} Id 1 Ch Rs,
-  K1 is K + 1, write-nodes O Pad P K1 Ns Rs.
+% [spaces N S]: N spaces
+pred spaces i:int, o:string.
+spaces N "" :- N =< 0, !.
+spaces N S :- N1 is N - 1, spaces N1 S1, S is " " ^ S1.
 
-% the JSON for the editor: per step its lines, status, formulas, message
+% [checked-lines Ins Line Out]: the line with its marks (from the right,
+% so that the columns of the others stay right), then the messages after
+% it, each between empty lines
+pred checked-lines i:list insertion, i:prooftext.numbered-line, o:list string.
+checked-lines Ins (prooftext.nl N S) [S1 | After] :-
+  std.map-filter Ins (i\ m\ sigma C T\ i = mark-at N C T, m = pr C T) Marks,
+  by-column-down Marks Sorted,
+  std.fold Sorted S insert-mark S1,
+  std.map-filter Ins (i\ m\ i = message-after N m) Ms,
+  std.map Ms (m\ ls\ ls = ["", m, ""]) Mss, std.flatten Mss After.
+
+% [insert-mark Mark S S1]: S with the text of Mark at its column
+pred insert-mark i:pair int string, i:string, o:string.
+insert-mark (pr C T) S S1 :-
+  L is size S, (C < L, C1 = C ; C1 = L), !,
+  S1 is substring S 0 C1 ^ T ^ substring S C1 (L - C1).
+
+% [by-column-down Marks Sorted]: the marks, their columns from the largest
+pred by-column-down i:list (pair int string), o:list (pair int string).
+by-column-down [] [].
+by-column-down [M | Ms] Sorted :- by-column-down Ms S1, insert-by-column M S1 Sorted.
+
+% [insert-by-column M Ms Ms1]: M inserted in Ms, sorted by column down
+pred insert-by-column i:pair int string, i:list (pair int string), o:list (pair int string).
+insert-by-column M [] [M].
+insert-by-column (pr C T) [pr C1 T1 | Ms] [pr C T, pr C1 T1 | Ms] :- C >= C1, !.
+insert-by-column M [X | Ms] [X | Ms1] :- insert-by-column M Ms Ms1.
+
+% ------------------------------------------------------------------ %
+% The JSON for the editor: per node its number, its lines, its status,
+% its formulas and its message
+
+% [json-string S J]: S as a JSON string
 pred json-string i:string, o:string.
 json-string S J :-
   rex.replace "\\\\" "\\\\\\\\" S S1, rex.replace "\"" "\\\\\"" S1 S2,
   rex.replace "\n" "\\\\n" S2 S3, J is "\"" ^ S3 ^ "\"".
 
-% [write-json Out First Last SEs Steps Rs]: the JSON file Out for the
-% editor: the statement (lines First to Last, elements SEs) and the steps,
-% each with its lines, status, formulas and message
-pred write-json i:string, i:int, i:int, i:list element, i:list prooftext.step, i:list report.
-write-json Out F La SEs Ns Rs :-
-  open_out Out O,
-  output O "{\"steps\":[",
-  json-step O "0" F La SEs Rs,
-  json-nodes O "" 1 Ns Rs,
-  output O "]}\n",
-  close_out O.
+% [write-json Out Top Rs]: the JSON file Out for the editor: each node of
+% the tree of Top, in the order of the text
+pred write-json i:string, i:prooftext.node, i:list report.
+write-json Out Top Rs :-
+  prooftext.all-nodes "0" Top All,
+  std.map All (json-node Rs) Js, std.string.concat "," Js J,
+  open_out Out O, output O {calc ("{\"steps\":[" ^ J ^ "]}\n")}, close_out O.
 
-% [json-step O Id First Last Es Rs]: the JSON object of the statement or
-% step Id
-pred json-step i:out_stream, i:string, i:int, i:int, i:list element, i:list report.
-json-step O K F La Es Rs :-
-  status-of Rs K S M,
-  std.filter Es (e\ sigma R X\ e = elt R X) Fs,
-  std.map Fs json-formula Js, std.string.concat "," Js J,
-  (K = "0", Sep = "" ; Sep = ","), !,
-  output O {calc (Sep ^ "{\"id\":\"" ^ K ^ "\",\"first\":" ^ {std.any->string F} ^ ",\"last\":" ^
-     {std.any->string La} ^ ",\"status\":\"" ^ S ^ "\",\"formulas\":[" ^ J ^
-     "],\"message\":" ^ {json-string M} ^ "}")}.
+% [json-node Rs Node J]: the JSON object of a numbered node
+pred json-node i:list report, i:pair string prooftext.node, o:string.
+json-node Rs (pr Id (prooftext.node _ Place _ _ _ as N)) J :-
+  place-lines Place F La,
+  status-of Rs Id S M,
+  prooftext.node-parts N Ps, std.map-filter Ps json-formula Fs, std.string.concat "," Fs FJ,
+  J is "{\"id\":\"" ^ Id ^ "\",\"first\":" ^ {std.any->string F} ^ ",\"last\":" ^
+     {std.any->string La} ^ ",\"status\":\"" ^ S ^ "\",\"formulas\":[" ^ FJ ^
+     "],\"message\":" ^ {json-string M} ^ "}".
 
-% [json-formula E J]: a formula with its role, as a JSON object
-pred json-formula i:element, o:string.
-json-formula (elt R X) J :-
-  prooftext.role-tag R N, !, J is "{\"role\":\"" ^ N ^ "\",\"text\":" ^ {json-string X} ^ "}".
+% [place-lines P First Last]: the lines of a place
+pred place-lines i:prooftext.place, o:int, o:int.
+place-lines (prooftext.lines F L) F L.
+place-lines prooftext.unplaced 0 0.
 
-% [json-nodes O Prefix K Steps Rs]: the JSON objects of the steps, numbered
-% as in steps-of
-pred json-nodes i:out_stream, i:string, i:int, i:list prooftext.step, i:list report.
-json-nodes _ _ _ [] _.
-json-nodes O P K [prooftext.step (prooftext.lines F La) T Ch | Ns] Rs :-
-  text-elements T _ Es,
-  prooftext.step-number P K Id, json-step O Id F La Es Rs,
-  json-nodes O Id 1 Ch Rs, K1 is K + 1, json-nodes O P K1 Ns Rs.
+% [json-formula P J]: a formula of a role, as a JSON object
+pred json-formula i:prooftext.text-part, o:string.
+json-formula (prooftext.formula-part C X _) J :-
+  prooftext.role-tag _ C, !, J is "{\"role\":\"" ^ C ^ "\",\"text\":" ^ {json-string X} ^ "}".

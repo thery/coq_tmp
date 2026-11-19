@@ -19,8 +19,8 @@ l'application" (Fig. 3.11), applied to the text.  Three strategies:
   follows from its new premises, checked by one of the tactics of
   `xtext-guard-tactic` (cyp's default ones: `tauto`, `congruence`, `lia`,
   `firstorder`, `auto`, 1 s each).  The tactic that closes the last
-  accepted configuration becomes the step's justification (`We deduce C
-  *by auto*`), so that cyp runs the same tactic.  (2) Its line has no "that
+  accepted configuration becomes the step's justification (`By
+  *auto*{.just} we deduce C`), so that cyp runs the same tactic.  (2) Its line has no "that
   is", so
   no conversion step is hidden (the thesis's guarded contraction keeps the
   type expressions that belong to a conversion, Fig. 3.13).
@@ -75,13 +75,13 @@ byte, as before this round.
 
 ## (8) Proofs in progress (L. Théry's thesis, 3.3.3)
 
-`Explain_partial.` (or `Explain_partial to "f.md".`), inside a proof,
+`ExtractText_partial.` (or `ExtractText_partial to "f.md".`), inside a proof,
 prints the text of the proof so far.  Each open goal is written `Prove
 G` at its place, as the thesis's `Prouvez G`.  The open goals are the holes
 of the partial proof term; their statements are their types.
 
 Limit: rocq-elpi gives the partial proof term only to a command that
-closes the proof, so `Explain_partial` ends the proof, as `Abort` does.
+closes the proof, so `ExtractText_partial` ends the proof, as `Abort` does.
 In an editor, undo it to go on.
 
 Tests (`partial.v`, texts `examples/*_partial*.md`):

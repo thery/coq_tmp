@@ -1,6 +1,6 @@
 % xtext: Applications: specialisations and modus ponens, and the contraction of
 % their steps.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 
 % rewriting with an equality (eq_ind, eq_ind_r, ...)
@@ -16,9 +16,14 @@ tr-app H Args Path P :-
   std.split-at NC Args Cons Rest,
   coq.mk-app H Cons T0, typ T0 Tau, ind-name I C, head-name H EN,
   branch-infos Ks Fls Cis0,
-  % the full name of the theorem, for the justification of the closing step
-  gr-of H GRE, qual-name GRE QE,
-  ((elim-app EN QE :- !) =>
+  % the name of the theorem, the justification of the elimination (cyp
+  % applies it, the cases being its subproofs); not for an elimination of
+  % the first kind on a type with indices (le_ind): the motive is then not
+  % found from the goal by unification, and cyp's default tactics close
+  % the step from the cases
+  gr-of H GRE, short-name GRE QE,
+  (if (Kind = 1, instance-arity I NS, NS > 1) (Justified = ff) (Justified = tt)),
+  ((elim-app EN QE :- Justified = tt, !) =>
   (if (Kind = 1)
       (imp-args Ks Cons Imps, std.last Imps Maj, std.drop-last 1 Imps Ns,
        std.drop-last 1 Cis0 Cis,
@@ -40,32 +45,27 @@ tr-app H Args Path P :-
   coq.mk-app H Cons T0, typ T0 Tau, ind-name I C, typ H TyH,
   kinds TyH Cons Ks, imp-args Ks Cons Ns,
   domains TyH Cons Es0, imp-args Ks Es0 Es,
-  head-name H K, gr-of H (indc KC), coq.env.indc KC NP _ _ _,
+  gr-of H (indc KC), coq.env.indc KC NP _ _ _,
   % the arguments that are not parameters nor premises are witnesses
   std.drop NP Cons Ws0, std.drop NP Ks KWs,
   witnesses KWs Ws0 Ws,
   (if (Ws = []) (WP = [])
-      (std.map Ws (formula rfact) FWs, std.map FWs (f\ p\ p = [tx f]) FWs1,
-       WP = [wd "witness", enum FWs1])),
-  with-name C K CN, std.append CN WP CD,
-  qual-name (indc KC) QK, tr-intro CD QK Tau Ns Es Path P0,
+      (std.map Ws (w\ p\ p = [untagged w]) FWs,
+       WP = [wd "witness", enum FWs])),
+  % the constructor is the justification of the step
+  short-name (indc KC) K, std.append [tx C, tx "(", jst K, tx ")"] WP CD,
+  tr-intro CD Tau Ns Es Path P0,
   apply-rest T0 P0 Rest Path P.
 tr-app H [] _ P :- name H, rec-var H, !,
   var-name H N, type-formula rclaim H F,
   sentence [wd "ih", tx "(", wd "recursive-call", tx N, tx ")", wd "have", tx F] S,
   conclusion-only S P.
 tr-app H [] _ P :- name H, !,
-  var-name H N, type-formula rclaim H F,
-  sentence [wd "by", tx N, wd "have", tx F] S, conclusion-only S P.
-tr-app H [] _ P :- gr-of H GR, !,
-  coq.gref->id GR N, type-formula rclaim H F, qual-name GR Q,
-  by-part Q BJ, sentence [wd "using", tx N, wd "get", tx F, BJ] S, conclusion-only S P.
-
-% the full name of a global reference, usable when its module is loaded
-% but not imported
-pred qual-name i:gref, o:string.
-qual-name GR Q :- coq.gref->path GR P, coq.gref->id GR Id,
-  std.append P [Id] L, std.string.concat "." L Q.
+  type-formula rclaim H F,
+  sentence [wd "by", {justification-of H}, wd "have", tx F] S, conclusion-only S P.
+tr-app H [] _ P :- gr-of H _, !,
+  type-formula rclaim H F,
+  sentence [wd "using", {justification-of H}, wd "get", tx F] S, conclusion-only S P.
 tr-app H Args Path P :-
   (if (is-sym H) (tr-app H [] Path P0) (tr-p H nostar Path P0)),
   apply-rest H P0 Args Path P.
@@ -163,7 +163,10 @@ mp-step Run Es T0 P0 Tau Path (prfp (prf L (some (it S []))) Tys) :-
   premise-cands Run Es Path Cs0,
   typ T0 Ty0, cand-of P0 Ty0 C0, std.append Cs0 [C0] Cs,
   switch "contraction" Strat, contract-premises Strat Cs Tau L Tys By,
-  formula rclaim Tau F, by-part By J, sentence [wd "deduce", tx F, J] S.
+  formula rclaim Tau F,
+  % the tactic that checked a guarded contraction justifies the step
+  (if (By = "") (J = []) (J = [wd "by", jst By])),
+  sentence {std.append J [wd "deduce", tx F]} S.
 
 % the candidates of the premises (with their expected types)
 pred premise-cands i:list term, i:list term, i:list int, o:list cand.

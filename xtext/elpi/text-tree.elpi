@@ -1,13 +1,20 @@
 % xtext: The structure of a text: lines with sub-lines, the text of a proof,
 % the kinds of binders and arguments, the * context.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Text
 
-% a line of text, with its indented sub-lines
+% a line of text, with its indented sub-lines: a node of the proof (a list
+% item; README of prooftext, "The format"), or a remark when its text has
+% no tag
 kind line type.
 type it string -> list line -> line.
+% a node in the forward style of the 2003 paper: its opening text, its
+% sub-lines, then its closing paragraph, which holds its conclusion ("We
+% prove `G` by induction on n: - Case 1 ... - Case 2 ...  These cases
+% being exhaustive, we deduce `G`{.claim}.")
+type with-closing string -> list line -> string -> line.
 
 % the text of a proof: the lines above its conclusion, and the
 % conclusion (none in the * context of the paper)

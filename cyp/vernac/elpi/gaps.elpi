@@ -19,15 +19,14 @@ pred gaps-clauses i:string, o:list prop.
 gaps-clauses "off" [gaps-off] :- !.
 gaps-clauses _ [].
 
-% [gap-justification Tac]: the conditions the gap tactic may close: those
-% with no justification, and those justified by a lemma or a tactic; a
-% step justified by named rules (*by monotonicity*) is closed by them only
-pred gap-justification i:option string.
-gap-justification none.
-gap-justification (some X) :- not (named X _ _).
+% [gap-justification M]: the conditions the gap tactic may close: those
+% whose justifications name no rule (a node justified by named rules,
+% *monotonicity*{.just}, is closed by them only)
+pred gap-justification i:method.
+gap-justification (method Ms _ _) :- not (std.exists Ms (m\ named m _ _)).
 
-% [close-gap Tac G]: the condition G, justified by Tac, closed by the gap
-% tactic
-pred close-gap i:option string, i:goal, o:list sealed-goal.
-close-gap Tac G [] :-
-  not gaps-off, gap-justification Tac, coq.ltac.call-ltac1 "cyp_gap" G [].
+% [close-gap M G]: the condition G, closed by the method M, closed by the
+% gap tactic
+pred close-gap i:method, i:goal, o:list sealed-goal.
+close-gap M G [] :-
+  not gaps-off, gap-justification M, coq.ltac.call-ltac1 "cyp_gap" G [].
