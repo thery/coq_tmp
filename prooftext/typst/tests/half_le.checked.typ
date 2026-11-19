@@ -11,7 +11,7 @@
 #statement(status: "ok")[#"Let "#var($n ∈ ℕ$)#". We prove "#claim($n class("binary", "div") 2 ≤ n$)#"."]
 
 #steps((
-  step("1", [#"By definition of nat (strong_induction), we prove "#claim($∀ n_(0) ∈ ℕ , n_(0) class("binary", "div") 2 ≤ n_(0)$)#":"], (
+  step("1", [#"By definition of nat (strong_induction) on "#fact($n$)#", we prove "#claim($n class("binary", "div") 2 ≤ n$)#":"], (
     step("1.1", [#"Let us choose arbitrarily "#var($n_(0) ∈ ℕ$)#"; assume by induction hypothesis "#hyp($∀ m ∈ ℕ , m < n_(0) → m class("binary", "div") 2 ≤ m$)#" "#name("IH")#"."], (
       step("1.1.1", [#"The element "#fact($n_(0)$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
       step("1.1.2", [#"The element "#fact($2$)#" belongs to "#fact($ℕ$)#"."], (), status: "none"),
@@ -72,6 +72,5 @@
       ), status: "ok"),
       step("1.1.5", [#"Applying div_le_upper_bound, we have "#claim($n_(0) class("binary", "div") 2 ≤ n_(0)$)#"."], (), status: "ko", message: "not proved: n0 / 2 <= n0"),
     ), status: "none"),
-  ), status: "ko", message: "not proved: forall n0 : nat, n0 / 2 <= n0"),
-  step("2", [#"In particular "#claim($n class("binary", "div") 2 ≤ n$)#"."], (), status: "ok"),
+  ), status: "ko", message: "not proved: n / 2 <= n"),
 ))
