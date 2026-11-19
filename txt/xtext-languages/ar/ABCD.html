@@ -119,8 +119,7 @@ body:has(#show-just:not(:checked)) .formula.just:not(footer.legend .formula) { b
 .formula.plain { }
 body:has(#show-plain:not(:checked)) .formula.plain:not(footer.legend .formula) { background: none; }
 footer.legend label { cursor: pointer; }
-footer.legend form { display: inline; margin: 0; }
-footer.legend button.reset { font: inherit; padding: 0 0.4em; margin-inline-end: 1em; cursor: pointer; border: 1px solid #b4b4b4; border-radius: 3px; background: #f4f4f4; color: #505050; }
+footer.legend button.all { font: inherit; padding: 0 0.4em; margin-inline-end: 1em; cursor: pointer; border: 1px solid #b4b4b4; border-radius: 3px; background: #f4f4f4; color: #505050; }
 footer.legend input { margin: 0 0.3em 0 0; vertical-align: middle; }
 .mark.ok { color: #1d7a33; }
 .message.ok { border-color: #1d7a33; background: #e8f2eb; }
@@ -165,4 +164,18 @@ function show(p) {
 document.addEventListener('mouseover', e => show(e.target.closest('.p')));
 const fixed = location.hash.match(/^#hover=(.+)$/);
 if (fixed) show(document.querySelector('.p[data-id="' + fixed[1] + '"]'));
-</script><footer class="legend"><form><button type="reset" class="reset" title="↺">↺</button><span class="entry"><label><input type="checkbox" id="show-var" checked><span class="formula var">متغير</span></label></span><span class="entry"><label><input type="checkbox" id="show-hyp" checked><span class="formula hyp">فرضية</span></label></span><span class="entry"><label><input type="checkbox" id="show-claim" checked><span class="formula claim">ادعاء</span></label></span><span class="entry"><label><input type="checkbox" id="show-fact" checked><span class="formula fact">حقيقة</span></label></span><span class="entry"><label><input type="checkbox" id="show-just" checked><span class="formula just">تبرير</span></label></span></form></footer></div></body></html>
+</script><footer class="legend"><button type="button" class="all">☐</button><span class="entry"><label><input type="checkbox" id="show-var" checked><span class="formula var">متغير</span></label></span><span class="entry"><label><input type="checkbox" id="show-hyp" checked><span class="formula hyp">فرضية</span></label></span><span class="entry"><label><input type="checkbox" id="show-claim" checked><span class="formula claim">ادعاء</span></label></span><span class="entry"><label><input type="checkbox" id="show-fact" checked><span class="formula fact">حقيقة</span></label></span><span class="entry"><label><input type="checkbox" id="show-just" checked><span class="formula just">تبرير</span></label></span><script>
+(() => {
+  const legend = document.currentScript.closest('footer.legend');
+  const all = legend.querySelector('button.all');
+  const roles = [...legend.querySelectorAll('input[id^=show-]')];
+  function show() { all.textContent = roles.some(b => b.checked) ? '☐' : '☑'; }
+  all.addEventListener('click', () => {
+    const anyOn = roles.some(b => b.checked);
+    roles.forEach(b => { b.checked = !anyOn; });
+    show();
+  });
+  roles.forEach(b => b.addEventListener('change', show));
+  show();
+})();
+</script></footer></div></body></html>
