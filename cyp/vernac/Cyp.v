@@ -209,34 +209,28 @@ Elpi Accumulate File cyp_proof.
 Elpi Accumulate File cyp_markdown.
 Elpi Accumulate File cyp_command.
 Elpi Accumulate lp:{{
-  % a step written in Rocq: words (primitive strings) and terms
+  % a step written in Rocq: words (primitive strings) and terms, read into
+  % pieces, whose elements are found as in a Markdown text (elements,
+  % elpi/text.elpi); its justification is a word "by X"
   pred raw-step i:string, i:term, o:step.
   raw-step I T (step I Es Tac []) :-
-    raw-items T Is, raw-elements Is rclaim Es0,
+    raw-items T Ps, elements Ps rclaim Es0,
     (std.mem Es0 (txt W), rex.match "^by " W, !,
      rex.replace "^by +" "" W X, Tac = some X,
      std.filter Es0 (e\ not (e = txt W)) Es ; Tac = none, Es = Es0).
 
-  kind ritem type.
-  type rword string -> ritem.
-  type rterm term -> ritem.
-
-  pred raw-items i:term, o:list ritem.
-  raw-items (app [primitive (pstring P) | As]) [rword S | L] :- !,
+  % [raw-items T Pieces]: the words (strings) and the formulas (terms) of
+  % a step written in Rocq, "We have" (x = 1) "by lia"
+  pred raw-items i:term, o:list piece.
+  raw-items (app [primitive (pstring P) | As]) [ptext S | L] :- !,
     coq.pstring->string P S, raw-args As L.
-  raw-items (primitive (pstring P)) [rword S] :- !, coq.pstring->string P S.
-  raw-items T [rterm T].
-  pred raw-args i:list term, o:list ritem.
+  raw-items (primitive (pstring P)) [ptext S] :- !, coq.pstring->string P S.
+  raw-items T [pterm T].
+  pred raw-args i:list term, o:list piece.
   raw-args [] [].
-  raw-args [primitive (pstring P) | R] [rword S | L] :- !,
+  raw-args [primitive (pstring P) | R] [ptext S | L] :- !,
     coq.pstring->string P S, raw-args R L.
-  raw-args [T | R] [rterm T | L] :- raw-args R L.
-
-  pred raw-elements i:list ritem, i:role, o:list element.
-  raw-elements [] _ [].
-  raw-elements [rword W | L] R [txt W | E] :-
-    (text-role W R1, ! ; R1 = R), raw-elements L R1 E.
-  raw-elements [rterm T | L] R [eltt R T | E] :- raw-elements L R E.
+  raw-args [T | R] [pterm T | L] :- raw-args R L.
 
   pred list-of i:term, o:list term.
   list-of (app [global (indc Cons), _, X, R]) [X | L] :-

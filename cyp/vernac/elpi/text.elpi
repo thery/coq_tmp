@@ -12,6 +12,7 @@ pred current-lang o:string.
 % the elements of a step, once its text is read
 kind element type.
 type elt role -> string -> element.     % a formula and its role
+type eltt role -> term -> element.      % a formula already a Rocq term (Cyp Lemma), and its role
 type hname string -> element.           % the name of the hypothesis before it
 type txt string -> element.             % words
 
@@ -123,18 +124,29 @@ earlier _ B B.
 % a formula just before Pieces
 pred after-roles i:list piece, o:list (option role), o:option role.
 after-roles P Rs none :- current-lang L, not (phrase-after L _), !,
-  std.map-filter P (p\ r\ sigma F\ p = pform F, r = none) Rs.
+  std.map-filter P (p\ r\ is-formula p, r = none) Rs.
 after-roles [] [] none.
 after-roles [ptext W | P] Rs Pend :- after-roles P Rs Pend1,
   (first-phrase W _ A R, !, (if (A = tt) (Pend = some R) (Pend = none)) ; Pend = Pend1).
-after-roles [pform _ | P] [Pend | Rs] Pend :- after-roles P Rs Pend.
+after-roles [F | P] [Pend | Rs] Pend :- is-formula F, after-roles P Rs Pend.
 
 % ------------------------------------------------------------------ %
 % Cutting a text into words and formulas (between backticks)
 
 kind piece type.
-type ptext string -> piece.
-type pform string -> piece.
+type ptext string -> piece.     % words
+type pform string -> piece.     % a formula, its text (between backticks)
+type pterm term -> piece.       % a formula already a Rocq term (Cyp Lemma)
+
+% [is-formula P]: the piece P is a formula
+pred is-formula i:piece.
+is-formula (pform _).
+is-formula (pterm _).
+
+% [formula-element P Role E]: the element of the formula piece P with Role
+pred formula-element i:piece, i:role, o:element.
+formula-element (pform F) R (elt R F).
+formula-element (pterm T) R (eltt R T).
 
 pred pieces i:string, o:list piece.
 pieces S P :- N is size S, chars S 0 N "" ff P.
@@ -184,19 +196,22 @@ pred elements1 i:list piece, i:role, i:bool, i:list (option role), o:list elemen
 elements1 [] _ _ _ [].
 elements1 [ptext W | P] R _ As [txt W | L] :- !,
   (text-role W R1, !, E = tt ; R1 = R, E = ff), elements1 P R1 E As L.
-elements1 [pform F, ptext W | P] R _ [_ | As] [elt R1 F | L] :-
-  tag W R1 W1, !, elements1 [ptext W1 | P] R ff As L.
-elements1 [pform F | P] R E [A | As] L :-
+elements1 [F, ptext W | P] R _ [_ | As] [E | L] :-
+  is-formula F, tag W R1 W1, !, formula-element F R1 E,
+  elements1 [ptext W1 | P] R ff As L.
+elements1 [F | P] R E [A | As] L :- is-formula F,
   (A = some R2, E = ff, !, R1 = R2 ; R1 = R), formula F R1 P R As L.
 
-% the formula F with its role R1, then the pieces P (R the role before)
-pred formula i:string, i:role, i:list piece, i:role, i:list (option role), o:list element.
-formula F rhyp [ptext W | P] R As [elt rhyp F, hname H | L] :-
+% the formula piece F with its role R1, then the pieces P (R the role
+% before)
+pred formula i:piece, i:role, i:list piece, i:role, i:list (option role), o:list element.
+formula F rhyp [ptext W | P] R As [E, hname H | L] :-
   rex.match "^ *([A-Za-z_][A-Za-z0-9_']*)" W, !,
   rex.replace "^ *(\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" W H,
   rex.replace "^ *([A-Za-z_][A-Za-z0-9_']*)" "" W W1,
+  formula-element F rhyp E,
   elements1 [ptext W1 | P] R ff As L.
-formula F R1 P R As [elt R1 F | L] :- elements1 P R ff As L.
+formula F R1 P R As [E | L] :- formula-element F R1 E, elements1 P R ff As L.
 
 % a tag right after a formula, {.Tag}: a class of a role
 % (prooftext/formulas.elpi; the first role with that class)

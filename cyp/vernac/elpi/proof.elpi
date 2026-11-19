@@ -24,9 +24,6 @@
 kind step type.
 type step string -> list element -> option string -> list step -> step.
 
-% a formula given as a term (Cyp Lemma) rather than as text (Cyp File)
-type eltt role -> term -> element.
-
 % the notation scope of the formulas (header's scope:), "" for none
 pred current-scope o:string.
 
