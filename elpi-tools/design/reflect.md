@@ -60,7 +60,8 @@ An OCaml program on the `elpi` library ([`lib/`](../reflect/lib)):
 1. parse with Elpi's own parser (`Elpi_parser`), accumulated files
    included;
 2. resolve names as the compiler does ([`scope.ml`](../reflect/lib/scope.ml):
-   namespaces, `shorten`, `.name` escapes), desugar spilling
+   namespaces, `shorten`, `.name` escapes; the rules of the Elpi it is
+   built with, 4.0.0 or 4.1, [`elpi_version.v4*.ml`](../reflect/lib/elpi_version.v41.ml)), desugar spilling
    ([`spill.ml`](../reflect/lib/spill.ml)), apply `:before`, `:after`,
    `:replace`, `:remove`, `:if` to get Elpi's order of the rules
    (`reflect.ml:place_rules`);

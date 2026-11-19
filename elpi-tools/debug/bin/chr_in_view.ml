@@ -104,7 +104,7 @@ let constraint_block loc filter clique =
    tried on some constraints, its guard held: ../lib/chr-hooks.elpi), in
    order, most recent first, until the interpreter takes them.  A guard
    runs in a runtime of its own, with the static program only (elpi
-   4.0.0, runtime.ml, try_fire_rule): the local clauses of the interpreter
+   4.0.0 and 4.1.1, runtime.ml, try_fire_rule): the local clauses of the interpreter
    are out of its reach, a queue of this driver is not.  The notes are
    closed terms, copied as a safe copies them. *)
 let rule_notes : API.Data.term list ref = ref []

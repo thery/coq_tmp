@@ -70,7 +70,7 @@ run-query _ :- report-final-failure, fail.
 % candidates of [backchain] (the other clauses of the user's goal) and the
 % choice points of the goals before it in the body, which is Elpi's
 % semantics.  Elpi's cut goes through pi, sigma and => and is local to ;
-% (checked on elpi 4.0.0); keeping these connectives native keeps that too.
+% (checked on elpi 4.0.0 and 4.1.1); keeping these connectives native keeps that too.
 % The ports of pi and => are goals in line, so the cut goes through them.
 
 % [compile Ctx Entry Names Body Code Names1]: Code runs Body in context Ctx,

@@ -3,7 +3,7 @@
 This document describes the design of elpi-tools: what each tool does, how
 it is implemented, and the reasons for the main choices.  It is intended
 for developers of Elpi and of tools built on it.  The tools target
-standalone Elpi 4.0.0, not Rocq-Elpi.  All outputs
+standalone Elpi, versions 4.0.0 and 4.1.1 (both tested), not Rocq-Elpi.  All outputs
 shown were produced by the tools in this repository; absolute paths are
 shortened to the file name, and long lines are cut and marked `…`.
 
@@ -93,7 +93,7 @@ the API (signature), its contract, where it would be used
 | 4 | CHR: a rule's goal run in the current program | feature | a runner goal suspended at the start, fed through CHR |
 | 5 | CHR: an event per rule attempt and outcome | feature | every guard rewritten, notes on an OCaml queue |
 | 6 | CHR: the identity of a suspension, the store from Elpi | feature | a number hidden in the context of each constraint |
-| 7 | LPCIC/elpi#505 (fixed on master b5dec85, not released) | bug fix | bridges as static rules, a first run to write them |
+| 7 | LPCIC/elpi#505 (fixed on master b5dec85, after 4.1.1) | bug fix | bridges as static rules, a first run to write them |
 | 8 | API: compile parsed units | feature | one `Obj.magic` |
 | 9 | take a goal apart (conjunction, builtin, λ) | feature | one pattern per arity up to 16 |
 | 10 | `catch`/`throw` | feature | retry unwinds by failing every event |
@@ -104,10 +104,32 @@ the API (signature), its contract, where it would be used
 | 15 | the names of the query variables | feature | a second parse of the goal |
 | 16 | `names` documentation | doc fix | — |
 
+## Elpi 4.0.0 and 4.1.1
+
+The same sources build with both versions; the outputs of the tests are
+the same.  Three places know the difference:
+
+- [`reflect/lib/parser_config.ml`](reflect/lib/parser_config.ml): the
+  configuration of Elpi's parser, which Elpi 4.1.0 extended (the reader of
+  files and the three lookups of packages, `accumulate "+pkg/path"`,
+  `"+pkg"`, `"+/path"`).  The tools read files from the disk and do not
+  load packages, as their own `Setup.init` (no `~packages`); with Elpi
+  4.0.0 these values are unused.
+- [`reflect/lib/elpi_version.v40.ml`](reflect/lib/elpi_version.v40.ml) and
+  [`elpi_version.v41.ml`](reflect/lib/elpi_version.v41.ml), chosen by dune
+  (`select` on the library `elpi.dynload`, new in Elpi 4.1.0): the name
+  resolution of namespaces, which Elpi 4.1.0 changed (a block of a
+  namespace sees what the namespace declares in its other blocks, in the
+  files before and in the builtins, LPCIC/elpi#346; the name of a
+  signature is no longer a type).  `debug/tests/namespaces.t` runs with
+  Elpi 4.1 only.
+- `reflect/lib/reflect.ml:connectives`: `=!=>`, declared by the builtins of
+  Elpi 4.1 (not by those of 4.0.0), is a connective, not reflected.
+
 ## Running the tests
 
 ```sh
-opam install elpi.4.0.0 yojson dune   # in any opam switch (OCaml 4.14 or 5)
+opam install elpi.4.1.1 yojson dune   # or elpi.4.0.0; in any opam switch (OCaml 4.14 or 5)
 git clone https://github.com/thery/coq_tmp.git
 cd coq_tmp/elpi-tools
 dune build @runtest                   # reflect, check, debug, dap (and the

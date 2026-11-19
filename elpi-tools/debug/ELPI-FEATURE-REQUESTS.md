@@ -10,7 +10,10 @@ by interpreting the rules of the program, which
 ports of each call, the unify steps with their bindings, `pi` and `=>`,
 CHR at work, a failure explained; it has interactive stepping and drives
 a debug adapter for VS Code ([`../dap`](../dap/README.md)).  Elpi is
-version 4.0.0.
+version 4.0.0 or 4.1.1.  Checked against Elpi 4.1.1 (tag v4.1.1, commit
+631d14a): none of the items below is provided by it (its new builtins are
+the `std.fmt` boxes and the declaration of `=!=>`; its new API is about
+packages, plugins and warnings), and item 7 is fixed after it.
 
 Wherever the debugger works around something Elpi does not offer, the
 workaround is a **stand-in** behind a small interface in one place, and
@@ -34,7 +37,7 @@ by what they would bring to the debugger.
 **Running the tests.**
 
 ```sh
-opam install elpi.4.0.0 yojson dune    # Elpi 4.0.0, in any opam switch
+opam install elpi.4.1.1 yojson dune    # or elpi.4.0.0, in any opam switch
 cd elpi-tools
 dune build @runtest                    # all the tests: debug, reflect, check, dap
 dune exec -- elpi-debug -trace debug/tests/append.elpi 'rev [1,2] R'
@@ -177,7 +180,7 @@ constraint p q {
 }
 ```
 
-Today (elpi 4.0.0, `runtime.ml:try_fire_rule`) the new goal of a rule is
+Today (elpi 4.0.0 and 4.1.1, `runtime.ml:try_fire_rule`) the new goal of a rule is
 made with `initial_program`, the static program.  For elpi-debug any
 program of the run would do (the interpreter keeps its compiled rules,
 options and state as local clauses of `run`, installed once at the start).
@@ -269,13 +272,13 @@ names the context of a constraint, `(C ?- p X)`).
 
 A CHR rule firing on a constraint whose predicate has a `pi`-quantified
 local clause in scope stops Elpi with `Invalid_argument("index out of
-bounds")` (elpi 4.0.0, and master 631d14a).  Minimal form:
+bounds")` (elpi 4.0.0 and 4.1.1, commit 631d14a).  Minimal form:
 [`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi)
 (`elpi -test chr-pi-local-clause.elpi`).
 
-**Status:** fixed on Elpi's master (b5dec85, 2026-11-19), not yet in a
-release.  The stand-in below stays while elpi-tools targets Elpi 4.0.0,
-and goes at the first release with the fix.
+**Status:** fixed on Elpi's master (b5dec85, 2026-11-19), after Elpi
+4.1.1, which still crashes.  The stand-in below stays while elpi-tools
+supports a release without the fix.
 
 **Used by** `program.elpi`, section Bridges (one native rule per
 predicate of the program, `P X1 .. Xn :- !, debug.bridge (P X1 .. Xn)`,
@@ -307,7 +310,7 @@ API's parsed program is abstract.
 **Used by** `bin/elpi_debug_main.ml:to_api`, called by `compile`.
 
 **It removes** the one `Obj.magic` of the driver.  It is the identity in
-elpi 4.0.0 (`type program = Ast.Program.t` in `API.ml`), but nothing
+elpi 4.0.0 and 4.1.1 (`type program = Ast.Program.t` in `API.ml`), but nothing
 checks it: a later Elpi that changes that type would compile and then
 crash at run time.  The README (Limits) has a minimal example.
 

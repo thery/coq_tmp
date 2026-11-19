@@ -200,7 +200,7 @@ let program_of (units : PAst.Program.t list) : PAst.Program.t =
    cast of the driver, isolated here: the API offers no way to compile a
    program built from parsed units (we need FILE without its rules), but
    its type of parsed programs is the parser's own: [type program =
-   Ast.Program.t] in elpi 4.0.0's API.ml, so the conversion is the
+   Ast.Program.t] in the API.ml of elpi 4.0.0 and 4.1.1, so the conversion is the
    identity.  Nothing checks it: to check again with each new version of
    Elpi.  With the requested API (a function from the parser's program to
    the API's), this function is that call. *)

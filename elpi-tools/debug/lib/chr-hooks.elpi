@@ -31,7 +31,7 @@
 % THE STAND-INS (below), and what they cost
 %
 % - §4.  Elpi runs the goal of a rule with its static program only (elpi
-%   4.0.0, runtime.ml, try_fire_rule: [initial_program]), where the local
+%   4.0.0 and 4.1.1, runtime.ml, try_fire_rule: [initial_program]), where the local
 %   clauses of [run] (the compiled rules, the options, the state), and so
 %   the bridges, are missing.  The goal is handed to a runner: a goal
 %   suspended at the start of the run, so with the program of [run],

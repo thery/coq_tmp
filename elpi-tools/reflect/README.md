@@ -79,7 +79,8 @@ reflect.premises (reflect.srcloc "f.elpi" 4 0) [(reflect.span "f.elpi" 4 11 4 22
 
 - **Names** are fully qualified: Elpi's `namespace` and `shorten` are
   resolved the way the compiler does (a name used in `namespace foo { }`
-  is `foo.name` when the block defines `foo.name`).  The second argument of
+  is `foo.name` when the block defines `foo.name`; with Elpi 4.1, when
+  any block of `foo`, in the program or the builtins, defines it).  The second argument of
   `constructor` and `signature`, and the first of `clause`, is the constant
   itself (type `any`): it builds terms (`F = app, T = F X Y`) and it indexes
   the rules (`reflect.clause rev _ _ _ H B` only looks at the rules of

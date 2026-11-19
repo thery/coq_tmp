@@ -307,7 +307,7 @@ suspension and the store: [`ELPI-FEATURE-REQUESTS.md`](ELPI-FEATURE-REQUESTS.md)
   i-th constraint matched (a variable of its own in place of a context
   the rule does not name), where the debugger put the number of its
   suspension; `Kept` is the number of heads before `\`.
-- What a guard may do, checked on elpi 4.0.0 (runtime.ml,
+- What a guard may do, checked on elpi 4.0.0 and 4.1.1 (runtime.ml,
   `try_fire_rule`, and a test program): it runs in a runtime of its own,
   on the static program only (a clause added by `=>` is not seen, nor the
   local clauses of the interpreter), with the variables of the
@@ -408,7 +408,7 @@ resolves names block by block).  Read them in this order:
      `compiled`, so the cut discards exactly the other candidates of the
      goal and the choice points before it in the body, which is Elpi's
      semantics.  Elpi's cut goes through `pi`, `sigma`, `=>` and is
-     local to `;` (checked on elpi 4.0.0); native connectives keep that.
+     local to `;` (checked on elpi 4.0.0 and 4.1.1); native connectives keep that.
    - `goal` dispatches a goal: a call of the program (`call`) or a builtin
      (`native`).
    - `call` builds the box and runs `run-box`: on the fast path (no event
@@ -821,11 +821,11 @@ Those that come from a feature Elpi lacks name the item of
   of a failure shows them as `c0`, `c1`.  The binder names come from
   reflect's `binders` attribute, matched with the binders of the rule in
   textual order; for a hypothetical clause or the query the name is `x`.
-- An Elpi 4.0.0 crash met on the way: a CHR rule firing on a constraint
+- An Elpi 4.0.0 (and 4.1.1) crash met on the way: a CHR rule firing on a constraint
   whose predicate has a `pi`-quantified local clause in scope fails with
   `Invalid_argument("index out of bounds")`, reported upstream as
-  [LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505) (also on Elpi
-  master 631d14a; minimal form in
+  [LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505) (also in Elpi
+  4.1.1, commit 631d14a; fixed on master by b5dec85; minimal form in
   [`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi));
   it is why the bridges are static rules (requested feature 7).
 - **The driver uses `Obj.magic` once** (`to_api` in
@@ -840,7 +840,7 @@ Those that come from a feature Elpi lacks name the item of
     other units.  The driver therefore parses with the parser library
     (`Elpi_parser`), whose type it sees, and passes the edited program to
     `API.Compile.program` through `Obj.magic`.
-  - *Why it works*: in elpi 4.0.0 the two types are one (`type program =
+  - *Why it works*: in elpi 4.0.0 and 4.1.1 the two types are one (`type program =
     Ast.Program.t` in `API.ml`), so the conversion is the identity.
   - *The risk*: nothing checks it.  If a later Elpi changes that type, the
     driver still compiles and then crashes or misbehaves at run time.  To
