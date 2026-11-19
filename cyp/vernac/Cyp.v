@@ -196,14 +196,18 @@ Elpi Accumulate lp:{{
   raw-items (app [primitive (pstring P) | As]) [ptext S | L] :- !,
     coq.pstring->string P S, raw-args As L.
   raw-items (primitive (pstring P)) [ptext S] :- !, coq.pstring->string P S.
-  raw-items T [pterm T].
+  raw-items T [pterm T "" none].
   % [raw-args Ts Pieces]: the arguments Ts of a step written in Rocq, each a
-  % word (a string) or a formula (a term)
+  % word (a string) or a formula (a term); the words right after a formula
+  % may give its class and its name, "{.hyp} (h)", as in a Markdown text
+  % (prooftext's after-formula)
   pred raw-args i:list term, o:list piece.
   raw-args [] [].
   raw-args [primitive (pstring P) | R] [ptext S | L] :- !,
     coq.pstring->string P S, raw-args R L.
-  raw-args [T | R] [pterm T | L] :- raw-args R L.
+  raw-args [T, primitive (pstring P) | R] [pterm T C N, ptext S1 | L] :- !,
+    coq.pstring->string P S, prooftext.after-formula S C N S1, raw-args R L.
+  raw-args [T | R] [pterm T "" none | L] :- raw-args R L.
 
   % [list-of T Ts]: the Rocq list T as an Elpi list (a term that is not a
   % list: itself, alone)

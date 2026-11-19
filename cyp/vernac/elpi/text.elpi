@@ -134,51 +134,45 @@ after-roles [ptext W | P] Rs Pend :- after-roles P Rs Pend1,
 after-roles [F | P] [Pend | Rs] Pend :- is-formula F, after-roles P Rs Pend.
 
 % ------------------------------------------------------------------ %
-% Cutting a text into words and formulas (between backticks)
+% Cutting a text into words and formulas: prooftext's reader of the text
+% of a step (prooftext/formulas.elpi, text-parts), that of the Typst
+% writer too
 
 kind piece type.
 type ptext string -> piece.     % words
-type pform string -> piece.     % a formula, its text (between backticks)
-type pterm term -> piece.       % a formula already a Rocq term (Cyp Lemma)
+type pform string -> string -> option string -> piece.
+                                % a formula: its text, its class ("" for
+                                % none), the name (h) written after it
+type pterm term -> string -> option string -> piece.
+                                % a formula already a Rocq term (Cyp
+                                % Lemma), its class and its name
 
 % [is-formula P]: the piece P is a formula
 pred is-formula i:piece.
-is-formula (pform _).
-is-formula (pterm _).
+is-formula (pform _ _ _).
+is-formula (pterm _ _ _).
 
 % [formula-element P Role E]: the element of the formula piece P with Role
 pred formula-element i:piece, i:role, o:element.
-formula-element (pform F) R (elt R F).
-formula-element (pterm T) R (eltt R T).
+formula-element (pform F _ _) R (elt R F).
+formula-element (pterm T _ _) R (eltt R T).
 
-% [pieces S P]: the text S cut into words and formulas (between backticks)
+% [formula-marks P Class Name]: the class and the name written after the
+% formula piece P
+pred formula-marks i:piece, o:string, o:option string.
+formula-marks (pform _ C N) C N.
+formula-marks (pterm _ C N) C N.
+
+% [pieces S P]: the text S cut into words and formulas
 pred pieces i:string, o:list piece.
-pieces S P :- N is size S, chars S 0 N "" ff P.
+pieces S P :- prooftext.text-parts S Parts, std.map Parts part-piece P.
 
-% [chars S I N Acc InFormula P]: the pieces of S from position I
-pred chars i:string, i:int, i:int, i:string, i:bool, o:list piece.
-chars _ N N Acc F P :- !, last-piece Acc F P.
-chars S I N Acc F P :-
-  C is substring S I 1, I1 is I + 1,
-  if (C = "`")
-     (flush Acc F P P1, negb F F1, chars S I1 N "" F1 P1)
-     (Acc1 is Acc ^ C, chars S I1 N Acc1 F P).
-
-% [negb B C]: C is the negation of the boolean B
-pred negb i:bool, o:bool.
-negb tt ff.
-negb ff tt.
-
-% [flush Acc InFormula P Tail]: the piece of the characters Acc read so far
-% (a formula if InFormula), in front of Tail; none for no character
-pred flush i:string, i:bool, o:list piece, o:list piece.
-flush "" _ P P :- !.
-flush A ff [ptext A | P] P.
-flush A tt [pform A | P] P.
-
-% [last-piece Acc InFormula P]: the pieces of the end of the text, Acc
-pred last-piece i:string, i:bool, o:list piece.
-last-piece A F P :- flush A F P [].
+% [part-piece Part P]: the piece of a part of a text; a justification
+% (text-elements takes them out of the text before) stays words
+pred part-piece i:prooftext.text-part, o:piece.
+part-piece (prooftext.plain W) (ptext W).
+part-piece (prooftext.formula-part C F N) (pform F C N).
+part-piece (prooftext.by-part J) (ptext S) :- prooftext.justification J S.
 
 % ------------------------------------------------------------------ %
 % The elements of a step: each formula with its role
@@ -196,48 +190,29 @@ text-elements S J Es :- justification S J Rest, pieces Rest P, elements P rclaim
 
 % [elements Pieces Role Elements]: Role is the role before the first
 % formula (claim in a step, the conclusion in a statement).  A formula
-% takes the role of the phrases before it, or, when no phrase stands
-% right before it, the role of the phrases after it (after-roles)
+% takes the role of its class, or else of the phrases before it, or, when
+% no phrase stands right before it, of the phrases after it (after-roles)
 pred elements i:list piece, i:role, o:list element.
 elements P R L :- after-roles P As _, elements1 P R ff As L.
 
 % [elements1 Pieces Role Explicit Afters Elements]: Explicit: a phrase
 % stands right before the next formula; Afters: the after-roles of the
-% formulas of Pieces
+% formulas of Pieces.  A hypothesis is followed by its name, if the text
+% gives one (hyp-name-element)
 pred elements1 i:list piece, i:role, i:bool, i:list (option role), o:list element.
 elements1 [] _ _ _ [].
 elements1 [ptext W | P] R _ As [txt W | L] :- !,
   (text-role W R1, !, E = tt ; R1 = R, E = ff), elements1 P R1 E As L.
-elements1 [F, ptext W | P] R _ [_ | As] [E | L] :-
-  is-formula F, tag W R1 W1, !, formula-element F R1 E,
-  elements1 [ptext W1 | P] R ff As L.
-elements1 [F | P] R E [A | As] L :- is-formula F,
-  (A = some R2, E = ff, !, R1 = R2 ; R1 = R), formula F R1 P R As L.
+elements1 [F | P] R E [A | As] [Elt | L] :-
+  formula-marks F Class Name,
+  (prooftext.role-tag R1 Class, ! ; A = some R1, E = ff, ! ; R1 = R),
+  formula-element F R1 Elt,
+  hyp-name-element R1 Name L L1,
+  elements1 P R ff As L1.
 
-% the formula piece F with its role R1, then the pieces P (R the role
-% before)
-pred formula i:piece, i:role, i:list piece, i:role, i:list (option role), o:list element.
-formula F rhyp [ptext W | P] R As [E, hname H | L] :-
-  rex.match "^ *([A-Za-z_][A-Za-z0-9_']*)" W, !,
-  rex.replace "^ *(\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" W H,
-  rex.replace "^ *([A-Za-z_][A-Za-z0-9_']*)" "" W W1,
-  formula-element F rhyp E,
-  elements1 [ptext W1 | P] R ff As L.
-formula F R1 P R As [E | L] :- formula-element F R1 E, elements1 P R ff As L.
-
-% a tag right after a formula, {.Tag}: a class of a role
-% (prooftext/formulas.elpi; the first role with that class)
-pred tag i:string, o:role, o:string.
-tag W R W1 :-
-  rex.match "^{[.][a-z]+}" W,
-  rex.replace "^{[.]\\([a-z]+\\)}.*" "\\1" W T, prooftext.role-tag R T, !,
-  rex.replace "^{[.][a-z]+}" "" W W1.
-
-% the text of a step, to report it
-pred elements-text i:list element, o:string.
-elements-text L S :- std.map L element-text Ws, std.string.concat "" Ws S.
-% [element-text E S]: the element E as it is written in a text
-pred element-text i:element, o:string.
-element-text (txt W) W.
-element-text (elt _ F) S :- S is "`" ^ F ^ "`".
-element-text (hname H) S :- S is " (" ^ H ^ ")".
+% [hyp-name-element Role Name L Tail]: L is Tail with the name of a
+% hypothesis (Role = rhyp, Name = some H) in front, hname H; Tail for
+% another formula or no name
+pred hyp-name-element i:role, i:option string, o:list element, o:list element.
+hyp-name-element rhyp (some H) [hname H | L] L :- !.
+hyp-name-element _ _ L L.

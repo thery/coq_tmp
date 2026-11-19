@@ -126,10 +126,10 @@ that the Proof block cannot prove ([wrong.v](wrong.v)).
 The Elpi files of [elpi/](elpi):
 
 - `text.elpi` (with prooftext's `formulas.elpi` and `tactics.elpi`: the
-  classes of the roles, the syntax `*by X*`, the tactics a text may name):
-  words, formulas, tags `{.role}`, names `(h)`, the
-  justification `*by X*`, and the role of a formula from the last phrase
-  before it;
+  reading of a text into words, formulas, tags `{.role}`, names `(h)` and
+  the justification `*by X*`, `text-parts`, shared with the Typst writer;
+  the tactics a text may name): the role of a formula, from its tag or
+  from the phrases around it;
 - `vocab_en.elpi`, `vocab_fr.elpi`, `vocab_it.elpi`: the phrases of each
   language and the role they give;
 - `check.elpi`: closing a goal by the step's justification, the rules of

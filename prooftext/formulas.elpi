@@ -42,4 +42,74 @@ split-justification S none S.
 pred is-justification i:string.
 is-justification S :- rex.match "^[*]by .*[*]$" S.
 
+% ------------------------------------------------------------------
+% Reading the text of a statement or a step: its parts, for every reader
+% (cyp, the Typst writer).  A formula is between backticks (a backtick
+% with no other after it is text); right after it may come its class,
+% {.tag}, then, after spaces, the name given to it, (h)
+
+% a part of the text of a statement or a step, as it is written
+kind text-part type.
+type plain string -> text-part.         % words
+type formula-part string -> string -> option string -> text-part.
+                                        % a formula: its class ("" for
+                                        % none), its text, the name (h)
+                                        % written after it (none for none)
+type by-part string -> text-part.       % a justification, *by X*
+
+% [text-parts Text Parts]: the parts of Text, in order: each formula
+% (with what follows it, after-formula) and the text between them, where
+% the justifications are (plain-parts)
+pred text-parts i:string, o:list text-part.
+text-parts Text Parts :-
+  rex.match "^[^`]*`[^`]*`" Text, !,
+  rex.replace "^\\([^`]*\\)`.*" "\\1" Text Before,
+  rex.replace "^[^`]*`\\([^`]*\\)`.*" "\\1" Text F,
+  rex.replace "^[^`]*`[^`]*`" "" Text After,
+  after-formula After Class Name After1,
+  plain-parts Before BeforeParts,
+  text-parts After1 Rest,
+  std.append BeforeParts [formula-part Class F Name | Rest] Parts.
+text-parts Text Parts :- plain-parts Text Parts.
+
+% [after-formula S Class Name Rest]: what S, the text right after a
+% formula, gives it: its class {.tag} ("" if there is none; a class that
+% is no role's tag is read all the same), then the name (h) after
+% spaces (none if there is none); Rest is the text after them
+pred after-formula i:string, o:string, o:option string, o:string.
+after-formula S Class Name Rest :- formula-class S Class S1, formula-name S1 Name Rest.
+
+% [formula-class S Class Rest]: the class {.tag} at the start of S ("" if
+% there is none) and the text after it
+pred formula-class i:string, o:string, o:string.
+formula-class S Class Rest :-
+  rex.match "^{[.][A-Za-z]+}" S, !,
+  rex.replace "^{[.]\\([A-Za-z]+\\)}.*" "\\1" S Class,
+  rex.replace "^{[.][A-Za-z]+}" "" S Rest.
+formula-class S "" S.
+
+% [formula-name S Name Rest]: the name (h), an identifier in parentheses,
+% at the start of S after spaces (none if there is none) and the text
+% after it
+pred formula-name i:string, o:option string, o:string.
+formula-name S (some N) Rest :-
+  rex.match "^ *([A-Za-z_][A-Za-z0-9_']*)" S, !,
+  rex.replace "^ *(\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" S N,
+  rex.replace "^ *([A-Za-z_][A-Za-z0-9_']*)" "" S Rest.
+formula-name S none S.
+
+% [plain-parts Text Parts]: a text without formulas: plain text and the
+% justifications *by X* in it (no part for an empty text)
+pred plain-parts i:string, o:list text-part.
+plain-parts "" [] :- !.
+plain-parts Text Parts :-
+  rex.match "^.*[*]by [^*]+[*]" Text, !,
+  rex.replace "^\\(.*\\)[*]by [^*]+[*].*" "\\1" Text Before,
+  rex.replace "^.*[*]by \\([^*]+\\)[*].*" "\\1" Text J,
+  rex.replace "^.*[*]by [^*]+[*]" "" Text After,
+  plain-parts Before BeforeParts,
+  plain-parts After AfterParts,
+  std.append BeforeParts [by-part J | AfterParts] Parts.
+plain-parts Text [plain Text].
+
 }

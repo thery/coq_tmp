@@ -97,10 +97,16 @@ Elpi Accumulate lp:{{
     expect "checked text" R1 "We have `C`{.claim}.",
     (prooftext.split-checked "We have `C`{.claim}." _ _, coq.error "a text that is not checked" ; true),
     prooftext.text-parts "From `A`{.fact} (i) we deduce `B \\/ A`{.claim} *by or_intror*, `x` (y z)." Ps,
-    expect-term "parts" Ps [prooftext.plain "From ", prooftext.formula-part "fact" "A",
-      prooftext.plain " ", prooftext.name-use "i", prooftext.plain " we deduce ",
-      prooftext.formula-part "claim" "B \\/ A", prooftext.plain " ", prooftext.by-part "or_intror",
-      prooftext.plain ", ", prooftext.formula-part "" "x", prooftext.plain " (y z)."],
+    expect-term "parts" Ps [prooftext.plain "From ", prooftext.formula-part "fact" "A" (some "i"),
+      prooftext.plain " we deduce ",
+      prooftext.formula-part "claim" "B \\/ A" none, prooftext.plain " ", prooftext.by-part "or_intror",
+      prooftext.plain ", ", prooftext.formula-part "" "x" none, prooftext.plain " (y z)."],
+    % a name after any number of spaces; a class that is no role's tag is
+    % a class all the same; a backtick with no other after it is text
+    prooftext.text-parts "Assume `A`{.hyp}  (h) and `B`{.Hyp}(k), `C" Ps2,
+    expect-term "parts" Ps2 [prooftext.plain "Assume ", prooftext.formula-part "hyp" "A" (some "h"),
+      prooftext.plain " and ", prooftext.formula-part "Hyp" "B" (some "k"),
+      prooftext.plain ", `C"],
     prooftext.typst-string "a \\ \"b\"" TS, expect "typst string" TS "\"a \\\\ \\\"b\\\"\"".
 }}.
 Elpi prooftext_check_typst.
