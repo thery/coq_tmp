@@ -1,5 +1,7 @@
 # elpi-debug: a debugger for standalone Elpi
 
+How it works and why, with the other tools: [`../DESIGN.md`](../DESIGN.md) (this part: [`../design/debug.md`](../design/debug.md)).
+
 A debugger for Elpi 4 programs (standalone Elpi, opam switch `elpi5`; not
 Rocq-Elpi), written as a **meta-interpreter in Elpi**
 ([`lib/*.elpi`](lib), assembled into `debug.elpi`).  It runs a goal by interpreting the rules of

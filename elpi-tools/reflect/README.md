@@ -1,5 +1,7 @@
 # elpi-reflect: an Elpi program as Elpi data
 
+How it works and why, with the other tools: [`../DESIGN.md`](../DESIGN.md) (this part: [`../design/reflect.md`](../design/reflect.md)).
+
 Elpi has no builtin that returns the rules of the running program (Prolog's
 `clause/2`).  `elpi-reflect` fills the gap from outside (the API that would make it
 unnecessary is item 12 of the wish list for Elpi,

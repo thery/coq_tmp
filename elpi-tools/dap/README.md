@@ -1,5 +1,7 @@
 # elpi-dap: the Elpi debugger in VS Code, and the properties in the Test Explorer
 
+How it works and why, with the other tools: [`../DESIGN.md`](../DESIGN.md) (this part: [`../design/dap.md`](../design/dap.md)).
+
 `elpi-dap` is a debug adapter: it speaks the
 [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/)
 (DAP) with VS Code, and runs the debugger

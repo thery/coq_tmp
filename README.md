@@ -42,7 +42,8 @@ papers (in development):
 ## elpi-tools
 
 Tools for standalone Elpi 4 (opam switch `elpi5`, not Rocq-Elpi; in
-development), in [elpi-tools/](elpi-tools):
+development), in [elpi-tools/](elpi-tools) (how they work and why:
+[elpi-tools/DESIGN.md](elpi-tools/DESIGN.md)):
 
 - [reflect/](elpi-tools/reflect/README.md): **a program as data**.
   `elpi-reflect file.elpi` prints the types, constructors, signatures with
