@@ -72,7 +72,7 @@ From Lexicon Extra Dependency "lang_en.elpi" as lex_en.
 From Lexicon Extra Dependency "lang_fr.elpi" as lex_fr.
 
 Elpi Command prooftext_check_typst.
-Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_checked
+Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
   pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   pred expect i:string, i:string, i:string.
@@ -235,7 +235,7 @@ Elpi prooftext_check_tree.
    the corelib links to its documentation, a tactic does not; the
    legend, in the language of the text. *)
 Elpi Command prooftext_check_links.
-Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_checked
+Elpi Accumulate File lex_core lex_en lex_fr pt_header pt_document pt_formulas pt_tree pt_nodes pt_checked
   pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate lp:{{
   % [expect-in What Text Part]: Part is in Text (Part read as a regexp
@@ -259,7 +259,7 @@ Elpi Accumulate lp:{{
     prooftext.write-typst-in prooftext.code D T,
     expect-in "label of a name of the statement" T "#name(\"a\", label: \"statement:a\")",
     expect-in "label of a name of a step" T "#name(\"P1\", label: \"1:P1\")",
-    expect-in "justification by a name" T "#by(\"a\", target: \"statement:a\")",
+    expect-in "justification by a name" T "#just(\"a\", target: \"statement:a\")",
     expect-in "name in the text" T " By \"#named(\"h\", \"1.1:h\")",
     expect-not-in "a word of the lexicon" T "#named(\"the\"",
     expect-in "name of an earlier step" T "#named(\"P1\", \"1:P1\")",
@@ -267,11 +267,11 @@ Elpi Accumulate lp:{{
     expect-in "lemma in the text" T
       "#cited(\"conj\", \"https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj\")",
     expect-in "justification by a lemma" T
-      "#by(\"Corelib.Init.Logic.conj\", url: \"https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj\")",
+      "#just(\"Corelib.Init.Logic.conj\", url: \"https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj\")",
     expect-in "name after a fact" T "#name(\"a\", target: \"statement:a\")",
-    expect-in "a tactic" T "#by(\"tauto\")",
+    expect-in "a tactic" T "#just(\"tauto\")",
     expect-in "legend" T
-      "#legend(((\"var\", \"variable\"), (\"hyp\", \"hypothesis\"), (\"claim\", \"claim\"), (\"fact\", \"fact\"), (\"by\", \"justification\"),))",
+      "#legend(((\"var\", \"variable\"), (\"hyp\", \"hypothesis\"), (\"claim\", \"claim\"), (\"fact\", \"fact\"), (\"just\", \"justification\"),))",
     prooftext.legend-typst "fr" tt LegendFr,
     expect-in "legend in French, checked" LegendFr "(\"hyp\", \"hypothèse\")",
     expect-in "legend of the statuses" LegendFr "statuses: ((\"ok\", \"prouvé\")".

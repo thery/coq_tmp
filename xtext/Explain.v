@@ -30,6 +30,8 @@ From Lexicon Extra Dependency "lang_la.elpi" as lex_la.
 From ProofText Extra Dependency "header.elpi" as pt_header.
 From ProofText Extra Dependency "document.elpi" as pt_document.
 From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
+From ProofText Extra Dependency "tree.elpi" as pt_tree.
+From ProofText Extra Dependency "nodes.elpi" as pt_nodes.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
@@ -145,7 +147,7 @@ Elpi Command Explain.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_tactics
   pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types
@@ -180,7 +182,7 @@ Elpi Command Explain_partial.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
-Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_tactics
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_tactics
   pt_checked pt_maths_table pt_maths pt_maths_typst pt_links pt_typst.
 Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_kinds xt_inductive xt_declarations xt_transducer xt_expected_types

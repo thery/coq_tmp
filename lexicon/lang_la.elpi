@@ -74,7 +74,7 @@ write-word "la" "legend-var" "variabilis".
 write-word "la" "legend-hyp" "hypothesis".
 write-word "la" "legend-claim" "propositio".
 write-word "la" "legend-fact" "factum".
-write-word "la" "legend-by" "ratio".
+write-word "la" "legend-just" "ratio".
 write-word "la" "legend-ok" "probatum".
 write-word "la" "legend-ko" "non probatum".
 write-word "la" "legend-todo" "bloco Proof relictum".

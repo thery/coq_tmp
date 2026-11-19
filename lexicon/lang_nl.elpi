@@ -74,7 +74,7 @@ write-word "nl" "legend-var" "variabele".
 write-word "nl" "legend-hyp" "hypothese".
 write-word "nl" "legend-claim" "bewering".
 write-word "nl" "legend-fact" "feit".
-write-word "nl" "legend-by" "rechtvaardiging".
+write-word "nl" "legend-just" "rechtvaardiging".
 write-word "nl" "legend-ok" "bewezen".
 write-word "nl" "legend-ko" "niet bewezen".
 write-word "nl" "legend-todo" "overgelaten aan een Proof-blok".

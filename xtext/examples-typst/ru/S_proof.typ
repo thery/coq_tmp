@@ -9,12 +9,12 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Пусть "#var($A , B , C : "Prop"$)#". Предположим, что "#hyp($A → B → C$)#" "#name("h", label: "statement:h")#", "#hyp($A → B$)#" "#name("h0", label: "statement:h0")#" и "#hyp($A$)#" "#name("h1", label: "statement:h1")#". Докажем, что "#claim($C$)#"."]
-
-#steps((
-  step("1", [#"По "#named("h1", "statement:h1")#" имеем "#claim($A$)#"."], ()),
-  step("2", [#"Применяя "#named("h0", "statement:h0")#" к "#named("h1", "statement:h1")#", имеем "#claim($B$)#"."], ()),
-  step("3", [#"Применяя "#named("h", "statement:h")#", имеем "#claim($C$)#"."], ()),
+#proof([#"Пусть "#var($A , B , C : "Prop"$)#". Предположим, что "#hyp($A → B → C$)#" "#name("h", label: "statement:h")#", "#hyp($A → B$)#" "#name("h0", label: "statement:h0")#" и "#hyp($A$)#" "#name("h1", label: "statement:h1")#". Докажем, что "#claim($C$)#"."], (
+  steps((
+    step("1", [#"По "#named("h1", "statement:h1")#" имеем "#claim($A$)#"."], ()),
+    step("2", [#"Применяя "#named("h0", "statement:h0")#" к "#named("h1", "statement:h1")#", имеем "#claim($B$)#"."], ()),
+    step("3", [#"Применяя "#named("h", "statement:h")#", имеем "#claim($C$)#"."], ()),
+  )),
 ))
 
-#legend((("var", "переменная"), ("hyp", "гипотеза"), ("claim", "утверждение"), ("fact", "факт"), ("by", "обоснование"),))
+#legend((("var", "переменная"), ("hyp", "гипотеза"), ("claim", "утверждение"), ("fact", "факт"), ("just", "обоснование"),))

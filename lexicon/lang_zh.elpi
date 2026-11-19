@@ -75,7 +75,7 @@ write-word "zh" "legend-var" "变量".
 write-word "zh" "legend-hyp" "假设".
 write-word "zh" "legend-claim" "断言".
 write-word "zh" "legend-fact" "事实".
-write-word "zh" "legend-by" "依据".
+write-word "zh" "legend-just" "依据".
 write-word "zh" "legend-ok" "已证明".
 write-word "zh" "legend-ko" "未证明".
 write-word "zh" "legend-todo" "留给 Proof 块".
