@@ -74,3 +74,13 @@ write-word "ar" "by-application" "بالتطبيق".
 write-word "ar" "with" "مع".
 write-word "ar" "the-element" "العنصر".
 write-word "ar" "belongs-to" "ينتمي إلى".
+% the legend of a PDF or HTML page of a proof text (prooftext/typst.elpi):
+% the names of the roles and of cyp's statuses
+write-word "ar" "legend-var" "متغير".
+write-word "ar" "legend-hyp" "فرضية".
+write-word "ar" "legend-claim" "ادعاء".
+write-word "ar" "legend-fact" "حقيقة".
+write-word "ar" "legend-ok" "مثبت".
+write-word "ar" "legend-ko" "غير مثبت".
+write-word "ar" "legend-todo" "متروك لكتلة Proof".
+write-word "ar" "legend-none" "لا شيء للتحقق".

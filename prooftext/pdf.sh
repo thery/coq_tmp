@@ -38,7 +38,7 @@ while [ $# -gt 0 ]; do
 done
 
 # Typst.vo, compiled again when a source is newer
-if [ ! -f "$here/Typst.vo" ] || [ -n "$(find "$here/Typst.v" "$here"/*.elpi "$here/../lexicon/lexicon.elpi" -newer "$here/Typst.vo")" ]; then
+if [ ! -f "$here/Typst.vo" ] || [ -n "$(find "$here/Typst.v" "$here"/*.elpi "$here"/../lexicon/*.elpi -newer "$here/Typst.vo")" ]; then
   (cd "$here" && nice rocq c -Q ../lexicon Lexicon -Q . ProofText Typst.v)
 fi
 

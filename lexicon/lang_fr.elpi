@@ -93,3 +93,13 @@ write-word "fr" "by-application" "par application".
 write-word "fr" "with" "avec".
 write-word "fr" "the-element" "l'élément".
 write-word "fr" "belongs-to" "appartient à".
+% the legend of a PDF or HTML page of a proof text (prooftext/typst.elpi):
+% the names of the roles and of cyp's statuses
+write-word "fr" "legend-var" "variable".
+write-word "fr" "legend-hyp" "hypothèse".
+write-word "fr" "legend-claim" "affirmation".
+write-word "fr" "legend-fact" "fait".
+write-word "fr" "legend-ok" "prouvé".
+write-word "fr" "legend-ko" "non prouvé".
+write-word "fr" "legend-todo" "laissé à un bloc Proof".
+write-word "fr" "legend-none" "rien à vérifier".

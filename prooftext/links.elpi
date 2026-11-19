@@ -1,0 +1,132 @@
+% prooftext: the links of a proof text, for its PDF and its HTML page.
+% (load after lexicon/lexicon.elpi and its tables lang_xx.elpi, which give
+% the words of the texts; the Typst writer, typst.elpi, uses it)
+%
+% Two kinds of links, found while the text is read, without a table of
+% names:
+% - a name given to a formula, `A`{.hyp} (h), introduces it: its uses
+%   (`B`{.fact} (h), "by h", "Applying h to ...", *by h*) link back to
+%   the step that introduced it.  A name holds where a declaration does
+%   (a Let, typst.elpi): in the rest of its step, the step's sub-steps and
+%   the steps after it in its list; a name of the statement, in the whole
+%   proof;
+% - a name of a lemma, a constructor or a type, in a justification (*by
+%   Corelib.Init.Logic.conj*) or in the text ("Applying f_equal_nat, ..."),
+%   that Rocq locates in a library with an online documentation (the
+%   corelib, the stdlib: library-documentation) links to its entry there.
+%
+% A word of the text is a name only when it is not a word of the lexicon
+% of the text's language: "a" in French "il y a" is never the hypothesis
+% (a).
+
+namespace prooftext {
+
+% ------------------------------------------------------------------
+% Names and the steps that introduce them
+
+% [name-label Where Name Label]: the Typst label of the introduction of
+% Name in the statement (Where = "statement") or in the step numbered
+% Where (Dewey notation): "statement:h", "1.2:h"
+pred name-label i:string, i:string, o:string.
+name-label Where Name Label :- Label is Where ^ ":" ^ Name.
+
+% [name-in-scope Names Name Label]: Name is in scope, introduced at Label
+% (the latest introduction, the first in Names)
+pred name-in-scope i:list (pair string string), i:string, o:string.
+name-in-scope Names Name Label :- std.lookup Names Name Label.
+
+% ------------------------------------------------------------------
+% The documentation of the libraries
+
+% [library-documentation Root Base]: the online documentation (rocqdoc
+% HTML, one page per file, Library.html#Name) of the libraries whose
+% logical path starts with Root.  A library may add its own, as the
+% notations of the formulas are added (README, "The table").
+% The addresses without a version (rocq-prover.org/corelib/...) lead to
+% the latest release of each library.
+pred library-documentation o:string, o:string.
+library-documentation "Corelib" "https://rocq-prover.org/corelib/".
+library-documentation "Stdlib" "https://rocq-prover.org/stdlib/".
+
+% [documentation-url Name Url]: the entry of Name in the documentation of
+% its library: the global reference Rocq gives to Name, in the current
+% context (the require line of the text), in a library that has an
+% online documentation.  The page is that of the file (the library, a
+% file that can be Required), the anchor the rest of the full name
+% (Stdlib.Arith.PeanoNat.html#Nat.add_succ_r).  Fails for other names.
+pred documentation-url i:string, o:string.
+documentation-url Name Url :-
+  std.mem {coq.locate-all Name} (loc-gref GR), !,
+  coq.gref->path GR Path,
+  Path = [Root | _], library-documentation Root Base, !,
+  file-of-path Path File,
+  std.length File N, std.drop N Path Inner,
+  std.append Inner [{coq.gref->id GR}] Anchor,
+  Url is Base ^ {std.string.concat "." File} ^ ".html#" ^ {std.string.concat "." Anchor}.
+
+% [file-of-path Path File]: the logical path of the file (a library) that
+% holds the module of full path Path
+pred file-of-path i:list string, o:list string.
+file-of-path Path File :-
+  std.mem {coq.locate-all {std.string.concat "." Path}} (loc-modpath MP), !,
+  coq.modpath->path {coq.modpath->library MP} File.
+
+% ------------------------------------------------------------------
+% The words of a text
+
+% a piece of plain text
+kind text-piece type.
+type word string -> text-piece.      % a word that has the form of a Rocq name
+type other string -> text-piece.     % the rest: spaces, punctuation, other words
+
+% [text-pieces Text Pieces]: Text cut into its words and the rest.  A
+% run is the text between two separators (ASCII spaces and punctuation
+% marks but _ ' .); a run, its final dots left out, is a word when it
+% has the form of a (qualified) Rocq name: Nat.add_succ_r, h4, IHn, x'.
+% A name glued to other characters (réécrit, 由h4) is not a word
+pred text-pieces i:string, o:list text-piece.
+text-pieces "" [] :- !.
+text-pieces Text [other S | Ps] :-
+  leading "[" Text S, !, text-pieces {after S Text} Ps.
+text-pieces Text Pieces :-
+  leading "[^" Text Run,
+  rex.replace "[.]*$" "" Run W,
+  rex.match "^[A-Za-z_][A-Za-z0-9_']*\\([.][A-Za-z_][A-Za-z0-9_']*\\)*$" W, !,
+  after W Run Dots,
+  (if (Dots = "") (Pieces = [word W | Ps]) (Pieces = [word W, other Dots | Ps])),
+  text-pieces {after Run Text} Ps.
+text-pieces Text [other Run | Ps] :- leading "[^" Text Run, text-pieces {after Run Text} Ps.
+
+% [leading Class Text Run]: the longest start of Text (not empty) made of
+% separators (Class = "[") or of other characters (Class = "[^")
+pred leading i:string, i:string, o:string.
+leading Class Text Run :-
+  Set is Class ^ "] \t!\"#$%&()*+,/:;<=>?@[^`{|}~-]",
+  rex.match {calc ("^" ^ Set)} Text,
+  rex.replace {calc ("^\\(" ^ Set ^ "+\\).*$")} "\\1" Text Run.
+
+% [after Start Text Rest]: Text without its start Start
+pred after i:string, i:string, o:string.
+after Start Text Rest :- N is size Start, Rest is substring Text N (size Text - N).
+% [lexicon-words Lang Words]: the words of the phrases of the lexicon of
+% the language Lang (lexicon.elpi), in lower case
+pred lexicon-words i:string, o:list string.
+lexicon-words Lang Words :-
+  std.findall (phrase Lang _ _) Ps, std.findall (write-word Lang _ _) Ws,
+  std.map Ps (p\ s\ p = phrase _ s _) PhraseTexts,
+  std.map Ws (w\ s\ w = write-word _ _ s) WordTexts,
+  std.append PhraseTexts WordTexts Texts,
+  std.fold Texts [] add-phrase-words Words.
+
+% [add-phrase-words Phrase Words0 Words]: the words of Phrase added to
+% Words0
+pred add-phrase-words i:string, i:list string, o:list string.
+add-phrase-words Phrase Words0 Words :-
+  text-pieces Phrase Pieces,
+  std.fold Pieces Words0 (p\ w0\ w\ sigma W\ if (p = word W) (w = [W | w0]) (w = w0)) Words.
+
+% [lexicon-word Words W]: W is, in lower case, one of the words Words
+pred lexicon-word i:list string, i:string.
+lexicon-word Words W :- lower W L, std.mem! Words L.
+
+}

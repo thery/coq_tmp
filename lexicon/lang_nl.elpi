@@ -68,3 +68,13 @@ write-word "nl" "by-application" "door toepassing".
 write-word "nl" "with" "met".
 write-word "nl" "the-element" "het element".
 write-word "nl" "belongs-to" "behoort tot".
+% the legend of a PDF or HTML page of a proof text (prooftext/typst.elpi):
+% the names of the roles and of cyp's statuses
+write-word "nl" "legend-var" "variabele".
+write-word "nl" "legend-hyp" "hypothese".
+write-word "nl" "legend-claim" "bewering".
+write-word "nl" "legend-fact" "feit".
+write-word "nl" "legend-ok" "bewezen".
+write-word "nl" "legend-ko" "niet bewezen".
+write-word "nl" "legend-todo" "overgelaten aan een Proof-blok".
+write-word "nl" "legend-none" "niets te controleren".
