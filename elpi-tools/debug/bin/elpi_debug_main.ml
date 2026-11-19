@@ -152,10 +152,9 @@ module type Parser = Elpi_parser.Parse.Parser_w_Internals
 
 (* the parser, made once the options (the search paths) are known *)
 let parser () : (module Parser) =
-  let module P = Elpi_parser.Parse.Make (struct
-    let versions = Elpi_util.Util.StrMap.empty
-    let resolver = API.Parse.std_resolver ~paths:!paths ()
-  end) in
+  let module P = Elpi_parser.Parse.Make (Elpi_reflect.Parser_config.Make (struct
+    let paths = !paths
+  end)) in
   (module P : Parser)
 
 (* [parse_or_fail read]: the program read by the parser, or its errors and exit *)

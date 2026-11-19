@@ -466,10 +466,9 @@ let facts ~defines ~rules ?(closed = false) (decls : Scope.resolved list) : stri
 
 exception Error of string
 
-module Parser (C : sig val paths : string list end) = Elpi_parser.Parse.Make (struct
-  let versions = Elpi_util.Util.StrMap.empty
-  let resolver = Elpi.API.Parse.std_resolver ~paths:C.paths ()
-end)
+(* the parser, with the search paths C.paths (parser_config.ml) *)
+module Parser (C : sig val paths : string list end) =
+  Elpi_parser.Parse.Make (Parser_config.Make (C))
 
 let check_errors = function
   | p, [], _ -> p
