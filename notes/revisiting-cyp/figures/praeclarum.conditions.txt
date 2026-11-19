@@ -16,7 +16,7 @@ cyp: praeclarum
   H1 : x -> z
   H2 : y -> t
   H3 : x /\ y
-  c1_1a : x
+  c1_1_1 : x
   ============================
   z
 
@@ -27,8 +27,7 @@ cyp: praeclarum
   H1 : x -> z
   H2 : y -> t
   H3 : x /\ y
-  c1_1a : x
-  c1_1b : z
+  c1_1 : z
   ============================
   y
 
@@ -39,9 +38,8 @@ cyp: praeclarum
   H1 : x -> z
   H2 : y -> t
   H3 : x /\ y
-  c1_1a : x
-  c1_1b : z
-  c1_2a : y
+  c1_1 : z
+  c1_2_1 : y
   ============================
   t
 
@@ -52,10 +50,8 @@ cyp: praeclarum
   H1 : x -> z
   H2 : y -> t
   H3 : x /\ y
-  c1_1a : x
-  c1_1b : z
-  c1_2a : y
-  c1_2b : t
+  c1_1 : z
+  c1_2 : t
   ============================
   z /\ t
 
@@ -65,13 +61,9 @@ cyp: praeclarum
   t : Prop
   H1 : x -> z
   H2 : y -> t
-  c1a : x /\ y -> x
-  c1b : x /\ y -> z
-  c1c : x /\ y -> y
-  c1d : x /\ y -> t
-  c1e : x /\ y -> z /\ t
+  c1 : x /\ y -> z /\ t
   ============================
   x /\ y -> z /\ t
 
-cyp: praeclarum, 4 steps, 6 conditions
+cyp: praeclarum, 6 steps, 6 conditions
 

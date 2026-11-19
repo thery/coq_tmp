@@ -1,0 +1,40 @@
+Let x y z t : Prop. Assume (x -> z) /\ (y -> t) (h1) and x /\ y (h2). We prove z /\ t.
+
+- Going back to the definition of and (and_ind) in h1, we prove z /\ t:
+  - Assume x -> z (i) and y -> t (j). Going back to the definition of and (and_ind) in h2, we prove z /\ t:
+    - Assume x (k) and y (l).
+      - Applying i to k, we have z.
+      - Applying j to l, we have t.
+
+      So by definition of and (conj), we have z /\ t.
+
+---
+require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import Fig.xtexts.
+by: tauto | congruence | lia | firstorder | auto
+---
+
+# praeclarum
+
+Let `x y z t : Prop`{.var}. Assume `(x -> z) /\ (y -> t)`{.hyp} (h1) and `x /\ y`{.hyp} (h2). We prove `z /\ t`{.claim}.
+
+- Going back to the definition of and (*and_ind*{.just}) in *h1*{.just}, we prove `z /\ t`{.claim}:
+  - Assume `x -> z`{.hyp} (i) and `y -> t`{.hyp} (j). Going back to the definition of and (*and_ind*{.just}) in *h2*{.just}, we prove `z /\ t`{.claim}:
+    - Assume `x`{.hyp} (k) and `y`{.hyp} (l).
+      - Applying *i*{.just} to *k*{.just}, we have `z`{.claim}.
+      - Applying *j*{.just} to *l*{.just}, we have `t`{.claim}.
+
+      So by definition of and (*conj*{.just}), we have `z /\ t`{.claim}.
+
+ExtractText: written praeclarum_xtext.md
+ExtractText: written praeclarum_ar.md
+Let x y z t : Prop. Assume (x -> z) /\ (y -> t) (H). We prove x /\ y -> z /\ t.
+
+- Going back to the definition of and (match) in H, we prove x /\ y -> z /\ t:
+  - Assume x -> z (Hxz), y -> t (Hyt) and x /\ y (H0). Going back to the definition of and (match) in H0, we prove z /\ t:
+    - Assume x (Hx) and y (Hy).
+      - Applying Hxz to Hx, we have z.
+      - Prove t.
+
+      So by definition of and (conj), we have z /\ t.
+
+ExtractText: written drinker.md

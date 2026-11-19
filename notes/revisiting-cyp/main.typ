@@ -1,5 +1,6 @@
 // Revisiting Cyp and extracting text from proofs
 // Build: typst compile notes/revisiting-cyp/main.typ
+// The figures and the outputs of the tools are made by figures/make.sh.
 
 #set document(title: "Revisiting Cyp and extracting text from proofs", author: "Laurent Théry")
 #set page(paper: "a4", margin: (x: 2.4cm, y: 2.5cm), numbering: "1")
@@ -13,6 +14,9 @@
 #show figure: set block(breakable: false)
 #show figure.caption: set text(size: 9pt)
 #show link: set text(fill: rgb("#0072b2"))
+
+// lines [a, b) of a file written by a tool (figures/make.sh)
+#let lines(file, a, b) = read(file).split("\n").slice(a, b).join("\n")
 
 #align(center)[
   #text(size: 17pt, weight: "bold")[Revisiting Cyp and extracting text from proofs]
@@ -30,24 +34,30 @@
   conclusions or variables, so that each step of the text becomes a
   condition for a prover. This note describes a new implementation of
   the idea for Rocq, and a tool that goes the other way. *cyp* reads a
-  proof written in Markdown and checks each step in Rocq. *xtext* writes
-  such a text from a Rocq proof term, after Coscoy's thesis. Both tools
-  are written in Rocq-Elpi and share a library for the format, a lexicon
-  of ten languages and a back end that typesets the texts with Typst. We
-  report what was built, how, and what we measured: of the 683 steps
-  with a claim in the 80 English texts written by xtext, cyp proves 666.
+  proof written in Markdown and checks each step in Rocq; it never fails
+  as a whole, and leaves the steps it cannot prove as named goals.
+  *xtext* writes such a text from a Rocq proof term, after Coscoy's
+  thesis. The format is the tree of the 2003 paper, written either as
+  nested lists or as free prose with marked spans; only what is tagged
+  is used, and the justifications are tagged names in the sentences.
+  Both tools are written in Rocq-Elpi and share a library for the
+  format, a lexicon of ten languages and a back end that typesets the
+  texts with Typst, as a PDF or as a web page. We report what was built
+  and what we measured: in the 80 English texts written by xtext, cyp
+  proves 684 of the 686 steps it checks (666 of 683 with the format used
+  before).
 ]
 
 = Introduction
 
-The paper _Colouring proofs_ @thery2004colouring came from proofs of
-floating-point algorithms. The proof was first written on paper. Then it
-was redone as a Coq script. The two then went separate ways. The paper
-listed three consequences. The published proof is not the checked
-one: only its statement is. The script tells little about the structure
-of the proof, which makes it hard to maintain. And when a hypothesis is
-changed, the failing tactic does not say which step of the paper proof
-is wrong.
+The paper _Colouring proofs_ @thery2004colouring (UITP 2003) came from
+proofs of floating-point algorithms. The proof was first written on
+paper. Then it was redone as a Coq script. The two then went separate
+ways. The paper listed three consequences. The published proof is not
+the checked one: only its statement is. The script tells little about
+the structure of the proof, which makes it hard to maintain. And when a
+hypothesis is changed, the failing tactic does not say which step of the
+paper proof is wrong.
 
 The proposal was a light one. Keep the proof as text, as a
 mathematician writes it. Mark only its structure and the role of each
@@ -71,14 +81,15 @@ in the earlier work on extracting text from proofs
 This note revisits both directions, twenty years later, for Rocq.
 
 - *cyp* reads a proof written in Markdown, with its formulas in Rocq
-  syntax, builds the conditions of its steps, and tries to prove each
-  of them. It writes the text back with a status in front of each step.
+  syntax, builds the condition of each step, and tries to prove it. It
+  writes the text back with a status in front of each step.
 - *xtext* writes a proof text from a Rocq proof term. It follows the
-  staged translation of Coscoy's thesis @coscoy2000thesis. Its output is
-  in the format that cyp reads.
-- *prooftext* and the *lexicon* are what the two share: the document
-  tree, its reader and writer, the roles of formulas, the words of ten
-  languages, and a back end that makes a PDF or a web page of a text.
+  staged translation of Coscoy's thesis @coscoy2000thesis. It prints the
+  text plainly, or writes it in the format that cyp reads.
+- *prooftext* and the *lexicon* are what the two share: the reader of
+  the format into its tree, the writer, the roles of formulas, the words
+  of ten languages, and a back end that makes a PDF or a web page of a
+  text.
 
 Everything is written in Rocq-Elpi @dunchev2015elpi, the extension
 language of Rocq based on λProlog. There is no external parser and no
@@ -87,15 +98,15 @@ second implementation of the format.
 We do not claim that the texts are good prose. The texts of xtext are
 faithful but coarse. The languages other than English were never
 reviewed by a native speaker. A step that cyp proves is a step whose
-claim follows from what comes before it; cyp does not check that it
+conclusion follows from what it can see; cyp does not check that it
 follows _for the reason the text gives_. These limits are recalled where
 they matter.
 
 The note is organised as follows. @sec-format describes the format,
-from the 2003 tags to Markdown, and the format we are now implementing.
+from the 2003 tags to the tree in Markdown that the tools now use.
 @sec-cyp describes the checker, @sec-xtext the writer, @sec-shared the
 shared libraries and the languages, and @sec-render the PDF and the web
-pages. @sec-experience gives the measurements. @sec-related and
+page. @sec-experience gives the measurements. @sec-related and
 @sec-conclusion discuss related work and what remains to be done.
 
 = The format <sec-format>
@@ -115,7 +126,7 @@ what is assumed, blue for what is proved.
 
 #figure(
   grid(columns: (1.15fr, 1fr), gutter: 10pt, align: horizon,
-    raw(read("figures/praeclarum.2006.xml").trim(), block: true, lang: "xml"),
+    raw(read("figures/praeclarum.2003.xml").trim(), block: true, lang: "xml"),
     image("figures/cyp2003.png", width: 100%),
   ),
   kind: image,
@@ -124,164 +135,150 @@ what is assumed, blue for what is proved.
   the paper, `exp_pos`, cropped from the published figure.],
 ) <fig-2003>
 
-== Today: Markdown with roles
+== A first Markdown version, and why it changed
 
-The 2003 format had two practical problems. The XML tags make a text
-hard to read without the tool. And every formula had to be tagged by
-hand. Today's format is plain Markdown, and the role of a formula is
-read from the words before it. @fig-today gives _praeclarum_ in it.
+The XML tags make a text hard to read without the tool, and every
+formula had to be tagged by hand. The first version of cyp therefore
+read plain Markdown, with formulas between backticks, and took the role
+of a formula from the words before it: _let_ introduced variables, _if_
+and _assume_ hypotheses, _we have_ and _hence_ claims. A step could have
+several claims (_we have `x` and hence `z`_), a step that said _it
+suffices to prove_ went backwards, and a justification was written
+after the sentence, `*by X*`.
+
+Guessing roles from words had costs. The reader needed a list of phrases
+for every language, a formula could take a role the author did not
+mean, and the Typst writer, which did not guess, showed such formulas
+without colour. Several claims per step and the backward phrases also
+took the format away from the 2003 tree, where each proof has one
+conclusion. Measured on xtext's English texts, read twice with and
+without their classes, the role of a formula came from its class only
+on 94 of 1933 lines: words were not enough even for texts written by a
+program from a fixed vocabulary. The format was therefore changed, after
+a written proposal (`proposal/PROPOSAL.md` in the repository). This is
+the format described now, and the one the tools implement.
+
+== The format now: the 2003 tree, two syntaxes <sec-v2>
+
+A proof text has a header between two lines `---` (the Rocq libraries
+to load, the default tactics, the language), a title `# name`, and then
+the top node: the statement with its proof. The rules are these.
+
+- *The tree of 2003.* A node has exactly one conclusion, any number of
+  variables and hypotheses, which hold in the node and in its subnodes
+  and nowhere else, facts and justifications, and its subnodes. Seen
+  from outside, a node is the formula $forall V, H -> C$. A node sees
+  the conclusions of the nodes before it in its list and before each
+  node around it (the visibility rule of 2003).
+- *Only what is tagged is used.* A formula's role is its class, written
+  after it in Pandoc's attribute syntax (@tab-tags). An untagged formula
+  and every word are plain text: shown, not used. A line with no tag at
+  all is a _remark_: shown, not checked. In "A, that is B", B is the
+  conclusion and A is plain text.
+- *Justifications* are names in the sentence, emphasised and tagged like
+  a formula: `By definition of and (*conj*{.just}), we have`. A node
+  may have several (`Applying *i*{.just} to *k*{.just}`); 2003 had one
+  `j` per proof. The word "by" is an ordinary word. A fact,
+  #raw("`F`{.fact}"), must be a hypothesis or a conclusion the node can
+  see.
+- *Two syntaxes for the same tree*, which can be mixed at any depth. In
+  the _structured_ syntax a list item is a node and its sub-items are its
+  subnodes; a paragraph after the sub-items, indented as the item's
+  text, belongs to the item, so that a conclusion can come after its
+  subproofs. In the _free_ syntax a node is a Pandoc span `[…]{.p}`
+  inside a paragraph, and spans nest; a node of several paragraphs is a
+  div, `::: p` … `:::`. A list item is read as a span around its
+  contents.
+
+#figure(
+  table(columns: 2, align: left, stroke: 0.4pt + luma(180), inset: 5pt,
+    table.header([*2003*], [*the format now*]),
+    [`<p>` a proof or a subproof], [a list item, a span `[…]{.p}` or a div `::: p`],
+    [`<n>` a name], [the title `# name`; `(h)` after a hypothesis; `(n)` after a conclusion],
+    [`<c>` the conclusion], [#raw("`C`{.claim}"), exactly one per node],
+    [`<h>` an assumption], [#raw("`A`{.hyp}")],
+    [`<v>` a variable], [#raw("`x y : T`{.var}")],
+    [`<f>` a formula used], [#raw("`F`{.fact}"), a hypothesis or conclusion in scope],
+    [`<j>` a justification], [`*X*{.just}`, one name each, any number per node],
+  ),
+  caption: [The tags of 2003 and their form in the format now.],
+) <tab-tags>
+
+@fig-syntaxes gives _praeclarum_ in both syntaxes. The free one
+reproduces node for node the 2003 line
+`<p><p> we have <c>x</c></p>, so <j>by <f>x -> z</f></j>, we get <c>z</c></p>`. cyp proves both texts,
+and finds the same six nodes in each. @fig-render shows how they are
+typeset (@sec-render).
 
 #figure(
   {
     show raw: set text(size: 6.6pt)
     grid(columns: (1fr, 1fr), gutter: 8pt,
-      raw(read("figures/praeclarum_words.md").trim(), block: true),
-      raw(read("figures/praeclarum_words.checked.md").trim(), block: true),
+      raw(read("figures/praeclarum_tree.md").trim(), block: true, lang: "markdown"),
+      raw(read("figures/praeclarum_free.md").trim(), block: true, lang: "markdown"),
     )
   },
   kind: image,
-  caption: [_praeclarum_ in today's format (left), and the file that cyp
-  writes back (right). ✅ marks a step proved, ▫️ a step with nothing to
-  check. The roles come from the words _Let_, _If_, _then_, _Suppose_,
-  _We have_, _hence_. The same text with a class on each formula
-  (`{.var}`, `{.hyp}`, `{.claim}`) gives the same result.],
-) <fig-today>
+  caption: [_praeclarum_ in the structured syntax (left) and in the free
+  syntax (right). "Altogether ..." is the closing paragraph of the item
+  "Suppose ...". The step "We get `z` by `x -> z`" has the fact `x -> z`
+  and one subnode, the step "we have `x`".],
+) <fig-syntaxes>
 
-A text has a header between two lines `---` (the Rocq libraries to load,
-the default tactics, the language), a title `# name`, a statement, and
-a nested list of steps. A formula is written between backticks in Rocq
-syntax. Its role comes from the phrase before it: _let_ introduces
-variables, _if_ and _assume_ hypotheses, _from_ and _using_ facts that
-are mentioned, _we have_, _hence_, _so_ claims. A class written after the
-formula, `{.claim}`, gives the role explicitly; this is the attribute
-syntax of Pandoc. A step names its justification as a paper says "by
-Lemma 3": `*by X*`, where X is a lemma, a hypothesis, a named rule or a
-tactic. @tab-tags maps the 2003 tags to this format.
+There is no backward phrase any more: going backwards is nesting, as
+the conclusion of a node follows from its subnodes. The reader reports
+the errors of the tree at their node and line: a node with tags but no
+conclusion, or with two; a name out of scope or given twice; an unknown
+class; an unclosed span or div. Two more errors need the meaning of the
+names and are cyp's: a justification that names nothing known, and a fact
+that is no hypothesis or conclusion in scope.
 
-#figure(
-  table(columns: 2, align: left, stroke: 0.4pt + luma(180), inset: 5pt,
-    table.header([*2003*], [*today's Markdown*]),
-    [`<p>` a proof or a subproof], [a list item, its sub-steps indented below it],
-    [`<n>` a name], [the title `# name`; for a hypothesis, `(h)` after its formula],
-    [`<c>` the conclusion], [#raw("`F`{.claim}"), or after _we have_, _we prove_, ...],
-    [`<h>` an assumption], [#raw("`F`{.hyp}"), or after _assume_, _if_, ...],
-    [`<v>` a variable], [#raw("`x : T`{.var}"), or after _let_],
-    [`<f>` a formula used], [#raw("`F`{.fact}"), or after _from_, _using_, ...],
-    [`<j>` a justification], [`*by X*`: a lemma, a hypothesis, a rule or a tactic],
-  ),
-  caption: [The tags of 2003 and their form in today's Markdown.],
-) <tab-tags>
+One limit is known: Pandoc has no attributes on emphasis, so a Markdown
+preview shows `*conj*{.just}` with its `{.just}`. prooftext reads
+Markdown itself, so the PDF and the web page are not affected. The old
+form `*by X*` is still read as the justification X.
 
-Today's format also departs from 2003 in its structure. A step may have
-several claims (_we have `x` and hence `z`_), each proved from the ones
-before it. A step that says _it suffices to prove_ goes backwards: its
-claim replaces the goal. And a step that only introduces variables or
-hypotheses opens a scope for its sub-steps, which is how the cases of an
-induction are written.
-
-== The format being implemented: the 2003 tree, two syntaxes <sec-v2>
-
-Guessing roles from words was convenient, but it has costs. The reader
-needs a list of phrases for every language. A formula can take a role
-that the author did not mean. And the Typst writer does not guess roles,
-so an untagged formula has no colour in the PDF (@fig-maths below).
-Several claims per step and the backward keywords also took the format
-away from the tree of 2003, where each proof has one conclusion.
-
-We have therefore decided on a new format, which is now being
-implemented. At the time of writing no reader exists for it: the
-examples below are written by hand, and the figure is a hand-written
-Typst mock-up. The decisions are the following.
-
-- Only what is tagged is used. An untagged formula is plain text, shown
-  without colour and ignored by cyp.
-- The tree of 2003 comes back: one conclusion per node, subnodes,
-  and scopes for hypotheses and variables. A node is seen from outside
-  as $forall V, H -> C$, and a node may use the conclusions of the nodes
-  before it, at every level (the visibility rule of 2003).
-- A justification is a name in the sentence, emphasised and tagged like
-  a formula: `By definition of and (*conj*{.just}), we have ...`. A node
-  may have several, since a sentence may name several things
-  (`Applying *i*{.just} to *k*{.just}`). This departs from 2003, which
-  had one `j` per proof.
-- There are two syntaxes for the same tree. In the _structured_ syntax a
-  list item is a node and its sub-items are its subnodes; a paragraph
-  after the sub-items belongs to the item, so that a conclusion can come
-  after its subproofs. In the _free_ syntax a node is a Pandoc span
-  `[…]{.p}` inside a paragraph, and spans nest. A list item is read as a
-  span around its contents, so the two syntaxes can be mixed.
-
-#figure(
-  grid(columns: 1, gutter: 6pt,
-    raw("- Suppose `x /\\ y`{.hyp}.
-  - We get `z`{.claim} by `x -> z`{.fact}, since
-    - we have `x`{.claim}.
-  - We get `t`{.claim} by `y -> t`{.fact}, since
-    - we have `y`{.claim}.
-
-  Altogether we have `z /\\ t`{.claim}.", block: true, lang: "markdown"),
-    raw("[Suppose `x /\\ y`{.hyp}. [[We have `x`{.claim}]{.p}, so by `x -> z`{.fact}
-we get `z`{.claim}.]{.p} [[We have `y`{.claim}]{.p}, so by `y -> t`{.fact}
-we get `t`{.claim}.]{.p} Altogether we have `z /\\ t`{.claim}.]{.p}", block: true, lang: "markdown"),
-    image("figures/fig-mockup-praeclarum.png", width: 88%),
-  ),
-  kind: image, placement: auto,
-  caption: [The proof of _praeclarum_ in the format being implemented:
-  structured syntax (top), free syntax (middle), and the hand-written
-  mock-up of the structured one (bottom). Variables are sky blue,
-  hypotheses orange, conclusions yellow, facts grey. The free syntax
-  reproduces the 2003 line `<p><p> we have <c>x</c></p>, so <j>by <f>x
-  -> z</f></j>, we get <c>z</c></p>` node for node.],
-) <fig-v2>
-
-One limit is known in advance: Pandoc has no attributes on emphasis, so
-a Markdown preview shows `*conj*{.just}` with its `{.just}`. prooftext
-reads Markdown itself, so the PDF and the web page are not affected.
-
-The cost of the change is also known, since it was counted on the 82
-English texts of xtext (1201 list items): 179 items name a
-justification with `*by X*`, 124 items have hypotheses but no claim and
-must be merged with a sub-item, 141 items have both a claim and a fact,
-and 384 items have facts only (321 of them are "The element `z` belongs
-to `E`", whose "facts" are not formulas). All of cyp's examples must be
-retagged, since 8 of the 10 rely on keywords only.
+The change touched every text. Counted before it on the 82 English
+texts of xtext (1201 list items): 179 items named a justification with
+`*by X*`, 124 items had hypotheses but no claim, 141 had both a claim and
+a fact, and 384 had facts only, 321 of them "The element `z` belongs to
+`E`", whose "facts" were not formulas. xtext now writes the tree
+(@sec-xtext), and cyp's examples were tagged again.
 
 = Reading and checking: cyp <sec-cyp>
 
 == The text as a verification condition generator
 
-cyp is a Rocq-Elpi command, `CypFile "proof.md".` A small OCaml driver
-writes the Rocq file that loads the libraries of the header and runs the
-command. The command reads the Markdown, elaborates each formula in the
-context of its step (with `coq.parse.argument`), and builds one
-condition per claim. The conditions are numbered after their step, in
-Dewey notation: `1.1a` and `1.1b` are the two claims of the first
-sub-step of step 1, and `0` is the statement after the steps.
+cyp is a Rocq-Elpi command, `CypFile "proof.md".` A small OCaml driver,
+the program `cyp`, writes the Rocq file that loads the libraries of the
+header and runs the command. The command reads the Markdown into its
+tree (prooftext's reader), elaborates each formula in the context of its
+node (with `coq.parse.argument`), and builds one condition per node. The
+conditions are numbered like the nodes, in Dewey notation: `1.1` is the
+first subnode of node 1, and `0` is the top node, the statement.
 @fig-conditions shows two of the six conditions of _praeclarum_, as
-printed by `cyp --conditions`, beside the 2003 lemmas for the paper's
+printed by `cyp --conditions`, beside a 2003 lemma for the paper's
 `exp_pos`. The structure is the same: the context of a condition holds
-the variables and hypotheses in scope and the claims of the steps
-before it. The difference is that the 2003 lemmas ended with `Apply ok`,
-and cyp tries to prove its conditions.
+the variables and hypotheses in scope, the conclusions of its subnodes
+and those of the nodes before it. The difference is that the 2003
+lemmas ended with `Apply ok`, and cyp tries to prove its conditions.
 
 #figure(
   grid(columns: (1fr, 1fr), gutter: 10pt,
+    // conditions 1.1 and 0 of figures/praeclarum.conditions.txt, the four
+    // variable lines merged into one
     raw("  x y z t : Prop
   H1 : x -> z
   H2 : y -> t
   H3 : x /\\ y
-  c1_1a : x
+  c1_1_1 : x
   ============================
   z
 
   ...
   H1 : x -> z
   H2 : y -> t
-  c1a : x /\\ y -> x
-  c1b : x /\\ y -> z
-  c1c : x /\\ y -> y
-  c1d : x /\\ y -> t
-  c1e : x /\\ y -> z /\\ t
+  c1 : x /\\ y -> z /\\ t
   ============================
   x /\\ y -> z /\\ t", block: true),
     raw("Lemma c_gp_2: (x: Z) (y: Z)
@@ -296,32 +293,36 @@ Apply ok.
 Qed.", block: true),
   ),
   kind: image,
-  caption: [Left: conditions 1.1b and 0 of _praeclarum_ (output of
-  `cyp --conditions`, the four variable lines merged into one). Condition 0
-  sees the claims of the scope of step 1 generalised over its hypothesis.
-  Right: a lemma generated in 2003, from the appendix of
-  @thery2004colouring.],
+  caption: [Left: conditions 1.1 and 0 of _praeclarum_ in the structured
+  syntax (output of `cyp --conditions`, the four variable lines merged
+  into one). Condition 1.1 sees its subnode 1.1.1; condition 0 sees node
+  1 generalised over its hypothesis. The hypotheses of the statement have
+  no name in the text, so cyp names them `H1`, `H2`, `H3`. Right: a lemma
+  generated in 2003, from the appendix of @thery2004colouring.],
 ) <fig-conditions>
 
-cyp builds the proof term itself. A forward claim is a `let` over the
-proof of the claim; a backward step is a proof of $C -> G$ applied to a
-proof of $C$; a scope is a proof of its claims generalised over its
-variables and hypotheses. The term is then type-checked by Rocq and the
-lemma is defined, so `Print Assumptions` shows only the axioms of the
+cyp builds the proof term itself. A node is a function of its variables
+and hypotheses, and each subnode is given once, as $forall V, H -> C$,
+to the proof of what follows. The term is then type-checked by Rocq and
+the lemma is defined, so `Print Assumptions` shows only the axioms of the
 libraries used. A first version built one copy of a scope's proof per
-claim, and the term grew quickly with the nesting. It now gives
-the proof of several claims once and projects each claim out of it. On
-a test of 12 nested steps of two claims, type-checking and definition
-went from 31.7 s and 12.1 s to 37 ms and 35 ms.
+claim, and the term grew quickly with the nesting: on a test of 12
+nested steps of two claims, type-checking and definition took 31.7 s and
+12.1 s, against 37 ms and 35 ms once each proof was given once. With the
+tree, the test of 13 nested nodes in the repository type-checks in 35 ms
+and is defined in 27 ms (figures of cyp's documentation).
 
 == How a condition is closed
 
 A condition is tried, in order, with:
 
-+ the step's justification, when it has one. A name of rules runs those
-  rules only. A hypothesis or a lemma is applied, and its premises are
-  closed by the rules and the default tactics. A tactic name runs the
-  tactic;
++ the justifications of its node. A name of rules or of a tactic chooses
+  the method; several are tried in turn. The other names (hypotheses,
+  nodes, variables, lemmas) are handed to the method: put first in the
+  context, a lemma added to it. With no rule or tactic name, the names
+  are applied one after the other, as lemmas, and their premises closed
+  by the other names, the rules and the default tactics. The facts of the
+  node are put first too;
 + the rules of the proof. A rule is an Elpi clause in a file named in
   the header, for instance
   ```
@@ -329,61 +330,92 @@ A condition is tried, in order, with:
   ```
   which applies a monotonicity lemma to a goal of that shape. This is
   where the knowledge of a field goes: rules are written once per field,
-  not in cyp. A rule may also have a name, and a step that says _by
-  monotonicity_ is then closed by that rule and no other;
-+ the default tactics of the header (`by: lia | nia`). For the name
-  `tauto` cyp runs itauto @besson2021itauto, because `tauto` can run for
-  minutes on small goals that itauto closes at once. For `firstorder`
-  it runs a bounded search: the unbounded tactic took more than 30 s and
-  7 GB of memory on one step of a text;
+  not in cyp. A rule may also have a name, and a step justified by
+  `*monotonicity*{.just}` is then closed by that rule and no other;
++ the default tactics of the header (`by: lia | nia`), then cyp's own,
+  and once more on the goal with its head unfolded. For the name `tauto`
+  cyp runs itauto @besson2021itauto, because `tauto` can run for minutes
+  on small goals that itauto closes at once. For `firstorder` it runs a
+  bounded search: the unbounded tactic took more than 30 s and 7 GB of
+  memory on one step of a text. No tactic is run on a goal with an
+  existential variable;
 + a last, coarse _gap tactic_: a few bounded searches (taking the goal
   and hypotheses apart, then a search of depth 4 or `congruence`, case
   analysis on booleans or on a variable, induction on a binder of the
   goal, a constructor). A condition it cannot close costs at most
-  0.06 s (measured). On the conditions that the steps before leave open
-  in xtext's texts, it closes 99%.
+  0.06 s (measured). On the conditions that the steps before left open
+  in xtext's texts, it closed 99%.
 
-A claim that does not hold is still added to the context of the steps
-after it, as on paper. A wrong step therefore makes the next steps
-easier, and the red step is the one to look at first.
+A conclusion that does not hold is still used by the nodes after it, as
+on paper. A wrong step therefore makes the next steps easier, and the
+red step is the one to look at first.
 
 == The result, and the conditions left to the user
 
-cyp writes the text back with a status in front of each step (✅ proved,
-❌ not proved, ▫️ nothing to check), and under a failing step a folded
-block with the goal and Rocq's message. It also writes a JSON file that
-a VS Code extension (about 130 lines of JavaScript) uses to colour the
-formulas by role and to show the goal of a failing step on hover. The
-lemma is defined only when every step is proved.
+cyp writes the text back with a status at the start of each node (✅
+proved, ❌ not proved, ▫️ a remark, nothing to check), and under a failing
+node a folded block with the goal and Rocq's message. In the free
+syntax the mark goes inside the span:
+#block(raw(lines("figures/praeclarum_free.checked.md", 8, 9), block: true))
+It also writes a JSON file that a VS Code extension (about 130 lines of
+JavaScript) uses to colour the formulas by role and to show the goal of
+a failing node on hover. The program `cyp` exits with 0 when the lemma
+is defined (every node proved), 1 when it is not, and 2 when it cannot
+run.
 
-The conditions that cyp does not discharge can be left to ordinary
-tactics. With `Cyp File "proof.md". Proof. ... CypQed.`, each open
-condition is a goal named after its number, and the script proves it by
-name with Rocq's goal selectors:
+cyp is not a yes-or-no check: what it proves is proved, and the rest is
+left as goals. An error of a node (a justification that names nothing,
+a fact not in scope, two conclusions, a formula that does not parse) is
+reported at the node, and the check goes on: the node is not tried, and
+the nodes after it use its conclusion all the same. Inside Rocq,
+`Cyp File "proof.md".` followed by `Proof. ... CypQed.` always succeeds. Each
+condition left open, and the conclusion of each node with an error, is
+a goal named after its number (`?c2` for 2, `?c2_1` for 2.1), which the
+script proves by name with Rocq's goal selectors:
 
 ```
 Cyp File "vc_file.md".
 Proof.
-  [c1b]: apply Z.sqrt_nonneg.
-  [c1a]: apply Z.sqrt_nonneg.
+  [c2]: apply Z.sqrt_nonneg.
+  [c1]: apply Z.sqrt_nonneg.
 CypQed.
 ```
 
-The step is then marked 🔶 with the numbers of its conditions. The same
-proof can also be written as a Rocq command, `Cyp Lemma`, whose body is a
-list of words and Rocq terms. A text may be written in any of the ten
-languages of the lexicon (@sec-shared).
+The node is then marked 🔶 with its number. The command fails only when
+the statement itself cannot be read, or on an error of Rocq outside cyp
+(a library that is not found). The same proof can also be written as a
+Rocq command, `Cyp Lemma`, whose statement is an ordinary lemma
+statement and whose body is a list of nodes, each a list of words and
+Rocq terms, a term followed by its class (`"{.claim}"`) and the list of
+its subnodes; `Cyp Lemma` succeeds in the same way. A text may be written
+in any language: cyp reads only the tags.
 
 = Writing: xtext <sec-xtext>
 
-`Explain foo.` prints the proof of the constant `foo` as a text. It
+`ExtractText foo.` prints the proof of the constant `foo` as a text. It
 follows the basic transducer of @coscoy1995extracting, extended to
 inductive types after Coscoy's thesis @coscoy2000thesis. Proofs ending
 with `Qed` work too, since Rocq-Elpi gives the body of opaque constants.
-The text is in the format of @sec-format: one list item per step, every
-formula in backticks with its role class, and the lemma or rule used by
-each step. It is meant to be faithful, not fluent: rewriting it into
+The text has one list item per step, and names the lemma or rule used
+by each step. It is meant to be faithful, not fluent: rewriting it into
 prose is left to a later pass, by hand or by a language model.
+
+```
+ExtractText foo.                     (* prints the text, plainly *)
+ExtractText foo in "fr".             (* in French; also it de nl ru zh ar ko la *)
+#[tags] ExtractText foo.             (* prints it in the format of proof texts *)
+ExtractText foo to "foo.md".         (* writes it to a file, in that format *)
+ExtractText foo to "foo.typ".        (* in Typst, for a PDF *)
+ExtractText_partial.                 (* inside a proof: the proof so far; ends it *)
+```
+
+The printed text is for a reader: the formulas in Rocq syntax without
+backticks, no classes, no header and no title. The file, and the text
+printed with the attribute `#[tags]`, are in the format of
+@sec-format: the form that cyp and the Typst writer read. Both are
+written by the same writer, the markup being a parameter.
+`ExtractText_partial` writes a proof in progress, each open goal as a
+step "Prove G", and ends the proof as `Abort` does.
 
 == The staged translation
 
@@ -403,16 +435,19 @@ its figure.
   application becomes a step of its own, named P1, P2, ..., before the
   step that uses it.
 + *Writing*. A conclusion says the type it proves, then "that is" the
-  required type when they differ.
+  required type when they differ. Every node is then given its
+  conclusion: a line that only introduces variables or hypotheses is
+  merged with its only sub-item, or its last sub-item becomes its
+  closing paragraph.
 
 The forms that the thesis treats in its chapter 6 (eliminations,
 introductions, rewriting, `fix`) are written directly, and their
 subproofs come back to the stages. Elimination and introduction theorems
 are recognised by their type, not their name. The motive of a dependent
 elimination is left out when Rocq's `elim` would find it again (thesis
-6.4.1). A subproof built by a tactic is one step "by T" (thesis 5.4).
-@tab-sizes gives the sizes of the texts with each choice of the second
-stage, on the 73 texts that are not proofs in progress.
+6.4.1). A subproof built by a tactic is one step justified by the tactic
+(thesis 5.4). @tab-sizes gives the sizes of the texts with each choice of
+the second stage, on the 73 texts that are not proofs in progress.
 
 #figure(
   table(columns: 3, align: (left, right, right), stroke: 0.4pt + luma(180), inset: 5pt,
@@ -422,7 +457,9 @@ stage, on the 73 texts that are not proofs in progress.
     [contraction guarded (default)], [1164], [126 128],
     [selection (thesis 4.3.1)], [981], [112 964],
   ),
-  caption: [Sizes of 73 texts written by xtext with each second stage.],
+  caption: [Sizes of 73 texts written by xtext with each second stage,
+  measured with the format used before the tree (not measured again
+  since).],
 ) <tab-sizes>
 
 The cost of the selection is easy to state. The statement of a
@@ -441,51 +478,54 @@ fun x y z t h1 h2 =>
   and_ind (fun (i : x -> z) (j : y -> t) =>
     and_ind (fun (k : x) (l : y) => conj (i k) (j l)) h2) h1
 ```
-and xtext writes
-```
-Let `x y z t : Prop`{.var}. Assume `(x -> z) /\ (y -> t)`{.hyp} (h1)
-and `x /\ y`{.hyp} (h2). We prove `z /\ t`{.claim}.
-
-- Going back to the definition of and (and_ind) in
-  `(x -> z) /\ (y -> t)`{.fact} (h1), we prove `z /\ t`{.claim}:
-  - Assume `x -> z`{.hyp} (i) and `y -> t`{.hyp} (j).
-    - Going back to the definition of and (and_ind) in `x /\ y`{.fact} (h2),
-      we prove `z /\ t`{.claim}:
-      - Assume `x`{.hyp} (k) and `y`{.hyp} (l).
-        - Applying i to k, we have `z`{.claim}.
-        - Applying j to l, we have `t`{.claim}.
-        - So by definition of and (conj), we have `z /\ t`{.claim}
-          *by Corelib.Init.Logic.conj*.
-```
-(lines broken here for the page; xtext writes one line per item). cyp
-checks this text in full. The same proof in the format being
-implemented is in @fig-xtext-v2: the justifications are the names
-already in the sentences, and the last line becomes the closing
-paragraph of its node.
+and `ExtractText praeclarum.` prints
+#block({
+  show raw: set text(size: 7pt)
+  raw(lines("figures/xtexts.out", 0, 9), block: true)
+})
+With `#[tags]`, or written to a file, the same text has its header, its
+title and its tags; @fig-xtext shows it typeset. Each formula that cyp
+uses carries its role, and the names that justify a step are tagged
+where the sentence names them: the elimination theorem `and_ind`, the
+hypotheses `h1`, `i`, `k`, the constructor `conj`. The line "Assume `x`
+(k) and `y` (l)" has no conclusion of its own, so its last sub-item
+became its closing paragraph ("So by definition of and ..."). cyp proves
+this text in full.
 
 #figure(
-  image("figures/fig-mockup-xtext.png", width: 92%),
-  caption: [xtext's _praeclarum_ in the format being implemented
-  (hand-written mock-up; the justifications are purple).],
-) <fig-xtext-v2>
+  image("figures/fig-xtext.png", width: 92%),
+  caption: [xtext's _praeclarum_ in the format of proof texts, typeset by
+  prooftext. The justifications are purple; each use of `h1`, `i`, ...
+  links back to the place where the name is introduced.],
+) <fig-xtext>
+
+Stopped in the middle of the proof of the same statement, after `split`
+and the first conjunct, `ExtractText_partial.` prints the proof so far,
+with the open goal as a step:
+#block({
+  show raw: set text(size: 7pt)
+  raw(lines("figures/xtexts.out", 29, 38), block: true)
+})
 
 = Shared libraries and languages <sec-shared>
 
 cyp and xtext do not depend on each other. What they must agree on is in
 two libraries.
 
-- *prooftext* holds the document tree and its writer, the reader of a
-  Markdown text (with the places of its lines, for error messages), the
-  header and its fields, the roles and how a formula carries its role,
-  the justification, fresh names, the tactics a text may name, and the
-  marks of a checked text. A writer and a reader that disagree on a
-  detail is the first thing that goes wrong when two tools share a
-  format; here there is one reader, and a test reads back what the
-  writer writes.
-- The *lexicon* holds, per language, the phrases that give a role to
-  the formula after them (`phrase Lang Phrase Role`) and the phrases of
-  the writer. A writer's phrase that gives a role is also a reader's
-  phrase, by one clause, so cyp reads a role exactly as xtext means it.
+- *prooftext* holds the reader of a text into its tree of nodes, in both
+  syntaxes (with the places of its lines, for error messages), what each
+  node says and the errors of the tree, the document of a writer and its
+  writing, the header and its fields, the roles and how a formula
+  carries its role, the justifications, fresh names, the tactics a text
+  may name, and the marks of a checked text. A writer and a reader that
+  disagree on a detail is the first thing that goes wrong when two tools
+  share a format; here there is one reader, and a test reads back what
+  the writer writes.
+- The *lexicon* holds, per language, the phrases of the writer (the
+  phrase that introduces a hypothesis, a conclusion, a case...) and the
+  words of the legend. cyp no longer reads it: no word gives a role. The
+  Typst writer uses it to tell a word from a name, so that the French
+  "a" is never taken for a hypothesis `(a)`.
 
 xtext writes a sentence as a list of parts (phrases by their use,
 formulas, names), and only the table changes from one language to
@@ -500,27 +540,58 @@ English order of the words that give no role).
 
 #figure(
   image("figures/fig-praeclarum-ar.png", width: 88%),
-  caption: [xtext's _praeclarum_ in Arabic, as typeset by prooftext. The
-  formulas stay left to right. The word _by_ before the justification is
-  part of the format and is not translated.],
+  caption: [xtext's _praeclarum_ in Arabic (written by
+  `ExtractText praeclarum to "praeclarum_ar.md" in "ar".`), as typeset by prooftext. The formulas and
+  the names stay left to right.],
 ) <fig-ar>
 
-All of this is Elpi code loaded by Rocq: about 1230 lines for cyp's
-reader and checker, 2740 for xtext, 2160 for prooftext (including the
-printer of formulas and the Typst writer) and 1000 for the lexicon
-(counted with `wc -l`, comments included).
+All of this is Elpi code loaded by Rocq: 1140 lines for cyp's checker,
+2742 for xtext, 2687 for prooftext (including the reader of the tree,
+the printer of formulas and the Typst writer) and 996 for the lexicon
+(the `.elpi` files, counted with `wc -l`, comments included).
 
 = Rendering <sec-render>
 
 == PDF and web page
 
 A proof text is typeset with Typst @typst. The Typst writer is in Elpi,
-next to the Markdown writer, so a text that xtext has just built is
-written directly, and a Markdown text (written by xtext, checked by cyp,
-or written by hand) is first read by the shared reader. The look is a
-Typst template, in one place. A web page is made from the same Typst
-source with Typst's HTML export (experimental in Typst 0.15); its
-formulas are MathML, and it needs no JavaScript.
+next to the reader: it writes the tree that the reader gives, so a
+Markdown text (written by xtext, checked by cyp, or written by hand, in
+either syntax) is shown as it is written, and a text that xtext has just
+built goes through the same path. The look is a Typst template, in one
+place. A web page is made from the same Typst source with Typst's HTML
+export (experimental in Typst 0.15); its formulas are MathML.
+
+A structured text keeps its list: each item a paragraph with its bullet,
+indented by its depth, and the closing paragraph after the sub-items. A
+free text shows no structure in the PDF: its paragraphs are those the
+author wrote, with the colours of the roles only. Margin bars and
+corners around the nodes were tried in the proposal and left out: bars
+mislead when several nodes share a line, and corners pile up at the end
+of nested nodes. On the web page, the structure of a free text is shown
+on demand: under the pointer, a node's conclusion is framed, its
+hypotheses dashed, its direct subnodes tinted blue, and the formulas its
+justifications, names and facts point to are outlined. This hover is a
+small script at the end of the page (about 40 lines); without
+JavaScript the page is the same, without the hover. @fig-render shows
+the three cases.
+
+#figure(
+  grid(columns: 1, gutter: 8pt,
+    image("figures/fig-tree-checked.png", width: 88%),
+    image("figures/fig-free.png", width: 88%),
+    image("figures/fig-hover.png", width: 80%),
+  ),
+  kind: image, placement: auto,
+  caption: [_praeclarum_ typeset by prooftext. Top: the structured text
+  checked by cyp (PDF). Middle: the free text (PDF), which shows no
+  structure. Bottom: the free text as a web page, the pointer on node
+  1.1 ("we get $z$"): its conclusion framed, its subnode "We have $x$"
+  tinted blue, the hypothesis that its fact repeats outlined in blue
+  (screenshot of Chrome, the hover fixed by the address
+  `#hover=1.1`). The legend of the web page has a switch per role and
+  the button ↺.],
+) <fig-render>
 
 == Formulas as mathematics
 
@@ -530,95 +601,115 @@ notation (operators with their levels, fractions, powers, roots,
 delimiters, quantifiers grouped by type), then written as Typst maths. A
 table, extensible by a library with Elpi clauses, gives the notation of
 each constant: `Rdiv` is a fraction, `Rabs` is $|dot|$, `Datatypes.nat`
-is $NN$. On the 79 texts of xtext and the 8 of cyp's examples then
-available (2090 formulas), 2 formulas could not be elaborated and are
-shown as code (variables bound by a `fix` that no `Let` declares).
-@fig-maths shows a text on real numbers checked by cyp.
+is $NN$. Before the change of format, on the 79 texts of xtext and the 8
+of cyp's examples then available (2090 formulas), 2 formulas could not be
+elaborated and were shown as code (variables bound by a `fix` that no
+`Let` declares); this was not measured again. Every formula of the
+figures of this note is mathematics. @fig-maths shows a text on real
+numbers checked by cyp.
 
 #figure(
   image("figures/fig-sqrt-square.png", width: 92%),
   caption: [A text of cyp's examples on real numbers, checked by cyp and
-  typeset. Its formulas carry no class, so they have no role colour. The
-  word _value_ is linked because it is also the name of a constant of
-  Rocq's corelib: a known limit of the links.],
+  typeset. The word _value_ is linked because it is also the name of a
+  constant of Rocq's corelib: a known limit of the links.],
 ) <fig-maths>
 
 == Roles, statuses and links
 
 The role of a formula is a light background behind black text: sky
-blue for variables, orange for hypotheses, yellow for claims, grey for
-facts, and a reddish purple for the name in a justification. They are
-light tints of the Okabe–Ito palette, with no red–green pair. We checked
-the pages under simulations of protanopia, deuteranopia and tritanopia
-@machado2009cvd: the roles stay distinct. Since colour alone is not
-enough, the legend at the end of a text also gives each role a mark that
-needs no colour (a dashed line, a frame, a dotted line). A checked text
-has a mark per step in place of the bullet (✔ proved, ✘ not proved, ◆
-left to a Proof block, ▫ nothing to check), cyp's message in a box under
-a failing step, and the step numbers in the margin, as cyp numbers its
-conditions (@fig-drinker).
+blue for variables, orange for hypotheses, yellow for conclusions, grey
+for facts, and a reddish purple (`#d9a9cb`) for the name of a
+justification. They are light tints of the Okabe–Ito palette, with no
+red–green pair. We checked the pages under simulations of protanopia,
+deuteranopia and tritanopia @machado2009cvd: the roles stay distinct.
+Since colour alone is not enough, the legend at the end of a text also
+gives each role a mark that needs no colour (a dashed line, a frame, a
+dotted line). A checked text has a mark per node in place of the bullet
+(✔ proved, ✘ not proved, ◆ left to a Proof block, ▫ nothing to check),
+cyp's message in a box under a failing node, and the node numbers in the
+margin, as cyp numbers its conditions (@fig-drinker).
+
+The roles can be turned off. In the web page each role of the legend is
+a switch, a check box that turns the colour of that role on and off in
+the whole text (style sheet only, no script), and the button ↺ puts every
+switch back as the page started (a form's reset). For the PDF,
+`pdf.sh --roles claim,just` colours only the roles listed; the web page then
+starts with only their switches on.
 
 The PDF and the web page have links. A name given to a hypothesis,
-`(h)`, labels its step, and its later uses link back to it. A lemma
+`(h)`, labels its node, and its later uses link back to it. A lemma
 that Rocq locates in the corelib or the stdlib links to its entry in
-the online documentation. A word of the lexicon is never a name, so
-the French "a" is not taken for a hypothesis `(a)`.
+the online documentation.
 
 A gallery of every text of the repository, with their PDFs and web
 pages, is published at #link("https://thery.github.io/coq_tmp/txt/")
-(387 texts in its last build).
+(387 texts in its last build). That build is older than the change of
+format: its pages still have the role `by` and no hover.
 
 = Experience <sec-experience>
 
 == xtext's texts checked by cyp
 
 The texts written by xtext carry the role of every formula and the
-lemma of every step, so cyp can check them. This is a test of both
-tools: it fails when xtext writes a wrong formula, a wrong role or a
+justifications of every step, so cyp can check them. This is a test of
+both tools: it fails when xtext writes a wrong formula, a wrong role or a
 wrong scope, and when cyp reads one wrongly. Each text is checked alone,
-with at most 8 GB of memory and 300 s.
+with at most 8 GB of memory and 300 s. @tab-results gives the results
+stored in the repository (`xtext/cyp-check/results.tsv` and
+`results_langs.tsv`, runs of 2026-11-19), with those of the format used
+before.
 
 #figure(
-  table(columns: (2.4fr, 1fr, 1fr, 1fr, 1.2fr, 1fr),
+  table(columns: (2.6fr, 0.8fr, 0.9fr, 1fr, 1.1fr, 1.2fr),
     align: (left, right, right, right, right, right),
     stroke: 0.4pt + luma(180), inset: 5pt,
-    table.header([*set*], [*texts*], [*proved*], [*not proved*], [*nothing to check*], [*time*]),
-    [English, staged (default)], [80], [666], [17], [504], [176 s],
-    [English, direct translation], [72], [923], [23], [213], [595 s],
-    [each of 9 other languages], [12], [77], [1], [38], [21–26 s],
+    table.header([*set*], [*texts*], [*proved*], [*not proved*], [*not checked*], [*time*]),
+    [English, now], [80], [684], [2], [279], [107 s],
+    [English, before], [80], [666], [17], [504], [176 s],
+    [English, direct translation, before], [72], [923], [23], [213], [595 s],
+    [9 other languages, now], [108], [711], [0], [90], [141 s],
+    [each other language, before], [12], [77], [1], [38], [21–26 s],
   ),
-  caption: [cyp on the texts of xtext (staged texts: runs of 2026-11-19;
-  direct translation: run of 2026-11-18). Counts are list items. A step
-  has "nothing to check" when it has no claim (_Let_, _Assume_, the
-  announcement of an induction). The direct translation had 5 timeouts;
-  the staged one has none.],
+  caption: [cyp on the texts of xtext. "Now" is the tree format;
+  "before" is the format with roles from words and `*by X*`. Counts are
+  list items (now: nodes). Not checked: before, the steps with no claim
+  (_Let_, _Assume_, the announcement of a case analysis); now, the
+  remarks, all of them lines "The element `t` belongs to `T`". The
+  direct translation (not the default) was not run again; it had 5
+  timeouts; the runs now have none. Times are the sums over the texts.],
 ) <tab-results>
 
-On the 80 English texts, cyp proves 666 of the 683 steps with a claim
-(97.5%). The 17 others are in 7 texts. @fig-drinker shows one of them:
-in the drinker's paradox, the step "Applying not_all_ex_not to A, P and
-H" is not proved. The text names the lemma in its sentence but has no
-`*by*` justification, and the header of the text does not even import
-the classical library that defines it: xtext writes the same `require`
-line for every text, a known limit.
-The two English texts left out are the texts on real numbers of the
-PDF tests. In the nine other languages, every step has the status of the
-same step in English, in all 108 texts: no step is proved in one
-language and not in another.
+On the 80 English texts, cyp now proves 684 of the 686 nodes it checks.
+16 of the 17 steps not proved before are proved: the sentences named the
+lemma they come from ("Applying not_all_ex_not to A, P and H"), but only
+as plain text, and the default tactics did not find it; the name is now
+a justification, and cyp applies it. The drinker's paradox, @fig-drinker,
+is one of them. The two nodes not proved are these. In `half_le`, a node
+made of the binders of `lia`'s internal proof and its closing step
+"Applying `ZMicromega.ZTautoChecker_sound`", not proved before either. In
+`std_Nat_le_trans`, a step of setoid rewriting "By application, we have
+`Morphisms.respectful iff iff (...)`, that is
+`forall x y : Prop, x <-> y -> ...`": its conclusion is now the second form, which needs
+`respectful` unfolded in a hypothesis, and the default tactics do not do
+it. This is the one status that got worse. In the nine other languages,
+each language gives 79 nodes proved and none not proved, and text by
+text the counts are those of English.
 
 #figure(
   image("figures/fig-drinker-checked.png", width: 96%),
   caption: [The drinker's paradox: the text written by xtext from a
   proof by `destruct`, `exists` and a classical lemma, checked by cyp
-  (run again for this note, identical to the stored result) and
-  typeset. Step 4.1.1 is not proved.],
+  (run again for this note) and typeset. Every node is proved; 1.1 is a
+  remark.],
 ) <fig-drinker>
 
-These results say less than they seem. cyp proves each claim again with
-its own tactics; a green step means that the claim follows from its
-context, not that it follows the way the sentence says. Making the text
-the actual proof would need cyp to use the named justification and
-nothing else, as it already does for named rules.
+These results say less than they seem. cyp proves each node with its
+justifications when they apply, and otherwise with its own tactics; a
+green node means that the conclusion follows from its context, not that
+it follows the way the sentence says. Making the text the actual proof
+would need cyp to use the named justification and nothing else, as it
+already does for named rules.
 
 == What the measurements changed
 
@@ -631,11 +722,10 @@ Several choices came from measurements rather than from design.
 - *The gap tactic.* Its searches were chosen in a greedy order over the
   conditions left open by the English texts, each candidate tried on
   each open condition.
-- *Tags or words.* Reading every text twice, with and without its
-  classes, shows that on 94 of 1933 lines of the English texts the role
-  of a formula comes only from its class: words are not enough even for
-  texts written by a program from a fixed vocabulary. This was one of
-  the reasons for the decision of @sec-v2 to use tags only.
+- *Tags or words.* The 94 lines of 1933 where words were not enough
+  (@sec-format) were one of the reasons to use tags only.
+- *Justifications.* Tagging the names that the sentences already gave
+  proved 16 of the 17 steps that the English texts left open.
 
 == A case study
 
@@ -659,16 +749,15 @@ its formulas, checked by the system. Coq had a declarative mode, C-zar
 proof must be written at the level of detail the checker needs. The
 format here is closer to the 2003 aim: the text is ordinary prose with
 marked formulas, a step may be as coarse as automation allows, and a
-step that is not proved is reported rather than rejected.
+step that is not proved is reported and left as a goal rather than
+rejected.
 
 *Controlled natural language.* Naproche @cramer2010naproche checks
 mathematical texts written in a controlled natural language, with
 automated provers for the steps. Verbose Lean @massot2024verbose gives
 Lean tactics in a controlled natural language, in English and French,
 for teaching. In both, the words are the syntax. In cyp, the words are
-free and the syntax is in the marks (and in today's format, partly in
-a list of phrases); in the format being implemented, only the marks
-count.
+free and only the marks count.
 
 = Conclusion and future work <sec-conclusion>
 
@@ -676,15 +765,15 @@ The idea of 2003 survives the change of tools. A proof written as text,
 with marked formulas, gives conditions that a prover can discharge, and
 today's automation discharges most of the small ones. Writing such
 texts from proof terms, and checking them with the same format, is a
-cheap test of both directions.
+cheap test of both directions. Going back to the tree of 2003, with
+tags only, proved more of the steps of xtext's texts.
 
 What remains, in order:
 
-- implement the format of @sec-v2 in prooftext, cyp and xtext, and
-  regenerate the texts (190 texts of xtext in all languages and cyp's
-  examples);
-- make cyp use the named justification of a step, so that a proved step
-  follows for the reason given;
+- make cyp use the named justification of a node and nothing else, so
+  that a proved node follows for the reason given;
+- the two nodes of xtext's texts that cyp does not prove;
+- rebuild the published gallery in the new format;
 - the parts of the paper and the thesis that xtext does not implement:
   the "further optimisations" of @coscoy1995extracting, the specific
   wordings for connectives and classical reasoning, the scripts of the
@@ -692,9 +781,9 @@ What remains, in order:
 - a review of the phrases of each language by native speakers;
 - turning xtext's faithful texts into fluent prose while keeping them
   checkable, which the format makes possible: a rewritten text is checked
-  again by cyp.
+  again by cyp, and the free syntax lets it be ordinary paragraphs.
 
 The code is in the repository `coq_tmp` (directories `cyp`, `xtext`,
-`prooftext` and `lexicon`).
+`prooftext` and `lexicon`; the design of the format in `proposal`).
 
 #bibliography("refs.bib", style: "springer-basic-author-date", title: "References")
