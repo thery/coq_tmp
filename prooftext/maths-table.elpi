@@ -20,11 +20,12 @@
 % 70 = <=, 75 ~, 80 /\, 85 \/, 95 <->, 99 ->, 200 forall.  The level is
 % that of the written symbol: negb is written ¬, so it has ¬'s level.
 %
-% A library or a user adds entries by accumulating clauses of
-% maths-notation in the command after this file, as for cyp's rules:
+% A library adds entries by accumulating clauses of maths-notation to the
+% command Typst, as for cyp's rules (README.md, "The table"):
 %
+%   From ProofText Require Import Typst.
 %   Elpi Accumulate Typst lp:{{
-%     prooftext.maths-notation "Rmax" (prooftext.function "max").
+%     prooftext.maths-notation "Rtrigo1.tan" (prooftext.function "tan").
 %   }}.
 %
 % An entry added with :before (or a longer suffix) overrides one here.

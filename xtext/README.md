@@ -74,8 +74,10 @@ Examples and checks:
   `inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`
   (the theses' examples), `stdlib.v` (lemmas of Rocq's Stdlib),
   `elim_type.v` (elimination principles recognised by their type),
-  `partial.v` (proofs in progress): the texts in `examples/` (82 with
-  those of a private case study, kept in a private branch, 77 here);
+  `partial.v` (proofs in progress), `reals.v` (two texts on real
+  numbers, with fractions, powers, square roots and absolute values, for
+  the formulas in mathematics of their PDF): the texts in `examples/` (84
+  with those of a private case study, kept in a private branch, 79 here);
 - `multilingual.v`: 12 of them in each of the other languages of the
   lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la`);
 - `typst_examples.v`: ten texts in Typst, for their PDFs (`examples-typst/`,
@@ -179,7 +181,11 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 examples/foo.md` does both steps from a Markdown text.  The PDF shows each
 role of a formula in its own style, the steps indented as in the list, and
 the header as a small title block; a text in Arabic is laid out from right
-to left.  The same template shows the texts that cyp has checked, with
+to left.  The formulas are mathematics (∀ n ∈ ℕ, n + 0 = n), printed from
+their Rocq terms by prooftext's table of notations (`pdf.sh --code` keeps
+the Rocq code; `pdf.sh --html` makes an HTML page); `reals.v` sets the
+`require` line of its texts (the parameter `xtext-header-require`) so that
+the reader finds the notations of the reals.  The same template shows the texts that cyp has checked, with
 their statuses (`../prooftext/pdf.sh cyp-check/foo.checked.md`).  The
 design, the fonts and the tests are in
 [prooftext](../prooftext/README.md#the-pdf-of-a-proof-text-typst).
