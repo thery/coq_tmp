@@ -3,3 +3,9 @@
 ; `dune test` checks them; `dune promote` accepts a new output.
 (cram
  (deps %{bin:elpi-debug} (glob_files *.elpi)))
+
+; namespaces.t: the name resolution of Elpi >= 4.1.0, whose library
+; elpi.dynload tells it apart from Elpi 4.0.x
+(cram
+ (applies_to namespaces)
+ (enabled_if %{lib-available:elpi.dynload}))

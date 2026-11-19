@@ -1,6 +1,7 @@
 (* Name resolution of a parsed Elpi program, done as Elpi's compiler does it
-   (elpi 4.0.0, src/compiler/compiler.ml, modules Scope_Quotation_Macro and
-   Flatten):
+   (src/compiler/compiler.ml, modules Scope_Quotation_Macro and Flatten, of
+   Elpi 4.0.0 and of Elpi 4.1.1; where they differ, elpi_version.ml says
+   which one is followed):
 
    - the declarations are first grouped into nested blocks: namespace,
      anonymous block { }, constraint block, the rest of a block after a
@@ -8,7 +9,9 @@
    - a block "defines" the predicates and constructors it declares and the
      predicates its rules have as head, and the types it declares;
    - inside namespace foo, a name that the namespace defines is renamed
-     foo.name; inside the scope of shorten foo.{ bar }, bar is renamed foo.bar;
+     foo.name; with Elpi >= 4.1.0, what the namespace defines is what all
+     its blocks define (in the program and the builtins), with Elpi 4.0.0
+     what the block defines; inside the scope of shorten foo.{ bar }, bar is renamed foo.bar;
    - a name written with a leading dot (.bar) escapes the namespaces.
 
    The output is the flat list of the declarations, in source order, with
@@ -89,17 +92,20 @@ let prefix_name prefix name = prefix ^ "." ^ name
 let prepend prefix d =
   { preds = StrSet.map (prefix_name prefix) d.preds; types = StrSet.map (prefix_name prefix) d.types }
 
+(* Elpi 4.0.0's compiler counts the declared symbols among the types too *)
+let signature_types names =
+  if Elpi_version.signature_names_are_types then names else StrSet.empty
+
 let rec defs_of_items items = List.fold_left (fun acc i -> union acc (defs_of_item i)) no_defs items
 
 and defs_of_item = function
   | Leaf (Program.Clause c) -> { no_defs with preds = StrSet.of_list (heads c.body) }
   | Leaf (Program.Type ts) ->
-      (* the compiler counts the declared symbols among the types too *)
       let names = StrSet.of_list (List.map (fun (t : _ Type.t) -> show_func t.name) ts) in
-      { preds = names; types = names }
+      { preds = names; types = signature_types names }
   | Leaf (Program.Pred t) ->
       let names = StrSet.singleton (show_func t.name) in
-      { preds = names; types = names }
+      { preds = names; types = signature_types names }
   | Leaf (Program.Kind ks) ->
       { no_defs with types = StrSet.of_list (List.map (fun (k : _ Type.t) -> show_func k.name) ks) }
   | Leaf (Program.TypeAbbreviation ta) -> { no_defs with types = StrSet.singleton (show_func ta.name) }
@@ -110,6 +116,16 @@ and defs_of_item = function
       let d = defs_of_items inner in
       { preds = StrSet.diff d.preds shorts; types = StrSet.diff d.types shorts }
   | Block inner | Constraint (_, _, inner) -> defs_of_items inner
+
+(* [members path g]: the names x such that path.x is in g (compiler:
+   Namespaces) *)
+let members path g =
+  let p = String.concat "." path ^ "." in
+  let n = String.length p in
+  StrSet.fold (fun s acc ->
+      if String.length s > n && String.equal (String.sub s 0 n) p
+      then StrSet.add (String.sub s n (String.length s - n)) acc else acc)
+    g StrSet.empty
 
 (* ------------------------------------------------------------------------ *)
 (* Substitutions (compiler: push_subst, push_subst_shorthands) *)
@@ -220,13 +236,20 @@ let rename_decl ss (d : Program.decl) : Program.decl =
                  new_goal = Option.map rename_sequent r.new_goal }
   | d -> d
 
-(* [flatten items]: the declarations in source order, names resolved *)
-let flatten (items : item list) : resolved list =
+(* [flatten ~known items]: the declarations in source order, names
+   resolved; [known] is what the whole program defines, by full names *)
+let flatten ~known (items : item list) : resolved list =
   let rec block ss clique items = List.concat_map (item ss clique) items
   and item ss clique = function
     | Leaf d -> [ { decl = rename_decl ss d; clique } ]
     | Namespace (prefix, inner) ->
         let d = defs_of_items inner in
+        let d =
+          if not Elpi_version.namespace_sees_its_other_blocks then d
+          else
+            let path = ss.on_terms.path @ [ prefix ] in
+            union d { preds = members path known.preds; types = members path known.types }
+        in
         let ss = { on_terms = push_namespace prefix d.preds ss.on_terms;
                    on_types = push_namespace prefix d.types ss.on_types } in
         block ss clique inner
@@ -240,7 +263,13 @@ let flatten (items : item list) : resolved list =
   in
   block empty_substs [] items
 
-(* [resolve_program p]: the declarations of a parsed file, names resolved *)
-let resolve_program (p : Program.t) : resolved list =
+(* [defs_of_program p]: what a parsed file defines, by full names *)
+let defs_of_program (p : Program.t) : defs = defs_of_items (fst (structure p.ast))
+
+(* [resolve_program ?known p]: the declarations of a parsed file, names
+   resolved; [known] (by default, what p defines) is what the whole program
+   defines, by full names, the builtins included *)
+let resolve_program ?known (p : Program.t) : resolved list =
   let items, _ = structure p.ast in
-  flatten items
+  let known = match known with Some k -> k | None -> defs_of_items items in
+  flatten ~known items

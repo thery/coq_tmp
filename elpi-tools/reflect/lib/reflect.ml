@@ -517,12 +517,22 @@ let in_block file (p : Program.t) =
    (closed-clause). *)
 let reflect_files ?(paths = []) ?(defines = []) ?(builtins = false) ?(closed = false) files : string =
   let defines = StrSet.of_list defines in
-  let program = List.concat_map (fun file -> Scope.resolve_program (in_block file (parse ~paths file))) files in
+  let parsed = List.map (fun file -> in_block file (parse ~paths file)) files in
+  let builtin_decls = lazy (in_block "builtin.elpi" (builtin_declarations ())) in
+  (* what the whole program defines: a block of a namespace sees it with
+     Elpi >= 4.1.0 (elpi_version.ml) *)
+  let known =
+    if not Elpi_version.namespace_sees_its_other_blocks then None
+    else
+      Some (List.fold_left (fun acc p -> Scope.union acc (Scope.defs_of_program p))
+              (Scope.defs_of_program (Lazy.force builtin_decls)) parsed)
+  in
+  let program = List.concat_map (Scope.resolve_program ?known) parsed in
   let builtin_text =
     if not builtins then ""
     else
       "\n% == Elpi builtins and standard library (declarations only)\n"
       ^ facts ~defines ~rules:false
-          (List.filter not_a_connective (Scope.resolve_program (in_block "builtin.elpi" (builtin_declarations ()))))
+          (List.filter not_a_connective (Scope.resolve_program ?known (Lazy.force builtin_decls)))
   in
   header ^ facts ~defines ~rules:true ~closed program ^ builtin_text

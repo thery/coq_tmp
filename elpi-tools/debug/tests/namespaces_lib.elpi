@@ -1,0 +1,5 @@
+% accumulated by namespaces.elpi: n.lib, seen by a later block of n
+namespace n {
+  pred lib.
+  lib.
+}

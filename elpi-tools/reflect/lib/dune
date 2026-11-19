@@ -1,4 +1,10 @@
 ; The library that reads Elpi files and prints them as Elpi data.
+; elpi_version.ml: the rules of name resolution of the Elpi it is built
+; with, 4.0.x or >= 4.1.0, told apart by the library elpi.dynload (new in
+; Elpi 4.1.0; linked, not used).
 (library
  (name elpi_reflect)
- (libraries elpi elpi.parser elpi.util))
+ (libraries elpi elpi.parser elpi.util
+  (select elpi_version.ml from
+   (elpi.dynload -> elpi_version.v41.ml)
+   (-> elpi_version.v40.ml))))

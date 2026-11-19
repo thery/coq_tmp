@@ -1,0 +1,35 @@
+% Name resolution of Elpi >= 4.1.0 (namespaces.t): a block of a namespace
+% sees what the namespace declares in its other blocks, also nested or
+% dotted, in the files before and in the builtins (LPCIC/elpi#346), and
+% in a namespace a predicate does not hide a type of the same name.
+accumulate namespaces_lib.
+kind term type.
+type c term.
+pred main.
+namespace n {
+  pred p.
+  p.
+  namespace m { pred r. r. }
+  kind t type.
+  symb a : t.
+}
+pred p.
+p :- fail.
+namespace n {
+  pred q.
+  q :- p, m.r, lib.
+  pred s -> t.
+  s a.
+  pred term.
+  pred k term -> int.
+  k c 1.
+}
+namespace n.m {
+  pred u.
+  u :- r.
+}
+namespace std {
+  pred twice-mem list int -> int.
+  twice-mem L X :- mem L X, mem L X.
+}
+main :- n.q, n.s X, n.m.u, n.k c 1, std.twice-mem [1,2] 2.
