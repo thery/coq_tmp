@@ -47,6 +47,8 @@ split-checked Text (checked Status Conditions Message) Rest :-
   split-conditions T1 Conditions T2,
   split-message T2 Message Rest.
 
+% [split-conditions T Ids Rest]: the conditions mark **[2a, 2b]** at the
+% start of T (none if there is none), and the text after it
 pred split-conditions i:string, o:option string, o:string.
 split-conditions T (some Ids) Rest :-
   rex.match "^[*][*][[][^]]*[]][*][*]" T, !,
@@ -54,6 +56,8 @@ split-conditions T (some Ids) Rest :-
   rex.replace "^[*][*][[][^]]*[]][*][*] *" "" T Rest.
 split-conditions T none T.
 
+% [split-message T M Rest]: the message of the folded block in T (none if
+% there is none), and the text without the block
 pred split-message i:string, o:option string, o:string.
 split-message T (some M) Rest :-
   rex.match ".*<details><summary>.*</summary></details>" T, !,

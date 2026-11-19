@@ -10,6 +10,8 @@ pred fresh-name i:list string, i:string, o:string.
 fresh-name Used Wanted Wanted :- not (std.mem! Used Wanted), !.
 fresh-name Used Wanted Name :- numbered-name Used Wanted 0 Name.
 
+% [numbered-name Used Base I Name]: the first of BaseI, BaseI+1, ... that is
+% not in Used
 pred numbered-name i:list string, i:string, i:int, o:string.
 numbered-name Used Base I Name :-
   Candidate is Base ^ {std.any->string I},

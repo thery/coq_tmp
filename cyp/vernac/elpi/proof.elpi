@@ -24,7 +24,6 @@
 kind step type.
 type step string -> list element -> option string -> list step -> step.
 
-% the notation scope of the formulas (header's scope:), "" for none
 % ------------------------------------------------------------------ %
 % Declarations: each variable, hypothesis, claim or definition of the
 % proof is declared with its name recorded (under-decl, under-def), so
@@ -45,6 +44,8 @@ under-decl Nm T G :- coq.name->id Nm Id, pi x\ (decl x Nm T, name-in-scope Id) =
 pred under-def i:name, i:term, i:term, i:(term -> prop).
 under-def Nm T B G :- coq.name->id Nm Id, pi x\ (def x Nm T B, name-in-scope Id) => G x.
 
+% [current-scope Sc]: the notation scope of the formulas (the header's
+% scope:), "" for none
 pred current-scope o:string.
 
 % the report of a step
@@ -67,6 +68,7 @@ pred bare-mode.
 pred condition-id i:string, i:int, i:int, o:string.
 condition-id S _ 1 S :- !.
 condition-id S I _ Id :- letter I L, Id is S ^ L.
+% [letter I L]: the I-th letter of the alphabet, a for 1
 pred letter i:int, o:string.
 letter I L :-
   std.nth {calc (I - 1)} ["a","b","c","d","e","f","g","h","i","j","k","l","m",
@@ -117,9 +119,11 @@ elaborate-context (context-item Id Imp T0 (some B0) R) (context-item Id Imp T (s
       under-def N T B (x\ elaborate-context (R x) (C x) D))
      (D = D1).
 
+% [is-prop T]: the term T is a proposition
 pred is-prop i:term.
 is-prop T :- coq.typecheck T Ty ok, coq.unify-eq Ty (sort prop) ok.
 
+% [conj Cs C]: the conjunction C of the non-empty list Cs, C1 /\ (C2 /\ ...)
 pred conj i:list term, o:term.
 conj [C] C :- !.
 conj [C | L] {{ lp:C /\ lp:R }} :- conj L R.
@@ -127,17 +131,24 @@ conj [C | L] {{ lp:C /\ lp:R }} :- conj L R.
 % the parts of a step
 pred claims i:list element, o:list element.
 claims L C :- std.filter L is-claim C.
+% [is-claim E]: the element E is a claim, forward or backward
 pred is-claim i:element.
 is-claim (elt rclaim _).
 is-claim (elt rback _).
 is-claim (eltt rclaim _).
 is-claim (eltt rback _).
+% [binders Es Vs]: the variables (and definitions) introduced by the
+% elements Es
 pred binders i:list element, o:list element.
 binders L C :- std.filter L is-var C.
+% [is-var E]: the element E introduces variables
 pred is-var i:element.
 is-var (elt rvar _).
+% [backward Es]: the step of elements Es is backward: one of its claims
+% replaces the goal
 pred backward i:list element.
 backward L :- std.exists L is-back.
+% [is-back E]: the element E is a backward claim
 pred is-back i:element.
 is-back (elt rback _).
 is-back (eltt rback _).
@@ -173,6 +184,7 @@ step-proof Tac I T P R :-
   gettimeofday T0, condition-proof Tac I T P R, gettimeofday T1,
   say-time I {calc (T1 - T0)}.
 
+% [condition-proof Tac I T P R]: as step-proof, without the timing
 pred condition-proof i:option string, i:string, i:term, o:term, o:report.
 condition-proof _ I T P (rep I (todo S)) :- bare-mode, !,
   condition-hole I T P, coq.term->string T S.
@@ -305,6 +317,8 @@ scope [] [pr E Nm0 | Hs] Body (prod Nm A TyR) (fun Nm A PfR) N Rs :-
   hyp-name Nm0 Nm,
   under-decl Nm A (h\ scope [] Hs Body (TyR h) (PfR h) N Rs).
 
+% [scope-ctx C Vs Hs Body Ty Pf N Rs]: as scope, under the variables of the
+% context C first
 pred scope-ctx i:context-decl, i:list element,
   i:list (pair element (option string)), i:list step, o:term, o:term, o:int,
   o:list report.
@@ -369,6 +383,9 @@ open-level-step (forward-claims Cs) I Tac Ch Rest Acc Ty Pf N Rs :-
   shared I C Ty P1 NC (e\ p\ open-exports I Acc C e 1 NC Rest Ty p N Rs2) Pf,
   std.append Rs1 Rs2 Rs.
 
+% [open-claims S J N Tac Cs Acc Rest Ty Pf M Rs]: as claims-then, with no
+% goal: each claim proved, then a hypothesis added to Acc, then the rest of
+% the steps (open-level)
 pred open-claims i:string, i:int, i:int, i:option string, i:list term,
   i:list (pair term term), i:list step, o:term, o:term, o:int, o:list report.
 open-claims _ _ _ _ [] Acc Rest Ty Pf N Rs :- open-level Acc Rest Ty Pf N Rs.
@@ -379,6 +396,8 @@ open-claims S J NC Tac [C | Cs] Acc Rest Ty {{ cyp_have lp:C lp:Ty lp:P1 lp:K }}
   K = fun Nm C Pf,
   under-decl Nm C (x\ open-claims S J1 NC Tac Cs [pr C x | Acc] Rest Ty (Pf x) N Rs).
 
+% [conj-proof Ts Ps P]: the proof P of the conjunction of Ts (conj) from the
+% proofs Ps of its members
 pred conj-proof i:list term, i:list term, o:term.
 conj-proof [_] [P] P :- !.
 conj-proof [A | Ts] [P | Ps] {{ @conj lp:A lp:B lp:P lp:Q }} :-
@@ -393,6 +412,7 @@ proj-type (prod Nm A B) I N (prod Nm A B1) :- !, pi x\ proj-type (B x) I N (B1 x
 proj-type (let Nm A V B) I N (let Nm A V B1) :- !, pi x\ proj-type (B x) I N (B1 x).
 proj-type B I N T :- component B I N T.
 
+% [component B I N T]: the I-th of the N members T of the conjunction B
 pred component i:term, i:int, i:int, o:term.
 component B _ 1 B :- !.
 component {{ lp:A /\ _ }} 1 _ A :- !.
@@ -406,6 +426,8 @@ proj-proof (let Nm A V B) E I N (let Nm A V P) :- !,
   under-def Nm A V (x\ proj-proof (B x) E I N (P x)).
 proj-proof B E I N P :- component-proof B E I N P.
 
+% [component-proof B E I N P]: the proof P of the I-th of the N members of
+% the conjunction B, from a proof E of B (proj1, proj2)
 pred component-proof i:term, i:term, i:int, i:int, o:term.
 component-proof _ E _ 1 E :- !.
 component-proof {{ lp:A /\ lp:R }} E 1 _ {{ @proj1 lp:A lp:R lp:E }} :- !.
@@ -439,6 +461,8 @@ exports S Own OTac ExTy ExPf I N Rest G {{ cyp_have lp:T lp:G lp:Pi lp:K }} Rs :
   K = fun Nm T P,
   under-decl Nm T (x\ exports S Own OTac ExTy ExPf I1 N Rest G (P x) Rs).
 
+% [open-exports S Acc ExTy ExPf I N0 Rest Ty Pf N Rs]: as exports, with no
+% goal: the claims are added to Acc (open-level)
 pred open-exports i:string, i:list (pair term term), i:term, i:term, i:int, i:int,
   i:list step, o:term, o:term, o:int, o:list report.
 open-exports _ Acc _ _ I N0 Rest Ty Pf N Rs :- I > N0, !, open-level Acc Rest Ty Pf N Rs.
@@ -461,6 +485,8 @@ statement [elt rvar S | Vs] Hs Gs Steps Ty Pf Rs :-
   statement-ctx C Vs Hs Gs Steps Ty Pf Rs.
 statement [] Hs Gs Steps Ty Pf Rs :- statement-hyps Hs Gs Steps Ty Pf Rs.
 
+% [statement-ctx C Vs Hs Gs Steps Ty Pf Rs]: as statement, under the
+% variables of the context C first
 pred statement-ctx i:context-decl, i:list element,
   i:list (pair element (option string)), i:list element, i:list step,
   o:term, o:term, o:list report.
@@ -469,6 +495,8 @@ statement-ctx (context-item Id _ T _ C) Vs Hs Gs Steps (prod Nm T TyR) (fun Nm T
   coq.id->name Id Nm,
   under-decl Nm T (x\ statement-ctx (C x) Vs Hs Gs Steps (TyR x) (PfR x) Rs).
 
+% [statement-hyps Hs Gs Steps Ty Pf Rs]: the hypotheses Hs of the statement,
+% then its conclusion Gs proved by the steps
 pred statement-hyps i:list (pair element (option string)), i:list element,
   i:list step, o:term, o:term, o:list report.
 statement-hyps [] Gs Steps G Pf Rs :-

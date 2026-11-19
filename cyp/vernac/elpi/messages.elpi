@@ -18,5 +18,6 @@ fill I [A | As] T S :-
   P is "%" ^ {std.any->string I}, rex.replace P A1 T T1,
   I1 is I + 1, fill I1 As T1 S.
 
+% [say Key Args]: the message Key printed, in the language of the proof
 pred say i:string, i:list string.
 say K As :- msg K As S, coq.say S.

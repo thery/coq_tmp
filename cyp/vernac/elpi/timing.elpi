@@ -5,6 +5,8 @@
 pred timed i:string, i:prop.
 timed L P :- gettimeofday T0, P, gettimeofday T1, say-time L {calc (T1 - T0)}.
 
+% [say-time Label D]: the time D (seconds) of Label printed, when CYP_TIME
+% is set
 pred say-time i:string, i:float.
 say-time I D :- getenv "CYP_TIME" (some _), !,
   Ms is floor (D * 1000.0), say "time" [I, {std.any->string Ms}].

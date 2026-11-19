@@ -37,6 +37,8 @@ header-lines Fields Lines :-
   std.map Fields field-line FieldLines,
   std.append ["---" | FieldLines] ["---"] Lines.
 
+% [field-line F Line]: the line "key: value" of the field F; an error for a
+% key that is not a header-key
 pred field-line i:prooftext.field, o:string.
 field-line (prooftext.field Key Value) Line :- header-key Key, !, Line is Key ^ ": " ^ Value.
 field-line (prooftext.field Key _) _ :- coq.error "prooftext: no header field" Key.

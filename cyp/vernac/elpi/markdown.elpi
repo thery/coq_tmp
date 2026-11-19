@@ -3,7 +3,7 @@
 %   ---
 %   scope: Z            the notation scope of the formulas (name or key)
 %   by: lia | nia       the default tactics of the proof
-%   lang: en            the language of the text (en, fr, it)
+%   lang: en            the language of the text (one of the lexicon's)
 %   gaps: off           no gap tactic (gaps.elpi)
 %   ---
 %   # name
@@ -59,6 +59,9 @@ todo-ids Rs S Ts :-
   std.filter Rs (r\ sigma I G\ r = rep I (todo G), step-of I S) L,
   std.map L (r\ i\ sigma G\ r = rep i G) Ts.
 
+% [write-md Out Fields Name Stmt Steps Rs]: the checked text written to the
+% file Out: the header, the title, the statement and the steps, each with
+% the mark of its status and its message (details)
 pred write-md i:string, i:list prooftext.field, i:string, i:string,
   i:list prooftext.step, i:list report.
 write-md Out H Name Stmt Ns Rs :-
@@ -72,6 +75,8 @@ write-md Out H Name Stmt Ns Rs :-
   write-nodes O "" "" 1 Ns Rs,
   close_out O.
 
+% [details O Pad M]: the message M of a step in a folded block, indented by
+% Pad; nothing for no message
 pred details i:out_stream, i:string, i:string.
 details _ _ "" :- !.
 details O Pad M :-
@@ -96,6 +101,9 @@ json-string S J :-
   rex.replace "\\\\" "\\\\\\\\" S S1, rex.replace "\"" "\\\\\"" S1 S2,
   rex.replace "\n" "\\\\n" S2 S3, J is "\"" ^ S3 ^ "\"".
 
+% [write-json Out First Last SEs Steps Rs]: the JSON file Out for the
+% editor: the statement (lines First to Last, elements SEs) and the steps,
+% each with its lines, status, formulas and message
 pred write-json i:string, i:int, i:int, i:list element, i:list prooftext.step, i:list report.
 write-json Out F La SEs Ns Rs :-
   open_out Out O,
@@ -105,6 +113,8 @@ write-json Out F La SEs Ns Rs :-
   output O "]}\n",
   close_out O.
 
+% [json-step O Id First Last Es Rs]: the JSON object of the statement or
+% step Id
 pred json-step i:out_stream, i:string, i:int, i:int, i:list element, i:list report.
 json-step O K F La Es Rs :-
   status-of Rs K S M,
@@ -115,10 +125,13 @@ json-step O K F La Es Rs :-
      {std.any->string La} ^ ",\"status\":\"" ^ S ^ "\",\"formulas\":[" ^ J ^
      "],\"message\":" ^ {json-string M} ^ "}")}.
 
+% [json-formula E J]: a formula with its role, as a JSON object
 pred json-formula i:element, o:string.
 json-formula (elt R X) J :-
   prooftext.role-tag R N, !, J is "{\"role\":\"" ^ N ^ "\",\"text\":" ^ {json-string X} ^ "}".
 
+% [json-nodes O Prefix K Steps Rs]: the JSON objects of the steps, numbered
+% as in steps-of
 pred json-nodes i:out_stream, i:string, i:int, i:list prooftext.step, i:list report.
 json-nodes _ _ _ [] _.
 json-nodes O P K [prooftext.step (prooftext.lines F La) T Ch | Ns] Rs :-

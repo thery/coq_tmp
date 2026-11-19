@@ -9,6 +9,8 @@ type qed-data string -> string -> term -> qed.
 pred by-clauses i:string, o:list prop.
 by-clauses "" [] :- !.
 by-clauses S Cl :- rex.split " *| *" S Ns, std.map Ns by-clause Cl.
+% [by-clause Name Clause]: a tactic name of the by: field as a clause of
+% proof-default
 pred by-clause i:string, o:prop.
 by-clause N (proof-default T) :- prooftext.trim N T.
 
@@ -55,11 +57,15 @@ count Rs Steps Ko Todo :-
 % the goals of the conditions, each with its context
 pred say-goals i:list sealed-goal.
 say-goals GL :- std.forall GL (g\ coq.ltac.open say-goal g _).
+% [say-goal G GL]: the goal G printed with its context, as Rocq prints a
+% goal
 pred say-goal i:goal, o:list sealed-goal.
 say-goal (goal Ctx _ Ty _ _) [] :-
   std.rev Ctx Cx, std.forall Cx say-hyp, coq.term->string Ty S,
   coq.say "  ============================",
   coq.say " " S, coq.say "".
+% [say-hyp D]: a variable or a definition of a goal's context, printed
+% (other entries are skipped)
 pred say-hyp i:prop.
 say-hyp (decl _ N T) :- !, coq.say " " {coq.name->id N} ":" {coq.term->string T}.
 say-hyp (def _ N _ V) :- !, coq.say " " {coq.name->id N} ":=" {coq.term->string V}.

@@ -26,6 +26,8 @@ close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
 close (goal _ _ Ty _ _ as G) :- named _ Ty Tac, run Tac G.
 close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
 
+% [run Tac G]: the tactic Tac of a rule run on G: an Ltac tactic that closes
+% it, or a lemma whose premises are then closed (premises)
 pred run i:cyptac, i:goal.
 run (ltac N) G :- coq.ltac.call-ltac1 N G [].
 run (lemma T) G :- refine T G GL, premises GL.
@@ -43,11 +45,14 @@ premise-depth 0.
 pred subgoals i:list sealed-goal.
 subgoals GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
 
+% [premises GL]: the premises GL of a lemma closed, one lemma deeper (fails
+% at premise-depth-max)
 pred premises i:list sealed-goal.
 premises GL :-
   premise-depth D, !, premise-depth-max Max, D < Max, D1 is D + 1,
   premise-depth D1 => subgoals GL.
 
+% [close-tac G GL]: close-default as a tactic, leaving no goal
 pred close-tac i:goal, o:list sealed-goal.
 close-tac G [] :- close-default G.
 

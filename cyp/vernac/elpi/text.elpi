@@ -35,6 +35,7 @@ boundary B :-
 pred normal i:string, o:string.
 normal S N :- lower S L0, L is " " ^ L0 ^ " ", unclitic L N.
 
+% [unclitic S N]: S without the clitic prefixes at the start of its words
 pred unclitic i:string, o:string.
 unclitic S S :- boundary "", !.
 unclitic S N :- current-lang Lang, boundary Bd,
@@ -51,11 +52,15 @@ side-phrases After Ps :-
     (if (phrase-after Lang P) (After = tt) (After = ff)),
     unclitic-phrase Lang P P1, q = phrase Lang P1 R) Ps.
 
+% [unclitic-phrase Lang P P1]: the phrase P of language Lang without its
+% clitic prefixes
 pred unclitic-phrase i:string, i:string, o:string.
 unclitic-phrase Lang P P :- not (clitic Lang _), !.
 unclitic-phrase _ P P2 :- S is " " ^ P ^ " ", unclitic S P1,
   rex.replace "^ \\(.*\\) $" "\\1" P1 P2.
 
+% [text-role S R]: the role R given by the last phrase of the text S
+% (best-phrase); fails if S has none
 pred text-role i:string, o:role.
 text-role S R :-
   normal S L, side-phrases ff Ps,
@@ -103,6 +108,8 @@ first-phrase W P After R :-
   std.append Bs1 As1 Ps,
   earliest T Bd Ps none (some (triple _ _ (triple P After R))).
 
+% [earliest Text Bd Phrases Acc Best]: as best-phrase, for the phrase that
+% starts first in Text (Bd: the word boundary)
 pred earliest i:string, i:string, i:list (pair bool prop),
   i:option (triple int int (triple string bool role)),
   o:option (triple int int (triple string bool role)).
@@ -144,6 +151,7 @@ pred formula-element i:piece, i:role, o:element.
 formula-element (pform F) R (elt R F).
 formula-element (pterm T) R (eltt R T).
 
+% [pieces S P]: the text S cut into words and formulas (between backticks)
 pred pieces i:string, o:list piece.
 pieces S P :- N is size S, chars S 0 N "" ff P.
 
@@ -156,10 +164,13 @@ chars S I N Acc F P :-
      (flush Acc F P P1, negb F F1, chars S I1 N "" F1 P1)
      (Acc1 is Acc ^ C, chars S I1 N Acc1 F P).
 
+% [negb B C]: C is the negation of the boolean B
 pred negb i:bool, o:bool.
 negb tt ff.
 negb ff tt.
 
+% [flush Acc InFormula P Tail]: the piece of the characters Acc read so far
+% (a formula if InFormula), in front of Tail; none for no character
 pred flush i:string, i:bool, o:list piece, o:list piece.
 flush "" _ P P :- !.
 flush A ff [ptext A | P] P.
@@ -225,6 +236,7 @@ tag W R W1 :-
 % the text of a step, to report it
 pred elements-text i:list element, o:string.
 elements-text L S :- std.map L element-text Ws, std.string.concat "" Ws S.
+% [element-text E S]: the element E as it is written in a text
 pred element-text i:element, o:string.
 element-text (txt W) W.
 element-text (elt _ F) S :- S is "`" ^ F ^ "`".

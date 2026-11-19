@@ -197,18 +197,23 @@ Elpi Accumulate lp:{{
     coq.pstring->string P S, raw-args As L.
   raw-items (primitive (pstring P)) [ptext S] :- !, coq.pstring->string P S.
   raw-items T [pterm T].
+  % [raw-args Ts Pieces]: the arguments Ts of a step written in Rocq, each a
+  % word (a string) or a formula (a term)
   pred raw-args i:list term, o:list piece.
   raw-args [] [].
   raw-args [primitive (pstring P) | R] [ptext S | L] :- !,
     coq.pstring->string P S, raw-args R L.
   raw-args [T | R] [pterm T | L] :- raw-args R L.
 
+  % [list-of T Ts]: the Rocq list T as an Elpi list (a term that is not a
+  % list: itself, alone)
   pred list-of i:term, o:list term.
   list-of (app [global (indc Cons), _, X, R]) [X | L] :-
     coq.locate "cons" (indc Cons), !, list-of R L.
   list-of (app [global (indc Nil), _]) [] :- coq.locate "nil" (indc Nil), !.
   list-of T [T].
 
+  % [numbered I Ts Steps]: the steps of the terms Ts, numbered from I
   pred numbered i:int, i:list term, o:list step.
   numbered _ [] [].
   numbered I [T | L] [S | Ss] :-
