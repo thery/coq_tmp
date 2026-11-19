@@ -9,8 +9,9 @@
 
 type location = { file : string; line : int }
 
-(* A rule of the program, with its number in the listing (the N of the
-   commands + clause N, - clause N). *)
+(* A rule of the program, or a CHR rule (numbered after the rules), with
+   its number in the listing (the N of the commands + clause N,
+   - clause N). *)
 type rule = { number : int; predicate : string; at : location }
 
 type program = { rules : rule list; declarations : location list }
@@ -53,9 +54,14 @@ type hypothesis = { clause : string; origin : string }
 (* A variable of the query, by its source name, and its value at the stop. *)
 type query_var = { name : string; value : string }
 
+(* A goal of the constraint store and the number of its suspension (0 when
+   not numbered). *)
+type stored = { suspension : int; stored_goal : string }
+
 (* A stop: its number (a command that only shows something prompts again
    with the same number), why it stops (start, step, breakpoint, pause),
-   the event (its port and its text) and the state of the run there. *)
+   the event (its port and its text) and the state of the run there, the
+   constraint store included. *)
 type stop = {
   stop_number : int;
   reason : string;
@@ -66,6 +72,8 @@ type stop = {
   hypotheses : hypothesis list;
   eigenvariables : string list;
   query_vars : query_var list;  (* the variables of the query, by their source names *)
+  store : stored list;  (* the constraint store, most recent first *)
+  rule : location option;  (* at a stop at a CHR rule (its attempt, its outcome): the rule *)
 }
 
 type message = Program of program | Stop of stop | Text of string
@@ -127,6 +135,12 @@ let hypothesis_of json = { clause = string_field "clause" json; origin = string_
 
 let query_var_of json = { name = string_field "name" json; value = string_field "value" json }
 
+let stored_of json = { suspension = int_field "suspension" json; stored_goal = string_field "goal" json }
+
+(* [optional_list name read json]: the list field [name], empty when absent
+   (from an older elpi-debug) *)
+let optional_list name read json = match J.member name json with `Null -> [] | l -> List.map read (J.to_list l)
+
 let stop_of json =
   {
     stop_number = int_field "stop" json;
@@ -138,6 +152,8 @@ let stop_of json =
     hypotheses = list_field "hyps" hypothesis_of json;
     eigenvariables = list_field "eigenvariables" J.to_string json;
     query_vars = list_field "query" query_var_of json;
+    store = optional_list "store" stored_of json;
+    rule = (match J.member "rule" json with `Null -> None | l -> Some (location_of l));
   }
 
 let program_of json = { rules = list_field "clauses" rule_of json; declarations = list_field "declarations" location_of json }

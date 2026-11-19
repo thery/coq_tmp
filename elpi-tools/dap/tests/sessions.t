@@ -33,7 +33,7 @@ continue to the end:
   -> {"seq":6,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
   <- {"seq":11,"type":"response","request_seq":6,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Unify: #1 append [1, 2] [3] [1 | X1]","id":1,"column":1,"source":{"name":"append.elpi","path":"append.elpi"},"line":6}],"totalFrames":1}}
   -> {"seq":7,"type":"request","command":"scopes","arguments":{"frameId":1}}
-  <- {"seq":12,"type":"response","request_seq":7,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false}]}}
+  <- {"seq":12,"type":"response","request_seq":7,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false},{"name":"Constraints","presentationHint":"locals","variablesReference":5,"expensive":false}]}}
   -> {"seq":8,"type":"request","command":"variables","arguments":{"variablesReference":1}}
   <- {"seq":13,"type":"response","request_seq":8,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"append [1, 2] [3] [1 | X1]","variablesReference":0},{"name":"arg 1 (input)","value":"[1, 2]","variablesReference":0},{"name":"arg 2 (input)","value":"[3]","variablesReference":0},{"name":"arg 3 (output)","value":"[1 | X1]","variablesReference":0},{"name":"X0 :=","value":"[1 | X1]","variablesReference":0}]}}
   # Step in: the call port of the recursive call.
@@ -129,9 +129,9 @@ on); a frame running a hypothetical clause; f from the debug console:
   <- {"seq":31,"type":"response","request_seq":12,"success":true,"command":"stepIn","body":null}
   <- {"seq":32,"type":"event","event":"output","body":{"category":"stdout","output":"    Assume: of x#2 X3   (added to the local program, for of x#1 X4 only)\n"}}
   <- {"seq":33,"type":"event","event":"stopped","body":{"reason":"step","description":"Assume step","text":"Assume: of x#2 X3   (added to the local program, for of x#1 X4 only)","threadId":1,"allThreadsStopped":true}}
-  # The four scopes of the call #2: its goal, the query, the local program, the eigenvariables.
+  # The scopes of the call #2: its goal, the query, the local program, the eigenvariables (and the constraint store, empty here).
   -> {"seq":13,"type":"request","command":"scopes","arguments":{"frameId":2}}
-  <- {"seq":34,"type":"response","request_seq":13,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false}]}}
+  <- {"seq":34,"type":"response","request_seq":13,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false},{"name":"Constraints","presentationHint":"locals","variablesReference":5,"expensive":false}]}}
   -> {"seq":14,"type":"request","command":"variables","arguments":{"variablesReference":1}}
   <- {"seq":35,"type":"response","request_seq":14,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"of (lam c2 \\ x#1) (arr X3 X4)","variablesReference":0},{"name":"arg 1 (input)","value":"lam c2 \\ x#1","variablesReference":0},{"name":"arg 2 (output)","value":"arr X3 X4","variablesReference":0}]}}
   -> {"seq":15,"type":"request","command":"variables","arguments":{"variablesReference":2}}
@@ -140,8 +140,8 @@ on); a frame running a hypothetical clause; f from the debug console:
   <- {"seq":37,"type":"response","request_seq":16,"success":true,"command":"variables","body":{"variables":[{"name":"of x#1 X1","value":"hypothesis added by #1","variablesReference":0}]}}
   -> {"seq":17,"type":"request","command":"variables","arguments":{"variablesReference":4}}
   <- {"seq":38,"type":"response","request_seq":17,"success":true,"command":"variables","body":{"variables":[{"name":"x#1","value":"eigenvariable in force","variablesReference":0},{"name":"x#2","value":"eigenvariable in force","variablesReference":0},{"name":"X3","value":"may depend on no eigenvariable","variablesReference":0},{"name":"X4","value":"may depend on no eigenvariable","variablesReference":0}]}}
-  # The same scopes for the call #1 (second in the stack: references 5 to 8): its eigenvariables.
-  -> {"seq":18,"type":"request","command":"variables","arguments":{"variablesReference":8}}
+  # The same scopes for the call #1 (second in the stack: references 6 to 10): its eigenvariables.
+  -> {"seq":18,"type":"request","command":"variables","arguments":{"variablesReference":9}}
   <- {"seq":39,"type":"response","request_seq":18,"success":true,"command":"variables","body":{"variables":[{"name":"x#1","value":"eigenvariable in force","variablesReference":0},{"name":"x#2","value":"eigenvariable in force","variablesReference":0},{"name":"X1","value":"may depend on no eigenvariable","variablesReference":0},{"name":"X3","value":"may depend on no eigenvariable","variablesReference":0},{"name":"X4","value":"may depend on no eigenvariable","variablesReference":0}]}}
   # Next at a step inside a call creeps: the call port of #3, then its unify with a hypothesis.
   -> {"seq":19,"type":"request","command":"next","arguments":{"threadId":1}}
@@ -198,6 +198,59 @@ goal that CHR suspended:
   -> {"seq":8,"type":"request","command":"disconnect","arguments":{}}
   <- {"seq":20,"type":"response","request_seq":8,"success":true,"command":"disconnect","body":null}
 
+A breakpoint in the margin on a CHR rule (transitivity, line 8 of
+leq.elpi): the run stops at its attempt, the call in focus shown at the
+rule; the scope Constraints lists the store; then the outcome and the
+goal of the rule:
+
+  $ replay chr-rule.dap
+  # A breakpoint in the margin on a CHR rule (transitivity, leq.elpi line 8): the run stops at its attempts.
+  -> {"seq":1,"type":"request","command":"initialize","arguments":{"adapterID":"elpi"}}
+  <- {"seq":1,"type":"response","request_seq":1,"success":true,"command":"initialize","body":{"supportsConfigurationDoneRequest":true,"supportsFunctionBreakpoints":true,"supportsRestartFrame":true,"supportsTerminateRequest":true,"supportsEvaluateForHovers":false,"supportsStepBack":false}}
+  -> {"seq":2,"type":"request","command":"launch","arguments":{"program":"leq.elpi","goal":"leq A B, leq B C, leq C A"}}
+  <- {"seq":2,"type":"response","request_seq":2,"success":true,"command":"launch","body":null}
+  <- {"seq":3,"type":"event","event":"initialized","body":null}
+  -> {"seq":3,"type":"request","command":"setBreakpoints","arguments":{"source":{"path":"leq.elpi"},"breakpoints":[{"line":8}]}}
+  <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setBreakpoints","body":{"breakpoints":[{"verified":true,"line":8}]}}
+  -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
+  <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
+  <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: leq A B, leq B C, leq C A   (running to the first breakpoint, or to the end)\n"}}
+  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Rule: clause 9 leq.elpi:8 tried on [S1, S2]\n"}}
+  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Rule step","text":"Rule: clause 9 leq.elpi:8 tried on [S1, S2]","threadId":1,"allThreadsStopped":true}}
+  # The stack: the call in focus is shown at the rule, named by the attempt.
+  -> {"seq":5,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
+  <- {"seq":9,"type":"response","request_seq":5,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Rule: clause 9 leq.elpi:8 tried on [S1, S2]","id":0,"column":1,"source":{"name":"leq.elpi","path":"leq.elpi"},"line":8}],"totalFrames":1}}
+  # The scopes of the call in focus; the Constraints scope (the fifth): the store.
+  -> {"seq":6,"type":"request","command":"scopes","arguments":{"frameId":0}}
+  <- {"seq":10,"type":"response","request_seq":6,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false},{"name":"Constraints","presentationHint":"locals","variablesReference":5,"expensive":false}]}}
+  -> {"seq":7,"type":"request","command":"variables","arguments":{"variablesReference":5}}
+  <- {"seq":11,"type":"response","request_seq":7,"success":true,"command":"variables","body":{"variables":[{"name":"[S2]","value":"leq X1 X2","variablesReference":0},{"name":"[S1]","value":"leq X0 X1","variablesReference":0}]}}
+  # The outcome of the attempt (step in), then the goal of the rule, then on to the end.
+  -> {"seq":8,"type":"request","command":"stepIn","arguments":{"threadId":1}}
+  <- {"seq":12,"type":"response","request_seq":8,"success":true,"command":"stepIn","body":null}
+  <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"  Rule: clause 9 leq.elpi:8 fires\n"}}
+  <- {"seq":14,"type":"event","event":"stopped","body":{"reason":"step","description":"Rule step","text":"Rule: clause 9 leq.elpi:8 fires","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":9,"type":"request","command":"stepIn","arguments":{"threadId":1}}
+  <- {"seq":15,"type":"response","request_seq":9,"success":true,"command":"stepIn","body":null}
+  <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:8)\n"}}
+  <- {"seq":17,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:8)","threadId":1,"allThreadsStopped":true}}
+  -> {"seq":10,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
+  <- {"seq":18,"type":"response","request_seq":10,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Call: #3 leq X0 X2","id":3,"column":1,"source":{"name":"leq.elpi","path":"leq.elpi"},"line":8}],"totalFrames":1}}
+  -> {"seq":11,"type":"request","command":"variables","arguments":{"variablesReference":5}}
+  <- {"seq":19,"type":"response","request_seq":11,"success":true,"command":"variables","body":{"variables":[{"name":"[S2]","value":"leq X1 X2","variablesReference":0},{"name":"[S1]","value":"leq X0 X1","variablesReference":0}]}}
+  -> {"seq":12,"type":"request","command":"setBreakpoints","arguments":{"source":{"path":"leq.elpi"},"breakpoints":[]}}
+  <- {"seq":20,"type":"response","request_seq":12,"success":true,"command":"setBreakpoints","body":{"breakpoints":[]}}
+  -> {"seq":13,"type":"request","command":"continue","arguments":{"threadId":1}}
+  <- {"seq":21,"type":"response","request_seq":13,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
+  <- {"seq":22,"type":"event","event":"output","body":{"category":"stdout","output":"Solution 1:\n"}}
+  <- {"seq":23,"type":"event","event":"output","body":{"category":"stdout","output":"  A = X0\n"}}
+  <- {"seq":24,"type":"event","event":"output","body":{"category":"stdout","output":"  B = X0\n"}}
+  <- {"seq":25,"type":"event","event":"output","body":{"category":"stdout","output":"  C = X0\n"}}
+  <- {"seq":26,"type":"event","event":"exited","body":{"exitCode":0}}
+  <- {"seq":27,"type":"event","event":"terminated","body":null}
+  -> {"seq":14,"type":"request","command":"disconnect","arguments":{}}
+  <- {"seq":28,"type":"response","request_seq":14,"success":true,"command":"disconnect","body":null}
+
 The scope Query (the variables of the query by their source names, with
 their values at the stop) and watch expressions (a variable of the query
 by its name, a variable X3 as elpi-debug names it); at the exit port of
@@ -228,7 +281,7 @@ a call seen at its call port, the bindings the whole call made:
   <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"      X0 := [1 | X1]\n"}}
   <- {"seq":14,"type":"event","event":"stopped","body":{"reason":"step","description":"Unify step","text":"Unify: #1 with append.elpi:6: append [1, 2] [3] [1 | X1]\n      X0 := [1 | X1]","threadId":1,"allThreadsStopped":true}}
   -> {"seq":7,"type":"request","command":"scopes","arguments":{"frameId":1}}
-  <- {"seq":15,"type":"response","request_seq":7,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false}]}}
+  <- {"seq":15,"type":"response","request_seq":7,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false},{"name":"Constraints","presentationHint":"locals","variablesReference":5,"expensive":false}]}}
   -> {"seq":8,"type":"request","command":"variables","arguments":{"variablesReference":2}}
   <- {"seq":16,"type":"response","request_seq":8,"success":true,"command":"variables","body":{"variables":[{"name":"L","value":"[1 | X1]","variablesReference":0}]}}
   # Watches: the query variable L, the variable X0 bound by this step, X1 of the goal, an unknown name.

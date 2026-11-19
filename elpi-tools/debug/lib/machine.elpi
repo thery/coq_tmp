@@ -199,10 +199,12 @@ origin-json (added-by S _) (json-object [pr "hypothesis" (json-string S)]).
 % of the goal N of its body, {"file", "line", "column", "endLine",
 % "endColumn"} (lines from 1, columns from 0, the end just after the last
 % character; from reflect.premises, null for a hypothetical clause)};
+% for a goal of a CHR rule, the rule (its goal, number 1, with no place);
 % null for a call of the query, a woken goal, or a premise not known.
 func premise-json entry -> json.
 premise-json (called-from (premise Origin N))
   (json-object [pr "index" (json-int N), pr "clause" {origin-json Origin}, pr "place" {premise-place-json Origin N}]) :- !.
+premise-json (by-rule Loc) (json-object [pr "index" (json-int 1), pr "clause" {origin-json (at Loc [])}, pr "place" json-null]) :- !.
 premise-json _ json-null.
 
 func premise-place-json origin, int -> json.

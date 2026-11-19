@@ -1,0 +1,23 @@
+# A breakpoint in the margin on a CHR rule (transitivity, leq.elpi line 8): the run stops at its attempts.
+{"command":"initialize","arguments":{"adapterID":"elpi"}}
+{"command":"launch","arguments":{"program":"leq.elpi","goal":"leq A B, leq B C, leq C A"}}
+{"await":"initialized"}
+{"command":"setBreakpoints","arguments":{"source":{"path":"leq.elpi"},"breakpoints":[{"line":8}]}}
+{"command":"configurationDone"}
+{"await":"stopped"}
+# The stack: the call in focus is shown at the rule, named by the attempt.
+{"command":"stackTrace","arguments":{"threadId":1}}
+# The scopes of the call in focus; the Constraints scope (the fifth): the store.
+{"command":"scopes","arguments":{"frameId":0}}
+{"command":"variables","arguments":{"variablesReference":5}}
+# The outcome of the attempt (step in), then the goal of the rule, then on to the end.
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stackTrace","arguments":{"threadId":1}}
+{"command":"variables","arguments":{"variablesReference":5}}
+{"command":"setBreakpoints","arguments":{"source":{"path":"leq.elpi"},"breakpoints":[]}}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}
