@@ -108,9 +108,14 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     the other, like a lemma, the premises that are one of the other names
     closed by it first, the others by the rules or the default tactics
     ("*and_ind*{.just} in *h1*{.just}"); a single `*X*{.just}` so means
-    what `*by X*` meant;
+    what `*by X*` meant; when none of them applies, the rules and the
+    default tactics run, the names given first (a text may name the lemma
+    a step comes from without its conclusion being the step's: "Applying
+    *proj1*{.just}, we have `z`{.claim}", from `proj1 H1` applied to `x`);
   - with no justification, all the rules, then the tactics of `by`, then
-    cyp's own (`tauto`, `lia`, `nia`, `lra`), the facts first;
+    cyp's own (`tauto`, `lia`, `nia`, `lra`), the facts first; the tactics
+    only on a goal with no existential variable (a premise of a lemma not
+    yet determined: `firstorder` runs for very long on `z /\ ?B`);
   - a name that is none of these (and no name of the text in scope) is an
     error.  X cannot be tactic code (`interval with (i_prec 100)`):
     Rocq-Elpi cannot yet turn a string into a tactic; name an Ltac

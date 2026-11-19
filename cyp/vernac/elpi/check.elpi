@@ -66,8 +66,11 @@ close-tac G [] :- close-default G.
 pred close-default i:goal.
 close-default G :- coq.ltac.call-ltac1 "cyp_hypothesis" G [], !.
 close-default G :- close G, !.
-close-default G :- proof-default N, run-name N G, !.
-close-default G :- default-ltac N, coq.ltac.call-ltac1 N G [], !.
+% the tactics only on a goal with no existential variable (a premise of a
+% lemma that is still to be found: a tactic could run for very long, e.g.
+% firstorder on z /\ ?B after eapply proj1)
+close-default G :- coq.ltac.call-ltac1 "cyp_evar_free" G _, proof-default N, run-name N G, !.
+close-default G :- coq.ltac.call-ltac1 "cyp_evar_free" G _, default-ltac N, coq.ltac.call-ltac1 N G [], !.
 
 % [tactic-known X]: X names a tactic: prooftext's, or one that the rules
 % of the proof add (tactic-name)
@@ -111,9 +114,14 @@ pred justify-step i:method, i:goal.
 justify-step (method [] [] Fs) G :- !,
   std.map Fs (f\ g\ g = given-local f) First, with-first First close-default G.
 % names given, no rule or tactic: each applied in turn, its premises closed
-% by the rules
-justify-step (method [] Gs _) G :- !,
-  std.mem Gs X, std.filter Gs (g\ not (g = X)) Others, apply-given X Others G, !.
+% by the rules; when none of them applies, the rules and the default
+% tactics, with the names given and the facts first (a text may name the
+% lemma a step comes from without its conclusion being the step's: "Applying
+% *proj1*{.just}, we have z", from (proj1 H1) x)
+justify-step (method [] Gs Fs) G :- !,
+  (std.mem Gs X, std.filter Gs (g\ not (g = X)) Others, apply-given X Others G, !
+  ; std.map Fs (f\ g\ g = given-local f) FGs, std.append Gs FGs First,
+    with-first First close-default G).
 % rule or tactic names: each tried in turn, the names given and the facts
 % first in the context
 justify-step (method Ms Gs Fs) G :-

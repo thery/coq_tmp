@@ -64,6 +64,8 @@ Ltac cyp_firstorder := bounded_firstorder.
 Ltac cyp_hypothesis :=
   lazymatch goal with |- ?g => tryif has_evar g then fail else assumption end.
 Ltac cyp_intros := progress intros.
+(* the goal has no existential variable *)
+Ltac cyp_evar_free := match goal with |- ?g => tryif has_evar g then fail else idtac end.
 Ltac cyp_eapply t := eapply t.
 Ltac cyp_exact t := exact t.
 (* an elimination principle t on the variable x: the goal abstracted over x
