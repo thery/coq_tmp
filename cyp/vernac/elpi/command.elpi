@@ -31,7 +31,7 @@ check-file F Lang Name Ty Proof Rs :-
   rex.replace "[.]md$" ".cyp.json" F OutJs,
   prooftext.read-document F (prooftext.document H Name (prooftext.lines SF SL) Stmt Ns),
   field H "scope" Sc, field H "by" By, field H "lang" Lang0, field H "gaps" Gaps,
-  (Lang0 = "", Lang = "en" ; Lang = Lang0), !,
+  (Lang0 = "", prooftext.default-lang Lang ; Lang = Lang0), !,
   by-clauses By Cl0, gaps-clauses Gaps Off, std.append Off Cl0 Cl,
   coq.say "cyp:" Name,
   (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (

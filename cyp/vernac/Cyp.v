@@ -270,10 +270,10 @@ Elpi Accumulate lp:{{
         say "left" [Name, {std.any->string NS}, {std.any->string NT}, TS],
         say-todo Rs).
 
-  % the language of Cyp Lemma: #[lang="fr"], English by default
+  % the language of Cyp Lemma: #[lang="fr"], else prooftext's default (English)
   pred lemma-lang o:string.
   lemma-lang L :- attributes A, std.mem A (attribute "lang" (leaf-str L)), !.
-  lemma-lang "en".
+  lemma-lang L :- prooftext.default-lang L.
 
   % the data for CypQed: the name, the language and the statement
   main-interp-proof [const-decl Name (some Body) Arity] _ Proof GL (qed-data Name Lang Ty) :-
