@@ -139,9 +139,9 @@ rule-guard-held :- note-rule guard-held, !.
 rule-guard-held.
 
 % [context-suspension C K]: the number K of the suspension of the
-% constraint whose context is C (the innermost [suspended-as]); 0 when
-% it has none (a constraint declared natively, or a context written by the
-% rule, which the driver leaves alone).
+% constraint whose context is C (the innermost [suspended-as]: Elpi lists
+% the most recent clause first); 0 when it has none (a constraint declared
+% by native code, or on the fast path).
 pred context-suspension i:list (pred), o:int.
 context-suspension C K :- std.mem C (suspended-as K1), !, K = K1.
 context-suspension _ 0.
