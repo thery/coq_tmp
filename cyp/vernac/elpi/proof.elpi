@@ -166,11 +166,18 @@ is-back (eltt rback _).
 % the hypotheses of a step, with the name written after each, if any
 pred hyps i:list element, o:list (pair element (option string)).
 hyps [] [].
-hyps [elt rhyp S, hname N | L] [pr (elt rhyp S) (some N) | H] :- !, hyps L H.
-hyps [eltt rhyp T, hname N | L] [pr (eltt rhyp T) (some N) | H] :- !, hyps L H.
-hyps [elt rhyp S | L] [pr (elt rhyp S) none | H] :- !, hyps L H.
-hyps [eltt rhyp T | L] [pr (eltt rhyp T) none | H] :- !, hyps L H.
+hyps [E | L] [pr E Name | H] :- is-hyp E, !, name-after L Name L1, hyps L1 H.
 hyps [_ | L] H :- hyps L H.
+% [is-hyp E]: the element E is a hypothesis
+pred is-hyp i:element.
+is-hyp (elt rhyp _).
+is-hyp (eltt rhyp _).
+% [name-after L Name Rest]: the name at the head of the elements L, hname
+% N (Name = some N; none if L starts with no name), and the elements
+% after it
+pred name-after i:list element, o:option string, o:list element.
+name-after [hname N | L] (some N) L :- !.
+name-after L none L.
 
 % the claims of a step as terms; those that are not propositions are
 % mentions; Bad: the formulas that do not parse
