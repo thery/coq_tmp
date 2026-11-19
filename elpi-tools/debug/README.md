@@ -499,6 +499,28 @@ Configuration 7 of [`../demo/.vscode/launch.json`](../demo/.vscode/launch.json)
 `-machine` 10.3 -> 6.4 -> 2.1 s, `-profile` 12.1 -> 8.1 -> 4.0 s,
 `-break nowhere` 9.8 -> 5.4 -> 1.4 s; no option 1.6 -> 0.46 s.
 
+**The primitives and the Exit bindings** (2026-11-19, load 2.3-4.4,
+minimum of 10 runs alternated with main of the same day, interpreted time
+of `-time`):
+
+| run | before | after |
+|---|---|---|
+| `count 6400` | 0.155 s | 0.147 s |
+| `bench 200` | 0.309 s | 0.296 s |
+| `queens 8 Q` | 0.102 s | 0.098 s |
+| `lookups 2000` | 0.116 s | 0.110 s |
+| `-profile`, configuration 7 | 3.80 s | 3.85 s |
+| `-machine`, configuration 7, no stop asked | 1.79 s | 1.85 s |
+| `-trace bench 30` (465 calls on lists, output to /dev/null) | 0.42 s | 0.63 s |
+
+The fast path is unchanged (within the noise).  `-profile` and
+`-machine` without stops: about 2 % (an extra goal per event).  `-trace`
+is about 50 % slower: each call port shown now takes a mark (a walk of the
+goal and of the hypotheses in scope) and its exit prints the bindings
+made since (about 0.15 s of the 0.21 s, measured by switching the mark
+off); the rest is the stand-in of `uuid` (a print per variable named) in
+the unify step.  The real builtins would remove most of it.
+
 **What is left.**  A call still runs about 26 goals of the interpreter
 (`app`), a builtin about 14 more than its own: a box with an invocation
 number, a safe for the explanation (needed for the warning of a predicate
