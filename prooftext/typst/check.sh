@@ -213,7 +213,7 @@ echo "ok   every link to a name has its anchor (HTML)"
 qpdf --qdf --object-streams=disable "$gallery/xtext/ABCD.pdf" "$out/ABCD.qdf.pdf"
 has "$out/ABCD.qdf.pdf" "/Dest" "names linked to their steps (PDF)"
 # a justification and a lemma of the corelib, linked to their documentation
-has "$gallery/xtext/or_commut.typ" '#just("Corelib.Init.Logic.or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")' \
+has "$gallery/xtext/or_commut.typ" '#just("or_intror", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_intror")' \
   "justification linked to its documentation"
 has "$gallery/xtext/or_commut.html" 'href="https://rocq-prover.org/corelib/Corelib.Init.Logic.html#or_ind"' \
   "lemma in the text linked to its documentation (HTML)"

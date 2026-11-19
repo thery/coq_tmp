@@ -37,6 +37,14 @@ Elpi Accumulate lp:{{
     if (Got = Wanted) (coq.say "ok  " D "  ⟶  " Got, typst-paragraph Got)
        (coq.error "FAIL" D ": got" Got "wanted" Wanted).
 
+  % [untagged F Wanted]: a formula F without a class is a declaration
+  % (Wanted = tt) or a formula (Wanted = ff)
+  pred untagged i:string, i:bool.
+  untagged F Wanted :-
+    (prooftext.is-declaration "" F, !, Got = tt ; Got = ff),
+    if (Got = Wanted) (coq.say "ok  " F "  ⟶  declaration:" Got)
+       (coq.error "FAIL" F ": declaration" Got "wanted" Wanted).
+
   % [typst-paragraph Code]: the maths Code, a paragraph of check_maths.typ
   pred typst-paragraph i:string.
   typst-paragraph "(does not elaborate)" :- !.
@@ -107,6 +115,15 @@ Elpi Accumulate lp:{{
     declaration "" [] "x y : R" "x , y ∈ ℝ",
     declaration "R_scope" ["x : R"] "y := x * x" "y ≔ x ⋅ x",
     declaration "" [] "f : nat -> nat" "f : ℕ → ℕ",
-    declaration "" [] "p : nat * nat" "p ∈ ℕ × ℕ".
+    declaration "" [] "p : nat * nat" "p ∈ ℕ × ℕ",
+    % formulas without a class: declarations, or formulas with binders
+    untagged "n : nat" tt,
+    untagged "a b : Z" tt,
+    untagged "y := x * x" tt,
+    untagged "forall z : nat, z = z" ff,
+    untagged "fun f : nat -> nat => f 0" ff,
+    untagged "exists x : nat, x = 0" ff,
+    untagged "n + 0 = n" ff,
+    formula "" ["A : Type", "l : list A"] "fun f : list A -> list A => f l" "f ↦ f\\(l\\)".
 }}.
 Elpi prooftext_check_maths.
