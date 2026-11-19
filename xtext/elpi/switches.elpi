@@ -77,7 +77,7 @@ with-switch Name Origin V G :- known-value Name Origin V,
 
 % ------------------------------------------------------------------
 % Mechanisms switched off, for measurements: XTEXT_OFF is a
-% comma-separated list of explicit, args, motive, tactics, thatis (README,
+% comma-separated list of explicit, args, motive, tactics, thatis (doc/generic-mechanisms.md,
 % "Inferable arguments, tactics, unfolding").  An unknown name is an error.
 pred off i:string.
 off M :- getenv "XTEXT_OFF" (some S), rex.split "," S L,

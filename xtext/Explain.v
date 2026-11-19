@@ -93,7 +93,7 @@ Elpi Db xtext.db lp:{{
   xtext-guard-tactic "xtext_g_auto" "auto".
   % [xtext-implicit-choice-limit N]: a formula whose applications with
   % implicit arguments do not all type-check again without them is printed
-  % with the arguments of each application decided one by one (README,
+  % with the arguments of each application decided one by one (doc/generic-mechanisms.md,
   % "Formulas that type-check again"), when it has at most N such
   % applications; above, they are all printed in full.  Each decision
   % elaborates the whole formula once.  The default 60 is the value the
