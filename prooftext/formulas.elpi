@@ -140,16 +140,3 @@ plain-parts Text Parts :-
 plain-parts Text [plain Text].
 
 }
-
-namespace prooftext {
-% [split-justification S J Rest]: the justification *by X* in the text S
-% of a step (J = some X) and the text without it (cyp's reading before
-% the tree; removed with it)
-pred split-justification i:string, o:option string, o:string.
-split-justification S (some X) Rest :-
-  rex.match ".*[*]by [^*]+[*]" S, !,
-  rex.replace ".*[*]by \\([^*]+\\)[*].*" "\\1" S X0,
-  rex.replace "[*]by [^*]+[*]" "" S Rest,
-  rex.replace "^ +\\| +$" "" X0 X.
-split-justification S none S.
-}

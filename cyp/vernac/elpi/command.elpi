@@ -31,26 +31,42 @@ pred check-file i:string, o:string, o:string, o:term, o:term, o:list report.
 check-file F Lang Name Ty Proof Rs :-
   rex.replace "[.]md$" ".checked.md" F OutMd,
   rex.replace "[.]md$" ".cyp.json" F OutJs,
-  prooftext.read-document F (prooftext.document H Name (prooftext.lines SF SL) Stmt Ns),
+  prooftext.read-lines F Lines,
+  prooftext.lines-tree Lines (prooftext.proof-text H Name Top),
   prooftext.field-value H "scope" Sc, prooftext.field-value H "by" By,
   prooftext.field-value H "gaps" Gaps, prooftext.header-lang H Lang,
   by-clauses By Cl0, gaps-clauses Gaps Off, std.append Off Cl0 Cl,
   coq.say "cyp:" Name,
   (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
-    text-elements Stmt _ SEs,
-    binders SEs Vs, hyps SEs Hs, claims SEs Gs,
-    steps-of "" 1 Ns Steps,
-    timed "conditions" (statement Vs Hs Gs Steps Ty Proof Rs),
-    timed "markdown" (write-md OutMd H Name Stmt Ns Rs),
-    timed "json" (write-json OutJs SF SL SEs Ns Rs)).
+    check-tree Top Ty Proof Rs,
+    timed "markdown" (write-md OutMd Lines Top Rs),
+    timed "json" (write-json OutJs Top Rs)).
 
-% the steps of the reports, and those with a condition not proved (Ko) or
-% left to the Proof block (Todo)
+% [check-tree Top Ty Proof Rs]: the statement Ty of the tree of the top
+% node Top and its proof, with the reports of its nodes (the errors of the
+% tree, then the conditions), in the order of the text
+pred check-tree i:prooftext.node, o:term, o:term, o:list report.
+check-tree Top Ty Proof Rs :-
+  prooftext.tree-errors Top Errors,
+  proof-node Errors (pr "0" Top) Node,
+  timed "conditions" (node-proof Node Ty Proof _ Rs0),
+  error-reports Errors Rs1, std.append Rs1 Rs0 Rs2,
+  prooftext.all-nodes "0" Top All, std.map All fst Ids,
+  in-text-order Ids Rs2 Rs.
+
+% [in-text-order Ids Rs Sorted]: the reports Rs, those of each node of Ids
+% in turn
+pred in-text-order i:list string, i:list report, o:list report.
+in-text-order Ids Rs Sorted :-
+  std.map Ids (i\ rs\ std.filter Rs (r\ sigma S\ r = rep i S) rs) Rss, std.flatten Rss Sorted.
+
+% the nodes of the reports, and those with a condition not proved or an
+% error (Ko) or left to the Proof block (Todo)
 pred count i:list report, o:list string, o:list string, o:list string.
 count Rs Steps Ko Todo :-
-  std.map Rs (r\ s\ sigma I St\ r = rep I St, step-of I s) S0, undup S0 Steps,
+  std.map Rs (r\ s\ sigma St\ r = rep s St) S0, undup S0 Steps,
   std.filter Rs (r\ sigma I S\ r = rep I S, (S = ko _ ; S = bad _)) Ko0,
-  std.map Ko0 (r\ s\ sigma I St\ r = rep I St, step-of I s) K0, undup K0 Ko,
+  std.map Ko0 (r\ s\ sigma St\ r = rep s St) K0, undup K0 Ko,
   std.filter Rs (r\ sigma I G\ r = rep I (todo G)) T0,
   std.map T0 (r\ i\ sigma St\ r = rep i St) Todo.
 

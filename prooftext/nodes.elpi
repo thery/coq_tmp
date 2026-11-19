@@ -286,7 +286,7 @@ children-errors [pr Id N | Ns] All Scope Visible Es :-
 % [node-line N L]: the first line of the node N
 pred node-line i:prooftext.node, o:int.
 node-line (prooftext.node _ (prooftext.lines L _) _ _ _) L.
-node-line (prooftext.node _ prooftext.unplaced _ _ _) 0.
+node-line (prooftext.node _ prooftext.unplaced _ _ _) -1.
 
 % [scope-errors Id L Js Visible All Es]: the justifications Js that name
 % something of the text that is not visible here (a name that the text

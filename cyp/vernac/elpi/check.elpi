@@ -1,4 +1,4 @@
-% Closing a goal: by the step's justification, or by the rules, or by the
+% Closing a goal: by the justifications and the facts of its node, or by the rules, or by the
 % default tactics.
 %
 % The rules are in the database cyp.db (Cyp.v): [justify_first], [named],
@@ -8,7 +8,8 @@
 % [tactic-name Name Ltac]: a tactic added by a proof's rules, and the Ltac
 % definition that runs it (Cyp.v).  The tactics every proof text may name
 % are prooftext's (prooftext/tactics.elpi): the tactic Name runs the Ltac
-% cyp_Name (Cyp.v).  Tactics defined with Ltac are found by their own name
+% cyp_Name (Cyp.v).  A tactic of the proof, defined with Ltac, is named by a
+% clause tactic-name Name Ltac in its rules
 pred tactic-name o:string, o:string.
 
 % the default tactics of the proof being checked (its header's by:), then
@@ -68,35 +69,106 @@ close-default G :- close G, !.
 close-default G :- proof-default N, run-name N G, !.
 close-default G :- default-ltac N, coq.ltac.call-ltac1 N G [], !.
 
-% a tactic by its name (an identifier: tactic code cannot be run from a
-% string yet, see the README)
+% [tactic-known X]: X names a tactic: prooftext's, or one that the rules
+% of the proof add (tactic-name)
+pred tactic-known i:string.
+tactic-known X :- tactic-name X _, !.
+tactic-known X :- prooftext.tactic X.
+
+% [run-name N G]: the tactic named N run on G
 pred run-name i:string, i:goal.
 run-name N G :- tactic-name N L, !, coq.ltac.call-ltac1 L G [].
-run-name N G :- prooftext.tactic N, !, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
-run-name N G :- rex.match "^[A-Za-z_][A-Za-z0-9_']*$" N, coq.ltac.call-ltac1 N G [].
+run-name N G :- prooftext.tactic N, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
 
-% [justify-step J G]: the goal G closed by the justification J of a step
-% (*by X*), or, when it has none (J = none), by the rules and the defaults
-pred justify-step i:option string, i:goal.
-justify-step none G :- close-default G.
-% the rules named X, and only them, if there are any
-justify-step (some X) (goal _ _ Ty _ _ as G) :-
-  std.findall (named X _ _) [_ | _], !, named X Ty T, run T G, !.
-% else the local name X of the goal's context (a hypothesis of the text,
-% the claim of an earlier step, c2a, a variable), applied like a lemma,
-% its premises closed by the rules; it hides a global X, as in Rocq
-justify-step (some X) (goal Ctx _ _ _ _ as G) :-
-  local-name Ctx X H, !,
-  coq.ltac.call "cyp_eapply" [trm H] G GL, premises GL, !.
-% else the lemma X (a name, possibly qualified), applied, its premises
-% closed by the rules
-justify-step (some X) G :-
-  rex.match "^@?[A-Za-z_][A-Za-z0-9_'.]*$" X,
-  rex.replace "^@" "" X X1,
-  coq.locate-all X1 L, std.mem L (loc-gref GR), !,
-  apply-lemma GR G.
-% else the tactic X
-justify-step (some X) G :- run-name X G.
+% ------------------------------------------------------------------ %
+% The justifications of a node (rule 9 of the format): the names of rules
+% and tactics choose the method, tried in turn; the names of hypotheses,
+% nodes and lemmas are what the method is given, put first in the context
+% (the paper reorders the assumptions by the justification, 2003, §2.3);
+% so are the hypotheses that the facts of the node are.  With no rule or
+% tactic name, the names given are applied, one after the other, as a
+% single *by X* is today; with no name at all, the rules and the default
+% tactics run.
+
+% [classify Names Methods Given Unknown]: the names of the justifications
+% of a node sorted: rule and tactic names (Methods), names given (Given),
+% and the names that name nothing known.  A name is, in this order: the
+% name of rules, a local name (a hypothesis, the conclusion of a node, a
+% variable: it hides a lemma of that name, as in Rocq), a lemma (a name,
+% possibly qualified), a tactic
+pred classify i:list string, o:list string, o:list given, o:list string.
+classify [] [] [] [].
+classify [X | Xs] [X | Ms] Gs Us :- std.findall (named X _ _) [_ | _], !, classify Xs Ms Gs Us.
+classify [X | Xs] Ms [given-local X | Gs] Us :- local-in-scope _ X _, !, classify Xs Ms Gs Us.
+classify [X | Xs] Ms [given-lemma GR | Gs] Us :-
+  prooftext.is-name X, coq.locate-all X L, std.mem L (loc-gref GR), !, classify Xs Ms Gs Us.
+classify [X | Xs] [X | Ms] Gs Us :- tactic-known X, !, classify Xs Ms Gs Us.
+classify [X | Xs] Ms Gs [X | Us] :- classify Xs Ms Gs Us.
+
+% [justify-step M G]: the goal G closed by the method M
+pred justify-step i:method, i:goal.
+% no name: the rules and the default tactics, the facts first
+justify-step (method [] [] Fs) G :- !,
+  std.map Fs (f\ g\ g = given-local f) First, with-first First close-default G.
+% names given, no rule or tactic: each applied in turn, its premises closed
+% by the rules
+justify-step (method [] Gs _) G :- !,
+  std.mem Gs X, std.filter Gs (g\ not (g = X)) Others, apply-given X Others G, !.
+% rule or tactic names: each tried in turn, the names given and the facts
+% first in the context
+justify-step (method Ms Gs Fs) G :-
+  std.map Fs (f\ g\ g = given-local f) FGs, std.append Gs FGs First,
+  with-first First (g\ std.mem Ms M, run-method M g, !) G.
+
+% [apply-given X Others G]: the name given X applied to the goal G; its
+% premises that are one of the other names given, Others, closed by them
+% first (so that the premises after them have no hole left: "and_ind in
+% h1"), the others by the rules
+pred apply-given i:given, i:list given, i:goal.
+apply-given (given-local X) Others (goal Ctx _ _ _ _ as G) :-
+  local-name Ctx X H, coq.ltac.call "cyp_eapply" [trm H] G GL, given-premises Others GL.
+apply-given (given-lemma GR) Others G :- apply-lemma GR Others G.
+
+% [given-premises Others GL]: the premises GL, those that a name of Others
+% is closed by it, then the rest by the rules
+pred given-premises i:list given, i:list sealed-goal.
+given-premises Others GL :-
+  coq.ltac.all (coq.ltac.open (premise-by-given Others)) GL Rest, premises Rest.
+
+% [premise-by-given Others G GL]: G closed by one of the names Others (GL =
+% []), or left as it is
+pred premise-by-given i:list given, i:goal, o:list sealed-goal.
+premise-by-given Others (goal Ctx _ _ _ _ as G) [] :-
+  std.mem Others X, given-term Ctx X H, coq.ltac.call "cyp_exact" [trm H] G [], !.
+premise-by-given _ G GL :- coq.ltac.call-ltac1 "idtac" G GL.
+
+% [run-method M G]: the rules named M (only them, if there are any), or
+% the tactic M, run on G
+pred run-method i:string, i:goal.
+run-method M (goal _ _ Ty _ _ as G) :-
+  std.findall (named M _ _) [_ | _], !, named M Ty T, run T G.
+run-method M G :- run-name M G.
+
+% [with-first Gs K G]: K run on the goal G with the hypotheses given Gs
+% moved last in its context (where tactics look first), and the lemmas
+% given added to it (cyp_first, Cyp.v)
+pred with-first i:list given, i:(pred i:goal), i:goal.
+with-first [] K G :- K G.
+with-first [X | Ns] K (goal Ctx _ _ _ _ as G) :-
+  given-term Ctx X H,
+  coq.ltac.call "cyp_first" [trm H] G [SG], !,
+  coq.ltac.open (with-first-tactic Ns K) SG [].
+with-first [_ | Ns] K G :- with-first Ns K G.
+
+% [with-first-tactic Ns K G GL]: with-first as a tactic, leaving no goal
+pred with-first-tactic i:list given, i:(pred i:goal), i:goal, o:list sealed-goal.
+with-first-tactic Ns K G [] :- with-first Ns K G.
+
+% [given-term Ctx X H]: the term of the name given X, in the context Ctx of
+% a goal
+pred given-term i:goal-ctx, i:given, o:term.
+given-term Ctx (given-local N) H :- local-name Ctx N H, !.
+given-term _ (given-lemma GR) (global GR).
 
 % [local-name Ctx X H]: H is the variable, hypothesis or local definition
 % named X in the context Ctx of a goal
@@ -104,18 +176,19 @@ pred local-name i:goal-ctx, i:string, o:term.
 local-name Ctx X H :- std.mem Ctx (decl H N _), coq.name->id N X.
 local-name Ctx X H :- std.mem Ctx (def H N _ _), coq.name->id N X.
 
-% [apply-lemma GR G]: the lemma GR applied to the goal, its premises closed
-% by the rules: directly (its conclusion unified with the goal), else, for
+% [apply-lemma GR Others G]: the lemma GR applied to the goal, its premises
+% closed by the other names given (given-premises) and the rules: directly (its conclusion unified with the goal), else, for
 % an elimination principle (its first argument is the predicate it proves,
 % the motive), as Rocq's elim does: the goal abstracted over one of its
 % variables, so that the motive is that abstraction (eapply alone unifies
 % ?P ?x with the goal first-order: on n <= n + m it takes P := le n)
-pred apply-lemma i:gref, i:goal.
-apply-lemma GR G :- coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, premises GL, !.
-apply-lemma GR (goal Ctx _ Ty _ _ as G) :-
+pred apply-lemma i:gref, i:list given, i:goal.
+apply-lemma GR Others G :-
+  coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, given-premises Others GL, !.
+apply-lemma GR Others (goal Ctx _ Ty _ _ as G) :-
   elimination-principle GR,
   std.mem Ctx (decl X _ _), occurs X Ty,
-  coq.ltac.call "cyp_elim_on" [trm (global GR), trm X] G GL, premises GL, !.
+  coq.ltac.call "cyp_elim_on" [trm (global GR), trm X] G GL, given-premises Others GL, !.
 
 % [elimination-principle GR]: the type of GR starts with a predicate
 % (forall P : ... -> Prop or Type or Set, ...)
@@ -127,21 +200,22 @@ pred conclusion-sort i:term.
 conclusion-sort (sort _).
 conclusion-sort (prod _ _ B) :- pi x\ conclusion-sort (B x).
 
-% [solve-step Tac G]: as [justify-step], and again after introducing the
-% premises of the goal
-pred solve-step i:option string, i:goal, o:list sealed-goal.
-solve-step Tac G [] :- justify-step Tac G, !.
-solve-step Tac G [] :-
-  coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (solve-step Tac) SG [].
 
-% [prove Tac T P]: a proof P of T, in the current context
-pred prove i:option string, i:term, o:term.
-prove Tac T P :-
+% [solve-step M G]: as [justify-step], and again after introducing the
+% premises of the goal
+pred solve-step i:method, i:goal, o:list sealed-goal.
+solve-step M G [] :- justify-step M G, !.
+solve-step M G [] :-
+  coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (solve-step M) SG [].
+
+% [prove M T P]: a proof P of T, in the current context, by the method M
+pred prove i:method, i:term, o:term.
+prove M T P :-
   coq.typecheck P T ok,
   coq.ltac.collect-goals P [SG] _,
-  coq.ltac.open (solve-step Tac) SG [].
+  coq.ltac.open (solve-step M) SG [].
 % else the coarse gap tactic (gaps.elpi)
-prove Tac T P :-
+prove M T P :-
   coq.typecheck P T ok,
   coq.ltac.collect-goals P [SG] _,
-  coq.ltac.open (close-gap Tac) SG [].
+  coq.ltac.open (close-gap M) SG [].

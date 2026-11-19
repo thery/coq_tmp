@@ -1,12 +1,12 @@
 (* Bare mode: every condition is a goal of the Proof block, in the order
-   of the text, named after it (?c2_1 for 2.1); nothing is tried. *)
+   of the text, named after it (?c3 for 3); nothing is tried. *)
 From Stdlib Require Import ZArith Lia.
 From CypV Require Import Cyp.
 Open Scope Z_scope.
 
 #[bare] Cyp File "vc_file.md".
 Proof.
-  [c2_1]: intro; nia.
+  [c3]: nia.
   all: first [ apply Z.sqrt_nonneg | assumption | nia ].
 CypQed.
 Print Assumptions sqrt_sq_md.

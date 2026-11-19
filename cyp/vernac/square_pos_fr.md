@@ -7,8 +7,8 @@ lang: fr
 
 # square_pos
 
-Soient `a b : Z`. Si `0 < a < b` alors `a * a < b * b`.
+Soient `a b : Z`{.var}. Si `0 < a < b`{.hyp} alors `a * a < b * b`{.claim}.
 
-- Il suffit de montrer `0 < b * b - a * a`.
-- Ce qui revient à `0 < (b + a) * (b - a)`.
-- À partir de `0 < a < b` nous avons `0 < b + a` et `0 < b - a`.
+- Il suffit de montrer `0 < b * b - a * a`{.claim}.
+  - Ce qui revient à `0 < (b + a) * (b - a)`{.claim}.
+    - À partir de `0 < a < b`{.fact} nous avons `0 < b + a /\ 0 < b - a`{.claim}.

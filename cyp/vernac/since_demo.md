@@ -6,7 +6,7 @@ by: lia
 
 # since_demo
 
-Let `a b : Z`. If `0 < a` and `a < b` then `0 < 2 * b`.
+Let `a b : Z`{.var}. If `0 < a`{.hyp} and `a < b`{.hyp} then `0 < 2 * b`{.claim}.
 
-- We have `0 < b` and hence `0 < b + b`.
-- So `0 < 2 * b`.
+- [We have `0 < b`{.claim}]{.p} and hence `0 < b + b`{.claim}.
+- So `0 < 2 * b`{.claim}.

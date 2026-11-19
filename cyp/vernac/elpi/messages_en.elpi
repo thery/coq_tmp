@@ -14,14 +14,16 @@ message "en" "no-typecheck" "cyp: the proof does not type-check".
 message "en" "holes" "cyp: some conditions are not proved".
 message "en" "steps-not-parsed" "cyp: steps of %1 that do not parse: %2".
 message "en" "statement-no-typecheck" "cyp: the statement does not type-check".
-message "en" "definition-not-parsed" "cyp: the definition does not parse: %1".
-message "en" "variables-not-parsed" "cyp: the variables do not parse: %1".
-message "en" "hypothesis-not-parsed" "cyp: a hypothesis does not parse".
-message "en" "statement-variables-not-parsed" "cyp: the variables of the statement do not parse: %1".
-message "en" "conclusion-not-parsed" "cyp: the conclusion of the statement does not parse".
-message "en" "statement-hypothesis-not-parsed" "cyp: a hypothesis of the statement does not parse".
 message "en" "md-not-proved" "not proved: %1".
 message "en" "md-not-parsed" "does not parse: %1".
 message "en" "md-todo" "condition %1, to prove in the Proof block: %2".
-message "en" "backward-no-goal" "a backward step needs a goal: not inside Let/Assume".
 message "en" "time" "cyp: time %1 %2 ms".
+message "en" "definition-not-parsed" "the definition %1 does not parse".
+message "en" "variables-not-parsed" "the variables %1 do not parse: %2".
+message "en" "hypothesis-not-parsed" "the hypothesis %1 does not parse: %2".
+message "en" "conclusion-not-prop" "the conclusion %1 is not a proposition".
+message "en" "fact-unknown" "the fact %1 is no hypothesis or conclusion visible here".
+message "en" "name-unknown" "%1 names nothing known: no hypothesis, node, lemma, rule or tactic".
+message "en" "at-line" "line %1: %2".
+% the errors of the tree are prooftext's (prooftext/nodes.elpi,
+% error-template), in English; their keys may be translated here

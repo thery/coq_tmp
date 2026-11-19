@@ -6,7 +6,7 @@ Open Scope Z_scope.
 
 Cyp File "vc_file.md".
 Proof.
-  [c1a]: apply Z.sqrt_nonneg.
-  [c1b]: apply Z.sqrt_nonneg.
+  [c1]: apply Z.sqrt_nonneg.
+  [c2]: apply Z.sqrt_nonneg.
 CypQed.
 Print Assumptions sqrt_sq_md.

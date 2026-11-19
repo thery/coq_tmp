@@ -1,48 +1,56 @@
-% A proof: its statement and its steps, turned into a Rocq proof.
+% A proof: the tree of its nodes, turned into a Rocq proof.
 %
-% A proof is a verification condition generator: each step gives
-% conditions, goals in their own context (the variables and hypotheses of
-% the statement, the claims of the steps before it, and the variables,
-% hypotheses and definitions of the scopes it is in; a claim is a
-% hypothesis, whatever its proof).  Each condition is discharged by the
-% rules or the default tactics; in proof mode (proof-mode), one that is not
-% becomes a goal of the Proof block.  Conditions are numbered after their
-% step, in Dewey notation: 2.1 is the first sub-step of step 2, 2a and 2b
-% the two claims of step 2, 0 the statement after the steps.
-% The proof term:
-%   a forward step with claim C:   cyp_have C G P (fun c : C => ...) (C
-%                                  proved by P, by its sub-steps if any);
-%   a backward step with claim C:  (P : C -> G) (proof of C by the rest);
-%   a scope (Let `x : T`, Assume `A`, Let `u := e`, no claim): its body
-%   (its sub-steps, or else the steps after it) is proved under those
-%   binders, and each claim C of the body is known after the scope as
-%   forall x, A -> C (a projection of the body's proof);
-%   the end of a list of steps: its goal, by the default tactics, or by
-%   the justification of the step whose sub-steps they are.
+% A proof is a verification condition generator.  Each node of the tree
+% (prooftext/nodes.elpi) with variables V, hypotheses H, conclusion C and
+% subnodes P1 ... Pk gives one condition, numbered like the node (Dewey
+% notation: 2.1 is the first subnode of node 2, 0 the top node, the
+% statement): C, in the context made of the variables and hypotheses of
+% the node and of the nodes around it, the subnodes P1 ... Pk, and the
+% nodes before it in its list and before each node around it (R1, the
+% rule of the 2003 paper).  A node is used from outside as ∀ V, H → C
+% (its variables and hypotheses hold in it only), whatever its proof.
+% Each condition is discharged by the node's justifications and facts
+% (check.elpi), or the rules and the default tactics; in proof mode
+% (proof-mode), one that is not becomes a goal of the Proof block.
+% The proof term of a node: fun V H => cyp_have T1 C P1 (fun c1 : T1 =>
+% ... cyp_have Tk C Pk (fun ck : Tk => proof of C)), Ti the subnode Pi
+% seen from outside, ci its name (the name of its conclusion).
 
-% a step: its number (Dewey), its elements, its justification, its sub-steps
-kind step type.
-type step string -> list element -> option string -> list step -> step.
+% a node of the proof, as cyp checks it: its number, its elements, the
+% name of its conclusion, whether the reader found errors in it, its
+% subnodes (the remarks left out: their subnodes are those of the node
+% around them)
+kind cnode type.
+type cnode string -> list element -> string -> bool -> list cnode -> cnode.
+
+% [proof-node Errors Numbered N]: the node of the proof of the numbered
+% node of prooftext's tree; Errors, the errors of the tree
+pred proof-node i:list prooftext.node-error, i:pair string prooftext.node, o:cnode.
+proof-node Errors (pr Id N) (cnode Id Es Name Flawed Children) :-
+  prooftext.node-parts N Ps, part-elements Ps Es, prooftext.node-name Id Ps Name,
+  (if (std.exists Errors (e\ sigma L E\ e = prooftext.node-error Id L E)) (Flawed = tt) (Flawed = ff)),
+  prooftext.node-children Id N Cs, std.map Cs (proof-node Errors) Children.
 
 % ------------------------------------------------------------------ %
-% Declarations: each variable, hypothesis, claim or definition of the
-% proof is declared with its name recorded (under-decl, under-def), so
-% that a hypothesis with no name gets one that nothing in scope has
-% (hyp-name).  (Rocq-Elpi's decl cannot be listed: its first argument is
-% an input.)
+% Declarations: each variable, hypothesis, conclusion or definition of the
+% proof is declared with its name and its type recorded (under-decl,
+% under-def), so that a hypothesis with no name gets one that nothing in
+% scope has (hyp-name), and that a fact is found among them (check.elpi).
+% (Rocq-Elpi's decl cannot be listed: its first argument is an input.)
 
-% [name-in-scope S]: S is the name of something declared in scope
-pred name-in-scope o:string.
+% (name-in-scope and local-in-scope, the names declared: text.elpi)
 
 % [under-decl Nm T G]: G x, for a new variable x : T named Nm, declared in
-% the context with its name recorded
+% the context with its name and its type recorded
 pred under-decl i:name, i:term, i:(term -> prop).
-under-decl Nm T G :- coq.name->id Nm Id, pi x\ (decl x Nm T, name-in-scope Id) => G x.
+under-decl Nm T G :- coq.name->id Nm Id,
+  pi x\ (decl x Nm T, name-in-scope Id, local-in-scope x Id T) => G x.
 
 % [under-def Nm T B G]: G x, for a new local definition x : T := B named
 % Nm, declared in the context with its name recorded
 pred under-def i:name, i:term, i:term, i:(term -> prop).
-under-def Nm T B G :- coq.name->id Nm Id, pi x\ (def x Nm T B, name-in-scope Id) => G x.
+under-def Nm T B G :- coq.name->id Nm Id,
+  pi x\ (def x Nm T B, name-in-scope Id, local-in-scope x Id T) => G x.
 
 % [under-context C Ty Pf G]: Ty = forall x1 .. xn, T and Pf = fun x1 ..
 % xn => P, for the variables x1 .. xn of the context C (read by
@@ -58,14 +66,16 @@ under-context (context-item Id _ T _ C) (prod Nm T TyR) (fun Nm T PfR) G :-
 % scope:), "" for none
 pred current-scope o:string.
 
-% the report of a step
+% the report of a node
 kind status type.
 type ok status.
 type ko string -> status.               % the goal not proved
-type bad string -> status.              % a formula that does not parse
+type bad string -> status.              % an error: a formula that does not
+                                        % parse, an error of the tree, a fact
+                                        % or a name unknown
 type todo string -> status.             % a goal left to the Proof block
 kind report type.
-type rep string -> status -> report.    % the number of a condition
+type rep string -> status -> report.    % the number of the node
 
 % proof mode: the conditions not discharged are left to the Proof block
 pred proof-mode.
@@ -73,25 +83,28 @@ pred proof-mode.
 % left as a hole (implies proof mode)
 pred bare-mode.
 
-% the condition I of step S: S itself if it is the only one, else S
-% followed by a letter
-pred condition-id i:string, i:int, i:int, o:string.
-condition-id S _ 1 S :- !.
-condition-id S I _ Id :- letter I L, Id is S ^ L.
-% [letter I L]: the I-th letter of the alphabet, a for 1
-pred letter i:int, o:string.
-letter I L :-
-  std.nth {calc (I - 1)} ["a","b","c","d","e","f","g","h","i","j","k","l","m",
-    "n","o","p","q","r","s","t","u","v","w","x","y","z"] L.
+% [error-reports Errors Rs]: the reports of the errors of the tree, one per
+% node (its messages joined)
+pred error-reports i:list prooftext.node-error, o:list report.
+error-reports [] [].
+error-reports ([prooftext.node-error Id _ _ | _] as Es) [rep Id (bad M) | Rs] :-
+  std.filter Es (e\ sigma L E\ e = prooftext.node-error Id L E) Mine,
+  std.filter Es (e\ not (sigma L E\ e = prooftext.node-error Id L E)) Others,
+  std.map Mine error-text Ms, std.string.concat "; " Ms M,
+  error-reports Others Rs.
 
-% the step of a condition: its number without the letter
-pred step-of i:string, o:string.
-step-of Id S :- rex.replace "[a-z]$" "" Id S.
+% [error-text E S]: the message of the error E, in the language of the
+% text, with its line (numbered from 1; none for a text with no lines,
+% Cyp Lemma)
+pred error-text i:prooftext.node-error, o:string.
+error-text (prooftext.node-error _ L (prooftext.text-error K As)) S :-
+  msg K As M,
+  if (L < 0) (S = M) (msg "at-line" [{std.any->string {calc (L + 1)}}, M] S).
 
 % ------------------------------------------------------------------ %
 % Formulas
 
-% [parse E T]: the term of a formula, in the current context
+% [parse E T D]: the term of a formula, in the current context
 pred parse i:element, o:term, o:diagnostic.
 parse (elt _ S) T D :-
   current-scope Sc, P is "(" ^ S ^ ")",
@@ -133,45 +146,44 @@ elaborate-context (context-item Id Imp T0 (some B0) R) (context-item Id Imp T (s
 pred is-prop i:term.
 is-prop T :- coq.typecheck T Ty ok, coq.unify-eq Ty (sort prop) ok.
 
-% [conj Cs C]: the conjunction C of the non-empty list Cs, C1 /\ (C2 /\ ...)
-pred conj i:list term, o:term.
-conj [C] C :- !.
-conj [C | L] {{ lp:C /\ lp:R }} :- conj L R.
+% [diagnostic-text D S]: the message of a diagnostic that is not ok
+pred diagnostic-text i:diagnostic, o:string.
+diagnostic-text (error M) M :- !.
+diagnostic-text _ "".
 
-% the parts of a step
+% the parts of a node
+% [claims Es Cs]: its conclusions (one for a node of the tree)
 pred claims i:list element, o:list element.
 claims L C :- std.filter L is-claim C.
-% [is-claim E]: the element E is a claim, forward or backward
+% [is-claim E]: the element E is a conclusion
 pred is-claim i:element.
 is-claim (elt rclaim _).
-is-claim (elt rback _).
 is-claim (eltt rclaim _).
-is-claim (eltt rback _).
-% [binders Es Vs]: the variables (and definitions) introduced by the
-% elements Es
-pred binders i:list element, o:list element.
-binders L C :- std.filter L is-var C.
-% [is-var E]: the element E introduces variables
-pred is-var i:element.
-is-var (elt rvar _).
-% [backward Es]: the step of elements Es is backward: one of its claims
-% replaces the goal
-pred backward i:list element.
-backward L :- std.exists L is-back.
-% [is-back E]: the element E is a backward claim
-pred is-back i:element.
-is-back (elt rback _).
-is-back (eltt rback _).
-
-% the hypotheses of a step, with the name written after each, if any
-pred hyps i:list element, o:list (pair element (option string)).
-hyps [] [].
-hyps [E | L] [pr E Name | H] :- is-hyp E, !, name-after L Name L1, hyps L1 H.
-hyps [_ | L] H :- hyps L H.
 % [is-hyp E]: the element E is a hypothesis
 pred is-hyp i:element.
 is-hyp (elt rhyp _).
 is-hyp (eltt rhyp _).
+% [justifications Es Js]: the names of its justifications
+pred justifications i:list element, o:list string.
+justifications Es Js :- std.map-filter Es (e\ j\ e = just j) Js.
+% [facts Es Fs]: its facts
+pred facts i:list element, o:list element.
+facts Es Fs :- std.filter Es (e\ e = elt rfact _ ; e = eltt rfact _) Fs.
+
+% a variable or a hypothesis of a node, in the order of the text
+kind binder type.
+type var-binder string -> binder.                 % x y : T, or u := e
+type hyp-binder element -> option string -> binder.
+                                                  % a hypothesis and its name
+
+% [node-binders Es Bs]: the variables and hypotheses of the elements Es
+pred node-binders i:list element, o:list binder.
+node-binders [] [].
+node-binders [elt rvar S | Es] [var-binder S | Bs] :- !, node-binders Es Bs.
+node-binders [E | Es] [hyp-binder E Name | Bs] :- is-hyp E, !,
+  name-after Es Name Es1, node-binders Es1 Bs.
+node-binders [_ | Es] Bs :- node-binders Es Bs.
+
 % [name-after L Name Rest]: the name at the head of the elements L, hname
 % N (Name = some N; none if L starts with no name), and the elements
 % after it
@@ -179,329 +191,188 @@ pred name-after i:list element, o:option string, o:list element.
 name-after [hname N | L] (some N) L :- !.
 name-after L none L.
 
-% the claims of a step as terms; those that are not propositions are
-% mentions; Bad: the formulas that do not parse
-pred claim-terms i:list element, o:list term, o:list string.
-claim-terms [] [] [].
-claim-terms [E | L] Ts Bad :-
-  parse E T D,
-  if (D = ok)
-     (if (is-prop T) (Ts = [T | Ts1]) (Ts = Ts1), Bad = Bad1)
-     (D = error M, Ts = Ts1, Bad = [M | Bad1]),
-  claim-terms L Ts1 Bad1.
-
 % ------------------------------------------------------------------ %
-% Proving a step
+% Proving a condition
 
-% [step-proof Tac I T P R]: the condition I, of type T, proved by P or
-% else left to the Proof block or not proved; with CYP_TIME set, the time
-% spent on it is printed
-pred step-proof i:option string, i:string, i:term, o:term, o:report.
-step-proof Tac I T P R :-
-  gettimeofday T0, condition-proof Tac I T P R, gettimeofday T1,
+% [step-proof M I T P R]: the condition I, of type T, proved by P (the
+% method M, check.elpi) or else left to the Proof block or not proved;
+% with CYP_TIME set, the time spent on it is printed
+pred step-proof i:method, i:string, i:term, o:term, o:report.
+step-proof M I T P R :-
+  gettimeofday T0, condition-proof M I T P R, gettimeofday T1,
   say-time I {calc (T1 - T0)}.
 
-% [condition-proof Tac I T P R]: as step-proof, without the timing
-pred condition-proof i:option string, i:string, i:term, o:term, o:report.
+% [condition-proof M I T P R]: as step-proof, without the timing
+pred condition-proof i:method, i:string, i:term, o:term, o:report.
 condition-proof _ I T P (rep I (todo S)) :- bare-mode, !,
   condition-hole I T P, coq.term->string T S.
-condition-proof Tac I T P (rep I ok) :- prove Tac T P, !.
+condition-proof M I T P (rep I ok) :- prove M T P, !.
 condition-proof _ I T P (rep I (todo S)) :- proof-mode, !,
   condition-hole I T P, coq.term->string T S.
 condition-proof _ I T _ (rep I (ko S)) :- coq.term->string T S.
 
 % a hole for the condition I, of type T: a goal of the Proof block, named
-% after the condition (condition-ident: the goal of 2.1b is ?c2_1b)
+% after the node (condition-ident: the goal of 2.1 is ?c2_1)
 pred condition-hole i:string, i:term, o:term.
 condition-hole I T H :-
   coq.typecheck H T ok, coq.ltac.name-uvar H {condition-ident I}.
 
 % the identifier of condition Id: c followed by its number, dots as _
-% (2.1b gives c2_1b; a Rocq name cannot begin with a digit nor hold a
-% dot); the name of its goal in the Proof block and of its claim in the
-% goals after it
+% (2.1 gives c2_1; a Rocq name cannot begin with a digit nor hold a
+% dot); the name of its goal in the Proof block, and of its conclusion in
+% the goals after it when the text gives it no name (prooftext's
+% auto-name)
 pred condition-ident i:string, o:id.
-condition-ident Id N :- rex.replace "[.]" "_" Id S, N is "c" ^ S.
+condition-ident Id N :- prooftext.auto-name Id N.
 
-% the hypothesis of claim Id, named by condition-ident
-pred claim-name i:string, o:name.
-claim-name Id N :- coq.id->name {condition-ident Id} N.
+% [condition Id Es C P R]: the condition of node Id, of elements Es and
+% conclusion C: its facts must be hypotheses or conclusions in scope, and
+% its justifications name something known; then it is proved by them
+pred condition i:string, i:list element, i:term, o:term, o:report.
+condition Id Es C P R :-
+  facts Es Fs, std.map Fs fact-hypothesis Found,
+  std.map-filter Found (f\ s\ f = unknown-fact s) Unknown,
+  justifications Es Js, classify Js Ms Gs NotNames,
+  if (Unknown = [S | _]) (R = rep Id (bad {msg "fact-unknown" [S]}))
+  (if (NotNames = [X | _]) (R = rep Id (bad {msg "name-unknown" [X]}))
+  (std.map-filter Found (f\ h\ f = known-fact h) Hs,
+   step-proof (method Ms Gs Hs) Id C P R)).
 
-% What a step does, by its elements (step-kind): level and open-level
-% prove a list of steps with and without a goal, each by its kind.
-kind step-kind type.
-type unparsed string -> step-kind.           % a formula does not parse (the messages)
-type opens-scope list element -> list (pair element (option string)) -> step-kind.
-                                             % variables or hypotheses and no claim
-type comment step-kind.                      % no variable, hypothesis or claim
-type backward-claim term -> step-kind.       % the claims (their conjunction)
-                                             % replace the goal
-type forward-claims list term -> step-kind.  % the claims, proved and then known
+% the hypothesis a fact is
+kind fact-found type.
+type known-fact string -> fact-found.   % the name of a hypothesis or conclusion in scope
+type unknown-fact string -> fact-found. % none: the fact as it is written
 
-% [step-kind Es K]: the kind of the step of elements Es; its claims are
-% parsed in the current context (a claim that is not a proposition is a
-% mention, claim-terms)
-pred step-kind i:list element, o:step-kind.
-step-kind Es K :-
-  claims Es Cs0, claim-terms Cs0 Cs Bad,
-  binders Es Vs, hyps Es Hs,
-  if (Bad = [_ | _]) (std.string.concat "; " Bad M, K = unparsed M)
-  (if (Cs = [], (Vs = [_ | _] ; Hs = [_ | _])) (K = opens-scope Vs Hs)
-  (if (Cs = []) (K = comment)
-  (if (backward Es) (conj Cs C, K = backward-claim C) (K = forward-claims Cs)))).
+% [fact-hypothesis E F]: the hypothesis or conclusion in scope (the latest)
+% whose type is the fact E, up to conversion
+pred fact-hypothesis i:element, o:fact-found.
+fact-hypothesis E (known-fact S) :-
+  parse E F ok, is-prop F,
+  local-in-scope _ S T, coq.unify-eq T F ok, !.
+fact-hypothesis E (unknown-fact S) :- element-text E S.
 
-% [scope-parts Ch Rest Body After]: the body of a scope is its sub-steps
-% Ch, or else, when it has none, the steps Rest after it; After: the
-% steps after the body
-pred scope-parts i:list step, i:list step, o:list step, o:list step.
-scope-parts [] Rest Rest [] :- !.
-scope-parts Ch Rest Ch Rest.
-
-% [level Own OTac Steps G P Rs]: P proves G from the steps, in the current
-% context; the last condition (G follows) belongs to the step Own and is
-% closed by its justification OTac
-pred level i:string, i:option string, i:list step, i:term, o:term, o:list report.
-level Own OTac [] G P [R] :- step-proof OTac Own G P R.
-level Own OTac [step I Es Tac Ch | Rest] G P Rs :-
-  step-kind Es K, level-step K I Tac Ch Rest Own OTac G P Rs.
-
-% [level-step K I Tac Ch Rest Own OTac G P Rs]: as level, for the step I
-% of kind K, with its justification Tac and its sub-steps Ch, followed by
-% the steps Rest
-pred level-step i:step-kind, i:string, i:option string, i:list step, i:list step,
-  i:string, i:option string, i:term, o:term, o:list report.
-% a formula does not parse: the step is reported, and skipped
-level-step (unparsed M) I _ Ch Rest Own OTac G P [rep I (bad M) | Rs] :-
-  level Own OTac {std.append Ch Rest} G P Rs.
-% a scope: its body, then the steps after it
-level-step (opens-scope Vs Hs) I _ Ch Rest Own OTac G P Rs :-
-  scope-parts Ch Rest Body After,
-  scope Vs Hs Body ExTy ExPf N Rs1,
-  if (N = 0) (level Own OTac After G P Rs2)
-             (shared I ExTy G ExPf N (e\ p\ exports I ExTy e 1 N [] (prove-goal Own OTac After G) p Rs2) P),
-  std.append Rs1 Rs2 Rs.
-level-step comment _ _ Ch Rest Own OTac G P Rs :-
-  level Own OTac {std.append Ch Rest} G P Rs.
-% the new goal C implies G; the sub-steps and the rest prove C
-level-step (backward-claim C) I Tac Ch Rest Own OTac G (app [P1, P2]) [R1 | Rs] :-
-  step-proof Tac I (prod `_` C (_\ G)) P1 R1,
-  level Own OTac {std.append Ch Rest} C P2 Rs.
-% the claims one after the other, each knowing those before it
-level-step (forward-claims Cs) I Tac [] Rest Own OTac G P Rs :- !,
-  std.length Cs NC, claims-then I 1 NC Tac Cs [] (prove-goal Own OTac Rest G) P Rs.
-% with sub-steps: the conjunction of the claims proved by them, and then
-% each claim on its own
-level-step (forward-claims Cs) I Tac Ch Rest Own OTac G P Rs :-
-  std.length Cs NC, conj Cs C,
-  level I Tac Ch C P1 Rs1,
-  shared I C G P1 NC (e\ p\ exports I C e 1 NC [] (prove-goal Own OTac Rest G) p Rs2) P,
-  std.append Rs1 Rs2 Rs.
-
-% What comes after the claims of a step, once they are hypotheses: the
-% rest of the steps, with a goal (level) or with none (open-level)
-kind after-claims type.
-type prove-goal string -> option string -> list step -> term -> after-claims.
-                          % level Own OTac Steps G: the steps prove G
-type collect-claims list step -> term -> int -> after-claims.
-                          % open-level: the steps' claims, Ty their
-                          % conjunction (with those known), N their number
-
-% [after-claims-goal A G]: the goal of the proof after the claims: G, or
-% the conjunction of the claims, Ty
-pred after-claims-goal i:after-claims, o:term.
-after-claims-goal (prove-goal _ _ _ G) G.
-after-claims-goal (collect-claims _ Ty _) Ty.
-
-% [prove-after-claims A Known P Rs]: P proves the goal of A by the rest of
-% the steps; Known: the claims known (their types and the variables
-% naming them), kept by open-level
-pred prove-after-claims i:after-claims, i:list (pair term term), o:term, o:list report.
-prove-after-claims (prove-goal Own OTac Steps G) _ P Rs :- level Own OTac Steps G P Rs.
-prove-after-claims (collect-claims Steps Ty N) Known P Rs :- open-level Known Steps Ty P N Rs.
-
-% [claims-then S J N Tac Cs Known A P Rs]: the claims J.. of the N claims
-% Cs of step S, each proved and then a hypothesis (added to Known), then
-% what comes after them, A
-pred claims-then i:string, i:int, i:int, i:option string, i:list term,
-  i:list (pair term term), i:after-claims, o:term, o:list report.
-claims-then _ _ _ _ [] Known A P Rs :- prove-after-claims A Known P Rs.
-claims-then S J N Tac [C | Cs] Known A {{ cyp_have lp:C lp:G lp:P1 lp:K }} [R | Rs] :-
-  after-claims-goal A G,
-  condition-id S J N Id,
-  step-proof Tac Id C P1 R,
-  claim-name Id Nm, J1 is J + 1,
-  K = fun Nm C P2,
-  under-decl Nm C (x\ claims-then S J1 N Tac Cs [pr C x | Known] A (P2 x) Rs).
+% [element-text E S]: the text of a formula, for a message
+pred element-text i:element, o:string.
+element-text (elt _ S) S.
+element-text (eltt _ T) S :- coq.term->string T S.
 
 % ------------------------------------------------------------------ %
-% Scopes
+% Proving a node
 
-% [scope Vs Hs Body ExTy ExPf N Rs]: under the variables, definitions
-% and hypotheses, the N claims of Body: ExTy = forall .., C1 /\ .. /\ CN
-% (let for a definition), ExPf its proof
-pred scope i:list element, i:list (pair element (option string)),
-  i:list step, o:term, o:term, o:int, o:list report.
-scope [] [] Body Ty Pf N Rs :- open-level [] Body Ty Pf N Rs.
-scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :- rex.match ".*:=" S, !,
+% [node-proof N Ty Pf Concluded Rs]: in the current context, Pf : Ty, Ty
+% the node N seen from outside, ∀ V, H → C (its definitions u := e
+% replaced by their values); Concluded = ff for a node with no
+% conclusion (then C is True, the node is not used by the nodes after it,
+% and its subnodes are checked all the same)
+pred node-proof i:cnode, o:term, o:term, o:bool, o:list report.
+node-proof (cnode Id Es _ _ _ as N) Ty Pf Concluded Rs :-
+  node-binders Es Bs,
+  binders-proof Id Bs N Ty0 Pf Concluded Rs,
+  zeta-binders Ty0 Ty.
+
+% [zeta-binders T T1]: T with the definitions of its leading binders
+% replaced by their values
+pred zeta-binders i:term, o:term.
+zeta-binders (let _ _ B F) T :- !, zeta-binders (F B) T.
+zeta-binders (prod N A F) (prod N A G) :- !, pi x\ zeta-binders (F x) (G x).
+zeta-binders T T.
+
+% [binders-proof Id Bs N Ty Pf Concluded Rs]: Ty = ∀ Bs, C and Pf its
+% proof, the node N under its binders Bs; a binder that does not parse is
+% reported, and left out
+pred binders-proof i:string, i:list binder, i:cnode, o:term, o:term, o:bool, o:list report.
+binders-proof _ [] N C P Concluded Rs :- node-body N C P Concluded Rs.
+binders-proof Id [var-binder S | Bs] N Ty Pf Concluded Rs :- rex.match ".*:=" S, !,
   % a definition u := e (or u : T := e)
-  P is "Definition " ^ S,
-  std.assert-ok! (coq.parse.argument P ff {current-scope} (const-decl Id (some Bo) Ar))
-    {msg "definition-not-parsed" [S]},
-  coq.arity->term Ar T, coq.id->name Id Nm,
-  Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
-  under-def Nm T Bo (x\ scope Vs Hs Body (TyR x) (PfR x) N Rs).
-scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :-
-  std.assert-ok! (variables S C) {msg "variables-not-parsed" [S]},
-  under-context C Ty Pf (ty\ pf\ scope Vs Hs Body ty pf N Rs).
-scope [] [pr E Nm0 | Hs] Body (prod Nm A TyR) (fun Nm A PfR) N Rs :-
-  std.assert-ok! (parse E A) {msg "hypothesis-not-parsed" []},
-  hyp-name Nm0 Nm,
-  under-decl Nm A (h\ scope [] Hs Body (TyR h) (PfR h) N Rs).
+  coq.parse.argument {calc ("Definition " ^ S)} ff {current-scope} A D,
+  if (D = ok, A = const-decl Def (some Bo) Ar)
+     (coq.arity->term Ar T, coq.id->name Def Nm,
+      Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
+      under-def Nm T Bo (x\ binders-proof Id Bs N (TyR x) (PfR x) Concluded Rs))
+     (Rs = [rep Id (bad {msg "definition-not-parsed" [S]}) | Rs1],
+      binders-proof Id Bs N Ty Pf Concluded Rs1).
+binders-proof Id [var-binder S | Bs] N Ty Pf Concluded Rs :-
+  variables S C D,
+  if (D = ok)
+     (under-context C Ty Pf (ty\ pf\ binders-proof Id Bs N ty pf Concluded Rs))
+     (Rs = [rep Id (bad {msg "variables-not-parsed" [S, {diagnostic-text D}]}) | Rs1],
+      binders-proof Id Bs N Ty Pf Concluded Rs1).
+binders-proof Id [hyp-binder E Nm0 | Bs] N Ty Pf Concluded Rs :-
+  parse E A D,
+  if (D = ok)
+     (hyp-name Nm0 Nm, Ty = prod Nm A TyR, Pf = fun Nm A PfR,
+      under-decl Nm A (h\ binders-proof Id Bs N (TyR h) (PfR h) Concluded Rs))
+     (Rs = [rep Id (bad {msg "hypothesis-not-parsed" [{element-text E}, {diagnostic-text D}]}) | Rs1],
+      binders-proof Id Bs N Ty Pf Concluded Rs1).
 
 % [hyp-name Given Name]: the name of a hypothesis: the one the text gives
-% it, else the first of H1, H2, ... that no variable, hypothesis or claim
-% in scope has, so that every name in scope names one hypothesis (Rocq
-% would rename a second H behind the text's back)
+% it, else the first of H1, H2, ... that no variable, hypothesis or
+% conclusion in scope has, so that every name in scope names one
+% hypothesis (Rocq would rename a second H behind the text's back)
 pred hyp-name i:option string, o:name.
 hyp-name (some S) N :- !, coq.id->name S N.
 hyp-name none N :- names-in-scope Used, prooftext.numbered-name Used "H" 1 S, coq.id->name S N.
 
-% [names-in-scope Used]: the names of the variables, hypotheses, claims and
-% definitions declared so far
+% [names-in-scope Used]: the names of the variables, hypotheses,
+% conclusions and definitions declared so far
 pred names-in-scope o:list string.
 names-in-scope Used :- std.findall (name-in-scope _) L, std.map L (c\ s\ c = name-in-scope s) Used.
 
-% [open-level Acc Steps Ty Pf N Rs]: the claims of the steps, with no goal;
-% Acc the claims so far (their types and the variables naming them)
-pred open-level i:list (pair term term), i:list step, o:term, o:term,
-  o:int, o:list report.
-open-level Acc [] Ty Pf N [] :-
-  std.rev Acc Acc1, std.length Acc1 N,
-  std.map Acc1 fst Ts, std.map Acc1 snd Ps,
-  (N = 0, Ty = {{ True }}, Pf = {{ I }} ; conj Ts Ty, conj-proof Ts Ps Pf), !.
-open-level Acc [step I Es Tac Ch | Rest] Ty Pf N Rs :-
-  step-kind Es K, open-level-step K I Tac Ch Rest Acc Ty Pf N Rs.
+% [node-body N C P Concluded Rs]: under the binders of the node N, its
+% conclusion C proved by P from its subnodes
+pred node-body i:cnode, o:term, o:term, o:bool, o:list report.
+node-body (cnode Id Es _ Flawed Subs) C P Concluded Rs :-
+  conclusion Es Found,
+  if (Found = found C0)
+     (C = C0, Concluded = tt, Goal = some C0, Rs0 = [])
+     (C = {{ True }}, Concluded = ff, Goal = none, missing-report Id Found Rs0),
+  children-chain Id Es Flawed Subs Goal P Rs1,
+  std.append Rs0 Rs1 Rs.
 
-% [open-level-step K I Tac Ch Rest Acc Ty Pf N Rs]: as open-level, for the
-% step I of kind K, with its justification Tac and its sub-steps Ch,
-% followed by the steps Rest
-pred open-level-step i:step-kind, i:string, i:option string, i:list step,
-  i:list step, i:list (pair term term), o:term, o:term, o:int, o:list report.
-% a formula does not parse: the step is reported, and skipped
-open-level-step (unparsed M) I _ Ch Rest Acc Ty Pf N [rep I (bad M) | Rs] :-
-  open-level Acc {std.append Ch Rest} Ty Pf N Rs.
-% a scope: its body, then the steps after it
-open-level-step (opens-scope Vs Hs) I _ Ch Rest Acc Ty Pf N Rs :-
-  scope-parts Ch Rest Body After,
-  scope Vs Hs Body ExTy ExPf N0 Rs1,
-  shared I ExTy Ty ExPf N0 (e\ p\ exports I ExTy e 1 N0 Acc (collect-claims After Ty N) p Rs2) Pf,
-  std.append Rs1 Rs2 Rs.
-open-level-step comment _ _ Ch Rest Acc Ty Pf N Rs :-
-  open-level Acc {std.append Ch Rest} Ty Pf N Rs.
-% a backward step needs a goal: it is reported, and skipped with its
-% sub-steps
-open-level-step (backward-claim _) I _ _ Rest Acc Ty Pf N [rep I (bad M) | Rs] :-
-  msg "backward-no-goal" [] M,
-  open-level Acc Rest Ty Pf N Rs.
-% the claims one after the other, each knowing those before it
-open-level-step (forward-claims Cs) I Tac [] Rest Acc Ty Pf N Rs :- !,
-  std.length Cs NC, claims-then I 1 NC Tac Cs Acc (collect-claims Rest Ty N) Pf Rs.
-% with sub-steps: the conjunction of the claims proved by them, and then
-% each claim on its own
-open-level-step (forward-claims Cs) I Tac Ch Rest Acc Ty Pf N Rs :-
-  std.length Cs NC, conj Cs C,
-  level I Tac Ch C P1 Rs1,
-  shared I C Ty P1 NC (e\ p\ exports I C e 1 NC Acc (collect-claims Rest Ty N) p Rs2) Pf,
-  std.append Rs1 Rs2 Rs.
+% the conclusion of a node
+kind conclusion-found type.
+type found term -> conclusion-found.         % the conclusion
+type none-written conclusion-found.          % none, or several: an error
+                                             % of the tree (nodes.elpi)
+type unparsed string -> conclusion-found.    % it does not parse, or is no
+                                             % proposition: the message
 
-% [conj-proof Ts Ps P]: the proof P of the conjunction of Ts (conj) from the
-% proofs Ps of its members
-pred conj-proof i:list term, i:list term, o:term.
-conj-proof [_] [P] P :- !.
-conj-proof [A | Ts] [P | Ps] {{ @conj lp:A lp:B lp:P lp:Q }} :-
-  conj Ts B, conj-proof Ts Ps Q.
+% [conclusion Es F]: the conclusion of a node of elements Es
+pred conclusion i:list element, o:conclusion-found.
+conclusion Es F :- claims Es [E], !,
+  parse E T D,
+  if (D = ok)
+     (if (is-prop T) (F = found T) (F = unparsed {msg "conclusion-not-prop" [{element-text E}]}))
+     (F = unparsed {msg "md-not-parsed" [{diagnostic-text D}]}).
+conclusion _ none-written.
 
-% ------------------------------------------------------------------ %
-% The claims of a scope, known after it
+% [missing-report Id F Rs]: the report of a conclusion that does not parse
+% (an error of the tree has its own report)
+pred missing-report i:string, i:conclusion-found, o:list report.
+missing-report Id (unparsed M) [rep Id (bad M)] :- !.
+missing-report _ _ [].
 
-% [proj-type ExTy I N T]: forall .., Ci from forall .., C1 /\ .. /\ CN
-pred proj-type i:term, i:int, i:int, o:term.
-proj-type (prod Nm A B) I N (prod Nm A B1) :- !, pi x\ proj-type (B x) I N (B1 x).
-proj-type (let Nm A V B) I N (let Nm A V B1) :- !, pi x\ proj-type (B x) I N (B1 x).
-proj-type B I N T :- component B I N T.
+% [children-chain Id Es Flawed Subs Goal P Rs]: P proves the goal of node
+% Id (some C; none for a node with no conclusion) from its subnodes Subs,
+% each known to the subnodes after it and to the condition; the
+% condition last, unless the node has an error (Flawed = tt: its report
+% is the error's, the condition is not tried)
+pred children-chain i:string, i:list element, i:bool, i:list cnode, i:option term,
+  o:term, o:list report.
+children-chain Id Es ff [] (some C) P [R] :- !, condition Id Es C P R.
+children-chain _ _ tt [] (some _) _ [] :- !.
+children-chain _ _ _ [] none {{ I }} [] :- !.
+children-chain Id Es Flawed [S | Ss] Goal P Rs :-
+  node-proof S T PS Concluded RsS,
+  goal-term Goal G,
+  if (Concluded = tt)
+     (S = cnode _ _ Name _ _, coq.id->name Name Nm,
+      P = {{ cyp_have lp:T lp:G lp:PS lp:K }}, K = fun Nm T Q,
+      under-decl Nm T (x\ children-chain Id Es Flawed Ss Goal (Q x) Rs1))
+     (children-chain Id Es Flawed Ss Goal P Rs1),
+  std.append RsS Rs1 Rs.
 
-% [component B I N T]: the I-th of the N members T of the conjunction B
-pred component i:term, i:int, i:int, o:term.
-component B _ 1 B :- !.
-component {{ lp:A /\ _ }} 1 _ A :- !.
-component {{ _ /\ lp:R }} I N T :- I1 is I - 1, N1 is N - 1, component R I1 N1 T.
-
-% [proj-proof ExTy E I N P]: P proves proj-type ExTy I N from E : ExTy
-pred proj-proof i:term, i:term, i:int, i:int, o:term.
-proj-proof (prod Nm A B) E I N (fun Nm A P) :- !,
-  pi x\ proj-proof (B x) {coq.mk-app E [x]} I N (P x).
-proj-proof (let Nm A V B) E I N (let Nm A V P) :- !,
-  under-def Nm A V (x\ proj-proof (B x) E I N (P x)).
-proj-proof B E I N P :- component-proof B E I N P.
-
-% [component-proof B E I N P]: the proof P of the I-th of the N members of
-% the conjunction B, from a proof E of B (proj1, proj2)
-pred component-proof i:term, i:term, i:int, i:int, o:term.
-component-proof _ E _ 1 E :- !.
-component-proof {{ lp:A /\ lp:R }} E 1 _ {{ @proj1 lp:A lp:R lp:E }} :- !.
-component-proof {{ lp:A /\ lp:R }} E I N P :-
-  I1 is I - 1, N1 is N - 1,
-  component-proof R {{ @proj2 lp:A lp:R lp:E }} I1 N1 P.
-
-% [shared S ExTy G ExPf N Use P]: P proves G by [Use E P'] with E a proof
-% of ExTy, the N claims of a scope or of the step S with sub-steps.  With
-% several claims, ExPf is given once to cyp_have and E is the variable that
-% names it: each claim is then a projection of that variable, instead of a
-% projection of its own copy of ExPf (copies that double the proof term at
-% each nested level, and so its type-check and definition).  The variable
-% is not declared in the context of the conditions: it is not one of the
-% claims, and no condition refers to it.
-pred shared i:string, i:term, i:term, i:term, i:int, i:(term -> term -> prop), o:term.
-shared _ _ _ ExPf N Use P :- N < 2, !, Use ExPf P.
-shared S ExTy G ExPf _ Use {{ cyp_have lp:ExTy lp:G lp:ExPf lp:K }} :-
-  claim-name S Nm, K = fun Nm ExTy P,
-  pi e\ Use e (P e).
-
-% [exports S ExTy ExPf I N Known A P Rs]: the claims I..N of a scope or of
-% a step S with sub-steps, as hypotheses named after S (added to Known),
-% then what comes after them, A (claims-then)
-pred exports i:string, i:term, i:term, i:int, i:int,
-  i:list (pair term term), i:after-claims, o:term, o:list report.
-exports _ _ _ I N Known A P Rs :- I > N, !, prove-after-claims A Known P Rs.
-exports S ExTy ExPf I N Known A {{ cyp_have lp:T lp:G lp:Pi lp:K }} Rs :-
-  after-claims-goal A G,
-  proj-type ExTy I N T, proj-proof ExTy ExPf I N Pi,
-  condition-id S I N Id, claim-name Id Nm, I1 is I + 1,
-  K = fun Nm T P,
-  under-decl Nm T (x\ exports S ExTy ExPf I1 N [pr T x | Known] A (P x) Rs).
-
-% ------------------------------------------------------------------ %
-% The statement
-
-% [statement Vs Hs Gs Steps Ty Pf Rs]: the lemma's type and its proof; the
-% hypotheses of the statement are named after the name written after them,
-% or H1, H2, ...
-pred statement i:list element, i:list (pair element (option string)),
-  i:list element, i:list step, o:term, o:term, o:list report.
-statement [elt rvar S | Vs] Hs Gs Steps Ty Pf Rs :-
-  std.assert-ok! (variables S C) {msg "statement-variables-not-parsed" [S]},
-  under-context C Ty Pf (ty\ pf\ statement Vs Hs Gs Steps ty pf Rs).
-statement [] Hs Gs Steps Ty Pf Rs :- statement-hyps Hs Gs Steps Ty Pf Rs.
-
-% [statement-hyps Hs Gs Steps Ty Pf Rs]: the hypotheses Hs of the statement,
-% then its conclusion Gs proved by the steps
-pred statement-hyps i:list (pair element (option string)), i:list element,
-  i:list step, o:term, o:term, o:list report.
-statement-hyps [] Gs Steps G Pf Rs :-
-  claim-terms Gs Cs Bad,
-  std.assert! (Bad = [], Cs = [_ | _]) {msg "conclusion-not-parsed" []},
-  conj Cs G, level "0" none Steps G Pf Rs.
-statement-hyps [pr E Nm0 | Hs] Gs Steps (prod Nm A TyR) (fun Nm A PfR) Rs :-
-  std.assert-ok! (parse E A) {msg "statement-hypothesis-not-parsed" []},
-  hyp-name Nm0 Nm,
-  under-decl Nm A (h\ statement-hyps Hs Gs Steps (TyR h) (PfR h) Rs).
+% [goal-term Goal G]: the goal of a node: its conclusion, or True
+pred goal-term i:option term, o:term.
+goal-term (some C) C.
+goal-term none {{ True }}.

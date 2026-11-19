@@ -11,7 +11,7 @@ export CYP_LIB="$here/vernac" CYP_TIME=1
 exe=${CYP_EXE:-$here/_build/default/bin/cyp.exe}
 ulimit -v 8000000
 for md in "$here"/examples/*.md "$here"/vernac/*.md; do
-  case $md in *.checked.md) continue ;; esac
+  case $md in *.checked.md|*/README.md) continue ;; esac
   n=$(basename "$md" .md)
   s=$(date +%s%N)
   nice -n 19 timeout 300 "$exe" "$md" > "$out/$n.out" 2>&1
