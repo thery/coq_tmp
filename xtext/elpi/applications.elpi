@@ -22,11 +22,17 @@ tr-app H Args Path P :-
   (if (Kind = 1)
       (imp-args Ks Cons Imps, std.last Imps Maj, std.drop-last 1 Imps Ns,
        std.drop-last 1 Cis0 Cis,
-       tr-elim1 C EN Tau Maj Ns Cis Path P0)
+       tr-elim1 C EN Tau Maj Ns Cis Path P0, T1 = T0, Rest1 = Rest)
       (imp-args Ks Cons Ns, Cis = Cis0,
-       (if (Rest = [_|_]) (typ (app [H|Args]) TF, Fin = some TF) (Fin = none)),
-       tr-elim2 C EN Tau Fin none Ns Cis Path P0))),
-  apply-rest T0 P0 Rest Path P.
+       (if (instance-without-motive H I Cons Rest Spec Rest1)
+           % thesis 6.4.1: the instance is proved by cases on the object,
+           % the generalised statement (the motive) left out
+           (coq.mk-app T0 Spec T1, typ T1 Tau1, std.last Spec Obj,
+            tr-elim2 C EN Tau1 none (some Obj) Ns Cis Path P0)
+           (T1 = T0, Rest1 = Rest,
+            (if (Rest = [_|_]) (typ (app [H|Args]) TF, Fin = some TF) (Fin = none)),
+            tr-elim2 C EN Tau Fin none Ns Cis Path P0))))),
+  apply-rest T1 P0 Rest1 Path P.
 % introduction theorems
 tr-app H Args Path P :-
   intro-info H I NC, std.length Args L, L >= NC, !,
@@ -104,6 +110,35 @@ inferable T0 Run Run2 T2 :-
   std.map Run (_\ h\ true) Hs, coq.mk-app T0 Hs T0h, coq.mk-app T0h Run2 Sk,
   typ T2 Ty, coq.elaborate-skeleton Sk Ty T3 ok, ground_term T3,
   coq.unify-eq T3 T2 ok.
+
+% Implicit arguments in eliminations (thesis 6.4.1): a dependent
+% elimination H Cons applied to Spec, the indices and the object x0,
+% proves the instance (P x0) of the generalised statement P, its motive.
+% The motive is left out when it can be found again from the instance and
+% Spec alone (ElimOpen without the generalised predicate): the predicate
+% found by abstracting Spec in the instance, as Rocq's elim and pattern
+% do, must be the motive of the proof.
+% [instance-without-motive H I Cons Args Spec Rest]: Args is Spec, the
+% indices and the object of the elimination H Cons on I, then Rest, and
+% the motive of H Cons can be left out
+pred instance-without-motive i:term, i:inductive, i:list term, i:list term, o:list term, o:list term.
+instance-without-motive H I Cons Args Spec Rest :-
+  not (off "motive"),
+  instance-arity I NS, std.length Args NA, NA >= NS,
+  std.split-at NS Args Spec Rest,
+  typ {coq.mk-app H {std.append Cons Spec}} Instance,
+  std.map Spec typ Tys, abstract-terms Spec Tys Instance Found,
+  motive-position H M, std.nth M Cons Motive,
+  coq.unify-eq Found Motive ok.
+
+% [abstract-terms Ts Tys B F]: F = fun y1 : Ty1 .. yn : Tyn => B, where
+% each term Ti of Ts (of type Tyi) is replaced by yi, in B and in the
+% types after it
+pred abstract-terms i:list term, i:list term, i:term, o:term.
+abstract-terms [] [] B B.
+abstract-terms [T|Ts] [Ty|Tys] B (fun `y` Ty F) :-
+  pi y\ sigma Tys1 B1\ ((copy T y :- !) => (std.map Tys copy Tys1, copy B B1)),
+    abstract-terms Ts Tys1 B1 (F y).
 
 pred apply-run i:ak, i:list term, i:list term, i:term, i:pf, i:term, i:list int, o:pf.
 apply-run ak-all _ _ T0 P0 Tau _ (prfp (prf L (some (it S []))) [Ty0]) :-

@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sia `m : nat`{.var}. Dimostriamo `m + 0 = m`{.claim}.
 
-- Per dimostrare `m + 0 = m`{.fact} per induzione (nat, nat_ind), lo generalizziamo in `forall n : nat, n + 0 = n`{.fact}:
+- Dimostriamo `m + 0 = m`{.fact} per induzione su `m`{.fact} (nat, nat_ind):
 - Caso 1 (base): dimostriamo `0 + 0 = 0 + 0`{.claim}.
   - Per definizione di eq (eq_refl), abbiamo `0 + 0 = 0 + 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Caso 2 (induttivo): dimostriamo `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.
@@ -20,5 +20,4 @@ Sia `m : nat`{.var}. Dimostriamo `m + 0 = m`{.claim}.
     - L'elemento `m0`{.fact} appartiene a `nat`{.fact}.
     - Per IH abbiamo `m0 + 0 = m0`{.claim}.
     - Applicando f_equal, abbiamo `S (m0 + 0) = S m0`{.claim}.
-- Essendo questi casi esaustivi, ne deduciamo `forall n : nat, n + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-- In particolare `m + 0 = m`{.claim}.
+- Essendo questi casi esaustivi, ne deduciamo `m + 0 = m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.

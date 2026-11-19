@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `n m : nat`{.var}. We prove `n <= n + m`{.claim}.
 
-- ▫️ To prove `n <= n + m`{.fact} by induction (nat, nat_ind), we generalise it to `forall n0 : nat, n <= n + n0`{.fact}:
+- ▫️ We prove `n <= n + m`{.fact} by induction on `m`{.fact} (nat, nat_ind):
 - ✅ Case 1 (base): we prove `n <= n + 0`{.claim}.
   - ✅ By definition of le (le_n), we have `n <= n`{.claim} *by Corelib.Init.Peano.le_n*.
   - ✅ Applying add_0_r to n, we have `n + 0 = n`{.claim}.
@@ -18,5 +18,7 @@ by: tauto | congruence | lia | firstorder | auto
     - ✅ By definition of le (le_S) with witness `n + m0`{.fact}, from `n <= n + m0`{.fact} (IH) we deduce `n <= S (n + m0)`{.claim} *by Corelib.Init.Peano.le_S*.
     - ✅ Applying add_succ_r to n and m0, we have `n + S m0 = S (n + m0)`{.claim}.
     - ✅ Rewriting with `n + S m0 = S (n + m0)`{.fact} from right to left (eq_ind_r), we get `n <= n + S m0`{.claim}.
-- ✅ These cases being exhaustive, we deduce `forall n0 : nat, n <= n + n0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-- ✅ In particular `n <= n + m`{.claim}.
+- ❌ These cases being exhaustive, we deduce `n <= n + m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
+
+  <details><summary>not proved: n <= n + m</summary></details>
+

@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
 
-- By definition of nat (strong_induction), we prove `forall n0 : nat, n0 / 2 <= n0`{.claim}:
+- By definition of nat (strong_induction) on `n`{.fact}, we prove `n / 2 <= n`{.claim}:
   - Let us consider an arbitrary `n0 : nat`{.var}.
     - Assume by induction hypothesis `forall m : nat, m < n0 -> m / 2 <= m`{.hyp} (IH).
       - We deduce `n0 <= 2 * n0`{.claim} *by lia*.
@@ -36,4 +36,3 @@ Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
         - Using rew_iff_rev we get `forall P Q : Prop, P <-> Q -> Q -> P`{.claim} *by Stdlib.micromega.ZifyClasses.rew_iff_rev*.
       - Using div_le_upper_bound we get `forall a b q : nat, a <= b * q -> a / b <= q`{.claim} *by Stdlib.Arith.PeanoNat.Nat.Div0.div_le_upper_bound*.
       - We deduce `n0 / 2 <= n0`{.claim}.
-- In particular `n / 2 <= n`{.claim}.

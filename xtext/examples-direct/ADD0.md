@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `m : nat`{.var}. We prove `m + 0 = m`{.claim}.
 
-- To prove `m + 0 = m`{.fact} by induction (nat, nat_ind), we generalise it to `forall n : nat, n + 0 = n`{.fact}:
+- We prove `m + 0 = m`{.fact} by induction on `m`{.fact} (nat, nat_ind):
 - Case 1 (base): we prove `0 + 0 = 0 + 0`{.claim}.
   - By definition of eq (eq_refl), we have `0 + 0 = 0 + 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Case 2 (inductive): we prove `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.
@@ -16,5 +16,4 @@ Let `m : nat`{.var}. We prove `m + 0 = m`{.claim}.
       - By IH we have `m0 + 0 = m0`{.claim}.
       - Using f_equal we get `forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y`{.claim} *by Corelib.Init.Logic.f_equal*.
       - We deduce `S (m0 + 0) = S m0`{.claim}.
-- These cases being exhaustive, we deduce `forall n : nat, n + 0 = n`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-- In particular `m + 0 = m`{.claim}.
+- These cases being exhaustive, we deduce `m + 0 = m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.

@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.claim}.
 
-- To prove `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.fact} by induction (nat, two_step), we generalise it to `forall n0 : nat, exists k : nat, n0 = 2 * k \/ n0 = 2 * k + 1`{.fact}:
+- We prove `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.fact} by induction on `n`{.fact} (nat, two_step):
 - Case 1 (base): we prove `exists k : nat, 0 = 2 * k \/ 0 = 2 * k + 1`{.claim}.
   - By definition of eq (eq_refl), we have `2 * 0 = 2 * 0`{.claim} *by Corelib.Init.Logic.eq_refl*, that is `0 = 2 * 0`{.fact}.
   - By definition of or (or_introl), we have `0 = 2 * 0 \/ 0 = 2 * 0 + 1`{.claim} *by Corelib.Init.Logic.or_introl*.
@@ -31,5 +31,4 @@ Let `n : nat`{.var}. We prove `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.clai
             - We have `S (S n0) = 2 * S k \/ S (S n0) = 2 * S k + 1`{.claim} *by lia*.
             - By definition of ex (ex_intro) with witness `S k`{.fact}, we have `exists k0 : nat, S (S n0) = 2 * k0 \/ S (S n0) = 2 * k0 + 1`{.claim} *by Corelib.Init.Logic.ex_intro*.
         - We have `exists k0 : nat, S (S n0) = 2 * k0 \/ S (S n0) = 2 * k0 + 1`{.claim} in all cases.
-- These cases being exhaustive, we deduce `forall n0 : nat, exists k : nat, n0 = 2 * k \/ n0 = 2 * k + 1`{.claim} *by XText.elim_type.two_step*.
-- In particular `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.claim}.
+- These cases being exhaustive, we deduce `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.claim} *by XText.elim_type.two_step*.

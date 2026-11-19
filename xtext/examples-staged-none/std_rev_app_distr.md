@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `x y : list A`{.var}. We prove `rev (x ++ y) = rev y ++ rev x`{.claim}.
 
-- To prove `rev (x ++ y) = rev y ++ rev x`{.fact} by induction (list, list_ind), we generalise it to `forall l : list A, rev (l ++ y) = rev y ++ rev l`{.fact}:
+- We prove `rev (x ++ y) = rev y ++ rev x`{.fact} by induction on `x`{.fact} (list, list_ind):
 - Case 1 (base): we prove `rev (nil ++ y) = rev y ++ rev nil`{.claim}.
   - By definition of eq (eq_refl), we have `rev y = rev y`{.claim} *by Corelib.Init.Logic.eq_refl*.
   - By application, we have `rev y ++ nil = rev y`{.claim}.
@@ -33,5 +33,4 @@ Let `A : Type`{.var}. Let `x y : list A`{.var}. We prove `rev (x ++ y) = rev y +
             - The element `a :: nil`{.fact} belongs to `list A`{.fact}.
         - By IHl we have `rev (l ++ y) = rev y ++ rev l`{.claim}.
         - Rewriting with `rev (l ++ y) = rev y ++ rev l`{.fact} from right to left (eq_ind_r), we get `rev (l ++ y) ++ a :: nil = rev y ++ rev l ++ a :: nil`{.claim}.
-- These cases being exhaustive, we deduce `forall l : list A, rev (l ++ y) = rev y ++ rev l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- In particular `rev (x ++ y) = rev y ++ rev x`{.claim}.
+- These cases being exhaustive, we deduce `rev (x ++ y) = rev y ++ rev x`{.claim} *by Corelib.Init.Datatypes.list_ind*.
