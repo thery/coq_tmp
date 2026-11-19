@@ -199,6 +199,8 @@ commit: identical, except where said.  elpi-tools: `dune build
 - cyp's `*by h*` with the name of a hypothesis is read as a tactic
   ("Ltac1 tactic h not found"), though cyp's README says a name is given
   "for *by h*".  Found while testing item 10; not a cleaning matter.
+  (Fixed since, 83a892d: a name of a hypothesis, a claim or a variable
+  is given to the method; the form is `*h*{.just}` now.)
 
 No file of the scope is over 1000 lines (the longest: staged.elpi 657,
 session.ml 559).  No Python found in the scope.

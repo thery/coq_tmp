@@ -1,7 +1,27 @@
 # One implementation of cyp: the design
 
-Step 2 of the cleaning session (see REVIEW.md).  A proposal: nothing is
-changed until it is agreed.
+Step 2 of the cleaning session (see REVIEW.md), 2026-11-17.  It was a
+proposal; it is kept as the record of the decisions taken then.  The one
+core in Elpi was built (in `cyp/vernac/elpi/`, not one file `cyp_core.elpi`),
+with `Cyp File`, `Cyp Lemma` and the thin OCaml driver.  What is different
+today:
+
+- the format of proof texts is the tree of the 2003 paper
+  ([proposal/PROPOSAL.md](proposal/PROPOSAL.md),
+  [prooftext/README.md](prooftext/README.md)): a list item (or a span
+  `[…]{.p}`) is a node with one conclusion; a formula has a role only by
+  its tag (no role phrases, no backward phrases), and a justification is
+  a tagged name, `*X*{.just}`, several per node (the old `*by X*` is read
+  as the name X);
+- the vocabulary is the lexicon ([lexicon/](lexicon/README.md), ten
+  languages), and the format is the library prooftext;
+- `Cyp Lemma` and `Cyp File` always succeed: a step that is not proved is
+  reported and left as a named goal ([cyp/vernac/README.md](cyp/vernac/README.md));
+- the driver is the OCaml program `cyp/bin/cyp.ml`, not the script
+  `cyprun.py` named below
+  (removed in 810526f).
+
+The rest of this file is as it was written.
 
 ## The idea
 

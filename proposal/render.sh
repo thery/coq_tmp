@@ -1,13 +1,23 @@
 #!/bin/sh
 # Renders the mock-ups of the proposal: PDFs and PNGs in render/.
 # Typst is a snap here: everything stays under the home directory.
+#
+# The mock-ups (mockup/lib.typ) are written over the template as it was
+# when the proposal was made (commit 352fc09); the template has changed
+# since (the tree, the role just), so they are compiled with that version,
+# taken from git into a temporary package directory.
 set -e
 cd "$(dirname "$0")"
-P=../prooftext/typst
-typst compile --package-path $P mockup/structured.typ render/structured.pdf
-typst compile --package-path $P --input brackets=on mockup/free.typ render/free-brackets.pdf
-typst compile --package-path $P --input brackets=off mockup/free.typ render/free-plain.pdf
-typst compile --package-path $P --input brackets=corners mockup/free.typ render/free-corners.pdf
+P=$(mktemp -d "$PWD/.template.XXXXXX")
+trap 'rm -rf "$P"' EXIT
+mkdir -p "$P/local/prooftext/0.1.0"
+for f in prooftext.typ typst.toml; do
+  git show "352fc09:prooftext/typst/local/prooftext/0.1.0/$f" > "$P/local/prooftext/0.1.0/$f"
+done
+typst compile --package-path "$P" mockup/structured.typ render/structured.pdf
+typst compile --package-path "$P" --input brackets=on mockup/free.typ render/free-brackets.pdf
+typst compile --package-path "$P" --input brackets=off mockup/free.typ render/free-plain.pdf
+typst compile --package-path "$P" --input brackets=corners mockup/free.typ render/free-corners.pdf
 for f in structured free-brackets free-plain free-corners; do
   rm -f render/$f-*.png
   pdftoppm -png -r 110 render/$f.pdf render/$f

@@ -1,8 +1,45 @@
 # A format for proof texts: the 2003 tree, two ways to write it
 
-Status: a proposal.  Nothing in cyp, xtext or prooftext has changed.
-The examples are hand-written, and so are the mock-ups (Typst and HTML).
-No reader produced them.
+Status: implemented, on main since 434c3f4 (November 2026).  This file
+is kept as the design record, as it was written before the work, with
+"today" meaning the state before it.  The examples are hand-written, and
+so are the mock-ups (Typst and HTML, `render.sh`): no reader produced
+them.  The texts of the tools in this format, and their PDFs and web
+pages, are in xtext/examples, cyp/examples and the gallery
+(`prooftext/gallery.sh`).
+
+**What was implemented, and where it differs from what follows.**  The
+user's choices were the recommended ones: 1 R1, 2 (a), 3 B the
+conclusion, 4 (a), 5 (a) remarks, 6 (a) with (c), 7 no structure in the
+PDF, 8 the hover, 9 the proposed rule.  The differences:
+
+- **Errors do not stop anything** (section 6 said "the reader stops").
+  The reader puts each error in the tree, at its node and line
+  (`tree-errors`, prooftext/nodes.elpi), and cyp reports it at that node
+  and goes on: a node with an error is not tried, its conclusion is
+  still used by the nodes after it, and in `Cyp File` / `Cyp Lemma` it is
+  left as a named goal of the Proof block.  The commands always succeed,
+  except when the statement itself cannot be read
+  ([cyp/vernac/README.md](../cyp/vernac/README.md)).  One more error was
+  added: a justification that is not a name (`*by lia*{.just}`).  Two
+  errors of the table, a name that names nothing known and a fact that
+  is no visible formula, are found by cyp, not by the reader: they need
+  the meaning of the names.
+- **`[*X*]{.just}` is not accepted** (choice 6 (b) was not taken); the
+  old `*by X*` is still read as the justification X (6 (c)).
+- **The hover** is a script of about 40 lines (not 30), on the nodes of
+  class `p` with their number (`data-id`); the address `#hover=1.2`
+  fixes it for a screenshot.  The mock-up's `#by=` address was not kept:
+  the hover of a node outlines the formulas its justifications, names
+  and facts point to.
+- **Not in the proposal, added:** on the web page, the legend's roles
+  are switches (check boxes, CSS only) that turn a role's colour on and
+  off, with a ↺ button that puts them back; `pdf.sh --roles claim,just`
+  colours only the roles listed; xtext's `ExtractText` prints plain text
+  by default (`#[tags]` for this format).
+- The role was renamed `just` in the template, the legend and the
+  writers (section 1), and the reader accepts the closing paragraph
+  (section 2).
 
 Decisions already taken by the user, which this proposal follows:
 
@@ -78,7 +115,7 @@ Applying *i*{.just} to *k*{.just} and *h*{.just}, we have `z`{.claim}.
 The role is named `just` everywhere: the class, the HTML class, the
 template's role.  The template on main (76b314b) has the colour under
 the name `by`.  It is to be renamed `just`; the mock-ups use `just` when
-the template has it, else `by`.
+the template has it, else `by`.  (Done: the template has the role `just`.)
 
 **A limit of `*X*{.just}`.**  Pandoc (3.6.4, checked) has no attributes
 on emphasis.  It reads `*i*{.just}` as emphasis followed by the text
@@ -118,8 +155,8 @@ How the reader builds the tree:
   as the item's text (here "Altogether …"), belongs to the item's node
   too.  This is plain Markdown (a list item may hold a paragraph after
   its sub-list; Pandoc reads it so).  It lets a node give its conclusion
-  after its subproofs, the forward style of the paper.  Today's reader
-  does not accept it;
+  after its subproofs, the forward style of the paper.  The reader before
+  the change did not accept it (it does now);
 - the parts (`{.claim}`, `{.hyp}`, `{.var}`, `{.fact}`, `*name*{.just}`,
   `(name)`) found in that text go to that node.
 
@@ -216,7 +253,9 @@ Dewey numbers (`2.1`); there is no more `2a`, `2b`.
 
 ## 6. Errors
 
-The reader stops on these, with the line and the node's number:
+The reader stops on these, with the line and the node's number (as
+implemented, nothing stops: each error is reported at its node and the
+check goes on; see the status at the top):
 
 | error | example |
 |---|---|
@@ -248,7 +287,8 @@ What the mock-ups show plainly:
   (praeclarum, exp_pos), the reader cannot tell where each starts;
 - corners are exact, but they pile up at the end of nested nodes
   (`⌟⌟⌟`);
-- the hover needs a little JavaScript (about 30 lines).  Today's page
+- the hover needs a little JavaScript (about 30 lines; 40 as
+  implemented).  Today's page
   needs none.
 
 ## 8. What changes for xtext's texts
@@ -270,7 +310,7 @@ cyp's examples: 8 of the 10 in `cyp/examples/` have no `{.claim}` (they
 rely on keywords), and 2 use backward keywords.  All 10 must be tagged,
 and the backward ones nested.
 
-## 9. Open choices
+## 9. Open choices (answered: see the status at the top)
 
 Each choice has a recommendation and a list of what it changes.
 
@@ -323,7 +363,7 @@ Each choice has a recommendation and a list of what it changes.
    single `*by X*`.  Cost: cyp's dispatch on a justification takes a
    list (today one name).
 
-What changes in each part, whatever the choices:
+What changes in each part, whatever the choices (all done since):
 
 - **prooftext**: the tree (`document.elpi`: a node has a text, subnodes
   and a closing text; one conclusion); the reader (closing paragraph,
@@ -356,4 +396,6 @@ What changes in each part, whatever the choices:
   `free-html.png`; the hover, fixed by the address (headless Chrome
   cannot hover): `free-html-hover.png` (`free.html#hover=x1.1.1`),
   `free-html-by.png` (`#by=x1.1.1.1/i`), `structured-html-hover.png`.
-- `render.sh`: makes all of `render/` (Typst 0.15, pdftoppm, Chrome).
+- `render.sh`: makes all of `render/` (Typst 0.15, pdftoppm, Chrome), with
+  the template as it was when the mock-ups were written (352fc09, taken
+  from git): they do not compile with today's.

@@ -1,6 +1,10 @@
 # Review of cyp and xtext: what is ad hoc, duplicated or fragile
 
-Step 1 of the cleaning session: findings only, nothing changed.  Reviewed:
+Step 1 of the cleaning session (2026-11-17): findings only, nothing
+changed; kept as the record of that review.  What it found was planned
+for as [DESIGN.md](DESIGN.md) says; the format of proof texts has changed
+since (the tree of the 2003 paper, justifications `*X*{.just}`: see
+[prooftext/README.md](prooftext/README.md)).  Reviewed:
 cyp at main (bin/cyp.ml, rules/cyp_rules.v, vernac/Cyp.v, vernac/CypFile.v,
 the rules of the private case study, vscode/), xtext at 40d1b6d
 (xtext.elpi, ExtractText.v).  The rounds the agents were doing then are not
