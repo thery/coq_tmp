@@ -349,7 +349,7 @@ let interpreted_units ~elpi ~flags file =
     with Elpi_reflect.Reflect.Error msg -> fail "%s" msg
   in
   let first =
-    [ parse_text "reflect.elpi" Embedded.reflect_elpi; parse_text "debug.elpi" Embedded.debug_elpi;
+    [ parse_text "reflect.elpi" (Embedded.file "reflect.elpi"); parse_text "debug.elpi" (Embedded.file "debug.elpi");
       without_rules (parse_file file); parse_text "(facts)" facts ]
   in
   let bridges_file = Filename.temp_file "elpi-debug-bridges" ".elpi" in
