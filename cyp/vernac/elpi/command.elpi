@@ -35,7 +35,7 @@ check-file F Lang Name Ty Proof Rs :-
   by-clauses By Cl0, gaps-clauses Gaps Off, std.append Off Cl0 Cl,
   coq.say "cyp:" Name,
   (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
-    justification Stmt _ Stmt1, pieces Stmt1 P, elements P rclaim SEs,
+    text-elements Stmt _ SEs,
     binders SEs Vs, hyps SEs Hs, claims SEs Gs,
     steps-of "" 1 Ns Steps,
     timed "conditions" (statement Vs Hs Gs Steps Ty Proof Rs),

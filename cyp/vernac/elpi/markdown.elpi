@@ -35,7 +35,7 @@ dewey P K Id :- Id is P ^ "." ^ {std.any->string K}.
 pred steps-of i:string, i:int, i:list prooftext.step, o:list step.
 steps-of _ _ [] [].
 steps-of P K [prooftext.step _ T Ch | Ns] [step Id Es Tac Sub | Ss] :-
-  justification T Tac T1, pieces T1 Pc, elements Pc rclaim Es,
+  text-elements T Tac Es,
   dewey P K Id, steps-of Id 1 Ch Sub, K1 is K + 1, steps-of P K1 Ns Ss.
 
 % ------------------------------------------------------------------ %
@@ -122,6 +122,6 @@ json-formula (elt R X) J :-
 pred json-nodes i:out_stream, i:string, i:int, i:list prooftext.step, i:list report.
 json-nodes _ _ _ [] _.
 json-nodes O P K [prooftext.step (prooftext.lines F La) T Ch | Ns] Rs :-
-  justification T _ T1, pieces T1 Pc, elements Pc rclaim Es,
+  text-elements T _ Es,
   dewey P K Id, json-step O Id F La Es Rs,
   json-nodes O Id 1 Ch Rs, K1 is K + 1, json-nodes O P K1 Ns Rs.

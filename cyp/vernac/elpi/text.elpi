@@ -182,6 +182,12 @@ last-piece A tt [pform A].
 pred justification i:string, o:option string, o:string.
 justification S J Rest :- prooftext.split-justification S J Rest.
 
+% [text-elements S J Es]: the text S of a statement or a step read: its
+% justification J (none if it has none) and the elements Es of the rest,
+% a formula before any phrase being a claim
+pred text-elements i:string, o:option string, o:list element.
+text-elements S J Es :- justification S J Rest, pieces Rest P, elements P rclaim Es.
+
 % [elements Pieces Role Elements]: Role is the role before the first
 % formula (claim in a step, the conclusion in a statement).  A formula
 % takes the role of the phrases before it, or, when no phrase stands
