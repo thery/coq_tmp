@@ -5,6 +5,8 @@
    the selection (Fig. 4.24).  Each test fails if a printed term is not
    the expected one. *)
 From XText Require Import Explain thesis.
+From XText Extra Dependency "test-helpers.elpi" as test_helpers.
+Elpi Accumulate Explain File test_helpers.
 
 (* [check-selection Name Annotated Selected] (for this file only) *)
 Elpi Accumulate Explain lp:{{
@@ -20,11 +22,6 @@ Elpi Accumulate Explain lp:{{
     annotate Bo Ty T,
     contract "none" T T0, aterm-string T0 A,
     select T T1, aterm-string T1 S.
-
-  pred expect i:string, i:string, i:string, i:string.
-  expect What Name S S :- !, coq.say Name What ":" S.
-  expect What Name Expected S :-
-    coq.error Name What "is" S "and not" Expected.
 }}.
 
 
