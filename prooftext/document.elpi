@@ -21,9 +21,8 @@
 %
 % The writer (xtext) builds a [document] and writes it with
 % [write-document].  The reader (tree.elpi) reads a file into the tree of
-% its nodes, the paper's tree (README.md, "The format"); [read-document]
-% (tree.elpi) gives the same [document] from that tree, for the Typst
-% writer (typst.elpi).  The formulas and justifications inside the texts
+% its nodes, the paper's tree (README.md, "The format"), which the Typst
+% writer (typst.elpi) reads.  The formulas and justifications inside the texts
 % are in formulas.elpi.
 
 namespace prooftext {

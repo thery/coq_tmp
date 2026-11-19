@@ -204,9 +204,7 @@ that names no formula in scope).
   K Number` (Dewey notation, `2.1` the first sub-step of step 2: cyp
   numbers its nodes with it, the Typst writer its steps);
 - `tree.elpi`: the reader, `read-tree File T` and `lines-tree Lines T`,
-  into the tree of nodes (below, the reader's contract), and
-  `read-document File D`, a flattened document of a writer from the tree
-  (the Typst back end no longer uses it: it writes from the tree);
+  into the tree of nodes (below, the reader's contract);
 - `nodes.elpi`: what the nodes of a tree say, their numbers, and the
   errors of a tree, `tree-errors` (below, the reader's contract);
 - `checked.elpi`: what a checker adds to the text of a step (cyp's
@@ -338,15 +336,9 @@ subnodes `1`, `2`, ..., the subnodes of `2` are `2.1`, ...), and the
 errors, `tree-errors Top Errors`, each `node-error Number Line Error`
 (`error-message E S`, its English message).
 
-**For a writer**, `read-document File D` gives a flattened `document` of
-the tree: the statement is the text of the top node (its first lines are
-its place), the steps are its list items, and the text of a step is its
-own text with that of its spans and divs, their marks left out, its
-paragraphs joined.  A text written by `write-document` gives back the
-same document, with places.  The Typst back end does not use it: it
-writes from the tree itself (`write-typst-tree`, below), so that a
-closing paragraph comes after its sub-items and a free text keeps its
-paragraphs.
+**For a writer**, the Typst back end writes from the tree itself
+(`write-typst-tree`, below), so that a closing paragraph comes after its
+sub-items and a free text keeps its paragraphs.
 
 ## The PDF of a proof text (Typst)
 

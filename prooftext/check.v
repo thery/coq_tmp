@@ -21,9 +21,8 @@ Elpi Accumulate lp:{{
   main [] :-
     prooftext.formula rhyp "A /\\ B" F, expect "formula" F "`A /\\ B`{.hyp}",
     prooftext.role-tag R "claim", !, expect "tag claim" {std.any->string R} "rclaim",
-    prooftext.justification "lia" J, expect "justification" J "*by lia*",
     prooftext.justification-name "Nat.add_comm" JN, expect "justification name" JN "*Nat.add_comm*{.just}",
-    (prooftext.is-justification J, ! ; coq.error "is-justification" J),
+    (prooftext.is-justification "*by lia*", ! ; coq.error "is-justification" "*by lia*"),
     prooftext.step-number "" 2 SN1, expect "step number 2" SN1 "2",
     prooftext.step-number "2.1" 3 SN2, expect "step number 2.1.3" SN2 "2.1.3",
     prooftext.field-value [prooftext.field "scope" "Z"] "scope" FV1, expect "field scope" FV1 "Z",
@@ -95,25 +94,6 @@ Elpi Accumulate lp:{{
   expect-term What Got Wanted :- if (Got = Wanted) (coq.say What ": ok")
     (coq.error What "gives" {std.any->string Got} "expected" {std.any->string Wanted}).
   main [] :-
-    Text = {std.string.concat "\n" [
-      "---", "require: From Stdlib Require Import Lia.", "lang: fr", "---", "",
-      "# and_swap", "",
-      "Let `A B : Prop`{.var}.", "We prove `A /\\ B -> B /\\ A`{.claim}.", "",
-      "- Assume `A /\\ B`{.hyp} (h).",
-      "  - We have `B /\\ A`{.claim}", "    *by tauto*.",
-      "- We have proved `A /\\ B -> B /\\ A`{.claim}.", ""]},
-    rex.split "\n" Text Lines,
-    prooftext.lines-tree Lines T0, prooftext.tree-document T0 D,
-    D = prooftext.document _ _ SP _ [prooftext.step P1 _ [prooftext.step P2 _ []], _],
-    expect-term "places" [SP, P1, P2] [prooftext.lines 7 8, prooftext.lines 10 10, prooftext.lines 11 12],
-    prooftext.write-document D Back,
-    expect "read, written back" Back {std.string.concat "\n" [
-      "---", "require: From Stdlib Require Import Lia.", "lang: fr", "---", "",
-      "# and_swap", "",
-      "Let `A B : Prop`{.var}. We prove `A /\\ B -> B /\\ A`{.claim}.", "",
-      "- Assume `A /\\ B`{.hyp} (h).",
-      "  - We have `B /\\ A`{.claim} *by tauto*.",
-      "- We have proved `A /\\ B -> B /\\ A`{.claim}.", ""]},
     prooftext.split-checked "🔶 **[2.1]** We have `C`{.claim}. <details><summary>not proved: C</summary></details>" C1 R1,
     expect-term "checked" C1 (prooftext.checked "todo" (some "2.1") (some "not proved: C")),
     expect "checked text" R1 "We have `C`{.claim}.",

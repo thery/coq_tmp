@@ -35,12 +35,6 @@ formula Role F S :- role-tag Role Tag, !, S is "`" ^ F ^ "`{." ^ Tag ^ "}".
 pred untagged-formula i:string, o:string.
 untagged-formula F S :- S is "`" ^ F ^ "`".
 
-% [justification J S]: the justification J in the form of the texts
-% written before the tree, *by J* (still read; no writer uses it now,
-% xtext writes *J*{.just}, justification-name)
-pred justification i:string, o:string.
-justification J S :- S is "*by " ^ J ^ "*".
-
 % [justification-name J S]: the justification J, *J*{.just}
 pred justification-name i:string, o:string.
 justification-name J S :- justification-class C, S is "*" ^ J ^ "*{." ^ C ^ "}".

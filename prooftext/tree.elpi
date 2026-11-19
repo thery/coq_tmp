@@ -392,41 +392,4 @@ offset-spot Segs O (spot L C) :-
   std.filter Segs (s\ sigma Off N K\ s = segment Off N K, Off =< O) Before,
   std.last Before (segment Off L K), C is K + O - Off.
 
-% ------------------------------------------------------------------
-% The document of a writer, from the tree
-
-% [read-document File D]: the proof text in File as the document of a
-% writer (document.elpi), for the Typst writer: the statement is the text
-% of the top node, the steps its list items; the text of a step is its
-% own text with that of its spans and divs, their marks [ ]{.p} left out,
-% and its paragraphs joined (decision 7 of the proposal: the PDF of a free
-% text shows no structure)
-pred read-document i:string, o:prooftext.document.
-read-document File D :- read-tree File T, tree-document T D.
-
-% [tree-document T D]: the document of the tree T
-pred tree-document i:proof-text, o:prooftext.document.
-tree-document (proof-text Fields Name (node _ _ (spot L1 _) (spot L2 _) Cs))
-    (prooftext.document Fields Name (prooftext.lines L1 L2) Statement Steps) :-
-  written-text Cs Statement Steps.
-
-% [written-text Cs Text Steps]: the text of the contents Cs and the steps
-% of their list items
-pred written-text i:list content, o:string, o:list prooftext.step.
-written-text Cs Text Steps :-
-  written-pieces Cs Texts Steps, std.string.concat "" Texts Text0, prooftext.trim Text0 Text.
-
-% [written-pieces Cs Texts Steps]: the pieces of the text of Cs (one
-% space for the end of a paragraph), and the steps of their list items
-pred written-pieces i:list content, o:list string, o:list prooftext.step.
-written-pieces [] [] [].
-written-pieces [run S _ | Cs] [S | Ts] Ss :- !, written-pieces Cs Ts Ss.
-written-pieces [para-end | Cs] [" " | Ts] Ss :- !, written-pieces Cs Ts Ss.
-written-pieces [sub (node list-item _ (spot F _) (spot L _) Sub) | Cs] Ts [prooftext.step (prooftext.lines F L) T S | Ss] :- !,
-  written-text Sub T S, written-pieces Cs Ts Ss.
-written-pieces [sub (node _ _ _ _ Sub) | Cs] Ts Ss :- !,
-  written-pieces Sub T1 S1, written-pieces Cs T2 S2,
-  std.append T1 T2 Ts, std.append S1 S2 Ss.
-written-pieces [_ | Cs] Ts Ss :- written-pieces Cs Ts Ss.
-
 }
