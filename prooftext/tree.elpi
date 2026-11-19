@@ -1,5 +1,5 @@
 % prooftext: the reader.  A proof text is read into the tree of its
-% nodes, the tree of the 2006 paper (README.md, "The format").
+% nodes, the tree of the 2003 paper (README.md, "The format").
 % (load after header.elpi, document.elpi and formulas.elpi)
 %
 % Everything after the title is the top node: the statement and its

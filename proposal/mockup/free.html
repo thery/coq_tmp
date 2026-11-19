@@ -31,17 +31,17 @@ footer.legend .hyp { border-bottom: 1px dashed #4d4d4d; } footer.legend .claim {
 </style></head><body><div class="proof-text">
 <p class="intro">Mock-up of the <b>free</b> syntax as a web page: proof nodes are spans inside the paragraphs, with no visible mark. Move the pointer over a sentence: its proof node's conclusion is framed, its hypotheses dashed, its direct subproofs tinted blue. Over a justification name (purple), the hypothesis it names is outlined; over a fact (grey), the hypothesis or conclusion it repeats. Hand-written HTML, not produced by a reader.</p>
 <section>
-<h2><code>praeclarum</code> <small>(UITP 2006)</small></h2>
+<h2><code>praeclarum</code> <small>(UITP 2003)</small></h2>
 <p>Let <span class="formula var"><span class="m">x, y, z, t : Prop</span></span>. If <span class="formula hyp"><span class="m">x → z</span></span> and <span class="formula hyp"><span class="m">y → t</span></span> then <span class="formula claim"><span class="m">(x ∧ y) → (z ∧ t)</span></span>.</p>
 <p><span class="p" data-id="p1">Suppose <span class="formula hyp"><span class="m">x ∧ y</span></span>. <span class="p" data-id="p1.1"><span class="p" data-id="p1.1.1">We have <span class="formula claim"><span class="m">x</span></span></span>, so by <span class="formula fact"><span class="m">x → z</span></span> we get <span class="formula claim"><span class="m">z</span></span>.</span> <span class="p" data-id="p1.2"><span class="p" data-id="p1.2.1">We have <span class="formula claim"><span class="m">y</span></span></span>, so by <span class="formula fact"><span class="m">y → t</span></span> we get <span class="formula claim"><span class="m">t</span></span>.</span> Altogether we have <span class="formula claim"><span class="m">z ∧ t</span></span>.</span></p>
 </section>
 <section>
-<h2><code>square_pos</code> <small>(UITP 2006)</small></h2>
+<h2><code>square_pos</code> <small>(UITP 2003)</small></h2>
 <p>Let <span class="formula var"><span class="m">a, b ∈ ℤ</span></span>. If <span class="formula hyp"><span class="m">0 &lt; a &lt; b</span></span> then <span class="formula claim"><span class="m">a a &lt; b b</span></span>.</p>
 <p><span class="p" data-id="s1">It is equivalent to prove <span class="formula claim"><span class="m">0 &lt; b b − a a</span></span>. <span class="p" data-id="s1.1">That can also be written as <span class="formula claim"><span class="m">0 &lt; (b + a)(b − a)</span></span>. <span class="p" data-id="s1.1.1">From <span class="formula fact"><span class="m">0 &lt; a &lt; b</span></span> we have <span class="formula claim"><span class="m">0 &lt; b + a ∧ 0 &lt; b − a</span></span>.</span></span></span></p>
 </section>
 <section>
-<h2><code>exp_pos</code> <small>(UITP 2006)</small></h2>
+<h2><code>exp_pos</code> <small>(UITP 2003)</small></h2>
 <p>Let <span class="formula var"><span class="m">x ∈ ℝ</span></span> and <span class="formula var"><span class="m">y ∈ ℤ</span></span>. If <span class="formula hyp"><span class="m">0 &lt; x</span></span>, to prove <span class="formula claim"><span class="m">0 &lt; x<sup>y</sup></span></span>, we have three cases: <span class="p" data-id="e1">if <span class="formula hyp"><span class="m">0 &lt; y</span></span> then <span class="formula claim"><span class="m">x<sup>1</sup> ≤ x<sup>y</sup></span></span></span>; <span class="p" data-id="e2">if <span class="formula hyp"><span class="m">0 = y</span></span> then <span class="formula claim"><span class="m">x<sup>y</sup> = 1</span></span></span>; <span class="p" data-id="e3">if <span class="formula hyp"><span class="m">y &lt; 0</span></span> then <span class="formula claim"><span class="m">x<sup>y</sup> = 1 / x<sup>−y</sup></span></span></span>.</p>
 </section>
 <section>

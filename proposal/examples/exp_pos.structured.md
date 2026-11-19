@@ -3,7 +3,7 @@ require: From Stdlib Require Import Reals.
 scope: R_scope
 ---
 
-<!-- The formulas are those of 2006 (x real, y integer, x ^ y the power
+<!-- The formulas are those of 2003 (x real, y integer, x ^ y the power
      with an integer exponent); they are not checked here. -->
 
 # exp_pos

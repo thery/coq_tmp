@@ -4,7 +4,7 @@
 
 #std.text(size: 0.85em, fill: luma(90))[Mock-up of the *structured* syntax: one list item per proof node, sub-items are its subproofs, a closing paragraph after the sub-items is the node's conclusion line. Hand-written Typst, not produced by a reader.]
 
-#example("praeclarum", "(UITP 2006)")
+#example("praeclarum", "(UITP 2003)")
 #statement[Let #var($x, y, z, t : "Prop"$). If #hyp($x → z$) and #hyp($y → t$) then #claim($(x ∧ y) → (z ∧ t)$).]
 #item(0)[Suppose #hyp($x ∧ y$).]
 #item(1)[We get #claim($z$) by #fact($x → z$), since]
@@ -13,13 +13,13 @@
 #item(2)[we have #claim($y$).]
 #closing(0)[Altogether we have #claim($z ∧ t$).]
 
-#example("square_pos", "(UITP 2006)")
+#example("square_pos", "(UITP 2003)")
 #statement[Let #var($a, b ∈ ℤ$). If #hyp($0 < a < b$) then #claim($a a < b b$).]
 #item(0)[It is equivalent to prove #claim($0 < b b - a a$).]
 #item(1)[That can also be written as #claim($0 < (b + a)(b - a)$).]
 #item(2)[From #fact($0 < a < b$) we have #claim($0 < b + a ∧ 0 < b - a$).]
 
-#example("exp_pos", "(UITP 2006)")
+#example("exp_pos", "(UITP 2003)")
 #statement[Let #var($x ∈ ℝ$) and #var($y ∈ ℤ$). If #hyp($0 < x$), to prove #claim($0 < x^y$), we have three cases:]
 #item(0)[If #hyp($0 < y$) then #claim($x^1 ≤ x^y$).]
 #item(0)[If #hyp($0 = y$) then #claim($x^y = 1$).]

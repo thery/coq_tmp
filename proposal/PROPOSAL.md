@@ -1,4 +1,4 @@
-# A format for proof texts: the 2006 tree, two ways to write it
+# A format for proof texts: the 2003 tree, two ways to write it
 
 Status: a proposal.  Nothing in cyp, xtext or prooftext has changed.
 The examples are hand-written, and so are the mock-ups (Typst and HTML).
@@ -12,7 +12,7 @@ Decisions already taken by the user, which this proposal follows:
 3. A justification is coloured inside the sentence.  It is an emphasised
    name with an explicit tag, like a formula's: "By definition of and
    (*conj*{.just}), we have …".  A step may have several.
-4. The structure of the 2006 paper comes back: one conclusion per proof
+4. The structure of the 2003 paper comes back: one conclusion per proof
    node, subproofs, and scopes for hypotheses and variables.
 5. The question this proposal answers: can a free syntax and a
    structured syntax live together without a mess?  Yes, if both are
@@ -20,7 +20,7 @@ Decisions already taken by the user, which this proposal follows:
 
 ## 1. The tree (the paper's grammar)
 
-The 2006 paper (§2.2) has seven tags: `p` proof, `c` conclusion, `h`
+The 2003 paper (§2.2) has seven tags: `p` proof, `c` conclusion, `h`
 hypothesis, `v` variable, `n` name, `f` formula, `j` justification.  Its
 grammar, written here as the tree a reader builds:
 
@@ -35,7 +35,7 @@ node  ::= one conclusion c            exactly one
           subnodes node*               in the order of the text
 ```
 
-**Departure from 2006:** the paper allows at most one `<j>` per `<p>`
+**Departure from 2003:** the paper allows at most one `<j>` per `<p>`
 (which may hold several names).  Here a node has a list of
 justifications, each one name, written where the sentence mentions it,
 because a step may rely on several names: "Applying *i*{.just} to
@@ -197,7 +197,7 @@ P1 … Pk, justifications J and facts F:
 
 **Which earlier steps can a node use?**
 
-- **R1, the paper's rule** (2006, end of §2.3): "the conclusion of p_i is
+- **R1, the paper's rule** (2003, end of §2.3): "the conclusion of p_i is
   visible inside p_j for i < j and invisible outside P".  Earlier siblings
   are visible, at every level.  This is what cyp does today ("each step
   from the claims of the steps before it").  xtext's texts rely on it:
@@ -342,10 +342,10 @@ What changes in each part, whatever the choices:
 
 ## Files
 
-- `examples/`: for each example, `NAME.2006.xml` (the paper's, unchanged)
+- `examples/`: for each example, `NAME.2003.xml` (the paper's, unchanged)
   or `NAME.today.md` (xtext's today), `NAME.structured.md`,
   `NAME.free.md`.  Paper: praeclarum, square_pos, exp_pos (formulas as
-  in 2006, not checked).  xtext: xtext_praeclarum, Trans_Inv.
+  in 2003, not checked).  xtext: xtext_praeclarum, Trans_Inv.
 - `mockup/`: `lib.typ` (mock-up functions over today's template),
   `structured.typ`, `free.typ`; `structured.src.html`, `free.src.html`
   (shorthand, expanded by `build-html.sh` with `expand.sed`, around

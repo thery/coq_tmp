@@ -50,7 +50,7 @@ Typst back end, `sh typst/check.sh` (below, "The PDF of a proof text").
 
 ## The format
 
-A proof text is the tree of the 2006 paper (§2.2, its tags `p`, `c`, `h`,
+A proof text is the tree of the 2003 paper (§2.2, its tags `p`, `c`, `h`,
 `v`, `n`, `f`, `j`), written in Markdown.  Its proposal, with the paper's
 examples in both syntaxes, is [../proposal/PROPOSAL.md](../proposal/PROPOSAL.md).
 
@@ -159,7 +159,7 @@ Two errors need the meaning of the names, and are the checker's: a
 justification that names nothing known (no hypothesis, node, lemma, rule
 or tactic), and a fact that is no hypothesis or conclusion in scope.
 
-**Departures from the 2006 paper.**
+**Departures from the 2003 paper.**
 
 - A node may have several justifications, each one name, written where
   the sentence mentions it ("Applying *i*{.just} to *k*{.just}"): the paper

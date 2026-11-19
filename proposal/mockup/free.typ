@@ -6,15 +6,15 @@
 
 #std.text(size: 0.85em, fill: luma(90))[Mock-up of the *free* syntax: proof nodes are spans inside the paragraphs#";" the marks `[...]{.p}` never show. #if structure-mode == "on" [Each subproof has a thin bar in the left margin, one bar per depth.] else if structure-mode == "corners" [Each subproof is between two small grey corners.] else [No mark of the structure in the PDF: only the colours.] Hand-written Typst, not produced by a reader.]
 
-#example("praeclarum", "(UITP 2006)")
+#example("praeclarum", "(UITP 2003)")
 #prose[Let #var($x, y, z, t : "Prop"$). If #hyp($x → z$) and #hyp($y → t$) then #claim($(x ∧ y) → (z ∧ t)$).]
 #prose[#ps("p1", 0)[Suppose #hyp($x ∧ y$). #ps("p1.1", 1)[#ps("p1.1.1", 2)[We have #claim($x$)], so by #fact($x → z$) we get #claim($z$).] #ps("p1.2", 1)[#ps("p1.2.1", 2)[We have #claim($y$)], so by #fact($y → t$) we get #claim($t$).] Altogether we have #claim($z ∧ t$).]]
 
-#example("square_pos", "(UITP 2006)")
+#example("square_pos", "(UITP 2003)")
 #prose[Let #var($a, b ∈ ℤ$). If #hyp($0 < a < b$) then #claim($a a < b b$).]
 #prose[#ps("s1", 0)[It is equivalent to prove #claim($0 < b b - a a$). #ps("s1.1", 1)[That can also be written as #claim($0 < (b + a)(b - a)$). #ps("s1.1.1", 2)[From #fact($0 < a < b$) we have #claim($0 < b + a ∧ 0 < b - a$).]]]]
 
-#example("exp_pos", "(UITP 2006)")
+#example("exp_pos", "(UITP 2003)")
 #prose[Let #var($x ∈ ℝ$) and #var($y ∈ ℤ$). If #hyp($0 < x$), to prove #claim($0 < x^y$), we have three cases: #ps("e1", 0)[if #hyp($0 < y$) then #claim($x^1 ≤ x^y$)]#";" #ps("e2", 0)[if #hyp($0 = y$) then #claim($x^y = 1$)]#";" #ps("e3", 0)[if #hyp($y < 0$) then #claim($x^y = 1 / x^(-y)$)].]
 
 #example("praeclarum", "(xtext)")
