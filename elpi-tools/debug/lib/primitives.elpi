@@ -37,7 +37,8 @@
 %
 % THE STAND-INS (below), and their limits
 %
-% - vars-of walks the term ([shape-of], lprolog.elpi).  Elpi has no
+% - vars-of walks the term ([shape-of], lprolog.elpi), a ground subterm
+%   skipped whole (the native test ground_term).  Elpi has no
 %   builtin to take apart an application of a builtin (X is Y + 1 is one
 %   node), so the walk does not see the variables there; nor those of a
 %   conjunction of more than 16 goals.  Hence reflect's option -closed:

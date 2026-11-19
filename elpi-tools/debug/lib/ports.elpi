@@ -149,7 +149,7 @@ premise-string (premise Origin N) S :-
 % A call port that is shown or stopped at takes a mark of the trail
 % (primitives.elpi), and the exit port of the call shows the bindings made
 % since: what the whole call computed, by its unify steps and the calls
-% of its body.  A call that is not seen at its call port costs nothing
+% of its body.  Its unify steps reuse that mark ([solutions-from]).  A call that is not seen at its call port costs nothing
 % more (its exit, if shown later, has no bindings).
 
 data call-mark.
