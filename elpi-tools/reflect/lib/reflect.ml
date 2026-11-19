@@ -495,8 +495,11 @@ let builtin_declarations () : Program.t =
   with Elpi_parser.Parse.ParseError (loc, msg) -> raise (Error (Loc.show loc ^ ": " ^ msg))
 
 (* The connectives of rules and goals are syntax, not constants that a fact
-   can mention: their declarations are not reflected. *)
-let connectives = StrSet.of_list [ ":-"; ","; "=>"; "==>"; "uvar"; "as"; ";"; "pi"; "sigma" ]
+   can mention: their declarations are not reflected.  =!=> is declared by
+   the builtins of Elpi >= 4.1.0 (by none in 4.0.0), with two types, as =>
+   and ==>: a fact (=!=> : T) would be rejected, the type checker not
+   telling the two apart. *)
+let connectives = StrSet.of_list [ ":-"; ","; "=>"; "==>"; "=!=>"; "uvar"; "as"; ";"; "pi"; "sigma" ]
 
 let not_a_connective (d : Scope.resolved) =
   match d.decl with
