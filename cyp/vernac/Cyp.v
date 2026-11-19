@@ -141,29 +141,12 @@ From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
 
 Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
-Elpi Accumulate File lexicon.
-Elpi Accumulate File lexicon_en.
-Elpi Accumulate File lexicon_fr.
-Elpi Accumulate File lexicon_it.
-Elpi Accumulate File lexicon_de.
-Elpi Accumulate File lexicon_nl.
-Elpi Accumulate File lexicon_ru.
-Elpi Accumulate File lexicon_zh.
-Elpi Accumulate File lexicon_ar.
-Elpi Accumulate File lexicon_ko.
-Elpi Accumulate File lexicon_la.
+Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
+  lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text.
-Elpi Accumulate File cyp_messages.
-Elpi Accumulate File cyp_timing.
-Elpi Accumulate File cyp_messages_en.
-Elpi Accumulate File cyp_messages_fr.
-Elpi Accumulate File cyp_messages_it.
-Elpi Accumulate File cyp_gaps.
-Elpi Accumulate File cyp_check.
-Elpi Accumulate File cyp_proof.
-Elpi Accumulate File cyp_markdown.
-Elpi Accumulate File cyp_command.
+Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+  cyp_command.
 Elpi Accumulate lp:{{
   % #[bare]: the conditions are printed, nothing is tried or defined
   main [str F] :- attributes A, std.mem A (attribute "bare" _), !,
@@ -190,29 +173,12 @@ Elpi Export CypFile.
 
 #[arguments(raw)] Elpi Command Cyp.
 Elpi Accumulate Db cyp.db.
-Elpi Accumulate File lexicon.
-Elpi Accumulate File lexicon_en.
-Elpi Accumulate File lexicon_fr.
-Elpi Accumulate File lexicon_it.
-Elpi Accumulate File lexicon_de.
-Elpi Accumulate File lexicon_nl.
-Elpi Accumulate File lexicon_ru.
-Elpi Accumulate File lexicon_zh.
-Elpi Accumulate File lexicon_ar.
-Elpi Accumulate File lexicon_ko.
-Elpi Accumulate File lexicon_la.
+Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
+  lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text.
-Elpi Accumulate File cyp_messages.
-Elpi Accumulate File cyp_timing.
-Elpi Accumulate File cyp_messages_en.
-Elpi Accumulate File cyp_messages_fr.
-Elpi Accumulate File cyp_messages_it.
-Elpi Accumulate File cyp_gaps.
-Elpi Accumulate File cyp_check.
-Elpi Accumulate File cyp_proof.
-Elpi Accumulate File cyp_markdown.
-Elpi Accumulate File cyp_command.
+Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+  cyp_command.
 Elpi Accumulate lp:{{
   % a step written in Rocq: words (primitive strings) and terms, read into
   % pieces, whose elements are found as in a Markdown text (elements,
@@ -294,25 +260,11 @@ Elpi Accumulate lp:{{
 
 (* the end of the Proof block of Cyp File or Cyp Lemma *)
 Elpi Command CypQed.
-Elpi Accumulate File lexicon.
-Elpi Accumulate File lexicon_en.
-Elpi Accumulate File lexicon_fr.
-Elpi Accumulate File lexicon_it.
-Elpi Accumulate File lexicon_de.
-Elpi Accumulate File lexicon_nl.
-Elpi Accumulate File lexicon_ru.
-Elpi Accumulate File lexicon_zh.
-Elpi Accumulate File lexicon_ar.
-Elpi Accumulate File lexicon_ko.
-Elpi Accumulate File lexicon_la.
+Elpi Accumulate File lexicon lexicon_en lexicon_fr lexicon_it lexicon_de
+  lexicon_nl lexicon_ru lexicon_zh lexicon_ar lexicon_ko lexicon_la.
 Elpi Accumulate File pt_formulas pt_tactics.
-Elpi Accumulate File cyp_text.
-Elpi Accumulate File cyp_messages.
-Elpi Accumulate File cyp_timing.
-Elpi Accumulate File cyp_messages_en.
-Elpi Accumulate File cyp_messages_fr.
-Elpi Accumulate File cyp_messages_it.
-Elpi Accumulate File cyp_command.
+Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_command.
 Elpi Accumulate lp:{{
   main-interp-qed _ _ Proof _ (qed-data Name Lang Ty) :-
     (current-lang Lang :- !) => (
