@@ -46,7 +46,4 @@ by: tauto | congruence | lia | firstorder | auto
             - ✅ By H10 we have `l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
           - ✅ Applying eq_trans, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
     - ✅ By application, with H, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
-- ❌ These cases being exhaustive, we deduce `l ++ m ++ n = (l ++ m) ++ n`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: l ++ m ++ n = (l ++ m) ++ n</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `l ++ m ++ n = (l ++ m) ++ n`{.claim} *by Corelib.Init.Datatypes.list_ind*.

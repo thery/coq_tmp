@@ -24,7 +24,4 @@ by: tauto | congruence | lia | firstorder | auto
       - ▫️ The element `rev l0`{.fact} belongs to `list A`{.fact}.
       - ▫️ The element `a`{.fact} belongs to `A`{.fact}.
     - ✅ Rewriting with `rev (rev l0 ++ a :: nil) = a :: rev (rev l0)`{.fact} from right to left (eq_ind_r), we get `rev (rev l0 ++ a :: nil) = a :: l0`{.claim}.
-- ❌ These cases being exhaustive, we deduce `rev (rev l) = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: rev (rev l) = l</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `rev (rev l) = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.

@@ -40,7 +40,4 @@ by: tauto | congruence | lia | firstorder | auto
             - ✅ By H10 we have `l0 ++ nil = l0`{.claim}.
           - ✅ Applying eq_trans, we have `a :: l0 ++ nil = a :: l0`{.claim}.
     - ✅ By application, with H, we have `a :: l0 ++ nil = a :: l0`{.claim}.
-- ❌ These cases being exhaustive, we deduce `l ++ nil = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: l ++ [] = l</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `l ++ nil = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.

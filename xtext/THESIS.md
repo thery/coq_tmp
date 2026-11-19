@@ -171,15 +171,14 @@ Where 6.4.1 is followed or not:
   proof, which is the generate-and-test of 5.4 with this unification.
   All 20 English texts of `examples/` that generalised before now leave
   the motive out (with `half_le`, an elimination with one case: 21).
-- A limit of cyp, the reader of the texts: its step *by C_ind* is
-  Rocq's eapply, which does not find the motive as elim does (on
-  n <= n + m it finds le n).  In 14 English texts, cyp no longer proves
-  the closing step of the elimination (README, "Checking the texts with
-  cyp"); the texts are still read.  The change cyp needs, a separate
-  task: for a claim announced "by induction on x0" (or "by case analysis
-  on x0"), abstract x0 in the goal before applying the theorem (elim x0
-  using C_ind).  That is the first step 6.4.1 asks for, the evaluation
-  extended so that ElimOpen can be evaluated without the predicate.
+- The reader, cyp, is extended as 6.4.1 asks (its first step: the
+  evaluation extended so that ElimOpen can be evaluated without the
+  predicate): a step *by C_ind*, C_ind an elimination principle, is
+  applied directly, else with the goal abstracted over one of its
+  variables first, as Rocq's elim does (cyp's `apply-lemma`,
+  `cyp/vernac/elpi/check.elpi`; eapply alone finds le n as the motive of
+  n <= n + m).  cyp proves the closing steps of all the texts that 6.4.1
+  shortens.
 
 ## Not implemented
 

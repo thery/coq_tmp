@@ -300,15 +300,11 @@ They replace the paper's rules for introduction and elimination theorems.
   `implicit_motive.v`).  It is always on, as the inferable arguments of
   5.4; `XTEXT_OFF=motive` switches it off.  It shortens every dependent
   elimination of `examples/`: 50 generated texts change (21 in English,
-  27 in the other languages, 2 in Typst), and 21 in each variant.  cyp still reads them all, but
-  its step *by nat_ind* is `eapply nat_ind`, which does not find the
-  motive as `elim` does (for `n <= n + m` it unifies `?P ?x` with
-  `le n (n + m)` first-order, giving `le n`): in 14 English texts the
-  closing step is no longer proved (see "Checking the texts with cyp").
-  This is a limit of cyp; the change it needs (a separate task) is an
-  elimination step that, for a claim announced "by induction on x0",
-  abstracts x0 in the goal before applying the theorem (`elim x0 using
-  C_ind`, or `pattern x0; eapply C_ind`).
+  27 in the other languages, 2 in Typst), and 21 in each variant.  cyp
+  reads and proves them: its step *by nat_ind* applies an elimination
+  principle as `elim` does, the goal abstracted over the variable first
+  (`eapply nat_ind` alone unifies `?P ?x` with `le n (n + m)`
+  first-order and gives `le n`).
 
 ## Departures from the paper and the thesis
 
@@ -852,36 +848,24 @@ at most 8 GB of memory per text.  It prints, per text, the time and the
 list items proved / not proved / not checked (`cyp-check/results.tsv`).
 
 The 80 English texts written by default (staged translation), 300 s per
-text (`cyp-check/results.tsv`: 2026-11-18; the three texts of
-`implicit_motive.v` and the 21 texts changed by 6.4.1, the motive left
-out, rerun 2026-11-19):
+text (`cyp-check/results.tsv`, all rerun 2026-11-19, after 6.4.1 and
+cyp's elimination step):
 
-- all 80 texts are checked, in 229 s in all: 652 steps proved, 31 not
+- all 80 texts are checked, in 176 s in all: 666 steps proved, 17 not
   proved, 504 not checked (lines with no claim: `Let`, `Assume`, the
   announcement of an induction, and the staged texts' "The element x
   belongs to T");
 - none times out (`std_or_assoc` did, until cyp tried first whether a
   goal is one of its hypotheses: `tauto` runs for minutes on one of its
   goals, two hypotheses long);
-- the 31 steps not proved are in 18 texts (`std_Nat_le_trans` 6,
-  `half_le` 3, `std_Nat_lt_irrefl` 3, `std_rev_app_distr` 3,
-  `std_length_rev` 2, `std_rev_involutive` 2, and 1 each in `drinker`,
-  `app_nil_r`, `even_or_odd`, `le_add_r`, `std_app_assoc`,
-  `std_app_nil_r`, `std_in_app_or`, `std_in_map`, `std_in_or_app`,
-  `std_length_app`, `std_map_app`, `std_map_map`); e.g. in `drinker`,
-  "Applying not_all_ex_not to A, P and H, we have `exists n : A, ~ P n`";
-- 14 of them are the closing step of an elimination whose motive the
-  text leaves out (6.4.1, e.g. `le_add_r`: "These cases being
-  exhaustive, we deduce `n <= n + m` *by nat_ind*"): cyp's `eapply
-  nat_ind` does not find the motive (see "Rules of the thesis").  Before
-  6.4.1 these texts proved the generalised statement and then "In
-  particular" the instance, both proved by cyp.  In the 7 other texts
-  that 6.4.1 changes (`ADD0`, `add_0_r`, `plus_n_Sm`, `std_plus_n_O`,
-  `std_plus_n_Sm`, `add_0_r_partial`, `half_le`) no new step fails: cyp
-  proves the closing step of the first six, and `half_le` (one case,
-  no closing step) keeps its 3 steps not proved; each has one step
-  fewer, the "In particular".
-- no text stops on the universe anomaly reported before.
+- the 17 steps not proved are in 7 texts (`std_Nat_le_trans` 6,
+  `half_le` 3, `std_Nat_lt_irrefl` 3, `std_rev_app_distr` 2, and 1 each
+  in `drinker`, `std_length_rev`, `std_rev_involutive`); e.g. in
+  `drinker`, "Applying not_all_ex_not to A, P and H, we have `exists n :
+  A, ~ P n`";
+- the texts that 6.4.1 changes (the motive left out) keep the statuses
+  they had, with one step fewer each (the "In particular" that goes):
+  cyp proves the closing step of the elimination, as `elim` would.
 
 With the direct translation (`examples-direct/`, the default before;
 `cyp-check/results_direct.tsv`): 72 texts checked in 595 s, 923 steps

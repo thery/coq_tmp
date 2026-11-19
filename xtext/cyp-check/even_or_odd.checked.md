@@ -31,7 +31,4 @@ by: tauto | congruence | lia | firstorder | auto
             - ✅ We have `S (S n0) = 2 * S k \/ S (S n0) = 2 * S k + 1`{.claim} *by lia*.
             - ✅ By definition of ex (ex_intro) with witness `S k`{.fact}, we have `exists k0 : nat, S (S n0) = 2 * k0 \/ S (S n0) = 2 * k0 + 1`{.claim} *by Corelib.Init.Logic.ex_intro*.
         - ✅ We have `exists k0 : nat, S (S n0) = 2 * k0 \/ S (S n0) = 2 * k0 + 1`{.claim} in all cases.
-- ❌ These cases being exhaustive, we deduce `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.claim} *by XText.elim_type.two_step*.
-
-  <details><summary>not proved: exists k : nat, n = 2 * k \/ n = 2 * k + 1</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `exists k : nat, n = 2 * k \/ n = 2 * k + 1`{.claim} *by XText.elim_type.two_step*.

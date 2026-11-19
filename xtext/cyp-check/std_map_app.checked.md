@@ -18,7 +18,4 @@ by: tauto | congruence | lia | firstorder | auto
       - ✅ By definition of eq (eq_refl), we have `f a :: map f l0 ++ map f l' = f a :: map f l0 ++ map f l'`{.claim} *by Corelib.Init.Logic.eq_refl*.
       - ✅ Applying IHl to l', we have `map f (l0 ++ l') = map f l0 ++ map f l'`{.claim}.
       - ✅ Rewriting with `map f (l0 ++ l') = map f l0 ++ map f l'`{.fact} from right to left (eq_ind_r), we get `f a :: map f (l0 ++ l') = f a :: map f l0 ++ map f l'`{.claim}.
-- ❌ These cases being exhaustive, we deduce `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: forall l' : list A, map f (l ++ l') = map f l ++ map f l'</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `forall l' : list A, map f (l ++ l') = map f l ++ map f l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.

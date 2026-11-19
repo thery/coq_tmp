@@ -33,7 +33,4 @@ by: tauto | congruence | lia | firstorder | auto
               - ✅ By definition of or (or_intror), from `In a m`{.fact} (H10) we deduce `(a0 = a \/ In a l0) \/ In a m`{.claim} *by Corelib.Init.Logic.or_intror*.
           - ✅ We have `(a0 = a \/ In a l0) \/ In a m`{.claim} in all cases.
       - ✅ We have `(a0 = a \/ In a l0) \/ In a m`{.claim} in all cases.
-- ❌ These cases being exhaustive, we deduce `In a (l ++ m) -> In a l \/ In a m`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: In a (l ++ m) -> In a l \/ In a m</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `In a (l ++ m) -> In a l \/ In a m`{.claim} *by Corelib.Init.Datatypes.list_ind*.

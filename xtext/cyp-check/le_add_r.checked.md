@@ -18,7 +18,4 @@ by: tauto | congruence | lia | firstorder | auto
     - ✅ By definition of le (le_S) with witness `n + m0`{.fact}, from `n <= n + m0`{.fact} (IH) we deduce `n <= S (n + m0)`{.claim} *by Corelib.Init.Peano.le_S*.
     - ✅ Applying add_succ_r to n and m0, we have `n + S m0 = S (n + m0)`{.claim}.
     - ✅ Rewriting with `n + S m0 = S (n + m0)`{.fact} from right to left (eq_ind_r), we get `n <= n + S m0`{.claim}.
-- ❌ These cases being exhaustive, we deduce `n <= n + m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-
-  <details><summary>not proved: n <= n + m</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `n <= n + m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.

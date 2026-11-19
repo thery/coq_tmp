@@ -16,7 +16,4 @@ by: tauto | congruence | lia | firstorder | auto
     - ✅ By definition of eq (eq_refl), we have `x :: l0 = x :: l0`{.claim} *by Corelib.Init.Logic.eq_refl*.
     - ✅ By IH we have `l0 ++ [] = l0`{.claim}.
     - ✅ Rewriting with `l0 ++ [] = l0`{.fact} from right to left (eq_ind_r), we get `x :: l0 ++ [] = x :: l0`{.claim}.
-- ❌ These cases being exhaustive, we deduce `l ++ [] = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: l ++ [] = l</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `l ++ [] = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.

@@ -34,7 +34,4 @@ by: tauto | congruence | lia | firstorder | auto
         - ✅ By application, we have `In (f x) (map f l0)`{.claim}.
         - ✅ By definition of or (or_intror), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by Corelib.Init.Logic.or_intror*.
     - ✅ We have `In (f x) (map f (a :: l0))`{.claim} in all cases.
-- ❌ These cases being exhaustive, we deduce `forall x : A, In x l -> In (f x) (map f l)`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: forall x : A, In x l -> In (f x) (map f l)</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `forall x : A, In x l -> In (f x) (map f l)`{.claim} *by Corelib.Init.Datatypes.list_ind*.

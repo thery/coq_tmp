@@ -59,6 +59,9 @@ Ltac cyp_hypothesis :=
   lazymatch goal with |- ?g => tryif has_evar g then fail else assumption end.
 Ltac cyp_intros := progress intros.
 Ltac cyp_eapply t := eapply t.
+(* an elimination principle t on the variable x: the goal abstracted over x
+   first, so that the motive is that abstraction (as elim does) *)
+Ltac cyp_elim_on t x := pattern x; eapply t.
 Ltac cyp_split := split.
 Ltac cyp_left := left.
 Ltac cyp_right := right.

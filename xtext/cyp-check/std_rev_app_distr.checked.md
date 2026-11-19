@@ -32,7 +32,4 @@ by: tauto | congruence | lia | firstorder | auto
         - ▫️ The element `a :: nil`{.fact} belongs to `list A`{.fact}.
     - ✅ By IHl we have `rev (l ++ y) = rev y ++ rev l`{.claim}.
     - ✅ Rewriting with `rev (l ++ y) = rev y ++ rev l`{.fact} from right to left (eq_ind_r), we get `rev (l ++ y) ++ a :: nil = rev y ++ rev l ++ a :: nil`{.claim}.
-- ❌ These cases being exhaustive, we deduce `rev (x ++ y) = rev y ++ rev x`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: rev (x ++ y) = rev y ++ rev x</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `rev (x ++ y) = rev y ++ rev x`{.claim} *by Corelib.Init.Datatypes.list_ind*.

@@ -82,7 +82,30 @@ justify-step (some X) G :-
   rex.match "^@?[A-Za-z_][A-Za-z0-9_'.]*$" X,
   rex.replace "^@" "" X X1,
   coq.locate-all X1 L, std.mem L (loc-gref GR), !,
-  coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, premises GL.
+  apply-lemma GR G.
+
+% [apply-lemma GR G]: the lemma GR applied to the goal, its premises closed
+% by the rules: directly (its conclusion unified with the goal), else, for
+% an elimination principle (its first argument is the predicate it proves,
+% the motive), as Rocq's elim does: the goal abstracted over one of its
+% variables, so that the motive is that abstraction (eapply alone unifies
+% ?P ?x with the goal first-order: on n <= n + m it takes P := le n)
+pred apply-lemma i:gref, i:goal.
+apply-lemma GR G :- coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, premises GL, !.
+apply-lemma GR (goal Ctx _ Ty _ _ as G) :-
+  elimination-principle GR,
+  std.mem Ctx (decl X _ _), occurs X Ty,
+  coq.ltac.call "cyp_elim_on" [trm (global GR), trm X] G GL, premises GL, !.
+
+% [elimination-principle GR]: the type of GR starts with a predicate
+% (forall P : ... -> Prop or Type or Set, ...)
+pred elimination-principle i:gref.
+elimination-principle GR :- coq.env.typeof GR (prod _ PT _), conclusion-sort PT.
+
+% [conclusion-sort T]: T is A1 -> .. -> An -> a sort
+pred conclusion-sort i:term.
+conclusion-sort (sort _).
+conclusion-sort (prod _ _ B) :- pi x\ conclusion-sort (B x).
 % else the tactic X
 justify-step (some X) G :- run-name X G.
 

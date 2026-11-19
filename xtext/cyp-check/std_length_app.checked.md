@@ -21,7 +21,4 @@ by: tauto | congruence | lia | firstorder | auto
       - ▫️ The element `length l0 + length l'`{.fact} belongs to `nat`{.fact}.
       - ✅ Applying IHl to l', we have `length (l0 ++ l') = length l0 + length l'`{.claim}.
       - ✅ Applying f_equal_nat, we have `S (length (l0 ++ l')) = S (length l0 + length l')`{.claim}.
-- ❌ These cases being exhaustive, we deduce `forall l' : list A, length (l ++ l') = length l + length l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: forall l' : list A, length (l ++ l') = length l + length l'</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `forall l' : list A, length (l ++ l') = length l + length l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.

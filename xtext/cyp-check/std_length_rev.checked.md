@@ -28,7 +28,4 @@ by: tauto | congruence | lia | firstorder | auto
       - ▫️ The element `rev l0`{.fact} belongs to `list A`{.fact}.
       - ▫️ The element `a :: nil`{.fact} belongs to `list A`{.fact}.
     - ✅ Rewriting with `length (rev l0 ++ a :: nil) = length (rev l0) + length (a :: nil)`{.fact} from right to left (eq_ind_r), we get `length (rev l0 ++ a :: nil) = S (length l0)`{.claim}.
-- ❌ These cases being exhaustive, we deduce `length (rev l) = length l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: length (rev l) = length l</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `length (rev l) = length l`{.claim} *by Corelib.Init.Datatypes.list_ind*.

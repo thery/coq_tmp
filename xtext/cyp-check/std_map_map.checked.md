@@ -16,7 +16,4 @@ by: tauto | congruence | lia | firstorder | auto
     - ✅ By definition of eq (eq_refl), we have `g (f a) :: map (fun x : A => g (f x)) l0 = g (f a) :: map (fun x : A => g (f x)) l0`{.claim} *by Corelib.Init.Logic.eq_refl*.
     - ✅ By IHl we have `map g (map f l0) = map (fun x : A => g (f x)) l0`{.claim}.
     - ✅ Rewriting with `map g (map f l0) = map (fun x : A => g (f x)) l0`{.fact} from right to left (eq_ind_r), we get `g (f a) :: map g (map f l0) = g (f a) :: map (fun x : A => g (f x)) l0`{.claim}.
-- ❌ These cases being exhaustive, we deduce `map g (map f l) = map (fun x : A => g (f x)) l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-
-  <details><summary>not proved: map g (map f l) = map (fun x : A => g (f x)) l</summary></details>
-
+- ✅ These cases being exhaustive, we deduce `map g (map f l) = map (fun x : A => g (f x)) l`{.claim} *by Corelib.Init.Datatypes.list_ind*.
