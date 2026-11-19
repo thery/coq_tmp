@@ -306,9 +306,9 @@ resolves names block by block).  Read them in this order:
    `eigen` clause in force in the scope of each `pi`); `can-depend` and
    `show-scope` tell which eigenvariables a logic variable may depend on.
 7. **[`primitives.elpi`](lib/primitives.elpi): the variables of a run**,
-   through four primitives that Elpi's core could offer, written in Elpi
-   as stand-ins for now (below, "The primitives"): `vars-of`, `uuid`,
-   `trail-mark` and `bindings-since`.  The other files know the variables
+   through three primitives (four predicates) that Elpi's core could
+   offer, written in Elpi as stand-ins for now (below, "The
+   primitives"): `vars-of`, `uuid`, `trail-mark` and `bindings-since`.  The other files know the variables
    of a run only through them.
 8. **[`ports.elpi`](lib/ports.elpi): the events.**  `event` shows an event
    and stops there if needed; its text is made only then (a closure:
@@ -334,9 +334,9 @@ resolves names block by block).  Read them in this order:
 ## The primitives (what Elpi's core could offer)
 
 Everything the debugger knows about the logic variables of a run goes
-through four predicates of [`lib/primitives.elpi`](lib/primitives.elpi),
-a small interface that Elpi's core could provide as builtins (the wish
-list, for Elpi's author: [`ELPI-WISHLIST.md`](ELPI-WISHLIST.md)).  Until
+through three primitives (four predicates) of
+[`lib/primitives.elpi`](lib/primitives.elpi), a small interface that
+Elpi's core could provide as builtins (the wish list, for Elpi's author: [`ELPI-WISHLIST.md`](ELPI-WISHLIST.md)).  Until
 then they are written in Elpi, as **stand-ins**; the switch to real
 builtins would touch that file only.
 
