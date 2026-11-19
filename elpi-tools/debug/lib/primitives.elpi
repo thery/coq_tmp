@@ -37,7 +37,8 @@
 %
 % THE STAND-INS (below), and their limits
 %
-% - vars-of walks the term ([shape-of], lprolog.elpi).  Elpi has no
+% - vars-of walks the term ([shape-of], lprolog.elpi), a ground subterm
+%   skipped whole (the native test ground_term).  Elpi has no
 %   builtin to take apart an application of a builtin (X is Y + 1 is one
 %   node), so the walk does not see the variables there; nor those of a
 %   conjunction of more than 16 goals.  Hence reflect's option -closed:
@@ -83,7 +84,11 @@ vars-of T Vs :- vars-acc T [] Rev, std.rev Rev Vs.
 
 % [vars-acc T Acc Acc1]: Acc1 is Acc and, most recent first, the variables
 % of T not in Acc.
+% A ground subterm has none: the native test ground_term skips it whole
+% (most of the data of a goal, such as a list of numbers) instead of an
+% interpreted walk of several goals per node.
 pred vars-acc i:any, i:list any, o:list any.
+vars-acc T Acc Acc :- ground_term T, !.
 vars-acc T Acc Acc1 :- shape-of T S, shape-vars S Acc Acc1.
 
 pred shape-vars i:shape, i:list any, o:list any.
@@ -118,20 +123,24 @@ uuid-name X S :- term-string X S.       % (not a variable: printed)
 func uuid-label int -> string.
 uuid-label N S :- S is "X" ^ {std.any->string N}.
 
-% [term-string T S]: T printed, each of its variables named X<uuid>
-% (stand-in: the printer's text, whose numbers are the uuids, without the
-% depth of each variable, "X12^1" printed X12).  The real builtin would be
-% the printer naming each variable by its identity (Elpi's printer has
-% the line, commented out: "X" ^ string_of_int (uvar_id r)).
+% [term-string T S]: T printed on one line, each of its variables named
+% X<uuid> (stand-in: the printer's text, whose numbers are the uuids,
+% without the depth of each variable, "X12^1" printed X12).  The real
+% builtin would be the printer naming each variable by its identity
+% (Elpi's printer has the line, commented out: "X" ^ string_of_int
+% (uvar_id r)).
 func term-string any -> string.
-term-string T S :- term_to_string T S0, without-depths S0 S.
+term-string T S :- term_to_string T S0, plain-text S0 S.
 
-% [without-depths S0 S]: S0 without the depths of its variables ("X12^1"
-% becomes X12); most texts have none, and looking for a "^" is cheaper
-% than the replacement.
-func without-depths string -> string.
-without-depths S0 S :- rex.match ".*\\^" S0, !, rex.replace "\\bX\\([0-9]+\\)\\^[0-9]+" "X\\1" S0 S.
-without-depths S S.
+% [plain-text S0 S]: the printer's text S0 on one line (a line break and
+% the indentation after it become a space), without the depths of its
+% variables ("X12^1" becomes X12).  Most texts have neither: one test for
+% both is cheaper than the two replacements (each regular expression is
+% compiled at each call, about 10 µs).
+func plain-text string -> string.
+plain-text S0 S :- rex.match "[^\n^]*[\n^]" S0, !,
+  rex.replace "\n *" " " S0 S1, rex.replace "\\bX\\([0-9]+\\)\\^[0-9]+" "X\\1" S1 S.
+plain-text S S.
 
 % ===== 3. The trail ========================================================================
 

@@ -378,7 +378,8 @@ pruning by comparing scopes).
 
 **The stand-ins, and their limits** (in the file, at the top):
 
-- `vars-of` is the walk of `shape-of`.  It cannot look inside an
+- `vars-of` is the walk of `shape-of`, which skips a ground subterm
+  (`ground_term`, native) whole.  It cannot look inside an
   application of a builtin (`X is Y + 1` is one node for Elpi), nor into a
   conjunction of more than 16 goals.  The head of an applied variable is
   got with the builtin `var`; on a variable that Elpi keeps in a compact
@@ -405,9 +406,11 @@ pruning by comparing scopes).
   shares its variables with the goal that added it; the frames above give
   no other access to a variable).  Missed: a variable reached only through
   a goal suspended in the constraint store, or inside an application of a
-  builtin.  Cost: a walk of the goal and the hypotheses at the mark, and a
+  builtin.  Cost: a walk of the goal and the hypotheses at the mark (a
+  ground subterm is skipped whole by the native test `ground_term`), and a
   test per variable at `bindings-since`; only for an event shown or
-  stopped at.
+  stopped at, and once per call: its unify steps reuse the mark of its
+  call port.
 
 Nothing of this runs on the fast path (no option), and a call port that
 is neither shown nor stopped at takes no mark.
@@ -563,6 +566,46 @@ built once when the clause is compiled.  The runs after the change are
 10 to 25 % faster, also with the order of the runs reversed (`bench 200`
 0.315 -> 0.261 s, `queens` 0.135 -> 0.101 s); the cause is not known
 (the box of a call has one field less: the entry moved into the frame).
+
+**The cost of `-trace`, reduced** (2026-11-19, load 5-10, minimum of 10
+runs alternated with main of the same day, which has the premises of the
+calls; interpreted time of `-time`):
+
+| run | before | after |
+|---|---|---|
+| `-trace bench 30` (output to a file) | 0.63 s | 0.45 s |
+| `-trace` on [`../demo/lists.elpi`](../demo/lists.elpi), `sort [3,1,2] S` | 0.015 s | 0.011 s |
+| `count 6400` | 0.146 s | 0.142 s |
+| `bench 200` | 0.253 s | 0.255 s |
+| `queens 8 Q` | 0.101 s | 0.104 s |
+| `lookups 2000` | 0.109 s | 0.108 s |
+
+Where the time of `-trace bench 30` went before (by switching one thing
+off at a time, and by micro-benchmarks of the primitives in plain Elpi):
+the marks of the trail and the bindings 0.29 s, of which most was the walk
+of `vars-of` (7 µs per node: 0.30 ms for `app L [X] R`, L a list of 30
+numbers; 0.035 ms after the change below); the printing of the terms
+0.05 s; the rest (0.28 s) the events and the interpreter (the same run
+without `-trace`: 0.07 s).  The changes, each measured on `-trace bench
+30`:
+
+| change | -trace bench 30 |
+|---|---|
+| before | 0.62 s |
+| `vars-of` skips a ground subterm with one native test (`ground_term`) | 0.48 |
+| the unify steps of a call reuse the mark of its call port (nothing is bound in between) | 0.46 |
+| one test for a line break or a depth in the printer's text, before the two replacements | 0.45 |
+
+Now: without the marks and the bindings shown 0.35 s, without the
+printing of the terms 0.36 s: each is about 0.1 s of the 0.45 s.  The
+rule of the marks was checked: only a call seen at its call port takes
+one, and with `-trace` the exit of every call is shown, so none is taken
+for nothing.  Tried and not kept: reading the number of a variable
+character by character instead of with a regular expression (10 µs
+either way: an interpreted loop costs what Elpi's compilation of the
+expression costs).  The fast path is unchanged (within the noise).
+`-trace bench 30` is now 0.45 s against 0.42 s before the primitives
+(measured then at a lower load, 2.3-4.4).
 
 **What is left.**  A call still runs about 26 goals of the interpreter
 (`app`), a builtin about 14 more than its own: a box with an invocation

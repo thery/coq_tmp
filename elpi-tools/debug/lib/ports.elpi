@@ -149,7 +149,7 @@ premise-string (premise Origin N) S :-
 % A call port that is shown or stopped at takes a mark of the trail
 % (primitives.elpi), and the exit port of the call shows the bindings made
 % since: what the whole call computed, by its unify steps and the calls
-% of its body.  A call that is not seen at its call port costs nothing
+% of its body.  Its unify steps reuse that mark ([solutions-from]).  A call that is not seen at its call port costs nothing
 % more (its exit, if shown later, has no bindings).
 
 data call-mark.
@@ -165,6 +165,20 @@ call-port-marked Box Mark :- port-seen call-port Box [] Seen, mark-if-seen Seen 
 pred mark-if-seen i:bool, o:box, o:call-mark.
 mark-if-seen tt Box (marked M) :- !, box-parts Box _ _ _ G _, trail-mark (in-reach G) M.
 mark-if-seen _ _ unmarked.
+
+% [solutions-from Mark Box]: the solutions of Box; when its call port was
+% marked, with the mark in force for them as [call-mark Id M]: the unify
+% steps of the call take it instead of a mark of their own, since nothing
+% is bound between the call port and the head unification of a clause
+% (those of a clause tried before are undone by backtracking).
+:nooc
+pred solutions-from i:call-mark, o:box.
+solutions-from unmarked Box :- solutions Box.
+solutions-from (marked M) Box :- box-parts Box Id _ _ _ _, (call-mark Id M => solutions Box).
+
+% [call-mark Id M]: the call Id was marked M at its call port (in force
+% while it runs).
+pred call-mark i:int, o:trail-mark.
 
 % [exit-port-with-bindings Mark Box]: the exit port of Box; when its call
 % port was marked, with the bindings made since the mark (in the text,
@@ -235,8 +249,9 @@ try-port (ctx _ [Frame | Above]) :- record-event try-step (box Frame Above).
 % the clause from Origin with head Head (Post: what follows the prefix that
 % Elpi matched when it selected the clause, compiled.elpi), for the call
 % whose body runs in Ctx, with its unify event when it is shown or when a
-% breakpoint is set on the clause: a mark of the trail before Post, the
-% bindings made since after it (the matching of the prefix binds none).
+% breakpoint is set on the clause: a mark of the trail before Post (the
+% mark of the call port when it has one, [unify-mark]), the bindings made
+% since after it (the matching of the prefix binds none).
 % The event runs in the context of the clause: [runs Id Origin] and
 % [made-bindings Bindings] are in force, for the stepper and the
 % machine-readable channel (stepper.elpi, machine.elpi).
@@ -246,12 +261,20 @@ unify-port (ctx _ [Frame | Above]) Origin _ Post :-
   not (event-shown unify-step (focus Frame Above)), not (clause-breakpoint-on Origin), !,
   Post.
 unify-port (ctx _ [frame Id D P G E | Above]) Origin Head Post :-
-  trail-mark (in-reach G) Mark,
+  unify-mark Id G Mark,
   Post,
   bindings-since Mark Bindings,
   std.map Bindings binding-line Lines,
   [runs Id Origin, made-bindings Bindings] =>
     event unify-step D (focus (frame Id D P G E) Above) (unify-text Id Origin Head Lines).
+
+% [unify-mark Id G M]: the mark before the head unification of a clause
+% for the call Id of G: the mark of its call port, or a new one when the
+% call port was not seen (a unify step shown for a breakpoint on the
+% clause).
+pred unify-mark i:int, i:(pred), o:trail-mark.
+unify-mark Id _ M :- call-mark Id M, !.
+unify-mark _ G M :- trail-mark (in-reach G) M.
 
 % [unify-text Id Origin Head Lines T]: the text of a unify event.
 pred unify-text i:int, i:origin, i:(pred), i:list string, o:list string.
