@@ -5,17 +5,12 @@
  (package elpi-tools)
  (libraries elpi elpi.parser elpi.util elpi_reflect str unix))
 
-; The two Elpi files the driver loads, embedded in the executable.
+; The two Elpi files the driver loads, embedded in the executable by
+; ../../embed/embed.exe.
 (rule
  (targets embedded.ml)
  (deps ../debug.elpi ../../reflect/reflect.elpi)
  (action
   (with-stdout-to
    embedded.ml
-   (progn
-    (echo "let debug_elpi = {elpi|")
-    (cat ../debug.elpi)
-    (echo "|elpi}\n")
-    (echo "let reflect_elpi = {elpi|")
-    (cat ../../reflect/reflect.elpi)
-    (echo "|elpi}\n")))))
+   (run %{exe:../../embed/embed.exe} %{deps}))))

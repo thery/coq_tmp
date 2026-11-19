@@ -87,13 +87,18 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
 
   and the writing of a header: `header-lines Fields Lines` (a key that
   is not a `header-key` is an error), `lang-fields Lang Fields` (no field
-  for the default language), `by-field Tactics Field`;
+  for the default language), `by-field Tactics Field`, and its reading:
+  `field-value Fields Key Value` (`""` for a field the header has not),
+  `header-lang Fields Lang` (`default-lang` without a `lang` field);
 - `document.elpi`: the document tree, `document Fields Name Place
   Statement Steps`, a step `step Place Text Sub-steps`, a `place` (`lines
   First Last`, the lines of a text in its file, numbered from 0, given by
   a reader; `unplaced` for a text being written), the writer
-  `write-document D Text`, and a reader, `read-document File D` (the
-  reader's contract below; cyp keeps its own reader);
+  `write-document D Text`, a reader, `read-document File D` (the
+  reader's contract below; cyp's and the Typst writer's), and the number
+  of a step, `step-number Parent K Number` (Dewey notation, `2.1` the
+  first sub-step of step 2: cyp numbers its conditions with it, the Typst
+  writer its steps);
 - `checked.elpi`: what a checker adds to the text of a step (cyp's
   `.checked.md`): `status-mark Status Mark` (`ok` ✅, `ko` ❌, `todo` 🔶,
   `none` ▫️, cyp's names of the statuses), `message-block M S` (the
@@ -118,8 +123,11 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   `rclaim` `claim`, `rfact` `fact`, and `rback`, a claim that replaces
   the goal, written as a claim: read back, the class `claim` gives
   `rclaim`, the first role with it), `formula Role F S` (`` `F`{.tag} ``),
-  `justification J S` (`*by J*`), `is-justification S`, and the reading
-  of a step's justification, `split-justification S J Rest`;
+  `justification J S` (`*by J*`), `is-justification S`, the reading
+  of a step's justification, `split-justification S J Rest`, and the
+  reading of the text of a statement or a step, `text-parts Text Parts`
+  (below, the reader's contract), the one reader of cyp and of the Typst
+  writer;
 - `names.elpi`: `fresh-name Used Wanted Name`, `Wanted` if it is not in
   use, else `Wanted0`, `Wanted1`, ...: the names a text introduces must
   differ from the names in use, so that `*by h*` names one hypothesis
@@ -167,10 +175,19 @@ of cyp and of the Typst back end):
   continuation line.  Its indentation is the number of spaces before
   `-`; its sub-steps are the items after it with a larger indentation, up
   to the first item that has not;
-- within the text of a statement or a step, formulas and their roles,
-  hypothesis names `(h)` and the justification are read as in
-  `formulas.elpi`, with the phrases of the lexicon for the formulas that
-  have no class (cyp: `cyp/vernac/elpi/text.elpi`).
+- within the text of a statement or a step (`text-parts` in
+  `formulas.elpi`): a **formula** is the text between two backticks (a
+  backtick with no other after it is text); right after it may come its
+  **class**, `{.tag}` (letters; a class that is no role's tag gives no
+  role, but is not text either), then, after any number of spaces, the
+  **name** given to it, `(h)` (an identifier); the **justification** is
+  `*by X*`.  A part is `plain Words`, `formula-part Class Formula Name`
+  (`Name` is `some h` or `none`) or `by-part X`.  The role of a formula is
+  that of its class; a formula with no class takes its role from the
+  phrases of the lexicon around it (cyp: `cyp/vernac/elpi/text.elpi`).
+  A name after a hypothesis names it; after a fact it is the name of the
+  hypothesis the fact is; after a claim, the name a later step uses (the
+  Typst writer links them).
 
 What a document written by `write-document` gives when read back is the
 same document, with places.

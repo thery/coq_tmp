@@ -30,10 +30,10 @@ elim_type.vo: elim_type.v Explain.vo
 partial.vo: partial.v Explain.vo
 	$(ROCQ) partial.v
 
-selection.vo: selection.v Explain.vo thesis.vo
+selection.vo: selection.v test-helpers.elpi Explain.vo thesis.vo
 	$(ROCQ) selection.v
 
-subproofs.vo: subproofs.v Explain.vo thesis.vo
+subproofs.vo: subproofs.v test-helpers.elpi Explain.vo thesis.vo
 	$(ROCQ) subproofs.v
 
 vocab_check.vo: vocab_check.v Explain.vo
@@ -45,7 +45,7 @@ multilingual.vo: multilingual.v paper.vo lemmas.vo inductive.vo thesis.vo
 typst_examples.vo: typst_examples.v paper.vo lemmas.vo inductive.vo
 	$(ROCQ) typst_examples.v
 
-implicit_motive.vo: implicit_motive.v Explain.vo lemmas.vo
+implicit_motive.vo: implicit_motive.v test-helpers.elpi Explain.vo lemmas.vo
 	$(ROCQ) implicit_motive.v
 
 reals.vo: reals.v Explain.vo

@@ -1,0 +1,5 @@
+; embed.exe FILE..: an OCaml module holding the contents of Elpi files, so
+; that an executable carries them (elpi-check, elpi-debug)
+(executable
+ (name embed)
+ (modules embed))

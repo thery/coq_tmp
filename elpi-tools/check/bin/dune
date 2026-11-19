@@ -1,10 +1,7 @@
 ; elpi-check: the property checker.  The Elpi library (../lib/*.elpi) and
 ; the declarations of the reflected data (../../reflect/reflect.elpi) and the
-; interpreter (../../debug/debug.elpi) are embedded in the executable by embed.exe.
-
-(executable
- (name embed)
- (modules embed))
+; interpreter (../../debug/debug.elpi) are embedded in the executable by
+; ../../embed/embed.exe.
 
 (rule
  (targets embedded.ml)
@@ -15,7 +12,7 @@
  (action
   (with-stdout-to
    embedded.ml
-   (run ./embed.exe %{deps}))))
+   (run %{exe:../../embed/embed.exe} %{deps}))))
 
 (executable
  (name elpi_check_main)

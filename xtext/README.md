@@ -99,6 +99,8 @@ Examples and checks:
   `examples/bool_P.md`, `prod_P.md`, `list_P.md`), on `add_0_r'`, and
   kept where it is not found again (`partial_motive`): each text is
   checked against the expected one;
+- `test-helpers.elpi`: what these three test files share (`expect`, the
+  text of a theorem from its statement on, `expect-text`);
 - `examples-staged-none/`, `examples-staged-maximal/`,
   `examples-staged-selection/` (with `XTEXT_SELECTION=thesis`),
   `examples-staged-naming/` and `examples-staged-shared/` (with

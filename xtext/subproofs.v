@@ -4,6 +4,8 @@
    (Fig. 4.12), then with its intermediate results named (Fig. 4.14).
    Each test fails if a printed term is not the expected one. *)
 From XText Require Import Explain thesis.
+From XText Extra Dependency "test-helpers.elpi" as test_helpers.
+Elpi Accumulate Explain File test_helpers.
 
 (* [check-naming Name Naming Marked Named] (for this file only): Naming is
    the value of the switch naming, all or shared *)
@@ -30,20 +32,7 @@ Elpi Accumulate Explain lp:{{
     with-switches (with-switch "naming" "the test" Naming
       (with-switch "selection" "the test" "thesis"
         (with-switch "lang" "the test" Lang
-          (explain Name D, prooftext.write-document D T)))),
-    rex.split "\n" T All, after-title All After,
-    std.filter After (l\ not (l = "")) Text,
-    std.string.concat "\n" Text S, std.string.concat "\n" Lines Expected,
-    expect "text" Name Expected S.
-
-  pred after-title i:list string, o:list string.
-  after-title [L | Ls] Ls :- rex.match "^# " L, !.
-  after-title [_ | Ls] After :- after-title Ls After.
-
-  pred expect i:string, i:string, i:string, i:string.
-  expect What Name S S :- !, coq.say Name What ":" S.
-  expect What Name Expected S :-
-    coq.error Name What "is" S "and not" Expected.
+          (expect-text Name Lines)))).
 }}.
 
 (* Fig. 4.27, the example ABCD (Fig. 4.22-4.30): every subproof is

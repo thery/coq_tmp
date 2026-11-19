@@ -1,0 +1,25 @@
+% Helpers of xtext's tests (selection.v, subproofs.v, implicit_motive.v),
+% accumulated into the command Explain by each of these files, which no
+% other file loads.
+
+% [expect What Name Expected S]: S is Expected (what is tested, What, of
+% the theorem Name, is printed); else an error that shows both
+pred expect i:string, i:string, i:string, i:string.
+expect What Name S S :- !, coq.say Name What ":" S.
+expect What Name Expected S :-
+  coq.error Name What "is" S "and not" Expected.
+
+% [expect-text Name Lines]: the text of Name (with the switches in
+% force), from its statement on, is the lines Lines
+pred expect-text i:string, i:list string.
+expect-text Name Lines :-
+  explain Name D, prooftext.write-document D T,
+  rex.split "\n" T All, after-title All After,
+  std.filter After (l\ not (l = "")) Text,
+  std.string.concat "\n" Text S, std.string.concat "\n" Lines Expected,
+  expect "text" Name Expected S.
+
+% [after-title Lines After]: the lines after the title, # name
+pred after-title i:list string, o:list string.
+after-title [L | Ls] Ls :- rex.match "^# " L, !.
+after-title [_ | Ls] After :- after-title Ls After.

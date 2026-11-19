@@ -8,6 +8,8 @@
    pairs, lists), a lemma of lemmas.v, and a motive that is not found.
    Each test fails if a text is not the expected one. *)
 From XText Require Import Explain lemmas.
+From XText Extra Dependency "test-helpers.elpi" as test_helpers.
+Elpi Accumulate Explain File test_helpers.
 
 (* [check-text Name Lang Lines] (for this file only): the text of Name in
    the language Lang, from its statement on (the non-empty lines after
@@ -16,20 +18,7 @@ Elpi Accumulate Explain lp:{{
   pred check-text i:string, i:string, i:list string.
   check-text Name Lang Lines :-
     with-switches (with-switch "lang" "the test" Lang
-      (explain Name D, prooftext.write-document D T)),
-    rex.split "\n" T All, after-title All After,
-    std.filter After (l\ not (l = "")) Text,
-    std.string.concat "\n" Text S, std.string.concat "\n" Lines Expected,
-    expect "text" Name Expected S.
-
-  pred after-title i:list string, o:list string.
-  after-title [L | Ls] Ls :- rex.match "^# " L, !.
-  after-title [_ | Ls] After :- after-title Ls After.
-
-  pred expect i:string, i:string, i:string, i:string.
-  expect What Name S S :- !, coq.say Name What ":" S.
-  expect What Name Expected S :-
-    coq.error Name What "is" S "and not" Expected.
+      (expect-text Name Lines)).
 }}.
 
 (* 6.3.3, the booleans: "Pour montrer (P b0), par une preuve par cas,

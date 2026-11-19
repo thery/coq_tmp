@@ -24,8 +24,8 @@
 %
 %   #legend((("var", "variable"), ("hyp", "hypothesis"), ...))
 %
-% The text of a statement or of a step is cut into its parts: the
-% formulas with their roles (formulas.elpi; a formula without a class is
+% The text of a statement or of a step is cut into its parts (text-parts,
+% formulas.elpi): the formulas with their roles (a formula without a class is
 % shown without a role), the name (h) given to a formula, right after
 % it, the justification *by X*, and the plain text between them, each
 % written as a Typst string, so that no character of the text is read as
@@ -74,7 +74,7 @@ write-typst D Text :- write-typst-in maths D Text.
 % formulas in the style Style
 pred write-typst-in i:formula-style, i:prooftext.document, o:string.
 write-typst-in Style (prooftext.document Fields Name _ Statement Steps) Text :-
-  text-language Fields Lang,
+  prooftext.header-lang Fields Lang,
   (if (text-is-checked Statement) (Checked = tt, Numbers = "true") (Checked = ff, Numbers = "false")),
   prooftext.typst-string Name TName,
   std.map Fields typst-field FieldLines,
@@ -108,13 +108,7 @@ first-context Style Fields Lang (context F [] Words) :-
 pred first-formulas i:formula-style, i:list prooftext.field, o:formulas.
 first-formulas code _ in-code.
 first-formulas maths Fields (in-maths Scope []) :-
-  (std.mem Fields (prooftext.field "scope" Scope), ! ; Scope = "").
-
-% [text-language Fields Lang]: the language of the text, from its lang
-% field (default-lang when it has none)
-pred text-language i:list prooftext.field, o:string.
-text-language Fields Lang :- std.mem Fields (prooftext.field "lang" Lang), !.
-text-language _ Lang :- prooftext.default-lang Lang.
+  prooftext.field-value Fields "scope" Scope.
 
 % [text-is-checked Statement]: the text was checked (by cyp): its
 % statement has a status mark
@@ -145,7 +139,7 @@ statement-typst C0 Statement Line C :-
 pred steps-typst i:context, i:string, i:string, i:int, i:list prooftext.step, o:list string.
 steps-typst _ _ _ _ [] [].
 steps-typst C0 Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
-  dewey-number Prefix K Number,
+  prooftext.step-number Prefix K Number,
   checked-text Text0 Check Text, check-arguments Check Arguments,
   (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
   text-content C0 Number Text Content C,
@@ -157,12 +151,6 @@ steps-typst C0 Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
   K1 is K + 1,
   steps-typst C Indent Prefix K1 Steps Next,
   std.append Own Next Lines.
-
-% [dewey-number Prefix K Number]: the number of the K-th step of a list
-% whose parent has the number Prefix ("" at the top)
-pred dewey-number i:string, i:int, o:string.
-dewey-number "" K N :- !, N is {std.any->string K}.
-dewey-number P K N :- N is P ^ "." ^ {std.any->string K}.
 
 % ------------------------------------------------------------------
 % Checked texts
@@ -212,23 +200,14 @@ legend-pair Lang Key Pair :-
   Pair is "(" ^ {prooftext.typst-string Key} ^ ", " ^ {prooftext.typst-string Word} ^ ")".
 
 % ------------------------------------------------------------------
-% The parts of a text
-
-% a part of the text of a statement or a step
-kind text-part type.
-type plain string -> text-part.            % text
-type formula-part string -> string -> text-part.
-                                           % the class of a formula ("" for none), its text
-type name-part string -> text-part.        % the name given to a formula, (h): it introduces it
-type name-use string -> text-part.         % the name after a fact: the hypothesis the fact is
-type by-part string -> text-part.          % the justification, *by X*
+% The parts of a text (text-parts, formulas.elpi)
 
 % [text-content C0 Where Text Content C]: the Typst content of the text
 % of the statement (Where = "statement") or of the step numbered Where,
 % [...] with one call per part; C, the context after it
 pred text-content i:context, i:string, i:string, o:string, o:context.
 text-content C0 Where Text Content C :-
-  text-parts Text Parts,
+  prooftext.text-parts Text Parts,
   parts-typst C0 Where Parts Calls C,
   std.string.concat "" Calls Inner,
   Content is "[" ^ Inner ^ "]".
@@ -236,37 +215,47 @@ text-content C0 Where Text Content C :-
 % [parts-typst C0 Where Parts Calls C]: the Typst code of each part, in
 % order, each formula under the declarations before it, each name under
 % the names introduced before it
-pred parts-typst i:context, i:string, i:list text-part, o:list string, o:context.
+pred parts-typst i:context, i:string, i:list prooftext.text-part, o:list string, o:context.
 parts-typst C _ [] [] C.
 parts-typst C0 Where [P | Ps] [Call | Calls] C :-
   part-typst C0 Where P Call C1, parts-typst C1 Where Ps Calls C.
 
 % [part-typst C0 Where Part Call C]: the Typst code of a part.  A formula
 % whose class is a role's tag is shown with that role (var, hyp, claim,
-% fact), other formulas without a role (formula).  A name given to a
-% formula is labelled, Where:h, and put in scope; a name after a fact,
-% a justification and the words of the text link to what they name
-pred part-typst i:context, i:string, i:text-part, o:string, o:context.
-part-typst C _ (plain S) Call C :- plain-typst C S Call.
-part-typst (context F0 Names Words) _ (formula-part Tag Formula) Call (context F Names Words) :-
+% fact), other formulas without a role (formula), followed by the name
+% written after it (name-typst); a justification and the words of the
+% text link to what they name
+pred part-typst i:context, i:string, i:prooftext.text-part, o:string, o:context.
+part-typst C _ (prooftext.plain S) Call C :- plain-typst C S Call.
+part-typst (context F0 Names Words) Where (prooftext.formula-part Tag Formula Name) Call C :-
   formula-typst F0 Tag Formula Shown F,
   (if (prooftext.role-tag _ Tag) (Role = Tag) (Role = "formula")),
-  Call is "#" ^ Role ^ "(" ^ Shown ^ ")".
-part-typst (context F Names Words) Where (name-part N) Call (context F Names1 Words) :-
+  name-typst (context F Names Words) Where Tag Name NameCall C,
+  Call is "#" ^ Role ^ "(" ^ Shown ^ ")" ^ NameCall.
+part-typst (context F Names Words) _ (prooftext.by-part J) Call (context F Names Words) :-
+  justification-link Names J Arguments,
+  Call is "#by(" ^ {prooftext.typst-string J} ^ Arguments ^ ")".
+
+% [name-typst C0 Where Tag Name Call C]: the Typst code of the name (h)
+% written after a formula of class Tag, after one space ("" for none).
+% After a fact (a mention), it is the name of the hypothesis the fact
+% is, a link to it; after another formula (a hypothesis, or a claim that
+% a later step names), it is introduced: labelled Where:h, and put in
+% scope
+pred name-typst i:context, i:string, i:string, i:option string, o:string, o:context.
+name-typst C _ _ none "" C.
+name-typst (context F Names Words) _ "fact" (some N) Call (context F Names Words) :- !,
+  (if (prooftext.name-in-scope Names N Label)
+     (Arguments is ", target: " ^ {prooftext.typst-string Label})
+     (Arguments = "")),
+  Call is "#\" \"#name(" ^ {prooftext.typst-string N} ^ Arguments ^ ")".
+name-typst (context F Names Words) Where _ (some N) Call (context F Names1 Words) :-
   prooftext.name-label Where N Label,
   (if (std.mem! Names (pr N Label))
      % the same name given twice in one text: the first one is the label
      (Names1 = Names, Arguments = "")
      (Names1 = [pr N Label | Names], Arguments is ", label: " ^ {prooftext.typst-string Label})),
-  Call is "#name(" ^ {prooftext.typst-string N} ^ Arguments ^ ")".
-part-typst (context F Names Words) _ (name-use N) Call (context F Names Words) :-
-  (if (prooftext.name-in-scope Names N Label)
-     (Arguments is ", target: " ^ {prooftext.typst-string Label})
-     (Arguments = "")),
-  Call is "#name(" ^ {prooftext.typst-string N} ^ Arguments ^ ")".
-part-typst (context F Names Words) _ (by-part J) Call (context F Names Words) :-
-  justification-link Names J Arguments,
-  Call is "#by(" ^ {prooftext.typst-string J} ^ Arguments ^ ")".
+  Call is "#\" \"#name(" ^ {prooftext.typst-string N} ^ Arguments ^ ")".
 
 % [justification-link Names J Arguments]: the link of the justification J,
 % as arguments of by: to the documentation of a lemma, or to the step that
@@ -338,61 +327,6 @@ formula-typst (in-maths Scope Ds) _ Formula Shown (in-maths Scope Ds) :-
 pred maths-or-code i:(prooftext.mexp -> prop), i:string, o:string.
 maths-or-code Print _ Shown :- Print E, !, Shown is "$" ^ {prooftext.maths-typst E} ^ "$".
 maths-or-code _ Formula Shown :- prooftext.typst-string Formula Shown.
-
-% [text-parts Text Parts]: the parts of a text, in order: the formulas
-% (between backticks, with an optional class {.tag}), each followed by
-% the name given to it if there is one, and the text between them,
-% where the justifications are
-pred text-parts i:string, o:list text-part.
-text-parts Text Parts :-
-  rex.match "^[^`]*`[^`]*`" Text, !,
-  rex.replace "^\\([^`]*\\)`.*" "\\1" Text Before,
-  rex.replace "^[^`]*`\\([^`]*\\)`.*" "\\1" Text F,
-  rex.replace "^[^`]*`[^`]*`" "" Text After,
-  formula-class After Tag After1,
-  formula-name Tag After1 Names After2,
-  plain-parts Before BeforeParts,
-  text-parts After2 Rest,
-  std.append BeforeParts [formula-part Tag F | Names] Parts0,
-  std.append Parts0 Rest Parts.
-text-parts Text Parts :- plain-parts Text Parts.
-
-% [formula-class After Tag Rest]: the class {.tag} right after a formula
-% ("" if there is none) and the text after it
-pred formula-class i:string, o:string, o:string.
-formula-class After Tag Rest :-
-  rex.match "^{[.][A-Za-z]+}" After, !,
-  rex.replace "^{[.]\\([A-Za-z]+\\)}.*" "\\1" After Tag,
-  rex.replace "^{[.][A-Za-z]+}" "" After Rest.
-formula-class After "" After.
-
-% [formula-name Tag After Names Rest]: the name (h) right after a formula
-% of class Tag, with one space before it, as [plain " ", P] ([] if there
-% is none), and the text after it.  After a fact (a mention), the name is
-% that of the hypothesis the fact is, P = name-use h; after another
-% formula (a hypothesis, or a claim that a later step names), the name is
-% introduced, P = name-part h
-pred formula-name i:string, i:string, o:list text-part, o:string.
-formula-name Tag After [plain " ", P] Rest :-
-  rex.match "^ ([A-Za-z_][A-Za-z0-9_']*)" After, !,
-  rex.replace "^ (\\([A-Za-z_][A-Za-z0-9_']*\\)).*" "\\1" After N,
-  rex.replace "^ ([A-Za-z_][A-Za-z0-9_']*)" "" After Rest,
-  (if (Tag = "fact") (P = name-use N) (P = name-part N)).
-formula-name _ After [] After.
-
-% [plain-parts Text Parts]: a text without formulas: plain text and the
-% justifications *by X* in it (no part for an empty text)
-pred plain-parts i:string, o:list text-part.
-plain-parts "" [] :- !.
-plain-parts Text Parts :-
-  rex.match "^.*[*]by [^*]+[*]" Text, !,
-  rex.replace "^\\(.*\\)[*]by [^*]+[*].*" "\\1" Text Before,
-  rex.replace "^.*[*]by \\([^*]+\\)[*].*" "\\1" Text J,
-  rex.replace "^.*[*]by [^*]+[*]" "" Text After,
-  plain-parts Before BeforeParts,
-  plain-parts After AfterParts,
-  std.append BeforeParts [by-part J | AfterParts] Parts.
-plain-parts Text [plain Text].
 
 % ------------------------------------------------------------------
 % Choosing the writer

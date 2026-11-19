@@ -21,6 +21,12 @@ Elpi Accumulate lp:{{
     prooftext.role-tag R "claim", !, expect "tag claim" {std.any->string R} "rclaim",
     prooftext.justification "lia" J, expect "justification" J "*by lia*",
     (prooftext.is-justification J, ! ; coq.error "is-justification" J),
+    prooftext.step-number "" 2 SN1, expect "step number 2" SN1 "2",
+    prooftext.step-number "2.1" 3 SN2, expect "step number 2.1.3" SN2 "2.1.3",
+    prooftext.field-value [prooftext.field "scope" "Z"] "scope" FV1, expect "field scope" FV1 "Z",
+    prooftext.field-value [prooftext.field "scope" "Z"] "by" FV2, expect "no field by" FV2 "",
+    prooftext.header-lang [prooftext.field "lang" "fr"] HL1, expect "lang fr" HL1 "fr",
+    prooftext.header-lang [] HL2, expect "no lang" HL2 "en",
     prooftext.fresh-name ["h", "h0"] "h" N1, expect "fresh h" N1 "h1",
     prooftext.fresh-name ["h"] "x" N2, expect "fresh x" N2 "x",
     prooftext.unknown-tactics ["lia", "omega"] U, expect "unknown tactics" {std.any->string U} "[omega]",
@@ -97,10 +103,16 @@ Elpi Accumulate lp:{{
     expect "checked text" R1 "We have `C`{.claim}.",
     (prooftext.split-checked "We have `C`{.claim}." _ _, coq.error "a text that is not checked" ; true),
     prooftext.text-parts "From `A`{.fact} (i) we deduce `B \\/ A`{.claim} *by or_intror*, `x` (y z)." Ps,
-    expect-term "parts" Ps [prooftext.plain "From ", prooftext.formula-part "fact" "A",
-      prooftext.plain " ", prooftext.name-use "i", prooftext.plain " we deduce ",
-      prooftext.formula-part "claim" "B \\/ A", prooftext.plain " ", prooftext.by-part "or_intror",
-      prooftext.plain ", ", prooftext.formula-part "" "x", prooftext.plain " (y z)."],
+    expect-term "parts" Ps [prooftext.plain "From ", prooftext.formula-part "fact" "A" (some "i"),
+      prooftext.plain " we deduce ",
+      prooftext.formula-part "claim" "B \\/ A" none, prooftext.plain " ", prooftext.by-part "or_intror",
+      prooftext.plain ", ", prooftext.formula-part "" "x" none, prooftext.plain " (y z)."],
+    % a name after any number of spaces; a class that is no role's tag is
+    % a class all the same; a backtick with no other after it is text
+    prooftext.text-parts "Assume `A`{.hyp}  (h) and `B`{.Hyp}(k), `C" Ps2,
+    expect-term "parts" Ps2 [prooftext.plain "Assume ", prooftext.formula-part "hyp" "A" (some "h"),
+      prooftext.plain " and ", prooftext.formula-part "Hyp" "B" (some "k"),
+      prooftext.plain ", `C"],
     prooftext.typst-string "a \\ \"b\"" TS, expect "typst string" TS "\"a \\\\ \\\"b\\\"\"".
 }}.
 Elpi prooftext_check_typst.
