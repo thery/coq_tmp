@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.paper.
 lang: ar
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -13,10 +13,6 @@ by: tauto | congruence | lia | firstorder | auto
   - ▫️ لنفرض أن `x -> z`{.hyp} (i) و `y -> t`{.hyp} (j).
     - ✅ بالعودة إلى تعريف and (and_ind) في `x /\ y`{.fact} (h2), سنثبت أن `z /\ t`{.claim}:
       - ▫️ لنفرض أن `x`{.hyp} (k) و `y`{.hyp} (l).
-        - ✅ نستنتج أن `z`{.claim}.
-          - ✅ حسب k لدينا `x`{.claim}.
-          - ✅ حسب i لدينا `x -> z`{.claim}.
-        - ✅ نستنتج أن `t`{.claim}.
-          - ✅ حسب l لدينا `y`{.claim}.
-          - ✅ حسب j لدينا `y -> t`{.claim}.
+        - ✅ بتطبيق i على k, لدينا `z`{.claim}.
+        - ✅ بتطبيق j على l, لدينا `t`{.claim}.
         - ✅ إذن حسب تعريف and (conj), لدينا `z /\ t`{.claim} *by Corelib.Init.Logic.conj*.

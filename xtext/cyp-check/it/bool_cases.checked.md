@@ -1,7 +1,7 @@
 ---
 require: From Stdlib Require Import Arith Lia List Bool. Import ListNotations. Require Import XText.inductive.
 lang: it
-flags: -R /home/thery/git/coq_tmp-xtext/xtext XText
+flags: -R /home/thery/git/coq_tmp/xtext XText
 by: tauto | congruence | lia | firstorder | auto
 ---
 
@@ -16,7 +16,4 @@ by: tauto | congruence | lia | firstorder | auto
 - ✅ Caso 2: dimostriamo `false = true \/ false = false`{.claim}.
   - ✅ Per definizione di eq (eq_refl), abbiamo `false = false`{.claim} *by Corelib.Init.Logic.eq_refl*.
   - ✅ Per definizione di or (or_intror), abbiamo `false = true \/ false = false`{.claim} *by Corelib.Init.Logic.or_intror*.
-- ❌ Essendo questi casi esaustivi, ne deduciamo `b = true \/ b = false`{.claim}.
-
-  <details><summary>not proved: b = true \/ b = false</summary></details>
-
+- ✅ Essendo questi casi esaustivi, ne deduciamo `b = true \/ b = false`{.claim}.
