@@ -42,8 +42,11 @@ maths-typst (prooftext.msup B E) Code :-
 maths-typst (prooftext.msqrt A) Code :- Code is "sqrt(" ^ {maths-typst A} ^ ")".
 maths-typst (prooftext.mfenced L R A) Code :-
   Code is "lr(" ^ L ^ " " ^ {maths-typst A} ^ " " ^ R ^ ")".
+% the arguments are separated by escaped commas, \,: inside the arguments
+% of a Typst function (frac(...)), a comma between the parentheses \(...\)
+% (which are not a group) would separate the arguments of the function
 maths-typst (prooftext.mapply F Args) Code :-
-  std.map Args maths-typst Codes, std.string.concat ", " Codes Inner,
+  std.map Args maths-typst Codes, std.string.concat "\\, " Codes Inner,
   parentheses (prooftext.mrow Args) Open Close,
   Code is {maths-typst F} ^ Open ^ Inner ^ Close.
 

@@ -57,15 +57,15 @@
                 step("1.1.2.4", [#"Applying "#just("__arith")#", we have "#claim($n_(0) ≤ "Zpos"\("xO"\("xH"\)\) ⋅ n_(0)$)#"."], (
                   steps((
                     step("1.1.2.4.1", [#"Applying "#just("Znat.Nat2Z.is_nonneg", url: "https://rocq-prover.org/stdlib/Stdlib.ZArith.Znat.html#Nat2Z.is_nonneg")#" to n0, we have "#claim($"Z0" ≤ n_(0)$)#" "#name("cstr", label: "1.1.2.4.1:cstr")#"."], (), status: "ok"),
-                    step("1.1.2.4.2", [#"We have proved "#claim($∀ italic("__x10") ∈ ℤ , "eval_bf"\("Zeval_formula"\("find"\("Z0", "Elt"\(italic("__x10")\)\)\), "IMPL"\("A"\("isProp", "Build_Formula"\("PEc"\("Z0"\), "OpLe", "PEX"\("xH"\)\), "tt"\), "None", "A"\("isProp", "Build_Formula"\("PEX"\("xH"\), "OpLe", "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\), "PEX"\("xH"\)\)\), "tt"\)\)\)$)#" "#name("__arith", label: "1.1.2.4.2:__arith")#"."], (
+                    step("1.1.2.4.2", [#"We have proved "#claim($∀ italic("__x10") ∈ ℤ , "eval_bf"\("Zeval_formula"\("find"\("Z0"\, "Elt"\(italic("__x10")\)\)\)\, "IMPL"\("A"\("isProp"\, "Build_Formula"\("PEc"\("Z0"\)\, "OpLe"\, "PEX"\("xH"\)\)\, "tt"\)\, "None"\, "A"\("isProp"\, "Build_Formula"\("PEX"\("xH"\)\, "OpLe"\, "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\)\, "PEX"\("xH"\)\)\)\, "tt"\)\)\)$)#" "#name("__arith", label: "1.1.2.4.2:__arith")#"."], (
                       steps((
-                        step("1.1.2.4.2.1", [#"Let us choose arbitrarily "#var($italic("__x1") ∈ ℤ$)#". Let "#var($italic("__wit") ≔ "[]"$)#". Let "#var($italic("__varmap") ≔ "Elt"\(italic("__x1")\)$)#". Let "#var($italic("__ff") ≔ "IMPL"\("A"\("isProp", "Build_Formula"\("PEc"\("Z0"\), "OpLe", "PEX"\("xH"\)\), "tt"\), "None", "A"\("isProp", "Build_Formula"\("PEX"\("xH"\), "OpLe", "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\), "PEX"\("xH"\)\)\), "tt"\)\)$)#"."], (
+                        step("1.1.2.4.2.1", [#"Let us choose arbitrarily "#var($italic("__x1") ∈ ℤ$)#". Let "#var($italic("__wit") ≔ "[]"$)#". Let "#var($italic("__varmap") ≔ "Elt"\(italic("__x1")\)$)#". Let "#var($italic("__ff") ≔ "IMPL"\("A"\("isProp"\, "Build_Formula"\("PEc"\("Z0"\)\, "OpLe"\, "PEX"\("xH"\)\)\, "tt"\)\, "None"\, "A"\("isProp"\, "Build_Formula"\("PEX"\("xH"\)\, "OpLe"\, "PEmul"\("PEc"\("Zpos"\("xO"\("xH"\)\)\)\, "PEX"\("xH"\)\)\)\, "tt"\)\)$)#"."], (
                           message("ko", "not proved: Tauto.eval_bf (ZMicromega.Zeval_formula (VarMap.find BinNums.Z0 __varmap)) __ff"),
                           steps((
                             step("1.1.2.4.2.1.1", [#"By definition of "#cited("eq", "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq")#" ("#just("eq_refl", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#eq_refl")#"), we have "#claim($"true" = "true"$)#"."], (), status: "ok"),
-                            step("1.1.2.4.2.1.2", [#"The element "#formula($"find"\("Z0", italic("__varmap")\)$)#" belongs to "#formula($"PolEnv"\(ℤ\)$)#"."], (), status: "none"),
+                            step("1.1.2.4.2.1.2", [#"The element "#formula($"find"\("Z0"\, italic("__varmap")\)$)#" belongs to "#formula($"PolEnv"\(ℤ\)$)#"."], (), status: "none"),
                           )),
-                          paragraph[#"Applying "#just("ZMicromega.ZTautoChecker_sound", url: "https://rocq-prover.org/stdlib/Stdlib.micromega.ZMicromega.html#ZTautoChecker_sound")#", we have "#claim($"eval_bf"\("Zeval_formula"\("find"\("Z0", italic("__varmap")\)\), italic("__ff")\)$)#"."],
+                          paragraph[#"Applying "#just("ZMicromega.ZTautoChecker_sound", url: "https://rocq-prover.org/stdlib/Stdlib.micromega.ZMicromega.html#ZTautoChecker_sound")#", we have "#claim($"eval_bf"\("Zeval_formula"\("find"\("Z0"\, italic("__varmap")\)\)\, italic("__ff")\)$)#"."],
                         ), status: "ko"),
                       )),
                     ), status: "ok"),

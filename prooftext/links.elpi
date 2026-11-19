@@ -48,6 +48,12 @@ pred library-documentation o:string, o:string.
 library-documentation "Corelib" "https://rocq-prover.org/corelib/".
 library-documentation "Stdlib" "https://rocq-prover.org/stdlib/".
 
+% [name-url Name Url]: the address of a name that Rocq does not locate (a
+% rule of a checker, a tactic), from a table that the tool adds (pdf.sh
+% --name-links): a justification *Name*{.just} links to it.  None by
+% default
+pred name-url o:string, o:string.
+
 % [documentation-url Name Url]: the entry of Name in the documentation of
 % its library: the global reference Rocq gives to Name, in the current
 % context (the require line of the text), in a library that has an

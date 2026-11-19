@@ -105,7 +105,7 @@ Elpi Accumulate lp:{{
     formula "" ["l : list nat", "x : nat"] "In x l \\/ l = nil" "x ∈ l ∨ l = \"[]\"",
     formula "bool_scope" ["b c : bool"] "negb (b && c) = negb b || negb c" "\\(¬ \\(b ∧ c\\)\\) = \\(¬ b ∨ ¬ c\\)",
     formula "" ["f : nat -> nat", "IH : Prop"] "f (f 2) = 2 /\\ IH" "f\\(f\\(2\\)\\) = 2 ∧ italic(\"IH\")",
-    formula "" ["l : list nat"] "map (fun x => x + 1) l = l" "\"map\"\\(\\(x ↦ x + 1\\), l\\) = l",
+    formula "" ["l : list nat"] "map (fun x => x + 1) l = l" "\"map\"\\(\\(x ↦ x + 1\\)\\, l\\) = l",
     formula "" N "match n with 0 => m | S k => k end = m"
       "\\(\"match n with | 0 => m | S k => k end\"\\) = m",
     % declarations (Let)

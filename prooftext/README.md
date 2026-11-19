@@ -383,6 +383,7 @@ prooftext/pdf.sh --source proof.md                    # the Typst source only
 prooftext/pdf.sh --links '[["index", "../index.html"]]' proof.typ   # links above the text (gallery.sh)
 prooftext/pdf.sh --roles claim,just proof.md # colour only the claims and justifications (all by default)
 sh prooftext/gallery.sh ~/gallery                      # every text of the repository, with an index
+prooftext/pdf.sh --doc-root MyLib=../doc/ --name-links names.txt proof.md   # links to local rocq doc pages, rules, tactics
 ```
 
 `pdf.sh` writes the Typst source of each text next to it (`proof.md` gives
@@ -553,8 +554,8 @@ form of the texts written before the tree, `*by X*`, is shown as the word
 
 The PDF and the web page have the same links, made with Typst's `link`
 and `label` (`links.elpi`, `typst.elpi`, the template's `linked`).  There
-are three kinds; the writer finds the first two while it reads the text,
-with no table of names.
+are four kinds; the writer finds the first two while it reads the text,
+with no table of names (the third needs one, given on the command line).
 
 1. **A name and its uses.**  A name given to a formula, `` `A`{.hyp}
    (h) `` (a hypothesis, or the conclusion of a node that later nodes
@@ -586,11 +587,25 @@ with no table of names.
    line of the text (with `--code`, without it: only the names that the
    prelude has, or given in full).  A name of another library (a lemma
    of the user, of xtext's examples) has no link: the gallery does not
-   know where its source is published.  A tactic (`*lia*{.just}`) has none.
+   know where its source is published, unless it is given (below).  A
+   tactic (`*lia*{.just}`) has none, unless a table gives one (3.).
    Another library adds its documentation with a clause, as the
    notations are added: `prooftext.library-documentation "MyLib"
    "https://.../"`, if its pages follow rocqdoc's scheme.
-3. **The pages of a gallery** (`gallery.sh`): see "The gallery".
+   The same clause is given on the command line, without editing a
+   file: `pdf.sh --doc-root MyLib=URL` (and `gallery.sh --doc-root`),
+   for a documentation made with `rocq doc --html` (one page per file,
+   `MyLib.File.html#name`), online or local (`URL` may be relative to
+   the page; a relative `URL` given to `gallery.sh` is relative to its
+   `OUT`, and rewritten for each page).  A clause given so is added after
+   those of the file (`Corelib`, `Stdlib` keep theirs).
+3. **A rule or a tactic** (a justification that Rocq does not locate:
+   the name of a rule of a checker, a tactic) links to the address that
+   a table gives it: `pdf.sh --name-links FILE` (and `gallery.sh
+   --name-links`), one line `NAME URL` each, the clauses
+   `prooftext.name-url "NAME" "URL"` (`links.elpi`).  A name in scope
+   (the name of a hypothesis) comes first.
+4. **The pages of a gallery** (`gallery.sh`): see "The gallery".
 
 The addresses without a version, `rocq-prover.org/corelib/...` and
 `rocq-prover.org/stdlib/...`, lead to the latest documentation (checked
@@ -714,7 +729,11 @@ itself:
   gives no way to add to the `head`; browsers accept it;
 - Chrome draws Typst's stretchy parentheses `(x)` with wide gaps; the
   writer therefore writes parentheses that keep their size, `\(x\)`, but
-  around a fraction (the same in the PDF).
+  around a fraction (the same in the PDF).  The arguments of an application
+  are then separated by escaped commas, `f\(x\, y\)`: between `\(` and
+  `\)`, which are not a group, a plain comma inside the arguments of a
+  Typst function (`frac(f\(x, y\), 2)`) would separate them (an error,
+  "unexpected argument", seen on a text of cyp).
 
 The page was looked at in Chrome (headless screenshots) for a text of
 xtext, a checked text with its statuses and messages, and the unit tests

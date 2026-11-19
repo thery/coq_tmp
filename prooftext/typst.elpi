@@ -474,12 +474,15 @@ name-typst (context F Names Words) Where _ (some N) Call (context F Names1 Words
 
 % [justification-link Names J Arguments]: the link of the justification J,
 % as arguments of just: to the documentation of a lemma, or to the step that
-% introduced the name J ("" for none)
+% introduced the name J, or to the address that the table of names gives
+% to J (name-url: a rule, a tactic; "" for none)
 pred justification-link i:list (pair string string), i:string, o:string.
 justification-link _ J Arguments :- prooftext.documentation-url J Url, !,
   Arguments is ", url: " ^ {prooftext.typst-string Url}.
 justification-link Names J Arguments :- prooftext.name-in-scope Names J Label, !,
   Arguments is ", target: " ^ {prooftext.typst-string Label}.
+justification-link _ J Arguments :- prooftext.name-url J Url, !,
+  Arguments is ", url: " ^ {prooftext.typst-string Url}.
 justification-link _ _ "".
 
 % [plain-typst C Text Call]: the Typst code of a plain text: its words that

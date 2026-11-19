@@ -1,7 +1,7 @@
 #!/bin/sh
 # A gallery of proof texts: a web page (Typst's HTML export, the formulas
 # as MathML) and a PDF per text, and an index.html that lists them.
-#   usage: sh prooftext/gallery.sh OUT [SECTION:TITLE:FLAGS:FILES ...]
+#   usage: sh prooftext/gallery.sh [OPTIONS] OUT [SECTION:TITLE:FLAGS:FILES ...]
 # With no section, the public gallery of the repository:
 #   - xtext's texts (xtext/examples/*.md), written from Rocq proofs;
 #   - the same in the other languages of the lexicon (xtext/examples/LANG/);
@@ -18,6 +18,23 @@
 # without .checked, in any section (the language is the lang field).
 # A text that fails is listed in OUT/failures.txt and left out of the
 # index.
+# Options, before OUT (passed to pdf.sh for every text):
+#   --doc-root PREFIX=URL   the names of the libraries under PREFIX link to
+#                           their rocqdoc pages under URL (pdf.sh --doc-root);
+#   --name-links FILE       a table "NAME URL" per line, the addresses of the
+#                           justifications that Rocq does not locate: rules,
+#                           tactics (pdf.sh --name-links).
+# A relative URL in either is relative to OUT: it is written relative to
+# each page (../ for each level of the page under OUT).
+doc_roots=""; name_links=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --doc-root) doc_roots="$doc_roots
+$2"; shift 2 ;;
+    --name-links) name_links=$(cd "$(dirname "$2")" && pwd)/$(basename "$2"); shift 2 ;;
+    *) break ;;
+  esac
+done
 out=$1; shift
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(dirname "$here")
@@ -31,6 +48,29 @@ if [ $# -eq 0 ]; then
     "xtext-checked:xtext's texts checked by cyp:$xtext_flags:$repo/xtext/cyp-check/*.checked.md $repo/xtext/cyp-check/*/*.checked.md" \
     "cyp:cyp's examples, checked:-Q $repo/cyp/examples CypExamples:$repo/cyp/examples/*.checked.md"
 fi
+# [relative_url UP URL]: URL seen from a page UP below OUT (UP: ../../),
+# when it is relative (no scheme, not absolute, not an anchor)
+relative_url() {
+  case $2 in *://*|/*|\#*) echo "$2" ;; *) echo "$1$2" ;; esac
+}
+
+# [link_options DIR]: the options of pdf.sh for the links of the pages in
+# OUT/DIR/ (DIR ends with /): --doc-root and --name-links, their relative
+# addresses written from there (the table in OUT/DIR/.name-links).  The
+# addresses have no spaces
+link_options() {
+  up=$(echo "$1" | sed 's|[^/]*/|../|g')
+  printf '%s\n' "$doc_roots" | while read -r r; do
+    [ -n "$r" ] && printf ' --doc-root %s=%s' "${r%%=*}" "$(relative_url "$up" "${r#*=}")"
+  done
+  if [ -n "$name_links" ]; then
+    while read -r n u; do
+      [ -n "$n" ] && echo "$n $(relative_url "$up" "$u")"
+    done < "$name_links" > "$out/$1.name-links"
+    printf ' --name-links %s' "$out/$1.name-links"
+  fi
+}
+
 : > "$out/failures.txt"
 : > "$out/.catalog"
 sections=""
@@ -55,7 +95,9 @@ for section in "$@"; do
     # the copy without its flags line: the load paths of this machine, which
     # the section's flags give instead
     grep -v '^ *flags:' "$f" > "$out/$name/$sub$base.md"
-    if nice sh "$here/pdf.sh" --source --flags "$flags" "$out/$name/$sub$base.md" > /dev/null 2>&1; then
+    # the options of the links: split on purpose
+    # shellcheck disable=SC2046
+    if nice sh "$here/pdf.sh" --source --flags "$flags" $(link_options "$name/$sub") "$out/$name/$sub$base.md" > /dev/null 2>&1; then
       echo "$sub$base" >> "$out/$name/.list"
       lang=$(sed -n -e '1{/^ *---/!q;}' -e '2,/^ *---/{/^ *---/q;s/^ *lang: *//p;}' "$f" | head -1)
       case $base in *.checked) checked=yes ;; *) checked=no ;; esac
