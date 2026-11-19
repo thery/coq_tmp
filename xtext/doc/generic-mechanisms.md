@@ -59,8 +59,9 @@ constant is recognised by its name.
   that of the proof term, so the large terms built by `lia`, `ring` or
   setoid rewriting are the ones tried.  Short subproofs keep their text.
 - Parameters, in the Elpi database `xtext.db` (`ExtractText.v`):
-  `xtext-tactic Ltac Text` (an Ltac definition, and the text written after
-  *by*), `xtext-threshold N`.  To add `lra`, write `Ltac my_lra := timeout
+  `xtext-tactic Ltac Text` (an Ltac definition, and the name the text
+  gives as the justification, `*lia*{.just}`), `xtext-threshold N`.  To
+  add `lra`, write `Ltac my_lra := timeout
   2 lra.` then `Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra".
   }}`.  To change the threshold, write `:before "xtext-threshold"
   xtext-threshold 50 :- !.`
@@ -97,7 +98,8 @@ it may use `u`.
 ## Measurements
 
 All 76 texts, generated with each mechanism alone and with all of them
-(measured before 6.4.1, the motive left out, which is not in the table)
+(measured before 6.4.1, the motive left out, which is not in the table,
+and before the tree; not rerun)
 (`XTEXT_OFF`; generation time is the sum of Rocq's `Time` over the texts):
 
 | mechanisms on | list items | characters | generation time (s) |

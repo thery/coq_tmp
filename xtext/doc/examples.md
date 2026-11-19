@@ -26,11 +26,13 @@ theses.
 
 **Tauto** (Coscoy, Fig. 1.5, 2.6, 2.8, 2.11): `fun A B C h1 h2 h3 => h3 h1 h2`.
 - Same: the statement (`Let A B C`, `Assume A (h1), B (h2) and A -> B -> C (h3)`).
-- Different: the thesis writes one step, `En appliquant l'hypothèse h3 à
-  h1 et h2 nous avons C` (its application-to-variables rule).  xtext
-  writes the three hypotheses as dashed lines, then `We deduce C`, so
-  that every formula is shown.  The thesis's closing `Nous avons montré
-  ∀A, B, C ...` is the statement here.
+- The step: the thesis writes one step, `En appliquant l'hypothèse h3 à
+  h1 et h2 nous avons C` (its application-to-variables rule).  The
+  default text (staged translation, `examples/Tauto.md`) is the same
+  step, `Applying h3 to h1 and h2, we have C`; the direct translation
+  (`examples-direct/Tauto.md`) writes the three hypotheses as lines of
+  their own, then `We deduce C`.  The thesis's closing `Nous avons
+  montré ∀A, B, C ...` is the statement here.
 
 **Trans_Inv** (Coscoy, Fig. 3.5-3.13 and the final form, Fig. 5.11):
 `fun E R h x y z h1 h2 => h z y x h2 h1`, with `Rel`, `Trans`, `Inv` as
@@ -85,8 +87,9 @@ hypothesis of the implication, which is in the statement.
 text: `x par (2) / Nous en déduisons z par (1) / y par (2) / Nous en
 déduisons t par (1) / Ceci réuni donne z ∧ t`.  Same structure (two
 modus ponens, then the conjunction), but `proj1` and `proj2` are Rocq
-theorems, not rules, so each ∧-elimination costs xtext two lines (`Using
-proj1 we get ...`, `In particular ...`) where the thesis writes `par (1)`.
+theorems, not rules, so each ∧-elimination is a step of its own
+(`Applying proj1, we have z`), with the premises of `proj1` below it,
+where the thesis writes `par (1)`.
 
 **ADD0** (Théry, section 4.9.2, HOL): `nat_ind (fun m => m + 0 = m)
 eq_refl (fun m IH => f_equal S IH) m`.  An induction with a base case and
@@ -104,7 +107,7 @@ an inductive case, as in the thesis's HOL session.  Coscoy's rules
 | ¬ intro | `Supposons A (j)` ... `d'où ¬A (en niant j)` | as ⊃ intro: `Assume A (j)` ... `We have proved A -> False` |
 | ∀ intro | `Considérons un c arbitraire` ... `comme c était arbitraire, nous avons ∀x A` | `Let us consider an arbitrary c : T` ... `We have τ, since c is arbitrary` |
 | ∃ intro | `par conséquent ∃x A` | `By definition of ex (ex_intro) with witness c, we have ...` |
-| ∧ elim | `A ∧ B, donc C` | one case: `Going back to the definition of and ... in A /\ B (h)`; with `proj1`: `Using proj1`, `In particular` |
+| ∧ elim | `A ∧ B, donc C` | one case: `Going back to the definition of and ... in A /\ B (h)`; with `proj1`: `Applying proj1, we have A` |
 | ∨ elim | `Il y a donc deux cas: si A (k) ... si B (l) ... nous avons C dans les deux cas` | `We prove C by case analysis on A \/ B (h) ...: Case 1 ... Case 2 ... We have C in all cases` |
 | ⊃ elim | `nous en déduisons B` | `We deduce B` |
 | ¬ elim | `il y a une contradiction` | `We deduce False` |
@@ -147,5 +150,8 @@ What breaks or becomes unreadable on the large ones:
 - **Local definitions** (`Let hyp_list be nil`) had no form in cyp, so a
   later formula that used `hyp_list` was a Rocq error.  They are now
   written as cyp's local definitions (see ["Local definitions"](generic-mechanisms.md#local-definitions)).
-- **Size**: `Nat.le_trans` (484 items) is generated in 0.5 s, but cyp
-  does not finish it within its limit (300 s).
+- **Size**: `Nat.le_trans` had 484 items in the first texts, generated
+  in 0.5 s, and cyp did not finish it within its limit (300 s).  With the
+  staged translation and the tactic-built subproofs it has 184 items,
+  and cyp checks it in 3 s (63 nodes proved, 1 not, 120 remarks;
+  `cyp-check/results.tsv`).

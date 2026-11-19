@@ -39,22 +39,25 @@ justification.
 
 **Trans_Inv**, Fig. 3.10 of the thesis (doubly annotated, not
 contracted), is `examples-staged-none/Trans_Inv.md`: the five double
-annotations L1-L5 of the figure are at the same steps,
+annotations L1-L5 of the figure are at the same steps (its lines, their
+indentation left out; L4 is the closing paragraph of the node of x, y, z),
 
 ```markdown
-- By h we have `Trans E R`, that is `forall x0 y0 z0 : E, R x0 y0 -> R y0 z0 -> R x0 z0`.  [L1]
-- By h2 we have `Inv E R y z`, that is `R z y`.                                          [L2]
-- By h1 we have `Inv E R x y`, that is `R y x`.                                          [L3]
-- By application, we have `R z x`, that is `Inv E R x z`.                                [L4]
-- We have proved `forall x0 y z : E, ...`, that is `Trans E (Inv E R)`.                 [L5]
+- By *h*{.just} we have `Trans E R`, that is `forall x0 y0 z0 : E, R x0 y0 -> R y0 z0 -> R x0 z0`{.claim}.  [L1]
+- By *h2*{.just} we have `Inv E R y z`, that is `R z y`{.claim}.                                          [L2]
+- By *h1*{.just} we have `Inv E R x y`, that is `R y x`{.claim}.                                          [L3]
+  By application, we have `R z x`, that is `Inv E R x z`{.claim}.                                         [L4]
+- We have proved `forall x0 y z : E, ...`, that is `Trans E (Inv E R)`{.claim}.                          [L5]
 ```
 
 with, as in the figure, one sentence per abstraction and per application
-(`By application, we have R z y -> R y x -> R z x`) and one for each
-element that is not a proof (`The element z belongs to E`).  Fig. 3.12
+(`By application, we have R z y -> R y x -> R z x`).  The figure also has
+one sentence for each element that is not a proof (`The element z
+belongs to E`); the text leaves it out when the element is a variable,
+whose type was given where it was introduced, as here.  Fig. 3.12
 (maximal contraction) is `examples-staged-maximal/Trans_Inv.md`
-(`Applying h to z, y, x, h2 and h1, we have R z x, that is Inv E R x
-z`), Fig. 3.13 (guarded contraction) `examples/Trans_Inv.md`.
+("Applying h to z, y, x, h2 and h1, we have R z x, that is Inv E R x
+z"), Fig. 3.13 (guarded contraction) `examples/Trans_Inv.md`.
 
 ## The selection of type annotations (thesis 4.3.1, Fig. 4.10)
 

@@ -128,4 +128,5 @@ They replace the paper's rules for introduction and elimination theorems.
 - Markdown lists replace the paper's dashes; a subproof's lines come
   below its conclusion (indented), not above it.
 - `Let us consider` / `Let us choose` instead of `Consider` / `Choose`, so
-  that the line reads as a binder for cyp.
+  that the line reads as a binder (chosen when cyp read the words of a
+  line; it reads only the tag `{.var}` now).

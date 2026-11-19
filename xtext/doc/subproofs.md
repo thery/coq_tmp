@@ -56,7 +56,7 @@ named result was already a step of its own: it moves before the step
 that uses it), 112682 characters against 112964; `shared` makes 4 texts
 shorter (968 items).  cyp reads the 18 texts with names as it reads them without:
 the same steps proved, not proved and not checked, text by text
-(2026-11-18; the names are read as the names of claims, and each step is
+(2026-11-18, before the tree, not rerun; the names are read as the names of claims, and each step is
 proved from the claims before it, as before); the 4 texts of `shared`
 lose only the steps they drop (the same steps not proved).  The departures from the thesis (the rules of
 Fig. 4.14 for applications of several arguments, Dewey numbers only

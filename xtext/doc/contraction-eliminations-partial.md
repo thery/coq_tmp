@@ -34,12 +34,14 @@ Limits:
   constructors, eliminations or rewriting.
 - The guard is checked with the premises of the step only, not with all
   the claims before it as cyp does.  It is conservative.
-- Contraction can repeat a line: `ABCD` reads `By h4 we have A` four
+- Contraction can repeat a line: `ABCD` in the direct translation
+  (`examples-direct/ABCD.md`) reads `By h4 we have A` four
   times.
 - On propositional proofs `tauto` always succeeds, so guarded is maximal
   there; the two differ on arithmetic and rewriting (`Nat.*`).
 
-Example, `ABCD` (Fig. 5.6 of the thesis has the three intermediate
+Example, `ABCD` in the direct translation (`examples-direct/ABCD.md`;
+Fig. 5.6 of the thesis has the three intermediate
 results `P1`, `P2`, `P3`): with contraction, the text is the eight uses
 of hypotheses (12 items become 9) and `We deduce D`.  The thesis keeps the
 three named intermediate results, which xtext's contraction drops.
@@ -76,7 +78,8 @@ byte, as before this round.
 ## (8) Proofs in progress (L. Théry's thesis, 3.3.3)
 
 `ExtractText_partial.` (or `ExtractText_partial to "f.md".`), inside a proof,
-prints the text of the proof so far.  Each open goal is written `Prove
+prints the text of the proof so far, as `ExtractText` does (plain text,
+the tagged format with `#[tags]` or in a file).  Each open goal is written `Prove
 G` at its place, as the thesis's `Prouvez G`.  The open goals are the holes
 of the partial proof term; their statements are their types.
 
@@ -91,12 +94,14 @@ Tests (`partial.v`, texts `examples/*_partial*.md`):
 - `praeclarum_partial1` and `2`, the session of section 3.3.3: after
   `split`, `Prove z` and `Prove t`, then `So by definition of and (conj)`,
   as the thesis's `Prouvez z / Prouvez t / Ceci réuni donne z ∧ t`.  After
-  the first conjunct, `We deduce z` (from `Hx` and `Hxz`) and `Prove t`.
+  the first conjunct, `Applying Hxz to Hx, we have z` and `Prove t`.
 
 ## Measurements
 
 All 78 texts (the 76 earlier ones and the two of `elim_type.v`), with each
-contraction strategy.  The generation time is the sum of Rocq's `Time`
+contraction strategy, in the direct translation (measured in an earlier
+round, before the staged translation and the tree; not rerun).  The
+generation time is the sum of Rocq's `Time`
 over the texts; the guard costs it.
 
 | strategy | list items | characters | generation time (s) |
