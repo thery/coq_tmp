@@ -108,6 +108,7 @@ leading Class Text Run :-
 % [after Start Text Rest]: Text without its start Start
 pred after i:string, i:string, o:string.
 after Start Text Rest :- N is size Start, Rest is substring Text N (size Text - N).
+
 % [lexicon-words Lang Words]: the words of the phrases of the lexicon of
 % the language Lang (lexicon.elpi), in lower case
 pred lexicon-words i:string, o:list string.
@@ -118,12 +119,12 @@ lexicon-words Lang Words :-
   std.append PhraseTexts WordTexts Texts,
   std.fold Texts [] add-phrase-words Words.
 
-% [add-phrase-words Phrase Words0 Words]: the words of Phrase added to
-% Words0
+% [add-phrase-words Phrase Words0 Words]: the words of Phrase, in lower
+% case, added to Words0
 pred add-phrase-words i:string, i:list string, o:list string.
 add-phrase-words Phrase Words0 Words :-
   text-pieces Phrase Pieces,
-  std.fold Pieces Words0 (p\ w0\ w\ sigma W\ if (p = word W) (w = [W | w0]) (w = w0)) Words.
+  std.fold Pieces Words0 (p\ w0\ w\ sigma W L\ if (p = word W) (lower W L, w = [L | w0]) (w = w0)) Words.
 
 % [lexicon-word Words W]: W is, in lower case, one of the words Words
 pred lexicon-word i:list string, i:string.
