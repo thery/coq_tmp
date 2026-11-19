@@ -20,19 +20,24 @@ From ProofText Extra Dependency "formulas.elpi" as pt_formulas.
 From ProofText Extra Dependency "names.elpi" as pt_names.
 From ProofText Extra Dependency "tactics.elpi" as pt_tactics.
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
+From ProofText Extra Dependency "maths-table.elpi" as pt_maths_table.
+From ProofText Extra Dependency "maths.elpi" as pt_maths.
+From ProofText Extra Dependency "maths-typst.elpi" as pt_maths_typst.
 From ProofText Extra Dependency "typst.elpi" as pt_typst.
 Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_names pt_tactics
-  pt_checked pt_typst.
+  pt_checked pt_maths_table pt_maths pt_maths_typst pt_typst.
 ```
 
 with `-Q prooftext ProofText` and `-Q lexicon Lexicon`.  `lexicon.elpi`
 comes first (`formulas.elpi` uses its roles), `header.elpi` before
-`document.elpi`, `document.elpi` before `checked.elpi`, and `typst.elpi`
-last.  A tool loads only the files it uses.  Every name is in the namespace `prooftext`
+`document.elpi`, `document.elpi` before `checked.elpi`, the table of
+notations, `maths-table.elpi`, before the printer, `maths.elpi`, before its
+Typst writer, `maths-typst.elpi`, and `typst.elpi` last.  A tool loads only the files it uses.  Every name is in the namespace `prooftext`
 (`prooftext.write-document`, `prooftext.step`, ...), so that it does not
 meet the names of the tools.
 
 Tests: `rocq c -Q ../lexicon Lexicon -Q . ProofText check.v`; those of the
+printer of formulas, `check_maths.v` (the same command); those of the
 Typst back end, `sh typst/check.sh` (below, "The PDF of a proof text").
 
 ## The format
@@ -92,9 +97,13 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   `conditions-mark Ids S` (`**[2a, 2b]**`, the conditions left to a Proof
   block), and their reading, `split-checked Text (checked Status
   Conditions Message) Rest`.  cyp writes its marks with these predicates;
-- `typst.elpi`: the Typst writer, `write-typst D Text`, and `write-as File
-  D Text` (Typst for a file `.typ`, Markdown otherwise); see "The PDF of a
-  proof text";
+- `typst.elpi`: the Typst writer, `write-typst D Text` (formulas in
+  mathematics), `write-typst-in Style D Text` (`maths` or `code`), and
+  `write-as File D Text` (Typst for a file `.typ`, Markdown otherwise);
+  see "The PDF of a proof text";
+- `maths-table.elpi`, `maths.elpi`, `maths-typst.elpi`: the formulas as
+  mathematics, the table of notations, the printer of Rocq terms and its
+  Typst writer; see "Formulas as mathematics";
 - `formulas.elpi`: `role-tag Role Tag` (`rvar` `var`, `rhyp` `hyp`,
   `rclaim` `claim`, `rfact` `fact`, and `rback`, a claim that replaces
   the goal, written as a claim: read back, the class `claim` gives
@@ -162,10 +171,20 @@ same document, with places.
 prooftext/pdf.sh xtext/examples/or_commut.md          # or_commut.typ, then or_commut.pdf
 prooftext/pdf.sh xtext/cyp-check/half_le.checked.md   # a text checked by cyp, with its statuses
 prooftext/pdf.sh foo.typ                              # a text xtext wrote in Typst
+prooftext/pdf.sh --code proof.md                      # the formulas as Rocq code, not mathematics
+prooftext/pdf.sh --html proof.md                      # an HTML page, proof.html, not a PDF
+prooftext/pdf.sh --flags "-R xtext XText" proof.md    # a load path for the require line
+prooftext/pdf.sh --source proof.md                    # the Typst source only
 ```
 
 `pdf.sh` writes the Typst source of each text next to it (`proof.md` gives
-`proof.typ`), then its PDF with [Typst](https://typst.app) (0.15).  It
+`proof.typ`), then its PDF with [Typst](https://typst.app) (0.15).  The
+formulas are mathematics: `pdf.sh` runs the `require` line of the text's
+header (with the load paths of its `flags` line and of `--flags`) before
+the command `Typst`, so that each formula elaborates in Rocq (see
+"Formulas as mathematics"); with `--code` they are Rocq code, as written,
+and nothing is required.  The command says how many formulas it shows as
+code (those that do not elaborate).  It
 needs the opam switch `elpi5` and `typst`; it compiles `Typst.vo` when it
 is older than its sources.  Typst is installed as a snap here: it reads
 and writes only under the home directory, not in `/tmp`.
@@ -201,12 +220,12 @@ A Typst source (xtext's `and_swap`, shortened):
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var("A B : Prop")#". Assume "#hyp("A /\\ B")#" "#name("H")#". We prove "#claim("B /\\ A")#"."]
+#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H")#". We prove "#claim($B ∧ A$)#"."]
 
 #steps((
-  step("1", [#"Going back to the definition of and (match) in "#fact("A /\\ B")#" "#name("H")#", we prove "#claim("B /\\ A")#":"], (
-    step("1.1", [#"Assume "#hyp("A")#" "#name("a")#" and "#hyp("B")#" "#name("b")#"."], (
-      step("1.1.1", [... #claim("B /\\ A")#" "#by("Corelib.Init.Logic.conj")#"."], ()),
+  step("1", [#"Going back to the definition of and (match) in "#fact($A ∧ B$)#" "#name("H")#", we prove "#claim($B ∧ A$)#":"], (
+    step("1.1", [#"Assume "#hyp($A$)#" "#name("a")#" and "#hyp($B$)#" "#name("b")#"."], (
+      step("1.1.1", [... #claim($B ∧ A$)#" "#by("Corelib.Init.Logic.conj")#"."], ()),
     )),
   )),
 ))
@@ -216,16 +235,18 @@ The text of a statement or of a step is cut into its parts: the formulas
 with their roles, the name `(h)` given to a formula (right after it), the
 justification `*by X*`, and the plain text between them.  Each part is
 written as a Typst string, so that no character of the text is read as
-Typst markup.
+Typst markup; a formula is Typst maths, `$...$`, made by the printer, or,
+as code, a string: `#claim("B /\\ A")`.
 
 ### What the PDF shows
 
 - **The header** is a small title block: the name of the theorem, then
   each field of the header (`require`, `flags`, `by`, `lang`, ...) with
   its value as code.
-- **Formulas** are Rocq code, shown in a monospace font.  They are not
-  turned into mathematical notation: Rocq notations have no clean, generic
-  translation.  Each role has its own style, the same in every text:
+- **Formulas** are mathematics (∀ n ∈ ℕ, n + 0 = n), printed from their
+  Rocq terms (see "Formulas as mathematics"); with `--code`, or when a
+  formula does not elaborate, Rocq code in a monospace font.  Each role
+  has its own style, the same in every text:
 
   | role | class | style |
   |---|---|---|
@@ -262,15 +283,47 @@ failure.
 | Latin, Cyrillic (en, fr, it, de, nl, la, ru) | Libertinus Serif |
 | Arabic (ar) | Noto Naskh Arabic |
 | Chinese (zh), Korean (ko) | Noto Serif CJK SC, Noto Serif CJK KR (variable fonts) |
-| formulas | DejaVu Sans Mono; Noto Sans Mono CJK for Chinese or Korean characters |
+| formulas as code | DejaVu Sans Mono; Noto Sans Mono CJK for Chinese or Korean characters |
+| formulas as mathematics | New Computer Modern Math (Typst's own); in the HTML page Latin Modern Math |
 | marks | DejaVu Sans |
 
 Missing: a monospace font for Arabic.  An Arabic name in a formula would
 be shown in a proportional font.  No formula in the texts has one.
 
+### The HTML page
+
+`pdf.sh --html proof.md` makes `proof.html` from the same Typst source,
+with Typst's HTML export (`typst compile --features html --format html`,
+experimental in Typst 0.15; `pdf.sh` hides its warning about that).  Its
+maths are MathML (`<math>`), which browsers draw without JavaScript.  The
+template has an HTML version of each of its functions (`on-html`): a
+formula is a `span` with the classes `formula` and its role (`formula
+claim`), a step an item of nested lists (`ul class="steps"`, `li
+class="step"`), a status a `span class="mark ok"`, cyp's message a `div
+class="message ko"`, and a small style sheet, made from the template's
+colours, gives them their look.  The page needs nothing else: no
+JavaScript, no file beside it.
+
+What Typst's HTML export does not do, so that the template does it
+itself:
+
+- the layout of the PDF (grids, padding, the page): ignored, with a
+  warning each time; hence the lists and the style sheet;
+- the colours of text (`text(fill: ...)`), highlights and underlines:
+  dropped; hence the classes;
+- the style sheet goes in the body (`html.elem("style")`), as Typst gives
+  no way to add to the `head`; browsers accept it;
+- Chrome draws Typst's stretchy parentheses `(x)` with wide gaps; the
+  writer therefore writes parentheses that keep their size, `\(x\)`, but
+  around a fraction (the same in the PDF).
+
+The page was looked at in Chrome (headless screenshots) for a text of
+xtext, a checked text with its statuses and messages, and the unit tests
+of the printer.  Firefox was not tried.
+
 ### Tests
 
-`sh prooftext/typst/check.sh` (about 15 s):
+`sh prooftext/typst/check.sh` (about 50 s, with cyp built):
 
 1. for the ten texts that xtext writes in Typst (`xtext/examples-typst/`:
    five in English, one each in French, Arabic, Chinese, Russian and
@@ -278,11 +331,20 @@ be shown in a proportional font.  No formula in the texts has one.
    (`xtext/examples/`) is the same, character for character;
 2. for two texts checked by cyp (`xtext/cyp-check/add_0_r.checked.md`,
    all proved, and `half_le.checked.md`, with steps not proved and cyp's
-   messages), the Typst source is the expected one (`typst/tests/*.typ`);
-3. every Typst source of 1 and 2 compiles to a PDF, without errors or
+   messages; their `flags` line left out), the Typst source is the
+   expected one (`typst/tests/*.typ`);
+3. the formulas as mathematics: the unit tests of the printer
+   (`check_maths.v`, 53 formulas and declarations), and ten texts (from
+   the standard library, the theses, the reals, and cyp's `square_pos`):
+   none of their formulas is left as code;
+4. the formulas as code (`--code`): all of them are code;
+5. every Typst source of 1-4 compiles to a PDF, without errors or
    warnings (the PDFs are in `typst/tests/out/`);
-4. the round, when cyp is built: xtext's `or_commut` checked by cyp, then
-   the PDF of the checked text.
+6. the HTML pages of `half_le.checked` and of the unit tests compile;
+   they have MathML and the classes of the roles and statuses;
+7. the round, when cyp is built: xtext's `or_commut` checked by cyp, then
+   the PDF of the checked text; cyp's `sqrt_square` (real numbers)
+   checked, then its PDF and its HTML page.
 
 `check.v` tests the reader (places, a text read and written back), the
 marks of a checked step, the parts of a text and the Typst strings.
@@ -299,5 +361,122 @@ marks of a checked step, the parts of a text and the Typst strings.
 - Markdown beyond the format (bold, links, code blocks) is shown as plain
   text.
 - The PDFs were checked by looking at rendered pages: English, French,
-  Arabic, Chinese, Russian and Korean texts, and two checked texts.  No
-  reader of these languages has reviewed them.
+  Arabic, Chinese, Russian and Korean texts, two checked texts, and the
+  texts in mathematics of the tests.  No reader of these languages has
+  reviewed them.
+
+## Formulas as mathematics
+
+A formula of a proof text is a Rocq string, `forall n : nat, n + 0 = n`.
+For the PDF and the HTML page it is shown as mathematics, ∀ n ∈ ℕ, n + 0
+= n, in three steps, each in its own file:
+
+1. **Elaboration** (`maths.elpi`): the command `Typst` runs in Rocq, after
+   the `require` line of the text; it elaborates each formula to a term
+   (`coq.parse.argument`), in the notation scope of the header (`scope`).
+   The variables a formula uses are those declared before it: each `Let`
+   (a formula of class `var`, `a b : Z` or `u := e`, or a formula without
+   a class that has the form of a declaration) puts its variables in the
+   context of the formulas after it, in the statement and in the steps.
+   As in cyp, a declaration in a step holds in its sub-steps and in the
+   steps after it in its list.  This is simpler than cyp's elaboration,
+   which builds the proof: the hypotheses are not needed to elaborate a
+   formula, only the variables.
+2. **Printing** (`maths.elpi`): the term is printed as a formula tree (a
+   `mexp`: numbers, variables, texts, symbols, operators, rows,
+   parentheses, fractions, powers, roots, delimiters, function
+   applications), which says what the formula is, not how a target
+   writes it.  A constant is printed as its entry of the table says;
+   without an entry, as a function of its explicit arguments, f(x, y)
+   (its implicit ones left out), or its name alone, upright.  A
+   variable is in italics, a letter followed by digits with a subscript
+   (n0: n₀).  A dependent product is ∀, grouped while the type is the
+   same (∀ m, n ∈ ℕ); a variable is bound by ∈ when its type is a type
+   of elements (ℕ, ℝ, list ℕ) and by : otherwise (a proposition, a
+   function type); a non-dependent product is →, fun x => b is x ↦ b.
+   Numbers are what Rocq prints as numbers (2, -1, 1.5, of any type).
+   Parentheses come from the levels: an operand is in parentheses when
+   its level is above what its place allows (on the side of the
+   associativity, the operator's level; else one less), and a sign right
+   after an arithmetic operator too, a - (-b).  A term that none of this
+   covers (a match, a let, a fix) is Rocq's own text, upright, in
+   parentheses when it is an operand.
+3. **Writing** (`maths-typst.elpi`): the tree as Typst maths code, `$...$`,
+   which Typst typesets in the PDF and turns into MathML in the HTML page.
+   A symbol is written as it is (≤, ℕ, +), a word or two ASCII characters
+   as a text with the class of the operator (`class("binary", "mod")`), a
+   fraction `frac(a, b)`, a power `a^(b)`, a root `sqrt(a)`, delimiters
+   `lr(| a |)`.  Another target (MathML, LaTeX) needs only another writer
+   of the same tree.
+
+A formula that does not elaborate keeps its text, shown as code.  On the
+79 texts of xtext and the 8 of cyp's examples (2090 formulas), 2 formulas
+are shown as code (`n` and `l1`, bound by a `fix` that no `Let`
+declares), and 1 has a part in Rocq's text (a `match`).
+
+### The table
+
+`maths-table.elpi` has one entry per constant, `maths-notation Name
+Form`, with a comment.  `Name` is a suffix of the constant's full name
+(`"Rplus"`, `"Z.le"`, `"Logic.eq"`): the longest suffix with an entry
+wins, so `"Z.le"` is found before a `"le"` would be.  The forms say what
+the notation is, not how a target writes it:
+
+| form | meaning | examples |
+|---|---|---|
+| `binary S L Assoc` | a S b, level L, `left-assoc`, `right-assoc`, `no-assoc` | `Rplus` +, `Datatypes.app` ++, `Z.modulo` mod |
+| `conjunction S L` | A S B, and a chain a < b < c for two relations on the same middle term | `Logic.and` ∧ |
+| `relation S Neg L` | a S b; ¬ (a S b) is a Neg b when Neg is not "" | `Logic.eq` = ≠, `Rle` ≤, `List.In` ∈ ∉ |
+| `unary S L`, `negation S L`, `sign S L` | S a; a negation takes a relation's negated symbol; a sign is in parentheses after an arithmetic operator | `Datatypes.negb` ¬, `Logic.not` ¬, `Ropp` - |
+| `fraction`, `reciprocal` | a over b, 1 over a | `Rdiv`, `Rinv` |
+| `power`, `fixed-power N` | a to the power b, or N | `Rpow_def.pow`, `Z.pow`, `Rsqr` (²) |
+| `root` | √a | `R_sqrt.sqrt` |
+| `enclosed L R` | a between two delimiters | `Rabs`, `Z.abs` \| \| |
+| `glyph S` | a symbol for a constant without operands | `Datatypes.nat` ℕ, `BinNums.Z` ℤ, `RbaseSymbolsImpl.R` ℝ, `Logic.True` ⊤ |
+| `function F` | F(a, b), F upright | `Rtrigo_def.exp` exp, `Rmax` max |
+| `hidden` | a coercion, shown as its operand | `INR`, `IZR`, `Z.of_nat` |
+| `binder S` | a quantifier on a function, S x ∈ A, P | `Logic.ex` ∃ |
+
+The table covers the logic (∧ ∨ ¬ ↔ ⊤ ⊥ = ∃), the orders and arithmetic
+of `nat`, `N`, `Z`, `R` and `Q` (+ - ⋅ div mod, powers, fractions,
+|·|, √, exp, ln, sin, cos, max, min, the coercions between numbers),
+booleans (written ∧ ∨ ¬), lists (:: ++ [] ∈) and the types ℕ ℤ ℚ ℝ 𝔹
+and pairs ×.  The levels are those of Rocq's notations for the same
+symbols (`negb`, written ¬, has ¬'s level).
+
+To add entries, a library accumulates clauses to the command `Typst`, as
+cyp's rules are added; no code changes.  A file `MyNotations.v`:
+
+```coq
+From Stdlib Require Import Reals.
+From ProofText Require Import Typst.
+Elpi Accumulate Typst lp:{{
+  prooftext.maths-notation "Rtrigo1.tan" (prooftext.function "tan").
+  prooftext.maths-notation "R_Ifp.Int_part" (prooftext.enclosed "⌊" "⌋").
+}}.
+```
+
+and a text whose header requires it, `require: From Stdlib Require Import
+Reals. Open Scope R_scope. From My Require Import MyNotations.` (with
+`pdf.sh --flags "-R dir My"`, or a `flags` line), shows `tan x` as tan(x)
+and `IZR (Int_part x)` as ⌊x⌋.  An entry with a longer suffix overrides a
+shorter one; `:before` puts a clause before those of the table.
+
+### Limits of the mathematics
+
+- The elaboration knows only the variables of the `Let`s: a formula that
+  names a variable bound otherwise (by a `fix`, as in xtext's texts of
+  structural recursion) is shown as code.
+- A notation of Rocq that is not a constant (a `match`, a record, a
+  `let`) is shown as Rocq's text; so are the constants without an entry
+  that are not applied (`S` is S(m), not m + 1, by design).
+- A coercion is hidden, so `INR n + 1 = INR (n + 1)` reads n + 1 = n + 1;
+  `Rsqr x` and `x ^ 2` both read x².
+- Binders keep their names: a binder that shadows a variable of the
+  context is not renamed.
+- The entries a library adds go to one command: `Typst` (the PDFs and
+  pages of `pdf.sh`); xtext's `Explain foo to "foo.typ"` has its own
+  program, where they are added the same way (`Elpi Accumulate Explain`).
+- In a PDF, a word operator (div, mod) inside a highlighted formula has
+  its own highlight box; inline fractions are small (Typst's inline
+  maths).

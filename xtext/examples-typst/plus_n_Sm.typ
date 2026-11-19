@@ -8,19 +8,19 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var("n m : nat")#". We prove "#claim("S (n + m) = n + S m")#"."]
+#statement[#"Let "#var($n , m ∈ ℕ$)#". We prove "#claim($"S"\(n + m\) = n + "S"\(m\)$)#"."]
 
 #steps((
-  step("1", [#"We prove "#fact("S (n + m) = n + S m")#" by induction on "#fact("n")#" (nat, nat_ind):"], ()),
-  step("2", [#"Case 1 (base): we prove "#claim("0 + S m = 0 + S m")#"."], (
-    step("2.1", [#"By definition of eq (eq_refl), we have "#claim("0 + S m = 0 + S m")#" "#by("Corelib.Init.Logic.eq_refl")#"."], ()),
+  step("1", [#"We prove "#fact($"S"\(n + m\) = n + "S"\(m\)$)#" by induction on "#fact($n$)#" (nat, nat_ind):"], ()),
+  step("2", [#"Case 1 (base): we prove "#claim($0 + "S"\(m\) = 0 + "S"\(m\)$)#"."], (
+    step("2.1", [#"By definition of eq (eq_refl), we have "#claim($0 + "S"\(m\) = 0 + "S"\(m\)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], ()),
   )),
-  step("3", [#"Case 2 (inductive): we prove "#claim("forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m")#"."], (
-    step("3.1", [#"Let us choose arbitrarily "#var("n0 : nat")#"; assume by induction hypothesis "#hyp("S (n0 + m) = n0 + S m")#" "#name("IH")#"."], (
-      step("3.1.1", [#"By definition of eq (eq_refl), we have "#claim("S (n0 + S m) = S (n0 + S m)")#" "#by("Corelib.Init.Logic.eq_refl")#"."], ()),
-      step("3.1.2", [#"By IH we have "#claim("S (n0 + m) = n0 + S m")#"."], ()),
-      step("3.1.3", [#"Rewriting with "#fact("S (n0 + m) = n0 + S m")#" from right to left (eq_ind_r), we get "#claim("S (S (n0 + m)) = S (n0 + S m)")#"."], ()),
+  step("3", [#"Case 2 (inductive): we prove "#claim($∀ n_(0) ∈ ℕ , "S"\(n_(0) + m\) = n_(0) + "S"\(m\) → "S"\("S"\(n_(0)\) + m\) = "S"\(n_(0)\) + "S"\(m\)$)#"."], (
+    step("3.1", [#"Let us choose arbitrarily "#var($n_(0) ∈ ℕ$)#"; assume by induction hypothesis "#hyp($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#" "#name("IH")#"."], (
+      step("3.1.1", [#"By definition of eq (eq_refl), we have "#claim($"S"\(n_(0) + "S"\(m\)\) = "S"\(n_(0) + "S"\(m\)\)$)#" "#by("Corelib.Init.Logic.eq_refl")#"."], ()),
+      step("3.1.2", [#"By IH we have "#claim($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#"."], ()),
+      step("3.1.3", [#"Rewriting with "#fact($"S"\(n_(0) + m\) = n_(0) + "S"\(m\)$)#" from right to left (eq_ind_r), we get "#claim($"S"\("S"\(n_(0) + m\)\) = "S"\(n_(0) + "S"\(m\)\)$)#"."], ()),
     )),
   )),
-  step("4", [#"These cases being exhaustive, we deduce "#claim("S (n + m) = n + S m")#" "#by("Corelib.Init.Datatypes.nat_ind")#"."], ()),
+  step("4", [#"These cases being exhaustive, we deduce "#claim($"S"\(n + m\) = n + "S"\(m\)$)#" "#by("Corelib.Init.Datatypes.nat_ind")#"."], ()),
 ))

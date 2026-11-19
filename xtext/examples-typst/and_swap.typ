@@ -8,12 +8,12 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var("A B : Prop")#". Assume "#hyp("A /\\ B")#" "#name("H")#". We prove "#claim("B /\\ A")#"."]
+#statement[#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H")#". We prove "#claim($B ∧ A$)#"."]
 
 #steps((
-  step("1", [#"Going back to the definition of and (match) in "#fact("A /\\ B")#" "#name("H")#", we prove "#claim("B /\\ A")#":"], (
-    step("1.1", [#"Assume "#hyp("A")#" "#name("a")#" and "#hyp("B")#" "#name("b")#"."], (
-      step("1.1.1", [#"By definition of and (conj), from "#fact("B")#" "#name("b")#" and "#fact("A")#" "#name("a")#" we deduce "#claim("B /\\ A")#" "#by("Corelib.Init.Logic.conj")#"."], ()),
+  step("1", [#"Going back to the definition of and (match) in "#fact($A ∧ B$)#" "#name("H")#", we prove "#claim($B ∧ A$)#":"], (
+    step("1.1", [#"Assume "#hyp($A$)#" "#name("a")#" and "#hyp($B$)#" "#name("b")#"."], (
+      step("1.1.1", [#"By definition of and (conj), from "#fact($B$)#" "#name("b")#" and "#fact($A$)#" "#name("a")#" we deduce "#claim($B ∧ A$)#" "#by("Corelib.Init.Logic.conj")#"."], ()),
     )),
   )),
 ))

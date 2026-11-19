@@ -1,0 +1,87 @@
+% prooftext: the Typst writer of formula trees (maths.elpi), and Typst
+% string literals.
+% (load after maths.elpi, before typst.elpi)
+%
+% [maths-typst E Code]: the Typst maths code of the tree E, to be put
+% between dollars: the tree of ∀ n ∈ ℕ, n + 0 = n gives
+% "∀ n ∈ ℕ , n + 0 = n".  Typst makes both the PDF and the HTML page
+% (where its maths become MathML) from this code.
+
+namespace prooftext {
+
+% [typst-string S T]: S as a Typst string literal, "...", with its
+% backslashes and double quotes escaped (in maths, a text shown upright;
+% typst.elpi writes every part of a text with it)
+pred typst-string i:string, o:string.
+typst-string S T :-
+  rex.replace "\\\\" "\\\\\\\\" S S1,
+  rex.replace "\"" "\\\\\"" S1 S2,
+  T is "\"" ^ S2 ^ "\"".
+
+% [maths-typst E Code]: the Typst maths code of the formula tree E
+pred maths-typst i:prooftext.mexp, o:string.
+maths-typst (prooftext.mnum N) N.
+maths-typst (prooftext.mvar V) V :- rex.match "^[A-Za-z]'*$" V, !.
+maths-typst (prooftext.mvar V) Code :- Code is "italic(" ^ {typst-string V} ^ ")".
+maths-typst (prooftext.msub B S) Code :-
+  Code is {maths-typst B} ^ "_(" ^ {maths-typst S} ^ ")".
+maths-typst (prooftext.mtext S) Code :- typst-string S Code.
+maths-typst (prooftext.msym S) Code :- if (plain-symbol S) (Code = S) (typst-string S Code).
+maths-typst (prooftext.mop Class S) Code :-
+  if (plain-symbol S) (Code = S)
+     (typst-class Class Name,
+      Code is "class(" ^ {typst-string Name} ^ ", " ^ {typst-string S} ^ ")").
+maths-typst (prooftext.mrow Es) Code :-
+  std.map Es maths-typst Codes, std.string.concat " " Codes Code.
+maths-typst (prooftext.mparen E) Code :- parentheses E Open Close,
+  Code is Open ^ {maths-typst E} ^ Close.
+maths-typst (prooftext.mfrac A B) Code :-
+  Code is "frac(" ^ {maths-typst A} ^ ", " ^ {maths-typst B} ^ ")".
+maths-typst (prooftext.msup B E) Code :-
+  Code is {maths-typst B} ^ "^(" ^ {maths-typst E} ^ ")".
+maths-typst (prooftext.msqrt A) Code :- Code is "sqrt(" ^ {maths-typst A} ^ ")".
+maths-typst (prooftext.mfenced L R A) Code :-
+  Code is "lr(" ^ L ^ " " ^ {maths-typst A} ^ " " ^ R ^ ")".
+maths-typst (prooftext.mapply F Args) Code :-
+  std.map Args maths-typst Codes, std.string.concat ", " Codes Inner,
+  parentheses (prooftext.mrow Args) Open Close,
+  Code is {maths-typst F} ^ Open ^ Inner ^ Close.
+
+% [parentheses E Open Close]: the parentheses around E: they grow with a
+% fraction in E, (...); else they keep their
+% size, \(...\): the same in a PDF, and in HTML MathML parentheses that
+% do not stretch, which browsers space as text (stretchy ones get wide
+% gaps in Chrome)
+pred parentheses i:prooftext.mexp, o:string, o:string.
+parentheses E "(" ")" :- has-fraction E, !.
+parentheses _ "\\(" "\\)".
+
+% [has-fraction E]: the tree E has a fraction
+pred has-fraction i:prooftext.mexp.
+has-fraction (prooftext.mfrac _ _).
+has-fraction (prooftext.mrow Es) :- std.exists Es has-fraction.
+has-fraction (prooftext.mparen E) :- has-fraction E.
+has-fraction (prooftext.msup B _) :- has-fraction B.
+has-fraction (prooftext.msub B _) :- has-fraction B.
+has-fraction (prooftext.msqrt E) :- has-fraction E.
+has-fraction (prooftext.mfenced _ _ E) :- has-fraction E.
+has-fraction (prooftext.mapply _ Es) :- std.exists Es has-fraction.
+
+% [plain-symbol S]: the symbol S is written as it is in Typst maths: it
+% has no printable ASCII character (≤, ℕ, ∀), or it is one of the ASCII
+% characters that stand for themselves (+ - = < > : , |); a word (mod)
+% or two ASCII characters (++, =?) are written as a text
+pred plain-symbol i:string.
+plain-symbol S :- rex.match "^[^ -~]+$" S, !.
+plain-symbol S :- rex.match "^[-+=<>:,|]$" S.
+
+% [typst-class Class Name]: the Typst maths class of an operator, for
+% its spacing, when it is written as a text
+pred typst-class i:prooftext.op-class, o:string.
+typst-class prooftext.binary-op "binary".
+typst-class prooftext.relation-op "relation".
+typst-class prooftext.prefix-op "unary".
+typst-class prooftext.binder-op "large".
+typst-class prooftext.separator "punctuation".
+
+}

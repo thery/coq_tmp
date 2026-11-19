@@ -9,10 +9,10 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Пусть "#var("A B C : Prop")#". Предположим, что "#hyp("A -> B -> C")#" "#name("h")#", "#hyp("A -> B")#" "#name("h0")#" и "#hyp("A")#" "#name("h1")#". Докажем, что "#claim("C")#"."]
+#statement[#"Пусть "#var($A , B , C : "Prop"$)#". Предположим, что "#hyp($A → B → C$)#" "#name("h")#", "#hyp($A → B$)#" "#name("h0")#" и "#hyp($A$)#" "#name("h1")#". Докажем, что "#claim($C$)#"."]
 
 #steps((
-  step("1", [#"По h1 имеем "#claim("A")#"."], ()),
-  step("2", [#"Применяя h0 к h1, имеем "#claim("B")#"."], ()),
-  step("3", [#"Применяя h, имеем "#claim("C")#"."], ()),
+  step("1", [#"По h1 имеем "#claim($A$)#"."], ()),
+  step("2", [#"Применяя h0 к h1, имеем "#claim($B$)#"."], ()),
+  step("3", [#"Применяя h, имеем "#claim($C$)#"."], ()),
 ))

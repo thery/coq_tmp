@@ -8,17 +8,17 @@
   ("by", "tauto | congruence | lia | firstorder | auto"),
 ))
 
-#statement[#"Let "#var("n m : nat")#". Assume "#hyp("n <= m")#" "#name("H")#". We prove "#claim("S n <= S m")#"."]
+#statement[#"Let "#var($n , m ∈ ℕ$)#". Assume "#hyp($n ≤ m$)#" "#name("H")#". We prove "#claim($"S"\(n\) ≤ "S"\(m\)$)#"."]
 
 #steps((
-  step("1", [#"We prove "#fact("S n <= S m")#" by induction on "#fact("n <= m")#" "#name("H")#" (le, le_ind):"], ()),
-  step("2", [#"Case 1 (base): we prove "#claim("S n <= S n")#"."], (
-    step("2.1", [#"By definition of le (le_n), we have "#claim("S n <= S n")#" "#by("Corelib.Init.Peano.le_n")#"."], ()),
+  step("1", [#"We prove "#fact($"S"\(n\) ≤ "S"\(m\)$)#" by induction on "#fact($n ≤ m$)#" "#name("H")#" (le, le_ind):"], ()),
+  step("2", [#"Case 1 (base): we prove "#claim($"S"\(n\) ≤ "S"\(n\)$)#"."], (
+    step("2.1", [#"By definition of le (le_n), we have "#claim($"S"\(n\) ≤ "S"\(n\)$)#" "#by("Corelib.Init.Peano.le_n")#"."], ()),
   )),
-  step("3", [#"Case 2 (inductive): we prove "#claim("forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)")#"."], (
-    step("3.1", [#"Let us choose arbitrarily "#var("m0 : nat")#"; assume "#hyp("n <= m0")#" "#name("H0")#" and by induction hypothesis "#hyp("S n <= S m0")#" "#name("IH")#"."], (
-      step("3.1.1", [#"By definition of le (le_S) with witness "#fact("S m0")#", from "#fact("S n <= S m0")#" "#name("IH")#" we deduce "#claim("S n <= S (S m0)")#" "#by("Corelib.Init.Peano.le_S")#"."], ()),
+  step("3", [#"Case 2 (inductive): we prove "#claim($∀ m_(0) ∈ ℕ , n ≤ m_(0) → "S"\(n\) ≤ "S"\(m_(0)\) → "S"\(n\) ≤ "S"\("S"\(m_(0)\)\)$)#"."], (
+    step("3.1", [#"Let us choose arbitrarily "#var($m_(0) ∈ ℕ$)#"; assume "#hyp($n ≤ m_(0)$)#" "#name("H0")#" and by induction hypothesis "#hyp($"S"\(n\) ≤ "S"\(m_(0)\)$)#" "#name("IH")#"."], (
+      step("3.1.1", [#"By definition of le (le_S) with witness "#fact($"S"\(m_(0)\)$)#", from "#fact($"S"\(n\) ≤ "S"\(m_(0)\)$)#" "#name("IH")#" we deduce "#claim($"S"\(n\) ≤ "S"\("S"\(m_(0)\)\)$)#" "#by("Corelib.Init.Peano.le_S")#"."], ()),
     )),
   )),
-  step("4", [#"We have "#claim("S n <= S m")#" in all cases."], ()),
+  step("4", [#"We have "#claim($"S"\(n\) ≤ "S"\(m\)$)#" in all cases."], ()),
 ))

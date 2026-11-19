@@ -54,10 +54,14 @@ Elpi prooftext_check.
 
 (* The reader, the marks of a checked text, the Typst writer. *)
 From ProofText Extra Dependency "checked.elpi" as pt_checked.
+From ProofText Extra Dependency "maths-table.elpi" as pt_maths_table.
+From ProofText Extra Dependency "maths.elpi" as pt_maths.
+From ProofText Extra Dependency "maths-typst.elpi" as pt_maths_typst.
 From ProofText Extra Dependency "typst.elpi" as pt_typst.
 
 Elpi Command prooftext_check_typst.
-Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_checked pt_typst.
+Elpi Accumulate File lex_core pt_header pt_document pt_formulas pt_checked
+  pt_maths_table pt_maths pt_maths_typst pt_typst.
 Elpi Accumulate lp:{{
   pred expect i:string, i:string, i:string.
   expect What Got Wanted :- if (Got = Wanted) (coq.say What ": ok")

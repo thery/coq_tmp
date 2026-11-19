@@ -1,0 +1,495 @@
+% prooftext: formulas as mathematics, for the PDF (and later the web page)
+% of a proof text.
+% (load after maths-table.elpi; needs a Rocq context: the commands that
+% load it elaborate formulas)
+%
+% A formula of a proof text is a Rocq string.  It is elaborated to a term,
+% in the context of the variables declared before it ("Elaboration"), and
+% the term is printed as a formula tree, a [mexp] ("Printing"), which says
+% what the formula is (an operator, a fraction, a power, ...) and not how
+% a target writes it.  A writer per target turns the tree into its code:
+% maths-typst.elpi (Typst maths, for the PDF), maths-mathml.elpi (MathML,
+% for a browser).  forall n : nat, n + 0 = n gives the tree of
+%
+%   ∀ n ∈ ℕ, n + 0 = n
+%
+% Each constant is written as its entry of the table says
+% (maths-table.elpi, maths-notation); a constant without an entry is a
+% function, f(x, y), with its explicit arguments; a variable is in
+% italics, a constant upright; a term the printer does not know (a match,
+% a let, a fix) is Rocq's own text, upright.  Parentheses come from the
+% levels of the operators, as in Rocq.
+
+namespace prooftext {
+
+% ------------------------------------------------------------------
+% Formula trees
+
+% a formula, as the writers of the targets read it
+kind mexp type.
+type mnum string -> mexp.                 % a number: 2, -1, 1.5
+type mvar string -> mexp.                 % a variable, in italics: x, n', IH
+type msub mexp -> mexp -> mexp.           % a subscript: n₀
+type mtext string -> mexp.                % a text, upright: a constant's
+                                          % name, a sort, Rocq's own text
+type msym string -> mexp.                 % a symbol standing for a value or
+                                          % a set: ℕ, ⊤, []
+type mop op-class -> string -> mexp.      % an operator's symbol: +, ≤, ¬, ∀
+type mrow list mexp -> mexp.              % a sequence, side by side
+type mparen mexp -> mexp.                 % in parentheses
+type mfrac mexp -> mexp -> mexp.          % a fraction
+type msup mexp -> mexp -> mexp.           % a base and its exponent
+type msqrt mexp -> mexp.                  % a square root
+type mfenced string -> string -> mexp -> mexp.
+                                          % between two delimiters: |a|
+type mapply mexp -> list mexp -> mexp.    % a function applied: f(a, b)
+
+% what an operator's symbol is, for its spacing
+kind op-class type.
+type binary-op op-class.                  % between two operands: +, ∧
+type relation-op op-class.                % a relation: =, ≤, ∈, :=
+type prefix-op op-class.                  % before its operand: ¬, -
+type binder-op op-class.                  % a quantifier: ∀, ∃
+type separator op-class.                  % a comma
+
+% ------------------------------------------------------------------
+% Elaboration
+%
+% A formula is elaborated under the declarations before it in the text
+% (the formulas of the Lets, in order: `a b : Z`, `u := e`), in the
+% notation scope of the text (its header's scope, "" for none): each
+% declaration puts its variables in the Elpi context (decl, def), where
+% coq.parse.argument finds them.
+
+% [formula-maths Scope Declarations F E]: the formula F (a Rocq string),
+% elaborated under the declarations, as a formula tree; fails when F does
+% not elaborate
+pred formula-maths i:string, i:list string, i:string, o:mexp.
+formula-maths Scope Declarations F E :-
+  under-declarations Scope Declarations (term-of-formula Scope F E).
+
+% [term-of-formula Scope F E]: F elaborated in the current context,
+% printed
+pred term-of-formula i:string, i:string, o:mexp.
+term-of-formula Scope F E :- elaborated Scope F T, top-maths T E.
+
+% [elaborated Scope F T]: the term T of the Rocq string F, in the current
+% context and the scope Scope
+pred elaborated i:string, i:string, o:term.
+elaborated Scope F T :-
+  coq.parse.argument {calc ("(" ^ F ^ ")")} ff Scope A ok, A = trm T.
+
+% [declaration-maths Scope Declarations D E]: the declaration D of a Let,
+% elaborated under the declarations before it, as a formula tree (a, b ∈
+% ℤ; u ≔ e); fails when D does not elaborate
+pred declaration-maths i:string, i:list string, i:string, o:mexp.
+declaration-maths Scope Declarations D E :-
+  under-declarations Scope Declarations
+    (declared Scope D (declared-maths Scope D E)).
+
+% [declared-maths Scope D E]: the declaration D, whose variables are in
+% the context, printed: u ≔ e for a definition, the variables grouped by
+% type for others; fails when they are not in the context
+pred declared-maths i:string, i:string, o:mexp.
+declared-maths Scope D (mrow [V, mop relation-op "≔", BE]) :-
+  definition-declaration D, !,
+  definition-parts D Name _,
+  elaborated Scope Name X, def X _ _ B,
+  variable-maths X V, top-maths B BE.
+declared-maths Scope D E :-
+  coq.parse.argument {calc ("Context (" ^ D ^ ")")} ff "" (ctx-decl C) ok,
+  context-names C Names,
+  std.map Names (elaborated Scope) Xs,
+  std.forall Xs (x\ decl x _ _),
+  std.map Xs binding-maths Bindings,
+  grouped-bindings Bindings E.
+
+% [is-declaration Role F]: the formula F of role Role declares variables:
+% a variable (Let), or a formula without a role that has the form of a
+% declaration, names : type or name := term
+pred is-declaration i:string, i:string.
+is-declaration "var" _ :- !.
+is-declaration "" F :- rex.match "^ *[A-Za-z_][A-Za-z0-9_' ]* *:[^:=]" F, !.
+is-declaration "" F :- definition-declaration F.
+
+% [definition-declaration D]: D is a definition, name := term (or name :
+% type := term)
+pred definition-declaration i:string.
+definition-declaration D :- rex.match "^ *[A-Za-z_][A-Za-z0-9_']* *\\(:[^=]*\\)?:=" D.
+
+% [definition-parts D Name Body]: the name and the body of the
+% definition D (its type, if it is given, is left out: the body's is used)
+pred definition-parts i:string, o:string, o:string.
+definition-parts D Name Body :-
+  rex.replace "^ *\\([A-Za-z_][A-Za-z0-9_']*\\).*" "\\1" D Name,
+  rex.replace "^[^=]*:=" "" D Body.
+
+% [under-declarations Scope Declarations P]: P, under the variables of
+% the declarations; a declaration that does not elaborate is left out
+pred under-declarations i:string, i:list string, i:prop.
+under-declarations _ [] P :- P.
+under-declarations Scope [D | Ds] P :-
+  declared Scope D (under-declarations Scope Ds P).
+
+% [declared Scope D P]: P, under the variables of the declaration D (a
+% definition, or variables names : type), or P alone when D does not
+% elaborate
+pred declared i:string, i:string, i:prop.
+declared Scope D P :- definition-declaration D,
+  definition-parts D Name Body, elaborated Scope Body B, !,
+  coq.typecheck B T ok, coq.id->name Name N,
+  pi x\ def x N T B => P.
+declared _ D P :-
+  coq.parse.argument {calc ("Context (" ^ D ^ ")")} ff "" (ctx-decl C) ok, !,
+  declared-context C P.
+declared _ _ P :- P.
+
+% [declared-context C P]: P, under the variables of the context C
+pred declared-context i:context-decl, i:prop.
+declared-context context-end P :- P.
+declared-context (context-item Id _ T none C) P :-
+  coq.id->name Id N, pi x\ decl x N T => declared-context (C x) P.
+declared-context (context-item Id _ T (some B) C) P :-
+  coq.id->name Id N, pi x\ def x N T B => declared-context (C x) P.
+
+% [context-names C Names]: the names of the variables of the context C
+pred context-names i:context-decl, o:list string.
+context-names context-end [].
+context-names (context-item Id _ _ _ C) [Id | Names] :-
+  pi x\ context-names (C x) Names.
+
+% ------------------------------------------------------------------
+% Printing
+
+% a term printed: its tree, its level (that of its outermost operator, 0
+% for an atom; as in Rocq, a smaller level binds tighter), and whether it
+% starts with a sign (-a)
+kind typeset type.
+type typeset mexp -> int -> sign-start -> typeset.
+kind sign-start type.
+type signed sign-start.
+type unsigned sign-start.
+
+% the level of a quantifier, of an implication, of an atom that is not a
+% power's base (a fraction, a root), of Rocq's text of a term, of the
+% relations (=, <=), of a power
+pred quantifier-level o:int.
+quantifier-level 200.
+pred implication-level o:int.
+implication-level 99.
+pred tall-atom-level o:int.
+tall-atom-level 1.
+pred rocq-text-level o:int.
+rocq-text-level 100.
+pred relation-level o:int.
+relation-level 70.
+pred power-level o:int.
+power-level 30.
+
+% [atom E M]: the tree E, an atom
+pred atom i:mexp, o:typeset.
+atom E (typeset E 0 unsigned).
+
+% [top-maths T E]: the tree of the term T, without parentheses around it
+pred top-maths i:term, o:mexp.
+top-maths T E :- term-maths T (typeset E _ _).
+
+% [term-maths T M]: the term T printed
+pred term-maths i:term, o:typeset.
+term-maths T M :- numeral T M, !.
+term-maths T M :- quantified T _ _ _ _, !, quantifier-maths T M.
+term-maths (prod _ A (_\ B)) M :- !, implication-maths A B M.
+term-maths (fun N A B) M :- !, lambda-maths N A B M.
+term-maths X M :- name X, !, variable-maths X V, atom V M.
+term-maths (app [X | Args]) M :- name X, !,
+  variable-maths X V, function-maths V Args M.
+term-maths (sort S) M :- !, sort-maths S M.
+term-maths T M :- constant-head T G Args, !, constant-maths G Args M.
+term-maths T M :- rocq-text T M.
+
+% [constant-head T G Args]: T is the constant G (universe polymorphic or
+% not) applied to Args
+pred constant-head i:term, o:gref, o:list term.
+constant-head (global G) G [].
+constant-head (pglobal G _) G [].
+constant-head (app [global G | Args]) G Args.
+constant-head (app [pglobal G _ | Args]) G Args.
+
+% [constant-maths G Args M]: the constant G applied to Args: in the form
+% of its entry in the table, else as a function of its explicit
+% arguments, name(a, b), or its name alone
+pred constant-maths i:gref, i:list term, o:typeset.
+constant-maths G Args M :- negated-relation G Args M, !.
+constant-maths G Args M :-
+  notation-of G Form, explicit-arguments G Args Operands,
+  form-maths Form Operands M, !.
+constant-maths G Args M :-
+  global-name G Name, explicit-arguments G Args Operands,
+  function-maths Name Operands M.
+
+% [numeral T M]: T is a number (2, -1, 3%Z, 1.5): Rocq prints it as one;
+% its scope and parentheses, (-1)%R, are left out
+pred numeral i:term, o:typeset.
+numeral T M :-
+  (T = global (indc _) ; T = app [global _ | _]),
+  coq.term->string T S,
+  rex.match "^(?-?[0-9]+\\([.][0-9]+\\)?)?\\(%[A-Za-z_]+\\)?$" S,
+  rex.replace "%.*\\|[()]" "" S N,
+  if (rex.match "^-" N) (M = typeset (mnum N) 35 signed) (atom (mnum N) M).
+
+% [rocq-text T M]: Rocq's text of T, upright: the printing of a term
+% that the table and the forms above do not cover, on one line
+pred rocq-text i:term, o:typeset.
+rocq-text T (typeset (mtext S) L unsigned) :-
+  coq.term->string T S0, rex.replace "[ \n]+" " " S0 S, rocq-text-level L.
+
+% [sort-maths S M]: a sort (Prop, Set, Type), as Rocq writes it, upright
+pred sort-maths i:sort, o:typeset.
+sort-maths S M :- coq.term->string (sort S) Name, atom (mtext Name) M.
+
+% [variable-maths X V]: the name of the variable X, in italics, a letter
+% followed by digits with the digits as a subscript (n0: n₀)
+pred variable-maths i:term, o:mexp.
+variable-maths X V :- (decl X N _ ; def X N _ _), !, coq.name->id N Id, name-maths Id V.
+
+% [name-maths Id V]: the tree of the name Id of a variable
+pred name-maths i:string, o:mexp.
+name-maths Id (msub (mvar Letter) (mnum Digits)) :- rex.match "^[A-Za-z][0-9]+$" Id, !,
+  rex.replace "[0-9]+$" "" Id Letter, rex.replace "^[A-Za-z]" "" Id Digits.
+name-maths Id (mvar Id).
+
+% [global-name G Name]: the name of the constant G, upright
+pred global-name i:gref, o:mexp.
+global-name G (mtext Id) :- coq.gref->id G Id.
+
+% [function-maths F Args M]: the function F applied to Args, F(a, b);
+% F alone without arguments (@nil nat, whose argument is implicit)
+pred function-maths i:mexp, i:list term, o:typeset.
+function-maths F [] M :- !, atom F M.
+function-maths F Args M :-
+  std.map Args inner-operand Es, atom (mapply F Es) M.
+
+% ------------------------------------------------------------------
+% The table
+
+% [notation-of G Form]: the form of the constant G in the table: the
+% entry of the longest suffix of its full name
+pred notation-of i:gref, o:prooftext.maths-form.
+notation-of G Form :-
+  coq.gref->string G Full,
+  rex.split "[.]" Full Parts,
+  name-suffixes Parts Suffixes,
+  std.exists Suffixes (s\ prooftext.maths-notation s Form), !.
+
+% [name-suffixes Parts Suffixes]: the suffixes of a dotted name, longest
+% first: [A, B, C] gives "A.B.C", "B.C", "C"
+pred name-suffixes i:list string, o:list string.
+name-suffixes [] [].
+name-suffixes [P | Ps] [S | Ss] :-
+  std.string.concat "." [P | Ps] S, name-suffixes Ps Ss.
+
+% [explicit-arguments G Args Explicit]: the explicit arguments of G among
+% Args (its implicit ones, the A of @eq A x y, left out)
+pred explicit-arguments i:gref, i:list term, o:list term.
+explicit-arguments G Args Explicit :-
+  coq.arguments.implicit G Imps, (Imps = [Kinds | _], ! ; Kinds = []),
+  explicit-of Kinds Args Explicit.
+
+pred explicit-of i:list implicit_kind, i:list term, o:list term.
+explicit-of _ [] [] :- !.
+explicit-of [] Args Args :- !.
+explicit-of [explicit | Ks] [A | As] [A | Es] :- !, explicit-of Ks As Es.
+explicit-of [_ | Ks] [_ | As] Es :- explicit-of Ks As Es.
+
+% [form-maths Form Operands M]: the operands written in the form Form;
+% fails when their number is not the form's
+pred form-maths i:prooftext.maths-form, i:list term, o:typeset.
+form-maths (prooftext.binary S L Assoc) [A, B] M :-
+  infix-maths (mop binary-op S) L Assoc A B M.
+form-maths (prooftext.conjunction _ _) [A, B] M :- chain-maths A B M, !.
+form-maths (prooftext.conjunction S L) [A, B] M :-
+  infix-maths (mop binary-op S) L prooftext.right-assoc A B M.
+form-maths (prooftext.relation S _ L) [A, B] M :-
+  infix-maths (mop relation-op S) L prooftext.no-assoc A B M.
+form-maths (prooftext.unary S L) [A] M :- prefix-maths S L unsigned A M.
+form-maths (prooftext.negation S L) [A] M :- prefix-maths S L unsigned A M.
+form-maths (prooftext.sign S L) [A] M :- prefix-maths S L signed A M.
+form-maths prooftext.fraction [A, B] (typeset (mfrac EA EB) L unsigned) :-
+  inner-operand A EA, inner-operand B EB, tall-atom-level L.
+form-maths prooftext.reciprocal [A] (typeset (mfrac (mnum "1") EA) L unsigned) :-
+  inner-operand A EA, tall-atom-level L.
+form-maths prooftext.power [A, B] M :- inner-operand B EB, power-maths A EB M.
+form-maths (prooftext.fixed-power N) [A] M :- power-maths A (mnum N) M.
+form-maths (prooftext.enclosed Left Right) [A] M :-
+  inner-operand A EA, atom (mfenced Left Right EA) M.
+form-maths prooftext.root [A] (typeset (msqrt EA) L unsigned) :-
+  inner-operand A EA, tall-atom-level L.
+form-maths (prooftext.glyph S) [] M :- atom (msym S) M.
+form-maths (prooftext.function F) Args M :- function-maths (mtext F) Args M.
+form-maths prooftext.hidden [A] M :- term-maths A M.
+
+% [negated-relation G Args M]: ~ (a R b), for a relation R that has a
+% negated symbol in the table, as a R̸ b (a ≠ b)
+pred negated-relation i:gref, i:list term, o:typeset.
+negated-relation G Args M :-
+  notation-of G (prooftext.negation _ _), explicit-arguments G Args [app [global R | RArgs]],
+  notation-of R (prooftext.relation _ Negated L), not (Negated = ""),
+  explicit-arguments R RArgs [A, B],
+  infix-maths (mop relation-op Negated) L prooftext.no-assoc A B M.
+
+% [chain-maths A B M]: the conjunction of two relations a R b and b R' c
+% on the same middle term, as the chain a R b R' c (Rocq's 0 < a < b)
+pred chain-maths i:term, i:term, o:typeset.
+chain-maths (app [global R1 | Args1]) (app [global R2 | Args2]) (typeset E L unsigned) :-
+  notation-of R1 (prooftext.relation S1 _ L), notation-of R2 (prooftext.relation S2 _ L),
+  explicit-arguments R1 Args1 [A, B], explicit-arguments R2 Args2 [B1, C],
+  B = B1, Max is L - 1,
+  operand-of A Max EA, operand-of B Max EB, operand-of C Max EC,
+  E = mrow [EA, mop relation-op S1, EB, mop relation-op S2, EC].
+
+% [infix-maths Op L Assoc A B M]: A Op B, at level L: the operand on the
+% side of the associativity may have the level L, the other one less; an
+% operand that starts with a sign is in parentheses (a - (-b))
+pred infix-maths i:mexp, i:int, i:prooftext.associativity, i:term, i:term, o:typeset.
+infix-maths Op L Assoc A B (typeset (mrow [EA, Op, EB]) L Sign) :-
+  side-levels L Assoc LeftMax RightMax,
+  term-maths A MA, parenthesised MA LeftMax EA,
+  term-maths B MB, after-operator L MB RightMax EB,
+  (if (MA = typeset _ LA signed, LA =< LeftMax) (Sign = signed) (Sign = unsigned)).
+
+% [side-levels L Assoc LeftMax RightMax]: the highest levels of the
+% operands of an infix operator of level L
+pred side-levels i:int, i:prooftext.associativity, o:int, o:int.
+side-levels L prooftext.left-assoc L R :- R is L - 1.
+side-levels L prooftext.right-assoc Left L :- Left is L - 1.
+side-levels L prooftext.no-assoc M M :- M is L - 1.
+
+% [prefix-maths S L Sign A M]: S A, at level L; Sign: whether S is a sign
+pred prefix-maths i:string, i:int, i:sign-start, i:term, o:typeset.
+prefix-maths S L Sign A (typeset (mrow [mop prefix-op S, EA]) L Sign) :-
+  term-maths A MA, after-operator L MA L EA.
+
+% [power-maths A E M]: A to the power E: the base an atom, else in
+% parentheses, (-x)^2, (a/b)^2
+pred power-maths i:term, i:mexp, o:typeset.
+power-maths A E (typeset (msup EA E) L unsigned) :-
+  term-maths A MA, parenthesised MA 0 EA, power-level L.
+
+% [implication-maths A B M]: A → B (a product that does not depend on
+% its variable: an implication, or a function type)
+pred implication-maths i:term, i:term, o:typeset.
+implication-maths A B M :-
+  implication-level L, infix-maths (mop binary-op "→") L prooftext.right-assoc A B M.
+
+% [lambda-maths N A B M]: fun x => b, written x ↦ b
+pred lambda-maths i:name, i:term, i:(term -> term), o:typeset.
+lambda-maths N A B (typeset (mrow [V, mop binary-op "↦", EB]) L unsigned) :-
+  quantifier-level L, coq.name->id N Id, name-maths Id V,
+  (pi x\ decl x N A => top-maths (B x) EB).
+
+% [operand-of A Max E]: the tree of the term A as an operand where the
+% level Max is allowed, in parentheses if its level is higher
+pred operand-of i:term, i:int, o:mexp.
+operand-of A Max E :- term-maths A M, parenthesised M Max E.
+
+% [inner-operand A E]: A inside a fraction, a root, delimiters, an
+% exponent or the arguments of a function (they group it): any level but
+% a quantifier's, whose comma would be read as a separator
+pred inner-operand i:term, o:mexp.
+inner-operand A E :- quantifier-level Q, Max is Q - 1, operand-of A Max E.
+
+% [parenthesised M Max E]: M in parentheses if its level is above Max
+pred parenthesised i:typeset, i:int, o:mexp.
+parenthesised (typeset E L _) Max E :- L =< Max, !.
+parenthesised (typeset E _ _) _ (mparen E).
+
+% [after-operator L M Max E]: M right after the symbol of an operator of
+% level L: as parenthesised, and in parentheses if it starts with a sign
+% and the operator is arithmetic (it binds tighter than the relations):
+% a - (-b), but a = -b
+pred after-operator i:int, i:typeset, i:int, o:mexp.
+after-operator L (typeset E _ signed) _ (mparen E) :- relation-level R, L < R, !.
+after-operator _ M Max E :- parenthesised M Max E.
+
+% ------------------------------------------------------------------
+% Quantifiers
+
+% [quantified T Symbol N A B]: T is a quantification Symbol x : A, B x:
+% a product whose body depends on its variable (∀), or a constant of the
+% table written as a binder applied to a function (ex: ∃)
+pred quantified i:term, o:string, o:name, o:term, o:(term -> term).
+quantified (prod N A B) "∀" N A B :- (pi x\ occurs x (B x)), !.
+quantified (app [global G | Args]) S N A B :-
+  notation-of G (prooftext.binder S), explicit-arguments G Args [fun N A B].
+
+% [quantifier-maths T M]: the quantification T, its first variables
+% grouped while they have the same quantifier and the same type:
+% ∀ m, n ∈ ℕ, P
+pred quantifier-maths i:term, o:typeset.
+quantifier-maths T (typeset E L unsigned) :-
+  quantified T S _ A _, binding-type-maths A Binding,
+  same-binders S Binding T Vars Body,
+  comma-separated Vars Names, quantifier-level L,
+  E = mrow [mop binder-op S, Names, Binding, mop separator ",", Body].
+
+% [same-binders S Binding T Vars Body]: the variables of the
+% quantifications S on a type bound as Binding that start T, then the
+% tree of the body
+pred same-binders i:string, i:mexp, i:term, o:list mexp, o:mexp.
+same-binders S Binding T [V | Vs] Body :-
+  quantified T S N A B, binding-type-maths A Binding, !,
+  coq.name->id N Id, name-maths Id V,
+  pi x\ decl x N A => same-binders S Binding (B x) Vs Body.
+same-binders _ _ T [] Body :- top-maths T Body.
+
+% [binding-type-maths A E]: how a variable of type A is bound: ∈ A when
+% A is a type of elements (ℕ, ℝ, list ℕ), : A otherwise (a proposition, a
+% sort, a function type)
+pred binding-type-maths i:term, o:mexp.
+binding-type-maths A (mrow [mop relation-op "∈", E]) :- set-like A, !,
+  operand-of A 99 E.
+binding-type-maths A (mrow [mop relation-op ":", E]) :- inner-operand A E.
+
+% [set-like A]: the type A is a type of elements, neither a product nor
+% a sort, and its own type is not Prop
+pred set-like i:term.
+set-like A :-
+  not (A = prod _ _ _), not (A = sort _),
+  coq.typecheck A Ty ok, Ty = sort U, not (U = prop), not (U = sprop).
+
+% [comma-separated Es E]: the trees Es separated by commas
+pred comma-separated i:list mexp, o:mexp.
+comma-separated [E] E :- !.
+comma-separated Es (mrow Items) :- comma-items Es Items.
+
+pred comma-items i:list mexp, o:list mexp.
+comma-items [E] [E] :- !.
+comma-items [E | Es] [E, mop separator "," | Items] :- comma-items Es Items.
+
+% [binding-maths X B]: the variable X of the context with how it is
+% bound, a pair (x, ∈ ℕ)
+pred binding-maths i:term, o:pair mexp mexp.
+binding-maths X (pr V Binding) :-
+  variable-maths X V, decl X _ A, binding-type-maths A Binding.
+
+% [grouped-bindings Bindings E]: the variables, those bound the same way
+% next to each other grouped: a, b ∈ ℤ, c ∈ ℝ
+pred grouped-bindings i:list (pair mexp mexp), o:mexp.
+grouped-bindings Bindings E :-
+  binding-groups Bindings Groups, comma-separated Groups E.
+
+pred binding-groups i:list (pair mexp mexp), o:list mexp.
+binding-groups [] [].
+binding-groups [pr V B | Bs] [mrow [Names, B] | Gs] :-
+  same-binding-prefix B Bs Vs Rest,
+  comma-separated [V | Vs] Names,
+  binding-groups Rest Gs.
+
+% [same-binding-prefix B Bindings Vars Rest]: the variables bound as B at
+% the start of Bindings, and the bindings after them
+pred same-binding-prefix i:mexp, i:list (pair mexp mexp), o:list mexp,
+  o:list (pair mexp mexp).
+same-binding-prefix B [pr V B | Bs] [V | Vs] Rest :- !, same-binding-prefix B Bs Vs Rest.
+same-binding-prefix _ Bs [] Bs.
+
+}

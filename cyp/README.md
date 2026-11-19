@@ -212,7 +212,10 @@ formulas have the style of their role when the text gives their class
 (`{.claim}`, as xtext's texts do); a formula without a class is shown
 without a role, since the PDF does not guess roles from the words, as cyp
 does.  The marks of a checked text are prooftext's (`checked.elpi`), so
-that the Typst writer reads back exactly what cyp writes.
+that the Typst writer reads back exactly what cyp writes.  The formulas are
+mathematics (√x², fractions, |x|, ≤), printed from the terms they elaborate
+to, as cyp reads them (`--code` keeps the Rocq code, `--html` makes an HTML
+page): `examples/sqrt_square.md` is a text on real numbers that shows them.
 
 ## The editor
 

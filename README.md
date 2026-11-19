@@ -24,10 +24,14 @@ papers (in development):
   the format of proof texts.
 - **The PDF of a proof text**, with Typst: `prooftext/pdf.sh proof.md`, for
   a text written by xtext (also `Explain foo to "foo.typ".`) or checked by
-  cyp.  Each role of a formula has its own style, the steps are indented as
-  in the list, and cyp's statuses are coloured marks; Arabic is laid out
-  from right to left
-  ([prooftext](prooftext/README.md#the-pdf-of-a-proof-text-typst)).
+  cyp.  The formulas are mathematics (∀ n ∈ ℕ, n + 0 = n; fractions,
+  powers, √, |x|), printed from their Rocq terms by a table of notations
+  that a library can extend; `--code` keeps the Rocq code, `--html` makes
+  an HTML page (MathML) instead of the PDF.  Each role of a formula has its
+  own style, the steps are indented as in the list, and cyp's statuses are
+  coloured marks; Arabic is laid out from right to left
+  ([prooftext](prooftext/README.md#the-pdf-of-a-proof-text-typst),
+  [formulas as mathematics](prooftext/README.md#formulas-as-mathematics)).
 
 ## elpi-tools
 

@@ -11,3 +11,4 @@ xtext/cyp-check/**/*.out
 
 # the outputs of the tests of the Typst back end
 prooftext/typst/tests/out/
+prooftext/check_maths.typ
