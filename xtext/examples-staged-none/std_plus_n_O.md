@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `n = n + 0`{.claim}.
 
-- To prove `n = n + 0`{.fact} by induction (nat, nat_ind), we generalise it to `forall n0 : nat, n0 = n0 + 0`{.fact}:
+- We prove `n = n + 0`{.fact} by induction on `n`{.fact} (nat, nat_ind):
 - Case 1 (base): we prove `0 = 0 + 0`{.claim}.
   - By definition of eq (eq_refl), we have `0 = 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Case 2 (inductive): we prove `forall n0 : nat, n0 = n0 + 0 -> S n0 = S n0 + 0`{.claim}.
@@ -24,5 +24,4 @@ Let `n : nat`{.var}. We prove `n = n + 0`{.claim}.
         - The element `n0 + 0`{.fact} belongs to `nat`{.fact}.
       - By IHn we have `n0 = n0 + 0`{.claim}.
       - By application, we have `S n0 = S (n0 + 0)`{.claim}.
-- These cases being exhaustive, we deduce `forall n0 : nat, n0 = n0 + 0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-- In particular `n = n + 0`{.claim}.
+- These cases being exhaustive, we deduce `n = n + 0`{.claim} *by Corelib.Init.Datatypes.nat_ind*.

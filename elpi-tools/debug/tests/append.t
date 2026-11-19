@@ -107,25 +107,25 @@ The relation (all outputs) runs backwards; same answers as the real engine:
 A breakpoint on append (without -i: the context is printed at each stop):
 
   $ elpi-debug -break append append.elpi 'rev [1,2] R'
-      Call: #4 append [] [2] X1
-  --- breakpoint at #4: append [] [2] X1
+      Call: #4 append [] [2] X0
+  --- breakpoint at #4: append [] [2] X0
     called from:
-      #2 rev [2] X1
-      #1 rev [1, 2] X0
+      #2 rev [2] X0
+      #1 rev [1, 2] X1
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
       Exit: #4 append [] [2] [2]
-    Call: #5 append [2] [1] X0
-  --- breakpoint at #5: append [2] [1] X0
+    Call: #5 append [2] [1] X1
+  --- breakpoint at #5: append [2] [1] X1
     called from:
-      #1 rev [1, 2] X0
+      #1 rev [1, 2] X1
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
-      Call: #6 append [] [1] X3
-  --- breakpoint at #6: append [] [1] X3
+      Call: #6 append [] [1] X2
+  --- breakpoint at #6: append [] [1] X2
     called from:
-      #5 append [2] [1] [2 | X3]
-      #1 rev [1, 2] [2 | X3]
+      #5 append [2] [1] [2 | X2]
+      #1 rev [1, 2] [2 | X2]
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
       Exit: #6 append [] [1] [1]

@@ -5,14 +5,23 @@
 % ===== Builtins ====================================================================
 
 % [native Ctx G]: the builtin goal G, run natively, with its call, exit and
-% fail ports (shown with option builtins).  Only a builtin that fails
-% without ever succeeding is a candidate for the failure explanation.
+% fail ports (shown with option builtins; none on the fast path, where no
+% event is shown or recorded).  Only a builtin that fails without ever
+% succeeding is a candidate for the failure explanation.
 :nooc
 pred native o:ctx, i:(pred).
+native Ctx G :- quiet, !,
+  new_safe Exited,
+  unseen-native Exited Ctx G.
 native Ctx G :-
   native-port call-port Ctx G,
   new_safe Exited,
   native-ports Exited Ctx G.
+
+:nooc
+pred unseen-native i:safe, o:ctx, i:(pred).
+unseen-native Exited Ctx G :- run-native Ctx G, stash_in_safe Exited "exited".
+unseen-native Exited Ctx G :- note-native-failure-if-first Exited Ctx G, fail.
 
 % (alternatives as clauses, not ;, as for [box-ports])
 :nooc
@@ -23,22 +32,15 @@ native-ports Exited Ctx G :-
   native-port fail-port Ctx G, note-native-failure-if-first Exited Ctx G, fail.
 
 % [run-native Ctx G]: run G, with Ctx as the context of the program goals
-% it may call back.  Elpi copies a local clause, and Ctx holds the goals of
-% the calls above, so it is installed only when G may call back.
+% it may call back (through their bridges).  Installing the local clause
+% costs the same whatever the size of Ctx (measured: under 1 µs, with 1 or
+% 50 frames of large goals), far less than looking into G for a possible
+% call back, so it is always installed.  (Reading it back, at a call
+% back only, walks Ctx: Elpi makes the occurs check on the head
+% unification of every local clause.)
 :nooc
 pred run-native o:ctx, i:(pred).
-run-native Ctx G :- may-call-back G, !, (current-ctx called Ctx => G).
-run-native _ G :- G.
-
-% [may-call-back T]: T mentions a program predicate or holds a λ-term (such
-% as x\ y\ rev x y, given to std.map), which native code may call.
-pred may-call-back i:any.
-may-call-back T :- shape-of T S, shape-may-call-back S.
-
-pred shape-may-call-back i:shape.
-shape-may-call-back (node H _) :- program-predicate H, !.
-shape-may-call-back (node _ Ts) :- std.exists Ts may-call-back.
-shape-may-call-back (binder _).
+run-native Ctx G :- (current-ctx called Ctx => G).
 
 % ===== Suspended goals: CHR at depth 1 ==================================================
 %

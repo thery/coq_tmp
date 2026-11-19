@@ -185,7 +185,7 @@ let compile ~elpi ~flags units text =
 (* [interpreted_units file]: the units 1-5 described at the top. *)
 let interpreted_units ~elpi ~flags file =
   let facts =
-    try Elpi_reflect.Reflect.reflect_files ~paths:!paths [ file ]
+    try Elpi_reflect.Reflect.reflect_files ~paths:!paths ~closed:true [ file ]
     with Elpi_reflect.Reflect.Error msg -> fail "%s" msg
   in
   let first =

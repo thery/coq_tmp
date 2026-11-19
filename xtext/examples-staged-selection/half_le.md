@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
 
-- By definition of nat (strong_induction), we prove `forall n0 : nat, n0 / 2 <= n0`{.claim}:
+- By definition of nat (strong_induction) on `n`{.fact}, we prove `n / 2 <= n`{.claim}:
   - Let us choose arbitrarily `n0 : nat`{.var}; assume by induction hypothesis `forall m : nat, m < n0 -> m / 2 <= m`{.hyp} (IH).
     - The element `2`{.fact} belongs to `nat`{.fact}.
     - Applying rew_iff_rev, we have `n0 <= 2 * n0`{.claim}.
@@ -36,4 +36,3 @@ Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
             - Applying ZTautoChecker_sound to __ff and __wit, we have `Tauto.eval_bf (ZMicromega.Zeval_formula (VarMap.find BinNums.Z0 __varmap)) __ff`{.claim}.
         - The element `BinInt.Z.of_nat n0`{.fact} belongs to `BinNums.Z`{.fact}.
     - Applying div_le_upper_bound to n0 and n0, we have `n0 / 2 <= n0`{.claim}.
-- In particular `n / 2 <= n`{.claim}.

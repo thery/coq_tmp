@@ -25,30 +25,30 @@ of the wrong rule, after the first two answers were looked for:
   <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"Solution 1:\n"}}
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"  N = c\n"}}
   <- {"seq":9,"type":"event","event":"output","body":{"category":"stdout","output":"Unify: #1 with lambda.elpi:26: step (app (lam c0 \\ c) c) (lam c0 \\ c)\n"}}
-  <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"      X0 := lam c0 \\ c\n"}}
-  <- {"seq":11,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Unify step","text":"Unify: #1 with lambda.elpi:26: step (app (lam c0 \\ c) c) (lam c0 \\ c)\n      X0 := lam c0 \\ c","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"      X10 := lam c0 \\ c\n"}}
+  <- {"seq":11,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Unify step","text":"Unify: #1 with lambda.elpi:26: step (app (lam c0 \\ c) c) (lam c0 \\ c)\n      X10 := lam c0 \\ c","threadId":1,"allThreadsStopped":true}}
   -> {"seq":5,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
   <- {"seq":12,"type":"response","request_seq":5,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Unify: #1 step (app (lam c0 \\ c) c) (lam c0 \\ c)","id":1,"column":1,"source":{"name":"lambda.elpi","path":"lambda.elpi"},"line":26}],"totalFrames":1}}
   -> {"seq":6,"type":"request","command":"variables","arguments":{"variablesReference":1}}
-  <- {"seq":13,"type":"response","request_seq":6,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"step (app (lam c0 \\ c) c) (lam c0 \\ c)","variablesReference":0},{"name":"arg 1 (input)","value":"app (lam c0 \\ c) c","variablesReference":0},{"name":"arg 2 (output)","value":"lam c0 \\ c","variablesReference":0},{"name":"X0 :=","value":"lam c0 \\ c","variablesReference":0}]}}
+  <- {"seq":13,"type":"response","request_seq":6,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"step (app (lam c0 \\ c) c) (lam c0 \\ c)","variablesReference":0},{"name":"arg 1 (input)","value":"app (lam c0 \\ c) c","variablesReference":0},{"name":"arg 2 (output)","value":"lam c0 \\ c","variablesReference":0},{"name":"X10 :=","value":"lam c0 \\ c","variablesReference":0}]}}
   -> {"seq":7,"type":"request","command":"continue","arguments":{"threadId":1}}
   <- {"seq":14,"type":"response","request_seq":7,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
   <- {"seq":15,"type":"event","event":"output","body":{"category":"stdout","output":"Solution 2:\n"}}
   <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"  N = lam c0 \\ c\n"}}
   <- {"seq":17,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
-  <- {"seq":18,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): #3 step c (X2 x#1)\n"}}
+  <- {"seq":18,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): #3 step c (X9 x#1)\n"}}
   <- {"seq":19,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
-  <- {"seq":20,"type":"event","event":"output","body":{"category":"stdout","output":"    #2 step (lam c1 \\ c) (lam c1 \\ X2 c1)\n"}}
-  <- {"seq":21,"type":"event","event":"output","body":{"category":"stdout","output":"    #1 step (app (lam c1 \\ c) c) (app (lam c1 \\ X2 c1) c)\n"}}
+  <- {"seq":20,"type":"event","event":"output","body":{"category":"stdout","output":"    #2 step (lam c1 \\ c) (lam X9)\n"}}
+  <- {"seq":21,"type":"event","event":"output","body":{"category":"stdout","output":"    #1 step (app (lam c1 \\ c) c) (app (lam X9) c)\n"}}
   <- {"seq":22,"type":"event","event":"output","body":{"category":"stdout","output":"  clauses tried:\n"}}
-  <- {"seq":23,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:24: step (app (lam X3^1) X4^1) (X3^1 X4^1)\n"}}
-  <- {"seq":24,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app (lam X3^1) X4^1\n"}}
-  <- {"seq":25,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:25: step (app X5^1 X6^1) (app X7^1 X6^1)\n"}}
-  <- {"seq":26,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X5^1 X6^1\n"}}
-  <- {"seq":27,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:26: step (app X8^1 X9^1) X8^1\n"}}
-  <- {"seq":28,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X8^1 X9^1\n"}}
-  <- {"seq":29,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:27: step (lam X10^1) (lam X11^1)\n"}}
-  <- {"seq":30,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs lam X10^1\n"}}
+  <- {"seq":23,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:24: step (app (lam X0^1) X1^1) (X0^1 X1^1)\n"}}
+  <- {"seq":24,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app (lam X0^1) X1^1\n"}}
+  <- {"seq":25,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:25: step (app X2^1 X3^1) (app X4^1 X3^1)\n"}}
+  <- {"seq":26,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X2^1 X3^1\n"}}
+  <- {"seq":27,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:26: step (app X5^1 X6^1) X5^1\n"}}
+  <- {"seq":28,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X5^1 X6^1\n"}}
+  <- {"seq":29,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:27: step (lam X7^1) (lam X8^1)\n"}}
+  <- {"seq":30,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs lam X7^1\n"}}
   <- {"seq":31,"type":"event","event":"exited","body":{"exitCode":0}}
   <- {"seq":32,"type":"event","event":"terminated","body":null}
   -> {"seq":8,"type":"request","command":"disconnect","arguments":{}}
@@ -144,19 +144,19 @@ hypothesis added by #1; the scopes of the call:
   -> {"seq":4,"type":"request","command":"continue","arguments":{"threadId":1}}
   <- {"seq":7,"type":"response","request_seq":4,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
   <- {"seq":8,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
-  <- {"seq":9,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): #4 of x#1 X5\n"}}
+  <- {"seq":9,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): #4 of x#1 X0\n"}}
   <- {"seq":10,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
-  <- {"seq":11,"type":"event","event":"output","body":{"category":"stdout","output":"    #2 of (app x#1 x#1) X4\n"}}
-  <- {"seq":12,"type":"event","event":"output","body":{"category":"stdout","output":"    #1 of (lam c1 \\ app c1 c1) (arr (arr X5 X4) X4)\n"}}
+  <- {"seq":11,"type":"event","event":"output","body":{"category":"stdout","output":"    #2 of (app x#1 x#1) X1\n"}}
+  <- {"seq":12,"type":"event","event":"output","body":{"category":"stdout","output":"    #1 of (lam c1 \\ app c1 c1) (arr (arr X0 X1) X1)\n"}}
   <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"  clauses tried:\n"}}
-  <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"    hypothesis added by #1: of x#1 (arr X5 X4)\n"}}
-  <- {"seq":15,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 2 (output): X5 vs arr X5 X4 (occurs check: X5 occurs in arr X5 X4)\n"}}
+  <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"    hypothesis added by #1: of x#1 (arr X0 X1)\n"}}
+  <- {"seq":15,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 2 (output): X0 vs arr X0 X1 (occurs check: X0 occurs in arr X0 X1)\n"}}
   <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:18: of c base\n"}}
   <- {"seq":17,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (output): x#1 vs c\n"}}
-  <- {"seq":18,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:19: of (app X6^1 X7^1) X8^1\n"}}
-  <- {"seq":19,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (output): x#1 vs app X6^1 X7^1\n"}}
-  <- {"seq":20,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:20: of (lam X9^1) (arr X10^1 X11^1)\n"}}
-  <- {"seq":21,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (output): x#1 vs lam X9^1\n"}}
+  <- {"seq":18,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:19: of (app X2^1 X3^1) X4^1\n"}}
+  <- {"seq":19,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (output): x#1 vs app X2^1 X3^1\n"}}
+  <- {"seq":20,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:20: of (lam X5^1) (arr X6^1 X7^1)\n"}}
+  <- {"seq":21,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (output): x#1 vs lam X5^1\n"}}
   <- {"seq":22,"type":"event","event":"output","body":{"category":"stdout","output":"No solution.\n"}}
   <- {"seq":23,"type":"event","event":"exited","body":{"exitCode":0}}
   <- {"seq":24,"type":"event","event":"terminated","body":null}
@@ -347,8 +347,8 @@ pinned:
   <- {"seq":12,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #1 of (app (lam c0 \\ c) c) base","threadId":1,"allThreadsStopped":true}}
   -> {"seq":6,"type":"request","command":"next","arguments":{"threadId":1}}
   <- {"seq":13,"type":"response","request_seq":6,"success":true,"command":"next","body":null}
-  <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #5 step (app (lam c0 \\ c) c) X1\n"}}
-  <- {"seq":15,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #5 step (app (lam c0 \\ c) c) X1","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":14,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #5 step (app (lam c0 \\ c) c) X0\n"}}
+  <- {"seq":15,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #5 step (app (lam c0 \\ c) c) X0","threadId":1,"allThreadsStopped":true}}
   -> {"seq":7,"type":"request","command":"next","arguments":{"threadId":1}}
   <- {"seq":16,"type":"response","request_seq":7,"success":true,"command":"next","body":null}
   <- {"seq":17,"type":"event","event":"output","body":{"category":"stdout","output":"Exit: #5 step (app (lam c0 \\ c) c) c\n"}}
@@ -372,19 +372,19 @@ pinned:
   -> {"seq":12,"type":"request","command":"continue","arguments":{"threadId":1}}
   <- {"seq":31,"type":"response","request_seq":12,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
   <- {"seq":32,"type":"event","event":"output","body":{"category":"stdout","output":"debug: no (more) solution.\n"}}
-  <- {"seq":33,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): #7 step c (X3 x#2)\n"}}
+  <- {"seq":33,"type":"event","event":"output","body":{"category":"stdout","output":"Deepest failure (depth 2): #7 step c (X10 x#2)\n"}}
   <- {"seq":34,"type":"event","event":"output","body":{"category":"stdout","output":"  called from:\n"}}
-  <- {"seq":35,"type":"event","event":"output","body":{"category":"stdout","output":"    #6 step (lam c1 \\ c) (lam c1 \\ X3 c1)\n"}}
-  <- {"seq":36,"type":"event","event":"output","body":{"category":"stdout","output":"    #5 step (app (lam c1 \\ c) c) (app (lam c1 \\ X3 c1) c)\n"}}
+  <- {"seq":35,"type":"event","event":"output","body":{"category":"stdout","output":"    #6 step (lam c1 \\ c) (lam X10)\n"}}
+  <- {"seq":36,"type":"event","event":"output","body":{"category":"stdout","output":"    #5 step (app (lam c1 \\ c) c) (app (lam X10) c)\n"}}
   <- {"seq":37,"type":"event","event":"output","body":{"category":"stdout","output":"  clauses tried:\n"}}
-  <- {"seq":38,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:24: step (app (lam X4^1) X5^1) (X4^1 X5^1)\n"}}
-  <- {"seq":39,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app (lam X4^1) X5^1\n"}}
-  <- {"seq":40,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:25: step (app X6^1 X7^1) (app X8^1 X7^1)\n"}}
-  <- {"seq":41,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X6^1 X7^1\n"}}
-  <- {"seq":42,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:26: step (app X9^1 X10^1) X9^1\n"}}
-  <- {"seq":43,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X9^1 X10^1\n"}}
-  <- {"seq":44,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:27: step (lam X11^1) (lam X12^1)\n"}}
-  <- {"seq":45,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs lam X11^1\n"}}
+  <- {"seq":38,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:24: step (app (lam X1^1) X2^1) (X1^1 X2^1)\n"}}
+  <- {"seq":39,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app (lam X1^1) X2^1\n"}}
+  <- {"seq":40,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:25: step (app X3^1 X4^1) (app X5^1 X4^1)\n"}}
+  <- {"seq":41,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X3^1 X4^1\n"}}
+  <- {"seq":42,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:26: step (app X6^1 X7^1) X6^1\n"}}
+  <- {"seq":43,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs app X6^1 X7^1\n"}}
+  <- {"seq":44,"type":"event","event":"output","body":{"category":"stdout","output":"    lambda.elpi:27: step (lam X8^1) (lam X9^1)\n"}}
+  <- {"seq":45,"type":"event","event":"output","body":{"category":"stdout","output":"        does not match: argument 1 (input): c vs lam X8^1\n"}}
   <- {"seq":46,"type":"event","event":"output","body":{"category":"stdout","output":"No solution.\n"}}
   <- {"seq":47,"type":"event","event":"exited","body":{"exitCode":0}}
   <- {"seq":48,"type":"event","event":"terminated","body":null}

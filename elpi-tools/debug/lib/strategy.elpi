@@ -37,13 +37,30 @@ pred candidate i:any, o:origin, o:(pred), o:(pred).
 candidate P Origin Head Body :- hyp P Origin C, clause-parts C Head Body.
 candidate P Origin Head Body :- program-rule P _ Head Body Origin.
 
-% [ordered-candidate P Origin Head Body]: the candidates in the order of
-% the strategy.
-pred ordered-candidate i:any, o:origin, o:(pred), o:(pred).
-ordered-candidate P Origin Head Body :- the-strategy (strategy shuffled _ _ _), !,
-  candidate-refs P Refs, shuffle Refs Shuffled,
-  std.mem Shuffled Ref, candidate-of-ref P Ref Origin Head Body.
-ordered-candidate P Origin Head Body :- candidate P Origin Head Body.
+% [shuffled-clauses Cut G Id Ctx]: the goal G of the call Id solved by its
+% compiled clauses in a random order (ordered-clause, with that order).
+:nooc
+pred shuffled-clauses i:cut-policy, i:(pred), i:int, i:ctx.
+shuffled-clauses Cut G Id Ctx :-
+  constant G P _, candidate-refs P Refs, shuffle Refs Shuffled,
+  shuffled-clause Cut P G Shuffled Id Ctx.
+
+% [shuffled-clause Cut P G Refs Id Ctx]: the candidates of reference Refs,
+% in that order.  When the cut is ignored, no compiled clause has one:
+% they are tried one by one.  When it is honoured, they are installed
+% again for the call alone (key shuffled-for Id), in that order, so that a
+% cut in one of them discards the ones after it.
+:nooc
+pred shuffled-clause i:cut-policy, i:any, i:(pred), i:list candidate-ref, i:int, i:ctx.
+shuffled-clause cut-ignored _ G Refs Id Ctx :- std.mem Refs Ref, compiled G (by-ref Ref) Id Ctx.
+shuffled-clause honour-cut P G Refs Id Ctx :-
+  std.map Refs (keyed-clause P (shuffled-for Id)) Cs,
+  Cs => compiled G (shuffled-for Id) Id Ctx.
+
+% [keyed-clause P Key Ref C]: C, the compiled clause of P of reference Ref,
+% with key Key.
+pred keyed-clause i:any, i:clause-key, i:candidate-ref, o:(pred).
+keyed-clause P Key Ref C :- clause-entry P Ref F, !, mk-app F [Key] C.
 
 % A reference to a candidate: a hypothetical clause by its number, or a
 % rule by its index.  (References, since std.findall would copy the
@@ -53,20 +70,10 @@ symb hyp-ref int -> candidate-ref.
 symb rule-ref int -> candidate-ref.
 
 pred candidate-refs i:any, o:list candidate-ref.
-candidate-refs P Refs :-
-  std.findall (hyp P (added-by _ _) _) Hyps, std.map Hyps hyp-ref-of HRefs,
-  std.findall (program-rule P _ _ _ _) Rules, std.map Rules rule-ref-of RRefs,
-  std.append HRefs RRefs Refs.
+candidate-refs P Refs :- std.findall (candidate-of P _) Cs, std.map Cs ref-of-candidate Refs.
 
-func hyp-ref-of (pred) -> candidate-ref.
-hyp-ref-of (hyp _ (added-by _ K) _) (hyp-ref K).
-
-func rule-ref-of (pred) -> candidate-ref.
-rule-ref-of (program-rule _ I _ _ _) (rule-ref I).
-
-pred candidate-of-ref i:any, i:candidate-ref, o:origin, o:(pred), o:(pred).
-candidate-of-ref P (hyp-ref K) (added-by S K) Head Body :- hyp P (added-by S K) C, !, clause-parts C Head Body.
-candidate-of-ref P (rule-ref I) Origin Head Body :- program-rule P I Head Body Origin, !.
+func ref-of-candidate (pred) -> candidate-ref.
+ref-of-candidate (candidate-of _ Ref) Ref.
 
 % [shuffle L S]: S is L in a random order.
 pred shuffle i:list A, o:list A.
@@ -85,16 +92,44 @@ func hyp-number -> int.
 hyp-number K :- the-strategy (strategy shuffled _ _ _), !, new_int K.
 hyp-number 0.
 
-% ---- Depth, solutions, cut ----------------------------------------------------
+% ---- The strategy as clauses --------------------------------------------------
+%
+% The predicates of a call that depend on the strategy have no clause of
+% their own: [run] installs, as local clauses, the ones of its strategy
+% ([strategy-clauses]), so that a call runs them without looking the
+% strategy up.  (All their variables are bound by pi, since the variables
+% of a local clause are shared by its uses.)
+
+% [solutions Box]: the solutions of the call (backchain), all or the first
+% only.
+pred solutions o:box.
 
 % [within-depth D]: a call at depth D may run.
 pred within-depth i:int.
-within-depth D :- the-strategy (strategy _ _ (bounded N) _), !, D =< N.
-within-depth _.
 
-% [keeps-first-solution]: a call keeps its first solution only.
-pred keeps-first-solution.
-keeps-first-solution :- the-strategy (strategy _ first-only _ _).
+% [ordered-clause G Id Ctx]: the goal G of the call Id, solved by its
+% compiled clauses (compiled.elpi) in the order of the strategy, their
+% bodies running in the context Ctx.
+pred ordered-clause i:(pred), i:int, i:ctx.
+
+% [strategy-clauses S Cs]: the clauses of solutions, within-depth and
+% ordered-clause for the strategy S.
+func strategy-clauses strategy -> list (pred).
+strategy-clauses (strategy Order Solutions Depth Cut) [S, D, O] :-
+  solutions-clause Solutions S, depth-clause Depth D, order-clause Order Cut O.
+
+% (the first solution only: the cut discards the choice points of backchain)
+func solutions-clause solution-policy -> (pred).
+solutions-clause all-solutions (pi b\ solutions b :- backchain b).
+solutions-clause first-only (pi b\ solutions b :- backchain b, !).
+
+func depth-clause depth-bound -> (pred).
+depth-clause unbounded (pi d\ within-depth d).
+depth-clause (bounded N) (pi d\ within-depth d :- d =< N).
+
+func order-clause candidate-order, cut-policy -> (pred).
+order-clause in-order _ (pi g\ pi id\ pi ctx\ pi r\ ordered-clause g id ctx :- compiled g (by-ref r) id ctx).
+order-clause shuffled Cut (pi g\ pi id\ pi ctx\ ordered-clause g id ctx :- shuffled-clauses Cut g id ctx).
 
 % [cut-ignored-here]: a cut does nothing.
 pred cut-ignored-here.

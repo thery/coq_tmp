@@ -204,47 +204,75 @@ resolves names block by block).  Read them in this order:
    order: `reflect.elpi`; `debug.elpi`; FILE **without its rules** (its
    declarations, so that the terms of the program type check, and its CHR
    rules, which run natively); the rules, as facts
-   `reflect.clause P Index Loc Attrs Head Body`; and one **bridge** per
+   `reflect.clause P Index Loc Attrs Head Body` and, closed, as facts
+   `reflect.closed-clause N F` (elpi-reflect `-closed`: F is the rule under
+   N binders, one per variable); and one **bridge** per
    predicate, `P X1..Xn :- !, debug.bridge (P X1..Xn)`, its only native
    rule, written by `write-bridges`.  They are static rules, not local
    clauses `pi x1..xn\ ...`: with those, Elpi crashes when a CHR rule fires
    ([LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505)).
    `program-rule` gives the rules of a predicate, `modes-of` its modes.
 3. **[`strategy.elpi`](lib/strategy.elpi): how a call is solved.**
-   `candidate` gives the candidate clauses in Elpi's order (the hypothetical
-   clauses in scope, most recent first, then the rules); `ordered-candidate`
-   in the order of the strategy (or shuffled); `within-depth`,
-   `keeps-first-solution`, `cut-ignored-here` read the rest of it.  With
+   `candidate` gives the candidate clauses in Elpi's order as data (the
+   hypothetical clauses in scope, most recent first, then the rules), for
+   the explanation.  The predicates of a call that depend on the strategy,
+   `solutions`, `within-depth` and `ordered-clause` (the compiled clauses
+   in the order of the strategy), have no clause of their own: `run`
+   installs those of its strategy (`strategy-clauses`), so that a call does
+   not look the strategy up.  In a random order, with the cut ignored the
+   candidates are tried one by one by reference; with the cut honoured the
+   clauses of the call are installed again for it alone, shuffled, so that a
+   cut discards those after it.  With
    `random-order`, `first-solution`, `max-depth N`, `ignore-cut`, it is the
    random derivation of [`../check`](../check/README.md), which solves its
    `generated-by` premises with `debug.run` (its own solver,
    `check/lib/solve.elpi`, is gone; its reports are unchanged).
 4. **[`interpreter.elpi`](lib/interpreter.elpi): the meta-interpreter.**
-   - `run` installs the options, the strategy, the safes and the
-     declarations as local clauses, and runs the query.
+   - `run` installs the options, the strategy, the safes, the
+     declarations and the compiled rules (compiled.elpi) as local clauses,
+     and runs the query.
    - `compile` turns a clause body into a native goal, one clause per
      construct: a conjunction is compiled goal by goal; `pi`, `sigma`,
-     `=>`, `;` stay native (with their ports); each atomic goal becomes
-     `debug.goal Ctx G`.  **The cut** (the classic difficulty: a cut must
+     `=>`, `;` stay native (with their ports); an atomic goal of a declared
+     predicate becomes `debug.call`, of another constant
+     `debug.undeclared-goal` (a builtin, or hypothetical clauses only), and
+     any other `debug.goal`, dispatched when it runs.  The code has no
+     variable of its own (sigma binds those it needs), so a clause is
+     compiled once.  **The cut** (the classic difficulty: a cut must
      discard the other clauses of the goal and the choice points before
      it, which belong to the interpreter, and Elpi has no "cut to here")
-     stays a native cut: the compiled body runs as the last goal of
-     `backchain`, so the cut discards exactly the remaining candidates of
-     `backchain` and the choice points before it in the body, which is
-     Elpi's semantics.  Elpi's cut goes through `pi`, `sigma`, `=>` and is
+     stays a native cut: the compiled body is the body of a local clause of
+     `compiled`, so the cut discards exactly the other candidates of the
+     goal and the choice points before it in the body, which is Elpi's
+     semantics.  Elpi's cut goes through `pi`, `sigma`, `=>` and is
      local to `;` (checked on elpi 4.0.0); native connectives keep that.
    - `goal` dispatches a goal: a call of the program (`call`) or a builtin
      (`native`).
-   - `call` builds the box and runs `attempt`, whose second clause is the
+   - `call` builds the box and runs `run-box`: on the fast path (no event
+     shown or recorded, so no stop and no retry) only its solutions and the
+     note of its failure; otherwise `attempt`, whose second clause is the
      choice point a retry or fail unwinds to; `box-ports` is Byrd's box
      (call, exit, redo, fail; the redo port is a clause tried when
      backtracking comes back into a call that exited).
-   - `backchain` tries the candidates: head matching by the modes
-     (`arg-match`: an input argument is matched with `pattern_match`, an
-     output one unified), then the compiled body.
+   - `backchain` calls the compiled clauses of the goal (`ordered-clause`).
    - `assume` gives `H => G` its hypothetical clauses as data, facts
-     `hyp P Origin C` added by the real `=>`: they have Elpi's scope and
-     order, share their variables, get fresh ones for their `pi`.
+     `hyp P Origin C` added by the real `=>`, and compiled: they have
+     Elpi's scope and order, share their variables, get fresh ones for
+     their `pi`.
+   - **[`compiled.elpi`](lib/compiled.elpi): the clauses compiled once.**
+     Each rule (from its closed form, instantiated with eigenvariables that
+     become the binders of the result) and each hypothetical clause becomes
+     a local clause `compiled G Key Id Ctx :- Rest, Body`: its head is the
+     head of the rule up to its first argument that needs more than
+     matching (an output, a `uvar` or `as` pattern), so Elpi itself selects
+     the candidates, with its indexing (`:index(2)`: the first-argument
+     indexing of Elpi and more), and matches them; `Rest` does the other
+     arguments in order (`match-arg`, `unify-arg`: head unifications, which
+     do not walk the goal as `=` and `pattern_match` do), with the unify
+     event; `Body` is the compiled body.  It returns nothing: Elpi makes the
+     occurs check on every local clause (`:nooc` does not apply to them), so
+     an output would walk the stack of calls.  `with-rule-cache G` keeps the
+     compiled rules across the runs of G (elpi-check uses it).
 5. **[`natives.elpi`](lib/natives.elpi): builtins, CHR, the way back.**
    `native` runs a builtin natively, with its ports; `delay` is the real
    `declare_constraint` (**CHR at depth 1**: the rules see the same
@@ -261,8 +289,9 @@ resolves names block by block).  Read them in this order:
    `can-depend` and `show-scope` tell which eigenvariables a logic variable
    may depend on.
 7. **[`ports.elpi`](lib/ports.elpi): the events.**  `event` shows an event
-   and stops there if needed; `port` for the ports of calls,
-   `match-with-port` for the unify step (with the bindings and the pruning
+   and stops there if needed; its text is made only then (a closure:
+   `port-text`, `unify-text` ...); `port` for the ports of calls,
+   `unify-port` for the unify step (with the bindings and the pruning
    it made), `pi-port`, `assume-port`, `delay-port`, `cut-port`,
    `native-port`.
 8. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
@@ -279,29 +308,85 @@ resolves names block by block).  Read them in this order:
 
 ## Cost
 
-Measured on 2026-11-18 on the laptop shared with other jobs (load about 5),
-programs of [`tests/bench.elpi`](tests/bench.elpi), no option (with
-`-trace` or `-profile` add the printing or the recording):
+Measured on 2026-11-19 on the laptop shared with other jobs (load about
+3), programs of [`tests/bench.elpi`](tests/bench.elpi), no option, the
+minimum of 10 runs alternated with the version before this work (main of
+2026-11-18):
 
-| goal | native | interpreted | ratio |
+| goal | native | interpreted | ratio | before |
+|---|---|---|---|---|
+| `count 6400` (a countdown) | 0.007 s | 0.15 s | about 22 | 0.61 s, 88 |
+| `bench 200` (naive reverse, 20 000 calls) | 0.014 s | 0.30 s | about 22 | 1.32 s, 94 |
+| `queens 8 Q` | 0.005 s | 0.10 s | about 21 | 0.33 s, 65 |
+| `lookups 2000` (a predicate of 200 facts) | 0.006 s | 0.11 s | about 19 | 3.0 s, 500 |
+
+At load 5.5 the same runs gave 0.13, 0.28 and 0.09 s (19, 22, 13-18): the
+ratios move by about 20 % with the load of the machine.
+
+**Where the time went** (measured before the changes, on these
+benchmarks): by switching off one mechanism at a time, by micro-benchmarks
+of each step of a call in the context of `run`, and by counting the goals
+Elpi runs per call (`ELPI_DEBUG_TRACE`, `-trace-only user:curgoal`).  One
+goal of the interpreter costs about 0.5 µs; a native call about 0.5 µs.
+
+- **Binding a variable to a large term walks it.**  Elpi's `=`,
+  `pattern_match` and the outputs of builtins (`constant G P Args`) make
+  the occurs check: 20 µs to bind a variable to a list of 200 elements
+  (0.1 µs per element).  Head matching argument by argument did it at
+  each call on every argument of the goal: replacing it by a plain `G =
+  Head` took `bench 200` from 1.45 to 0.92 s.  Head unification of a
+  `:nooc` static clause does not walk; that of a **local** clause always
+  does (Elpi makes the occurs check on every hypothetical clause), which
+  ruled out local clauses that return terms holding the goal or the stack.
+- **The compilation of the body at each call**, and the dispatch of each
+  of its goals (a builtin or a call): 16 µs for the body of `count`; the
+  two together, with the wrapper of builtins, about half of `count` and
+  two thirds of `queens`.
+- **A walk of each builtin goal** to decide whether it may call back the
+  program: 20-30 µs for `X is 3 - 1`, while installing the context it
+  needs costs under 1 µs whatever its size: 20 % of `count`, 26 % of
+  `queens`.
+- **No indexing within a predicate**: every rule of the predicate tried,
+  its head matched: `lookups 2000` 500 times slower than native.
+- Smaller: the strategy and the options looked up at each call (9 of the
+  26 goals of a call of `app` after the changes below), the ports and the
+  choice point for a retry on the fast path (where no event is shown).
+
+**The changes**, each measured on the three benchmarks (load 4-5):
+
+| change | count 6400 | bench 200 | queens 8 |
 |---|---|---|---|
-| `count 6400` (a countdown) | 0.007-0.009 s | 0.50-0.80 s | about 70-90 |
-| `bench 200` (naive reverse, 20 000 calls) | 0.014 s | 1.2-2.2 s | about 90-150 |
-| `queens 8 Q` | 0.007 s | 0.36-0.51 s | about 50-70 |
+| before | 0.63 s | 1.35-1.45 s | 0.31 s |
+| a builtin always gets the context of its call backs (no walk) | 0.52 | 1.38 | 0.24 |
+| the clauses compiled once into local clauses that Elpi selects and matches (`compiled.elpi`) | 0.19 | 0.39 | 0.13 |
+| fast path: no ports, no retry point; builtins dispatched when compiling | 0.141 | 0.317 | 0.094 |
+| the strategy and the fast path as clauses installed by `run` | 0.130 | 0.281 | 0.090 |
 
-`-profile` multiplies these times by 2 to 5 (an event per port);
-`-trace` costs the printing of each goal (36 s for `bench 200`, whose goals
-hold lists of 200 elements).  Memory: 100 MB at most for `bench 200`.
+The first version of the compiled clauses returned the compiled body from
+a local clause: quadratic (`count 6400` 4.5 s), because of the occurs
+check of local clauses above; the clauses now do their work in their body.
+elpi-check runs `debug.run` once per test case, and compiling the rules at
+each run cost 4 ms on `stlc.elpi` (about 120 µs per rule): with
+`debug.with-rule-cache` it compiles them once; its tests: `stlc` 9.3 s
+before, 9.6 s now (within the noise), `rev`, `sort`, `strings` unchanged,
+the same reports.
 
-So 50 to 150 times slower than the real engine, not the 10 hoped for in
-the design: each call does the work of several dozen native ones (a box, a
-safe for the explanation, the compilation of the body, mode-aware head
-matching).  The cost per call is constant (it was first exponential, then
-linear, in the depth of the recursion: Elpi copies or walks terms that hold
-the stack of calls, through local clauses, the occurs check and input
-arguments; the stack is now a flat list and the predicates that build terms
-holding it are `:nooc`).
+**With events.**  An event used to print its goal into its text even when
+it was neither shown nor stopping (with `-profile`, with `-machine`
+between stops, with `-break`); the text is now made only then.
+Configuration 7 of [`../demo/.vscode/launch.json`](../demo/.vscode/launch.json)
+(`std.iota 200 L, naive-rev L R1, rev L R2`, min of 3), before this work
+-> before this change -> now: `-machine -profile` 12.5 -> 8.8 -> 4.9 s,
+`-machine` 10.3 -> 6.4 -> 2.1 s, `-profile` 12.1 -> 8.1 -> 4.0 s,
+`-break nowhere` 9.8 -> 5.4 -> 1.4 s; no option 1.6 -> 0.46 s.
 
+**What is left.**  A call still runs about 26 goals of the interpreter
+(`app`), a builtin about 14 more than its own: a box with an invocation
+number, a safe for the explanation (needed for the warning of a predicate
+with no clause), the depth, the context.  With events on, each event
+looks up the breakpoints and the stepping mode in their safes (about 137
+goals per call with `-break`, against 26 on the fast path): not changed
+here.  `-trace` still costs the printing of each goal.
 ## Limits (said plainly)
 
 - **Cut through a variable**: `G = !, ..., G` cuts only `G` itself (in Elpi
@@ -332,7 +417,46 @@ holding it are `:nooc`).
   master 631d14a; minimal form in
   [`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi));
   it is why the bridges are static rules.
-- The driver hands the parsed program to the compiler with `Obj.magic`:
-  Elpi's API has no function for a program built from parsed units, but its
-  type of parsed programs is the parser's own (`type program =
-  Ast.Program.t` in elpi 4.0.0's `API.ml`).
+- **The driver uses `Obj.magic` once** (`to_api` in
+  [`bin/elpi_debug_main.ml`](bin/elpi_debug_main.ml)), the one place
+  where it goes around Elpi's API.
+  - *Why*: the debugger must compile FILE **without its rules** (they are
+    given to the interpreter as data; Elpi must not run them), together
+    with the interpreter, the rules as facts and the bridges.  So it parses
+    FILE, removes the rules, and compiles the result with other units.
+    Elpi's API can parse and compile a file, but its parsed program
+    (`API.Ast.program`) is abstract: it cannot be edited, nor joined with
+    other units.  The driver therefore parses with the parser library
+    (`Elpi_parser`), whose type it sees, and passes the edited program to
+    `API.Compile.program` through `Obj.magic`.
+  - *Why it works*: in elpi 4.0.0 the two types are one (`type program =
+    Ast.Program.t` in `API.ml`), so the conversion is the identity.
+  - *The risk*: nothing checks it.  If a later Elpi changes that type, the
+    driver still compiles and then crashes or misbehaves at run time.  To
+    be checked again with each new version of Elpi.
+  - *The fix needs Elpi's API* (asked of its author): a function from the
+    parser's program to the API's (`API.Ast.program_of_parsed`, say), or a
+    way to compile a file without its rules, or to compile a program made
+    of several parsed units.  The minimal example of the request:
+
+    ```ocaml
+    (* parse, drop the rules, compile: the last step has no API *)
+    module PAst = Elpi_parser.Ast
+    let without_rules (p : PAst.Program.t) =
+      { p with ast = List.filter (function PAst.Program.Clause _ -> false | _ -> true) p.ast }
+    let () =
+      let elpi = API.Setup.init ~builtins:[ Builtin.std_builtins ] () in
+      let module P = Elpi_parser.Parse.Make (struct
+        let versions = Elpi_util.Util.StrMap.empty
+        let resolver = API.Parse.std_resolver ~paths:[] ()
+      end) in
+      let parsed, _, _ = P.program_from ~loc:(Elpi_util.Util.Loc.initial "(source)")
+          ~digest:(Digest.string source) (Lexing.from_string source) in
+      let program : API.Ast.program = Obj.magic (without_rules parsed) in  (* no API for this *)
+      ignore (API.Compile.program ~elpi program)
+    ```
+
+  - *Without an API change*, the other way is to give the declarations and
+    the rules in two files (the user writes FILE's declarations apart), so
+    that the driver compiles the file of declarations as it is: no cast,
+    but a constraint on how programs are written.

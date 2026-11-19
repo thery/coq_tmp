@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `length (rev l) = length l`{.claim}.
 
-- To prove `length (rev l) = length l`{.fact} by induction (list, list_ind), we generalise it to `forall l0 : list A, length (rev l0) = length l0`{.fact}:
+- We prove `length (rev l) = length l`{.fact} by induction on `l`{.fact} (list, list_ind):
 - Case 1 (base): we prove `length (rev (@nil A)) = length (@nil A)`{.claim}.
   - By definition of eq (eq_refl), we have `0 = 0`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Case 2 (inductive): we prove `forall (a : A) (l0 : list A), length (rev l0) = length l0 -> length (rev (a :: l0)) = length (a :: l0)`{.claim}.
@@ -23,5 +23,4 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `length (rev l) = length 
       - The element `rev l0`{.fact} belongs to `list A`{.fact}.
       - The element `a :: nil`{.fact} belongs to `list A`{.fact}.
     - Rewriting with `length (rev l0 ++ a :: nil) = length (rev l0) + length (a :: nil)`{.fact} from right to left (eq_ind_r), we get `length (rev l0 ++ a :: nil) = S (length l0)`{.claim}.
-- These cases being exhaustive, we deduce `forall l0 : list A, length (rev l0) = length l0`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- In particular `length (rev l) = length l`{.claim}.
+- These cases being exhaustive, we deduce `length (rev l) = length l`{.claim} *by Corelib.Init.Datatypes.list_ind*.

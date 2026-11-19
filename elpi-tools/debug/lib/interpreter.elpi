@@ -21,9 +21,9 @@ run Options Goal :-
   std.map Options (o\ c\ c = opt o) OptionClauses,
   quiet-clauses Options Quiet,
   strategy-of Options Strategy,
-  std.flatten [OptionClauses, Quiet, States, Decls,
+  std.flatten [OptionClauses, Quiet, States, Decls, {strategy-clauses Strategy},
                [the-strategy Strategy, current-ctx called (ctx 0 [])]] Local,
-  Local => run-query Goal.
+  Local => (rule-clauses Rules, Rules => run-query Goal).
 
 % [new-state Name C]: the clause [state Name S] for a new safe S.
 func new-state string -> (pred).
@@ -34,10 +34,11 @@ pred stash-initial-mode i:list option, i:list (pred).
 stash-initial-mode Options States :-
   std.mem States (state "mode" S), !, stash_in_safe S {initial-mode Options}.
 
-% [quiet-clauses Options Cs]: [quiet] when no option shows or records events.
+% [quiet-clauses Options Cs]: [quiet] when no option shows or records events
+% (the fast path), and the clause of [run-box] for it.
 func quiet-clauses list option -> list (pred).
-quiet-clauses Options [] :- std.exists! Options shows-events, !.
-quiet-clauses _ [quiet].
+quiet-clauses Options [(pi e\ pi b\ run-box e b :- attempt e b)] :- std.exists! Options shows-events, !.
+quiet-clauses _ [quiet, (pi e\ pi b\ run-box e b :- unseen-box e b)].
 
 pred shows-events i:option.
 shows-events trace.
@@ -72,7 +73,9 @@ run-query _ :- report-final-failure, fail.
 % [compile Ctx Names Body Code Names1]: Code runs Body in context Ctx.
 % Names are the source names of the binders of Body in textual order (from
 % reflect; [] when unknown) and Names1 those left after Body: a pi names its
-% eigenvariable after the first one.
+% eigenvariable after the first one.  Code has no variable of its own (those
+% it needs when it runs are bound in it by sigma), so that a clause can be
+% compiled once and its compiled body run at each call (compiled.elpi).
 :nooc
 pred compile o:ctx, i:list string, i:(pred), o:(pred), o:list string.
 % a goal only known at run time: dispatched then
@@ -87,18 +90,24 @@ compile Ctx Ns G Code Ns1 :- conjuncts G Gs, !, compile-all Ctx Ns Gs Codes Ns1,
 % the name ([eigen x N]) stays in force in the scope of x
 compile Ctx Ns (pi x\ F x) (pi x\ Code x) Ns1 :- quiet, !,
   next-name Ns _ Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
-compile Ctx Ns (pi x\ F x) (pi x\ debug.pi-port Ctx Name x (F x) N, (debug.eigen x N => Code x)) Ns1 :- !,
+compile Ctx Ns (pi x\ F x) (pi x\ sigma N\ debug.pi-port Ctx Name x (F x) N, (debug.eigen x N => Code x)) Ns1 :- !,
   next-name Ns Name Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
-% sigma x\ B: B with a fresh variable for x
-compile Ctx Ns (sigma x\ F x) Code Ns1 :- !, next-name Ns _ Ns0, compile Ctx Ns0 (F _) Code Ns1.
+% sigma x\ B: native sigma (a fresh variable for x at each run of the code)
+compile Ctx Ns (sigma x\ F x) (sigma x\ Code x) Ns1 :- !, next-name Ns _ Ns0, pi x\ compile Ctx Ns0 (F x) (Code x) Ns1.
 % H => B: native =>, of the hypothetical clauses of H as data ([assume])
-compile Ctx Ns (H => B) (debug.assume Ctx H B Hyps, Hyps => Code) Ns1 :- !,
+compile Ctx Ns (H => B) (sigma Hyps\ debug.assume Ctx H B Hyps, Hyps => Code) Ns1 :- !,
   drop-names H Ns Ns0, compile Ctx Ns0 B Code Ns1.
 % A ; B: native ;, of the compiled branches
 compile Ctx Ns (A ; B) (CA ; CB) Ns2 :- !, compile Ctx Ns A CA Ns1, compile Ctx Ns1 B CB Ns2.
 % declare_constraint G Keys: the real one, with its delay port
 compile Ctx Ns (declare_constraint G Keys) (debug.delay Ctx G Keys) Ns1 :- !, drop-names G Ns Ns1.
-% an atomic goal: a call of the program or a builtin, dispatched by [goal]
+% an atomic goal of a declared predicate of the program: a call
+compile Ctx Ns G (debug.call Ctx P G debug.called) Ns1 :- constant G P _, declared P _, !, drop-names G Ns Ns1.
+% an atomic goal of a constant the program does not declare: a builtin, or
+% a predicate with hypothetical clauses only, told apart when it runs
+compile Ctx Ns G (debug.undeclared-goal Ctx P G) Ns1 :- constant G P _, !, drop-names G Ns Ns1.
+% any other goal (headed by an eigenvariable, an application of a builtin
+% written in OCaml): dispatched by [goal] when it runs
 compile Ctx Ns G (debug.goal Ctx G) Ns1 :- drop-names G Ns Ns1.
 
 :nooc
@@ -168,6 +177,14 @@ goal Ctx G :- program-goal G P, !, call Ctx P G called.
 % anything else: a builtin, run natively
 goal Ctx G :- native Ctx G.
 
+% [undeclared-goal Ctx P G]: the goal G of the constant P, which the program
+% does not declare: a call when hypothetical clauses of P are in scope,
+% otherwise a builtin (as [goal] tells them apart).
+:nooc
+pred undeclared-goal o:ctx, i:any, i:(pred).
+undeclared-goal Ctx P G :- hyp P _ _, !, call Ctx P G called.
+undeclared-goal Ctx _ G :- native Ctx G.
+
 % [program-goal G P]: G is a goal of the predicate P of the program
 % (declared, or with hypothetical clauses in scope).
 pred program-goal i:(pred), o:any.
@@ -192,7 +209,18 @@ pred call o:ctx, i:any, i:(pred), i:entry.
 call (ctx D Above) P G Entry :-
   new_int Id,
   new_safe Exited,
-  attempt Exited (box (frame Id D P G) Above Entry).
+  run-box Exited (box (frame Id D P G) Above Entry).
+
+% [run-box Exited Box]: the call, with its ports ([attempt]); on the fast
+% path, where no event is shown or recorded (so no stop, and no retry), it
+% is only its solutions and the note of its failure ([unseen-box]).  Its
+% clause is installed by [run] ([quiet-clauses]).
+pred run-box i:safe, o:box.
+
+:nooc
+pred unseen-box i:safe, o:box.
+unseen-box Exited Box :- solutions Box, stash_in_safe Exited "exited".
+unseen-box Exited Box :- note-failure-if-first Exited Box, fail.
 
 % [attempt Exited Box]: the call; its second clause is the choice point to
 % which a retry or fail command of the stepper unwinds (stepper.elpi).
@@ -231,45 +259,22 @@ box-ports Exited Box :-
 box-ports Exited Box :-
   port fail-port Box, note-failure-if-first Exited Box, fail.
 
-% [solutions Box]: the solutions of the call, all or the first only (a cut
-% here discards the choice points of backchaining).
-:nooc
-pred solutions o:box.
-solutions Box :- keeps-first-solution, !, backchain Box, !.
-solutions Box :- backchain Box.
-
 :nooc
 pred exit-or-redo o:box.
 exit-or-redo Box :- port exit-port Box.
 exit-or-redo Box :- port redo-port Box, fail.
 
-% [backchain Box]: the candidate clauses of the goal, in the order of the
-% strategy; the body of each one whose head applies runs, compiled, as the
-% last goal of this clause, so that a cut in it is the native cut of this
-% clause.
+% [backchain Box]: the candidate clauses of the goal, compiled
+% (compiled.elpi), in the order of the strategy: Elpi selects those whose
+% head matches, each one ends the head unification and runs the body of
+% its rule, in which a cut is the native cut of the compiled clause.
 :nooc
 pred backchain o:box.
 backchain Box :-
   box-parts Box Id D P G Above,
   within-depth D,
-  modes-of P G Modes,
-  ordered-candidate P Origin Head Body,
-  try-port Box,
-  binder-names-of-body Origin Head Body Names,
-  match-with-port Modes Box Origin G Head,
   D1 is D + 1,
-  compile (ctx D1 [frame Id D P G | Above]) Names Body Code _,
-  body-goal Id Origin Code Goal,
-  Goal.
-
-% [body-goal Id Origin Code Goal]: the goal that runs the compiled body
-% Code of the rule from Origin for call Id.  With option machine, Code runs
-% under [runs Id Origin], so that a stop inside knows the clause each call
-% of the stack runs (machine.elpi); the cut goes through =>.
-:nooc
-pred body-goal i:int, i:origin, o:(pred), o:(pred).
-body-goal Id Origin Code (runs Id Origin => Code) :- opt machine, !.
-body-goal _ _ Code Code.
+  ordered-clause G Id (ctx D1 [frame Id D P G | Above]).
 
 % [binder-names-of-body Origin Head Body Names]: the source names of the
 % binders of the body of a rule, for the names of its eigenvariables (none
@@ -315,14 +320,15 @@ arg-match o A B :- A = B.
 % order, and share their variables with the goal that added them.
 pred hyp o:any, o:origin, o:(pred).
 
-% [assume Ctx H B Hyps]: Hyps are the [hyp] facts of the clauses of H (a
-% clause or a list of clauses), added for the goal B.
+% [assume Ctx H B Hyps]: Hyps are, for each clause of H (a clause or a
+% list of clauses) added for the goal B, its [hyp] fact and its compiled
+% clause (compiled.elpi).
 :nooc
 pred assume o:ctx, i:any, i:(pred), o:list (pred).
 assume Ctx H B Hyps :-
   assume-port Ctx H B,
   hyp-list H Cs, hyp-origin Ctx Origin,
-  std.map Cs (hyp-fact Origin) Hyps.
+  std.map Cs (hyp-clauses Origin) Hyps2, std.flatten Hyps2 Hyps.
 
 % [hyp-list H Cs]: the clauses of the hypothesis H.
 pred hyp-list i:any, o:list (pred).
@@ -336,10 +342,13 @@ func hyp-origin ctx -> string.
 hyp-origin (ctx _ [frame Id _ _ _|_]) S :- !, S is "hypothesis added by " ^ {box-name Id}.
 hyp-origin _ "hypothesis added by the query".
 
-% [hyp-fact Origin C F]: the [hyp] fact of the clause C.
-func hyp-fact string, (pred) -> (pred).
-hyp-fact Origin C (hyp P (added-by Origin K) C) :- clause-parts C H _, constant H P _, !, hyp-number K.
-hyp-fact _ C _ :- std.fatal-error-w-data "debug: unsupported hypothetical clause" C.
+% [hyp-clauses Origin C Cs]: the [hyp] fact of the clause C, and its
+% compiled clause.
+pred hyp-clauses i:string, i:(pred), o:list (pred).
+hyp-clauses Origin C [hyp P (added-by Origin K) C | Installed] :- clause-parts C H _, constant H P _, !,
+  hyp-number K, hyp-closure (added-by Origin K) C F,
+  installed-clauses P (hyp-ref K) F [] Installed.
+hyp-clauses _ C _ :- std.fatal-error-w-data "debug: unsupported hypothetical clause" C.
 
 % [clause-parts C Head Body]: the head and body of the clause C, with
 % fresh variables for its pi-bound variables.

@@ -49,7 +49,7 @@ main Args :-
   if (Props = [], Output = human-output) (print "elpi-check: no property found") true,
   if (Action = list-properties)
      (std.forall Props (list-property Output))
-     (std.map Props (check-property Settings) Results,
+     (debug.with-rule-cache (std.map Props (check-property Settings) Results),
       summary Output Seed Props Results).
 
 % [parse-arguments Args Default Settings]: -n N, -size S, -seed K, -p NAME,

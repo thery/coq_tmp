@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l m n : list A`{.var}. We prove `l ++ m ++ n = (l ++ m) ++ n`{.claim}.
 
-- To prove `l ++ m ++ n = (l ++ m) ++ n`{.fact} by induction (list, list_ind), we generalise it to `forall l0 : list A, l0 ++ m ++ n = (l0 ++ m) ++ n`{.fact}:
+- We prove `l ++ m ++ n = (l ++ m) ++ n`{.fact} by induction on `l`{.fact} (list, list_ind):
 - Case 1 (base): we prove `nil ++ m ++ n = (nil ++ m) ++ n`{.claim}.
   - By definition of eq (eq_refl), we have `n = n`{.claim} *by Corelib.Init.Logic.eq_refl* (H).
   - By application, with H0, we have `n = n -> m ++ n = m ++ n`{.claim}.
@@ -45,5 +45,4 @@ Let `A : Type`{.var}. Let `l m n : list A`{.var}. We prove `l ++ m ++ n = (l ++ 
             - By H10 we have `l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim}.
           - Applying eq_trans, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
     - By application, with H, we have `a :: l0 ++ m ++ n = a :: (l0 ++ m) ++ n`{.claim}.
-- These cases being exhaustive, we deduce `forall l0 : list A, l0 ++ m ++ n = (l0 ++ m) ++ n`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- In particular `l ++ m ++ n = (l ++ m) ++ n`{.claim}.
+- These cases being exhaustive, we deduce `l ++ m ++ n = (l ++ m) ++ n`{.claim} *by Corelib.Init.Datatypes.list_ind*.

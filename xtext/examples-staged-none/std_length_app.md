@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, length (l ++ l') = length l + length l'`{.claim}.
 
-- To prove `forall l' : list A, length (l ++ l') = length l + length l'`{.fact} by induction (list, list_ind), we generalise it to `forall l0 l' : list A, length (l0 ++ l') = length l0 + length l'`{.fact}:
+- We prove `forall l' : list A, length (l ++ l') = length l + length l'`{.fact} by induction on `l`{.fact} (list, list_ind):
 - Case 1 (base): we prove `forall l' : list A, @eq nat (@length A (@app A (@nil A) l')) (Init.Nat.add (@length A (@nil A)) (@length A l'))`{.claim}.
   - Let `l' : list A`{.var}.
     - By definition of eq (eq_refl), we have `length l' = length l'`{.claim} *by Corelib.Init.Logic.eq_refl*.
@@ -29,5 +29,4 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, leng
             - By IHl we have `forall l'0 : list A, length (l0 ++ l'0) = length l0 + length l'0`{.claim}.
             - The element `l'`{.fact} belongs to `list A`{.fact}.
           - By application, we have `S (length (l0 ++ l')) = S (length l0 + length l')`{.claim}.
-- These cases being exhaustive, we deduce `forall l0 l' : list A, length (l0 ++ l') = length l0 + length l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- In particular `forall l' : list A, length (l ++ l') = length l + length l'`{.claim}.
+- These cases being exhaustive, we deduce `forall l' : list A, length (l ++ l') = length l + length l'`{.claim} *by Corelib.Init.Datatypes.list_ind*.

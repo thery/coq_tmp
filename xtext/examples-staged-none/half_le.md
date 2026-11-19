@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
 
-- By definition of nat (strong_induction), we prove `forall n0 : nat, n0 / 2 <= n0`{.claim}:
+- By definition of nat (strong_induction) on `n`{.fact}, we prove `n / 2 <= n`{.claim}:
   - Let us choose arbitrarily `n0 : nat`{.var}.
     - Assume `forall m : nat, m < n0 -> m / 2 <= m`{.hyp} (IH).
       - By application, we have `n0 <= 2 * n0 -> n0 / 2 <= n0`{.claim}.
@@ -108,4 +108,3 @@ Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
             - The element `BinInt.Z.of_nat n0`{.fact} belongs to `BinNums.Z`{.fact}.
           - By cstr we have `BinInt.Z.le BinNums.Z0 (BinInt.Z.of_nat n0)`{.claim}.
       - By application, we have `n0 / 2 <= n0`{.claim}.
-- In particular `n / 2 <= n`{.claim}.

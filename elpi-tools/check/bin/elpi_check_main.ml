@@ -106,7 +106,7 @@ let run o file =
   List.iter (fun (name, text) -> write (Filename.concat dir name) text) Embedded.files;
   let paths = dir :: o.paths in
   let facts =
-    try Elpi_reflect.Reflect.reflect_files ~paths ~defines:o.defines ~builtins:true [ file ]
+    try Elpi_reflect.Reflect.reflect_files ~paths ~defines:o.defines ~builtins:true ~closed:true [ file ]
     with Elpi_reflect.Reflect.Error msg -> raise (Stop [ msg ])
   in
   let facts_file = Filename.concat dir "program.reflect.elpi" in

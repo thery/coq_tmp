@@ -3,7 +3,7 @@
 %
 % The interpreter is in the files of this directory: fragments of one
 % block [namespace debug { }], which dune's rule (../dune) writes around
-% their concatenation, in the order: state, program, strategy, interpreter,
+% their concatenation, in the order: state, program, strategy, interpreter, compiled,
 % natives, lprolog, ports, stepper, machine, explain, profile.  README.md, section
 % "How the interpreter works", reads them side by side.
 

@@ -65,8 +65,18 @@ elim-info H I Kind NC Ks Fls :-
   scheme-info Ty M 0 none Ks0 Fls0,
   std.length Ks0 L,
   (if (Kind = 1) (NC = L)
-      (coq.env.indt I _ NP _ Ar _ _, count-prods Ar NA, NC is L - (NA - NP + 1))),
+      (instance-arity I NS, NC is L - NS)),
   NC > M, std.take NC Ks0 Ks, std.take NC Fls0 Fls.
+
+% the number of arguments of a dependent elimination on I after its
+% branches: the indices of I and the eliminated object
+pred instance-arity i:inductive, o:int.
+instance-arity I NS :- coq.env.indt I _ NP _ Ar _ _, count-prods Ar NA, NS is NA - NP + 1.
+
+% the position of the motive among the arguments of the elimination
+% theorem H
+pred motive-position i:term, o:int.
+motive-position H M :- gr-of H (const C), coq.env.const C _ Ty, elim-shape Ty M _ _.
 
 pred elim-shape i:term, o:int, o:inductive, o:int.
 elim-shape Ty M I K :- eshape Ty [] [] M I K.
@@ -85,8 +95,7 @@ eshape Concl Vs Ds M I K :-
   not (occurs P XTy),
   (if (std.exists CArgs (a\ a == X)) (K = 2) (K = 1, is-prop XTy)),
   std.length Vs L, M1 is M + 1,
-  (if (K = 1) (L1 is L - 1) (coq.env.indt I _ NPI _ ArI _ _, count-prods ArI NAI,
-                             L1 is L - (NAI - NPI + 1))),
+  (if (K = 1) (L1 is L - 1) (instance-arity I NS, L1 is L - NS)),
   L1 >= M1,
   std.drop M1 Ds Ds2, std.take {calc (L1 - M1)} Ds2 Mid,
   std.forall Mid (d\ (concl-head d P ; not (is-prop d))).

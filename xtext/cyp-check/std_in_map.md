@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove `forall x : A, In x l -> In (f x) (map f l)`{.claim}.
 
-- To prove `forall x : A, In x l -> In (f x) (map f l)`{.fact} by induction (list, list_ind), we generalise it to `forall (l0 : list A) (x : A), In x l0 -> In (f x) (map f l0)`{.fact}:
+- We prove `forall x : A, In x l -> In (f x) (map f l)`{.fact} by induction on `l`{.fact} (list, list_ind):
 - Case 1 (base): we prove `forall x : A, In x nil -> In x nil`{.claim}.
   - Let `x : A`{.var}; assume `In x nil`{.hyp} (H).
     - By H we have `In x nil`{.claim}.
@@ -34,5 +34,4 @@ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove
         - By application, we have `In (f x) (map f l0)`{.claim}.
         - By definition of or (or_intror), we have `f a = f x \/ In (f x) (map f l0)`{.claim} *by Corelib.Init.Logic.or_intror*.
     - We have `In (f x) (map f (a :: l0))`{.claim} in all cases.
-- These cases being exhaustive, we deduce `forall (l0 : list A) (x : A), In x l0 -> In (f x) (map f l0)`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- In particular `forall x : A, In x l -> In (f x) (map f l)`{.claim}.
+- These cases being exhaustive, we deduce `forall x : A, In x l -> In (f x) (map f l)`{.claim} *by Corelib.Init.Datatypes.list_ind*.

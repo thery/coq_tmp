@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Seien `n m : nat`{.var}. Wir zeigen `S (n + m) = n + S m`{.claim}.
 
-- Um zu zeigen `S (n + m) = n + S m`{.fact} durch Induktion (nat, nat_ind), verallgemeinern wir es zu `forall n0 : nat, S (n0 + m) = n0 + S m`{.fact}:
+- Wir zeigen `S (n + m) = n + S m`{.fact} durch Induktion über `n`{.fact} (nat, nat_ind):
 - Fall 1 (Anfang): wir zeigen `0 + S m = 0 + S m`{.claim}.
   - Nach Definition von eq (eq_refl), es gilt `0 + S m = 0 + S m`{.claim} *by Corelib.Init.Logic.eq_refl*.
 - Fall 2 (Schritt): wir zeigen `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.
@@ -16,5 +16,4 @@ Seien `n m : nat`{.var}. Wir zeigen `S (n + m) = n + S m`{.claim}.
     - Nach Definition von eq (eq_refl), es gilt `S (n0 + S m) = S (n0 + S m)`{.claim} *by Corelib.Init.Logic.eq_refl*.
     - Nach IH es gilt `S (n0 + m) = n0 + S m`{.claim}.
     - Durch Umschreiben mit `S (n0 + m) = n0 + S m`{.fact} von rechts nach links (eq_ind_r), wir erhalten `S (S (n0 + m)) = S (n0 + S m)`{.claim}.
-- Da diese Fälle vollständig sind, daraus folgt `forall n0 : nat, S (n0 + m) = n0 + S m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.
-- Insbesondere `S (n + m) = n + S m`{.claim}.
+- Da diese Fälle vollständig sind, daraus folgt `S (n + m) = n + S m`{.claim} *by Corelib.Init.Datatypes.nat_ind*.

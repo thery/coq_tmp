@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ nil = l`{.claim}.
 
-- To prove `l ++ nil = l`{.fact} by induction (list, list_ind), we generalise it to `forall l0 : list A, l0 ++ nil = l0`{.fact}:
+- We prove `l ++ nil = l`{.fact} by induction on `l`{.fact} (list, list_ind):
 - Case 1 (base): we prove `nil ++ nil = (@nil A)`{.claim}.
   - By definition of eq (eq_refl), we have `A = A`{.claim} *by Corelib.Init.Logic.eq_refl* (H).
   - By definition of eq (eq_refl), we have `nil = (@nil A)`{.claim} *by Corelib.Init.Logic.eq_refl*.
@@ -37,5 +37,4 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ nil = l`{.claim}.
           - The element `a :: l0`{.fact} belongs to `list A`{.fact}.
           - Applying eq_trans to P1.1.1 and P1.1.2, we have `a :: l0 ++ nil = a :: l0`{.claim}.
     - By application, with H, we have `a :: l0 ++ nil = a :: l0`{.claim}.
-- These cases being exhaustive, we deduce `forall l0 : list A, l0 ++ nil = l0`{.claim} *by Corelib.Init.Datatypes.list_ind*.
-- In particular `l ++ nil = l`{.claim}.
+- These cases being exhaustive, we deduce `l ++ nil = l`{.claim} *by Corelib.Init.Datatypes.list_ind*.

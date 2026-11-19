@@ -8,9 +8,9 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `n : nat`{.var}. We prove `n / 2 <= n`{.claim}.
 
-- ❌ By definition of nat (strong_induction), we prove `forall n0 : nat, n0 / 2 <= n0`{.claim}:
+- ❌ By definition of nat (strong_induction) on `n`{.fact}, we prove `n / 2 <= n`{.claim}:
 
-  <details><summary>not proved: forall n0 : nat, n0 / 2 <= n0</summary></details>
+  <details><summary>not proved: n / 2 <= n</summary></details>
 
   - ▫️ Let us choose arbitrarily `n0 : nat`{.var}; assume by induction hypothesis `forall m : nat, m < n0 -> m / 2 <= m`{.hyp} (IH).
     - ▫️ The element `n0`{.fact} belongs to `nat`{.fact}.
@@ -71,4 +71,3 @@ by: tauto | congruence | lia | firstorder | auto
 
       <details><summary>not proved: n0 / 2 <= n0</summary></details>
 
-- ✅ In particular `n / 2 <= n`{.claim}.

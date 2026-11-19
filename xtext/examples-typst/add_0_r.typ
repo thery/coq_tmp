@@ -11,7 +11,7 @@
 #statement[#"Let "#var("n : nat")#". We prove "#claim("n + 0 = n")#"."]
 
 #steps((
-  step("1", [#"To prove "#fact("n + 0 = n")#" by induction (nat, nat_ind), we generalise it to "#fact("forall n0 : nat, n0 + 0 = n0")#":"], ()),
+  step("1", [#"We prove "#fact("n + 0 = n")#" by induction on "#fact("n")#" (nat, nat_ind):"], ()),
   step("2", [#"Case 1 (base): we prove "#claim("0 = 0")#"."], (
     step("2.1", [#"By definition of eq (eq_refl), we have "#claim("0 = 0")#" "#by("Corelib.Init.Logic.eq_refl")#"."], ()),
   )),
@@ -22,6 +22,5 @@
       step("3.1.3", [#"Rewriting with "#fact("m + 0 = m")#" from right to left (eq_ind_r), we get "#claim("S (m + 0) = S m")#"."], ()),
     )),
   )),
-  step("4", [#"These cases being exhaustive, we deduce "#claim("forall n0 : nat, n0 + 0 = n0")#" "#by("Corelib.Init.Datatypes.nat_ind")#"."], ()),
-  step("5", [#"In particular "#claim("n + 0 = n")#"."], ()),
+  step("4", [#"These cases being exhaustive, we deduce "#claim("n + 0 = n")#" "#by("Corelib.Init.Datatypes.nat_ind")#"."], ()),
 ))
