@@ -12,7 +12,8 @@ message "en" "left" "cyp: %1, %2 steps, %3 condition(s) left for the Proof block
 message "en" "left-line" "  🔶 condition %1: %2".
 message "en" "no-typecheck" "cyp: the proof does not type-check".
 message "en" "holes" "cyp: some conditions are not proved".
-message "en" "steps-not-parsed" "cyp: steps of %1 that do not parse: %2".
+message "en" "errors" "cyp: %1, %2 node(s) with an error (❌ above): %3".
+message "en" "statement-not-read" "cyp: the statement of %1 cannot be read: %2".
 message "en" "statement-no-typecheck" "cyp: the statement does not type-check".
 message "en" "md-not-proved" "not proved: %1".
 message "en" "md-not-parsed" "does not parse: %1".

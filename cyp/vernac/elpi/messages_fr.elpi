@@ -8,7 +8,8 @@ message "fr" "left" "cyp: %1, %2 étapes, %3 condition(s) laissée(s) au bloc Pr
 message "fr" "left-line" "  🔶 condition %1 : %2".
 message "fr" "no-typecheck" "cyp: la preuve n'est pas bien typée".
 message "fr" "holes" "cyp: des conditions ne sont pas démontrées".
-message "fr" "steps-not-parsed" "cyp: étapes de %1 qui ne s'analysent pas : %2".
+message "fr" "errors" "cyp: %1, %2 nœud(s) avec une erreur (❌ ci-dessus) : %3".
+message "fr" "statement-not-read" "cyp: l'énoncé de %1 ne peut pas être lu : %2".
 message "fr" "statement-no-typecheck" "cyp: l'énoncé n'est pas bien typé".
 message "fr" "md-not-proved" "non démontré : %1".
 message "fr" "md-not-parsed" "ne s'analyse pas : %1".
