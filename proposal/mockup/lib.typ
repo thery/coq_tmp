@@ -2,10 +2,12 @@
 // template.  Hand-written: no reader produced these files.
 #import "@local/prooftext:0.1.0": *
 
-// The colour of a justification: the template's role "by" (the user's
+// The colour of a justification: the template's role "just" (today still
+// named "by" in the template, to be renamed; the user's
 // fifth role colour, on main since 76b314b), with role-look as a
 // formula's; no "by" is added: the word, if any, is in the text
-#let jb(body) = role-look("by", if type(body) == str { raw(body) } else { body })
+#let just-role = if "just" in role-backgrounds { "just" } else { "by" }
+#let jb(body) = role-look(just-role, if type(body) == str { raw(body) } else { body })
 
 // ---- the structured syntax: one line per proof node, and the closing
 // paragraph after the sub-proofs, at the text of its item
@@ -60,5 +62,5 @@
   line(length: 30%, stroke: 0.4pt + luma(190))
   set std.text(size: 0.75em, fill: luma(70))
   ((("var", "variable"), ("hyp", "hypothesis"), ("claim", "conclusion"), ("fact", "fact"))
-    .map(((role, word)) => role-look(role, word, cue: true)) + (role-look("by", [justification], cue: true),)).join(h(1.4em))
+    .map(((role, word)) => role-look(role, word, cue: true)) + (role-look(just-role, [justification], cue: true),)).join(h(1.4em))
 })

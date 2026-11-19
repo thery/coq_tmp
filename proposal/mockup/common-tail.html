@@ -1,4 +1,4 @@
-<footer class="legend"><span class="formula var">variable</span><span class="formula hyp">hypothesis</span><span class="formula claim">conclusion</span><span class="formula fact">fact</span><span class="by">justification</span></footer>
+<footer class="legend"><span class="formula var">variable</span><span class="formula hyp">hypothesis</span><span class="formula claim">conclusion</span><span class="formula fact">fact</span><span class="just">justification</span></footer>
 </div>
 <script>
 // the hover of the mock-up: the proof node under the pointer, its
@@ -20,7 +20,7 @@ function target(by) {
   return null;
 }
 document.addEventListener('mouseover', e => {
-  const by = e.target.closest('.by, .formula.fact');
+  const by = e.target.closest('.just, .formula.fact');
   show(e.target.closest('.p'));
   if (by) { const t = target(by); if (t) t.classList.add('ref-target'); }
 });
@@ -29,6 +29,6 @@ const h = location.hash.match(/hover=([^&]*)/);
 if (h) show(document.querySelector('.p[data-id="' + h[1] + '"]'));
 const b = location.hash.match(/by=([^/]*)\/(.*)/);
 if (b) { const p = document.querySelector('.p[data-id="' + b[1] + '"]'); show(p);
-  for (const by of p.querySelectorAll('.by')) if (by.textContent.trim() === decodeURIComponent(b[2])) { const t = target(by); if (t) t.classList.add('ref-target'); by.style.outline = '2px solid #0072b2'; } }
+  for (const by of p.querySelectorAll('.just')) if (by.textContent.trim() === decodeURIComponent(b[2])) { const t = target(by); if (t) t.classList.add('ref-target'); by.style.outline = '2px solid #0072b2'; } }
 </script>
 </body></html>
