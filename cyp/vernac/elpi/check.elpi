@@ -82,6 +82,12 @@ justify-step none G :- close-default G.
 % the rules named X, and only them, if there are any
 justify-step (some X) (goal _ _ Ty _ _ as G) :-
   std.findall (named X _ _) [_ | _], !, named X Ty T, run T G, !.
+% else the local name X of the goal's context (a hypothesis of the text,
+% the claim of an earlier step, c2a, a variable), applied like a lemma,
+% its premises closed by the rules; it hides a global X, as in Rocq
+justify-step (some X) (goal Ctx _ _ _ _ as G) :-
+  local-name Ctx X H, !,
+  coq.ltac.call "cyp_eapply" [trm H] G GL, premises GL, !.
 % else the lemma X (a name, possibly qualified), applied, its premises
 % closed by the rules
 justify-step (some X) G :-
@@ -91,6 +97,12 @@ justify-step (some X) G :-
   apply-lemma GR G.
 % else the tactic X
 justify-step (some X) G :- run-name X G.
+
+% [local-name Ctx X H]: H is the variable, hypothesis or local definition
+% named X in the context Ctx of a goal
+pred local-name i:goal-ctx, i:string, o:term.
+local-name Ctx X H :- std.mem Ctx (decl H N _), coq.name->id N X.
+local-name Ctx X H :- std.mem Ctx (def H N _ _), coq.name->id N X.
 
 % [apply-lemma GR G]: the lemma GR applied to the goal, its premises closed
 % by the rules: directly (its conclusion unified with the goal), else, for
