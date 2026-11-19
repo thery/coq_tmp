@@ -55,6 +55,8 @@ pred unspaced o:string.
 % [lower S L]: S in lower case, by the capital letters of all the languages
 pred lower i:string, o:string.
 lower S L :- std.findall (capital _ _ _) Cs, std.fold Cs S lower-step L.
+% [lower-step C S S1]: S with the capital letter of the clause C capital U L
+% in lower case
 pred lower-step i:prop, i:string, o:string.
 lower-step (capital _ U L) S S1 :- rex.replace U L S S1.
 

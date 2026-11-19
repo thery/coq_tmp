@@ -295,6 +295,8 @@ explicit-arguments G Args Explicit :-
   coq.arguments.implicit G Imps, (Imps = [Kinds | _], ! ; Kinds = []),
   explicit-of Kinds Args Explicit.
 
+% [explicit-of Kinds Args Explicit]: the arguments Args whose implicit kind
+% in Kinds is explicit (the arguments past Kinds are explicit)
 pred explicit-of i:list implicit_kind, i:list term, o:list term.
 explicit-of _ [] [] :- !.
 explicit-of [] Args Args :- !.
@@ -462,6 +464,7 @@ pred comma-separated i:list mexp, o:mexp.
 comma-separated [E] E :- !.
 comma-separated Es (mrow Items) :- comma-items Es Items.
 
+% [comma-items Es Items]: the trees Es with a comma between each two
 pred comma-items i:list mexp, o:list mexp.
 comma-items [E] [E] :- !.
 comma-items [E | Es] [E, mop separator "," | Items] :- comma-items Es Items.
@@ -478,6 +481,8 @@ pred grouped-bindings i:list (pair mexp mexp), o:mexp.
 grouped-bindings Bindings E :-
   binding-groups Bindings Groups, comma-separated Groups E.
 
+% [binding-groups Bindings Groups]: the variables of Bindings, each run
+% bound the same way as one group "a, b ∈ ℤ"
 pred binding-groups i:list (pair mexp mexp), o:list mexp.
 binding-groups [] [].
 binding-groups [pr V B | Bs] [mrow [Names, B] | Gs] :-

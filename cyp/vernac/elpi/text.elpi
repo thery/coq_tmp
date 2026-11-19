@@ -35,6 +35,7 @@ boundary B :-
 pred normal i:string, o:string.
 normal S N :- lower S L0, L is " " ^ L0 ^ " ", unclitic L N.
 
+% [unclitic S N]: S without the clitic prefixes at the start of its words
 pred unclitic i:string, o:string.
 unclitic S S :- boundary "", !.
 unclitic S N :- current-lang Lang, boundary Bd,
@@ -51,11 +52,15 @@ side-phrases After Ps :-
     (if (phrase-after Lang P) (After = tt) (After = ff)),
     unclitic-phrase Lang P P1, q = phrase Lang P1 R) Ps.
 
+% [unclitic-phrase Lang P P1]: the phrase P of language Lang without its
+% clitic prefixes
 pred unclitic-phrase i:string, i:string, o:string.
 unclitic-phrase Lang P P :- not (clitic Lang _), !.
 unclitic-phrase _ P P2 :- S is " " ^ P ^ " ", unclitic S P1,
   rex.replace "^ \\(.*\\) $" "\\1" P1 P2.
 
+% [text-role S R]: the role R given by the last phrase of the text S
+% (best-phrase); fails if S has none
 pred text-role i:string, o:role.
 text-role S R :-
   normal S L, side-phrases ff Ps,
@@ -72,16 +77,20 @@ best-phrase T [phrase _ P R | Ps] Acc B :-
   rex.match Re T, !,
   rex.replace Re "" T Suffix,
   N is size Suffix, M is size P,
-  better (triple N M R) Acc Acc1,
+  nearer-match (triple N M R) Acc Acc1,
   best-phrase T Ps Acc1 B.
 best-phrase T [_ | Ps] Acc B :- best-phrase T Ps Acc B.
 
-pred better i:triple int int role, i:option (triple int int role),
-  o:option (triple int int role).
-better X none (some X) :- !.
-better (triple N M R) (some (triple N1 _ _)) (some (triple N M R)) :- N < N1, !.
-better (triple N M R) (some (triple N M1 _)) (some (triple N M R)) :- M > M1, !.
-better _ B B.
+% [nearer-match Match Best Best1]: of a match (triple N M X) of a phrase
+% and the best one so far, the one at the smaller distance N from the
+% formula (the length of the text between them), on a tie the longer
+% phrase (length M); X is what the match gives
+pred nearer-match i:triple int int A, i:option (triple int int A),
+  o:option (triple int int A).
+nearer-match X none (some X) :- !.
+nearer-match (triple N M X) (some (triple N1 _ _)) (some (triple N M X)) :- N < N1, !.
+nearer-match (triple N M X) (some (triple N M1 _)) (some (triple N M X)) :- M > M1, !.
+nearer-match _ B B.
 
 % The phrases after a formula (lexicon: phrase-after).  The text after a
 % formula gives it a role when the first phrase in that text (of either
@@ -99,6 +108,8 @@ first-phrase W P After R :-
   std.append Bs1 As1 Ps,
   earliest T Bd Ps none (some (triple _ _ (triple P After R))).
 
+% [earliest Text Bd Phrases Acc Best]: as best-phrase, for the phrase that
+% starts first in Text (Bd: the word boundary)
 pred earliest i:string, i:string, i:list (pair bool prop),
   i:option (triple int int (triple string bool role)),
   o:option (triple int int (triple string bool role)).
@@ -107,17 +118,9 @@ earliest T Bd [pr A (phrase _ P R) | Ps] Acc B :-
   Re is Bd ^ P ^ Bd, rex.match {calc (".*" ^ Re)} T, !,
   rex.replace {calc (Re ^ ".*")} "" T Prefix,
   N is size Prefix, M is size P,
-  earlier (triple N M (triple P A R)) Acc Acc1,
+  nearer-match (triple N M (triple P A R)) Acc Acc1,
   earliest T Bd Ps Acc1 B.
 earliest T Bd [_ | Ps] Acc B :- earliest T Bd Ps Acc B.
-
-pred earlier i:triple int int (triple string bool role),
-  i:option (triple int int (triple string bool role)),
-  o:option (triple int int (triple string bool role)).
-earlier X none (some X) :- !.
-earlier (triple N M X) (some (triple N1 _ _)) (some (triple N M X)) :- N < N1, !.
-earlier (triple N M X) (some (triple N M1 _)) (some (triple N M X)) :- M > M1, !.
-earlier _ B B.
 
 % [after-roles Pieces Rs Pend]: for each formula of Pieces, in order, the
 % role given by the phrases after it, if any; Pend: the role passed on to
@@ -148,6 +151,7 @@ pred formula-element i:piece, i:role, o:element.
 formula-element (pform F) R (elt R F).
 formula-element (pterm T) R (eltt R T).
 
+% [pieces S P]: the text S cut into words and formulas (between backticks)
 pred pieces i:string, o:list piece.
 pieces S P :- N is size S, chars S 0 N "" ff P.
 
@@ -160,19 +164,21 @@ chars S I N Acc F P :-
      (flush Acc F P P1, negb F F1, chars S I1 N "" F1 P1)
      (Acc1 is Acc ^ C, chars S I1 N Acc1 F P).
 
+% [negb B C]: C is the negation of the boolean B
 pred negb i:bool, o:bool.
 negb tt ff.
 negb ff tt.
 
+% [flush Acc InFormula P Tail]: the piece of the characters Acc read so far
+% (a formula if InFormula), in front of Tail; none for no character
 pred flush i:string, i:bool, o:list piece, o:list piece.
 flush "" _ P P :- !.
 flush A ff [ptext A | P] P.
 flush A tt [pform A | P] P.
 
+% [last-piece Acc InFormula P]: the pieces of the end of the text, Acc
 pred last-piece i:string, i:bool, o:list piece.
-last-piece "" _ [] :- !.
-last-piece A ff [ptext A].
-last-piece A tt [pform A].
+last-piece A F P :- flush A F P [].
 
 % ------------------------------------------------------------------ %
 % The elements of a step: each formula with its role
@@ -181,6 +187,12 @@ last-piece A tt [pform A].
 % of proof texts, prooftext/formulas.elpi)
 pred justification i:string, o:option string, o:string.
 justification S J Rest :- prooftext.split-justification S J Rest.
+
+% [text-elements S J Es]: the text S of a statement or a step read: its
+% justification J (none if it has none) and the elements Es of the rest,
+% a formula before any phrase being a claim
+pred text-elements i:string, o:option string, o:list element.
+text-elements S J Es :- justification S J Rest, pieces Rest P, elements P rclaim Es.
 
 % [elements Pieces Role Elements]: Role is the role before the first
 % formula (claim in a step, the conclusion in a statement).  A formula
@@ -224,6 +236,7 @@ tag W R W1 :-
 % the text of a step, to report it
 pred elements-text i:list element, o:string.
 elements-text L S :- std.map L element-text Ws, std.string.concat "" Ws S.
+% [element-text E S]: the element E as it is written in a text
 pred element-text i:element, o:string.
 element-text (txt W) W.
 element-text (elt _ F) S :- S is "`" ^ F ^ "`".

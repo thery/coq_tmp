@@ -76,6 +76,7 @@ read-document File D :- read-lines File Lines, lines-document Lines D.
 pred read-lines i:string, o:list string.
 read-lines File Lines :- open_in File I, input-lines I Lines, close_in I.
 
+% [input-lines I Lines]: the lines of the input stream I, up to its end
 pred input-lines i:in_stream, o:list string.
 input-lines I [] :- eof I, !.
 input-lines I [L | Ls] :- input_line I L, input-lines I Ls.
@@ -93,6 +94,7 @@ lines-document Lines (document Fields Name StatementPlace Statement Steps) :-
   statement-of AfterTitle StatementPlace Statement Items,
   item-tree Items Steps.
 
+% [number-lines N Lines Numbered]: the lines numbered from N
 pred number-lines i:int, i:list string, o:list numbered-line.
 number-lines _ [] [].
 number-lines N [L | Ls] [nl N L | Ns] :- N1 is N + 1, number-lines N1 Ls Ns.
@@ -104,6 +106,9 @@ pred header-of i:list numbered-line, o:list prooftext.field, o:list numbered-lin
 header-of [nl _ L | Ls] Fields Body :- trim L "---", !, header-fields Ls Fields Body.
 header-of Ls [] Ls.
 
+% [header-fields Lines Fields Body]: the fields of the header, up to its
+% closing line ---, and the lines after it; a line that is not a field "key:
+% value" of a header-key is skipped
 pred header-fields i:list numbered-line, o:list prooftext.field, o:list numbered-line.
 header-fields [] [] [].
 header-fields [nl _ L | Ls] [] Ls :- trim L "---", !.
@@ -135,6 +140,7 @@ statement-of Lines Place Statement Items :-
 pred item-line i:numbered-line.
 item-line (nl _ L) :- rex.match "^ *[-*] " L.
 
+% [blank-line L]: the line L has only spaces and tabs
 pred blank-line i:numbered-line.
 blank-line (nl _ L) :- trim L "".
 
@@ -162,6 +168,9 @@ type item int -> place -> string -> item.
 pred item-tree i:list numbered-line, o:list step.
 item-tree Lines Steps :- items Lines Items, item-steps Items Steps.
 
+% [items Lines Items]: the list items of Lines (each starts at a line "- "
+% or "* "), each with its indentation, its place and its text, continuation
+% lines joined
 pred items i:list numbered-line, o:list item.
 items [] [].
 items [nl N L | Ls] [item Indent Place Text | Is] :-
@@ -173,6 +182,8 @@ items [nl N L | Ls] [item Indent Place Text | Is] :-
   text-place [nl N L | Filled] Place,
   items Rest Is.
 
+% [item-steps Items Steps]: the steps of the items, each with the items
+% after it that are more indented as its sub-steps
 pred item-steps i:list item, o:list step.
 item-steps [] [].
 item-steps [item Indent Place Text | Is] [step Place Text Sub | Steps] :-

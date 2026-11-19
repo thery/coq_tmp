@@ -8,6 +8,7 @@
 
 namespace prooftext {
 
+% [tactic Name]: Name is a tactic a proof text may name
 pred tactic o:string.
 tactic "lia".          tactic "nia".
 tactic "lra".          tactic "nra".

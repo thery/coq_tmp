@@ -24,17 +24,28 @@
 kind step type.
 type step string -> list element -> option string -> list step -> step.
 
-% the notation scope of the formulas (header's scope:), "" for none
 % ------------------------------------------------------------------ %
 % Declarations: each variable, hypothesis, claim or definition of the
-% proof is declared with its name recorded, (decl X N T, name-in-scope S)
-% => G, so that a hypothesis with no name gets one that nothing in scope
-% has (hyp-name).  (Rocq-Elpi's decl cannot be listed: its first argument
-% is an input.)
+% proof is declared with its name recorded (under-decl, under-def), so
+% that a hypothesis with no name gets one that nothing in scope has
+% (hyp-name).  (Rocq-Elpi's decl cannot be listed: its first argument is
+% an input.)
 
 % [name-in-scope S]: S is the name of something declared in scope
 pred name-in-scope o:string.
 
+% [under-decl Nm T G]: G x, for a new variable x : T named Nm, declared in
+% the context with its name recorded
+pred under-decl i:name, i:term, i:(term -> prop).
+under-decl Nm T G :- coq.name->id Nm Id, pi x\ (decl x Nm T, name-in-scope Id) => G x.
+
+% [under-def Nm T B G]: G x, for a new local definition x : T := B named
+% Nm, declared in the context with its name recorded
+pred under-def i:name, i:term, i:term, i:(term -> prop).
+under-def Nm T B G :- coq.name->id Nm Id, pi x\ (def x Nm T B, name-in-scope Id) => G x.
+
+% [current-scope Sc]: the notation scope of the formulas (the header's
+% scope:), "" for none
 pred current-scope o:string.
 
 % the report of a step
@@ -57,6 +68,7 @@ pred bare-mode.
 pred condition-id i:string, i:int, i:int, o:string.
 condition-id S _ 1 S :- !.
 condition-id S I _ Id :- letter I L, Id is S ^ L.
+% [letter I L]: the I-th letter of the alphabet, a for 1
 pred letter i:int, o:string.
 letter I L :-
   std.nth {calc (I - 1)} ["a","b","c","d","e","f","g","h","i","j","k","l","m",
@@ -97,19 +109,21 @@ elaborate-context (context-item Id Imp T0 none R) (context-item Id Imp T none C)
   coq.elaborate-ty-skeleton T0 _ T D0,
   if (D0 = ok)
      (coq.id->name Id N,
-      coq.name->id N DeclaredName, pi x\ (decl x N T, name-in-scope DeclaredName) => elaborate-context (R x) (C x) D)
+      under-decl N T (x\ elaborate-context (R x) (C x) D))
      (D = D0).
 elaborate-context (context-item Id Imp T0 (some B0) R) (context-item Id Imp T (some B) C) D :-
   coq.elaborate-ty-skeleton T0 _ T D0,
   if (D0 = ok) (coq.elaborate-skeleton B0 T B D1) (D1 = D0),
   if (D1 = ok)
      (coq.id->name Id N,
-      coq.name->id N DeclaredName, pi x\ (def x N T B, name-in-scope DeclaredName) => elaborate-context (R x) (C x) D)
+      under-def N T B (x\ elaborate-context (R x) (C x) D))
      (D = D1).
 
+% [is-prop T]: the term T is a proposition
 pred is-prop i:term.
 is-prop T :- coq.typecheck T Ty ok, coq.unify-eq Ty (sort prop) ok.
 
+% [conj Cs C]: the conjunction C of the non-empty list Cs, C1 /\ (C2 /\ ...)
 pred conj i:list term, o:term.
 conj [C] C :- !.
 conj [C | L] {{ lp:C /\ lp:R }} :- conj L R.
@@ -117,17 +131,24 @@ conj [C | L] {{ lp:C /\ lp:R }} :- conj L R.
 % the parts of a step
 pred claims i:list element, o:list element.
 claims L C :- std.filter L is-claim C.
+% [is-claim E]: the element E is a claim, forward or backward
 pred is-claim i:element.
 is-claim (elt rclaim _).
 is-claim (elt rback _).
 is-claim (eltt rclaim _).
 is-claim (eltt rback _).
+% [binders Es Vs]: the variables (and definitions) introduced by the
+% elements Es
 pred binders i:list element, o:list element.
 binders L C :- std.filter L is-var C.
+% [is-var E]: the element E introduces variables
 pred is-var i:element.
 is-var (elt rvar _).
+% [backward Es]: the step of elements Es is backward: one of its claims
+% replaces the goal
 pred backward i:list element.
 backward L :- std.exists L is-back.
+% [is-back E]: the element E is a backward claim
 pred is-back i:element.
 is-back (elt rback _).
 is-back (eltt rback _).
@@ -163,6 +184,7 @@ step-proof Tac I T P R :-
   gettimeofday T0, condition-proof Tac I T P R, gettimeofday T1,
   say-time I {calc (T1 - T0)}.
 
+% [condition-proof Tac I T P R]: as step-proof, without the timing
 pred condition-proof i:option string, i:string, i:term, o:term, o:report.
 condition-proof _ I T P (rep I (todo S)) :- bare-mode, !,
   condition-hole I T P, coq.term->string T S.
@@ -188,42 +210,75 @@ condition-ident Id N :- rex.replace "[.]" "_" Id S, N is "c" ^ S.
 pred claim-name i:string, o:name.
 claim-name Id N :- coq.id->name {condition-ident Id} N.
 
+% What a step does, by its elements (step-kind): level and open-level
+% prove a list of steps with and without a goal, each by its kind.
+kind step-kind type.
+type unparsed string -> step-kind.           % a formula does not parse (the messages)
+type opens-scope list element -> list (pair element (option string)) -> step-kind.
+                                             % variables or hypotheses and no claim
+type comment step-kind.                      % no variable, hypothesis or claim
+type backward-claim term -> step-kind.       % the claims (their conjunction)
+                                             % replace the goal
+type forward-claims list term -> step-kind.  % the claims, proved and then known
+
+% [step-kind Es K]: the kind of the step of elements Es; its claims are
+% parsed in the current context (a claim that is not a proposition is a
+% mention, claim-terms)
+pred step-kind i:list element, o:step-kind.
+step-kind Es K :-
+  claims Es Cs0, claim-terms Cs0 Cs Bad,
+  binders Es Vs, hyps Es Hs,
+  if (Bad = [_ | _]) (std.string.concat "; " Bad M, K = unparsed M)
+  (if (Cs = [], (Vs = [_ | _] ; Hs = [_ | _])) (K = opens-scope Vs Hs)
+  (if (Cs = []) (K = comment)
+  (if (backward Es) (conj Cs C, K = backward-claim C) (K = forward-claims Cs)))).
+
+% [scope-parts Ch Rest Body After]: the body of a scope is its sub-steps
+% Ch, or else, when it has none, the steps Rest after it; After: the
+% steps after the body
+pred scope-parts i:list step, i:list step, o:list step, o:list step.
+scope-parts [] Rest Rest [] :- !.
+scope-parts Ch Rest Ch Rest.
+
 % [level Own OTac Steps G P Rs]: P proves G from the steps, in the current
 % context; the last condition (G follows) belongs to the step Own and is
 % closed by its justification OTac
 pred level i:string, i:option string, i:list step, i:term, o:term, o:list report.
 level Own OTac [] G P [R] :- step-proof OTac Own G P R.
 level Own OTac [step I Es Tac Ch | Rest] G P Rs :-
-  claims Es Cs0, claim-terms Cs0 Cs Bad,
-  binders Es Vs, hyps Es Hs,
-  if (Bad = [_ | _])
-     % a formula does not parse: the step is reported, and skipped
-     (std.string.concat "; " Bad M, Rs = [rep I (bad M) | Rs1],
-      level Own OTac {std.append Ch Rest} G P Rs1)
-  (if (Cs = [], (Vs = [_ | _] ; Hs = [_ | _]))
-     % a scope: its sub-steps, or else the steps after it
-     (if (Ch = []) (Body = Rest, Rest1 = []) (Body = Ch, Rest1 = Rest),
-      scope Vs Hs Body ExTy ExPf N Rs1,
-      if (N = 0) (level Own OTac Rest1 G P Rs2)
-                 (shared I ExTy G ExPf N (e\ p\ exports I Own OTac ExTy e 1 N Rest1 G p Rs2) P),
-      std.append Rs1 Rs2 Rs)
-  (if (Cs = [])
-     % a comment
-     (level Own OTac {std.append Ch Rest} G P Rs)
-  (conj Cs C,
-   if (backward Es)
-     % the new goal C implies G; the sub-steps and the rest prove C
-     (step-proof Tac I (prod `_` C (_\ G)) P1 R1,
-      level Own OTac {std.append Ch Rest} C P2 Rs2,
-      P = app [P1, P2], Rs = [R1 | Rs2])
-     % the claims one after the other, each knowing those before it; or,
-     % with sub-steps, their conjunction proved by them and then each claim
-     % on its own
-     (std.length Cs NC,
-      if (Ch = []) (claims-then I 1 NC Tac Cs Own OTac Rest G P Rs)
-        (level I Tac Ch C P1 Rs1,
-         shared I C G P1 NC (e\ p\ exports I Own OTac C e 1 NC Rest G p Rs2) P,
-         std.append Rs1 Rs2 Rs))))).
+  step-kind Es K, level-step K I Tac Ch Rest Own OTac G P Rs.
+
+% [level-step K I Tac Ch Rest Own OTac G P Rs]: as level, for the step I
+% of kind K, with its justification Tac and its sub-steps Ch, followed by
+% the steps Rest
+pred level-step i:step-kind, i:string, i:option string, i:list step, i:list step,
+  i:string, i:option string, i:term, o:term, o:list report.
+% a formula does not parse: the step is reported, and skipped
+level-step (unparsed M) I _ Ch Rest Own OTac G P [rep I (bad M) | Rs] :-
+  level Own OTac {std.append Ch Rest} G P Rs.
+% a scope: its body, then the steps after it
+level-step (opens-scope Vs Hs) I _ Ch Rest Own OTac G P Rs :-
+  scope-parts Ch Rest Body After,
+  scope Vs Hs Body ExTy ExPf N Rs1,
+  if (N = 0) (level Own OTac After G P Rs2)
+             (shared I ExTy G ExPf N (e\ p\ exports I Own OTac ExTy e 1 N After G p Rs2) P),
+  std.append Rs1 Rs2 Rs.
+level-step comment _ _ Ch Rest Own OTac G P Rs :-
+  level Own OTac {std.append Ch Rest} G P Rs.
+% the new goal C implies G; the sub-steps and the rest prove C
+level-step (backward-claim C) I Tac Ch Rest Own OTac G (app [P1, P2]) [R1 | Rs] :-
+  step-proof Tac I (prod `_` C (_\ G)) P1 R1,
+  level Own OTac {std.append Ch Rest} C P2 Rs.
+% the claims one after the other, each knowing those before it
+level-step (forward-claims Cs) I Tac [] Rest Own OTac G P Rs :- !,
+  std.length Cs NC, claims-then I 1 NC Tac Cs Own OTac Rest G P Rs.
+% with sub-steps: the conjunction of the claims proved by them, and then
+% each claim on its own
+level-step (forward-claims Cs) I Tac Ch Rest Own OTac G P Rs :-
+  std.length Cs NC, conj Cs C,
+  level I Tac Ch C P1 Rs1,
+  shared I C G P1 NC (e\ p\ exports I Own OTac C e 1 NC Rest G p Rs2) P,
+  std.append Rs1 Rs2 Rs.
 
 % [claims-then S J N Tac Cs ...]: the claims J.. of the N claims Cs of step
 % S, each proved and then a hypothesis, then the rest of the steps
@@ -235,7 +290,7 @@ claims-then S J N Tac [C | Cs] Own OTac Rest G {{ cyp_have lp:C lp:G lp:P1 lp:K 
   step-proof Tac Id C P1 R,
   claim-name Id Nm, J1 is J + 1,
   K = fun Nm C P2,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm C, name-in-scope DeclaredName) => claims-then S J1 N Tac Cs Own OTac Rest G (P2 x) Rs.
+  under-decl Nm C (x\ claims-then S J1 N Tac Cs Own OTac Rest G (P2 x) Rs).
 
 % ------------------------------------------------------------------ %
 % Scopes
@@ -253,22 +308,24 @@ scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :- rex.match ".*:=" S, !,
     {msg "definition-not-parsed" [S]},
   coq.arity->term Ar T, coq.id->name Id Nm,
   Ty = let Nm T Bo TyR, Pf = let Nm T Bo PfR,
-  coq.name->id Nm DeclaredName, pi x\ (def x Nm T Bo, name-in-scope DeclaredName) => scope Vs Hs Body (TyR x) (PfR x) N Rs.
+  under-def Nm T Bo (x\ scope Vs Hs Body (TyR x) (PfR x) N Rs).
 scope [elt rvar S | Vs] Hs Body Ty Pf N Rs :-
   std.assert-ok! (variables S C) {msg "variables-not-parsed" [S]},
   scope-ctx C Vs Hs Body Ty Pf N Rs.
 scope [] [pr E Nm0 | Hs] Body (prod Nm A TyR) (fun Nm A PfR) N Rs :-
   std.assert-ok! (parse E A) {msg "hypothesis-not-parsed" []},
   hyp-name Nm0 Nm,
-  coq.name->id Nm DeclaredName, pi h\ (decl h Nm A, name-in-scope DeclaredName) => scope [] Hs Body (TyR h) (PfR h) N Rs.
+  under-decl Nm A (h\ scope [] Hs Body (TyR h) (PfR h) N Rs).
 
+% [scope-ctx C Vs Hs Body Ty Pf N Rs]: as scope, under the variables of the
+% context C first
 pred scope-ctx i:context-decl, i:list element,
   i:list (pair element (option string)), i:list step, o:term, o:term, o:int,
   o:list report.
 scope-ctx context-end Vs Hs Body Ty Pf N Rs :- scope Vs Hs Body Ty Pf N Rs.
 scope-ctx (context-item Id _ T _ C) Vs Hs Body (prod Nm T TyR) (fun Nm T PfR) N Rs :-
   coq.id->name Id Nm,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => scope-ctx (C x) Vs Hs Body (TyR x) (PfR x) N Rs.
+  under-decl Nm T (x\ scope-ctx (C x) Vs Hs Body (TyR x) (PfR x) N Rs).
 
 % [hyp-name Given Name]: the name of a hypothesis: the one the text gives
 % it, else the first of H1, H2, ... that no variable, hypothesis or claim
@@ -276,21 +333,12 @@ scope-ctx (context-item Id _ T _ C) Vs Hs Body (prod Nm T TyR) (fun Nm T PfR) N 
 % would rename a second H behind the text's back)
 pred hyp-name i:option string, o:name.
 hyp-name (some S) N :- !, coq.id->name S N.
-hyp-name none N :- names-in-scope Used, numbered-free-name Used "H" 1 S, coq.id->name S N.
+hyp-name none N :- names-in-scope Used, prooftext.numbered-name Used "H" 1 S, coq.id->name S N.
 
 % [names-in-scope Used]: the names of the variables, hypotheses, claims and
 % definitions declared so far
 pred names-in-scope o:list string.
 names-in-scope Used :- std.findall (name-in-scope _) L, std.map L (c\ s\ c = name-in-scope s) Used.
-
-% [numbered-free-name Used Base K Name]: the first of BaseK, BaseK+1, ...
-% not in Used
-pred numbered-free-name i:list string, i:string, i:int, o:string.
-numbered-free-name Used Base K Name :-
-  Candidate is Base ^ {std.any->string K},
-  if (std.mem! Used Candidate)
-     (K1 is K + 1, numbered-free-name Used Base K1 Name)
-     (Name = Candidate).
 
 % [open-level Acc Steps Ty Pf N Rs]: the claims of the steps, with no goal;
 % Acc the claims so far (their types and the variables naming them)
@@ -301,28 +349,43 @@ open-level Acc [] Ty Pf N [] :-
   std.map Acc1 fst Ts, std.map Acc1 snd Ps,
   (N = 0, Ty = {{ True }}, Pf = {{ I }} ; conj Ts Ty, conj-proof Ts Ps Pf), !.
 open-level Acc [step I Es Tac Ch | Rest] Ty Pf N Rs :-
-  claims Es Cs0, claim-terms Cs0 Cs Bad,
-  binders Es Vs, hyps Es Hs,
-  if (Bad = [_ | _])
-     (std.string.concat "; " Bad M, Rs = [rep I (bad M) | Rs1],
-      open-level Acc {std.append Ch Rest} Ty Pf N Rs1)
-  (if (Cs = [], (Vs = [_ | _] ; Hs = [_ | _]))
-     (if (Ch = []) (Body = Rest, Rest1 = []) (Body = Ch, Rest1 = Rest),
-      scope Vs Hs Body ExTy ExPf N0 Rs1,
-      shared I ExTy Ty ExPf N0 (e\ p\ open-exports I Acc ExTy e 1 N0 Rest1 Ty p N Rs2) Pf,
-      std.append Rs1 Rs2 Rs)
-  (if (Cs = [])
-     (open-level Acc {std.append Ch Rest} Ty Pf N Rs)
-  (conj Cs C,
-   if (backward Es)
-     (Rs = [rep I (bad {msg "backward-no-goal" []}) | Rs1],
-      open-level Acc Rest Ty Pf N Rs1)
-     (std.length Cs NC,
-      if (Ch = []) (open-claims I 1 NC Tac Cs Acc Rest Ty Pf N Rs)
-        (level I Tac Ch C P1 Rs1,
-         shared I C Ty P1 NC (e\ p\ open-exports I Acc C e 1 NC Rest Ty p N Rs2) Pf,
-         std.append Rs1 Rs2 Rs))))).
+  step-kind Es K, open-level-step K I Tac Ch Rest Acc Ty Pf N Rs.
 
+% [open-level-step K I Tac Ch Rest Acc Ty Pf N Rs]: as open-level, for the
+% step I of kind K, with its justification Tac and its sub-steps Ch,
+% followed by the steps Rest
+pred open-level-step i:step-kind, i:string, i:option string, i:list step,
+  i:list step, i:list (pair term term), o:term, o:term, o:int, o:list report.
+% a formula does not parse: the step is reported, and skipped
+open-level-step (unparsed M) I _ Ch Rest Acc Ty Pf N [rep I (bad M) | Rs] :-
+  open-level Acc {std.append Ch Rest} Ty Pf N Rs.
+% a scope: its body, then the steps after it
+open-level-step (opens-scope Vs Hs) I _ Ch Rest Acc Ty Pf N Rs :-
+  scope-parts Ch Rest Body After,
+  scope Vs Hs Body ExTy ExPf N0 Rs1,
+  shared I ExTy Ty ExPf N0 (e\ p\ open-exports I Acc ExTy e 1 N0 After Ty p N Rs2) Pf,
+  std.append Rs1 Rs2 Rs.
+open-level-step comment _ _ Ch Rest Acc Ty Pf N Rs :-
+  open-level Acc {std.append Ch Rest} Ty Pf N Rs.
+% a backward step needs a goal: it is reported, and skipped with its
+% sub-steps
+open-level-step (backward-claim _) I _ _ Rest Acc Ty Pf N [rep I (bad M) | Rs] :-
+  msg "backward-no-goal" [] M,
+  open-level Acc Rest Ty Pf N Rs.
+% the claims one after the other, each knowing those before it
+open-level-step (forward-claims Cs) I Tac [] Rest Acc Ty Pf N Rs :- !,
+  std.length Cs NC, open-claims I 1 NC Tac Cs Acc Rest Ty Pf N Rs.
+% with sub-steps: the conjunction of the claims proved by them, and then
+% each claim on its own
+open-level-step (forward-claims Cs) I Tac Ch Rest Acc Ty Pf N Rs :-
+  std.length Cs NC, conj Cs C,
+  level I Tac Ch C P1 Rs1,
+  shared I C Ty P1 NC (e\ p\ open-exports I Acc C e 1 NC Rest Ty p N Rs2) Pf,
+  std.append Rs1 Rs2 Rs.
+
+% [open-claims S J N Tac Cs Acc Rest Ty Pf M Rs]: as claims-then, with no
+% goal: each claim proved, then a hypothesis added to Acc, then the rest of
+% the steps (open-level)
 pred open-claims i:string, i:int, i:int, i:option string, i:list term,
   i:list (pair term term), i:list step, o:term, o:term, o:int, o:list report.
 open-claims _ _ _ _ [] Acc Rest Ty Pf N Rs :- open-level Acc Rest Ty Pf N Rs.
@@ -331,8 +394,10 @@ open-claims S J NC Tac [C | Cs] Acc Rest Ty {{ cyp_have lp:C lp:Ty lp:P1 lp:K }}
   step-proof Tac Id C P1 R,
   claim-name Id Nm, J1 is J + 1,
   K = fun Nm C Pf,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm C, name-in-scope DeclaredName) => open-claims S J1 NC Tac Cs [pr C x | Acc] Rest Ty (Pf x) N Rs.
+  under-decl Nm C (x\ open-claims S J1 NC Tac Cs [pr C x | Acc] Rest Ty (Pf x) N Rs).
 
+% [conj-proof Ts Ps P]: the proof P of the conjunction of Ts (conj) from the
+% proofs Ps of its members
 pred conj-proof i:list term, i:list term, o:term.
 conj-proof [_] [P] P :- !.
 conj-proof [A | Ts] [P | Ps] {{ @conj lp:A lp:B lp:P lp:Q }} :-
@@ -347,6 +412,7 @@ proj-type (prod Nm A B) I N (prod Nm A B1) :- !, pi x\ proj-type (B x) I N (B1 x
 proj-type (let Nm A V B) I N (let Nm A V B1) :- !, pi x\ proj-type (B x) I N (B1 x).
 proj-type B I N T :- component B I N T.
 
+% [component B I N T]: the I-th of the N members T of the conjunction B
 pred component i:term, i:int, i:int, o:term.
 component B _ 1 B :- !.
 component {{ lp:A /\ _ }} 1 _ A :- !.
@@ -357,9 +423,11 @@ pred proj-proof i:term, i:term, i:int, i:int, o:term.
 proj-proof (prod Nm A B) E I N (fun Nm A P) :- !,
   pi x\ proj-proof (B x) {coq.mk-app E [x]} I N (P x).
 proj-proof (let Nm A V B) E I N (let Nm A V P) :- !,
-  coq.name->id Nm DeclaredName, pi x\ (def x Nm A V, name-in-scope DeclaredName) => proj-proof (B x) E I N (P x).
+  under-def Nm A V (x\ proj-proof (B x) E I N (P x)).
 proj-proof B E I N P :- component-proof B E I N P.
 
+% [component-proof B E I N P]: the proof P of the I-th of the N members of
+% the conjunction B, from a proof E of B (proj1, proj2)
 pred component-proof i:term, i:term, i:int, i:int, o:term.
 component-proof _ E _ 1 E :- !.
 component-proof {{ lp:A /\ lp:R }} E 1 _ {{ @proj1 lp:A lp:R lp:E }} :- !.
@@ -391,8 +459,10 @@ exports S Own OTac ExTy ExPf I N Rest G {{ cyp_have lp:T lp:G lp:Pi lp:K }} Rs :
   proj-type ExTy I N T, proj-proof ExTy ExPf I N Pi,
   condition-id S I N Id, claim-name Id Nm, I1 is I + 1,
   K = fun Nm T P,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => exports S Own OTac ExTy ExPf I1 N Rest G (P x) Rs.
+  under-decl Nm T (x\ exports S Own OTac ExTy ExPf I1 N Rest G (P x) Rs).
 
+% [open-exports S Acc ExTy ExPf I N0 Rest Ty Pf N Rs]: as exports, with no
+% goal: the claims are added to Acc (open-level)
 pred open-exports i:string, i:list (pair term term), i:term, i:term, i:int, i:int,
   i:list step, o:term, o:term, o:int, o:list report.
 open-exports _ Acc _ _ I N0 Rest Ty Pf N Rs :- I > N0, !, open-level Acc Rest Ty Pf N Rs.
@@ -400,7 +470,7 @@ open-exports S Acc ExTy ExPf I N0 Rest Ty {{ cyp_have lp:T lp:Ty lp:Pi lp:K }} N
   proj-type ExTy I N0 T, proj-proof ExTy ExPf I N0 Pi,
   condition-id S I N0 Id, claim-name Id Nm, I1 is I + 1,
   K = fun Nm T Pf,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => open-exports S [pr T x | Acc] ExTy ExPf I1 N0 Rest Ty (Pf x) N Rs.
+  under-decl Nm T (x\ open-exports S [pr T x | Acc] ExTy ExPf I1 N0 Rest Ty (Pf x) N Rs).
 
 % ------------------------------------------------------------------ %
 % The statement
@@ -415,14 +485,18 @@ statement [elt rvar S | Vs] Hs Gs Steps Ty Pf Rs :-
   statement-ctx C Vs Hs Gs Steps Ty Pf Rs.
 statement [] Hs Gs Steps Ty Pf Rs :- statement-hyps Hs Gs Steps Ty Pf Rs.
 
+% [statement-ctx C Vs Hs Gs Steps Ty Pf Rs]: as statement, under the
+% variables of the context C first
 pred statement-ctx i:context-decl, i:list element,
   i:list (pair element (option string)), i:list element, i:list step,
   o:term, o:term, o:list report.
 statement-ctx context-end Vs Hs Gs Steps Ty Pf Rs :- statement Vs Hs Gs Steps Ty Pf Rs.
 statement-ctx (context-item Id _ T _ C) Vs Hs Gs Steps (prod Nm T TyR) (fun Nm T PfR) Rs :-
   coq.id->name Id Nm,
-  coq.name->id Nm DeclaredName, pi x\ (decl x Nm T, name-in-scope DeclaredName) => statement-ctx (C x) Vs Hs Gs Steps (TyR x) (PfR x) Rs.
+  under-decl Nm T (x\ statement-ctx (C x) Vs Hs Gs Steps (TyR x) (PfR x) Rs).
 
+% [statement-hyps Hs Gs Steps Ty Pf Rs]: the hypotheses Hs of the statement,
+% then its conclusion Gs proved by the steps
 pred statement-hyps i:list (pair element (option string)), i:list element,
   i:list step, o:term, o:term, o:list report.
 statement-hyps [] Gs Steps G Pf Rs :-
@@ -432,4 +506,4 @@ statement-hyps [] Gs Steps G Pf Rs :-
 statement-hyps [pr E Nm0 | Hs] Gs Steps (prod Nm A TyR) (fun Nm A PfR) Rs :-
   std.assert-ok! (parse E A) {msg "statement-hypothesis-not-parsed" []},
   hyp-name Nm0 Nm,
-  coq.name->id Nm DeclaredName, pi h\ (decl h Nm A, name-in-scope DeclaredName) => statement-hyps Hs Gs Steps (TyR h) (PfR h) Rs.
+  under-decl Nm A (h\ statement-hyps Hs Gs Steps (TyR h) (PfR h) Rs).
