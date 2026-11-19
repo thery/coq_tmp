@@ -115,9 +115,9 @@ hypothesis added by #1; the scopes of the call:
   <- {"seq":40,"type":"response","request_seq":14,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Unify: #3 of x#1 X1   (hypothesis added by #1)","id":3,"column":1,"line":0},{"name":"#2 of (lam c2 \\ x#1) (arr X3 X1)","id":2,"column":1,"source":{"name":"lambda.elpi","path":"lambda.elpi"},"line":20},{"name":"#1 of (lam c2 \\ lam c3 \\ c2) (arr X1 (arr X3 X1))","id":1,"column":1,"source":{"name":"lambda.elpi","path":"lambda.elpi"},"line":20}],"totalFrames":3}}
   -> {"seq":15,"type":"request","command":"variables","arguments":{"variablesReference":1}}
   <- {"seq":41,"type":"response","request_seq":15,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"of x#1 X1","variablesReference":0},{"name":"arg 1 (output)","value":"x#1","variablesReference":0},{"name":"arg 2 (output)","value":"X1","variablesReference":0},{"name":"X4 :=","value":"X1","variablesReference":0}]}}
-  -> {"seq":16,"type":"request","command":"variables","arguments":{"variablesReference":2}}
+  -> {"seq":16,"type":"request","command":"variables","arguments":{"variablesReference":3}}
   <- {"seq":42,"type":"response","request_seq":16,"success":true,"command":"variables","body":{"variables":[{"name":"of x#2 X3","value":"hypothesis added by #2","variablesReference":0},{"name":"of x#1 X1","value":"hypothesis added by #1","variablesReference":0}]}}
-  -> {"seq":17,"type":"request","command":"variables","arguments":{"variablesReference":3}}
+  -> {"seq":17,"type":"request","command":"variables","arguments":{"variablesReference":4}}
   <- {"seq":43,"type":"response","request_seq":17,"success":true,"command":"variables","body":{"variables":[{"name":"x#1","value":"eigenvariable in force","variablesReference":0},{"name":"x#2","value":"eigenvariable in force","variablesReference":0},{"name":"X1","value":"may depend on no eigenvariable","variablesReference":0}]}}
   -> {"seq":18,"type":"request","command":"continue","arguments":{"threadId":1}}
   <- {"seq":44,"type":"response","request_seq":18,"success":true,"command":"continue","body":{"allThreadsContinued":true}}

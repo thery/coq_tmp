@@ -1,0 +1,29 @@
+# The Query scope and watch expressions: launch append [1,2] [3] L, stop at the unify step of line 6.
+{"command":"initialize","arguments":{"adapterID":"elpi","linesStartAt1":true,"columnsStartAt1":true}}
+{"command":"launch","arguments":{"program":"append.elpi","goal":"append [1,2] [3] L","stopOnEntry":true}}
+{"await":"initialized"}
+{"command":"configurationDone"}
+{"await":"stopped"}
+# At the start, before any event: L is unbound.
+{"command":"evaluate","arguments":{"expression":"L","context":"watch"}}
+# Step in: the call port of #1, then its unify step.
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"stepIn","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"scopes","arguments":{"frameId":1}}
+{"command":"variables","arguments":{"variablesReference":2}}
+# Watches: the query variable L, the variable X0 bound by this step, X1 of the goal, an unknown name.
+{"command":"evaluate","arguments":{"expression":"L","context":"watch"}}
+{"command":"evaluate","arguments":{"expression":"X0","context":"watch"}}
+{"command":"evaluate","arguments":{"expression":"X1","context":"watch"}}
+{"command":"evaluate","arguments":{"expression":"Y","context":"watch"}}
+# Step out to the exit of #1: the bindings the whole call made, and L again.
+{"command":"stepOut","arguments":{"threadId":1}}
+{"await":"stopped"}
+{"command":"variables","arguments":{"variablesReference":1}}
+{"command":"evaluate","arguments":{"expression":"L","context":"watch"}}
+{"command":"evaluate","arguments":{"expression":"X0","context":"watch"}}
+{"command":"continue","arguments":{"threadId":1}}
+{"await":"terminated"}
+{"command":"disconnect"}

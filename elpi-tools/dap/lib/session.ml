@@ -11,10 +11,14 @@
    - stackTrace: the calls of the stop, each at the clause it runs (the
      call in focus, at its own ports, at the clause of its caller: where
      the goal is written);
-   - scopes: the goal (its arguments; the bindings of a unify step), the
-     local program (the clauses added by =>), the eigenvariables (and what
-     each logic variable of the goal may depend on);
-   - evaluate (debug console): any command of elpi-debug.
+   - scopes: the goal (its arguments; the bindings of a unify step or of
+     an exit port), the query (its variables by their source names, with
+     their values), the local program (the clauses added by =>), the
+     eigenvariables (and what each logic variable of the goal may depend
+     on);
+   - evaluate: in the debug console, any command of elpi-debug; a watch
+     expression, a variable of the query by its name, or a variable X3
+     (as elpi-debug names it), from the description of the stop.
 
    elpi-debug reads a command at each stop and answers each one by a new
    description of the stop: with the same number if the command only
@@ -31,7 +35,7 @@ module P = Protocol
 type expectation =
   | Initial_stop  (* the stop Start: elpi-debug is ready (answers launch) *)
   | Quiet  (* a breakpoint changed: its text is not shown *)
-  | Answer of P.request * Buffer.t  (* an evaluate: its text is the answer *)
+  | Answer of P.request * Buffer.t  (* an evaluate in the debug console: its text is the answer *)
   | Next_stop  (* the run goes on: the next stop is reported *)
 
 type t = {
@@ -225,15 +229,20 @@ let stack_frame s stop index f =
       | Some (file, line) -> `Assoc ((("name", `String name) :: common) @ [ ("source", source_of file); ("line", `Int (client_line s line)) ])
       | None -> `Assoc ((("name", `String name) :: common) @ [ ("line", `Int 0) ]))
 
-(* The scopes of a frame: references index * 3 + 1, + 2, + 3 (index: its
+(* The scopes of a frame: references index * 4 + 1 .. + 4 (index: its
    place in the stack, from 0); valid while the stop lasts. *)
-type scope = Goal | Local_program | Eigenvariables
+type scope = Goal | Query | Local_program | Eigenvariables
 
-let scope_reference index scope = (index * 3) + match scope with Goal -> 1 | Local_program -> 2 | Eigenvariables -> 3
+let scope_reference index scope =
+  (index * 4) + match scope with Goal -> 1 | Query -> 2 | Local_program -> 3 | Eigenvariables -> 4
 
 let scope_of_reference reference =
-  let index = (reference - 1) / 3 in
-  match (reference - 1) mod 3 with 0 -> (index, Goal) | 1 -> (index, Local_program) | _ -> (index, Eigenvariables)
+  let index = (reference - 1) / 4 in
+  match (reference - 1) mod 4 with
+  | 0 -> (index, Goal)
+  | 1 -> (index, Query)
+  | 2 -> (index, Local_program)
+  | _ -> (index, Eigenvariables)
 
 let variable name value = `Assoc [ ("name", `String name); ("value", `String value); ("variablesReference", `Int 0) ]
 
@@ -244,6 +253,10 @@ let goal_variables stop index f =
   let binding (b : binding) = variable (b.bound ^ " :=") (b.bound_to ^ b.pruning) in
   let bindings = if index = 0 then List.map binding stop.bindings else [] in
   (variable "goal" f.goal :: List.mapi argument f.args) @ bindings
+
+(* [query_variables stop]: the variables of the query, by their source
+   names, with their values at the stop (the same for every frame). *)
+let query_variables stop = List.map (fun (q : query_var) -> variable q.name q.value) stop.query_vars
 
 let local_program_variables stop = List.map (fun h -> variable h.clause h.origin) stop.hypotheses
 
@@ -347,17 +360,50 @@ let resuming_commands = [ ""; "c"; "s"; "o"; "l"; "t"; "n"; "r"; "f"; "a" ]
 
 let first_word text = match String.split_on_char ' ' (String.trim text) with w :: _ -> w | [] -> ""
 
+(* [watch_value stop expression]: the value of a watch expression at the
+   stop: a variable of the query by its source name (X of the goal [sort
+   [2, 1] X]), its value now; a variable as elpi-debug names it (X3): its
+   binding by the step of the stop (a unify step, an exit port), else, if
+   it is a logic variable of a goal of the stack, that it is unbound; else
+   none (it is not in view at this stop). *)
+let watch_value stop expression =
+  let name = String.trim expression in
+  let bound (b : binding) = b.bound = name in
+  let in_goal f = List.exists (fun (v : var_scope) -> v.var = name) f.scope in
+  match List.find_opt (fun (q : query_var) -> q.name = name) stop.query_vars with
+  | Some q -> Some q.value
+  | None -> (
+      match List.find_opt bound stop.bindings with
+      | Some b -> Some (b.bound_to ^ b.pruning)
+      | None -> if List.exists in_goal stop.frames then Some (name ^ "   (unbound)") else None)
+
+(* [watch s r expression]: a watch expression, answered from the
+   description of the stop in progress. *)
+let watch s r expression =
+  with_stop s r (fun stop ->
+      match watch_value stop expression with
+      | Some value -> respond s r (`Assoc [ ("result", `String value); ("variablesReference", `Int 0) ])
+      | None -> fail s r (expression ^ ": not in view at this stop (not a variable of the query, nor of a goal of the stack)"))
+
+(* [evaluate_command s r expression]: a command of elpi-debug typed in the
+   debug console: one that lets the run go on, or one whose output is the
+   answer. *)
+let evaluate_command s r expression =
+  with_stop s r (fun _ ->
+      if List.mem (first_word expression) resuming_commands then begin
+        respond s r (`Assoc [ ("result", `String ""); ("variablesReference", `Int 0) ]);
+        emit s "continued" (`Assoc [ ("threadId", `Int thread_id) ]);
+        resume s expression
+      end
+      else send_command s expression (Answer (r, Buffer.create 256)))
+
+(* [evaluate s r]: a command in the debug console, or a watch expression. *)
 let evaluate s (r : P.request) =
   let expression = Option.value ~default:"" (P.string_argument "expression" r) in
-  if P.string_argument "context" r <> Some "repl" then fail s r "only commands of elpi-debug in the debug console"
-  else
-    with_stop s r (fun _ ->
-        if List.mem (first_word expression) resuming_commands then begin
-          respond s r (`Assoc [ ("result", `String ""); ("variablesReference", `Int 0) ]);
-          emit s "continued" (`Assoc [ ("threadId", `Int thread_id) ]);
-          resume s expression
-        end
-        else send_command s expression (Answer (r, Buffer.create 256)))
+  match P.string_argument "context" r with
+  | Some "watch" -> watch s r expression
+  | Some "repl" -> evaluate_command s r expression
+  | _ -> fail s r "only commands of elpi-debug in the debug console, and watch expressions"
 
 let stack_trace s (r : P.request) =
   with_stop s r (fun stop ->
@@ -382,7 +428,8 @@ let scopes s (r : P.request) =
           respond s r
             (`Assoc
               [ ("scopes",
-                 `List [ scope "Goal" "arguments" Goal; scope "Local program (=>)" "locals" Local_program;
+                 `List [ scope "Goal" "arguments" Goal; scope "Query" "locals" Query;
+                         scope "Local program (=>)" "locals" Local_program;
                          scope "Eigenvariables" "locals" Eigenvariables ]) ]))
 
 let variables s (r : P.request) =
@@ -396,6 +443,7 @@ let variables s (r : P.request) =
           let vars =
             match kind with
             | Goal -> goal_variables stop index f
+            | Query -> query_variables stop
             | Local_program -> local_program_variables stop
             | Eigenvariables -> eigenvariable_variables stop f
           in

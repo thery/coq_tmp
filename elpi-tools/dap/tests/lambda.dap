@@ -22,13 +22,14 @@
 {"await":"stopped"}
 {"command":"stepIn","arguments":{"threadId":1}}
 {"await":"stopped"}
-# The three scopes of the call #2: its goal, the local program, the eigenvariables.
+# The four scopes of the call #2: its goal, the query, the local program, the eigenvariables.
 {"command":"scopes","arguments":{"frameId":2}}
 {"command":"variables","arguments":{"variablesReference":1}}
 {"command":"variables","arguments":{"variablesReference":2}}
 {"command":"variables","arguments":{"variablesReference":3}}
-# The same scopes for the call #1 (second in the stack: references 4, 5, 6).
-{"command":"variables","arguments":{"variablesReference":6}}
+{"command":"variables","arguments":{"variablesReference":4}}
+# The same scopes for the call #1 (second in the stack: references 5 to 8): its eigenvariables.
+{"command":"variables","arguments":{"variablesReference":8}}
 # Next at a step inside a call creeps: the call port of #3, then its unify with a hypothesis.
 {"command":"next","arguments":{"threadId":1}}
 {"await":"stopped"}

@@ -27,11 +27,15 @@ type var_scope = { var : string; depends : string list }
 (* A call of the stack; the call 0 is the query. *)
 type frame = { id : int; goal : string; running : running; args : argument list; scope : var_scope list }
 
-(* A binding made by the head unification of a unify step. *)
+(* A binding made by the step of the stop: the head unification of a unify
+   step, or the whole call at an exit port (the variable named X<n>). *)
 type binding = { bound : string; bound_to : string; pruning : string }
 
 (* A clause of the local program and the call that added it. *)
 type hypothesis = { clause : string; origin : string }
+
+(* A variable of the query, by its source name, and its value at the stop. *)
+type query_var = { name : string; value : string }
 
 (* A stop: its number (a command that only shows something prompts again
    with the same number), why it stops (start, step, breakpoint, pause),
@@ -45,6 +49,7 @@ type stop = {
   bindings : binding list;
   hypotheses : hypothesis list;
   eigenvariables : string list;
+  query_vars : query_var list;  (* the variables of the query, by their source names *)
 }
 
 type message = Program of program | Stop of stop | Text of string
@@ -86,6 +91,8 @@ let binding_of json = { bound = string_field "var" json; bound_to = string_field
 
 let hypothesis_of json = { clause = string_field "clause" json; origin = string_field "origin" json }
 
+let query_var_of json = { name = string_field "name" json; value = string_field "value" json }
+
 let stop_of json =
   {
     stop_number = int_field "stop" json;
@@ -96,6 +103,7 @@ let stop_of json =
     bindings = list_field "bindings" binding_of json;
     hypotheses = list_field "hyps" hypothesis_of json;
     eigenvariables = list_field "eigenvariables" J.to_string json;
+    query_vars = list_field "query" query_var_of json;
   }
 
 let program_of json = { rules = list_field "clauses" rule_of json; declarations = list_field "declarations" location_of json }
