@@ -92,8 +92,11 @@ Let `A B : Prop`{.var}. We prove `A /\ B -> B /\ A`{.claim}.
   Statement Steps`, a step `step Place Text Sub-steps`, a `place` (`lines
   First Last`, the lines of a text in its file, numbered from 0, given by
   a reader; `unplaced` for a text being written), the writer
-  `write-document D Text`, and a reader, `read-document File D` (the
-  reader's contract below; cyp keeps its own reader);
+  `write-document D Text`, a reader, `read-document File D` (the
+  reader's contract below; cyp's and the Typst writer's), and the number
+  of a step, `step-number Parent K Number` (Dewey notation, `2.1` the
+  first sub-step of step 2: cyp numbers its conditions with it, the Typst
+  writer its steps);
 - `checked.elpi`: what a checker adds to the text of a step (cyp's
   `.checked.md`): `status-mark Status Mark` (`ok` ✅, `ko` ❌, `todo` 🔶,
   `none` ▫️, cyp's names of the statuses), `message-block M S` (the

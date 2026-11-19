@@ -42,6 +42,14 @@ type step place -> string -> list step -> step.
 kind document type.
 type document list prooftext.field -> string -> place -> string -> list step -> document.
 
+% [step-number Parent K Number]: the number of the K-th step of a list of
+% steps whose parent has the number Parent ("" at the top), in Dewey
+% notation: 2.1 is the first sub-step of step 2.  A checker names its
+% conditions after it (cyp), the Typst writer shows it
+pred step-number i:string, i:int, o:string.
+step-number "" K N :- !, N is {std.any->string K}.
+step-number P K N :- N is P ^ "." ^ {std.any->string K}.
+
 % ------------------------------------------------------------------
 % Writing
 

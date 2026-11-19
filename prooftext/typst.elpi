@@ -145,7 +145,7 @@ statement-typst C0 Statement Line C :-
 pred steps-typst i:context, i:string, i:string, i:int, i:list prooftext.step, o:list string.
 steps-typst _ _ _ _ [] [].
 steps-typst C0 Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
-  dewey-number Prefix K Number,
+  prooftext.step-number Prefix K Number,
   checked-text Text0 Check Text, check-arguments Check Arguments,
   (if (Arguments = "") (Tail = "") (Tail is ", " ^ Arguments)),
   text-content C0 Number Text Content C,
@@ -157,12 +157,6 @@ steps-typst C0 Indent Prefix K [prooftext.step _ Text0 Sub | Steps] Lines :-
   K1 is K + 1,
   steps-typst C Indent Prefix K1 Steps Next,
   std.append Own Next Lines.
-
-% [dewey-number Prefix K Number]: the number of the K-th step of a list
-% whose parent has the number Prefix ("" at the top)
-pred dewey-number i:string, i:int, o:string.
-dewey-number "" K N :- !, N is {std.any->string K}.
-dewey-number P K N :- N is P ^ "." ^ {std.any->string K}.
 
 % ------------------------------------------------------------------
 % Checked texts

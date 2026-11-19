@@ -21,6 +21,8 @@ Elpi Accumulate lp:{{
     prooftext.role-tag R "claim", !, expect "tag claim" {std.any->string R} "rclaim",
     prooftext.justification "lia" J, expect "justification" J "*by lia*",
     (prooftext.is-justification J, ! ; coq.error "is-justification" J),
+    prooftext.step-number "" 2 SN1, expect "step number 2" SN1 "2",
+    prooftext.step-number "2.1" 3 SN2, expect "step number 2.1.3" SN2 "2.1.3",
     prooftext.fresh-name ["h", "h0"] "h" N1, expect "fresh h" N1 "h1",
     prooftext.fresh-name ["h"] "x" N2, expect "fresh x" N2 "x",
     prooftext.unknown-tactics ["lia", "omega"] U, expect "unknown tactics" {std.any->string U} "[omega]",
