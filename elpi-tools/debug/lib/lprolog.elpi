@@ -106,7 +106,7 @@ pred eigen o:any, o:string.
 % X<uuid> (term-string, primitives.elpi), its eigenvariables by their
 % source names.
 func show-term any -> string.
-show-term T S :- term-string T S0, rex.replace "\n *" " " S0 S1, names Es, rename-eigens Es 0 S1 S.
+show-term T S :- term-string T S1, names Es, rename-eigens Es 0 S1 S.
 
 % [rename-eigens Es L S0 S]: Es are the eigenvariables in scope from level
 % L on, the oldest first (as [names] gives them, whatever its documentation
