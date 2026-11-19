@@ -36,6 +36,8 @@ a woken goal enters the interpreter through its Wake port.
   Unify: #2 with chr.elpi:14: odd X0
   Cut: #2 commits to its current clause
     Delay: [S2] odd X0 on [X0]
+    Rule: clause 6 chr.elpi:5 tried on [S1, S2]
+    Rule: clause 6 chr.elpi:5 fires
   CHR: both even and odd
   Fail: #2 odd X0
   Redo: #1 even X0

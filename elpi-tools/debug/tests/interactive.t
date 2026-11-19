@@ -184,8 +184,9 @@ again); the help:
       g            the calls above (goals)
       scope        the eigenvariables in force and what each logic variable may depend on
       hyps         the local program: the clauses added by =>
+      store        the constraint store: the goals suspended by declare_constraint
       + P, - P     set, remove a breakpoint on the predicate P
-      + clause N, - clause N   set, remove a breakpoint on the clause N (option -machine lists them)
+      + clause N, - clause N   set, remove a breakpoint on the clause N (a rule, or a CHR rule: option -machine lists them)
       e            the deepest failure so far
       a            abort
      ? n

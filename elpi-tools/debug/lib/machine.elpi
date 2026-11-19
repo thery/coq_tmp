@@ -8,8 +8,8 @@
 %
 % one JSON object per line, flushed at once:
 % - at the start, {"event":"program", ...}: the rules of the program,
-%   numbered (the numbers of the commands + clause N, - clause N), and the
-%   lines of its declarations, so that a front end can tell which clause a
+%   numbered, then its CHR rules (the numbers of the commands + clause N,
+%   - clause N), and the lines of its declarations, so that a front end can tell which clause a
 %   line of a file belongs to; then a stop "Start", before the first event,
 %   where breakpoints can be set before the run (c: stop at the first
 %   event, l: run to the first breakpoint);
@@ -18,7 +18,8 @@
 %   same number), why it stops, the event, the stack of calls (each with
 %   the clause it runs, its arguments and the scope of its variables), the
 %   bindings of a unify step or of an exit port, the local program, the
-%   eigenvariables, the variables of the query by their source names.
+%   eigenvariables, the variables of the query by their source names, the
+%   constraint store, and at an event of a CHR rule its location.
 %   Variables are named X<uuid> (primitives.elpi).
 % Everything else (the events shown, the output of commands such as p or
 % e, the prints of the program, the solutions) is text for a person.
@@ -72,16 +73,20 @@ start-session :- opt machine, !,
   stop started start-step (focus (frame 0 0 query true called) []) ["the run is about to start"].
 start-session.
 
-% [emit-program]: the message "program": the rules, numbered from 1, and
-% the lines of the declarations.
+% [emit-program]: the message "program": the rules, numbered from 1, then
+% the CHR rules, and the lines of the declarations.
 pred emit-program.
 emit-program :-
   numbered-rules Rules,
   numbered-rules-json 1 Rules RulesJson,
+  std.length Rules Count,
+  std.findall (reflect.chr-rule _ _ _ _ _ _ _ _) ChrRules,
+  std.map ChrRules (chr-rule-json Count) ChrRulesJson,
+  std.append RulesJson ChrRulesJson ClausesJson,
   std.findall (declaration-at _) Declarations,
   std.map Declarations declaration-json DeclarationsJson,
   emit (json-object [pr "event" (json-string "program"),
-                     pr "clauses" (json-list RulesJson),
+                     pr "clauses" (json-list ClausesJson),
                      pr "declarations" (json-list DeclarationsJson)]).
 
 % [numbered-rules-json N Rules Js]: {"clause":N, "predicate", "file", "line"}
@@ -94,14 +99,22 @@ numbered-rules-json N [reflect.clause P _ Loc _ _ _ | Rules] [J | Js] :-
   N1 is N + 1,
   numbered-rules-json N1 Rules Js.
 
+% [chr-rule-json Count Rule J]: {"clause":N, "predicate":"(CHR rule)",
+% "file", "line"} for a CHR rule, numbered after the Count rules
+% (chr.elpi, [chr-rule-number]).
+func chr-rule-json int, (pred) -> json.
+chr-rule-json Count (reflect.chr-rule I Loc _ _ _ _ _ _) J :-
+  location-fields Loc Fields, N is Count + I,
+  J = json-object [pr "clause" (json-int N), pr "predicate" (json-string "(CHR rule)") | Fields].
+
 % [declaration-at Loc]: Loc is the location of a declaration of the
-% program (a type, a constructor, a signature, an abbreviation, a CHR rule).
+% program (a type, a constructor, a signature, an abbreviation; the CHR
+% rules are listed with the rules).
 pred declaration-at o:reflect.srcloc.
 declaration-at Loc :- reflect.data-type _ _ Loc.
 declaration-at Loc :- reflect.constructor _ _ _ Loc.
 declaration-at Loc :- reflect.signature _ _ _ _ _ Loc.
 declaration-at Loc :- reflect.type-abbrev _ _ Loc.
-declaration-at Loc :- reflect.chr-rule _ Loc _ _ _ _ _ _.
 
 func declaration-json (pred) -> json.
 declaration-json (declaration-at Loc) (json-object Fields) :- location-fields Loc Fields.
@@ -123,6 +136,7 @@ emit-stop (focus Frame Above) :-
   bindings-json Bindings,
   hyps-json Hyps,
   query-json Query,
+  store-json Store,
   names Es, eigen-names Es EigenNames, std.map EigenNames string-json Eigens,
   emit (json-object [
     pr "event" (json-string "stop"),
@@ -134,7 +148,9 @@ emit-stop (focus Frame Above) :-
     pr "bindings" (json-list Bindings),
     pr "hyps" (json-list Hyps),
     pr "eigenvariables" (json-list Eigens),
-    pr "query" (json-list Query)]).
+    pr "query" (json-list Query),
+    pr "store" (json-list Store),
+    pr "rule" {tried-rule-json}]).
 
 func reason-name stop-reason -> string.
 reason-name at-breakpoint "breakpoint".
@@ -245,6 +261,29 @@ hyps-json Js :- new_safe S, std.ignore-failure! (hyp-json J, stash_in_safe S J, 
 pred hyp-json o:json.
 hyp-json (json-object [pr "clause" (json-string Text), pr "origin" (json-string OriginText)]) :-
   hyp _ Origin C, show-term C Text, origin-string Origin OriginText.
+
+% [store-json Js]: {"suspension", "goal"} per goal of the constraint store
+% (chr.elpi, [program-store]), most recent first; the suspension is 0
+% when not numbered.  Computed in a failure-driven loop, its JSON kept in
+% a safe: reading the store may bind (chr.elpi).
+pred store-json o:list json.
+store-json Js :-
+  new_safe S,
+  std.ignore-failure! (program-store Gs, std.map Gs stored-json Js0, stash_in_safe S Js0, fail),
+  open_safe S Found, store-found Found Js.
+
+func store-found list (list json) -> list json.
+store-found [Js] Js :- !.
+store-found _ [].
+
+pred stored-json i:pair int any, o:json.
+stored-json (pr K G) (json-object [pr "suspension" (json-int K), pr "goal" (json-string {show-term G})]).
+
+% [tried-rule-json J]: at an event of a CHR rule ([tried-rule], chr.elpi),
+% {"file", "line"} of the rule; null otherwise.
+func tried-rule-json -> json.
+tried-rule-json (json-object Fields) :- tried-rule Loc, !, location-fields Loc Fields.
+tried-rule-json json-null.
 
 % [query-json Js]: {"name", "value"} per variable of the query, by its
 % source name (option query-vars, given by the driver), with its value now.
