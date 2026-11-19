@@ -203,6 +203,7 @@ prooftext/pdf.sh --html proof.md                      # an HTML page, proof.html
 prooftext/pdf.sh --flags "-R xtext XText" proof.md    # a load path for the require line
 prooftext/pdf.sh --source proof.md                    # the Typst source only
 prooftext/pdf.sh --links '[["index", "../index.html"]]' proof.typ   # links above the text (gallery.sh)
+prooftext/pdf.sh --roles claim,by proof.md   # colour only the claims and justifications (all by default)
 sh prooftext/gallery.sh ~/gallery                      # every text of the repository, with an index
 ```
 
@@ -259,7 +260,7 @@ A Typst source (xtext's `and_swap`, shortened):
   )),
 ))
 
-#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"),))
+#legend((("var", "variable"), ("hyp", "hypothesis"), ("claim", "claim"), ("fact", "fact"), ("by", "justification"),))
 ```
 
 The text of a statement or of a step is cut into its parts: the formulas
@@ -386,12 +387,19 @@ good within a page, not as addresses from other pages.
 ### The legend
 
 At the end of the text, a small legend recalls the look of the roles:
-the words variable, hypothesis, claim and fact, each in the look of its
+the words variable, hypothesis, claim, fact and justification, each in the look of its
 role, and, for a text checked by cyp, the status marks with their
 meanings (✔ proved, ✘ not proved, ◆ left to a Proof block, ▫ nothing to
 check).  Its words are in the language of the text: the uses
 `legend-var`, ..., `legend-none` of the lexicon, in its ten languages
-(`write-word`).  In the web page it is a `footer class="legend"`.
+(`write-word`).  In the web page it is a `footer class="legend"`, and each
+role in it is a switch (a check box) that turns the colour of that role on
+and off in the whole text (CSS only, no script).
+
+The roles coloured are all of them by default; `pdf.sh --roles claim,by`
+(Typst's `--input roles=...`) colours only those listed: the others look
+like plain formulas, the PDF's legend lists only the coloured roles, and
+the web page starts with only their switches on.
 
 ### The gallery
 

@@ -43,6 +43,17 @@
   plain: none,
 )
 
+// [shown-roles]: the roles whose formulas are coloured, given by the
+// command line (typst compile --input roles=var,claim; pdf.sh --roles):
+// all of them by default.  The others look like plain formulas, and in
+// the PDF the legend leaves them out; the web page lists them all in its
+// legend, as switches, the given ones on
+#let shown-roles = {
+  let given = sys.inputs.at("roles", default: "")
+  if given == "" { role-backgrounds.keys() }
+  else { given.split(",").map(str.trim) + ("plain",) }
+}
+
 // the mark of each role that needs no colour: a frame or an underline
 // ("solid", "dashed", "dotted"), none for none
 #let role-cues = (
@@ -163,7 +174,13 @@
     // the mark of the role, in the legend only
     let mark = css-cue(role-cues.at(role))
     if mark != "" { rules.push("footer.legend .formula." + role + " {" + mark + " }") }
+    // the legend's switch of the role: unchecked, the role's formulas in
+    // the text lose their background (CSS only, no script)
+    rules.push("body:has(#show-" + role + ":not(:checked)) .formula." + role
+      + ":not(footer.legend .formula) { background: none; }")
   }
+  rules.push("footer.legend label { cursor: pointer; }")
+  rules.push("footer.legend input { margin: 0 0.3em 0 0; vertical-align: middle; }")
   for (status, s) in status-marks {
     rules.push(".mark." + status + " { color: " + s.colour.to-hex() + "; }")
     rules.push(".message." + status + " { border-color: " + s.colour.to-hex()
@@ -183,7 +200,7 @@
 // the line is a box as wide as the line, where it breaks (on its own
 // lines)
 #let role-look(role, body, cue: false) = {
-  let background = role-backgrounds.at(role)
+  let background = if role in shown-roles { role-backgrounds.at(role) } else { none }
   let cue = if cue { role-cues.at(role) } else { none }
   let line = if cue == none { none } else { (paint: cue-colour, thickness: 0.5pt, dash: cue.dash) }
   let stroke = if cue == none { none } else if cue.line == "frame" { line } else { (bottom: line) }
@@ -441,10 +458,19 @@
 // [legend(roles, statuses)]: the key of the look, at the end of the text:
 // each role's word (in the language of the text) with the look of the
 // role, then, for a text checked by cyp, each status mark with its
-// meaning; roles and statuses are lists of (role or status, word) pairs
+// meaning; roles and statuses are lists of (role or status, word) pairs.
+// On the web page each role is a switch (a check box) that turns its
+// colour on and off; in the PDF only the shown roles are listed
 #let legend(roles, statuses: ()) = on-html(
   () => html.elem("footer", attrs: (class: "legend"), {
-    for (role, word) in roles { element("span", "entry", element("span", "formula " + role, word)) }
+    for (role, word) in roles {
+      let box-attrs = (type: "checkbox", id: "show-" + role)
+      if role in shown-roles { box-attrs.insert("checked", "") }
+      element("span", "entry", html.elem("label", {
+        html.elem("input", attrs: box-attrs)
+        element("span", "formula " + role, word)
+      }))
+    }
     for (status, word) in statuses {
       element("span", "entry", status-mark(status, false) + word)
     }
@@ -452,7 +478,8 @@
   () => block(above: 2em, {
     line(length: 30%, stroke: 0.4pt + luma(190))
     set std.text(size: 0.75em, fill: luma(70))
-    (roles.map(((role, word)) => role-look(role, word, cue: true))
+    (roles.filter(((role, word)) => role in shown-roles)
+      .map(((role, word)) => role-look(role, word, cue: true))
       + statuses.map(((status, word)) => box(status-mark(status, false)) + " " + word))
       .join(h(1.4em))
   }))
