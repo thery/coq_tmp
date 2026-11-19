@@ -148,8 +148,34 @@ Where the code departs from the thesis:
 | 6.2.2 (Elim*) | elimination theorems, first and second kind | `tr-elim1`, `tr-elim2` in `inductive-text.elpi` |
 | 6.3.1, 6.3.2 | eliminations with one case, with zero cases | `inductive-text.elpi` |
 | 6.3.3, 6.3.4 | dependent eliminations, eliminations with recursion (base and inductive cases) | `inductive-text.elpi` (`recursive`) |
+| 6.4.1 | implicit arguments in eliminations: the generalised predicate (the motive) of a dependent elimination left out when it follows from the instance and the object, "Montrons (P x0) par une preuve par cas sur x0"; decided as 6.4.1 asks, by the pragmatic method of 5.4 (generate and test): the reader's step *by C_ind* (cyp's eapply) run on the instance must give back the motive and the object; always on, as 5.4's inferable arguments (`XTEXT_OFF=motive` for measurements) | `instance-without-motive`, `reader-applies` in `applications.elpi`; `implicit_motive.v` (the schemes of 6.3.3-6.3.4: booleans, pairs, lists) |
 | 6.4.2 | elimination theorems recognised by their type, whatever their name | `elim-info` in `inductive.elpi` |
 | (end of 6.4.2) | rewriting: the thesis asks for a specific rule but gives none | `tr-rewrite` in `inductive-text.elpi`; the rewriting principles recognised by their type, `rewrite-info` in `inductive.elpi` |
+
+Where 6.4.1 is followed or not:
+
+- 6.4.1 has no figure; its examples are the schemes of 6.3.3 and 6.3.4
+  ("Pour montrer (P b0), par une preuve par cas, généralisons en
+  λb:bool.(P b) avant de le spécialiser à b0", the pairs, the lists by
+  induction), reproduced in `implicit_motive.v` with the light text
+  6.4.1 gives, "Montrons (P x0) par une preuve par cas sur x0" (here
+  "Montrons `P b0` par analyse de cas sur `b0` (bool, bool_ind):", the
+  words of the lexicon, and the cases kept; the closing step proves the
+  instance, so there is no "In particular").  An elimination with one
+  case has no announcement (6.3.3): its line becomes "Par définition de
+  prod (prod_ind) sur `p0`, montrons `P p0`:".
+- 6.4.1 asks for two steps: the evaluation extended, with an external
+  unification, so that ElimOpen can be evaluated without the predicate,
+  then the production of the script changed, with a test.  The
+  evaluation of a text is its reader's, cyp's, and its step *by C_ind* is
+  Rocq's eapply; the first step is not done (cyp is not changed), and the
+  test is that step as it is.  Rocq's eapply finds the motive only when
+  the instance is a predicate applied to the object (P x0, as in the
+  thesis's schemes); for n + 0 = n it finds fun n0 => n + 0 = n0.  So no
+  text of `examples/` other than the three new ones changes.  A test
+  that abstracts the object in the instance, as elim does, would
+  lighten 50 generated texts, but cyp would not prove their closing
+  step (tried on `le_add_r`).
 
 ## Not implemented
 
@@ -162,7 +188,6 @@ Where the code departs from the thesis:
   cannot be read back into a term.  Fig. 4.15 (a β-expansion that keeps
   the tree, P1.1 inside P1) is not produced: the thesis shows it to
   motivate the postfix one, Fig. 4.16, which is the algorithm.
-- 6.4.1, leaving out implicit arguments in eliminations.
 
 ## From L. Théry's thesis (1994)
 

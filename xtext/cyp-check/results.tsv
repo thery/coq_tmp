@@ -75,3 +75,6 @@ std_rev_app_distr	2	10	2	8
 std_rev_involutive	3	9	1	5
 Tauto	1	1	0	0
 Trans_Inv	2	5	0	4
+bool_P	3	5	0	1
+prod_P	3	2	0	0
+list_P	2	5	0	1

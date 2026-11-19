@@ -77,13 +77,13 @@ with-switch Name Origin V G :- known-value Name Origin V,
 
 % ------------------------------------------------------------------
 % Mechanisms switched off, for measurements: XTEXT_OFF is a
-% comma-separated list of explicit, args, tactics, thatis (README,
+% comma-separated list of explicit, args, motive, tactics, thatis (README,
 % "Inferable arguments, tactics, unfolding").  An unknown name is an error.
 pred off i:string.
 off M :- getenv "XTEXT_OFF" (some S), rex.split "," S L,
   std.forall L known-mechanism, std.mem! L M.
 
 pred known-mechanism i:string.
-known-mechanism M :- std.mem! ["explicit", "args", "tactics", "thatis"] M, !.
+known-mechanism M :- std.mem! ["explicit", "args", "motive", "tactics", "thatis"] M, !.
 known-mechanism M :- coq.error {calc ("xtext: XTEXT_OFF names \"" ^ M ^
-  "\"; the mechanisms are explicit, args, tactics, thatis")}.
+  "\"; the mechanisms are explicit, args, motive, tactics, thatis")}.

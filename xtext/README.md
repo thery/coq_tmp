@@ -74,8 +74,10 @@ Examples and checks:
   `inductive.v` (induction, case analysis, rewriting, fix), `thesis.v`
   (the theses' examples), `stdlib.v` (lemmas of Rocq's Stdlib),
   `elim_type.v` (elimination principles recognised by their type),
-  `partial.v` (proofs in progress): the texts in `examples/` (82 with
-  those of a private case study, kept in a private branch, 77 here);
+  `implicit_motive.v` (the motive of an elimination left out, thesis
+  6.4.1),
+  `partial.v` (proofs in progress): the texts in `examples/` (85 with
+  those of a private case study, kept in a private branch, 80 here);
 - `multilingual.v`: 12 of them in each of the other languages of the
   lexicon (`examples/fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la`);
 - `typst_examples.v`: ten texts in Typst, for their PDFs (`examples-typst/`,
@@ -90,6 +92,11 @@ Examples and checks:
   Fig. 4.17, the text of Fig. 4.30 in French and English) and on terms
   with a dependent argument, a named abstraction and a case analysis
   inside an application;
+- `implicit_motive.v`: the motive of a dependent elimination left out
+  (thesis 6.4.1) on the schemes of 6.3.3-6.3.4 (booleans, pairs, lists,
+  `examples/bool_P.md`, `prod_P.md`, `list_P.md`), and kept where the
+  reader would not find it (`add_0_r'`): each text is checked against
+  the expected one;
 - `examples-staged-none/`, `examples-staged-maximal/`,
   `examples-staged-selection/` (with `XTEXT_SELECTION=thesis`),
   `examples-staged-naming/` and `examples-staged-shared/` (with
@@ -163,9 +170,10 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
   name, which cyp applies (`*by X*`: cyp runs no tactic code): a theorem
   step and a constructor step carry the full name of the theorem or of the
   constructor, `*by Stdlib.Lists.List.rev_unit*`; the closing step of a
-  dependent elimination (the generalised statement) the elimination
-  theorem, `*by Corelib.Init.Datatypes.nat_ind*`; a step proved by a
-  tactic (below) the tactic's name, `*by lia*`.  The closing steps of a
+  dependent elimination (the generalised statement, or the instance
+  when the motive is left out, 6.4.1) the elimination theorem,
+  `*by Corelib.Init.Datatypes.nat_ind*`; a step proved by a tactic
+  (below) the tactic's name, `*by lia*`.  The closing steps of a
   `match` and of a first-kind elimination (`or_ind`, `le_ind`) have none:
   the motive is not found from the goal by unification when the type has
   indices, and a `match` would need `destruct`; cyp's default tactics
@@ -277,6 +285,29 @@ They replace the paper's rules for introduction and elimination theorems.
   `(inductive)`, and the proof is announced `by induction` instead of `by
   case analysis`.  All of this is read from the type of the elimination
   theorem, so it works for `nat_ind`, `list_ind`, `le_ind`, ...
+- **Implicit arguments in eliminations** (6.4.1): the generalised
+  statement (the motive) of a dependent elimination is left out when the
+  reader can find it again: `We prove P l0 by induction on l0 (list,
+  list_ind):`, the cases, `These cases being exhaustive, we deduce P l0`,
+  with no generalisation and no `In particular` (the thesis's "Montrons
+  (P x0) par une preuve par cas sur x0").  As the thesis asks, after the
+  pragmatic method of 5.4, a test decides it: the reader's own step *by
+  list_ind* (cyp's `eapply list_ind`) is run on the instance `P l0`, and
+  it must give back the motive of the proof and `l0`
+  (`instance-without-motive` in `applications.elpi`).  It is always on,
+  as the inferable arguments of 5.4, since the test keeps every text
+  checkable; `XTEXT_OFF=motive` switches it off.  Rocq's `eapply` finds
+  the motive only when the instance is a predicate applied to the object
+  (`P l0`); for `n + 0 = n` it finds `fun n0 => n + 0 = n0`, so the texts
+  of `examples/` keep their generalisation, and only the thesis's
+  schemes (`implicit_motive.v`: `bool_P`, `prod_P`, `list_P`) are
+  lightened.  A trial with a test that finds the motive as `elim` does
+  (abstracting the object in the goal) lightened 50 generated texts, in
+  all languages, but cyp then fails on their closing step (`le_add_r`:
+  `we deduce n <= n + m *by nat_ind*` not proved), since its step is
+  `eapply`.  Those texts need the thesis's first step, the reader's
+  evaluation extended (an elimination step of cyp that finds the motive
+  as `elim` does), which is not done here.
 
 ## Departures from the paper and the thesis
 
@@ -484,7 +515,9 @@ What breaks or becomes unreadable on the large ones:
 
 Four generic mechanisms, after Coscoy's thesis.  Each can be switched
 off for measurements with the environment variable `XTEXT_OFF` (a
-comma-separated list of `explicit`, `args`, `tactics`, `thatis`).
+comma-separated list of `explicit`, `args`, `tactics`, `thatis`; and
+`motive`, the motive of an elimination left out, thesis 6.4.1, see "Rules
+of the thesis").
 
 ### (3a) Formulas that type-check again (thesis 5.4, applied to formulas)
 
@@ -816,11 +849,12 @@ finds the example files), and runs cyp's driver (`cyp/bin/cyp.ml`, which runs
 at most 8 GB of memory per text.  It prints, per text, the time and the
 list items proved / not proved / not checked (`cyp-check/results.tsv`).
 
-The 77 English texts written by default (staged translation), 300 s per
-text (2026-11-18, `cyp-check/results.tsv`):
+The 80 English texts written by default (staged translation), 300 s per
+text (2026-11-18, `cyp-check/results.tsv`; the three texts of
+`implicit_motive.v` added 2026-11-19, the other texts unchanged by it):
 
-- all 77 texts are checked, in 227 s in all: 675 steps proved, 17 not
-  proved, 502 not checked (lines with no claim: `Let`, `Assume`, the
+- all 80 texts are checked, in 235 s in all: 687 steps proved, 17 not
+  proved, 504 not checked (lines with no claim: `Let`, `Assume`, the
   announcement of an induction, and the staged texts' "The element x
   belongs to T");
 - none times out (`std_or_assoc` did, until cyp tried first whether a
@@ -962,10 +996,10 @@ element named (`The element z belongs to E`), and, in an application
 with both named arguments and arguments with a text, the position of the
 latter among the arguments.  Type arguments that the direct writer would
 infer are named too (`Applying f_equal to nat, nat, S, m0 and IH`): the
-staged translation does not leave out inferable arguments (thesis 5.4,
-6.4.1).  What a reader keeps: every conversion, every intermediate
-result that is not an identifier, and the conclusion of each series of
-abstractions.
+staged translation does not leave out inferable arguments (thesis 5.4;
+the motive of an elimination, 6.4.1, is left out in both translations).
+What a reader keeps: every conversion, every intermediate result that is
+not an identifier, and the conclusion of each series of abstractions.
 
 ### The subproofs (thesis 4.3.2-4.3.3, `elpi/subproofs.elpi`)
 
@@ -1042,10 +1076,12 @@ the same annotations (it is in the history, commit 56a84ef).
 - The specific wordings of the paper's figures for the usual connectives
   and classical reasoning (`Altogether`, `Obviously`, `If we have ...
   Otherwise`).
-- From the thesis: leaving out the generalised predicate (6.4.1), and
-  the scripts of its chapter 4 (4.2, 4.3.4: a text that can be read back
-  into a proof term); the selection of type annotations and the
-  subproofs (4.3.1-4.3.3) are done.
+- From the thesis: the scripts of its chapter 4 (4.2, 4.3.4: a text that
+  can be read back into a proof term); the selection of type annotations
+  and the subproofs (4.3.1-4.3.3) are done.  Of 6.4.1 (the generalised
+  predicate left out), the first step, a reader that finds the motive as
+  `elim` does: the motive is left out only where cyp's eapply finds it
+  (see "Rules of the thesis").
 - Mutual fixpoints (`mfix`) and `cofix` are left unchanged, as are
   non-propositional subterms.
 - The `require` line of the header is the same for every text (the
