@@ -8,9 +8,9 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Laat `A B C D : Prop`{.var}. Stel `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) en `A`{.hyp} (h4). We bewijzen `D`{.claim}.
 
-- ✅ Volgens h4 er geldt `A`{.claim}.
-- ✅ Door toepassing van h2, er geldt `B`{.claim}.
-  - ✅ Volgens h4 er geldt `A`{.claim}.
-  - ✅ Door toepassing van h3 op h4, er geldt `C`{.claim}.
-- ✅ Door toepassing van h3 op h4, er geldt `C`{.claim}.
-- ✅ Door toepassing van h1, er geldt `D`{.claim}.
+- ✅ Volgens *h4*{.just} er geldt `A`{.claim}.
+- ✅ Door toepassing van *h2*{.just}, er geldt `B`{.claim}.
+  - ✅ Volgens *h4*{.just} er geldt `A`{.claim}.
+  - ✅ Door toepassing van *h3*{.just} op *h4*{.just}, er geldt `C`{.claim}.
+- ✅ Door toepassing van *h3*{.just} op *h4*{.just}, er geldt `C`{.claim}.
+- ✅ Door toepassing van *h1*{.just}, er geldt `D`{.claim}.

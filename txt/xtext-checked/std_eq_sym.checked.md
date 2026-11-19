@@ -7,5 +7,5 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `A : Type`{.var}. Let `x y : A`{.var}. Assume `x = y`{.hyp} (H). We prove `y = x`{.claim}.
 
-- ✅ Going back to the definition of eq (match) in `x = y`{.fact} (H), we prove `y = x`{.claim}:
-  - ✅ By definition of eq (eq_refl), we have `x = x`{.claim} *by Corelib.Init.Logic.eq_refl*.
+- ✅ Going back to the definition of eq (match) in *H*{.just}, we prove `y = x`{.claim}:
+  - ✅ By definition of eq (*eq_refl*{.just}), we have `x = x`{.claim}.

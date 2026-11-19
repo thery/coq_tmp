@@ -8,9 +8,9 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ لتكن `A B C D : Prop`{.var}. لنفرض أن `A -> B -> C -> D`{.hyp} (h1), `A -> C -> B`{.hyp} (h2), `A -> C`{.hyp} (h3) و `A`{.hyp} (h4). سنثبت أن `D`{.claim}.
 
-- ✅ حسب h4 لدينا `A`{.claim}.
-- ✅ بتطبيق h2, لدينا `B`{.claim}.
-  - ✅ حسب h4 لدينا `A`{.claim}.
-  - ✅ بتطبيق h3 على h4, لدينا `C`{.claim}.
-- ✅ بتطبيق h3 على h4, لدينا `C`{.claim}.
-- ✅ بتطبيق h1, لدينا `D`{.claim}.
+- ✅ حسب *h4*{.just} لدينا `A`{.claim}.
+- ✅ بتطبيق *h2*{.just}, لدينا `B`{.claim}.
+  - ✅ حسب *h4*{.just} لدينا `A`{.claim}.
+  - ✅ بتطبيق *h3*{.just} على *h4*{.just}, لدينا `C`{.claim}.
+- ✅ بتطبيق *h3*{.just} على *h4*{.just}, لدينا `C`{.claim}.
+- ✅ بتطبيق *h1*{.just}, لدينا `D`{.claim}.

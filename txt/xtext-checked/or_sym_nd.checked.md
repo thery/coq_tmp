@@ -7,11 +7,10 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `a b : Prop`{.var}. Assume `a \/ b`{.hyp} (H1). We prove `b \/ a`{.claim}.
 
-- ▫️ We prove `b \/ a`{.fact} by case analysis on `a \/ b`{.fact} (H1) (or, match):
-- ✅ Case 1: we prove `a -> b \/ a`{.claim}.
-  - ▫️ Assume `a`{.hyp} (H2).
-    - ✅ By definition of or (or_intror), from `a`{.fact} (H2) we deduce `b \/ a`{.claim} *by Corelib.Init.Logic.or_intror*.
-- ✅ Case 2: we prove `b -> b \/ a`{.claim}.
-  - ▫️ Assume `b`{.hyp} (H3).
-    - ✅ By definition of or (or_introl), from `b`{.fact} (H3) we deduce `b \/ a`{.claim} *by Corelib.Init.Logic.or_introl*.
-- ✅ We have `b \/ a`{.claim} in all cases.
+- ✅ We prove `b \/ a` by case analysis on *H1*{.just} (or, match):
+  - ✅ Case 1: we prove `a -> b \/ a`{.claim}.
+    - ✅ Assume `a`{.hyp} (H2). By definition of or (*or_intror*{.just}), from *H2*{.just} we deduce `b \/ a`{.claim}.
+  - ✅ Case 2: we prove `b -> b \/ a`{.claim}.
+    - ✅ Assume `b`{.hyp} (H3). By definition of or (*or_introl*{.just}), from *H3*{.just} we deduce `b \/ a`{.claim}.
+
+  We have `b \/ a`{.claim} in all cases.

@@ -7,10 +7,10 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `n m : nat`{.var}. Assume `n <= m`{.hyp} (H). We prove `S n <= S m`{.claim}.
 
-- ▫️ We prove `S n <= S m`{.fact} by induction on `n <= m`{.fact} (H) (le, le_ind):
-- ✅ Case 1 (base): we prove `S n <= S n`{.claim}.
-  - ✅ By definition of le (le_n), we have `S n <= S n`{.claim} *by Corelib.Init.Peano.le_n*.
-- ✅ Case 2 (inductive): we prove `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.
-  - ▫️ Let us choose arbitrarily `m0 : nat`{.var}; assume `n <= m0`{.hyp} (H0) and by induction hypothesis `S n <= S m0`{.hyp} (IH).
-    - ✅ By definition of le (le_S) with witness `S m0`{.fact}, from `S n <= S m0`{.fact} (IH) we deduce `S n <= S (S m0)`{.claim} *by Corelib.Init.Peano.le_S*.
-- ✅ We have `S n <= S m`{.claim} in all cases.
+- ✅ We prove `S n <= S m` by induction on *H*{.just} (le, le_ind):
+  - ✅ Case 1 (base): we prove `S n <= S n`{.claim}.
+    - ✅ By definition of le (*le_n*{.just}), we have `S n <= S n`{.claim}.
+  - ✅ Case 2 (inductive): we prove `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.
+    - ✅ Let us choose arbitrarily `m0 : nat`{.var}; assume `n <= m0`{.hyp} (H0) and by induction hypothesis `S n <= S m0`{.hyp} (IH). By definition of le (*le_S*{.just}) with witness `S m0`, from *IH*{.just} we deduce `S n <= S (S m0)`{.claim}.
+
+  We have `S n <= S m`{.claim} in all cases.

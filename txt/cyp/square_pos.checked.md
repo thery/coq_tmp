@@ -6,13 +6,13 @@ by: lia | nia
 
 # square_pos
 
-✅ Let `a b : Z`. If `0 < a < b` then `a * a < b * b`.
+✅ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
 
-- ✅ It is equivalent to prove `0 < b * b - a * a`.
-- ✅ That can also be written as `0 < (b + a) * (b - a)`.
-- ✅ From `0 < a < b` we have `0 < b + a` and `0 < b - a`.
-- ✅ Hence `0 < b - a + 1`. *by lia*
-- ❌ So `0 < a - b`, a wrong step on purpose.
+- ✅ It is equivalent to prove `0 < b * b - a * a`{.claim}.
+  - ✅ That can also be written as `0 < (b + a) * (b - a)`{.claim}.
+    - ✅ From `0 < a < b`{.fact} we have `0 < b + a /\ 0 < b - a`{.claim}.
+- ✅ Hence `0 < b - a + 1`{.claim} by *lia*{.just}.
+- ❌ So `0 < a - b`{.claim}, a wrong step on purpose.
 
   <details><summary>not proved: 0 < a - b</summary></details>
 

@@ -8,10 +8,10 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Пусть `x y z t : Prop`{.var}. Предположим, что `(x -> z) /\ (y -> t)`{.hyp} (h1) и `x /\ y`{.hyp} (h2). Докажем, что `z /\ t`{.claim}.
 
-- ✅ Возвращаясь к определению and (and_ind) в `(x -> z) /\ (y -> t)`{.fact} (h1), докажем, что `z /\ t`{.claim}:
-  - ▫️ Предположим, что `x -> z`{.hyp} (i) и `y -> t`{.hyp} (j).
-    - ✅ Возвращаясь к определению and (and_ind) в `x /\ y`{.fact} (h2), докажем, что `z /\ t`{.claim}:
-      - ▫️ Предположим, что `x`{.hyp} (k) и `y`{.hyp} (l).
-        - ✅ Применяя i к k, имеем `z`{.claim}.
-        - ✅ Применяя j к l, имеем `t`{.claim}.
-        - ✅ Тогда по определению and (conj), имеем `z /\ t`{.claim} *by Corelib.Init.Logic.conj*.
+- ✅ Возвращаясь к определению and (*and_ind*{.just}) в *h1*{.just}, докажем, что `z /\ t`{.claim}:
+  - ✅ Предположим, что `x -> z`{.hyp} (i) и `y -> t`{.hyp} (j). Возвращаясь к определению and (*and_ind*{.just}) в *h2*{.just}, докажем, что `z /\ t`{.claim}:
+    - ✅ Предположим, что `x`{.hyp} (k) и `y`{.hyp} (l).
+      - ✅ Применяя *i*{.just} к *k*{.just}, имеем `z`{.claim}.
+      - ✅ Применяя *j*{.just} к *l*{.just}, имеем `t`{.claim}.
+
+      Тогда по определению and (*conj*{.just}), имеем `z /\ t`{.claim}.

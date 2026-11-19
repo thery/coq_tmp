@@ -8,11 +8,10 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sint `A B : Prop`{.var}. Ponamus `A \/ B`{.hyp} (h). Ostendamus `B \/ A`{.claim}.
 
-- Ostendamus `B \/ A`{.fact} per casus in `A \/ B`{.fact} (h) (or, or_ind):
-- Casus 1: ostendamus `A -> B \/ A`{.claim}.
-  - Ponamus `A`{.hyp} (i).
-    - Ex definitione or (or_intror), ex `A`{.fact} (i) unde sequitur `B \/ A`{.claim} *by Corelib.Init.Logic.or_intror*.
-- Casus 2: ostendamus `B -> B \/ A`{.claim}.
-  - Ponamus `B`{.hyp} (j).
-    - Ex definitione or (or_introl), ex `B`{.fact} (j) unde sequitur `B \/ A`{.claim} *by Corelib.Init.Logic.or_introl*.
-- Habemus `B \/ A`{.claim} in omnibus casibus.
+- Ostendamus `B \/ A` per casus in *h*{.just} (or, *or_ind*{.just}):
+  - Casus 1: ostendamus `A -> B \/ A`{.claim}.
+    - Ponamus `A`{.hyp} (i). Ex definitione or (*or_intror*{.just}), ex *i*{.just} unde sequitur `B \/ A`{.claim}.
+  - Casus 2: ostendamus `B -> B \/ A`{.claim}.
+    - Ponamus `B`{.hyp} (j). Ex definitione or (*or_introl*{.just}), ex *j*{.just} unde sequitur `B \/ A`{.claim}.
+
+  Habemus `B \/ A`{.claim} in omnibus casibus.

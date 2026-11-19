@@ -7,4 +7,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `A : Prop`{.var}. Assume `A`{.hyp} (h). We prove `A`{.claim}.
 
-- ✅ By h we have `A`{.claim}.
+- ✅ By *h*{.just} we have `A`{.claim}.

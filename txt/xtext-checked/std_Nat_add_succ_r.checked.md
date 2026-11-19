@@ -7,4 +7,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `n m : nat`{.var}. We prove `n + S m = S (n + m)`{.claim}.
 
-- ✅ We have `n + S m = S (n + m)`{.claim} *by lia*.
+- ✅ By *lia*{.just} we have `n + S m = S (n + m)`{.claim}.

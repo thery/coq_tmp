@@ -7,5 +7,5 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `E F : Set`{.var}. Let `P : E * F -> Prop`{.var}. Assume `forall (x : E) (y : F), P (x, y)`{.hyp} (h). Let `p0 : (E * F)%type`{.var}. We prove `P p0`{.claim}.
 
-- ✅ By definition of prod (prod_ind) on `p0`{.fact}, we prove `P p0`{.claim}:
-  - ✅ By h we have `forall (x : E) (y : F), P (x, y)`{.claim}.
+- ✅ By definition of prod (*prod_ind*{.just}) on `p0`, we prove `P p0`{.claim}:
+  - ✅ By *h*{.just} we have `forall (x : E) (y : F), P (x, y)`{.claim}.
