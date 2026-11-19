@@ -4,17 +4,20 @@
    debug.elpi (see ../README.md), or with the real engine (-native), or
    both, comparing their answers (-compare).
 
-   The interpreted program is made of five compilation units, in order:
+   The interpreted program is made of six compilation units, in order:
    1. reflect.elpi, the format of a reflected program (../../reflect);
    2. debug.elpi, the interpreter;
    3. FILE without its rules: its declarations and CHR rules, so that the
-      terms of the program type check and CHR runs natively;
+      terms of the program type check and CHR runs natively (the CHR
+      rules rewritten, so that the interpreter sees them at work: "CHR in
+      view" below);
    4. the rules of FILE as reflect facts, printed by elpi-reflect;
    5. the bridges: one native rule per predicate of FILE, which sends a
       native call of that predicate back to the interpreter (written by
       debug.write-bridges, run on units 1-4);
-   6. the clause of debug.pause-requested, on the builtin of this driver
-      that tells whether a front end asked for a pause (-machine). *)
+   6. the clauses that tie the interpreter to the builtins of this driver:
+      whether a front end asked for a pause (-machine), the notes of the
+      CHR rules, the constraint store. *)
 
 open Elpi
 module PAst = Elpi_parser.Ast

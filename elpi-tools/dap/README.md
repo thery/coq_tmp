@@ -83,11 +83,19 @@ a goal of the stack); at the exit port of a call seen at its call port,
 the Goal scope lists what the whole call bound (`X0 := [1, 2, 3]` at the
 exit of #1).  Variables keep their name `X<n>` for the whole run.
 
+On a CHR program ([`tests/leq.elpi`](tests/leq.elpi), `leq A B, leq B C,
+leq C A`), a breakpoint on line 9 (the transitivity rule) stops at
+`Rule: clause 9 leq.elpi:9 tried on [S1, S2]` with line 9 highlighted,
+the scope **Constraints** showing `[S2] = leq X1 X2`, `[S1] = leq X0
+X1`; Step Into shows `Rule: clause 9 leq.elpi:9 fires`, then the call of
+the goal of the rule, `Call: #3 leq X0 X2`, at line 9 (the session of
+[`tests/sessions.t`](tests/sessions.t)).
+
 ## The mapping
 
 | DAP | elpi-debug |
 |---|---|
-| setBreakpoints (file, line) | `+ clause N`: N is the rule that holds the line; the run stops at the unify step of that rule (when it is selected for a call) |
+| setBreakpoints (file, line) | `+ clause N`: N is the rule that holds the line; the run stops at the unify step of that rule (when it is selected for a call); on a CHR rule, at each attempt of the rule (`Rule: clause 9 leq.elpi:9 tried on [S1, S2]`) |
 | setFunctionBreakpoints (name) | `+ P`: the run stops at the call port of each call of P (and at the resume of a goal of P woken by CHR) |
 | configurationDone | `l` (leap to the first breakpoint), or with `stopOnEntry` a stop before the first event (shown at `queryPath`:`queryLine` when the launch gives them, e.g. the property of a counterexample; else with no line) |
 | stepIn | `c` (creep: the next event) |
@@ -98,28 +106,30 @@ exit of #1).  Variables keep their name `X<n>` for the whole run.
 | restartFrame (call #N) | `r N`: retry call #N from its call port (bindings, local program and scope undone) |
 | evaluate (debug console) | the command typed, its output as the answer |
 | evaluate (watch) | from the description of the stop: a variable of the query by its source name (`L` of `append [1,2] [3] L`), its value now; a variable as elpi-debug names it (`X1`), its binding by the step of the stop (a unify step, an exit port), or `X1   (unbound)` when it is a logic variable of a goal of the stack; otherwise an error, "not in view at this stop" |
-| stackTrace | the calls of the stop, the call in focus first, named `#N goal` (the first one prefixed by the port: `Call:`, `Unify:`, `Pi:`...).  A call at its own ports (call, exit, redo, fail), where it runs no clause, is at the goal it comes from, where it is written: the premise of its caller's clause, as a range (`line`, `column`, `endLine`, `endColumn`), so that the editor highlights that goal only; a call below it in the stack (its caller) is at the same goal, the call it made; the call in focus inside a clause (unify, pi, =>, cut) is at the line of that clause.  A call of the query or a woken goal, which has no premise, is where its caller is (the query: `queryPath`:`queryLine` when given); a call that runs a hypothetical clause has no source line |
-| scopes | **Goal**: the goal, its arguments with their modes, and the bindings made by the step of the stop (`X0 := ...`, with the pruning, if any): at a unify step those of the head unification, at an exit port those of the whole call (when its call port was shown or stopped at); **Query**: the variables of the query by their source names, with their values at the stop (the same in every frame); **Local program (=>)**: the clauses added by `=>`, each with the call that added it; **Eigenvariables**: those in force, and for each logic variable of the goal the eigenvariables it may depend on |
-| stopped | reason `breakpoint`, `step`, `pause` or `entry`; the description says the port (`Call port`, `Unify step`...), the text is the event |
+| stackTrace | the calls of the stop, the call in focus first, named `#N goal` (the first one prefixed by the port: `Call:`, `Unify:`, `Pi:`...).  A call at its own ports (call, exit, redo, fail), where it runs no clause, is at the goal it comes from, where it is written: the premise of its caller's clause, as a range (`line`, `column`, `endLine`, `endColumn`), so that the editor highlights that goal only; a call below it in the stack (its caller) is at the same goal, the call it made; the call in focus inside a clause (unify, pi, =>, cut) is at the line of that clause.  A call of the query or a woken goal, which has no premise, is where its caller is (the query: `queryPath`:`queryLine` when given); a call of the goal of a CHR rule is at the line of the rule; a call that runs a hypothetical clause has no source line.  At a stop at a CHR rule (its attempt, its outcome), the first frame is named by the event and is at the line of the rule |
+| scopes | **Goal**: the goal, its arguments with their modes, and the bindings made by the step of the stop (`X0 := ...`, with the pruning, if any): at a unify step those of the head unification, at an exit port those of the whole call (when its call port was shown or stopped at); **Query**: the variables of the query by their source names, with their values at the stop (the same in every frame); **Local program (=>)**: the clauses added by `=>`, each with the call that added it; **Eigenvariables**: those in force, and for each logic variable of the goal the eigenvariables it may depend on; **Constraints**: the constraint store, the goals suspended by `declare_constraint`, most recent first, each named by its suspension (`[S2]`: `leq X1 X2`; the same in every frame) |
+| stopped | reason `breakpoint`, `step`, `pause` or `entry`; the description says the port (`Call port`, `Unify step`, `Rule step`...), the text is the event |
 | output | every line elpi-debug prints that is not for the adapter: the events shown, the prints of the program, the solutions, the explanation of a failure, the profile |
 | exited, terminated | when elpi-debug ends |
 
 A source line belongs to the last item of its file that starts at or
 before it (a rule or a declaration, from the listing of elpi-debug); a
-breakpoint is set when that item is a rule, and VS Code moves it to the
-first line of the rule.
+breakpoint is set when that item is a rule or a CHR rule (listed with the
+rules, numbered after them), and VS Code moves it to the first line of
+the rule.
 
 ## How it works
 
 `elpi-debug -machine` ([`../debug/lib/machine.elpi`](../debug/lib/machine.elpi))
 prints, besides its usual text, lines `@@elpi-debug {JSON}`: first the
-listing of the program (its rules, numbered, with file and line; the lines
-of its declarations), then at each stop, in place of the prompt, the
+listing of the program (its rules then its CHR rules, numbered, with file
+and line; the lines of its declarations), then at each stop, in place of the prompt, the
 description of the stop: its number, its reason, the event, the stack
 (each call with the clause it runs, the premise it comes from and its
 place, its arguments, the scope of its variables), the bindings of a unify step or of an exit port, the local
 program, the eigenvariables, the variables of the query by their source
-names with their values.  It waits at a stop `Start` before the first event, where
+names with their values, the constraint store, and at a stop at a CHR
+rule the place of the rule.  It waits at a stop `Start` before the first event, where
 the adapter sets the breakpoints.  The adapter never parses the text for a
 person: it forwards it as output.
 
@@ -243,9 +253,11 @@ request per line, `{"await": E}` to wait for an event) with
 - [`tests/sessions.t`](tests/sessions.t): breakpoints on a clause and on
   a line without one, the stack, the scopes, step in, next, step out, the
   debug console, restart frame, continue (append); stop on entry, pi and
-  `=>`, the four scopes, a frame running a hypothetical clause, `f` from
+  `=>`, the scopes, a frame running a hypothetical clause, `f` from
   the console (λ-calculus); a function breakpoint met at a call and at
-  the resume of a goal suspended by CHR; the Query scope and watch
+  the resume of a goal suspended by CHR; a breakpoint in the margin on a
+  CHR rule: its attempt and outcome at the line of the rule, the scope
+  Constraints, the goal of the rule (leq.elpi); the Query scope and watch
   expressions, the bindings of an exit port (append); a program that does
   not exist;
   a pause of a long run (only its reason is compared: where it stops
@@ -365,7 +377,8 @@ and one module per tool.
   resolver gives the program paths that do not exist, and breakpoints on
   lines are not found there (the tests run in a copy of their files).
 - Inherited from elpi-debug: a cut through a variable, conjunctions of
-  more than 16 goals, `=!=>`, CHR at depth 1 only (see
+  more than 16 goals, `=!=>`, CHR at depth 1 only (the rules run natively;
+  their attempts, their goals and the store are shown: see
   [`../debug/README.md`](../debug/README.md), Limits).
 - The properties: the Test Explorer lists those of the `.elpi` files
   opened in this session (and saved), not those of the files of the folder

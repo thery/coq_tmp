@@ -1,8 +1,8 @@
 % A CHR benchmark (not run by `dune test`): the primes up to N by a sieve
 % of constraints.  Each number J is a constraint prime J K; the rule
 % removes a multiple J of a smaller I.  All the constraints are suspended
-% on the same variable K, so that the rule sees each pair: about N*N/2
-% attempts.  (On _, as Elpi allows, the interpreter would suspend each on
+% on the same variable K, so that the rule sees each pair: 60 169
+% attempts for N = 300.  (On _, as Elpi allows, the interpreter would suspend each on
 % a variable of its own: README, "Limits".)
 
 func prime int, any.
