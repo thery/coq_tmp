@@ -53,27 +53,27 @@ the call that added them) and the eigenvariables:
     called from:
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
-    Call: #2 of (lam c1 \ x#1) X2
-  --- breakpoint at #2: of (lam c1 \ x#1) X2
+    Call: #2 of (lam c1 \ x#1) X1
+  --- breakpoint at #2: of (lam c1 \ x#1) X1
     called from:
-      #1 of (lam c1 \ lam c2 \ c1) (arr X1 X2)
+      #1 of (lam c1 \ lam c2 \ c1) (arr X2 X1)
     local program (clauses added by =>, most recent first):
-      of x#1 X1    (hypothesis added by #1)
+      of x#1 X2    (hypothesis added by #1)
     eigenvariables in scope: x#1
-      Call: #3 of x#1 X4
-  --- breakpoint at #3: of x#1 X4
+      Call: #3 of x#1 X3
+  --- breakpoint at #3: of x#1 X3
     called from:
-      #2 of (lam c2 \ x#1) (arr X3 X4)
-      #1 of (lam c2 \ lam c3 \ c2) (arr X1 (arr X3 X4))
+      #2 of (lam c2 \ x#1) (arr X4 X3)
+      #1 of (lam c2 \ lam c3 \ c2) (arr X2 (arr X4 X3))
     local program (clauses added by =>, most recent first):
-      of x#2 X3    (hypothesis added by #2)
-      of x#1 X1    (hypothesis added by #1)
+      of x#2 X4    (hypothesis added by #2)
+      of x#1 X2    (hypothesis added by #1)
     eigenvariables in scope: x#1, x#2
-      Exit: #3 of x#1 X1
-    Exit: #2 of (lam c1 \ x#1) (arr X3 X1)
-  Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X1 (arr X3 X1))
+      Exit: #3 of x#1 X2
+    Exit: #2 of (lam c1 \ x#1) (arr X4 X2)
+  Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X2 (arr X4 X2))
   Solution 1:
-    T = arr X1 (arr X3 X1)
+    T = arr X2 (arr X4 X2)
 
 Interactive: commands read from stdin (backtrace, hyps, step, continue).
 
@@ -97,10 +97,10 @@ Interactive: commands read from stdin (backtrace, hyps, step, continue).
       + clause N, - clause N   set, remove a breakpoint on the clause N (option -machine lists them)
       e            the deepest failure so far
       a            abort
-     ?   Call: #2 of (lam c1 \ x#1) X2
-     ?     Call: #3 of x#1 X4
-     ?     Exit: #3 of x#1 X1
-     ?   Exit: #2 of (lam c1 \ x#1) (arr X3 X1)
-     ? Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X1 (arr X3 X1))
+     ?   Call: #2 of (lam c1 \ x#1) X1
+     ?     Call: #3 of x#1 X2
+     ?     Exit: #3 of x#1 X3
+     ?   Exit: #2 of (lam c1 \ x#1) (arr X4 X3)
+     ? Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X3 (arr X4 X3))
      ? Solution 1:
-    T = arr X1 (arr X3 X1)
+    T = arr X3 (arr X4 X3)
