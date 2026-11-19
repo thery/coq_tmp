@@ -1,4 +1,4 @@
-% prooftext: the tactics a proof text may name, in a justification *by X*
+% prooftext: the tactics a proof text may name, in a justification *X*{.just}
 % or in the by field of its header.  The reader runs the tactic of that
 % name (cyp: tactic-name Name Ltac, cyp/vernac/Cyp.v, the Ltac it calls);
 % the writer writes only these names (xtext: the second argument of

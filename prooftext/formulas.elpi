@@ -36,8 +36,8 @@ pred untagged-formula i:string, o:string.
 untagged-formula F S :- S is "`" ^ F ^ "`".
 
 % [justification J S]: the justification J in the form of the texts
-% written before the tree, *by J* (xtext writes it until its texts are
-% written as trees)
+% written before the tree, *by J* (still read; no writer uses it now,
+% xtext writes *J*{.just}, justification-name)
 pred justification i:string, o:string.
 justification J S :- S is "*by " ^ J ^ "*".
 

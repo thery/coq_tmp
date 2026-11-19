@@ -374,6 +374,8 @@ inline-mark (prooftext.checked Status Conditions _) Call :-
   (if (C = "") (Tail = "") (Tail is ", " ^ C)),
   Call is "#mark(" ^ {prooftext.typst-string Status} ^ Tail ^ ")".
 
+% [optional-argument Name V A]: the named Typst argument "Name: V", or ""
+% when there is no value V
 pred optional-argument i:string, i:option string, o:string.
 optional-argument _ none "".
 optional-argument Name (some V) A :- A is Name ^ ": " ^ {prooftext.typst-string V}.
