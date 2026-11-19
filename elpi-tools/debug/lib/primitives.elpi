@@ -1,49 +1,67 @@
-% primitives.elpi: what elpi-debug needs to know about the unification
-% variables of a run, as a small interface of primitives that Elpi's core
-% could offer (the wish list below, and ../ELPI-WISHLIST.md), written here
-% in Elpi as STAND-INS until Elpi has them.  The other files of the
-% interpreter go through this interface only: switching to the real
-% builtins touches this file only.
+% primitives.elpi: what elpi-debug needs to know about the terms and the
+% unification variables of a run and does not find in Elpi's core, as a
+% small interface of primitives that Elpi could offer as builtins (the
+% wish list, ../ELPI-WISHLIST.md), written here in Elpi as STAND-INS until
+% Elpi has them.  The other files of the interpreter go through this
+% interface only: switching to the real builtins touches this file only.
 %
-% THE WISH LIST
+% THE INTERFACE, section by section (§N: the item of ../ELPI-WISHLIST.md)
 %
-% 1. [vars-of T Vs]: Vs are the unification variables occurring in T, each
-%    once, in the order of their first occurrence (left to right, depth
-%    first), under binders and inside applications of builtins.  A
+% 1. [vars-of T Vs] (§1): Vs are the unification variables occurring in
+%    T, each once, in the order of their first occurrence (left to right,
+%    depth first), under binders and inside applications of builtins.  A
 %    variable applied to arguments (X a b) is given by its head X.  It
 %    binds nothing.
 %
-% 2. [uuid X N]: N identifies the unification variable X for the whole
-%    run: two variables have different numbers, and a variable keeps its
-%    number at every event and across backtracking.  X must be a variable
-%    (it fails otherwise); a variable bound to another one has the number
-%    of that one (Elpi dereferences it).  elpi-debug names X "X<N>" in all
-%    it shows ([uuid-name], [term-string]: the printer naming each
-%    variable so).
+% 2. [uuid X N] (§2): N identifies the unification variable X for the
+%    whole run: two variables have different numbers, and a variable keeps
+%    its number at every event and across backtracking.  X must be a
+%    variable (it fails otherwise); a variable bound to another one has
+%    the number of that one (Elpi dereferences it).  [uuid-name X S]:
+%    "X<N>", the name elpi-debug shows for X.  [show-term T S]: T printed
+%    on one line, its unification variables named X<uuid>, its
+%    eigenvariables by the names in force ([eigen E Name], lprolog.elpi).
 %
-% 3. The trail.  [trail-mark M]: M marks the current point of the trail.
-%    [bindings-since M Bs]: Bs are the bindings made since M and still in
-%    force, one [binding N V P] per variable that existed at M and is
-%    bound now: N its uuid, V its value now, P the pruning Elpi made when
-%    it bound it: [not-pruned]; [pruned-arguments U K N], it was replaced
-%    by the variable of uuid U applied to K of its N arguments;
-%    [pruned-scope Es], by a variable that may no longer depend on the
-%    eigenvariables Es.  The variables created after M are not listed:
-%    they are parts of the values.  (The order of Bs: the stand-in gives
-%    the order of vars-of at the mark; the real builtin may give the order
-%    of the trail.)  [debug-unif T1 T2 Bs] (mark, T1 = T2, bindings since
-%    the mark) is not needed by elpi-debug: its head unification is split
-%    between Elpi's own matching and the goals of compiled.elpi.
+% 3. The trail (§3).  [trail-mark G M]: M marks the current point of the
+%    trail, before the goal G runs (G is for the stand-in only: the real
+%    builtin needs no argument).  [bindings-since M Bs]: Bs are the
+%    bindings made since M and still in force, one [binding N V P] per
+%    variable that existed at M and is bound now: N its uuid, V its value
+%    now, P the pruning Elpi made when it bound it: [not-pruned];
+%    [pruned-arguments U K N], it was replaced by the variable of uuid U
+%    applied to K of its N arguments; [pruned-scope Es], by a variable
+%    that may no longer depend on the eigenvariables Es.  The variables
+%    created after M are not listed: they are parts of the values.  (The
+%    order of Bs: the stand-in gives the order of vars-of at the mark; the
+%    real builtin may give the order of the trail.)
+%
+% 4. The shape of a term (§9).  [shape-of T S]: T taken apart, one level:
+%    a variable, a leaf, a head and its arguments, or a binder;
+%    [conjuncts G Gs]: the goals of the conjunction G; [binder-body F X B]:
+%    the body of the λ-term F for X.
+%
+% 5. The scope of a variable (§11).  [can-depend V E]: the variable V may
+%    be assigned a term mentioning the eigenvariable E.
+%    [visible-eigens V Es]: the eigenvariables in scope that V may depend
+%    on, oldest first.
+%
+% The other stand-ins of elpi-debug, outside this file: the CHR hooks
+% (chr-hooks.elpi, §4-§6), the bridges as static rules (program.elpi,
+% §7), the unwinding of retry (stepper.elpi, "Unwinding", §10); in the
+% driver (../bin): the parsed program given to the API (§8), the CHR rules
+% rewritten (chr_in_view.ml, §4-§6), the names of the query variables
+% (§15); and elpi-reflect itself, for the rules of the program as data
+% (§12, §14).  ../ELPI-WISHLIST.md lists them all.
 %
 % THE STAND-INS (below), and their limits
 %
-% - vars-of walks the term ([shape-of], lprolog.elpi), a ground subterm
-%   skipped whole (the native test ground_term).  Elpi has no
-%   builtin to take apart an application of a builtin (X is Y + 1 is one
-%   node), so the walk does not see the variables there; nor those of a
-%   conjunction of more than 16 goals.  Hence reflect's option -closed:
-%   the debugger cannot abstract the variables of a rule itself, reflect
-%   gives each rule closed (compiled.elpi).  The walk gets the head of an
+% - vars-of walks the term ([shape-of]), a ground subterm skipped whole
+%   (the native test ground_term).  Elpi has no builtin to take apart an
+%   application of a builtin (X is Y + 1 is one node), so the walk does
+%   not see the variables there; nor those of a conjunction of more than
+%   16 goals.  Hence reflect's option -closed: the debugger cannot
+%   abstract the variables of a rule itself, reflect gives each rule
+%   closed (compiled.elpi, [compile-rules]).  The walk gets the head of an
 %   applied variable with the builtin var; on a variable that Elpi keeps
 %   in a compact form (G x, x the binder above, printed X0^1 by Elpi) that
 %   head is a new variable, bound in place of the old one: from then on
@@ -58,21 +76,30 @@
 %   same_var cannot tell a variable from one bound to it (both dereference
 %   to the same).  The stand-in is wrong inside a copy (std.findall copies
 %   its goal and prints with a table of its own, from X0): the debugger
-%   names no variable inside std.findall.
+%   names no variable inside std.findall.  show-term edits the printer's
+%   text: the depths dropped ("X12^1" is X12), the line breaks of long
+%   terms replaced by spaces, and each eigenvariable c<level> that has a
+%   name in force replaced by it, with a regular expression.
 % - trail-mark cannot see the trail: it takes a snapshot of the variables
-%   in reach, which it is told ([trail-mark Reach M], Reach a closure that
-%   gives them; the real builtin needs no Reach and would not call it),
-%   and bindings-since compares them with what they are now: O(variables
-%   in reach) at the mark and again at bindings-since.  What is in reach
-%   of a goal: the variables of the goal, and those of the hypothetical
-%   clauses in scope (a clause added by => shares its variables with the
-%   goal that added it; the frames above give no other access).  Missed:
-%   a variable reached only through a suspended goal of the constraint
-%   store (CHR), or inside an application of a builtin (vars-of above).
-%   The eigenvariables a variable may depend on are found by trying to
-%   bind it to each one (can-depend, lprolog.elpi).
+%   in reach of G, and bindings-since compares them with what they are
+%   now: O(variables in reach) at the mark and again at bindings-since.
+%   What is in reach of a goal: the variables of the goal, and those of
+%   the hypothetical clauses in scope (a clause added by => shares its
+%   variables with the goal that added it; the frames above give no other
+%   access).  Missed: a variable reached only through a suspended goal of
+%   the constraint store (CHR), or inside an application of a builtin
+%   (vars-of above).
+% - shape-of tells the connectives by one pattern each, and a conjunction
+%   by one pattern per number of goals, up to 16 ([conjuncts]); an
+%   application of a builtin written in OCaml (var X, X is Y + 1, print X)
+%   is a leaf; a λ-term is told by its printed text ([is-lambda]).
+% - can-depend tries the binding V = E and undoes it (Elpi refuses it when
+%   E is younger than V): visible-eigens costs one such try per
+%   eigenvariable in scope.
 %
-% Nothing here runs on the fast path (no event shown or recorded).
+% Nothing here runs on the fast path (no event shown or recorded), except
+% [conjuncts], which the compilation of a clause body uses
+% (interpreter.elpi, compiled.elpi).
 
 
 % ===== 1. The variables of a term ==============================================
@@ -91,6 +118,7 @@ pred vars-acc i:any, i:list any, o:list any.
 vars-acc T Acc Acc :- ground_term T, !.
 vars-acc T Acc Acc1 :- shape-of T S, shape-vars S Acc Acc1.
 
+% [shape-vars S Acc Acc1]: [vars-acc] for a term of shape S.
 pred shape-vars i:shape, i:list any, o:list any.
 shape-vars (flexible H) Acc Acc :- std.exists Acc (same_var H), !.
 shape-vars (flexible H) Acc [H|Acc].
@@ -98,11 +126,12 @@ shape-vars leaf Acc Acc.
 shape-vars (node _ Ts) Acc Acc1 :- vars-acc-all Ts Acc Acc1.
 shape-vars (binder F) Acc Acc1 :- pi x\ sigma B\ binder-body F x B, vars-acc B Acc Acc1.
 
+% [vars-acc-all Ts Acc Acc1]: [vars-acc] for each of the terms Ts in turn.
 pred vars-acc-all i:list any, i:list any, o:list any.
 vars-acc-all [] Acc Acc.
 vars-acc-all [T|Ts] Acc Acc2 :- vars-acc T Acc Acc1, vars-acc-all Ts Acc1 Acc2.
 
-% ===== 2. The identity of a variable ================================================
+% ===== 2. The identity of a variable, and printing ==================================
 
 % [uuid X N]: the number of the variable X for the whole run (stand-in:
 % the number of Elpi's printer, "X12^1" for 12).
@@ -123,12 +152,18 @@ uuid-name X S :- term-string X S.       % (not a variable: printed)
 func uuid-label int -> string.
 uuid-label N S :- S is "X" ^ {std.any->string N}.
 
+% [show-term T S]: T printed on one line, its unification variables named
+% X<uuid>, its eigenvariables by their source names (the [eigen] clauses
+% in force).  The real builtin would be Elpi's printer itself, naming each
+% variable by its identity (the printer has the line, commented out:
+% "X" ^ string_of_int (uvar_id r)) and each eigenvariable by a name the
+% caller gives, on one line.
+func show-term any -> string.
+show-term T S :- term-string T S1, names Es, rename-eigens Es 0 S1 S.
+
 % [term-string T S]: T printed on one line, each of its variables named
 % X<uuid> (stand-in: the printer's text, whose numbers are the uuids,
-% without the depth of each variable, "X12^1" printed X12).  The real
-% builtin would be the printer naming each variable by its identity
-% (Elpi's printer has the line, commented out: "X" ^ string_of_int
-% (uvar_id r)).
+% without the depth of each variable, "X12^1" printed X12).
 func term-string any -> string.
 term-string T S :- term_to_string T S0, plain-text S0 S.
 
@@ -141,6 +176,21 @@ func plain-text string -> string.
 plain-text S0 S :- rex.match "[^\n^]*[\n^]" S0, !,
   rex.replace "\n *" " " S0 S1, rex.replace "\\bX\\([0-9]+\\)\\^[0-9]+" "X\\1" S1 S.
 plain-text S S.
+
+% [rename-eigens Es L S0 S]: S is the text S0 in which each eigenvariable
+% of Es that has a name in force, printed c<level> by Elpi, is replaced by
+% its name; Es are the eigenvariables in scope from level L on, the
+% oldest first (as [names] gives them, whatever its documentation says:
+% its code is list_init 0 depth).
+func rename-eigens list any, int, string -> string.
+rename-eigens [] _ S S.
+rename-eigens [E|Es] L S0 S :- rename-eigen E L S0 S1, L1 is L + 1, rename-eigens Es L1 S1 S.
+
+% [rename-eigen E L S0 S]: the eigenvariable E, of level L, renamed in S0.
+func rename-eigen any, int, string -> string.
+rename-eigen E L S0 S :- eigen E Name, !,
+  Rex is "\\bc" ^ {std.any->string L} ^ "\\b", rex.replace Rex Name S0 S.
+rename-eigen _ _ S S.
 
 % ===== 3. The trail ========================================================================
 
@@ -163,14 +213,34 @@ symb not-pruned pruning.
 symb pruned-arguments int -> int -> int -> pruning.  % the variable of uuid U gets K of the N arguments
 symb pruned-scope list any -> pruning.               % may no longer depend on these eigenvariables
 
-% [trail-mark Reach M]: a mark of the trail now.  Reach R gives a term R
-% holding the variables that the goals run until bindings-since may bind:
-% the stand-in needs it, the real builtin would not call it.
-pred trail-mark i:(pred o:any), o:trail-mark.
-trail-mark Reach (snapshot Ss) :- Reach R, vars-of R Vs, std.map Vs snapshot-of Ss.
+% [trail-mark G M]: a mark of the trail now, before the goal G runs
+% (stand-in: a snapshot of the variables that the goals run for G may
+% bind, [in-reach]; the real builtin would not look at G).
+pred trail-mark i:(pred), o:trail-mark.
+trail-mark G (snapshot Ss) :- in-reach G R, vars-of R Vs, std.map Vs snapshot-of Ss.
 
+% [snapshot-of V S]: the variable V as the snapshot keeps it.
 pred snapshot-of i:any, o:var-snapshot.
 snapshot-of V (var-snapshot V N Vis) :- uuid V N, visible-eigens V Vis.
+
+% [in-reach G R]: R holds what the goals run for G may bind: G and the
+% hypothetical clauses in scope ([hyp], interpreter.elpi), which share
+% their variables with the goals that added them.
+pred in-reach i:(pred), o:any.
+in-reach G (pr G Vs) :- hyps-vars [] Vs.
+
+% [hyps-vars Acc Vs]: Acc and the variables of the hypothetical clauses in
+% scope, gathered one clause at a time (std.findall would copy them).
+pred hyps-vars i:list any, o:list any.
+hyps-vars Acc Vs :- hyp _ _ C, vars-of C CVs, new-vars CVs Acc New, not (New = []), !,
+  std.append Acc New Acc1, hyps-vars Acc1 Vs.
+hyps-vars Acc Acc.
+
+% [new-vars Vs Known New]: the variables of Vs not in Known.
+pred new-vars i:list any, i:list any, o:list any.
+new-vars [] _ [].
+new-vars [V|Vs] Known New :- std.exists Known (same_var V), !, new-vars Vs Known New.
+new-vars [V|Vs] Known [V|New] :- new-vars Vs Known New.
 
 % [bindings-since M Bs]: the bindings made since the mark M, still in
 % force (stand-in: each variable of the snapshot that is no longer
@@ -178,6 +248,7 @@ snapshot-of V (var-snapshot V N Vis) :- uuid V N, visible-eigens V Vis.
 pred bindings-since i:trail-mark, o:list binding.
 bindings-since (snapshot Ss) Bs :- bindings-of-snapshots Ss Bs.
 
+% [bindings-of-snapshots Ss Bs]: the bindings of the variables of Ss bound now.
 pred bindings-of-snapshots i:list var-snapshot, o:list binding.
 bindings-of-snapshots [] [].
 bindings-of-snapshots [var-snapshot V N Vis | Ss] [binding N V P | Bs] :- bound-since V N, !,
@@ -214,3 +285,92 @@ pred lost-eigens i:list any, i:list any, o:list any.
 lost-eigens [] _ [].
 lost-eigens [E|Es] Now Lost :- std.exists Now (same_term E), !, lost-eigens Es Now Lost.
 lost-eigens [E|Es] Now [E|Lost] :- lost-eigens Es Now Lost.
+
+% ===== 4. The shape of a term =============================================================
+%
+% Elpi has no builtin to take a λ-term, a connective or an application of
+% a builtin apart (constant and name fail on them); [shape-of] does it
+% once for all the walks of the debugger (vars-of above, lprolog.elpi,
+% the explanation).
+
+data shape.
+symb flexible any -> shape.        % a logic variable (its head, for an applied one)
+symb leaf shape.                   % a primitive datum, [], !, or a builtin application
+symb node any -> list any -> shape.  % a head (constant, eigenvariable, list-cell
+                                   % or connective-node) and its arguments
+symb binder any -> shape.          % pi, sigma or a λ-term, with its body as a λ-term
+
+% the heads given to list cells and to connectives
+symb list-cell any.
+symb connective-node any.
+
+% [shape-of T S]: the shape of T.  (Call it with S unknown: its clauses are
+% guarded by cuts.)
+pred shape-of i:any, o:shape.
+shape-of T (flexible H) :- var T H _, !.
+shape-of T leaf :- is_cdata T _, !.
+shape-of (pi x\ F x) (binder F) :- !.
+shape-of (sigma x\ F x) (binder F) :- !.
+shape-of G (node connective-node Gs) :- conjuncts G Gs, !.
+shape-of (A => B) (node connective-node [A, B]) :- !.
+shape-of (A :- B) (node connective-node [A, B]) :- !.
+shape-of (A = B) (node connective-node [A, B]) :- !.
+shape-of (pattern_match A B) (node connective-node [A, B]) :- !.
+shape-of (findall_solutions A B) (node connective-node [A, B]) :- !.
+shape-of (declare_constraint G K) (node connective-node [G, K]) :- !.
+shape-of ! leaf :- !.
+shape-of T (node H Args) :- constant T H Args, !.
+shape-of T (node H Args) :- name T H Args, !.
+shape-of [] leaf :- !.
+shape-of T (node list-cell [X, L1]) :- T = [X|L], !, std.unsafe-cast L L1.
+shape-of T (binder T) :- is-lambda T, !.
+shape-of _ leaf.          % an application of a builtin (var X ...): not looked into
+
+% [is-lambda T]: T is a λ-term.  Elpi has no builtin for it, and unifying
+% T with x\ F x would eta-expand anything; a λ-term prints as "cN \ ...".
+pred is-lambda i:any.
+is-lambda T :- term_to_string T S, rex.match "^c[0-9]+ \\\\" S.
+
+% [binder-body F X B]: B is the body of the λ-term F for the eigenvariable X.
+pred binder-body i:any, i:any, o:any.
+:untyped
+binder-body F X (F X).
+
+% [conjuncts G Gs]: G is a conjunction of the goals Gs.  Elpi represents
+% (A, B, C) as one n-ary node and has no builtin to take it apart, so each
+% arity needs its own pattern; up to 16 goals at the same level.
+% (Building a conjunction needs no stand-in: (G, C) nested runs the same,
+% [mk-conj], interpreter.elpi.)
+pred conjuncts i:(pred), o:list (pred).
+conjuncts (A1,A2) [A1,A2].
+conjuncts (A1,A2,A3) [A1,A2,A3].
+conjuncts (A1,A2,A3,A4) [A1,A2,A3,A4].
+conjuncts (A1,A2,A3,A4,A5) [A1,A2,A3,A4,A5].
+conjuncts (A1,A2,A3,A4,A5,A6) [A1,A2,A3,A4,A5,A6].
+conjuncts (A1,A2,A3,A4,A5,A6,A7) [A1,A2,A3,A4,A5,A6,A7].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8) [A1,A2,A3,A4,A5,A6,A7,A8].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9) [A1,A2,A3,A4,A5,A6,A7,A8,A9].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15].
+conjuncts (A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16) [A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16].
+
+% ===== 5. The scope of a variable ============================================================
+
+% [can-depend V E]: the logic variable V may be assigned a term mentioning
+% the eigenvariable E (stand-in: the binding tried and undone).
+pred can-depend i:any, i:any.
+can-depend V E :- not (not (V = E)).
+
+% [visible-eigens V Es]: the eigenvariables in scope that V may depend on.
+pred visible-eigens i:any, o:list any.
+visible-eigens V Es :- names All, keep-visible V All Es.
+
+% [keep-visible V Es Vs]: the eigenvariables of Es that V may depend on.
+pred keep-visible i:any, i:list any, o:list any.
+keep-visible _ [] [].
+keep-visible V [E|Es] [E|Vs] :- can-depend V E, !, keep-visible V Es Vs.
+keep-visible V [_|Es] Vs :- keep-visible V Es Vs.

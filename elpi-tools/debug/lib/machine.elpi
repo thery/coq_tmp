@@ -265,9 +265,9 @@ hyp-json (json-object [pr "clause" (json-string Text), pr "origin" (json-string 
   hyp _ Origin C, show-term C Text, origin-string Origin OriginText.
 
 % [store-json Js]: {"suspension", "goal"} per goal of the constraint store
-% (chr.elpi, [program-store]), most recent first; the suspension is 0
+% (chr-hooks.elpi, [program-store]), most recent first; the suspension is 0
 % when not numbered.  Computed in a failure-driven loop, its JSON kept in
-% a safe: reading the store may bind (chr.elpi).
+% a safe: reading the store may bind (chr-hooks.elpi).
 pred store-json o:list json.
 store-json Js :-
   new_safe S,

@@ -1,5 +1,7 @@
 # elpi-check: properties of Elpi programs, checked by random testing
 
+How it works and why, with the other tools: [`../DESIGN.md`](../DESIGN.md) (this part: [`../design/check.md`](../design/check.md)).
+
 A program states properties next to its predicates; `elpi-check` tests
 them on random values, QuickCheck style, and reports the smallest
 counterexample it finds.  Standalone Elpi 4 (opam switch `elpi5`), not

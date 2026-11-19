@@ -1,0 +1,24 @@
+% An example for design/reflect.md: a namespace, a spill, a binder, a CHR rule.
+kind shape type.
+type circle int -> shape.
+type square int -> shape.
+
+namespace geo {
+  func area shape -> int.
+  area (circle R) A :- A is 3 * R * R.
+  area (square S) A :- A is S * S.
+  % [total Ss T]: the sum of the areas, with a spill
+  func total list shape -> int.
+  total [] 0.
+  total [S | Ss] T :- T is {area S} + {total Ss}.
+}
+
+% a binder: F applied under pi
+pred apply-all i:(int -> shape), o:list shape.
+apply-all F [X, Y] :- pi n\ X = F 1, Y = F 2.
+
+constraint small {
+  rule (small X) | (X > 10) <=> fail.
+}
+func small int.
+small X :- declare_constraint (small X) [X].

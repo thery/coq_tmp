@@ -81,6 +81,7 @@ program-signature P Loc :- not (var P), not (builtin-loc Loc).
 pred builtin-loc i:reflect.srcloc.
 builtin-loc (reflect.srcloc File _ _) :- rex.match "^builtin[a-z_]*\\.elpi$" File.
 
+% [arg-mode A M]: the mode M of the argument A of a signature.
 func arg-mode reflect.arg -> mode.
 arg-mode (reflect.arg reflect.in _) i.
 arg-mode (reflect.arg reflect.out _) o.
@@ -96,9 +97,13 @@ modes-of _ G Modes :- constant G _ Args, std.map Args (_\ m\ m = o) Modes.
 %   P X1 .. Xn :- !, debug.bridge (P X1 .. Xn).
 % which sends a native call of P (from std.map, not, a woken constraint...)
 % back to the interpreter (natives.elpi).  The driver accumulates them
-% after the program, whose own rules it removes.  They are static rules,
-% not local clauses [pi x1..xn\ ...] made by the interpreter: with those,
-% Elpi crashes when a CHR rule fires (LPCIC/elpi#505).
+% after the program, whose own rules it removes.
+%
+% STAND-IN for the fix of an Elpi crash (../ELPI-WISHLIST.md §7,
+% LPCIC/elpi#505): the bridges are static rules, written to a file by
+% [write-bridges] in a first run of the driver, not local clauses
+% [pi x1..xn\ ...] that [run] would install with the compiled rules: with
+% those, Elpi crashes when a CHR rule fires.
 
 % [write-bridges File]: write the bridges to File.
 pred write-bridges i:string.

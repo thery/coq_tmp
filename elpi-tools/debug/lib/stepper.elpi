@@ -5,7 +5,8 @@
 % the focus of the event: the call whose port it is, or whose body runs
 % the pi, => or cut.
 %
-% retry and fail.  Each call is run by [attempt] (interpreter.elpi), whose
+% retry and fail (section "Unwinding" below, the stand-in of
+% ../ELPI-WISHLIST.md §10).  Each call is run by [attempt] (interpreter.elpi), whose
 % second clause is a choice point placed just before the call port.  The
 % command records the request (retry N or fail-call N) in a safe, which
 % survives backtracking, and fails.  While a request is pending every event
@@ -41,9 +42,11 @@ symb leap stepping.         % stop at breakpoints only
 symb tracing stepping.      % show every event, stop at breakpoints only
 symb nodebug stepping.      % show nothing, stop nowhere
 
+% [current-mode M]: the stepping mode now.
 pred current-mode o:stepping.
 current-mode M :- latest "mode" leap M.
 
+% [set-mode M]: M is the stepping mode from now on.
 pred set-mode i:stepping.
 set-mode M :- state "mode" S, stash_in_safe S M.
 
@@ -53,6 +56,7 @@ func initial-mode list option -> stepping.
 initial-mode Options creep :- std.mem! Options interactive, not (std.exists Options is-break), !.
 initial-mode _ leap.
 
+% [is-break O]: the option O is a breakpoint on a predicate.
 pred is-break i:option.
 is-break (break _).
 
@@ -102,40 +106,61 @@ step-out-mode Kind (focus _ [frame Id _ _ _ _ | _]) (skip Id) :- box-event Kind,
 step-out-mode Kind (focus (frame Id _ _ _ _) _) (skip Id) :- not (box-event Kind), Id > 0, !.
 step-out-mode _ _ leap.
 
-% ===== Requests: retry and fail ============================================================
+% ===== Unwinding, for retry and fail =========================================================
+%
+% STAND-IN for a backtrack to a recorded point (../ELPI-WISHLIST.md §10:
+% catch and throw, as in Prolog).  The interface: [unwind-for R] unwinds
+% the run to the choice point placed before the call port of the call
+% named in the request R (the second clause of [attempt],
+% interpreter.elpi), where [unwound-to Id R] takes the request R about
+% call Id; [unwinding] holds while the run unwinds.  The stand-in records
+% R in a safe, which survives backtracking, and fails: every event then
+% fails at once ([event-seen], [native-port], ports.elpi), until the
+% choice point of the call.  Its cost: the unwinding backtracks into every
+% choice point left inside the call, and so runs again the builtins with
+% several solutions met on the way.  With catch and throw, [attempt]
+% would catch the request and [unwind-for] would throw it, at once.
 
 data request.
 symb no-request request.
 symb retry int -> request.
 symb fail-call int -> request.
 
+% [current-request R]: the request being carried out (no-request when none).
 pred current-request o:request.
 current-request R :- latest "request" no-request R.
 
+% [set-request R]: R is now the request being carried out.
 pred set-request i:request.
 set-request R :- state "request" S, stash_in_safe S R.
 
-% [pending]: a retry or fail is unwinding the run.
-pred pending.
-pending :- current-request R, not (R = no-request).
+% [unwind-for R]: unwind the run for the request R (fails).
+pred unwind-for i:request.
+unwind-for R :- set-request R, fail.
 
-% [take-request Id R]: the pending request R is about call Id; it is taken.
-pred take-request i:int, o:request.
-take-request Id (retry Id) :- current-request (retry Id), !, set-request no-request.
-take-request Id (fail-call Id) :- current-request (fail-call Id), !, set-request no-request.
+% [unwinding]: a retry or fail is unwinding the run.
+pred unwinding.
+unwinding :- current-request R, not (R = no-request).
+
+% [unwound-to Id R]: the unwinding has reached the call Id, the call of
+% the request R; R is taken.
+pred unwound-to i:int, o:request.
+unwound-to Id (retry Id) :- current-request (retry Id), !, set-request no-request.
+unwound-to Id (fail-call Id) :- current-request (fail-call Id), !, set-request no-request.
 
 % [ask-retry Id]: unwind the run to the call port of call Id, and stop
 % there (creep).
 pred ask-retry i:int.
 ask-retry Id :-
   say 0 ["    retry ", {box-name Id}, ": back to its call port"],
-  set-mode creep, set-request (retry Id), fail.
+  set-mode creep, unwind-for (retry Id).
 
 % [call-in-stack Id F]: call Id is the call in focus or a call above it.
 :nooc
 pred call-in-stack i:int, o:focus.
 call-in-stack Id (focus Frame Above) :- std.exists [Frame | Above] (frame-has-id Id).
 
+% [frame-has-id Id F]: F is the frame of call Id.
 pred frame-has-id i:int, i:frame.
 frame-has-id Id (frame Id _ _ _ _).
 
@@ -152,6 +177,7 @@ data breakpoint.
 symb on-predicate string -> breakpoint.     % by the name of the predicate
 symb on-clause reflect.srcloc -> breakpoint. % by the location of the clause
 
+% [breakpoint-on P]: a breakpoint is set on the predicate P.
 pred breakpoint-on i:any.
 breakpoint-on P :- term_to_string P Name, breakpoint-set (on-predicate Name).
 
@@ -159,6 +185,7 @@ breakpoint-on P :- term_to_string P Name, breakpoint-set (on-predicate Name).
 pred clause-breakpoint-on i:origin.
 clause-breakpoint-on (at Loc _) :- breakpoint-set (on-clause Loc).
 
+% [breakpoint-set B]: the breakpoint B is set.
 pred breakpoint-set i:breakpoint.
 breakpoint-set B :- state "breaks" S, open_safe S L, std.rev L Recent, last-change Recent B C, !, C = "+".
 breakpoint-set (on-predicate Name) :- opt (break Name), !.
@@ -170,6 +197,8 @@ pred last-change i:list (pair string breakpoint), i:breakpoint, o:string.
 last-change [pr C B | _] B C :- !.
 last-change [_ | L] B C :- last-change L B C.
 
+% [change-breakpoint C B]: records the change C ("+" set, "-" remove) of the
+% breakpoint B.
 pred change-breakpoint i:string, i:breakpoint.
 change-breakpoint C B :- state "breaks" S, stash_in_safe S (pr C B).
 
@@ -181,6 +210,8 @@ change-clause-breakpoint C N :- rex.match "^[0-9]+$" N, I is string_to_int N, cl
   say 1 [{breakpoint-verb C}, " on the clause at ", {origin-string (at Loc [])}].
 change-clause-breakpoint _ N :- say 1 ["no clause numbered ", N].
 
+% [breakpoint-verb C S]: the word for the change C in messages ("breakpoint"
+% or "no breakpoint").
 func breakpoint-verb string -> string.
 breakpoint-verb "+" "breakpoint" :- !.
 breakpoint-verb _ "no breakpoint".
@@ -261,7 +292,7 @@ run-command ["n"] _ _ :- !, set-mode nodebug.
 % call N of the stack)
 run-command ["r"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, ask-retry Id.
 run-command ["r", N] _ F :- rex.match "^[1-9][0-9]*$" N, Id is string_to_int N, call-in-stack Id F, !, ask-retry Id.
-run-command ["f"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, set-request (fail-call Id), fail.
+run-command ["f"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, unwind-for (fail-call Id).
 run-command [C] Kind F :- (C = "r" ; C = "f"), !,
   print "    (the query itself cannot be retried or failed)", command-loop Kind F.
 run-command ["r", _] Kind F :- !, print "    (no such call in the stack)", command-loop Kind F.
@@ -283,6 +314,7 @@ run-command ["-", Name] Kind F :- !, change-breakpoint "-" (on-predicate Name), 
 run-command ["a"] _ _ :- !, halt "debug: aborted".
 run-command _ Kind F :- print "    unknown command (h for help)", command-loop Kind F.
 
+% [show-help]: the commands at a stop (command h).
 pred show-help.
 show-help :- std.forall [
   "    c or return  creep: go to the next event",
@@ -312,9 +344,11 @@ show-focus (focus (frame Id _ _ G _) _) :-
   say 1 [{box-name Id}, " ", {show-term G}],
   show-hyps, show-scope G.
 
+% [show-backtrace Fs]: the calls of the stack Fs (command g).
 pred show-backtrace i:list frame.
 show-backtrace Above :- print "  called from:", show-frames Above.
 
+% [show-frames Fs]: one line per frame of Fs.
 pred show-frames i:list frame.
 show-frames [].
 show-frames [F|Fs] :- say 2 [{frame-string F}], show-frames Fs.
@@ -330,6 +364,7 @@ show-hyps :- print "  local program (clauses added by =>, most recent first):", 
 show-hyps :- hyp _ Origin C, say 2 [{show-term C}, "    (", {origin-string Origin}, ")"], fail.
 show-hyps.
 
+% [show-eigenvariables]: the eigenvariables in scope, by their names.
 pred show-eigenvariables.
 show-eigenvariables :- names Es, eigen-names Es Ns, say 1 ["eigenvariables in scope: ", {names-or-none Ns}].
 

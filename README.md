@@ -42,7 +42,8 @@ papers (in development):
 ## elpi-tools
 
 Tools for standalone Elpi 4 (opam switch `elpi5`, not Rocq-Elpi; in
-development), in [elpi-tools/](elpi-tools):
+development), in [elpi-tools/](elpi-tools) (how they work and why:
+[elpi-tools/DESIGN.md](elpi-tools/DESIGN.md)):
 
 - [reflect/](elpi-tools/reflect/README.md): **a program as data**.
   `elpi-reflect file.elpi` prints the types, constructors, signatures with
@@ -68,9 +69,11 @@ development), in [elpi-tools/](elpi-tools):
   by each call (at its exit); at each call, the premise of the clause it
   comes from (`premise 1 of lists.elpi:16`).  About 20 times slower than the real engine
   on the benchmarks of its README.  Its strategy can be random:
-  elpi-check uses it to generate.  What it knows of the variables of a
-  run goes through three primitives that Elpi's core could provide,
-  written in Elpi for now ([debug/ELPI-WISHLIST.md](elpi-tools/debug/ELPI-WISHLIST.md)).
+  elpi-check uses it to generate.  Wherever it works around something
+  Elpi does not offer (the variables of a term, the trail, CHR hooks, a
+  crash, an `Obj.magic` ...), a stand-in sits behind a small interface,
+  listed with the API that would remove it in
+  [debug/ELPI-WISHLIST.md](elpi-tools/debug/ELPI-WISHLIST.md).
 - [dap/](elpi-tools/dap/README.md): **the debugger in VS Code**.  `elpi-dap`,
   a debug adapter (Debug Adapter Protocol) on `elpi-debug -machine`, and a
   small VS Code extension: breakpoints on clause lines and on predicates,

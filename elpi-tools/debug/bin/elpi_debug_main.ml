@@ -9,15 +9,23 @@
    2. debug.elpi, the interpreter;
    3. FILE without its rules: its declarations and CHR rules, so that the
       terms of the program type check and CHR runs natively (the CHR
-      rules rewritten, so that the interpreter sees them at work: "CHR in
-      view" below);
+      rules rewritten, so that the interpreter sees them at work:
+      chr_in_view.ml);
    4. the rules of FILE as reflect facts, printed by elpi-reflect;
    5. the bridges: one native rule per predicate of FILE, which sends a
       native call of that predicate back to the interpreter (written by
-      debug.write-bridges, run on units 1-4);
+      debug.write-bridges, run on units 1-4; static rules because of an
+      Elpi crash, ../ELPI-WISHLIST.md §7);
    6. the clauses that tie the interpreter to the builtins of this driver:
       whether a front end asked for a pause (-machine), the notes of the
-      CHR rules, the constraint store. *)
+      CHR rules, the constraint store.
+
+   Where the driver works around a missing feature of Elpi (each one an
+   item of ../ELPI-WISHLIST.md): [to_api] (§8), the CHR rules
+   rewritten and their builtins (chr_in_view.ml, §4-§6), the bridges
+   (§7), the rules printed closed by elpi-reflect (~closed, §1) and the
+   names of the query variables found by a walk of the parsed goal
+   ([query_variables], §15). *)
 
 open Elpi
 module PAst = Elpi_parser.Ast
@@ -35,7 +43,7 @@ let show_warnings = ref false
 let paths = ref []
 let machine = ref false            (* -machine: a front end drives the session *)
 let args = ref []
-let rule_events = ref false        (* the CHR rules report their attempts (see "CHR in view") *)
+let rule_events = ref false        (* the CHR rules report their attempts (see chr_in_view.ml) *)
 
 let add_option o = elpi_options := !elpi_options @ [ o ]
 
@@ -89,81 +97,24 @@ let pause_asked = ref false
 
 let listen_for_pause () = Sys.set_signal Sys.sigusr1 (Sys.Signal_handle (fun _ -> pause_asked := true))
 
-(* ---- CHR in view: the notes of the rules, the store ------------------------ *)
-
-(* The notes that the CHR rules of FILE make while Elpi tries them (a rule
-   tried on some constraints, its guard held: ../lib/chr.elpi), in order,
-   most recent first, until the interpreter takes them.  A guard runs in a
-   runtime of its own, with the static program only (elpi 4.0.0,
-   runtime.ml, try_fire_rule): the local clauses of the interpreter are out
-   of its reach, a queue of this driver is not.  The notes are closed
-   terms, copied as a safe copies them. *)
-let rule_notes : API.Data.term list ref = ref []
-
-(* [suspension_number hyps]: K when the hypothesis debug.suspended-as K is
-   among hyps, the context of a suspended goal (the interpreter numbers its
-   suspensions so: ../lib/natives.elpi, [delay]); 0 otherwise. *)
-let suspension_number (hyps : API.RawData.hyps) =
-  let open API.RawData in
-  let number_in { hdepth; hsrc } =
-    match look ~depth:hdepth hsrc with
-    | App (c, arg, []) when Constants.show c = "debug.suspended-as" -> (
-        match look ~depth:hdepth arg with
-        | CData d when API.RawOpaqueData.is_int d -> Some (API.RawOpaqueData.to_int d)
-        | _ -> None)
-    | _ -> None
-  in
-  Option.value ~default:0 (List.find_map number_in hyps)
-
-(* [store_contents ~depth suspended]: the goals in the store, each with
-   its suspension number, as terms at [depth]; a goal suspended under more
-   binders than [depth] (inside a pi now left) comes under as many λs,
-   which bind its eigenvariables out of scope here. *)
-let store_contents ~depth suspended =
-  let open API.RawData in
-  let rec under_lambdas n t = if n <= 0 then t else under_lambdas (n - 1) (mkLam t) in
-  List.map
-    (fun { context; goal = goal_depth, goal; _ } -> (suspension_number context, under_lambdas (goal_depth - depth) goal))
-    (API.RawData.constraints suspended)
+(* ---- The builtins of the driver ------------------------------------------ *)
 
 (* [driver_builtins]: the builtins of this driver: the pause of a front
-   end, the notes of the CHR rules and the store. *)
+   end, and those of CHR in view (chr_in_view.ml: the notes of the CHR
+   rules and the store). *)
 let driver_builtins =
   let open API.BuiltIn in
   let open API.BuiltInPredicate in
-  let open API.BuiltInPredicate.Notation in
-  let open API.BuiltInData in
   let signal_received ~depth:_ = if !pause_asked then pause_asked := false else raise No_clause in
-  let note_rule (note, _) ~depth:_ = rule_notes := note :: !rule_notes in
-  let take_rule_notes _ ~depth:_ =
-    let notes = List.rev_map (fun n -> (n, 0)) !rule_notes in
-    rule_notes := [];
-    !:notes
-  in
-  let store _ ~depth _ constraints _ = !:(store_contents ~depth constraints) in
   declare ~file_name:"elpi-debug-driver.elpi"
-    [ MLCode (Pred ("debug.signal-received", Easy "a pause was asked (signal SIGUSR1) since the last success", signal_received), DocAbove);
-      MLCode (Pred ("debug.builtin-note-rule", In (closed "A", "Note", Easy "keeps a note of a CHR rule"), note_rule), DocAbove);
-      MLCode
-        ( Pred ("debug.builtin-take-rule-notes", Out (list (closed "A"), "Notes", Easy "the notes kept since the last call, oldest first"), take_rule_notes),
-          DocAbove );
-      MLCode
-        ( Pred
-            ( "debug.builtin-store",
-              Out (list (Builtin.pair int any), "Goals", Read (API.ContextualConversion.raw_ctx, "the suspended goals, with their numbers")),
-              store ),
-          DocAbove ) ]
+    (MLCode (Pred ("debug.signal-received", Easy "a pause was asked (signal SIGUSR1) since the last success", signal_received), DocAbove)
+     :: Chr_in_view.builtins)
 
 (* [driver_clauses]: the clauses that tie the interpreter to these
    builtins (the interpreter declares the predicates, with no clause:
-   ../lib/machine.elpi, ../lib/chr.elpi). *)
+   ../lib/machine.elpi, ../lib/chr-hooks.elpi). *)
 let driver_clauses =
-  String.concat "\n"
-    [ "debug.pause-requested :- debug.signal-received.";
-      "debug.note-rule N :- debug.builtin-note-rule N.";
-      "debug.take-rule-notes Ns :- debug.builtin-take-rule-notes Ns.";
-      "debug.constraint-store Gs :- debug.builtin-store Gs.";
-      "" ]
+  String.concat "\n" (("debug.pause-requested :- debug.signal-received." :: Chr_in_view.clauses) @ [ "" ])
 
 (* ---- Elpi setup and errors ---------------------------------------------- *)
 
@@ -224,100 +175,16 @@ let parse_text name text =
 (* [parse_file file]: a unit from a file, with the files it accumulates *)
 let parse_file file = parse_or_fail (fun (module P : Parser) -> P.program file)
 
-(* ---- CHR in view: the CHR rules of FILE, rewritten ------------------------ *)
-(* The CHR rules run natively (CHR at depth 1), rewritten so that the
-   interpreter sees them at work (../lib/chr.elpi):
-   - the goal N of a rule (rule ... <=> N) becomes
-     [debug.hand-rule-goal Loc N]: N is run by the interpreter, not
-     natively (natively, N would run with the static program only, where
-     the interpreter's local clauses, and so the bridges, are missing);
-   - with an option that shows events, the guard G of a rule (G is true
-     when the rule has none) becomes
-       debug.rule-tried Loc Kept [C1, ..., Cn], G, debug.rule-guard-held
-     where Ci is the context of the i-th constraint matched (a variable
-     in place of the context the rule does not read), Kept the number of
-     constraints it keeps (those before \): the attempt, then the outcome
-     of the guard, noted for the interpreter;
-   - each constraint block gets debug.suspended-as in its context filter
-     (constraint debug.suspended-as ... ?- ...), so that the context of a
-     constraint holds the number the interpreter gave its suspension.
-   Loc is the location of the rule, as reflect gives it (reflect.srcloc).
-   Nothing else changes: the new guard step reads its arguments and binds
-   none of the variables of the rule (Elpi freezes them during the guard
-   anyway), declares no constraint, and always succeeds. *)
-
-module T = PAst.Term
-
-let named loc name = T.mkCon loc name
-let string_term loc s = T.mkC loc (PAst.cstring.Elpi_util.Util.CData.cin s)
-let int_term loc n = T.mkC loc (PAst.cint.Elpi_util.Util.CData.cin n)
-let list_term loc ts = T.mkSeq ~loc (ts @ [ T.mkNil loc ])
-
-(* [rule_location r]: the term reflect.srcloc File Line Column of the rule r,
-   as reflect gives it (at its first head) *)
-let rule_location (r : _ PAst.Chr.t) =
-  let l = Elpi_reflect.Reflect.chr_rule_loc r in
-  T.mkApp l
-    [ named l "reflect.srcloc"; string_term l l.source_name; int_term l l.line; int_term l (l.source_start - l.line_starts_at) ]
-
-(* [is_discarded t]: t is the context of a constraint that the rule does not read *)
-let is_discarded (t : T.t) = match t.it with T.Const f -> PAst.Func.equal f PAst.Func.dummyname | _ -> false
-
-(* [with_named_contexts ~first sequents]: the sequents of the constraints
-   matched, with a variable of its own for each context the rule does not
-   read (Debug_context_N, N from [first]), and the contexts (named or
-   written by the rule), in order. *)
-let with_named_contexts ~first (sequents : T.t PAst.Chr.sequent list) =
-  List.split
-    (List.mapi
-       (fun i (s : T.t PAst.Chr.sequent) ->
-         if is_discarded s.context then
-           let context = named s.context.loc (Printf.sprintf "Debug_context_%d" (first + i)) in
-           ({ s with context }, context)
-         else (s, s.context))
-       sequents)
-
-(* [requested_goal r]: the goal of the rule r, run by the interpreter *)
-let requested_goal (r : _ PAst.Chr.t) =
-  Option.map
-    (fun (s : T.t PAst.Chr.sequent) ->
-      let l = s.conclusion.loc in
-      { s with conclusion = T.mkApp l [ named l "debug.hand-rule-goal"; rule_location r; s.conclusion ] })
-    r.new_goal
-
-(* [with_attempt_reported r]: the rule r, whose guard notes its attempt and
-   outcome first *)
-let with_attempt_reported (r : _ PAst.Chr.t) =
-  let l = r.loc in
-  let to_match, kept_contexts = with_named_contexts ~first:1 r.to_match in
-  let to_remove, removed_contexts = with_named_contexts ~first:(1 + List.length r.to_match) r.to_remove in
-  let tried =
-    T.mkApp l
-      [ named l "debug.rule-tried"; rule_location r; int_term l (List.length r.to_match);
-        list_term l (kept_contexts @ removed_contexts) ] in
-  let guard = Option.to_list r.guard in
-  let steps = (tried :: guard) @ [ named l "debug.rule-guard-held" ] in
-  { r with to_match; to_remove; guard = Some (T.mkAppF l (l, PAst.Func.andf) steps) }
-
-(* [in_view r]: the CHR rule r, rewritten as above *)
-let in_view (r : _ PAst.Chr.t) =
-  let r = { r with new_goal = requested_goal r } in
-  if !rule_events then with_attempt_reported r else r
-
-(* [with_suspension_numbers loc filter clique]: the constraint block, its
-   context filter with debug.suspended-as *)
-let with_suspension_numbers loc filter clique =
-  PAst.Program.Constraint (loc, filter @ [ PAst.Func.from_string "debug.suspended-as" ], clique)
-
 (* [without_rules p]: the program p (and the files it accumulates) without
    its rules; they are given to the interpreter as reflect facts instead.
-   Its CHR rules are kept, in view. *)
+   Its CHR rules and constraint blocks are kept, rewritten so that the
+   interpreter sees CHR at work (chr_in_view.ml). *)
 let rec without_rules (p : PAst.Program.t) : PAst.Program.t =
   let rec decls = function
     | [] -> []
     | PAst.Program.Clause _ :: ds -> decls ds
-    | PAst.Program.Chr r :: ds -> PAst.Program.Chr (in_view r) :: decls ds
-    | PAst.Program.Constraint (loc, filter, clique) :: ds -> with_suspension_numbers loc filter clique :: decls ds
+    | PAst.Program.Chr r :: ds -> PAst.Program.Chr (Chr_in_view.rule ~rule_events:!rule_events r) :: decls ds
+    | PAst.Program.Constraint (loc, filter, clique) :: ds -> Chr_in_view.constraint_block loc filter clique :: decls ds
     | PAst.Program.Accumulated (loc, ps) :: ds -> PAst.Program.Accumulated (loc, List.map without_rules ps) :: decls ds
     | d :: ds -> d :: decls ds
   in
@@ -328,21 +195,35 @@ let program_of (units : PAst.Program.t list) : PAst.Program.t =
   let loc = Elpi_util.Util.Loc.initial "(elpi-debug)" in
   { PAst.file_name = "(elpi-debug)"; digest = Digest.string "elpi-debug"; deps = []; ast = [ PAst.Program.Accumulated (loc, units) ] }
 
+(* ---- STAND-IN: a parsed program given to the API (../ELPI-WISHLIST.md §8) *)
+
 (* [to_api p]: the parsed program p as the API's parsed program.  The one
-   hack of the driver, isolated here: the API offers no way to compile a
+   cast of the driver, isolated here: the API offers no way to compile a
    program built from parsed units (we need FILE without its rules), but
    its type of parsed programs is the parser's own: [type program =
    Ast.Program.t] in elpi 4.0.0's API.ml, so the conversion is the
-   identity.  To check again with each new version of Elpi. *)
+   identity.  Nothing checks it: to check again with each new version of
+   Elpi.  With the requested API (a function from the parser's program to
+   the API's), this function is that call. *)
 let to_api (p : PAst.Program.t) : API.Ast.program = Obj.magic p
 
+(* ---- Compiling ---------------------------------------------------------- *)
+
+(* [compile ~elpi ~flags units text]: the query [text] on the program made
+   of [units], compiled and ready to run *)
 let compile ~elpi ~flags units text =
   let prog = or_exit (API.Compile.program ~flags ~elpi (to_api (program_of units))) in
   let q = query_or_exit (API.Parse.query ~elpi ~loc:(API.Ast.Loc.initial "(goal)") ~text) in
   let q = query_or_exit (API.Compile.query prog q) in
   API.Compile.optimize q
 
-(* [interpreted_units file]: the units 1-5 described at the top. *)
+(* [interpreted_units file]: the units 1-6 described at the top.  The rules
+   are reflected closed (~closed: each rule also under one binder per
+   variable), since the interpreter cannot find the variables of a rule
+   itself (../ELPI-WISHLIST.md §1).  The bridges need a first compilation
+   and run of units 1-4 that writes them to a file: with the crash of §7
+   fixed, the interpreter would install them as local clauses, and this
+   step would go. *)
 let interpreted_units ~elpi ~flags file =
   let facts =
     try Elpi_reflect.Reflect.reflect_files ~paths:!paths ~closed:true [ file ]
@@ -414,7 +295,9 @@ let normalize s =
    in the order of their first occurrence (the names of "Solution: X =
    ..."): the names that start with a capital letter and are not bound by
    a λ of the goal; none if the goal does not parse (its compilation then
-   reports the error). *)
+   reports the error).  A walk of the goal parsed a second time, as Elpi's
+   compiler reads it: the API does not give the names of the variables of
+   a compiled query before it runs (../ELPI-WISHLIST.md §15). *)
 let query_variables goal =
   let module T = PAst.Term in
   let found = ref [] in
