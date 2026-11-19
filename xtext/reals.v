@@ -2,7 +2,7 @@
    (fractions, powers, square roots, absolute values): ../prooftext/pdf.sh
    examples/reals_sqrt_sq.md. *)
 From Stdlib Require Import Reals.
-From XText Require Import Explain.
+From XText Require Import ExtractText.
 Open Scope R_scope.
 
 (* the require line of the texts: the reals, their notations and scope *)
@@ -21,5 +21,5 @@ Proof.
            (Rplus_lt_le_0_compat _ _ Rlt_0_1 (pow2_ge_0 x))).
 Qed.
 
-Explain reals_sqrt_sq to "examples/reals_sqrt_sq.md".
-Explain reals_exp_div to "examples/reals_exp_div.md".
+ExtractText reals_sqrt_sq to "examples/reals_sqrt_sq.md".
+ExtractText reals_exp_div to "examples/reals_exp_div.md".

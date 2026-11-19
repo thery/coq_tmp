@@ -14,7 +14,7 @@ papers (in development):
   paper) is kept in a private branch.  After *Colouring proofs: a
   lightweight approach to adding formal structure to proofs* (UITP).
 - [xtext/](xtext/README.md): **text from proofs**.  A Rocq-Elpi command,
-  `Explain foo.`, that writes the proof term of `foo` as a coarse but
+  `ExtractText foo.`, that writes the proof term of `foo` as a coarse but
   faithful text in cyp's format.  After Coscoy, Kahn and Théry,
   *Extracting Text from Proofs* (TLCA 1995), and Yann Coscoy's thesis
   (2000): its staged translation (chapters 2-4, up to the named
@@ -23,7 +23,7 @@ papers (in development):
   libraries the two tools share, the words of proofs in each language and
   the format of proof texts.
 - **The PDF of a proof text**, with Typst: `prooftext/pdf.sh proof.md`, for
-  a text written by xtext (also `Explain foo to "foo.typ".`) or checked by
+  a text written by xtext (also `ExtractText foo to "foo.typ".`) or checked by
   cyp.  The formulas are mathematics (∀ n ∈ ℕ, n + 0 = n; fractions,
   powers, √, |x|), printed from their Rocq terms by a table of notations
   that a library can extend; `--code` keeps the Rocq code, `--html` makes

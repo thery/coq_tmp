@@ -1,6 +1,6 @@
 % xtext: Applications: specialisations and modus ponens, and the contraction of
 % their steps.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 
 % rewriting with an equality (eq_ind, eq_ind_r, ...)

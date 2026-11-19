@@ -3,7 +3,7 @@
 # Each step prints "ok" or stops with the difference or error.
 #
 # 1. the texts of ../../xtext/examples-typst (written in Typst by xtext,
-#    Explain foo to "foo.typ"): the Typst source that prooftext's reader
+#    ExtractText foo to "foo.typ"): the Typst source that prooftext's reader
 #    and write-typst give from the Markdown text (../../xtext/examples) is
 #    the same, character for character;
 # 2. texts checked by cyp (../../xtext/cyp-check/*.checked.md, with their

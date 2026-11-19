@@ -1,6 +1,6 @@
 % xtext: Formulas that type-check again: the implicit arguments that must be
 % printed so that a formula, read back, means the same.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Formulas that type-check again (Coscoy's thesis 5.4, applied to the

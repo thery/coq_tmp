@@ -1,5 +1,5 @@
 % xtext: The type expected at the place of a subproof, and "that is".
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % "that is" (the Cast' of the thesis, 5.2.2): when the type that a proof
 % proves (synthesised) differs from the type expected at its place

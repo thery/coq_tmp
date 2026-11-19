@@ -1,5 +1,5 @@
 % xtext: Words and sentences in the language of the text (from the lexicon).
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Words.  The writer takes its phrases from the lexicon

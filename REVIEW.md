@@ -3,7 +3,7 @@
 Step 1 of the cleaning session: findings only, nothing changed.  Reviewed:
 cyp at main (bin/cyp.ml, rules/cyp_rules.v, vernac/Cyp.v, vernac/CypFile.v,
 the rules of the private case study, vscode/), xtext at 40d1b6d
-(xtext.elpi, Explain.v).  The rounds the agents were doing then are not
+(xtext.elpi, ExtractText.v).  The rounds the agents were doing then are not
 included.
 
 ## A. The same thing done in several places
@@ -33,7 +33,7 @@ both in three languages.
 
 **A3. Calling a standard tactic by name from Elpi is solved three times:**
 `cyp_std_*` in rules/cyp_rules.v, `cyp_std_*` again in vernac/Cyp.v (a
-different list), `xtext_tauto`/`xtext_lia` in xtext's Explain.v.
+different list), `xtext_tauto`/`xtext_lia` in xtext's ExtractText.v.
 
 ## B. Ad hoc choices
 

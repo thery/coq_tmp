@@ -251,7 +251,7 @@ that names no formula in scope).
   (`cyp/vernac/Cyp.v`; the rules of a proof may add tactics,
   `tactic-name Name Ltac`); xtext writes only these
   names (the text of its tactics, `xtext-tactic Ltac Name` and
-  `xtext-guard-tactic Ltac Name` in `xtext/Explain.v`, which run them with
+  `xtext-guard-tactic Ltac Name` in `xtext/ExtractText.v`, which run them with
   a time limit), and `xtext/vocab_check.v` checks it.  A name added to one
   tool's table goes here first.
 
@@ -375,7 +375,7 @@ and writes only under the home directory, not in `/tmp`.
   above), so that a text in Markdown (one that xtext wrote, a text
   checked by cyp, a text written by hand, in either syntax) is shown as
   it is written.  xtext writes a document it has just built
-  (`Explain foo to "foo.typ"`: `write-as` chooses the writer by the
+  (`ExtractText foo to "foo.typ"`: `write-as` chooses the writer by the
   extension of the file) with `write-typst D Text`: the document's
   Markdown (`write-document`), read back into its tree, so that both
   give the same Typst source.  Reading Markdown needs no OCaml driver:
@@ -877,8 +877,8 @@ shorter one; `:before` puts a clause before those of the table.
 - Binders keep their names: a binder that shadows a variable of the
   context is not renamed.
 - The entries a library adds go to one command: `Typst` (the PDFs and
-  pages of `pdf.sh`); xtext's `Explain foo to "foo.typ"` has its own
-  program, where they are added the same way (`Elpi Accumulate Explain`).
+  pages of `pdf.sh`); xtext's `ExtractText foo to "foo.typ"` has its own
+  program, where they are added the same way (`Elpi Accumulate ExtractText`).
 - In a PDF, a word operator (div, mod) inside a highlighted formula has
   its own highlight box; inline fractions are small (Typst's inline
   maths).

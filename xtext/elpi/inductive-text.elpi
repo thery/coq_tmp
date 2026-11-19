@@ -1,5 +1,5 @@
 % xtext: The text of introductions, eliminations, recursion (fix) and rewriting.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % --- introduction theorems (thesis 6.2.1, tactic Constr); CD: the words
 % that name the constructor, which is the justification of the step (cyp

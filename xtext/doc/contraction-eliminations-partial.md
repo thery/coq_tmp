@@ -75,13 +75,13 @@ byte, as before this round.
 
 ## (8) Proofs in progress (L. Théry's thesis, 3.3.3)
 
-`Explain_partial.` (or `Explain_partial to "f.md".`), inside a proof,
+`ExtractText_partial.` (or `ExtractText_partial to "f.md".`), inside a proof,
 prints the text of the proof so far.  Each open goal is written `Prove
 G` at its place, as the thesis's `Prouvez G`.  The open goals are the holes
 of the partial proof term; their statements are their types.
 
 Limit: rocq-elpi gives the partial proof term only to a command that
-closes the proof, so `Explain_partial` ends the proof, as `Abort` does.
+closes the proof, so `ExtractText_partial` ends the proof, as `Abort` does.
 In an editor, undo it to go on.
 
 Tests (`partial.v`, texts `examples/*_partial*.md`):

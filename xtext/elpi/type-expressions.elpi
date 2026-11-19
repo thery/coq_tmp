@@ -4,7 +4,7 @@
 % translation (staged.elpi), whose stage 1 is the double annotation of
 % Fig. 3.9.  The weak head normal form of Fig. 3.3 is whnf (printing.elpi:
 % every term sent to Rocq goes through it or through away-from-context).
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Fig. 3.4, the synthesis of types: xtext's typ follows its rules (Var

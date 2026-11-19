@@ -1,5 +1,5 @@
 % xtext: Abstractions (series of binders) and local definitions.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % --- abstraction: iterated abstraction rules
 

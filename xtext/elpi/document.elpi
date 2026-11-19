@@ -1,5 +1,5 @@
 % xtext: The top level: the statement, the document and its header.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Top level: the abstractions at the top of the proof make the
@@ -93,17 +93,17 @@ header-fields Path Fields :-
   prooftext.by-field Tactics By,
   std.append [prooftext.field "require" Require | LangFields] [By] Fields.
 
-% the document of a proof in progress (Explain_partial): its partial
+% the document of a proof in progress (ExtractText_partial): its partial
 % proof term P, where the open goals are holes (thesis of L. Théry, 3.3.3)
-pred explain-partial i:string, i:term, o:prooftext.document.
-explain-partial Name P D :-
+pred extract-text-partial i:string, i:term, o:prooftext.document.
+extract-text-partial Name P D :-
   beta P P1, coq.typecheck P Ty0 ok, beta-ty Ty0 Ty,
   coq.env.current-path Path,
   proof-text {calc (Name ^ " (proof in progress)")} Path P1 Ty D.
 
 % the document of the proof of the constant Name
-pred explain i:string, o:prooftext.document.
-explain Name D :-
+pred extract-text i:string, o:prooftext.document.
+extract-text Name D :-
   coq.locate Name GR,
   ((GR = const C, coq.env.const-body C (some Bo)), !
    ; coq.error "xtext:" Name "is not a constant with a body"),

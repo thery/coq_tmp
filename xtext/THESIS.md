@@ -213,4 +213,4 @@ texts, inverting each form of sentence.
 
 | thesis | what | code |
 |---|---|---|
-| 3.3.3 | a proof in progress: each open goal written "Prove G" | `open-goal` in `transducer.elpi`, `explain-partial` in `document.elpi` |
+| 3.3.3 | a proof in progress: each open goal written "Prove G" | `open-goal` in `transducer.elpi`, `extract-text-partial` in `document.elpi` |

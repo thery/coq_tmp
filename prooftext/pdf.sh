@@ -5,7 +5,7 @@
 # proof.checked.md), writes its Typst source proof.typ next to it (the
 # command Typst of Typst.v, prooftext's reader and write-typst-in), then
 # proof.pdf with typst and the template typst/local/prooftext/0.1.0 (the
-# Typst package @local/prooftext).  A file .typ (Explain foo to "foo.typ")
+# Typst package @local/prooftext).  A file .typ (ExtractText foo to "foo.typ")
 # is compiled as it is.  Stops at the first error.
 #
 # The formulas are mathematics (maths.elpi): each is elaborated in Rocq,

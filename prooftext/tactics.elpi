@@ -2,7 +2,7 @@
 % or in the by field of its header.  The reader runs the tactic of that
 % name (cyp: tactic-name Name Ltac, cyp/vernac/Cyp.v, the Ltac it calls);
 % the writer writes only these names (xtext: the second argument of
-% xtext-tactic and xtext-guard-tactic, xtext/Explain.v, checked by
+% xtext-tactic and xtext-guard-tactic, xtext/ExtractText.v, checked by
 % xtext/vocab_check.v).  A tool may run a tactic its own way (a time
 % limit, options): the name is what the text says.
 

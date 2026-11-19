@@ -1,11 +1,11 @@
-(* The command [Explain foo.]: print the proof of [foo] as text, after the
+(* The command [ExtractText foo.]: print the proof of [foo] as text, after the
    basic transducer of "Extracting Text from Proofs" (TLCA 1995).
-   [Explain foo to "foo.md".] writes the text to the file foo.md.
-   [Explain foo to "foo.md" in "fr".]: the same in French (the languages of
+   [ExtractText foo to "foo.md".] writes the text to the file foo.md.
+   [ExtractText foo to "foo.md" in "fr".]: the same in French (the languages of
    the lexicon: en, fr, it, de, nl, ru, zh, ar, ko, la).
-   [Explain foo to "foo.typ".]: the text in Typst, for its PDF
+   [ExtractText foo to "foo.typ".]: the text in Typst, for its PDF
    (../prooftext/pdf.sh foo.typ).
-   [Explain_partial.], inside a proof, prints the proof so far. *)
+   [ExtractText_partial.], inside a proof, prints the proof so far. *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
 (* the bounded searches shared with cyp (bounded_firstorder) *)
@@ -115,7 +115,7 @@ Elpi Db xtext.db lp:{{
   % [xtext-switch Name Variable Default]: a switch of the writer, the
   % environment variable that sets it, and its default value.  The values
   % the writer knows are in elpi/switches.elpi; any other value, an empty
-  % one included, is an error.  The switches are read when Explain runs
+  % one included, is an error.  The switches are read when ExtractText runs
   % (make does not see the variables: compile the example files again).
   %   translation: how a proof becomes text, "staged" (annotation,
   %     contraction, writing, as in Coscoy's thesis; elpi/staged.elpi) or
@@ -132,7 +132,7 @@ Elpi Db xtext.db lp:{{
   %     before the step that uses it) or "shared" (the same, a result
   %     proved once for each type in scope);
   %   lang: the language of the texts (those of the lexicon, ../lexicon),
-  %     also given by the command, Explain foo in "fr".
+  %     also given by the command, ExtractText foo in "fr".
   % Change a default with
   % Elpi Accumulate xtext.db lp:{{ :before "xtext-switch" xtext-switch "contraction" "XTEXT_CONTRACTION" "none" :- !. }}.
   pred xtext-switch o:string, o:string, o:string.
@@ -144,7 +144,7 @@ Elpi Db xtext.db lp:{{
   xtext-switch "lang" "XTEXT_LANG" "en".
 }}.
 
-Elpi Command Explain.
+Elpi Command ExtractText.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
@@ -155,12 +155,12 @@ Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
   xt_abstractions xt_applications xt_inductive_text xt_conclusions xt_document
   xt_type_expressions xt_staged xt_subproofs.
 Elpi Accumulate lp:{{
-  main [str N] :- !, with-switches (explain N D), say-document D.
-  main [str N, str "in", str L] :- !, in-language L (explain N D), say-document D.
-  main [str N, str "to", str F] :- !, with-switches (explain N D), write-text F D.
+  main [str N] :- !, with-switches (extract-text N D), say-document D.
+  main [str N, str "in", str L] :- !, in-language L (extract-text N D), say-document D.
+  main [str N, str "to", str F] :- !, with-switches (extract-text N D), write-text F D.
   main [str N, str "to", str F, str "in", str L] :- !,
-    in-language L (explain N D), write-text F D.
-  main _ :- coq.error "usage: Explain name [to \"file.md\" | to \"file.typ\"] [in \"lang\"].".
+    in-language L (extract-text N D), write-text F D.
+  main _ :- coq.error "usage: ExtractText name [to \"file.md\" | to \"file.typ\"] [in \"lang\"].".
   % G with the switches, the language being L (the "in" of the command)
   pred in-language i:string, i:prop.
   in-language L G :- with-switches (with-switch "lang" "the command" L G).
@@ -171,15 +171,15 @@ Elpi Accumulate lp:{{
   % else in Markdown (prooftext.write-as)
   pred write-text i:string, i:prooftext.document.
   write-text F D :- prooftext.write-as F D T,
-    open_out F O, output O T, close_out O, coq.say "Explain: written" F.
+    open_out F O, output O T, close_out O, coq.say "ExtractText: written" F.
 }}.
-Elpi Export Explain.
+Elpi Export ExtractText.
 
-(* [Explain_partial.] inside a proof: prints the text of the proof so far,
+(* [ExtractText_partial.] inside a proof: prints the text of the proof so far,
    each open goal written "Prove G" at its place.  It ends the proof (as
    Abort does): rocq-elpi gives the partial proof only to a command that
    closes the proof. *)
-Elpi Command Explain_partial.
+Elpi Command ExtractText_partial.
 Elpi Accumulate Db xtext.db.
 Elpi Accumulate File lex_core lex_en lex_fr lex_it lex_de
   lex_nl lex_ru lex_zh lex_ar lex_ko lex_la.
@@ -192,12 +192,12 @@ Elpi Accumulate File xt_text_tree xt_printing xt_switches xt_words xt_reparse
 Elpi Accumulate lp:{{
   main-interp-qed [str "to", str F] _ P _ Name :- !,
     (if (var Name) (N = "proof") (N = Name)),
-    with-switches (explain-partial N P D), prooftext.write-as F D T,
+    with-switches (extract-text-partial N P D), prooftext.write-as F D T,
     open_out F O, output O T, close_out O,
-    coq.say "Explain_partial: written" F.
+    coq.say "ExtractText_partial: written" F.
   main-interp-qed _ _ P _ Name :-
     (if (var Name) (N = "proof") (N = Name)),
-    with-switches (explain-partial N P D), prooftext.write-document D T, coq.say T.
+    with-switches (extract-text-partial N P D), prooftext.write-document D T, coq.say T.
 }}.
 #[proof="end"]
-Elpi Export Explain_partial.
+Elpi Export ExtractText_partial.

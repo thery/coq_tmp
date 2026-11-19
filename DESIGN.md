@@ -17,7 +17,7 @@ xtext, which writes texts that cyp reads back.
                         |        |                         |
                         |    checked proof: proof.checked.md, proof.cyp.json
                         |                                  |
-           command line / VS Code (thin driver)   xtext (Explain) writes proof.md
+           command line / VS Code (thin driver)   xtext (ExtractText) writes proof.md
 ```
 
 ## The parts

@@ -7,14 +7,14 @@
    (6.3.3).  The examples are the schemes of 6.3.3 and 6.3.4 (booleans,
    pairs, lists), a lemma of lemmas.v, and a motive that is not found.
    Each test fails if a text is not the expected one. *)
-From XText Require Import Explain lemmas.
+From XText Require Import ExtractText lemmas.
 From XText Extra Dependency "test-helpers.elpi" as test_helpers.
-Elpi Accumulate Explain File test_helpers.
+Elpi Accumulate ExtractText File test_helpers.
 
 (* [check-text Name Lang Lines] (for this file only): the text of Name in
    the language Lang, from its statement on (the non-empty lines after
    the title) *)
-Elpi Accumulate Explain lp:{{
+Elpi Accumulate ExtractText lp:{{
   pred check-text i:string, i:string, i:list string.
   check-text Name Lang Lines :-
     with-switches (with-switch "lang" "the test" Lang
@@ -26,8 +26,8 @@ Elpi Accumulate Explain lp:{{
    6.4.1 lightens to "Montrons (P b0) par une preuve par cas sur b0" *)
 Definition bool_P (P : bool -> Prop) (ht : P true) (hf : P false) (b0 : bool) : P b0 :=
   bool_ind P ht hf b0.
-Time Explain bool_P to "examples/bool_P.md".
-Elpi Query Explain lp:{{ check-text "bool_P" "fr" [
+Time ExtractText bool_P to "examples/bool_P.md".
+Elpi Query ExtractText lp:{{ check-text "bool_P" "fr" [
   "Soit `P : bool -> Prop`{.var}. Supposons `P true`{.hyp} (ht) et `P false`{.hyp} (hf). Soit `b0 : bool`{.var}. Montrons `P b0`{.claim}.",
   "- Montrons `P b0` par analyse de cas sur `b0` (bool, *bool_ind*{.just}):",
   "  - Cas 1: montrons `P true`{.claim}.",
@@ -42,8 +42,8 @@ Elpi Query Explain lp:{{ check-text "bool_P" "fr" [
 Definition prod_P (E F : Set) (P : prod E F -> Prop)
   (h : forall (x : E) (y : F), P (pair x y)) (p0 : prod E F) : P p0 :=
   prod_ind P h p0.
-Time Explain prod_P to "examples/prod_P.md".
-Elpi Query Explain lp:{{ check-text "prod_P" "fr" [
+Time ExtractText prod_P to "examples/prod_P.md".
+Elpi Query ExtractText lp:{{ check-text "prod_P" "fr" [
   "Soient `E F : Set`{.var}. Soit `P : E * F -> Prop`{.var}. Supposons `forall (x : E) (y : F), P (x, y)`{.hyp} (h). Soit `p0 : (E * F)%type`{.var}. Montrons `P p0`{.claim}.",
   "- Par définition de prod (*prod_ind*{.just}) sur `p0`, montrons `P p0`{.claim}:",
   "  - Par *h*{.just} nous avons `forall (x : E) (y : F), P (x, y)`{.claim}."] }}.
@@ -54,8 +54,8 @@ Elpi Query Explain lp:{{ check-text "prod_P" "fr" [
 Definition list_P (E : Set) (P : list E -> Prop) (h0 : P nil)
   (h1 : forall x l, P l -> P (cons x l)) (l0 : list E) : P l0 :=
   list_ind P h0 h1 l0.
-Time Explain list_P to "examples/list_P.md".
-Elpi Query Explain lp:{{ check-text "list_P" "fr" [
+Time ExtractText list_P to "examples/list_P.md".
+Elpi Query ExtractText lp:{{ check-text "list_P" "fr" [
   "Soit `E : Set`{.var}. Soit `P : list E -> Prop`{.var}. Supposons `P nil`{.hyp} (h0) et `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.hyp} (h1). Soit `l0 : list E`{.var}. Montrons `P l0`{.claim}.",
   "- Montrons `P l0` par récurrence sur `l0` (list, *list_ind*{.just}):",
   "  - Cas 1 (base): montrons `P nil`{.claim}.",
@@ -63,7 +63,7 @@ Elpi Query Explain lp:{{ check-text "list_P" "fr" [
   "  - Cas 2 (inductif): montrons `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.claim}.",
   "    - Par *h1*{.just} nous avons `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.claim}.",
   "  Ces cas étant exhaustifs, nous en déduisons `P l0`{.claim}."] }}.
-Elpi Query Explain lp:{{ check-text "list_P" "en" [
+Elpi Query ExtractText lp:{{ check-text "list_P" "en" [
   "Let `E : Set`{.var}. Let `P : list E -> Prop`{.var}. Assume `P nil`{.hyp} (h0) and `forall (x : E) (l : list E), P l -> P (x :: l)%list`{.hyp} (h1). Let `l0 : list E`{.var}. We prove `P l0`{.claim}.",
   "- We prove `P l0` by induction on `l0` (list, *list_ind*{.just}):",
   "  - Case 1 (base): we prove `P nil`{.claim}.",
@@ -75,7 +75,7 @@ Elpi Query Explain lp:{{ check-text "list_P" "en" [
 (* add_0_r' (lemmas.v): the motive fun n0 => n0 + 0 = n0 is n abstracted
    in n + 0 = n, as elim finds it; the text proves n + 0 = n by
    induction on n *)
-Elpi Query Explain lp:{{ check-text "add_0_r'" "en" [
+Elpi Query ExtractText lp:{{ check-text "add_0_r'" "en" [
   "Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.",
   "- We prove `n + 0 = n` by induction on `n` (nat, *nat_ind*{.just}):",
   "  - Case 1 (base): we prove `0 = 0`{.claim}.",
@@ -93,7 +93,7 @@ Elpi Query Explain lp:{{ check-text "add_0_r'" "en" [
 Definition partial_motive (n : nat) (h0 : 0 + 0 = n)
   (hS : forall m, m + 0 = n -> S m + 0 = n) : n + 0 = n :=
   nat_ind (fun m => m + 0 = n) h0 hS n.
-Elpi Query Explain lp:{{ check-text "partial_motive" "en" [
+Elpi Query ExtractText lp:{{ check-text "partial_motive" "en" [
   "Let `n : nat`{.var}. Assume `0 + 0 = n`{.hyp} (h0) and `forall m : nat, m + 0 = n -> S m + 0 = n`{.hyp} (hS). We prove `n + 0 = n`{.claim}.",
   "- To prove `n + 0 = n` by induction (nat, *nat_ind*{.just}), we generalise it to `forall n0 : nat, n0 + 0 = n`:",
   "  - Case 1 (base): we prove `0 + 0 = n`{.claim}.",

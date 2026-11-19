@@ -1,5 +1,5 @@
 % xtext: Kinds of binders and of arguments.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Kinds of binders and arguments

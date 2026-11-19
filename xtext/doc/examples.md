@@ -120,14 +120,14 @@ constructors and theorems, has no special words for `¬` (a negation is
 an implication to `False` in Rocq), and states the goal of each case.
 
 The text of an **incomplete proof** (section 3.3.3), where each open goal
-is written `Prouvez G` at its place, is now `Explain_partial` (see ["Proofs in progress"](contraction-eliminations-partial.md#8-proofs-in-progress-l-thérys-thesis-333)).
+is written `Prouvez G` at its place, is now `ExtractText_partial` (see ["Proofs in progress"](contraction-eliminations-partial.md#8-proofs-in-progress-l-thérys-thesis-333)).
 
 ## More examples: theses, Stdlib
 
 Files: `thesis.v` (the theses' examples, above), `stdlib.v` (40 lemmas
-of Rocq's Stdlib, explained from the library itself: `Time Explain
+of Rocq's Stdlib, explained from the library itself: `Time ExtractText
 app_assoc to ...`).  `measure.sh f.v` prints, for each text, the time of
-`Explain` (Rocq's `Time`), the number of list items and the size;
+`ExtractText` (Rocq's `Time`), the number of list items and the size;
 
 What breaks or becomes unreadable on the large ones:
 

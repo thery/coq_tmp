@@ -58,7 +58,7 @@ constant is recognised by its name.
   and the body of a cast or `let` that is the whole proof).  The size is
   that of the proof term, so the large terms built by `lia`, `ring` or
   setoid rewriting are the ones tried.  Short subproofs keep their text.
-- Parameters, in the Elpi database `xtext.db` (`Explain.v`):
+- Parameters, in the Elpi database `xtext.db` (`ExtractText.v`):
   `xtext-tactic Ltac Text` (an Ltac definition, and the text written after
   *by*), `xtext-threshold N`.  To add `lra`, write `Ltac my_lra := timeout
   2 lra.` then `Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra".
@@ -67,7 +67,7 @@ constant is recognised by its name.
 - Limits: a subproof that a tactic closes loses its explanation, even if
   it was written by hand (e.g. the inductive step of `Nat.add_assoc` at a
   lower threshold).  The threshold is the only control.  Tactics are run
-  in Explain's environment; one not loaded there must be added as above.
+  in ExtractText's environment; one not loaded there must be added as above.
 
 ## (4) "that is" (thesis 3.3 and 5.2.2, Cast')
 

@@ -1,42 +1,42 @@
 # Build the command and regenerate the examples (examples/*.md).
 ROCQ = rocq c -R . XText -Q ../lexicon Lexicon -Q ../prooftext ProofText
 
-all: Explain.vo paper.vo lemmas.vo inductive.vo thesis.vo stdlib.vo elim_type.vo partial.vo vocab_check.vo selection.vo subproofs.vo multilingual.vo typst_examples.vo implicit_motive.vo reals.vo
+all: ExtractText.vo paper.vo lemmas.vo inductive.vo thesis.vo stdlib.vo elim_type.vo partial.vo vocab_check.vo selection.vo subproofs.vo multilingual.vo typst_examples.vo implicit_motive.vo reals.vo
 
 ../prooftext/Tactics.vo:
 	cd ../prooftext && rocq c -Q . ProofText Tactics.v
 
-Explain.vo: ../prooftext/Tactics.vo Explain.v $(wildcard elpi/*.elpi) $(wildcard ../lexicon/*.elpi) $(wildcard ../prooftext/*.elpi)
-	$(ROCQ) Explain.v
+ExtractText.vo: ../prooftext/Tactics.vo ExtractText.v $(wildcard elpi/*.elpi) $(wildcard ../lexicon/*.elpi) $(wildcard ../prooftext/*.elpi)
+	$(ROCQ) ExtractText.v
 
-paper.vo: paper.v Explain.vo
+paper.vo: paper.v ExtractText.vo
 	$(ROCQ) paper.v
 
-lemmas.vo: lemmas.v Explain.vo
+lemmas.vo: lemmas.v ExtractText.vo
 	$(ROCQ) lemmas.v
 
-inductive.vo: inductive.v Explain.vo
+inductive.vo: inductive.v ExtractText.vo
 	$(ROCQ) inductive.v
 
-thesis.vo: thesis.v Explain.vo
+thesis.vo: thesis.v ExtractText.vo
 	$(ROCQ) thesis.v
 
-stdlib.vo: stdlib.v Explain.vo
+stdlib.vo: stdlib.v ExtractText.vo
 	$(ROCQ) stdlib.v
 
-elim_type.vo: elim_type.v Explain.vo
+elim_type.vo: elim_type.v ExtractText.vo
 	$(ROCQ) elim_type.v
 
-partial.vo: partial.v Explain.vo
+partial.vo: partial.v ExtractText.vo
 	$(ROCQ) partial.v
 
-selection.vo: selection.v test-helpers.elpi Explain.vo thesis.vo
+selection.vo: selection.v test-helpers.elpi ExtractText.vo thesis.vo
 	$(ROCQ) selection.v
 
-subproofs.vo: subproofs.v test-helpers.elpi Explain.vo thesis.vo
+subproofs.vo: subproofs.v test-helpers.elpi ExtractText.vo thesis.vo
 	$(ROCQ) subproofs.v
 
-vocab_check.vo: vocab_check.v Explain.vo
+vocab_check.vo: vocab_check.v ExtractText.vo
 	$(ROCQ) vocab_check.v
 
 multilingual.vo: multilingual.v paper.vo lemmas.vo inductive.vo thesis.vo
@@ -45,10 +45,10 @@ multilingual.vo: multilingual.v paper.vo lemmas.vo inductive.vo thesis.vo
 typst_examples.vo: typst_examples.v paper.vo lemmas.vo inductive.vo
 	$(ROCQ) typst_examples.v
 
-implicit_motive.vo: implicit_motive.v test-helpers.elpi Explain.vo lemmas.vo
+implicit_motive.vo: implicit_motive.v test-helpers.elpi ExtractText.vo lemmas.vo
 	$(ROCQ) implicit_motive.v
 
-reals.vo: reals.v Explain.vo
+reals.vo: reals.v ExtractText.vo
 	$(ROCQ) reals.v
 
 clean:

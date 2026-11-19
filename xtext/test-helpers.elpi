@@ -1,5 +1,5 @@
 % Helpers of xtext's tests (selection.v, subproofs.v, implicit_motive.v),
-% accumulated into the command Explain by each of these files, which no
+% accumulated into the command ExtractText by each of these files, which no
 % other file loads.
 
 % [expect What Name Expected S]: S is Expected (what is tested, What, of
@@ -13,7 +13,7 @@ expect What Name Expected S :-
 % force), from its statement on, is the lines Lines
 pred expect-text i:string, i:list string.
 expect-text Name Lines :-
-  explain Name D, prooftext.write-document D T,
+  extract-text Name D, prooftext.write-document D T,
   rex.split "\n" T All, after-title All After,
   std.filter After (l\ not (l = "")) Text,
   std.string.concat "\n" Text S, std.string.concat "\n" Lines Expected,

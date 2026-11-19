@@ -1,5 +1,5 @@
 % xtext: Inductive types: recognising introduction and elimination theorems.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Inductive types: introduction and elimination theorems

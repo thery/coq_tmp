@@ -36,7 +36,7 @@ lexicon/check.v.  elpi-tools was not changed (no `dune build @runtest` needed).
 | 4 | high | dup | text.elpi: `better` and `earlier` the same four clauses on two types: one polymorphic `nearer-match`; `last-piece` by `flush` | a10f5d9 |
 | 5 | medium | misplaced code | check.elpi: the last clause of `justify-step` stood after `apply-lemma`/`conclusion-sort`; its comment named `justify Tac G` | e63c375 |
 | 6 | medium | inconsistent conventions | default language "en" written in check-file and lemma-lang while prooftext has `default-lang` | 0166715 |
-| 7 | medium | dup | Cyp.v: three commands listing the same 23 files one per line: one line per library, as Explain.v | fbcbfb4 |
+| 7 | medium | dup | Cyp.v: three commands listing the same 23 files one per line: one line per library, as ExtractText.v | fbcbfb4 |
 | 8 | high | dup / over-long predicates | proof.elpi: `level` and `open-level` had the same 20-line chain of nested ifs: `step-kind` decides once, one clause per kind | 823565f |
 | 9 | high | missing comments | 58 predicates of cyp, prooftext (not typst.elpi) and lexicon without a comment; 2 stale comments | c489fdd |
 
@@ -158,7 +158,7 @@ commit: identical, except where said.  elpi-tools: `dune build
   notion; neither tool's file is the place, and prooftext is about texts,
   so this needs a decision on where Rocq helpers shared by the tools live.
 - **dup-tools: the Ltac of the tactics a text may name.**  Cyp.v defines
-  `cyp_N` for each name of prooftext/tactics.elpi; Explain.v defines
+  `cyp_N` for each name of prooftext/tactics.elpi; ExtractText.v defines
   `xtext_g_N` (with time limits) for five of them; only
   `bounded_firstorder` is shared (prooftext/Tactics.v).  The time limits
   differ on purpose (xtext checks a contraction quickly), so a shared table

@@ -1,6 +1,6 @@
 % xtext: The structure of a text: lines with sub-lines, the text of a proof,
 % the kinds of binders and arguments, the * context.
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Text

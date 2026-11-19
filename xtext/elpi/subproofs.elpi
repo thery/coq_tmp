@@ -1,6 +1,6 @@
 % xtext: The subproofs of the staged translation, after the selection of
 % the type expressions (Y. Coscoy, thesis, Nice 2000, 4.3.2 and 4.3.3).
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 %
 % With the switch "naming" (switches.elpi) set to "all" or "shared", and
 % the selection of the thesis (switch "selection" = "thesis"), the

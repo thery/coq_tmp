@@ -1,6 +1,6 @@
 % xtext: Assembling text, and the transducer: the text of a proof term, by the
 % form of the term (the dispatch; the forms are in the files below).
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 
 % ------------------------------------------------------------------
 % Assembling text

@@ -1,6 +1,6 @@
 # xtext: proofs as text
 
-`Explain foo.` prints the proof of the constant `foo` as text.  It follows
+`ExtractText foo.` prints the proof of the constant `foo` as text.  It follows
 the *basic transducer* of *Extracting Text from Proofs* (Y. Coscoy,
 G. Kahn, L. Théry, TLCA 1995, section 3.1), extended to inductive types
 after chapter 6 of Y. Coscoy's thesis *Explication textuelle de preuves
@@ -12,11 +12,11 @@ it is written in the Markdown format of [cyp](../cyp/README.md), so that
 cyp can check it again.
 
 ```coq
-From XText Require Import Explain.
-Explain foo.                                (* prints the text *)
-Explain foo to "examples/foo.md".           (* writes it to a file *)
-Explain foo to "examples/fr/foo.md" in "fr".   (* in French; also it de nl ru zh ar ko la *)
-Explain foo to "foo.typ".                   (* in Typst, for a PDF: ../prooftext/pdf.sh foo.typ *)
+From XText Require Import ExtractText.
+ExtractText foo.                                (* prints the text *)
+ExtractText foo to "examples/foo.md".           (* writes it to a file *)
+ExtractText foo to "examples/fr/foo.md" in "fr".   (* in French; also it de nl ru zh ar ko la *)
+ExtractText foo to "foo.typ".                   (* in Typst, for a PDF: ../prooftext/pdf.sh foo.typ *)
 ```
 
 Proofs ending with `Qed` work too: the body is read with
@@ -35,12 +35,12 @@ justifications `*X*{.just}`, fresh names, the tactics a text may name):
 
 ```sh
 eval "$(opam env --root=/home/thery/opam-rocq.9.1.0 --switch=elpi5)"
-make          # builds Explain.vo, then the example files, which write examples/*.md
+make          # builds ExtractText.vo, then the example files, which write examples/*.md
 ```
 
 ## Files
 
-`Explain.v` defines the commands `Explain` and `Explain_partial`, the
+`ExtractText.v` defines the commands `ExtractText` and `ExtractText_partial`, the
 database `xtext.db` (the parameters: tactics, thresholds, switches, the
 header's libraries) and loads the lexicon, prooftext and the writer.  The
 writer is in `elpi/`, one file per subject, loaded in this order:
@@ -117,7 +117,7 @@ Examples and checks:
 
 Five switches change how a text is written (`elpi/switches.elpi`).  Each
 has an environment variable that sets it and a default, in `xtext.db`
-(`xtext-switch Name Variable Default`, `Explain.v`):
+(`xtext-switch Name Variable Default`, `ExtractText.v`):
 
 | switch | variable | values | default |
 |---|---|---|---|
@@ -127,10 +127,10 @@ has an environment variable that sets it and a default, in `xtext.db`
 | `naming` | `XTEXT_NAMING` | `none`, `all` (after the selection, each subproof used in an application is named, P1, P2, ..., and proved before the step that uses it; thesis 4.3.2-4.3.3), `shared` (the same, a result proved once for each type in scope); needs `selection` = `thesis` (see ["The subproofs"](doc/subproofs.md)) | `none` |
 | `lang` | `XTEXT_LANG` | the languages of the lexicon: `en`, `fr`, `it`, `de`, `nl`, `ru`, `zh`, `ar`, `ko`, `la` | `en` |
 
-The language given to the command (`Explain foo in "fr"`) comes before
+The language given to the command (`ExtractText foo in "fr"`) comes before
 the variable.  A value that is not in the list, an empty one included,
 is an error, so that a misspelt value does not silently give the texts of
-another setting.  The switches are read when `Explain` runs, from the
+another setting.  The switches are read when `ExtractText` runs, from the
 environment of the Rocq process that runs it: `make` does not see the
 variables, so after changing one, compile the example files again
 (`make_variant.sh` does it in a copy of the directory).  `XTEXT_OFF`
@@ -209,7 +209,7 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
 
 ### The PDF of a text
 
-`Explain foo to "foo.typ".` writes the text in Typst instead of Markdown
+`ExtractText foo to "foo.typ".` writes the text in Typst instead of Markdown
 (the same document, written by prooftext's `write-typst`), and
 `../prooftext/pdf.sh foo.typ` makes `foo.pdf`.  `../prooftext/pdf.sh
 examples/foo.md` does both steps from a Markdown text.  The PDF shows each

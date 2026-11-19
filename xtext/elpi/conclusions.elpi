@@ -1,7 +1,7 @@
 % xtext: Every node has its conclusion (the tree of the 2003 paper; the
 % format of proof texts, ../prooftext/README.md, "The format"; decision 2
 % of ../proposal/PROPOSAL.md).
-% (part of xtext's writer; the files are loaded in the order of Explain.v)
+% (part of xtext's writer; the files are loaded in the order of ExtractText.v)
 %
 % A line is a node of the proof (a list item) when its text has tags.  A
 % line whose text has tags but no conclusion, `F`{.claim}, introduces
