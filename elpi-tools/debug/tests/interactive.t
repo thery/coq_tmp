@@ -56,10 +56,13 @@ eigenvariable and its hypothesis are undone, then rebuilt), skip a call:
         X6 := X1
      ? c
       Exit: #3 of x#1 X1
+        X6 := X1
      ? s
     Exit: #2 of (lam c1 \ x#1) (arr X5 X1)
+        X2 := arr X5 X1
      ? c
   Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X1 (arr X5 X1))
+        X0 := arr X1 (arr X5 X1)
      ? c
   Solution 1:
     T = arr X1 (arr X5 X1)
@@ -95,6 +98,7 @@ afterwards), and look at the calls above:
         X9 := lam c1 \ c1
      ? c
     Exit: #4 same (lam c1 \ c1) (lam c1 \ c1)
+        X9 := lam c1 \ c1
      ? c
   Exit: #3 vacuous (c0 \ lam c1 \ c1) (lam c0 \ c0)
      ? c
@@ -118,7 +122,7 @@ higher-order binding and a pruning:
     called from:
       #1 vacuous (c1 \ app c1 c1) X0
     clauses tried:
-      lambda.elpi:22: same X1^1 X1^1
+      lambda.elpi:22: same X1 X1
           does not match: argument 2 (output): X0 vs app x#1 x#1 (X0 cannot depend on the eigenvariable x#1, introduced by a pi after X0 was created)
   No solution.
 
@@ -128,20 +132,23 @@ higher-order binding and a pruning:
   Unify: #1 with lambda.elpi:22: same (app x#1 x#1) (app x#1 x#1)
         X0 := c1 \ app c1 c1
   Exit: #1 same (app x#1 x#1) (app x#1 x#1)
+        X0 := c1 \ app c1 c1
   Solution 1:
     F = c0 \ app c0 c0
 
   $ elpi-debug -trace lambda.elpi 'pi x\ pi y\ same (G x) (F x y)'
-  Pi: x#1 is a new eigenvariable; its scope: pi c1 \ same X0^1 (X1 x#1 c1)
-  Pi: x#2 is a new eigenvariable; its scope: same X0^1 (X1 x#1 x#2)
-  Call: #1 same X0^1 (X1 x#1 x#2)
-  Unify: #1 with lambda.elpi:22: same (X4 x#1) (X4 x#1)
+  Pi: x#1 is a new eigenvariable; its scope: pi c1 \ same X0 (X1 x#1 c1)
+  Pi: x#2 is a new eigenvariable; its scope: same X0 (X1 x#1 x#2)
+  Call: #1 same X0 (X1 x#1 x#2)
+  Unify: #1 with lambda.elpi:22: same (X3 x#1) (X3 x#1)
         X2 := c2 \ X3 c2
-        X1 := c2 \ c3 \ X3 c2   (pruned: X4 gets 1 of the 2 arguments)
-  Exit: #1 same (X4 x#1) (X4 x#1)
+        X1 := c2 \ c3 \ X3 c2   (pruned: X3 gets 1 of the 2 arguments)
+  Exit: #1 same (X3 x#1) (X3 x#1)
+        X2 := c2 \ X3 c2
+        X1 := c2 \ c3 \ X3 c2   (pruned: X3 gets 1 of the 2 arguments)
   Solution 1:
-    F = c0 \ c1 \ X4 c0
-    G = c0 \ X4 c0
+    F = c0 \ c1 \ X3 c0
+    G = c0 \ X3 c0
 
 Retry at a fail port: the call is run again from its call port (and fails
 again); the help:

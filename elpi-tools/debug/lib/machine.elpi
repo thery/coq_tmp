@@ -119,7 +119,8 @@ emit-stop (focus Frame Above) :-
   std.string.concat "" [{event-label Kind}, " " | Text] EventText,
   std.map [Frame | Above] frame-json Frames,
   bindings-json Bindings,
-  std.findall (hyp-json _) HypMessages, std.map HypMessages hyp-json-value Hyps,
+  hyps-json Hyps,
+  query-json Query,
   names Es, eigen-names Es EigenNames, std.map EigenNames string-json Eigens,
   emit (json-object [
     pr "event" (json-string "stop"),
@@ -130,7 +131,8 @@ emit-stop (focus Frame Above) :-
     pr "frames" (json-list Frames),
     pr "bindings" (json-list Bindings),
     pr "hyps" (json-list Hyps),
-    pr "eigenvariables" (json-list Eigens)]).
+    pr "eigenvariables" (json-list Eigens),
+    pr "query" (json-list Query)]).
 
 func reason-name stop-reason -> string.
 reason-name at-breakpoint "breakpoint".
@@ -159,7 +161,7 @@ frame-json (frame Id _ P G) (json-object [pr "id" (json-int Id), pr "goal" (json
                                            pr "scope" (json-list Scope)]) :-
   clause-run-by Id Clause,
   args-json P G Args,
-  logic-vars G Vs, std.map Vs var-scope-json Scope.
+  vars-of G Vs, std.map Vs var-scope-json Scope.
 
 % [clause-run-by Id J]: the clause call Id runs, if any ([runs], in force
 % in its body).
@@ -193,27 +195,39 @@ mode-word o "output".
 % [var-scope-json V J]: {"var", "depends"}: the eigenvariables in scope
 % that the logic variable V may depend on.
 pred var-scope-json i:any, o:json.
-var-scope-json V (json-object [pr "var" (json-string {show-term V}), pr "depends" (json-list Names)]) :-
+var-scope-json V (json-object [pr "var" (json-string {uuid-name V}), pr "depends" (json-list Names)]) :-
   visible-eigens V Es, eigen-names Es Ns, std.map Ns string-json Names.
 
 % [bindings-json Js]: {"var", "value", "pruning"} per binding made by the
-% unify step in progress ([made-bindings], ports.elpi); none at other events.
+% event in progress ([made-bindings], ports.elpi): the head unification
+% at a unify step, the whole call at an exit port; none at other events.
 func bindings-json -> list json.
 bindings-json Js :- made-bindings Bs, !, std.map Bs binding-json Js.
 bindings-json [].
 
 func binding-json binding -> json.
-binding-json (binding Var Value Pruned)
-  (json-object [pr "var" (json-string Var), pr "value" (json-string Value), pr "pruning" (json-string Pruned)]).
+binding-json (binding N Value P)
+  (json-object [pr "var" (json-string {uuid-label N}), pr "value" (json-string {show-term Value}),
+                pr "pruning" (json-string {pruning-text P})]).
 
-% [hyp-json J]: by backtracking, {"clause", "origin"} per clause of the
-% local program, most recent first (strings only: std.findall copies).
+% [hyps-json Js]: {"clause", "origin"} per clause of the local program,
+% most recent first, gathered by backtracking into a safe (std.findall
+% would print copies of the clauses, whose variables have other names).
+pred hyps-json o:list json.
+hyps-json Js :- new_safe S, std.ignore-failure! (hyp-json J, stash_in_safe S J, fail), open_safe S Js.
+
 pred hyp-json o:json.
 hyp-json (json-object [pr "clause" (json-string Text), pr "origin" (json-string OriginText)]) :-
   hyp _ Origin C, show-term C Text, origin-string Origin OriginText.
 
-func hyp-json-value (pred) -> json.
-hyp-json-value (hyp-json J) J.
+% [query-json Js]: {"name", "value"} per variable of the query, by its
+% source name (option query-vars, given by the driver), with its value now.
+func query-json -> list json.
+query-json Js :- opt (query-vars Vs), !, std.map Vs query-var-json Js.
+query-json [].
+
+func query-var-json pair string any -> json.
+query-var-json (pr Name V) (json-object [pr "name" (json-string Name), pr "value" (json-string {show-term V})]).
 
 % ===== Pause ===============================================================================
 

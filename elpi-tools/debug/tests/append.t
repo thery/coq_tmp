@@ -11,11 +11,14 @@ The four ports of each call, and a solution:
       Unify: #3 with append.elpi:14: rev [] []
         X2 := []
       Exit: #3 rev [] []
+        X2 := []
       Call: #4 append [] [2] X1
       Unify: #4 with append.elpi:5: append [] [2] [2]
         X1 := [2]
       Exit: #4 append [] [2] [2]
+        X1 := [2]
     Exit: #2 rev [2] [2]
+        X1 := [2]
     Call: #5 append [2] [1] X0
     Unify: #5 with append.elpi:6: append [2] [1] [2 | X3]
         X0 := [2 | X3]
@@ -23,8 +26,11 @@ The four ports of each call, and a solution:
       Unify: #6 with append.elpi:5: append [] [1] [1]
         X3 := [1]
       Exit: #6 append [] [1] [1]
+        X3 := [1]
     Exit: #5 append [2] [1] [2, 1]
+        X0 := [2, 1]
   Exit: #1 rev [1, 2] [2, 1]
+        X0 := [2, 1]
   Solution 1:
     R = [2, 1]
 
@@ -36,6 +42,8 @@ Backtracking into a relation shows the redo ports:
         X0 := []
         X1 := [1, 2]
   Exit: #1 app [] [1, 2] [1, 2]
+        X0 := []
+        X1 := [1, 2]
   Solution 1:
     X = []
     Y = [1, 2]
@@ -47,7 +55,11 @@ Backtracking into a relation shows the redo ports:
         X2 := []
         X1 := [2]
     Exit: #2 app [] [2] [2]
+        X2 := []
+        X1 := [2]
   Exit: #1 app [1] [2] [1, 2]
+        X0 := [1]
+        X1 := [2]
   Solution 2:
     X = [1]
     Y = [2]
@@ -60,8 +72,14 @@ Backtracking into a relation shows the redo ports:
         X3 := []
         X1 := []
       Exit: #3 app [] [] []
+        X3 := []
+        X1 := []
     Exit: #2 app [2] [] [2]
+        X2 := [2]
+        X1 := []
   Exit: #1 app [1, 2] [] [1, 2]
+        X0 := [1, 2]
+        X1 := []
   Solution 3:
     X = [1, 2]
     Y = []
@@ -115,6 +133,7 @@ A breakpoint on append (without -i: the context is printed at each stop):
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
       Exit: #4 append [] [2] [2]
+        X0 := [2]
     Call: #5 append [2] [1] X1
   --- breakpoint at #5: append [2] [1] X1
     called from:
@@ -129,7 +148,9 @@ A breakpoint on append (without -i: the context is printed at each stop):
     local program (clauses added by =>, most recent first):
     eigenvariables in scope: no eigenvariable
       Exit: #6 append [] [1] [1]
+        X2 := [1]
     Exit: #5 append [2] [1] [2, 1]
+        X1 := [2, 1]
   Solution 1:
     R = [2, 1]
 

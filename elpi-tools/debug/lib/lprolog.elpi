@@ -13,7 +13,8 @@
 % ===== The shape of a term ============================================================
 %
 % Elpi has no builtin to take a λ-term or a connective apart; [shape-of]
-% does it once for all the walks of this file and of the explanation.
+% does it once for all the walks of this file, of the explanation and of
+% the stand-in of vars-of (primitives.elpi).
 
 data shape.
 symb flexible any -> shape.        % a logic variable (its head, for an applied one)
@@ -73,28 +74,9 @@ pred binder-counts i:list any, o:int.
 binder-counts [] 0.
 binder-counts [T|Ts] N :- binder-count T A, binder-counts Ts B, N is A + B.
 
-% [logic-vars T Vs]: the logic variables of T (their heads, once each, in
-% order of appearance).
-pred logic-vars i:any, o:list any.
-logic-vars T Vs :- logic-vars-acc T [] Rev, std.rev Rev Vs.
-
-pred logic-vars-acc i:any, i:list any, o:list any.
-logic-vars-acc T Acc Acc1 :- shape-of T S, shape-logic-vars S Acc Acc1.
-
-pred shape-logic-vars i:shape, i:list any, o:list any.
-shape-logic-vars (flexible H) Acc Acc :- std.exists Acc (same_var H), !.
-shape-logic-vars (flexible H) Acc [H|Acc].
-shape-logic-vars leaf Acc Acc.
-shape-logic-vars (node _ Ts) Acc Acc1 :- logic-vars-all Ts Acc Acc1.
-shape-logic-vars (binder F) Acc Acc1 :- pi x\ sigma B\ binder-body F x B, logic-vars-acc B Acc Acc1.
-
-pred logic-vars-all i:list any, i:list any, o:list any.
-logic-vars-all [] Acc Acc.
-logic-vars-all [T|Ts] Acc Acc2 :- logic-vars-acc T Acc Acc1, logic-vars-all Ts Acc1 Acc2.
-
 % [mentions-var T V]: the logic variable V occurs in T.
 pred mentions-var i:any, i:any.
-mentions-var T V :- logic-vars T Vs, std.exists Vs (same_var V).
+mentions-var T V :- vars-of T Vs, std.exists Vs (same_var V).
 
 % ===== Source names of binders ==========================================================
 
@@ -120,9 +102,11 @@ body-binder-names _ _ _ [].
 % [eigen X Name]: the eigenvariable X is shown as Name.
 pred eigen o:any, o:string.
 
-% [show-term T S]: T printed on one line, its eigenvariables named.
+% [show-term T S]: T printed on one line, its unification variables named
+% X<uuid> (term-string, primitives.elpi), its eigenvariables by their
+% source names.
 func show-term any -> string.
-show-term T S :- term_to_string T S0, rex.replace "\n *" " " S0 S1, names Es, rename-eigens Es 0 S1 S.
+show-term T S :- term-string T S0, rex.replace "\n *" " " S0 S1, names Es, rename-eigens Es 0 S1 S.
 
 % [rename-eigens Es L S0 S]: Es are the eigenvariables in scope from level
 % L on, the oldest first (as [names] gives them, whatever its documentation
@@ -137,7 +121,7 @@ rename-eigen E L S0 S :- eigen E Name, !,
 rename-eigen _ _ S S.
 
 % [eigen-names Es Ns]: the names of the eigenvariables Es.
-pred eigen-names i:list any, o:list string.
+func eigen-names list any -> list string.
 eigen-names [] [].
 eigen-names [E|Es] [N|Ns] :- show-term E N, eigen-names Es Ns.
 
@@ -163,7 +147,7 @@ pred show-scope i:(pred).
 show-scope G :-
   names Es, eigen-names Es Ns,
   say 1 ["eigenvariables in force (oldest first): ", {names-or-none Ns}],
-  logic-vars G Vs,
+  vars-of G Vs,
   show-var-scopes Vs.
 
 pred show-var-scopes i:list any.
@@ -173,7 +157,7 @@ show-var-scopes [V|Vs] :- show-var-scope V, show-var-scopes Vs.
 pred show-var-scope i:any.
 show-var-scope V :-
   visible-eigens V Es, eigen-names Es Ns,
-  say 1 ["  ", {show-term V}, " may depend on: ", {names-or-none Ns}].
+  say 1 ["  ", {uuid-name V}, " may depend on: ", {names-or-none Ns}].
 
 func names-or-none list string -> string.
 names-or-none [] "no eigenvariable" :- !.

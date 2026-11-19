@@ -21,8 +21,11 @@ program.
       Unify: #3 with hypothesis added by #1: of x#1 X1
         X4 := X1
       Exit: #3 of x#1 X1
+        X4 := X1
     Exit: #2 of (lam c1 \ x#1) (arr X3 X1)
+        X2 := arr X3 X1
   Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X1 (arr X3 X1))
+        X0 := arr X1 (arr X3 X1)
   Solution 1:
     T = arr X1 (arr X3 X1)
 
@@ -38,10 +41,10 @@ hypothesis added for x and why it does not apply:
     clauses tried:
       hypothesis added by #1: of c0 (arr X0 X1)
           does not match: argument 2 (output): X0 vs arr X0 X1 (occurs check: X0 occurs in arr X0 X1)
-      lambda.elpi:13: of (app X2^1 X3^1) X4^1
-          does not match: argument 1 (input): c0 vs app X2^1 X3^1
-      lambda.elpi:14: of (lam X5^1) (arr X6^1 X7^1)
-          does not match: argument 1 (input): c0 vs lam X5^1
+      lambda.elpi:13: of (app X2 X3) X4
+          does not match: argument 1 (input): c0 vs app X2 X3
+      lambda.elpi:14: of (lam X5) (arr X6 X7)
+          does not match: argument 1 (input): c0 vs lam X5
   No solution.
 
 At a breakpoint: the ancestors, the hypothetical clauses in scope (with
@@ -70,8 +73,11 @@ the call that added them) and the eigenvariables:
       of x#1 X2    (hypothesis added by #1)
     eigenvariables in scope: x#1, x#2
       Exit: #3 of x#1 X2
+        X3 := X2
     Exit: #2 of (lam c1 \ x#1) (arr X4 X2)
+        X1 := arr X4 X2
   Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X2 (arr X4 X2))
+        X0 := arr X2 (arr X4 X2)
   Solution 1:
     T = arr X2 (arr X4 X2)
 
@@ -98,9 +104,12 @@ Interactive: commands read from stdin (backtrace, hyps, step, continue).
       e            the deepest failure so far
       a            abort
      ?   Call: #2 of (lam c1 \ x#1) X1
-     ?     Call: #3 of x#1 X2
-     ?     Exit: #3 of x#1 X3
-     ?   Exit: #2 of (lam c1 \ x#1) (arr X4 X3)
-     ? Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X3 (arr X4 X3))
+     ?     Call: #3 of x#1 X3
+     ?     Exit: #3 of x#1 X2
+        X3 := X2
+     ?   Exit: #2 of (lam c1 \ x#1) (arr X4 X2)
+        X1 := arr X4 X2
+     ? Exit: #1 of (lam c0 \ lam c1 \ c0) (arr X2 (arr X4 X2))
+        X0 := arr X2 (arr X4 X2)
      ? Solution 1:
-    T = arr X3 (arr X4 X3)
+    T = arr X2 (arr X4 X2)

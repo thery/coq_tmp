@@ -49,31 +49,32 @@ continue to the end:
   -> {"seq":12,"type":"request","command":"next","arguments":{"threadId":1}}
   <- {"seq":19,"type":"response","request_seq":12,"success":true,"command":"next","body":null}
   <- {"seq":20,"type":"event","event":"output","body":{"category":"stdout","output":"  Exit: #2 append [2] [3] [2, 3]\n"}}
-  <- {"seq":21,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #2 append [2] [3] [2, 3]","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":21,"type":"event","event":"output","body":{"category":"stdout","output":"      X1 := [2, 3]\n"}}
+  <- {"seq":22,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #2 append [2] [3] [2, 3]\n      X1 := [2, 3]","threadId":1,"allThreadsStopped":true}}
   -> {"seq":13,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
-  <- {"seq":22,"type":"response","request_seq":13,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Exit: #2 append [2] [3] [2, 3]","id":2,"column":1,"source":{"name":"append.elpi","path":"append.elpi"},"line":6},{"name":"#1 append [1, 2] [3] [1, 2, 3]","id":1,"column":1,"source":{"name":"append.elpi","path":"append.elpi"},"line":6}],"totalFrames":2}}
+  <- {"seq":23,"type":"response","request_seq":13,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Exit: #2 append [2] [3] [2, 3]","id":2,"column":1,"source":{"name":"append.elpi","path":"append.elpi"},"line":6},{"name":"#1 append [1, 2] [3] [1, 2, 3]","id":1,"column":1,"source":{"name":"append.elpi","path":"append.elpi"},"line":6}],"totalFrames":2}}
   # Step out: the exit of the first call.
   -> {"seq":14,"type":"request","command":"stepOut","arguments":{"threadId":1}}
-  <- {"seq":23,"type":"response","request_seq":14,"success":true,"command":"stepOut","body":null}
-  <- {"seq":24,"type":"event","event":"output","body":{"category":"stdout","output":"Exit: #1 append [1, 2] [3] [1, 2, 3]\n"}}
-  <- {"seq":25,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #1 append [1, 2] [3] [1, 2, 3]","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":24,"type":"response","request_seq":14,"success":true,"command":"stepOut","body":null}
+  <- {"seq":25,"type":"event","event":"output","body":{"category":"stdout","output":"Exit: #1 append [1, 2] [3] [1, 2, 3]\n"}}
+  <- {"seq":26,"type":"event","event":"stopped","body":{"reason":"step","description":"Exit port","text":"Exit: #1 append [1, 2] [3] [1, 2, 3]","threadId":1,"allThreadsStopped":true}}
   # A command of elpi-debug in the debug console.
   -> {"seq":15,"type":"request","command":"evaluate","arguments":{"expression":"g","context":"repl"}}
-  <- {"seq":26,"type":"response","request_seq":15,"success":true,"command":"evaluate","body":{"result":"  called from:\n","variablesReference":0}}
+  <- {"seq":27,"type":"response","request_seq":15,"success":true,"command":"evaluate","body":{"result":"  called from:\n","variablesReference":0}}
   # Restart the first call (retry), then continue to the end.
   -> {"seq":16,"type":"request","command":"restartFrame","arguments":{"frameId":1}}
-  <- {"seq":27,"type":"response","request_seq":16,"success":true,"command":"restartFrame","body":null}
-  <- {"seq":28,"type":"event","event":"output","body":{"category":"stdout","output":"    retry #1: back to its call port\n"}}
-  <- {"seq":29,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #1 append [1, 2] [3] X0\n"}}
-  <- {"seq":30,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #1 append [1, 2] [3] X0","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":28,"type":"response","request_seq":16,"success":true,"command":"restartFrame","body":null}
+  <- {"seq":29,"type":"event","event":"output","body":{"category":"stdout","output":"    retry #1: back to its call port\n"}}
+  <- {"seq":30,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #1 append [1, 2] [3] X0\n"}}
+  <- {"seq":31,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #1 append [1, 2] [3] X0","threadId":1,"allThreadsStopped":true}}
   -> {"seq":17,"type":"request","command":"continue","arguments":{"threadId":1}}
-  <- {"seq":31,"type":"response","request_seq":17,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
-  <- {"seq":32,"type":"event","event":"output","body":{"category":"stdout","output":"Solution 1:\n"}}
-  <- {"seq":33,"type":"event","event":"output","body":{"category":"stdout","output":"  L = [1, 2, 3]\n"}}
-  <- {"seq":34,"type":"event","event":"exited","body":{"exitCode":0}}
-  <- {"seq":35,"type":"event","event":"terminated","body":null}
+  <- {"seq":32,"type":"response","request_seq":17,"success":true,"command":"continue","body":{"allThreadsContinued":true}}
+  <- {"seq":33,"type":"event","event":"output","body":{"category":"stdout","output":"Solution 1:\n"}}
+  <- {"seq":34,"type":"event","event":"output","body":{"category":"stdout","output":"  L = [1, 2, 3]\n"}}
+  <- {"seq":35,"type":"event","event":"exited","body":{"exitCode":0}}
+  <- {"seq":36,"type":"event","event":"terminated","body":null}
   -> {"seq":18,"type":"request","command":"disconnect","arguments":{}}
-  <- {"seq":36,"type":"response","request_seq":18,"success":true,"command":"disconnect","body":null}
+  <- {"seq":37,"type":"response","request_seq":18,"success":true,"command":"disconnect","body":null}
 
 Stop on entry; step through pi and => (the typing of λx.λy.x); the three
 scopes of a call: the goal, the local program (with the call that added
@@ -134,7 +135,7 @@ on); a frame running a hypothetical clause; f from the debug console:
   -> {"seq":14,"type":"request","command":"variables","arguments":{"variablesReference":1}}
   <- {"seq":35,"type":"response","request_seq":14,"success":true,"command":"variables","body":{"variables":[{"name":"goal","value":"of (lam c2 \\ x#1) (arr X3 X4)","variablesReference":0},{"name":"arg 1 (input)","value":"lam c2 \\ x#1","variablesReference":0},{"name":"arg 2 (output)","value":"arr X3 X4","variablesReference":0}]}}
   -> {"seq":15,"type":"request","command":"variables","arguments":{"variablesReference":2}}
-  <- {"seq":36,"type":"response","request_seq":15,"success":true,"command":"variables","body":{"variables":[{"name":"of x#1 X0","value":"hypothesis added by #1","variablesReference":0}]}}
+  <- {"seq":36,"type":"response","request_seq":15,"success":true,"command":"variables","body":{"variables":[{"name":"of x#1 X1","value":"hypothesis added by #1","variablesReference":0}]}}
   -> {"seq":16,"type":"request","command":"variables","arguments":{"variablesReference":3}}
   <- {"seq":37,"type":"response","request_seq":16,"success":true,"command":"variables","body":{"variables":[{"name":"x#1","value":"eigenvariable in force","variablesReference":0},{"name":"x#2","value":"eigenvariable in force","variablesReference":0},{"name":"X3","value":"may depend on no eigenvariable","variablesReference":0},{"name":"X4","value":"may depend on no eigenvariable","variablesReference":0}]}}
   # The same scopes for the call #1 (second in the stack: references 4, 5, 6).

@@ -4,7 +4,7 @@
 % The interpreter is in the files of this directory: fragments of one
 % block [namespace debug { }], which dune's rule (../dune) writes around
 % their concatenation, in the order: state, program, strategy, interpreter, compiled,
-% natives, lprolog, ports, stepper, machine, explain, profile.  README.md, section
+% natives, lprolog, primitives, ports, stepper, machine, explain, profile.  README.md, section
 % "How the interpreter works", reads them side by side.
 
 
@@ -24,6 +24,9 @@ symb seed int -> option.       % seed of the random order
 symb first-solution option.    % strategy: the first solution of each call only
 symb max-depth int -> option.  % strategy: calls deeper than this fail
 symb ignore-cut option.        % strategy: a cut does nothing
+symb query-vars list (pair string any) -> option.
+                               % the variables of the query, by their source names
+                               % (given by the driver; shown by machine.elpi)
 
 % [opt O]: option O is on (one local clause per option, installed by [run]).
 pred opt o:option.
