@@ -818,9 +818,11 @@ For the PDF and the HTML page it is shown as mathematics, ∀ n ∈ ℕ, n + 0
    of the same tree.
 
 A formula that does not elaborate keeps its text, shown as code.  On the
-79 texts of xtext and the 8 of cyp's examples (2090 formulas), 2 formulas
-are shown as code (`n` and `l1`, bound by a `fix` that no `Let`
-declares), and 1 has a part in Rocq's text (a `match`).
+82 English texts of xtext and the 11 of cyp's examples (1978 formulas,
+measured 2026-11-19 with `pdf.sh --source`), 2 formulas are shown as code
+(`n` and `l1`, bound by a `fix` that no `Let` declares).  Before the tree,
+on 79 + 8 texts (2090 formulas), the same 2, and 1 formula had a part in
+Rocq's text (a `match`; not counted again).
 
 ### The table
 
