@@ -394,7 +394,8 @@ check).  Its words are in the language of the text: the uses
 `legend-var`, ..., `legend-none` of the lexicon, in its ten languages
 (`write-word`).  In the web page it is a `footer class="legend"`, and each
 role in it is a switch (a check box) that turns the colour of that role on
-and off in the whole text (CSS only, no script).
+and off in the whole text (CSS only, no script); the button ↺ before them
+puts every switch back as the page started.
 
 The roles coloured are all of them by default; `pdf.sh --roles claim,by`
 (Typst's `--input roles=...`) colours only those listed: the others look
