@@ -585,8 +585,9 @@ check, the mark of a remark).  Its words are in the language of the text: the us
 `legend-ok`, ..., `legend-none` of the lexicon, in its ten languages
 (`write-word`).  In the web page it is a `footer class="legend"`, and each
 role in it is a switch (a check box) that turns the colour of that role on
-and off in the whole text (CSS only, no script); the button ↺ before them
-puts every switch back as the page started.
+and off in the whole text (CSS only); the button before them turns them
+all off when any is on, else all on, its label ☐ or ☑ being what the next
+click does (a few lines of script, `all-script`).
 
 The roles coloured are all of them by default; `pdf.sh --roles claim,just`
 (Typst's `--input roles=...`) colours only those listed: the others look

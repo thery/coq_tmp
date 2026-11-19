@@ -243,8 +243,7 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
       + ":not(footer.legend .formula) { background: none; }")
   }
   rules.push("footer.legend label { cursor: pointer; }")
-  rules.push("footer.legend form { display: inline; margin: 0; }")
-  rules.push("footer.legend button.reset { font: inherit; padding: 0 0.4em; margin-inline-end: 1em; cursor: pointer; border: 1px solid #b4b4b4; border-radius: 3px; background: #f4f4f4; color: #505050; }")
+  rules.push("footer.legend button.all { font: inherit; padding: 0 0.4em; margin-inline-end: 1em; cursor: pointer; border: 1px solid #b4b4b4; border-radius: 3px; background: #f4f4f4; color: #505050; }")
   rules.push("footer.legend input { margin: 0 0.3em 0 0; vertical-align: middle; }")
   for (status, s) in status-marks {
     rules.push(".mark." + status + " { color: " + s.colour.to-hex() + "; }")
@@ -579,17 +578,36 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
 // ------------------------------------------------------------------
 // The legend
 
+// [all-script]: the first button of the legend sets or unsets all the
+// roles' switches: a click while any switch is on turns them all off,
+// else all on; its label is what the next click does, ☐ (all off) or ☑
+// (all on)
+#let all-script = "
+(() => {
+  const legend = document.currentScript.closest('footer.legend');
+  const all = legend.querySelector('button.all');
+  const roles = [...legend.querySelectorAll('input[id^=show-]')];
+  function show() { all.textContent = roles.some(b => b.checked) ? '☐' : '☑'; }
+  all.addEventListener('click', () => {
+    const anyOn = roles.some(b => b.checked);
+    roles.forEach(b => { b.checked = !anyOn; });
+    show();
+  });
+  roles.forEach(b => b.addEventListener('change', show));
+  show();
+})();
+"
+
 // [legend(roles, statuses)]: the key of the look, at the end of the text:
 // each role's word (in the language of the text) with the look of the
 // role, then, for a text checked by cyp, each status mark with its
 // meaning; roles and statuses are lists of (role or status, word) pairs.
 // On the web page each role is a switch (a check box) that turns its
-// colour on and off; in the PDF only the shown roles are listed
+// colour on and off, and a first button (all-script) sets or unsets
+// them all; in the PDF only the shown roles are listed
 #let legend(roles, statuses: ()) = on-html(
-  // a form, so that its reset button (↺) puts every switch back as the
-  // page started, with no script
-  () => html.elem("footer", attrs: (class: "legend"), html.elem("form", {
-    html.elem("button", attrs: (type: "reset", class: "reset", title: "↺"), "↺")
+  () => html.elem("footer", attrs: (class: "legend"), {
+    html.elem("button", attrs: (type: "button", class: "all"), "☐")
     for (role, word) in roles {
       let box-attrs = (type: "checkbox", id: "show-" + role)
       if role in shown-roles { box-attrs.insert("checked", "") }
@@ -601,7 +619,8 @@ if (fixed) show(document.querySelector('.p[data-id=\"' + fixed[1] + '\"]'));
     for (status, word) in statuses {
       element("span", "entry", status-mark(status, false) + word)
     }
-  })),
+    html.elem("script", all-script)
+  }),
   () => block(above: 2em, {
     line(length: 30%, stroke: 0.4pt + luma(190))
     set std.text(size: 0.75em, fill: luma(70))

@@ -43,7 +43,8 @@ papers (in development):
   marks; on the web page, the pointer over a node highlights what it rests
   on (its conclusion, hypotheses, subnodes and the formulas its names point
   to), and the legend's roles are switches that turn their colours on and
-  off (↺ puts them back; `pdf.sh --roles claim,just` colours only those
+  off (a button before them turns them all off, or all on;
+  `pdf.sh --roles claim,just` colours only those
   roles); Arabic is laid out from right to left.  The PDF and the page have links: a name (h) and its
   uses lead to the step that introduced it, a lemma of the corelib or the
   stdlib to its documentation, and the pages of the gallery
