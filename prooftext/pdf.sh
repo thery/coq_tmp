@@ -21,7 +21,7 @@
 #                   [text, target] pairs (gallery.sh; the template's
 #                   page-links): typst compile --input links=JSON;
 #   --roles R,...   colour only the formulas of these roles (var, hyp,
-#                   claim, fact, by), the others plain; all by default.  On
+#                   claim, fact, just), the others plain; all by default.  On
 #                   the web page the legend turns each role on and off.
 #
 # Needs: the opam switch elpi5 (rocq-elpi), typst (0.15).  Typst.vo is
