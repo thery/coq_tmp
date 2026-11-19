@@ -52,7 +52,9 @@ a woken goal enters the interpreter through its Wake port.
 CHR in view, on leq.elpi (order constraints: reflexivity and
 antisymmetry simplify, transitivity propagates).  The answers are the
 real engine's, with and without -trace (which rewrites the guards of the
-rules to note their attempts):
+rules to note their attempts); also on parity.elpi (in a namespace, a
+rule that keeps a constraint and removes another, a rule that names a
+context):
 
   $ for g in 'leq A B, leq B C, leq C A' 'leq A B, leq B A' 'leq A B, leq B C' 'leq A B, leq B C, A = 3, C = 2' 'leq A B, leq B C, A = 1, C = 2' 'chain 5 L' 'chain 4 [A,B,C,D], D = A'; do elpi-debug -compare leq.elpi "$g"; elpi-debug -compare -trace leq.elpi "$g" | tail -1; done
   Same answers (1).
@@ -74,6 +76,13 @@ rules to note their attempts):
   Same answers (0).
   Same answers (1).
   Same answers (0).
+  $ for g in 'par.even X, par.odd X' 'par.even X, par.even X' 'par.even X, par.even X, X = 2'; do elpi-debug -compare parity.elpi "$g"; elpi-debug -compare -trace parity.elpi "$g" | tail -1; done
+  Same answers (0).
+  Same answers (0).
+  Same answers (1).
+  Same answers (1).
+  Same answers (1).
+  Same answers (1).
 
 The attempts of the rules (those whose heads match: the numbers of the
 constraints tried on), then their outcome: the guard fails, or the rule

@@ -1,0 +1,15 @@
+% CHR in a namespace: a simpagation rule (keeps the first constraint,
+% removes the second), and a rule that names the context of a constraint.
+
+namespace par {
+func even int.
+func odd int.
+constraint even odd {
+  rule (even X) \ (odd X) <=> (fail).
+  rule \ (C ?- even X) (even X) <=> (even X).
+}
+even X :- var X, !, declare_constraint (even X) [X].
+even X :- 0 is X mod 2.
+odd X :- var X, !, declare_constraint (odd X) [X].
+odd X :- 1 is X mod 2.
+}

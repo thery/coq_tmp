@@ -259,15 +259,16 @@ let rule_location (r : _ PAst.Chr.t) =
 (* [is_discarded t]: t is the context of a constraint that the rule does not read *)
 let is_discarded (t : T.t) = match t.it with T.Const f -> PAst.Func.equal f PAst.Func.dummyname | _ -> false
 
-(* [with_named_contexts sequents]: the sequents of the constraints matched,
-   with a variable for each context the rule does not read, and the
-   contexts (named or written by the rule), in order. *)
-let with_named_contexts (sequents : T.t PAst.Chr.sequent list) =
+(* [with_named_contexts ~first sequents]: the sequents of the constraints
+   matched, with a variable of its own for each context the rule does not
+   read (Debug_context_N, N from [first]), and the contexts (named or
+   written by the rule), in order. *)
+let with_named_contexts ~first (sequents : T.t PAst.Chr.sequent list) =
   List.split
     (List.mapi
        (fun i (s : T.t PAst.Chr.sequent) ->
          if is_discarded s.context then
-           let context = named s.context.loc (Printf.sprintf "Debug_context_%d" (i + 1)) in
+           let context = named s.context.loc (Printf.sprintf "Debug_context_%d" (first + i)) in
            ({ s with context }, context)
          else (s, s.context))
        sequents)
@@ -284,8 +285,8 @@ let requested_goal (r : _ PAst.Chr.t) =
    outcome first *)
 let with_attempt_reported (r : _ PAst.Chr.t) =
   let l = r.loc in
-  let to_match, kept_contexts = with_named_contexts r.to_match in
-  let to_remove, removed_contexts = with_named_contexts r.to_remove in
+  let to_match, kept_contexts = with_named_contexts ~first:1 r.to_match in
+  let to_remove, removed_contexts = with_named_contexts ~first:(1 + List.length r.to_match) r.to_remove in
   let tried =
     T.mkApp l
       [ named l "debug.rule-tried"; rule_location r; int_term l (List.length r.to_match);
