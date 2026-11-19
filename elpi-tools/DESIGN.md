@@ -93,7 +93,7 @@ the API (signature), its contract, where it would be used
 | 4 | CHR: a rule's goal run in the current program | feature | a runner goal suspended at the start, fed through CHR |
 | 5 | CHR: an event per rule attempt and outcome | feature | every guard rewritten, notes on an OCaml queue |
 | 6 | CHR: the identity of a suspension, the store from Elpi | feature | a number hidden in the context of each constraint |
-| 7 | LPCIC/elpi#505 | bug fix | bridges as static rules, a first run to write them |
+| 7 | LPCIC/elpi#505 (fixed on master b5dec85, not released) | bug fix | bridges as static rules, a first run to write them |
 | 8 | API: compile parsed units | feature | one `Obj.magic` |
 | 9 | take a goal apart (conjunction, builtin, λ) | feature | one pattern per arity up to 16 |
 | 10 | `catch`/`throw` | feature | retry unwinds by failing every event |

@@ -273,6 +273,10 @@ bounds")` (elpi 4.0.0, and master 631d14a).  Minimal form:
 [`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi)
 (`elpi -test chr-pi-local-clause.elpi`).
 
+**Status:** fixed on Elpi's master (b5dec85, 2026-11-19), not yet in a
+release.  The stand-in below stays while elpi-tools targets Elpi 4.0.0,
+and goes at the first release with the fix.
+
 **Used by** `program.elpi`, section Bridges (one native rule per
 predicate of the program, `P X1 .. Xn :- !, debug.bridge (P X1 .. Xn)`,
 which sends a native call back to the interpreter): `interpreter.elpi:run`
