@@ -36,8 +36,8 @@ a woken goal enters the interpreter through its Wake port.
   Unify: #2 with chr.elpi:14: odd X0
   Cut: #2 commits to its current clause
     Delay: [S2] odd X0 on [X0]
-    Rule: clause 6 chr.elpi:5 tried on [S1, S2]
-    Rule: clause 6 chr.elpi:5 fires
+    Rule: clause 6 chr.elpi:6 tried on [S1, S2]
+    Rule: clause 6 chr.elpi:6 fires
   CHR: both even and odd
   Fail: #2 odd X0
   Redo: #1 even X0
@@ -94,41 +94,41 @@ fires runs in the interpreter, at the level of the query:
   Unify: #1 with leq.elpi:13: leq X0 X1
   Cut: #1 commits to its current clause
     Delay: [S1] leq X0 X1 on [X0, X1]
-    Rule: clause 7 leq.elpi:6 tried on [S1]
-    Rule: clause 7 leq.elpi:6 guard fails
+    Rule: clause 7 leq.elpi:7 tried on [S1]
+    Rule: clause 7 leq.elpi:7 guard fails
   Exit: #1 leq X0 X1
   Call: #2 leq X1 X2
   Unify: #2 with leq.elpi:13: leq X1 X2
   Cut: #2 commits to its current clause
     Delay: [S2] leq X1 X2 on [X1, X2]
-    Rule: clause 7 leq.elpi:6 tried on [S2]
-    Rule: clause 7 leq.elpi:6 guard fails
-    Rule: clause 9 leq.elpi:8 tried on [S1, S2]
-    Rule: clause 9 leq.elpi:8 fires
-  Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:8)
+    Rule: clause 7 leq.elpi:7 tried on [S2]
+    Rule: clause 7 leq.elpi:7 guard fails
+    Rule: clause 9 leq.elpi:9 tried on [S1, S2]
+    Rule: clause 9 leq.elpi:9 fires
+  Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:9)
   Unify: #3 with leq.elpi:13: leq X0 X2
   Cut: #3 commits to its current clause
     Delay: [S3] leq X0 X2 on [X0, X2]
-    Rule: clause 7 leq.elpi:6 tried on [S3]
-    Rule: clause 7 leq.elpi:6 guard fails
+    Rule: clause 7 leq.elpi:7 tried on [S3]
+    Rule: clause 7 leq.elpi:7 guard fails
   Exit: #3 leq X0 X2
   Exit: #2 leq X1 X2
   Call: #4 leq X2 X0
   Unify: #4 with leq.elpi:13: leq X2 X0
   Cut: #4 commits to its current clause
     Delay: [S4] leq X2 X0 on [X2, X0]
-    Rule: clause 7 leq.elpi:6 tried on [S4]
-    Rule: clause 7 leq.elpi:6 guard fails
-    Rule: clause 8 leq.elpi:7 tried on [S4, S3]
-    Rule: clause 8 leq.elpi:7 fires, removes [S4, S3]
+    Rule: clause 7 leq.elpi:7 tried on [S4]
+    Rule: clause 7 leq.elpi:7 guard fails
+    Rule: clause 8 leq.elpi:8 tried on [S4, S3]
+    Rule: clause 8 leq.elpi:8 fires, removes [S4, S3]
     Resume: [S2] #5 leq X1 X0
     Unify: #5 with leq.elpi:13: leq X1 X0
     Cut: #5 commits to its current clause
       Delay: [S5] leq X1 X0 on [X1, X0]
-      Rule: clause 7 leq.elpi:6 tried on [S5]
-      Rule: clause 7 leq.elpi:6 guard fails
-      Rule: clause 8 leq.elpi:7 tried on [S5, S1]
-      Rule: clause 8 leq.elpi:7 fires, removes [S5, S1]
+      Rule: clause 7 leq.elpi:7 tried on [S5]
+      Rule: clause 7 leq.elpi:7 guard fails
+      Rule: clause 8 leq.elpi:8 tried on [S5, S1]
+      Rule: clause 8 leq.elpi:8 fires, removes [S5, S1]
     Exit: [S2] #5 leq X0 X0
         X1 := X0
   Exit: #4 leq X0 X0
@@ -144,17 +144,17 @@ numbered after the rules: here 7 to 9), the store at a stop:
   $ printf '+ clause 9\nl\nstore\nc\nc\ng\nstore\n- clause 9\nl\n' | elpi-debug -i -echo leq.elpi 'leq A B, leq B C, leq C A'
   Call: #1 leq X0 X1
      ? + clause 9
-    breakpoint on the clause at leq.elpi:8
+    breakpoint on the clause at leq.elpi:9
      ? l
-    Rule: clause 9 leq.elpi:8 tried on [S1, S2]
+    Rule: clause 9 leq.elpi:9 tried on [S1, S2]
      ? store
     the constraint store (the goals suspended by declare_constraint, most recent first):
       [S2] leq X1 X2
       [S1] leq X0 X1
      ? c
-    Rule: clause 9 leq.elpi:8 fires
+    Rule: clause 9 leq.elpi:9 fires
      ? c
-  Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:8)
+  Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:9)
      ? g
     called from:
      ? store
@@ -162,7 +162,7 @@ numbered after the rules: here 7 to 9), the store at a stop:
       [S2] leq X1 X2
       [S1] leq X0 X1
      ? - clause 9
-    no breakpoint on the clause at leq.elpi:8
+    no breakpoint on the clause at leq.elpi:9
      ? l
   Solution 1:
     A = X0
@@ -173,8 +173,8 @@ With -machine: the CHR rules in the listing of the program, and at each
 stop the store and, at a stop at a CHR rule, its location:
 
   $ printf '+ clause 9\nl\nn\n' | elpi-debug -machine leq.elpi 'leq A B, leq B C' | sed -E 's|"/[^"]*/([^/"]+[.]elpi)"|"\1"|g' | grep -o '"clauses":.*\]\|"text":"Rule[^"]*"\|"store":.*'
-  "clauses":[{"clause":1,"predicate":"leq","file":"leq.elpi","line":13},{"clause":2,"predicate":"leq","file":"leq.elpi","line":14},{"clause":3,"predicate":"leq","file":"leq.elpi","line":15},{"clause":4,"predicate":"leq","file":"leq.elpi","line":16},{"clause":5,"predicate":"chain","file":"leq.elpi","line":20},{"clause":6,"predicate":"chain","file":"leq.elpi","line":21},{"clause":7,"predicate":"(CHR rule)","file":"leq.elpi","line":6},{"clause":8,"predicate":"(CHR rule)","file":"leq.elpi","line":7},{"clause":9,"predicate":"(CHR rule)","file":"leq.elpi","line":8}],"declarations":[{"file":"leq.elpi","line":12},{"file":"leq.elpi","line":19}]
+  "clauses":[{"clause":1,"predicate":"leq","file":"leq.elpi","line":13},{"clause":2,"predicate":"leq","file":"leq.elpi","line":14},{"clause":3,"predicate":"leq","file":"leq.elpi","line":15},{"clause":4,"predicate":"leq","file":"leq.elpi","line":16},{"clause":5,"predicate":"chain","file":"leq.elpi","line":20},{"clause":6,"predicate":"chain","file":"leq.elpi","line":21},{"clause":7,"predicate":"(CHR rule)","file":"leq.elpi","line":7},{"clause":8,"predicate":"(CHR rule)","file":"leq.elpi","line":8},{"clause":9,"predicate":"(CHR rule)","file":"leq.elpi","line":9}],"declarations":[{"file":"leq.elpi","line":12},{"file":"leq.elpi","line":19}]
   "store":[],"rule":null}
   "store":[],"rule":null}
-  "text":"Rule: clause 9 leq.elpi:8 tried on [S1, S2]"
-  "store":[{"suspension":2,"goal":"leq X1 X2"},{"suspension":1,"goal":"leq X0 X1"}],"rule":{"file":"leq.elpi","line":8}}
+  "text":"Rule: clause 9 leq.elpi:9 tried on [S1, S2]"
+  "store":[{"suspension":2,"goal":"leq X1 X2"},{"suspension":1,"goal":"leq X0 X1"}],"rule":{"file":"leq.elpi","line":9}}

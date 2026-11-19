@@ -198,28 +198,28 @@ goal that CHR suspended:
   -> {"seq":8,"type":"request","command":"disconnect","arguments":{}}
   <- {"seq":20,"type":"response","request_seq":8,"success":true,"command":"disconnect","body":null}
 
-A breakpoint in the margin on a CHR rule (transitivity, line 8 of
+A breakpoint in the margin on a CHR rule (transitivity, line 9 of
 leq.elpi): the run stops at its attempt, the call in focus shown at the
 rule; the scope Constraints lists the store; then the outcome and the
 goal of the rule:
 
   $ replay chr-rule.dap
-  # A breakpoint in the margin on a CHR rule (transitivity, leq.elpi line 8): the run stops at its attempts.
+  # A breakpoint in the margin on a CHR rule (transitivity, leq.elpi line 9): the run stops at its attempts.
   -> {"seq":1,"type":"request","command":"initialize","arguments":{"adapterID":"elpi"}}
   <- {"seq":1,"type":"response","request_seq":1,"success":true,"command":"initialize","body":{"supportsConfigurationDoneRequest":true,"supportsFunctionBreakpoints":true,"supportsRestartFrame":true,"supportsTerminateRequest":true,"supportsEvaluateForHovers":false,"supportsStepBack":false}}
   -> {"seq":2,"type":"request","command":"launch","arguments":{"program":"leq.elpi","goal":"leq A B, leq B C, leq C A"}}
   <- {"seq":2,"type":"response","request_seq":2,"success":true,"command":"launch","body":null}
   <- {"seq":3,"type":"event","event":"initialized","body":null}
-  -> {"seq":3,"type":"request","command":"setBreakpoints","arguments":{"source":{"path":"leq.elpi"},"breakpoints":[{"line":8}]}}
-  <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setBreakpoints","body":{"breakpoints":[{"verified":true,"line":8}]}}
+  -> {"seq":3,"type":"request","command":"setBreakpoints","arguments":{"source":{"path":"leq.elpi"},"breakpoints":[{"line":9}]}}
+  <- {"seq":4,"type":"response","request_seq":3,"success":true,"command":"setBreakpoints","body":{"breakpoints":[{"verified":true,"line":9}]}}
   -> {"seq":4,"type":"request","command":"configurationDone","arguments":{}}
   <- {"seq":5,"type":"response","request_seq":4,"success":true,"command":"configurationDone","body":null}
   <- {"seq":6,"type":"event","event":"output","body":{"category":"console","output":"Start: leq A B, leq B C, leq C A   (running to the first breakpoint, or to the end)\n"}}
-  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Rule: clause 9 leq.elpi:8 tried on [S1, S2]\n"}}
-  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Rule step","text":"Rule: clause 9 leq.elpi:8 tried on [S1, S2]","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":7,"type":"event","event":"output","body":{"category":"stdout","output":"  Rule: clause 9 leq.elpi:9 tried on [S1, S2]\n"}}
+  <- {"seq":8,"type":"event","event":"stopped","body":{"reason":"breakpoint","description":"Rule step","text":"Rule: clause 9 leq.elpi:9 tried on [S1, S2]","threadId":1,"allThreadsStopped":true}}
   # The stack: the call in focus is shown at the rule, named by the attempt.
   -> {"seq":5,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
-  <- {"seq":9,"type":"response","request_seq":5,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Rule: clause 9 leq.elpi:8 tried on [S1, S2]","id":0,"column":1,"source":{"name":"leq.elpi","path":"leq.elpi"},"line":8}],"totalFrames":1}}
+  <- {"seq":9,"type":"response","request_seq":5,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Rule: clause 9 leq.elpi:9 tried on [S1, S2]","id":0,"column":1,"source":{"name":"leq.elpi","path":"leq.elpi"},"line":9}],"totalFrames":1}}
   # The scopes of the call in focus; the Constraints scope (the fifth): the store.
   -> {"seq":6,"type":"request","command":"scopes","arguments":{"frameId":0}}
   <- {"seq":10,"type":"response","request_seq":6,"success":true,"command":"scopes","body":{"scopes":[{"name":"Goal","presentationHint":"arguments","variablesReference":1,"expensive":false},{"name":"Query","presentationHint":"locals","variablesReference":2,"expensive":false},{"name":"Local program (=>)","presentationHint":"locals","variablesReference":3,"expensive":false},{"name":"Eigenvariables","presentationHint":"locals","variablesReference":4,"expensive":false},{"name":"Constraints","presentationHint":"locals","variablesReference":5,"expensive":false}]}}
@@ -228,14 +228,14 @@ goal of the rule:
   # The outcome of the attempt (step in), then the goal of the rule, then on to the end.
   -> {"seq":8,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":12,"type":"response","request_seq":8,"success":true,"command":"stepIn","body":null}
-  <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"  Rule: clause 9 leq.elpi:8 fires\n"}}
-  <- {"seq":14,"type":"event","event":"stopped","body":{"reason":"step","description":"Rule step","text":"Rule: clause 9 leq.elpi:8 fires","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":13,"type":"event","event":"output","body":{"category":"stdout","output":"  Rule: clause 9 leq.elpi:9 fires\n"}}
+  <- {"seq":14,"type":"event","event":"stopped","body":{"reason":"step","description":"Rule step","text":"Rule: clause 9 leq.elpi:9 fires","threadId":1,"allThreadsStopped":true}}
   -> {"seq":9,"type":"request","command":"stepIn","arguments":{"threadId":1}}
   <- {"seq":15,"type":"response","request_seq":9,"success":true,"command":"stepIn","body":null}
-  <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:8)\n"}}
-  <- {"seq":17,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:8)","threadId":1,"allThreadsStopped":true}}
+  <- {"seq":16,"type":"event","event":"output","body":{"category":"stdout","output":"Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:9)\n"}}
+  <- {"seq":17,"type":"event","event":"stopped","body":{"reason":"step","description":"Call port","text":"Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:9)","threadId":1,"allThreadsStopped":true}}
   -> {"seq":10,"type":"request","command":"stackTrace","arguments":{"threadId":1}}
-  <- {"seq":18,"type":"response","request_seq":10,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Call: #3 leq X0 X2","id":3,"column":1,"source":{"name":"leq.elpi","path":"leq.elpi"},"line":8}],"totalFrames":1}}
+  <- {"seq":18,"type":"response","request_seq":10,"success":true,"command":"stackTrace","body":{"stackFrames":[{"name":"Call: #3 leq X0 X2","id":3,"column":1,"source":{"name":"leq.elpi","path":"leq.elpi"},"line":9}],"totalFrames":1}}
   -> {"seq":11,"type":"request","command":"variables","arguments":{"variablesReference":5}}
   <- {"seq":19,"type":"response","request_seq":11,"success":true,"command":"variables","body":{"variables":[{"name":"[S2]","value":"leq X1 X2","variablesReference":0},{"name":"[S1]","value":"leq X0 X1","variablesReference":0}]}}
   -> {"seq":12,"type":"request","command":"setBreakpoints","arguments":{"source":{"path":"leq.elpi"},"breakpoints":[]}}

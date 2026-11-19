@@ -250,9 +250,10 @@ let string_term loc s = T.mkC loc (PAst.cstring.Elpi_util.Util.CData.cin s)
 let int_term loc n = T.mkC loc (PAst.cint.Elpi_util.Util.CData.cin n)
 let list_term loc ts = T.mkSeq ~loc (ts @ [ T.mkNil loc ])
 
-(* [rule_location r]: the term reflect.srcloc File Line Column of the rule r *)
+(* [rule_location r]: the term reflect.srcloc File Line Column of the rule r,
+   as reflect gives it (at its first head) *)
 let rule_location (r : _ PAst.Chr.t) =
-  let l = r.loc in
+  let l = Elpi_reflect.Reflect.chr_rule_loc r in
   T.mkApp l
     [ named l "reflect.srcloc"; string_term l l.source_name; int_term l l.line; int_term l (l.source_start - l.line_starts_at) ]
 
