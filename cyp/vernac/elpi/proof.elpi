@@ -286,21 +286,12 @@ scope-ctx (context-item Id _ T _ C) Vs Hs Body (prod Nm T TyR) (fun Nm T PfR) N 
 % would rename a second H behind the text's back)
 pred hyp-name i:option string, o:name.
 hyp-name (some S) N :- !, coq.id->name S N.
-hyp-name none N :- names-in-scope Used, numbered-free-name Used "H" 1 S, coq.id->name S N.
+hyp-name none N :- names-in-scope Used, prooftext.numbered-name Used "H" 1 S, coq.id->name S N.
 
 % [names-in-scope Used]: the names of the variables, hypotheses, claims and
 % definitions declared so far
 pred names-in-scope o:list string.
 names-in-scope Used :- std.findall (name-in-scope _) L, std.map L (c\ s\ c = name-in-scope s) Used.
-
-% [numbered-free-name Used Base K Name]: the first of BaseK, BaseK+1, ...
-% not in Used
-pred numbered-free-name i:list string, i:string, i:int, o:string.
-numbered-free-name Used Base K Name :-
-  Candidate is Base ^ {std.any->string K},
-  if (std.mem! Used Candidate)
-     (K1 is K + 1, numbered-free-name Used Base K1 Name)
-     (Name = Candidate).
 
 % [open-level Acc Steps Ty Pf N Rs]: the claims of the steps, with no goal;
 % Acc the claims so far (their types and the variables naming them)
