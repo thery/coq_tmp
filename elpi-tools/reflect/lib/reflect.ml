@@ -209,7 +209,7 @@ let rec last_located (t : Term.t) : Loc.t =
    t.  Elpi's locations give the offset of the end of a term, not its line:
    the line is found in the text of the file, read once; when the file
    cannot be read (Elpi's resolver may name a file by a path that does not
-   exist, e.g. under a directory whose name starts with a dot), from the
+   exist: seen in dune's test sandbox, cause not known), from the
    sub-term that starts last, which is exact unless a line break lies
    after its start (a closing parenthesis on a line of its own, a string
    on several lines). *)

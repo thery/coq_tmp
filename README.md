@@ -40,7 +40,7 @@ development), in [elpi-tools/](elpi-tools):
 
 - [reflect/](elpi-tools/reflect/README.md): **a program as data**.
   `elpi-reflect file.elpi` prints the types, constructors, signatures with
-  modes, rules and CHR rules of an Elpi program as Elpi facts, for tools
+  modes, rules (with the place of each premise) and CHR rules of an Elpi program as Elpi facts, for tools
   written in Elpi (Elpi has no `clause/2`).
 - [check/](elpi-tools/check/README.md): **property-based testing**.
   Properties written in the program, `property "rev-involutive" (pi L R L2\
@@ -58,7 +58,8 @@ development), in [elpi-tools/](elpi-tools):
   stepping, counts and time per predicate, and on failure the deepest
   failing goal with each clause tried and why it did not apply (or that the
   predicate has no clause at all); the bindings made by each unify step and
-  by each call (at its exit).  About 20 times slower than the real engine
+  by each call (at its exit); at each call, the premise of the clause it
+  comes from (`premise 1 of lists.elpi:16`).  About 20 times slower than the real engine
   on the benchmarks of its README.  Its strategy can be random:
   elpi-check uses it to generate.  What it knows of the variables of a
   run goes through three primitives that Elpi's core could provide,
@@ -67,7 +68,8 @@ development), in [elpi-tools/](elpi-tools):
   a debug adapter (Debug Adapter Protocol) on `elpi-debug -machine`, and a
   small VS Code extension: breakpoints on clause lines and on predicates,
   step in, over, out, continue, pause, restart a call, the stack of calls
-  at their clauses, four scopes (the goal, the variables of the query by
+  at the goals they come from (the premise highlighted, not the whole
+  clause line), four scopes (the goal, the variables of the query by
   their names, the local program, the eigenvariables), watch expressions.
   The same extension shows the properties of elpi-check in the Test
   Explorer (run buttons on their lines, the shrunk

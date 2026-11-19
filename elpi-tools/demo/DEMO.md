@@ -145,12 +145,12 @@ Unify: #1 with lambda.elpi:20: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
       X0 := arr X1 X2
   Pi: x#1 is a new eigenvariable; its scope: (of x#1 X1) ==> of (lam c1 \ x#1) X2
   Assume: of x#1 X1   (added to the local program, for of (lam c1 \ x#1) X2 only)
-  Call: #2 of (lam c1 \ x#1) X2
+  Call: #2 of (lam c1 \ x#1) X2   (premise 1 of lambda.elpi:20)
   Unify: #2 with lambda.elpi:20: of (lam c1 \ x#1) (arr X3 X4)
       X2 := arr X3 X4
     Pi: x#2 is a new eigenvariable; its scope: (of x#2 X3) ==> of x#1 X4
     Assume: of x#2 X3   (added to the local program, for of x#1 X4 only)
-    Call: #3 of x#1 X4
+    Call: #3 of x#1 X4   (premise 1 of lambda.elpi:20)
     Unify: #3 with hypothesis added by #1: of x#1 X1
       X4 := X1
     Exit: #3 of x#1 X1
@@ -184,7 +184,7 @@ Unify: #1 with lambda.elpi:20: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
    ? c
   Assume: of x#1 X1   (added to the local program, for of (lam c1 \ x#1) X2 only)
    ? c
-  Call: #2 of (lam c1 \ x#1) X2
+  Call: #2 of (lam c1 \ x#1) X2   (premise 1 of lambda.elpi:20)
    ? c
   Unify: #2 with lambda.elpi:20: of (lam c1 \ x#1) (arr X3 X4)
       X2 := arr X3 X4
@@ -305,21 +305,21 @@ after line 9 fails on `0 < 0`):
 $ elpi-debug -trace lists.elpi 'sort [0,0] S'
 Call: #1 sort [0, 0] X0
 Unify: #1 with lists.elpi:16: sort [0, 0] X0
-  Call: #2 sort [0] X1
+  Call: #2 sort [0] X1   (premise 1 of lists.elpi:16)
   Unify: #2 with lists.elpi:16: sort [0] X1
-    Call: #3 sort [] X2
+    Call: #3 sort [] X2   (premise 1 of lists.elpi:16)
     Unify: #3 with lists.elpi:15: sort [] []
       X2 := []
     Exit: #3 sort [] []
       X2 := []
-    Call: #4 insert 0 [] X1
+    Call: #4 insert 0 [] X1   (premise 2 of lists.elpi:16)
     Unify: #4 with lists.elpi:8: insert 0 [] [0]
       X1 := [0]
     Exit: #4 insert 0 [] [0]
       X1 := [0]
   Exit: #2 sort [0] [0]
       X1 := [0]
-  Call: #5 insert 0 [0] X0
+  Call: #5 insert 0 [0] X0   (premise 2 of lists.elpi:16)
   Unify: #5 with lists.elpi:9: insert 0 [0] [0, 0]
       X0 := [0, 0]
   Unify: #5 with lists.elpi:10: insert 0 [0] [0]

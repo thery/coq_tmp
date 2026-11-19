@@ -7,7 +7,9 @@ the program, which [`../reflect`](../reflect/README.md) gives as Elpi data,
 and shows what the real engine does not:
 
 - the four **ports** of each call (call, exit, redo, fail, as in Prolog
-  tracers), and the steps of **λProlog** inside a call: the **unify** port
+  tracers; at the call port, the **premise** it comes from: `(premise 2 of
+  lists.elpi:16)`, the second goal of the body of that clause), and the
+  steps of **λProlog** inside a call: the **unify** port
   of the selected clause (where it comes from, file:line or a hypothesis
   and the call that added it; the bindings it makes, higher-order ones and
   **pruning** included), the entry into **pi** (a new eigenvariable, shown
@@ -58,7 +60,7 @@ No solution.
 $ elpi-debug -trace tests/chr.elpi 'double 3 Y'
 Call: #1 double 3 X0
 Unify: #1 with chr.elpi:18: double 3 X0
-  Call: #2 even X0
+  Call: #2 even X0   (premise 1 of chr.elpi:18)
   Unify: #2 with chr.elpi:10: even X0
   Cut: #2 commits to its current clause
     Delay: [S1] even X0 on [X0]
@@ -111,7 +113,7 @@ Unify: #1 with lambda.elpi:14: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
    ? c
   Assume: of x#1 X1   (added to the local program, for of (lam c1 \ x#1) X2 only)
    ? c
-  Call: #2 of (lam c1 \ x#1) X2
+  Call: #2 of (lam c1 \ x#1) X2   (premise 1 of lambda.elpi:14)
    ? scope
   eigenvariables in force (oldest first): x#1
     X2 may depend on: no eigenvariable
@@ -178,13 +180,33 @@ the call port, bound by a call inside, after a CHR resume).  A call that
 is not seen at its call port takes no mark (its exit, if shown, has no
 bindings): with `-profile`, or between breakpoints, nothing of this runs.
 
+**Where a call comes from.**  The call port of a call says which goal of
+which clause made it: `Call: #2 sort [0] X1   (premise 1 of
+lists.elpi:16)` is the call made by the first goal of the body of the rule
+on line 16, `sort [X | L] S :- sort L S1, insert X S1 S.` (the goals are
+those of the top-level conjunction of the body, nested conjunctions
+flattened as Elpi reads them: `a, (b, c)` has three; a call inside a `pi`,
+`=>`, `;` or `not` comes from the goal that holds it; a call made back by a
+builtin, as `std.forall L p`, from the goal of the builtin).  For a
+hypothetical clause: `(premise 2 of hypothesis added by #4)`.  Calls of
+the query and woken goals have no premise.  `-machine` gives, for each
+call of the stack, the place of that goal in the source (line, column, end
+line, end column, from elpi-reflect's `reflect.premises`), and elpi-dap
+highlights it.  The premise is compiled into the clause, once
+(`compile-body`, [`lib/compiled.elpi`](lib/compiled.elpi)): each call
+of the goal N is entered `called-from (premise Origin N)`, kept in its
+frame; on the fast path (no event shown or recorded) the calls are
+compiled as before and nothing is kept.
+
 **For a front end** (`-machine`, [`lib/machine.elpi`](lib/machine.elpi)): besides the
 usual text, elpi-debug prints lines `@@elpi-debug {JSON}`: first the
 listing of the rules (numbered, with file and line) and of the lines of
 the declarations; then, at each stop and in place of the prompt, the
 description of the stop (its number, why it stops: `start`, `step`,
 `breakpoint`, `pause`; the event; the stack of calls, each with the clause
-it runs, its arguments and what each of its logic variables may depend on;
+it runs, the premise it comes from (the goal of its caller's clause, with
+its place: file, line, column, end line, end column), its arguments and
+what each of its logic variables may depend on;
 the bindings of a unify step or of an exit port; the local program;
 the eigenvariables; the variables of the query by their source names,
 `L` of `append [1] [2] L`, with their values, which the driver finds in
@@ -200,7 +222,8 @@ Build and test: `cd elpi-tools && dune build && dune test`.  The tests
 breakpoints and stepping on five small programs (lists, cut, a typed
 λ-calculus, CHR, a predicate defined nowhere) and check with `-compare`
 that the interpreter gives the answers of the real engine;
-[`tests/machine.t`](tests/machine.t) records a session of `-machine`.
+[`tests/machine.t`](tests/machine.t) records a session of `-machine`;
+[`tests/premises.t`](tests/premises.t) the premise of each call.
 
 ## How the interpreter works
 
@@ -211,9 +234,9 @@ resolves names block by block).  Read them in this order:
 1. **[`state.elpi`](lib/state.elpi): the data.**  The options of `run`;
    the strategy, one value `strategy Order Solutions Depth Cut` (Elpi's
    own is `strategy in-order all-solutions unbounded honour-cut`); a
-   `frame` per call (`#Id`, depth, predicate, goal), a `box` (a frame,
-   the frames above it, how it was entered), a context `ctx` (where a goal
-   runs); the safes that keep what must survive backtracking.
+   `frame` per call (`#Id`, depth, predicate, goal, how it was entered:
+   from which premise of which clause, or woken), a `box` (a frame and the
+   frames above it), a context `ctx` (where a goal runs); the safes that keep what must survive backtracking.
 2. **[`program.elpi`](lib/program.elpi): the program as data.**  The
    driver ([`bin/`](bin)) runs elpi-reflect on FILE and compiles, in this
    order: `reflect.elpi`; `debug.elpi`; FILE **without its rules** (its
@@ -286,7 +309,8 @@ resolves names block by block).  Read them in this order:
      indexing of Elpi and more), and matches them; `Rest` does the other
      arguments in order (`match-arg`, `unify-arg`: head unifications, which
      do not walk the goal as `=` and `pattern_match` do), with the unify
-     event; `Body` is the compiled body.  It returns nothing: Elpi makes the
+     event; `Body` is the compiled body (`compile-body`: with events, each
+     call it makes knows the premise it comes from).  It returns nothing: Elpi makes the
      occurs check on every local clause (`:nooc` does not apply to them), so
      an output would walk the stack of calls.  `with-rule-cache G` keeps the
      compiled rules across the runs of G (elpi-check uses it).
@@ -521,6 +545,25 @@ made since (about 0.15 s of the 0.21 s, measured by switching the mark
 off); the rest is the stand-in of `uuid` (a print per variable named) in
 the unify step.  The real builtins would remove most of it.
 
+**The premise of each call** (2026-11-19, load 4.7-5.5, minimum of 10
+runs alternated with main of the same day, interpreted time of `-time`):
+
+| run | before | after |
+|---|---|---|
+| `count 6400` | 0.167 s | 0.150 s |
+| `bench 200` | 0.313 s | 0.257 s |
+| `queens 8 Q` | 0.134 s | 0.100 s |
+| `lookups 2000` | 0.124 s | 0.111 s |
+| `-break nowhere bench 200` | 1.43 s | 1.35 s |
+| `-profile bench 200` | 4.12 s | 3.85 s |
+
+No slowdown: the fast path compiles the calls as before (entered
+`called`), and with events each call carries its premise in its frame,
+built once when the clause is compiled.  The runs after the change are
+10 to 25 % faster, also with the order of the runs reversed (`bench 200`
+0.315 -> 0.261 s, `queens` 0.135 -> 0.101 s); the cause is not known
+(the box of a call has one field less: the entry moved into the frame).
+
 **What is left.**  A call still runs about 26 goals of the interpreter
 (`app`), a builtin about 14 more than its own: a box with an invocation
 number, a safe for the explanation (needed for the warning of a predicate
@@ -536,6 +579,15 @@ here.  `-trace` still costs the printing of each goal.
 - **Conjunctions** of more than 16 goals at the same level are not taken
   apart (Elpi represents them as one node with no builtin to inspect it;
   there is one pattern per length).
+- **Premises**: the place of a call is the goal of the top-level
+  conjunction of the clause body that holds it, not a smaller sub-goal (a
+  call inside `pi x\ A => (B, C)` is at the whole goal); the calls of the
+  query (a string on the command line) and woken goals have none; the
+  goals of a hypothetical clause are numbered but have no place in the
+  source.  When elpi-reflect cannot read a file again (Elpi's resolver
+  may name it by a path that does not exist: seen in dune's test sandbox,
+  cause not known), the end of a place is taken from its last sub-term: wrong by a
+  line when a closing parenthesis stands on a line of its own.
 - **Head patterns** `uvar` and `as` are supported only at the top of an
   argument.  `=!=>` and clause bodies given as lists (`H :- [B1, B2]`) are
   not supported.

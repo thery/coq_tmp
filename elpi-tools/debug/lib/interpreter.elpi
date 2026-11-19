@@ -60,9 +60,10 @@ run-query _ :- report-final-failure, fail.
 % points belong to the interpreter, and Elpi has no "cut to here".
 %
 % Our solution: a body is not interpreted goal by goal, it is *compiled*
-% into a native goal in which each atomic goal G becomes [debug.goal Ctx G]
-% while the connectives (conjunction, pi, sigma, =>, ;) and the cut itself
-% stay native.  [backchain] runs the compiled body as the last goal of its
+% into a native goal in which each atomic goal G becomes [debug.goal Ctx
+% Entry G] (or a call, a builtin, when known at compile time) while the
+% connectives (conjunction, pi, sigma, =>, ;) and the cut itself stay
+% native.  [backchain] runs the compiled body as the last goal of its
 % own clause: there, the native cut discards exactly the remaining
 % candidates of [backchain] (the other clauses of the user's goal) and the
 % choice points of the goals before it in the body, which is Elpi's

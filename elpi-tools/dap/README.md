@@ -71,7 +71,9 @@ F5 stops with line 6 highlighted, the call stack showing `Unify: #1 append
 [1, 2] [3] [1 | X1]`, and in the variables panel the scope **Goal**: `goal`,
 `arg 1 (input) = [1, 2]`, `arg 2 (input) = [3]`, `arg 3 (output) = [1 |
 X1]`, `X0 := [1 | X1]`, and the scope **Query**: `L = [1 | X1]`.  Step
-Into stops at `Call: #2 append [2] [3] X1`, the stack showing #2 above #1;
+Into stops at `Call: #2 append [2] [3] X1   (premise 1 of append.elpi:6)`,
+the stack showing #2 above #1, both at the goal `append L M R` of line 6,
+highlighted alone (the place of the premise, a range: column 25 to 37);
 the debug console shows each event as the trace of elpi-debug does, and
 the solutions at the end.  Typing a command of elpi-debug in the debug
 console (`g`, `p`, `scope`, `hyps`, `e`, `f`, `+ P`...) runs it.  In the
@@ -96,7 +98,7 @@ exit of #1).  Variables keep their name `X<n>` for the whole run.
 | restartFrame (call #N) | `r N`: retry call #N from its call port (bindings, local program and scope undone) |
 | evaluate (debug console) | the command typed, its output as the answer |
 | evaluate (watch) | from the description of the stop: a variable of the query by its source name (`L` of `append [1,2] [3] L`), its value now; a variable as elpi-debug names it (`X1`), its binding by the step of the stop (a unify step, an exit port), or `X1   (unbound)` when it is a logic variable of a goal of the stack; otherwise an error, "not in view at this stop" |
-| stackTrace | the calls of the stop, the call in focus first, named `#N goal` (the first one prefixed by the port: `Call:`, `Unify:`, `Pi:`...); each at the line of the clause it runs; the call in focus at its own ports (call, exit, redo, fail), where it runs no clause, at the clause of its caller, where the goal is written; a call that runs a hypothetical clause has no source line |
+| stackTrace | the calls of the stop, the call in focus first, named `#N goal` (the first one prefixed by the port: `Call:`, `Unify:`, `Pi:`...).  A call at its own ports (call, exit, redo, fail), where it runs no clause, is at the goal it comes from, where it is written: the premise of its caller's clause, as a range (`line`, `column`, `endLine`, `endColumn`), so that the editor highlights that goal only; a call below it in the stack (its caller) is at the same goal, the call it made; the call in focus inside a clause (unify, pi, =>, cut) is at the line of that clause.  A call of the query or a woken goal, which has no premise, is where its caller is (the query: `queryPath`:`queryLine` when given); a call that runs a hypothetical clause has no source line |
 | scopes | **Goal**: the goal, its arguments with their modes, and the bindings made by the step of the stop (`X0 := ...`, with the pruning, if any): at a unify step those of the head unification, at an exit port those of the whole call (when its call port was shown or stopped at); **Query**: the variables of the query by their source names, with their values at the stop (the same in every frame); **Local program (=>)**: the clauses added by `=>`, each with the call that added it; **Eigenvariables**: those in force, and for each logic variable of the goal the eigenvariables it may depend on |
 | stopped | reason `breakpoint`, `step`, `pause` or `entry`; the description says the port (`Call port`, `Unify step`...), the text is the event |
 | output | every line elpi-debug prints that is not for the adapter: the events shown, the prints of the program, the solutions, the explanation of a failure, the profile |
@@ -114,8 +116,8 @@ prints, besides its usual text, lines `@@elpi-debug {JSON}`: first the
 listing of the program (its rules, numbered, with file and line; the lines
 of its declarations), then at each stop, in place of the prompt, the
 description of the stop: its number, its reason, the event, the stack
-(each call with the clause it runs, its arguments, the scope of its
-variables), the bindings of a unify step or of an exit port, the local
+(each call with the clause it runs, the premise it comes from and its
+place, its arguments, the scope of its variables), the bindings of a unify step or of an exit port, the local
 program, the eigenvariables, the variables of the query by their source
 names with their values.  It waits at a stop `Start` before the first event, where
 the adapter sets the breakpoints.  The adapter never parses the text for a
@@ -296,7 +298,9 @@ answers at each step; what VS Code draws from it is not checked.
    shows `Call`, `Unify`, `Pi: x#1 is a new eigenvariable`, `Assume: of x#1
    X1`, the same for #2, then `Call: #3 of x#1 X4` and `Unify: #3 with
    hypothesis added by #1`.  The call stack shows #3 (no source line: it
-   runs a hypothesis), #2 and #1 at line 20.  Variables: Goal `X4 := X1`;
+   runs a hypothesis), #2 and #1 on line 20 at the goal `pi x\ of x A =>
+   of (F x) B`, highlighted (the premise their calls come from).
+   Variables: Goal `X4 := X1`;
    Local program (=>) `of x#2 X0: hypothesis added by #2`, `of x#1 X1:
    hypothesis added by #1` (Elpi's printer may name one variable
    differently in two places: `X0` here is the `X3` of the Assume line);
@@ -312,7 +316,8 @@ answers at each step; what VS Code draws from it is not checked.
 6. **Sorting.**  Open `lists.elpi`, a breakpoint on line 10 (`insert X [Y |
    L] [Y | L] :- X = Y.`).  Pick "5. ..." and F5: it stops on line 10 at
    `Unify: #5 insert 0 [0] [0]`, the call stack shows `#1 sort [0, 0] [0]`
-   at line 16 below it; Step Out: `Exit: #5 insert 0 [0] [0]`; Continue:
+   below it, at `insert X S1 S` on line 16 (the goal that made #5,
+   highlighted); Step Out: `Exit: #5 insert 0 [0] [0]`; Continue:
    `S = [0]`, an element lost.
 7. **A sorting failure.**  Pick "6. ...": the run ends with the
    explanation, the deepest failure `0 < 0` called from `#5 insert 0 [0]

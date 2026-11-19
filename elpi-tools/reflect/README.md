@@ -113,7 +113,11 @@ reflect.premises (reflect.srcloc "f.elpi" 4 0) [(reflect.span "f.elpi" 4 11 4 22
   EndColumn`, its end the position just after the last character (lines
   from 1, columns from 0).  Elpi's parser keeps for each sub-term its
   start (line and column) and the offset of its end, not the line of the
-  end: elpi-reflect reads the file again to find it.  The goal of a
+  end: elpi-reflect reads the file again to find it (when it cannot, as
+  for a path that Elpi's resolver gives but that does not exist, seen in
+  dune's test sandbox, the end line is that of the last sub-term of the
+  goal: wrong only when a line break follows its start, e.g. a closing
+  parenthesis on a line of its own).  The goal of a
   spill `{f X}` (above) is placed at `f X`, inside the braces.
 - **Head patterns** `uvar` and `P as X` become `reflect.uvar-pattern` and
   `reflect.as-pattern P X`: in a fact they would match, not be returned.

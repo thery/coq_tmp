@@ -8,9 +8,10 @@
    - stepIn: c (creep); next: s (skip) at the ports of a call, c at a step
      inside a call (unify, pi, =>, cut, delay); stepOut: o; continue: l
      (leap); restartFrame: r N (retry the call N); pause: SIGUSR1;
-   - stackTrace: the calls of the stop, each at the clause it runs (the
-     call in focus, at its own ports, at the clause of its caller: where
-     the goal is written);
+   - stackTrace: the calls of the stop; a call at its own ports at the
+     goal it comes from (the premise of its caller's clause, a range), a
+     caller at the goal of the call it made, the call in focus inside a
+     clause at the line of that clause;
    - scopes: the goal (its arguments; the bindings of a unify step or of
      an exit port), the query (its variables by their source names, with
      their values), the local program (the clauses added by =>), the
