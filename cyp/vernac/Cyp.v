@@ -17,7 +17,9 @@
      Proof. tactics. CypQed.
        the same, but the conditions not discharged are the goals of the
        Proof block, in the order of the text; each goal is named after its
-       node (?c2 for 2, ?c2_1 for 2.1), so that [c2]: tac. proves it.  In
+       node (?c2 for 2, ?c2_1 for 2.1), so that [c2]: tac. proves it.  They
+       always succeed when the statement can be read: an error of a node
+       is printed, and the node's conclusion is a goal all the same.  In
        Cyp Lemma a step is a node: words (strings, with *X*{.just} for a
        justification), formulas (terms, each followed by its class,
        "{.claim}"), and its subnodes (a list of steps).
