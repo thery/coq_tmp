@@ -123,5 +123,5 @@ Deepest failure (depth 2): 0 < 0
   the replay goal.
 - **Limits** (README): interactive mode is slow (`std.iota 200 L,
   naive-rev L R1, rev L R2`: 1.5 s alone, 10.1 s with `-machine`), a
-  variable may be named differently in two panels (wish list item 2),
+  variable may be named differently in two panels (requested feature 2),
   breakpoints changed while running take effect at the next stop.

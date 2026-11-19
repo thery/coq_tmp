@@ -1,6 +1,6 @@
 (* CHR in view: the driver's side of the CHR hooks of elpi-debug
    (../lib/chr-hooks.elpi), STAND-INS for three features that Elpi's CHR
-   engine lacks (../ELPI-WISHLIST.md):
+   engine lacks (../ELPI-FEATURE-REQUESTS.md):
 
    §4 the goal of a rule run in the current program, not the static one;
    §5 an event on each attempt of a rule and its outcome;

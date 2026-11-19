@@ -4,7 +4,7 @@
 % runs their goals, and shows the store.
 %
 % What this needs of Elpi's CHR engine goes through the interface of
-% chr-hooks.elpi (stand-ins, ../ELPI-WISHLIST.md §4-§6): the goal of a
+% chr-hooks.elpi (stand-ins, ../ELPI-FEATURE-REQUESTS.md §4-§6): the goal of a
 % rule that fires reaches [run-rule-goal] below; the attempts are taken as
 % notes ([take-rule-notes]); the store is read with the number of each
 % suspension ([program-store]).  The driver rewrites each CHR rule of the

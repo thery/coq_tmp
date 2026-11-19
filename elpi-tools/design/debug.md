@@ -96,7 +96,7 @@ clause-with Key Origin Names H B P Prefix Modes Rest Vs
 by argument cost `count 6400` 0.52 s; compiled clauses 0.19 s.  A
 compiled clause returns nothing: Elpi makes the occurs check on the head
 of every local clause, so returning a term that holds the goal walked
-it (a first version was quadratic: 4.5 s; wish list item 13).
+it (a first version was quadratic: 4.5 s; requested feature 13).
 
 ### The box and its ports
 
@@ -135,7 +135,7 @@ its exit) come from two primitives of
 [`primitives.elpi`](../debug/lib/primitives.elpi): `trail-mark G M`
 before, `bindings-since M Bs` after.  Today they are stand-ins (a snapshot
 of the variables in reach of G, compared later); Elpi's trail would make
-them exact and cheap (wish list item 3).  The pruning Elpi does is
+them exact and cheap (requested feature 3).  The pruning Elpi does is
 reported:
 
 ```
@@ -153,7 +153,7 @@ Solution 1:
 ```
 
 (`X0` shows as `X2` at the unify step: the stand-in of `vars-of` renames
-a variable kept by Elpi in compact form, `G x`; wish list items 1-2.)
+a variable kept by Elpi in compact form, `G x`; requested features 1-2.)
 
 ### λProlog: pi, =>, eigenvariables
 
@@ -229,7 +229,7 @@ bridge G :- current-ctx Entry Ctx, !, program-goal G P, call Ctx P G Entry.
 
 The bridges are static rules written by a first run of the driver,
 because as local clauses `pi x1..xn\ …` they crash Elpi when a CHR rule
-fires (LPCIC/elpi#505, wish list item 7).
+fires (LPCIC/elpi#505, requested feature 7).
 
 ### CHR at depth 1, and its view
 
@@ -259,8 +259,8 @@ Solution 1:
   C = X0
 ```
 
-Three stand-ins ([`lib/chr-hooks.elpi`](../debug/lib/chr-hooks.elpi), wish
-list items 4-6):
+Three stand-ins ([`lib/chr-hooks.elpi`](../debug/lib/chr-hooks.elpi),
+requested features 4-6):
 
 - *attempts*: each guard G becomes `rule-tried Loc Kept Contexts, G,
   rule-guard-held`; a guard runs in a runtime of its own with the static
@@ -327,8 +327,8 @@ point before the call port; `r` records the request in a safe and fails,
 every event fails while it is pending, and the second clause of `attempt`
 for that call takes it and runs the call again.  The bindings, the local
 program and the eigenvariables go back with backtracking, since `=>` and
-`pi` are Elpi's own.  A `catch`/`throw` would make it immediate (wish
-list item 10; [`stepper.elpi`](../debug/lib/stepper.elpi), section
+`pi` are Elpi's own.  A `catch`/`throw` would make it immediate
+(requested feature 10; [`stepper.elpi`](../debug/lib/stepper.elpi), section
 Unwinding).
 
 ### `-machine`: the channel for front ends
@@ -374,7 +374,7 @@ From the README (2026-11-19, a loaded laptop, the minimum of 10 runs):
 - **The price** is about 20 times the native time, and the stand-ins
   where Elpi code cannot see what the runtime knows (the variables of a
   term, their identity, the trail, CHR's attempts): each one is an item
-  of [`../debug/ELPI-WISHLIST.md`](../debug/ELPI-WISHLIST.md).
+  of [`../debug/ELPI-FEATURE-REQUESTS.md`](../debug/ELPI-FEATURE-REQUESTS.md).
 - **What is kept native, and why**: connectives (the cut's semantics),
   `pi`/`=>` (scopes, restored by backtracking), head matching and clause
   selection (Elpi's indexing), builtins, CHR (its matching and

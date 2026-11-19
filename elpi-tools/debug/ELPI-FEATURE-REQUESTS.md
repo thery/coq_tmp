@@ -1,6 +1,9 @@
-# What elpi-debug would like from Elpi
+# elpi-debug: requested features of Elpi
 
-**For Enrico.**  elpi-debug ([`README.md`](README.md)) is a debugger for
+This document lists the features of Elpi that would remove the workarounds
+of elpi-debug, ordered by expected benefit.
+
+elpi-debug ([`README.md`](README.md)) is a debugger for
 standalone Elpi 4 written as a meta-interpreter in Elpi: it runs a goal
 by interpreting the rules of the program, which
 [`../reflect`](../reflect/README.md) gives as Elpi facts, and shows the
@@ -115,7 +118,7 @@ in `runtime.ml` (`"X" ^ string_of_int (uvar_id r)`).  Also seen in
 elpi-dap: one variable printed under two names in two panels
 (`../dap/README.md`, Limits).
 
-## 3. The trail: `trail-mark` and `bindings-since` (feature; Enrico's suggestion)
+## 3. The trail: `trail-mark` and `bindings-since` (feature)
 
 ```elpi
 data trail-mark.

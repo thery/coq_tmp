@@ -15,13 +15,13 @@
    5. the bridges: one native rule per predicate of FILE, which sends a
       native call of that predicate back to the interpreter (written by
       debug.write-bridges, run on units 1-4; static rules because of an
-      Elpi crash, ../ELPI-WISHLIST.md §7);
+      Elpi crash, ../ELPI-FEATURE-REQUESTS.md §7);
    6. the clauses that tie the interpreter to the builtins of this driver:
       whether a front end asked for a pause (-machine), the notes of the
       CHR rules, the constraint store.
 
    Where the driver works around a missing feature of Elpi (each one an
-   item of ../ELPI-WISHLIST.md): [to_api] (§8), the CHR rules
+   item of ../ELPI-FEATURE-REQUESTS.md): [to_api] (§8), the CHR rules
    rewritten and their builtins (chr_in_view.ml, §4-§6), the bridges
    (§7), the rules printed closed by elpi-reflect (~closed, §1) and the
    names of the query variables found by a walk of the parsed goal
@@ -195,7 +195,7 @@ let program_of (units : PAst.Program.t list) : PAst.Program.t =
   let loc = Elpi_util.Util.Loc.initial "(elpi-debug)" in
   { PAst.file_name = "(elpi-debug)"; digest = Digest.string "elpi-debug"; deps = []; ast = [ PAst.Program.Accumulated (loc, units) ] }
 
-(* ---- STAND-IN: a parsed program given to the API (../ELPI-WISHLIST.md §8) *)
+(* ---- STAND-IN: a parsed program given to the API (../ELPI-FEATURE-REQUESTS.md §8) *)
 
 (* [to_api p]: the parsed program p as the API's parsed program.  The one
    cast of the driver, isolated here: the API offers no way to compile a
@@ -220,7 +220,7 @@ let compile ~elpi ~flags units text =
 (* [interpreted_units file]: the units 1-6 described at the top.  The rules
    are reflected closed (~closed: each rule also under one binder per
    variable), since the interpreter cannot find the variables of a rule
-   itself (../ELPI-WISHLIST.md §1).  The bridges need a first compilation
+   itself (../ELPI-FEATURE-REQUESTS.md §1).  The bridges need a first compilation
    and run of units 1-4 that writes them to a file: with the crash of §7
    fixed, the interpreter would install them as local clauses, and this
    step would go. *)
@@ -297,7 +297,7 @@ let normalize s =
    a λ of the goal; none if the goal does not parse (its compilation then
    reports the error).  A walk of the goal parsed a second time, as Elpi's
    compiler reads it: the API does not give the names of the variables of
-   a compiled query before it runs (../ELPI-WISHLIST.md §15). *)
+   a compiled query before it runs (../ELPI-FEATURE-REQUESTS.md §15). *)
 let query_variables goal =
   let module T = PAst.Term in
   let found = ref [] in

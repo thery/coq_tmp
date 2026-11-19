@@ -1,9 +1,11 @@
-# elpi-tools: the design
+# elpi-tools: design
 
-**For Enrico Tassi**, and anyone who wants to know how elpi-tools work and
-why they are built so.  Standalone Elpi 4.0.0 (opam switch `elpi5`), not
-Rocq-Elpi.  Every output below was produced by the tools of this tree
-(absolute paths shortened to the file name; long lines cut, marked `…`).
+This document describes the design of elpi-tools: what each tool does, how
+it is implemented, and the reasons for the main choices.  It is intended
+for developers of Elpi and of tools built on it.  The tools target
+standalone Elpi 4.0.0 (opam switch `elpi5`), not Rocq-Elpi.  All outputs
+shown were produced by the tools in this repository; absolute paths are
+shortened to the file name, and long lines are cut and marked `…`.
 
 ## Overview
 
@@ -64,7 +66,7 @@ The main choices, each argued in its page:
 
 Where Elpi lacks something, the tools carry a **stand-in** behind a
 small interface, and each one is an item of
-[`debug/ELPI-WISHLIST.md`](debug/ELPI-WISHLIST.md) (summary below).
+[`debug/ELPI-FEATURE-REQUESTS.md`](debug/ELPI-FEATURE-REQUESTS.md) (summary below).
 
 ## The parts
 
@@ -77,13 +79,13 @@ small interface, and each one is an item of
 4. [**dap**: VS Code](design/dap.md) — the adapter, the extension, the
    Test Explorer
 
-## The wish list, in short
+## Requested features of Elpi, in short
 
-[`debug/ELPI-WISHLIST.md`](debug/ELPI-WISHLIST.md) gives, for each item,
+[`debug/ELPI-FEATURE-REQUESTS.md`](debug/ELPI-FEATURE-REQUESTS.md) gives, for each item,
 the API (signature), its contract, where it would be used
 (file:predicate) and what would go away.  In order of benefit:
 
-| # | wish | kind | stand-in today |
+| # | feature | kind | stand-in today |
 |---|---|---|---|
 | 1 | `vars-of`: the variables of a term | feature | a walk in Elpi, blind inside builtin applications; reflect's `-closed` |
 | 2 | `uuid` of a variable, and a printer that uses it | feature | the number of Elpi's printer, regexps on its text |

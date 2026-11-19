@@ -99,7 +99,7 @@ modes-of _ G Modes :- constant G _ Args, std.map Args (_\ m\ m = o) Modes.
 % back to the interpreter (natives.elpi).  The driver accumulates them
 % after the program, whose own rules it removes.
 %
-% STAND-IN for the fix of an Elpi crash (../ELPI-WISHLIST.md §7,
+% STAND-IN for the fix of an Elpi crash (../ELPI-FEATURE-REQUESTS.md §7,
 % LPCIC/elpi#505): the bridges are static rules, written to a file by
 % [write-bridges] in a first run of the driver, not local clauses
 % [pi x1..xn\ ...] that [run] would install with the compiled rules: with

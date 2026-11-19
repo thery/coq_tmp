@@ -89,7 +89,7 @@ instead of being returned): `uvar` and `P as X` become
   only way today; doing it with Elpi's parser keeps the syntax exact.
   The cost is a copy of the compiler's front end (scoping, spilling,
   order: about 350 lines) and its limits (macros, a spill under a λ inside
-  an atom, `:autospill`: README, "Not supported").  Wish list item 12 asks
+  an atom, `:autospill`: README, "Not supported").  Requested feature 12 asks
   for the rules of a compiled program instead.
 - **Why facts and not a term "the program".**  Facts are indexed by Elpi
   (the rules of one predicate only), give fresh variables at each lookup,
@@ -100,9 +100,9 @@ instead of being returned): `uvar` and `P as X` become
 - **Why `-closed`.**  Elpi code cannot find the variables of a term inside
   an application of a builtin (`X is Y + 1` is one node), so the debugger
   cannot close a rule itself; elpi-reflect, which sees the source, can.
-  It goes with `vars-of` (wish list item 1).
+  It goes with `vars-of` (requested feature 1).
 - **Why `premises` with spans.**  The debugger shows which goal of a body
   a call comes from (`(premise 2 of append.elpi:15)`) and VS Code
   highlights it.  Elpi's locations give the end of a term as an offset,
-  not a line: elpi-reflect reads the file again to find it (wish list
+  not a line: elpi-reflect reads the file again to find it (list of requested features
   item 14).

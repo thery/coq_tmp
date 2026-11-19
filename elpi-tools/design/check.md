@@ -186,4 +186,4 @@ this counterexample" starts the debugger on this goal (design/dap.md).
 - **Limits** (README): no time bound per test; the random solver ignores
   cuts and keeps the first solution of each call; at most 10 conjuncts
   where the checker looks into a conjunction (one pattern per length:
-  wish list item 9).
+  requested feature 9).

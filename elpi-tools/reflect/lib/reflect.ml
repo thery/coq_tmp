@@ -208,7 +208,7 @@ let rec last_located (t : Term.t) : Loc.t =
 (* [end_position t]: the line and column just after the last character of
    t.  Elpi's locations give the offset of the end of a term, not its line:
    the line is found in the text of the file, read once (a location with
-   its end line would make this a field: ../../debug/ELPI-WISHLIST.md §14);
+   its end line would make this a field: ../../debug/ELPI-FEATURE-REQUESTS.md §14);
    when the file cannot be read (Elpi's resolver may name a file by a path
    that does not exist: seen in dune's test sandbox, cause not known), from
    the sub-term that starts last, which is exact unless a line break lies
@@ -290,7 +290,7 @@ let rule_variables (ts : Term.t list) : string list * Term.t list =
    with [closed], also its fact [closed-clause N (V1\ .. VN\ clause ...)],
    the same under a binder per variable of the rule.  The closed form
    exists because Elpi code cannot find the variables of a rule (no builtin
-   vars-of: ../../debug/ELPI-WISHLIST.md §1); with one, a tool would close
+   vars-of: ../../debug/ELPI-FEATURE-REQUESTS.md §1); with one, a tool would close
    the rule itself and this form would go. *)
 let rule_fact ~overloaded ~closed index (r : rule) =
   let attrs = List.filter_map attribute_data r.attrs @ [ binders_data (binders r.head @ binders r.body) ] in
@@ -376,7 +376,7 @@ let sequent_data ~pattern (q : Term.t Chr.sequent) =
 (* [chr_rule_loc r]: where the CHR rule r is written: at its first head.
    (Elpi's own location of a rule without attributes starts at the end of
    the token before it, the { of its block or the dot of the rule before:
-   often the line above; ../../debug/ELPI-WISHLIST.md §14.)  The location
+   often the line above; ../../debug/ELPI-FEATURE-REQUESTS.md §14.)  The location
    of a sequent is the earliest of its parts (a part the rule does not
    write has the location of the whole sequent). *)
 let chr_rule_loc (r : (_, Term.t) Chr.t) =

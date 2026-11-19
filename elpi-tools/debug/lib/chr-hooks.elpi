@@ -1,6 +1,6 @@
 % chr-hooks.elpi: what elpi-debug needs from Elpi's CHR engine and does
 % not find there, as a small interface, written here as STAND-INS until
-% Elpi has it (../ELPI-WISHLIST.md, §4-§6).  The display of CHR at work
+% Elpi has it (../ELPI-FEATURE-REQUESTS.md, §4-§6).  The display of CHR at work
 % (chr.elpi) and the delay port (natives.elpi) go through this interface
 % only; with the requested features, this file and the rewriting of the
 % CHR rules by the driver (../bin/chr_in_view.ml) would go, or shrink to a

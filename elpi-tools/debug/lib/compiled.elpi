@@ -12,7 +12,7 @@
 %
 % A compiled clause does all its work in its body and returns nothing: Elpi
 % makes the occurs check on every hypothetical clause (:nooc does not apply
-% to them: ../ELPI-WISHLIST.md §13), so a binding made by a local
+% to them: ../ELPI-FEATURE-REQUESTS.md §13), so a binding made by a local
 % clause walks the term bound, and the body of the clause would hold the
 % arguments of the goal and the stack of calls.  Its body is built without
 % that walk, as the body of any clause.  So the cut in the body of a rule is the native cut of its
@@ -108,7 +108,7 @@ holds _ ff.
 % eigenvariables, which then become the binders of the compiled clause, a
 % fresh copy at each use.  (The closed form is a detour: the interpreter
 % cannot find the variables of a rule itself.  With [vars-of] a builtin,
-% ../ELPI-WISHLIST.md §1, it would take [reflect.clause] and abstract its
+% ../ELPI-FEATURE-REQUESTS.md §1, it would take [reflect.clause] and abstract its
 % variables, and elpi-reflect's option -closed would go.)
 pred compile-rules o:list compiled-rule.
 compile-rules Rs :- std.findall (reflect.closed-clause _ _) Rules, compile-rules-of Rules Rs.

@@ -73,7 +73,7 @@ development), in [elpi-tools/](elpi-tools) (how they work and why:
   Elpi does not offer (the variables of a term, the trail, CHR hooks, a
   crash, an `Obj.magic` ...), a stand-in sits behind a small interface,
   listed with the API that would remove it in
-  [debug/ELPI-WISHLIST.md](elpi-tools/debug/ELPI-WISHLIST.md).
+  [debug/ELPI-FEATURE-REQUESTS.md](elpi-tools/debug/ELPI-FEATURE-REQUESTS.md).
 - [dap/](elpi-tools/dap/README.md): **the debugger in VS Code**.  `elpi-dap`,
   a debug adapter (Debug Adapter Protocol) on `elpi-debug -machine`, and a
   small VS Code extension: breakpoints on clause lines and on predicates,

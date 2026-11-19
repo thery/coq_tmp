@@ -6,7 +6,7 @@
 % the pi, => or cut.
 %
 % retry and fail (section "Unwinding" below, the stand-in of
-% ../ELPI-WISHLIST.md §10).  Each call is run by [attempt] (interpreter.elpi), whose
+% ../ELPI-FEATURE-REQUESTS.md §10).  Each call is run by [attempt] (interpreter.elpi), whose
 % second clause is a choice point placed just before the call port.  The
 % command records the request (retry N or fail-call N) in a safe, which
 % survives backtracking, and fails.  While a request is pending every event
@@ -108,7 +108,7 @@ step-out-mode _ _ leap.
 
 % ===== Unwinding, for retry and fail =========================================================
 %
-% STAND-IN for a backtrack to a recorded point (../ELPI-WISHLIST.md §10:
+% STAND-IN for a backtrack to a recorded point (../ELPI-FEATURE-REQUESTS.md §10:
 % catch and throw, as in Prolog).  The interface: [unwind-for R] unwinds
 % the run to the choice point placed before the call port of the call
 % named in the request R (the second clause of [attempt],

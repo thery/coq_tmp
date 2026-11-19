@@ -1,11 +1,11 @@
 % primitives.elpi: what elpi-debug needs to know about the terms and the
 % unification variables of a run and does not find in Elpi's core, as a
 % small interface of primitives that Elpi could offer as builtins (the
-% wish list, ../ELPI-WISHLIST.md), written here in Elpi as STAND-INS until
+% list of requested features, ../ELPI-FEATURE-REQUESTS.md), written here in Elpi as STAND-INS until
 % Elpi has them.  The other files of the interpreter go through this
 % interface only: switching to the real builtins touches this file only.
 %
-% THE INTERFACE, section by section (§N: the item of ../ELPI-WISHLIST.md)
+% THE INTERFACE, section by section (§N: the item of ../ELPI-FEATURE-REQUESTS.md)
 %
 % 1. [vars-of T Vs] (§1): Vs are the unification variables occurring in
 %    T, each once, in the order of their first occurrence (left to right,
@@ -51,7 +51,7 @@
 % driver (../bin): the parsed program given to the API (§8), the CHR rules
 % rewritten (chr_in_view.ml, §4-§6), the names of the query variables
 % (§15); and elpi-reflect itself, for the rules of the program as data
-% (§12, §14).  ../ELPI-WISHLIST.md lists them all.
+% (§12, §14).  ../ELPI-FEATURE-REQUESTS.md lists them all.
 %
 % THE STAND-INS (below), and their limits
 %

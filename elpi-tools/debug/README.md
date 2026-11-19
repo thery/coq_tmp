@@ -159,7 +159,7 @@ whose body runs the pi, `=>` or cut.
 clause is a choice point placed just before the call port.  `r` (or `f`)
 records the request "retry #N" (or "fail #N") in a safe, which survives
 backtracking, and fails (the stand-in of a catch and throw, section
-Unwinding of `lib/stepper.elpi`, [`ELPI-WISHLIST.md`](ELPI-WISHLIST.md)
+Unwinding of `lib/stepper.elpi`, [`ELPI-FEATURE-REQUESTS.md`](ELPI-FEATURE-REQUESTS.md)
 item 10).  While a request is pending, every event fails at
 once, so backtracking goes quickly through the choice points inside call
 N, Elpi undoing their bindings as usual, and reaches the second clause of
@@ -296,7 +296,7 @@ Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:9)
 [`lib/chr.elpi`](lib/chr.elpi)), the same way for every rule.  These are
 stand-ins for three features of Elpi's CHR engine (a rule's goal run in
 the current program, an event on each attempt, the identity of a
-suspension and the store: [`ELPI-WISHLIST.md`](ELPI-WISHLIST.md), items
+suspension and the store: [`ELPI-FEATURE-REQUESTS.md`](ELPI-FEATURE-REQUESTS.md), items
 4-6):
 
 - The guard `G` of a rule (`true` when it has none) becomes
@@ -368,11 +368,11 @@ resolves names block by block).  Read them in this order:
    `reflect.closed-clause N F` (elpi-reflect `-closed`: F is the rule under
    N binders, one per variable: the debugger cannot close a rule itself,
    its walk does not see the variables inside applications of builtins;
-   "The primitives" below, and wish list item 1); and one **bridge** per
+   "The primitives" below, and requested feature 1); and one **bridge** per
    predicate, `P X1..Xn :- !, debug.bridge (P X1..Xn)`, its only native
    rule, written by `write-bridges`.  They are static rules, not local
    clauses `pi x1..xn\ ...`: with those, Elpi crashes when a CHR rule fires
-   ([LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505), wish list
+   ([LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505), list of requested features
    item 7).
    `program-rule` gives the rules of a predicate, `modes-of` its modes.
 3. **[`strategy.elpi`](lib/strategy.elpi): how a call is solved.**
@@ -435,7 +435,7 @@ resolves names block by block).  Read them in this order:
      event; `Body` is the compiled body (`compile-body`: with events, each
      call it makes knows the premise it comes from).  It returns nothing: Elpi makes the
      occurs check on every local clause (`:nooc` does not apply to them,
-     wish list item 13), so an output would walk the stack of calls.
+     requested feature 13), so an output would walk the stack of calls.
      `with-rule-cache G` keeps the compiled rules across the runs of G
      (elpi-check uses it).
 5. **[`natives.elpi`](lib/natives.elpi): builtins, CHR, the way back.**
@@ -451,7 +451,7 @@ resolves names block by block).  Read them in this order:
    shows the attempts (`show-rule-attempts`) and the store
    (`show-store`), and runs the goal of a rule (`run-rule-goal`);
    `chr-hooks.elpi` is what this needs of Elpi's CHR engine, written as
-   stand-ins (wish list items 4-6): the steps that the rewritten rules
+   stand-ins (requested features 4-6): the steps that the rewritten rules
    call (`rule-tried`, `rule-guard-held`, `hand-rule-goal`), the runner of
    the goals of the rules (`rule-runner`), the numbers of the suspensions
    (`suspended-as`) and the store (`program-store`); above, "CHR at work".
@@ -482,7 +482,7 @@ resolves names block by block).  Read them in this order:
    `native-port`.
 10. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
    stepping modes, the requests of retry and fail (section Unwinding, the
-   stand-in of a catch and throw, wish list item 10), the breakpoints, the
+   stand-in of a catch and throw, requested feature 10), the breakpoints, the
    command loop (how retry and skip work: above, and in the file).
 11. **[`machine.elpi`](lib/machine.elpi): the machine-readable channel** of
    `-machine` (above, "For a front end"), with a small JSON writer.
@@ -497,13 +497,13 @@ resolves names block by block).  Read them in this order:
 
 Wherever the debugger works around something Elpi does not offer, the
 workaround is a **stand-in** behind a small interface in one place, and
-an item of the wish list for Elpi's author,
-[`ELPI-WISHLIST.md`](ELPI-WISHLIST.md), which gives for each one the API
+an item of the list of requested features for Elpi's author,
+[`ELPI-FEATURE-REQUESTS.md`](ELPI-FEATURE-REQUESTS.md), which gives for each one the API
 that would remove it, its contract, where it would be used and what
 would go away.  Switching to a real builtin would touch the stand-in
 only.
 
-| interface | stand-in for | wish list |
+| interface | stand-in for | list of requested features |
 |---|---|---|
 | [`lib/primitives.elpi`](lib/primitives.elpi): `vars-of T Vs` | the variables of a term, each once, in order, under binders and inside applications of builtins; binds nothing | 1 |
 | `uuid X N`, `uuid-name X S`, `show-term T S` | a number for each variable, the same for the whole run (shown `X<N>` everywhere), and a printer that uses it | 2 |
@@ -562,7 +562,7 @@ Nothing of this runs on the fast path (no option) but `conjuncts`, when a
 clause body is compiled; a call port that is neither shown nor stopped
 at takes no mark.
 
-**What the real builtins would bring** (the wish list says it item by
+**What the real builtins would bring** (the list of requested features says it item by
 item): the variables inside applications of builtins, no binding when the
 debugger looks (the names would not drift as above), and walks at the
 speed of the runtime; the identity without printing, right inside copies
@@ -759,14 +759,14 @@ is found by listing the rules, at each event).
 ## Limits (said plainly)
 
 Those that come from a feature Elpi lacks name the item of
-[`ELPI-WISHLIST.md`](ELPI-WISHLIST.md) that would remove them.
+[`ELPI-FEATURE-REQUESTS.md`](ELPI-FEATURE-REQUESTS.md) that would remove them.
 
 - **Cut through a variable**: `G = !, ..., G` cuts only `G` itself (in Elpi
   it cuts the clause); a cut inside `not`, `std.findall`... is native, as in
   Elpi.
 - **Conjunctions** of more than 16 goals at the same level are not taken
   apart (Elpi represents them as one node with no builtin to inspect it;
-  there is one pattern per length: wish list item 9).
+  there is one pattern per length: requested feature 9).
 - **Premises**: the place of a call is the goal of the top-level
   conjunction of the clause body that holds it, not a smaller sub-goal (a
   call inside `pi x\ A => (B, C)` is at the whole goal); the calls of the
@@ -776,14 +776,14 @@ Those that come from a feature Elpi lacks name the item of
   may name it by a path that does not exist: seen in dune's test sandbox,
   cause not known), the end of a place is taken from its last sub-term:
   wrong by a line when a closing parenthesis stands on a line of its own
-  (a location with its end line: wish list item 14).
+  (a location with its end line: requested feature 14).
 - **Head patterns** `uvar` and `as` are supported only at the top of an
   argument.  `=!=>` and clause bodies given as lists (`H :- [B1, B2]`) are
   not supported.
 - **CHR at depth 1 only**: the rules are matched and fire natively; the
   debugger shows their attempts and outcomes, runs their goals and shows
   the store ("CHR at work"), but does not interpret CHR itself.  Not
-  shown: the attempts whose heads do not match (wish list item 5).  A stop at an attempt
+  shown: the attempts whose heads do not match (requested feature 5).  A stop at an attempt
   comes after the propagation: the constraints a rule removes are already
   gone from the store.  At an attempt the focus is the call that declared
   the constraint, or the query when the goal of a rule comes first.
@@ -792,7 +792,7 @@ Those that come from a feature Elpi lacks name the item of
   (`debug.rule-runner`, hidden by `store`, seen by `print_constraints`),
   and with events the context of a constraint holds `debug.suspended-as
   K` (seen by `print_constraints`, and by a rule that names the context of
-  a constraint, `(C ?- p X)`; wish list items 4 and 6).  Such a rule did not and does not see the
+  a constraint, `(C ?- p X)`; requested features 4 and 6).  Such a rule did not and does not see the
   hypothetical clauses of the program: the interpreter keeps them as data
   (`hyp` facts), not as clauses of their predicates.  The goal of a rule
   runs to its first solution, at depth 0 (for `-max-depth`); a goal of a
@@ -807,7 +807,7 @@ Those that come from a feature Elpi lacks name the item of
   delay or goal of a rule.
 - **Elpi's location of a CHR rule** without attributes starts at the end
   of the token before it (often the line above); elpi-reflect gives the
-  place of its first head instead (wish list item 14).
+  place of its first head instead (requested feature 14).
 - **Explanations** name the deepest failure, which is not always the
   culprit; failures inside `not` count as failures.
 - Logic variables are named `X<uuid>` (`X12`), one name per variable for
@@ -815,7 +815,7 @@ Those that come from a feature Elpi lacks name the item of
   query, by their names in the stop description of `-machine`).  With the
   stand-in of `vars-of`, a variable kept by Elpi in a compact form gets a
   second number when the debugger first looks at it (above, "The
-  primitives"; wish list items 1 and 2).  Eigenvariables get their source name (`x#3`) only when
+  primitives"; requested features 1 and 2).  Eigenvariables get their source name (`x#3`) only when
   events are shown (`-trace`, `-i`, `-break`): on the fast path (no
   option) the explanation
   of a failure shows them as `c0`, `c1`.  The binder names come from
@@ -827,10 +827,10 @@ Those that come from a feature Elpi lacks name the item of
   [LPCIC/elpi#505](https://github.com/LPCIC/elpi/issues/505) (also on Elpi
   master 631d14a; minimal form in
   [`tests/elpi-bugs/chr-pi-local-clause.elpi`](tests/elpi-bugs/chr-pi-local-clause.elpi));
-  it is why the bridges are static rules (wish list item 7).
+  it is why the bridges are static rules (requested feature 7).
 - **The driver uses `Obj.magic` once** (`to_api` in
   [`bin/elpi_debug_main.ml`](bin/elpi_debug_main.ml)), the one place
-  where it goes around Elpi's API (wish list item 8).
+  where it goes around Elpi's API (requested feature 8).
   - *Why*: the debugger must compile FILE **without its rules** (they are
     given to the interpreter as data; Elpi must not run them), together
     with the interpreter, the rules as facts and the bridges.  So it parses
