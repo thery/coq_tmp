@@ -86,7 +86,7 @@ event Kind Ind F Text :- event-seen Kind Ind F Text _.
 % is tt when it was shown or stopped at, ff otherwise.
 :nooc
 pred event-seen i:event-kind, i:int, o:focus, i:(pred o:list string), o:bool.
-event-seen _ _ _ _ _ :- pending, !, fail.
+event-seen _ _ _ _ _ :- unwinding, !, fail.
 event-seen Kind Ind F Text tt :- event-shown Kind F, !,
   Text T, say Ind [{event-label Kind}, " " | T],
   stop-if-stopping Kind F T.
@@ -353,7 +353,7 @@ ctx-focus [] (focus (frame 0 0 query true called) []).
 :nooc
 pred native-port i:event-kind, o:ctx, i:(pred).
 native-port _ _ _ :- quiet, !.
-native-port _ _ _ :- pending, !, fail.
+native-port _ _ _ :- unwinding, !, fail.
 native-port Kind Ctx G :-
   record-native-event Kind Ctx G,
   show-native-if-shown Kind Ctx G.

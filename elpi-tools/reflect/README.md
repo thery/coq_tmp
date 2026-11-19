@@ -1,7 +1,9 @@
 # elpi-reflect: an Elpi program as Elpi data
 
 Elpi has no builtin that returns the rules of the running program (Prolog's
-`clause/2`).  `elpi-reflect` fills the gap from outside: an OCaml program
+`clause/2`).  `elpi-reflect` fills the gap from outside (the API that would make it
+unnecessary is item 12 of the wish list for Elpi,
+[`../debug/ELPI-WISHLIST.md`](../debug/ELPI-WISHLIST.md)): an OCaml program
 on the `elpi` library reads `.elpi` files with Elpi's own parser and prints
 their declarations, rules and CHR rules as **Elpi facts**.  A tool written
 in Elpi (a meta-interpreter, a debugger, the property checker
@@ -95,7 +97,9 @@ reflect.premises (reflect.srcloc "f.elpi" 4 0) [(reflect.span "f.elpi" 4 11 4 22
   walk of the term in Elpi cannot take apart the application of a builtin
   written in OCaml (`var X`, `print X`, `X = Y` ...).  A tool can then
   compile the rule once into a closed clause of its own (elpi-debug,
-  `../debug/lib/compiled.elpi`).
+  `../debug/lib/compiled.elpi`).  With a builtin giving the variables of a
+  term (item 1 of [`../debug/ELPI-WISHLIST.md`](../debug/ELPI-WISHLIST.md)),
+  the tool would close the rule itself and `-closed` would go.
 - **Order**: the `Index` of a `clause` is its rank among the rules of its
   predicate in the order Elpi tries them, after `:before`, `:after`,
   `:replace` and `:remove`; the facts are printed in that order too.  Rules

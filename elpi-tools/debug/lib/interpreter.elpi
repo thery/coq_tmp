@@ -221,7 +221,7 @@ attempt Exited Box :- resumed-by-request Exited Box.
 :nooc
 pred resumed-by-request i:safe, o:box.
 resumed-by-request Exited Box :-
-  box-parts Box Id _ _ _ _, take-request Id R, after-request R Exited Box.
+  box-parts Box Id _ _ _ _, unwound-to Id R, after-request R Exited Box.
 
 :nooc
 pred after-request i:request, i:safe, o:box.

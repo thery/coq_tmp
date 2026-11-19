@@ -5,7 +5,8 @@
 % the focus of the event: the call whose port it is, or whose body runs
 % the pi, => or cut.
 %
-% retry and fail.  Each call is run by [attempt] (interpreter.elpi), whose
+% retry and fail (section "Unwinding" below, the stand-in of
+% ../ELPI-WISHLIST.md §10).  Each call is run by [attempt] (interpreter.elpi), whose
 % second clause is a choice point placed just before the call port.  The
 % command records the request (retry N or fail-call N) in a safe, which
 % survives backtracking, and fails.  While a request is pending every event
@@ -102,34 +103,54 @@ step-out-mode Kind (focus _ [frame Id _ _ _ _ | _]) (skip Id) :- box-event Kind,
 step-out-mode Kind (focus (frame Id _ _ _ _) _) (skip Id) :- not (box-event Kind), Id > 0, !.
 step-out-mode _ _ leap.
 
-% ===== Requests: retry and fail ============================================================
+% ===== Unwinding, for retry and fail =========================================================
+%
+% STAND-IN for a backtrack to a recorded point (../ELPI-WISHLIST.md §10:
+% catch and throw, as in Prolog).  The interface: [unwind-for R] unwinds
+% the run to the choice point placed before the call port of the call
+% named in the request R (the second clause of [attempt],
+% interpreter.elpi), where [unwound-to Id R] takes the request R about
+% call Id; [unwinding] holds while the run unwinds.  The stand-in records
+% R in a safe, which survives backtracking, and fails: every event then
+% fails at once ([event-seen], [native-port], ports.elpi), until the
+% choice point of the call.  Its cost: the unwinding backtracks into every
+% choice point left inside the call, and so runs again the builtins with
+% several solutions met on the way.  With catch and throw, [attempt]
+% would catch the request and [unwind-for] would throw it, at once.
 
 data request.
 symb no-request request.
 symb retry int -> request.
 symb fail-call int -> request.
 
+% [current-request R]: the request being carried out (no-request when none).
 pred current-request o:request.
 current-request R :- latest "request" no-request R.
 
+% [set-request R]: R is now the request being carried out.
 pred set-request i:request.
 set-request R :- state "request" S, stash_in_safe S R.
 
-% [pending]: a retry or fail is unwinding the run.
-pred pending.
-pending :- current-request R, not (R = no-request).
+% [unwind-for R]: unwind the run for the request R (fails).
+pred unwind-for i:request.
+unwind-for R :- set-request R, fail.
 
-% [take-request Id R]: the pending request R is about call Id; it is taken.
-pred take-request i:int, o:request.
-take-request Id (retry Id) :- current-request (retry Id), !, set-request no-request.
-take-request Id (fail-call Id) :- current-request (fail-call Id), !, set-request no-request.
+% [unwinding]: a retry or fail is unwinding the run.
+pred unwinding.
+unwinding :- current-request R, not (R = no-request).
+
+% [unwound-to Id R]: the unwinding has reached the call Id, the call of
+% the request R; R is taken.
+pred unwound-to i:int, o:request.
+unwound-to Id (retry Id) :- current-request (retry Id), !, set-request no-request.
+unwound-to Id (fail-call Id) :- current-request (fail-call Id), !, set-request no-request.
 
 % [ask-retry Id]: unwind the run to the call port of call Id, and stop
 % there (creep).
 pred ask-retry i:int.
 ask-retry Id :-
   say 0 ["    retry ", {box-name Id}, ": back to its call port"],
-  set-mode creep, set-request (retry Id), fail.
+  set-mode creep, unwind-for (retry Id).
 
 % [call-in-stack Id F]: call Id is the call in focus or a call above it.
 :nooc
@@ -261,7 +282,7 @@ run-command ["n"] _ _ :- !, set-mode nodebug.
 % call N of the stack)
 run-command ["r"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, ask-retry Id.
 run-command ["r", N] _ F :- rex.match "^[1-9][0-9]*$" N, Id is string_to_int N, call-in-stack Id F, !, ask-retry Id.
-run-command ["f"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, set-request (fail-call Id), fail.
+run-command ["f"] _ (focus (frame Id _ _ _ _) _) :- Id > 0, !, unwind-for (fail-call Id).
 run-command [C] Kind F :- (C = "r" ; C = "f"), !,
   print "    (the query itself cannot be retried or failed)", command-loop Kind F.
 run-command ["r", _] Kind F :- !, print "    (no such call in the stack)", command-loop Kind F.
