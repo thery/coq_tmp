@@ -35,11 +35,16 @@ origin-string (at (reflect.srcloc File Line _) _) S :-
 pred numbered-rules o:list (pred).
 numbered-rules Rules :- std.findall (reflect.clause _ _ _ _ _ _) Rules.
 
-% [clause-location N Loc]: the location of the rule numbered N.
+% [clause-location N Loc]: the location of the rule numbered N; the CHR
+% rules are numbered after the rules, in the order of reflect's facts
+% (chr.elpi, [chr-rule-number]).
 pred clause-location i:int, o:reflect.srcloc.
 clause-location N Loc :-
-  numbered-rules Rules, std.length Rules Count, N >= 1, N =< Count,
+  numbered-rules Rules, std.length Rules Count, N >= 1, N =< Count, !,
   I is N - 1, std.nth I Rules Rule, Rule = reflect.clause _ _ Loc _ _ _.
+clause-location N Loc :-
+  numbered-rules Rules, std.length Rules Count, I is N - Count,
+  reflect.chr-rule I Loc _ _ _ _ _ _.
 
 % ---- Declarations and modes -------------------------------------------------
 

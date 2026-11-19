@@ -123,7 +123,8 @@ pred premises o:srcloc, o:list span.
 pred closed-clause o:int, o:any.
 
 % [chr-rule Index Loc Attributes Clique ToMatch ToRemove Guard NewGoal]:
-% rule ToMatch \ ToRemove | Guard <=> NewGoal, inside constraint Clique {..}.
+% rule ToMatch \ ToRemove | Guard <=> NewGoal, inside constraint Clique {..};
+% Loc is the place of its first head.
 pred chr-rule o:int, o:srcloc, o:list attribute, o:list any,
               o:list sequent, o:list sequent, o:option (pred), o:option sequent.
 

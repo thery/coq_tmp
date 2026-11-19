@@ -126,7 +126,9 @@ reflect.premises (reflect.srcloc "f.elpi" 4 0) [(reflect.span "f.elpi" 4 11 4 22
 - **CHR**: `chr-rule I Loc Attrs Clique ToMatch ToRemove Guard NewGoal` for
   `constraint Clique { rule ToMatch \ ToRemove | Guard <=> NewGoal. }`; a
   pattern `(E :> C ?- G)` is `reflect.sequent E C G`, a missing `E` or `C`
-  is a fresh variable, a missing guard or new goal is `none`.
+  is a fresh variable, a missing guard or new goal is `none`; `Loc` is
+  the place of the first head of the rule (Elpi's own location of a rule
+  starts at the end of the token before it, often on the line above).
 - **Overloaded symbols** (declared twice with different types): the
   constant is cast to its type when that type is monomorphic
   (`((+) : int -> int -> int)`); for a polymorphic overloaded symbol such as

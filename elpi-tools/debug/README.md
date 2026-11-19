@@ -19,9 +19,15 @@ and shows what the real engine does not:
   the **exit** port, what the whole call computed (the bindings it made
   since its call port); a logic variable keeps one name, `X3`, for the
   whole run;
+- **CHR at work** (the rules still run natively): each attempt of a
+  CHR rule, with the constraints it is tried on, and its outcome (it
+  fires, and removes some of them, or its guard fails); the goal of a
+  rule that fires, run in the interpreter; and at any stop the
+  **constraint store** (below, "CHR at work");
 - **interactive stepping** (`-i`), as in the box-model tracers of Prolog:
   creep, skip, leap, retry, fail, print, the scope of each logic variable,
-  the local program, breakpoints set at the prompt;
+  the local program, the constraint store, breakpoints set at the prompt
+  (on a predicate, a rule, a CHR rule);
 - **breakpoints** on a predicate, with the calls above, the local program
   (and the call that added each clause) and the eigenvariables;
 - **counts and time per predicate** (calls, exits, redos, fails, clauses
@@ -99,9 +105,9 @@ tracer (to debug the debugger).
 With `-i` the interpreter stops at each event and reads a command after
 the prompt ` ? ` (with `-break`, it first leaps to a breakpoint).  The
 events are the ports of the calls (`Call`, `Exit`, `Redo`, `Fail`,
-`Resume` for a woken goal) and the steps of λProlog (`Unify`, `Pi`,
-`Assume`, `Delay`, `Cut`); `-trace` prints the same events without
-stopping.  An excerpt of [`tests/interactive.t`](tests/interactive.t):
+`Resume` for a woken goal), the steps of λProlog (`Unify`, `Pi`,
+`Assume`, `Delay`, `Cut`) and the attempts of the CHR rules (`Rule`);
+`-trace` prints the same events without stopping.  An excerpt of [`tests/interactive.t`](tests/interactive.t):
 
 ```
 Call: #1 of (lam c0 \ lam c1 \ c0) X0
@@ -137,8 +143,9 @@ Unify: #1 with lambda.elpi:14: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
 | `g` | the calls above |
 | `scope` | the eigenvariables in force and, for each logic variable of the goal, those it may depend on |
 | `hyps` | the local program (the clauses added by `=>`, with the call that added each) |
+| `store` | the constraint store: the goals suspended by `declare_constraint`, most recent first, with their numbers (`[S2] leq X1 X2`) |
 | `+ P`, `- P` | set, remove a breakpoint on the predicate P |
-| `+ clause N`, `- clause N` | set, remove a breakpoint on the clause numbered N in the listing of `-machine`: the run stops at the unify step of that clause |
+| `+ clause N`, `- clause N` | set, remove a breakpoint on the clause numbered N in the listing of `-machine` (the rules, then the CHR rules): the run stops at the unify step of that clause; for a CHR rule, at each of its attempts |
 | `e` | the deepest failure so far |
 | `a` | abort |
 | `h`, `?` | help |
@@ -200,8 +207,8 @@ compiled as before and nothing is kept.
 
 **For a front end** (`-machine`, [`lib/machine.elpi`](lib/machine.elpi)): besides the
 usual text, elpi-debug prints lines `@@elpi-debug {JSON}`: first the
-listing of the rules (numbered, with file and line) and of the lines of
-the declarations; then, at each stop and in place of the prompt, the
+listing of the rules and then of the CHR rules (numbered, with file and
+line) and of the lines of the declarations; then, at each stop and in place of the prompt, the
 description of the stop (its number, why it stops: `start`, `step`,
 `breakpoint`, `pause`; the event; the stack of calls, each with the clause
 it runs, the premise it comes from (the goal of its caller's clause, with
@@ -210,7 +217,8 @@ what each of its logic variables may depend on;
 the bindings of a unify step or of an exit port; the local program;
 the eigenvariables; the variables of the query by their source names,
 `L` of `append [1] [2] L`, with their values, which the driver finds in
-the goal and passes to `debug.run` as the option `debug.query-vars`).  The
+the goal and passes to `debug.run` as the option `debug.query-vars`; the
+constraint store; at an event of a CHR rule, the place of the rule).  The
 run waits at a stop `Start` before its first event, where breakpoints can
 be set.  The signal SIGUSR1 asks for a pause: the run stops at the next
 event.  Only with `-machine`, the body of each clause runs under a local
@@ -219,11 +227,116 @@ transparent to the cut; without it nothing changes.
 
 Build and test: `cd elpi-tools && dune build && dune test`.  The tests
 ([`tests/*.t`](tests), dune cram tests) record traces, explanations,
-breakpoints and stepping on five small programs (lists, cut, a typed
+breakpoints and stepping on small programs (lists, cut, a typed
 λ-calculus, CHR, a predicate defined nowhere) and check with `-compare`
 that the interpreter gives the answers of the real engine;
 [`tests/machine.t`](tests/machine.t) records a session of `-machine`;
-[`tests/premises.t`](tests/premises.t) the premise of each call.
+[`tests/premises.t`](tests/premises.t) the premise of each call;
+[`tests/chr.t`](tests/chr.t) CHR at work (below).
+
+## CHR at work
+
+The CHR rules of the program still run natively ("CHR at depth 1":
+Elpi matches them, runs their guards, removes the constraints they
+simplify; interpreting CHR itself is out of scope).  What the debugger
+shows of them, on [`tests/leq.elpi`](tests/leq.elpi) (order constraints:
+reflexivity and antisymmetry simplify, transitivity propagates; from
+[`tests/chr.t`](tests/chr.t)):
+
+```
+$ elpi-debug -trace tests/leq.elpi 'leq A B, leq B C, leq C A'
+...
+  Delay: [S2] leq X1 X2 on [X1, X2]
+  Rule: clause 7 leq.elpi:7 tried on [S2]
+  Rule: clause 7 leq.elpi:7 guard fails
+  Rule: clause 9 leq.elpi:9 tried on [S1, S2]
+  Rule: clause 9 leq.elpi:9 fires
+Call: #3 leq X0 X2   (goal of the CHR rule at leq.elpi:9)
+...
+  Delay: [S4] leq X2 X0 on [X2, X0]
+  Rule: clause 7 leq.elpi:7 tried on [S4]
+  Rule: clause 7 leq.elpi:7 guard fails
+  Rule: clause 8 leq.elpi:8 tried on [S4, S3]
+  Rule: clause 8 leq.elpi:8 fires, removes [S4, S3]
+```
+
+- **The attempts.**  `Rule: clause N file:line tried on [S1, S2]`: the
+  rule (numbered after the rules of the program: the N of `+ clause N`)
+  is tried on the constraints of those suspensions, which match its
+  heads, in the order of its heads; then its outcome: `fires` (and
+  `removes [...]`, the constraints after `\`), or `guard fails`.  An
+  attempt whose heads do not match is not shown (Elpi tries the rules of
+  a new constraint on every combination of the constraints that share a
+  variable with it).  The events come after the propagation, at the
+  depth of the `Delay` that led to it: Elpi tries all the rules before
+  the goal of any of them runs.  `S?` is a constraint that the
+  interpreter did not number (one declared by native code: "Limits").
+- **The goal of a rule** that fires runs in the interpreter, at the
+  level of the query (the goal of a rule is called by no call), its calls
+  marked `(goal of the CHR rule at file:line)`.
+- **The store**: `store` at the prompt, the field `store` of
+  `-machine`, the scope Constraints in VS Code: the goals suspended now,
+  most recent first, each with its number (`[S2] leq X1 X2`).  It is
+  **Elpi's own store**, read by a builtin of the driver
+  (`API.RawData.constraints`): exact (a goal removed by a rule or woken is
+  gone), rather than the debugger's record of its delays, which would not
+  see the removals and could not keep the goals (a safe refuses a term
+  with variables).
+- **Breakpoints**: `+ clause N` on a CHR rule (N from the listing of
+  `-machine`: the rules, then the CHR rules) stops at each attempt of the
+  rule; in VS Code, a breakpoint in the margin on the line of a CHR rule.
+
+**How.**  The driver rewrites the CHR rules of FILE before compiling them
+(`in_view` in [`bin/elpi_debug_main.ml`](bin/elpi_debug_main.ml);
+[`lib/chr.elpi`](lib/chr.elpi)), the same way for every rule:
+
+- The guard `G` of a rule (`true` when it has none) becomes
+  `debug.rule-tried Loc Kept [C1, ..., Cn], G, debug.rule-guard-held`,
+  only with an option that shows events (`-trace`, `-builtins`,
+  `-break`, `-i`, `-machine`): the first step notes the attempt, the last
+  one that the guard of the program held.  `Ci` is the context of the
+  i-th constraint matched (a variable of its own in place of a context
+  the rule does not name), where the debugger put the number of its
+  suspension; `Kept` is the number of heads before `\`.
+- What a guard may do, checked on elpi 4.0.0 (runtime.ml,
+  `try_fire_rule`, and a test program): it runs in a runtime of its own,
+  on the static program only (a clause added by `=>` is not seen, nor the
+  local clauses of the interpreter), with the variables of the
+  constraints frozen (binding one fails), and it may not declare a
+  constraint (a runtime error); it may call any predicate of the static
+  program and any builtin, printing included.  So the notes go to a queue
+  of the driver (its builtin `debug.builtin-note-rule`), which the
+  interpreter takes after the propagation and shows as events.  The steps
+  added read their arguments, bind none of the variables of the rule,
+  declare nothing and always succeed: the rule matches, holds and fires
+  exactly as before.
+- Each constraint block gets `debug.suspended-as` in its context filter
+  (`constraint debug.suspended-as ... ?- ...`): with events, `delay` runs
+  `declare_constraint` under the clause `debug.suspended-as K`, so that
+  the context of the constraint holds its number (Elpi keeps in the
+  context of a constraint only the clauses of the predicates of the
+  filter).
+- The goal `N` of a rule becomes `debug.hand-rule-goal Loc N`, always.
+  Natively the goal of a rule runs with the static program only, where
+  the local clauses of the interpreter, and so the bridges, are missing:
+  before this, a rule goal that called a program predicate failed
+  (`leq A B, leq B C` had no solution in the interpreter, one natively).
+  The goal is handed, through CHR itself, to a **runner**: a goal
+  suspended at the start of the run, so under the local clauses of the
+  run, which Elpi gives back to a woken goal.  `hand-rule-goal` declares
+  the constraint `rule-goal-request Loc N`; a rule of the debugger matches
+  it with the runner `rule-runner T` and binds `T`; the runner wakes,
+  suspends itself again on a new variable, and runs `N` in the
+  interpreter, to its first solution (Elpi checks that the goal of a rule
+  is a function).  Both are suspended on `_`: CHR matches only
+  constraints that share a key, and all the constraints suspended on `_`
+  share one.
+
+The answers are unchanged: `-compare`, with and without `-trace`, gives
+the answers of the real engine on [`tests/chr.elpi`](tests/chr.elpi),
+[`tests/leq.elpi`](tests/leq.elpi) and
+[`tests/parity.elpi`](tests/parity.elpi) (a namespace, a rule keeping one
+constraint and removing another, a rule naming a context).
 
 ## How the interpreter works
 
@@ -241,7 +354,7 @@ resolves names block by block).  Read them in this order:
    driver ([`bin/`](bin)) runs elpi-reflect on FILE and compiles, in this
    order: `reflect.elpi`; `debug.elpi`; FILE **without its rules** (its
    declarations, so that the terms of the program type check, and its CHR
-   rules, which run natively); the rules, as facts
+   rules, which run natively, rewritten: above, "CHR at work"); the rules, as facts
    `reflect.clause P Index Loc Attrs Head Body` and, closed, as facts
    `reflect.closed-clause N F` (elpi-reflect `-closed`: F is the rule under
    N binders, one per variable: the debugger cannot close a rule itself,
@@ -322,19 +435,24 @@ resolves names block by block).  Read them in this order:
    into the interpreter, where a woken goal enters through its resume port.
    (The design said `declare_constraint (solve G)`: changed, because the
    CHR rules would then not match the constraint.)
-6. **[`lprolog.elpi`](lib/lprolog.elpi): λProlog in view.**  `shape-of`
+6. **[`chr.elpi`](lib/chr.elpi): CHR at work.**  The steps that the
+   rewritten rules call (`rule-tried`, `rule-guard-held`,
+   `hand-rule-goal`), the runner of the goals of the rules
+   (`rule-runner`), the events of the attempts (`show-rule-attempts`) and
+   the store (`show-store`, `program-store`); above, "CHR at work".
+7. **[`lprolog.elpi`](lib/lprolog.elpi): λProlog in view.**  `shape-of`
    takes any term apart (Elpi has no builtin for λ-terms and connectives),
    for every walk: binders, the stand-in of `vars-of`, the clash of the
    explanation.  `show-term` prints a term with its logic variables named
    `X<uuid>` and its eigenvariables by their source names (`x#3`, from the
    `eigen` clause in force in the scope of each `pi`); `can-depend` and
    `show-scope` tell which eigenvariables a logic variable may depend on.
-7. **[`primitives.elpi`](lib/primitives.elpi): the variables of a run**,
+8. **[`primitives.elpi`](lib/primitives.elpi): the variables of a run**,
    through three primitives (four predicates) that Elpi's core could
    offer, written in Elpi as stand-ins for now (below, "The
    primitives"): `vars-of`, `uuid`, `trail-mark` and `bindings-since`.  The other files know the variables
    of a run only through them.
-8. **[`ports.elpi`](lib/ports.elpi): the events.**  `event` shows an event
+9. **[`ports.elpi`](lib/ports.elpi): the events.**  `event` shows an event
    and stops there if needed; its text is made only then (a closure:
    `port-text`, `unify-text` ...); `port` for the ports of calls
    (`call-port-marked` marks the trail at a call port seen, and
@@ -343,17 +461,17 @@ resolves names block by block).  Read them in this order:
    the head unification, the bindings since after it, the pruning
    included), `pi-port`, `assume-port`, `delay-port`, `cut-port`,
    `native-port`.
-9. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
+10. **[`stepper.elpi`](lib/stepper.elpi): interactive stepping.**  The
    stepping modes, the requests of retry and fail, the breakpoints, the
    command loop (how retry and skip work: above, and in the file).
-10. **[`machine.elpi`](lib/machine.elpi): the machine-readable channel** of
+11. **[`machine.elpi`](lib/machine.elpi): the machine-readable channel** of
    `-machine` (above, "For a front end"), with a small JSON writer.
-11. **[`explain.elpi`](lib/explain.elpi): the explanation of a failure.**
+12. **[`explain.elpi`](lib/explain.elpi): the explanation of a failure.**
    At the fail port of a call that never exited, where the goal is back as
    it was called: each candidate retried, the first argument that does not
    match and the smallest clashing subterms (`subterm-clash`), the occurs
    check and the scope of eigenvariables (`flex-clash`).
-12. **[`profile.elpi`](lib/profile.elpi): the outcome and the profile.**
+13. **[`profile.elpi`](lib/profile.elpi): the outcome and the profile.**
 
 ## The primitives (what Elpi's core could offer)
 
@@ -614,6 +732,29 @@ with no clause), the depth, the context.  With events on, each event
 looks up the breakpoints and the stepping mode in their safes (about 137
 goals per call with `-break`, against 26 on the fast path): not changed
 here.  `-trace` still costs the printing of each goal.
+
+**CHR at work** (2026-11-19, load 11-20: other jobs on the laptop;
+minimum of 10 runs alternated with main of the same day; interpreted
+time of `-time`):
+
+| run | before | after |
+|---|---|---|
+| `count 6400` | 0.150 s | 0.155 s |
+| `bench 200` | 0.264 s | 0.264 s |
+| `queens 8 Q` | 0.127 s | 0.097 s |
+| `lookups 2000` | 0.113 s | 0.109 s |
+| `primes 300` ([`tests/chrbench.elpi`](tests/chrbench.elpi), 299 constraints, 60 169 attempts, 237 firings, counted with `-trace`; native 1.24 s) | 3.01 s | 2.92 s |
+| `-trace bench 30` | 0.500 s | 0.489 s |
+| `-trace primes 100` (6594 attempts shown) | 0.66 s | 6.19 s |
+
+The fast path is unchanged (within the noise: two more series on `primes
+300` gave 2.87-2.96 s before, 2.93-3.10 s after).  On it the rules are
+not rewritten but for their goals, and each goal of a rule that fires
+goes through the runner (a constraint declared, a rule of the debugger,
+a wake-up).  With `-trace`, a CHR run pays for its rule events: about
+0.4 ms per event (two per attempt shown; the notes alone, without the
+events, cost 0.82 - 0.66 s); a tenth of it names the rule (its number
+is found by listing the rules, at each event).
 ## Limits (said plainly)
 
 - **Cut through a variable**: `G = !, ..., G` cuts only `G` itself (in Elpi
@@ -634,9 +775,34 @@ here.  `-trace` still costs the printing of each goal.
 - **Head patterns** `uvar` and `as` are supported only at the top of an
   argument.  `=!=>` and clause bodies given as lists (`H :- [B1, B2]`) are
   not supported.
-- **CHR at depth 1 only**: the rules fire natively; the store and the
-  rule attempts are not shown (only the delay and wake-up of interpreted
-  goals; a refused constraint is explained as such).
+- **CHR at depth 1 only**: the rules are matched and fire natively; the
+  debugger shows their attempts and outcomes, runs their goals and shows
+  the store ("CHR at work"), but does not interpret CHR itself.  Not
+  shown: the attempts whose heads do not match.  A stop at an attempt
+  comes after the propagation: the constraints a rule removes are already
+  gone from the store.  At an attempt the focus is the call that declared
+  the constraint, or the query when the goal of a rule comes first.
+- **CHR, what differs from the real engine** (not the answers, on the
+  tests): the store holds the runner of the goals of the rules
+  (`debug.rule-runner`, hidden by `store`, seen by `print_constraints`),
+  and with events the context of a constraint holds `debug.suspended-as
+  K` (seen by `print_constraints`, and by a rule that names the context of
+  a constraint, `(C ?- p X)`).  Such a rule did not and does not see the
+  hypothetical clauses of the program: the interpreter keeps them as data
+  (`hyp` facts), not as clauses of their predicates.  The goal of a rule
+  runs to its first solution, at depth 0 (for `-max-depth`); a goal of a
+  rule on constraints declared inside `pi` works on the test
+  (`pi x\ (p Y, p Y)`), one that mentions an eigenvariable is not tested.
+  A constraint declared on `_` (`declare_constraint G [_]`) is suspended
+  on a variable of its own in the interpreter, while Elpi suspends all
+  such constraints on one key, so that CHR sees them together (so before
+  this work too; [`tests/chrbench.elpi`](tests/chrbench.elpi) names its
+  key).  A constraint declared by native code (inside a builtin) is not
+  numbered (`S?`), and the attempts it leads to are shown at the next
+  delay or goal of a rule.
+- **Elpi's location of a CHR rule** without attributes starts at the end
+  of the token before it (often the line above); elpi-reflect gives the
+  place of its first head instead.
 - **Explanations** name the deepest failure, which is not always the
   culprit; failures inside `not` count as failures.
 - Logic variables are named `X<uuid>` (`X12`), one name per variable for

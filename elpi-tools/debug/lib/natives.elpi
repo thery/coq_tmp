@@ -47,22 +47,36 @@ run-native Ctx Entry G :- (current-ctx Entry Ctx => G).
 %
 % [delay Ctx G Keys]: G suspended on Keys by the real declare_constraint,
 % so that the CHR rules see the same constraints and fire natively.  The
-% suspension gets a number; when G is woken, its bridge brings it back
-% into the interpreter, where it enters through the resume port with that
-% number (ECLiPSe's DELAY and RESUME ports).
+% suspension gets a number, in force as [suspended-as K] in its context
+% (chr.elpi); when G is woken, its bridge brings it back into the
+% interpreter, where it enters through the resume port with that number
+% (ECLiPSe's DELAY and RESUME ports).  The attempts of the CHR rules that
+% the new constraint led to are shown after it (chr.elpi).
 :nooc
 pred delay o:ctx, i:(func), i:any.
 delay Ctx G Keys :-
   suspension-number K,
   delay-port Ctx G Keys K,
-  delay-or-explain Ctx G Keys K.
+  note-declaration Ctx,
+  delay-or-explain Ctx G Keys K,
+  show-rule-attempts Ctx.
 
 :nooc
 pred delay-or-explain o:ctx, i:(func), i:any, i:int.
-delay-or-explain Ctx G Keys K :- (current-ctx (woken K) Ctx => declare_constraint G Keys).
+delay-or-explain Ctx G Keys K :- suspension-clauses K Ctx Cs, (Cs => declare_constraint G Keys).
 delay-or-explain Ctx G _ _ :-
+  show-rule-attempts Ctx,
   note-goal-failure Ctx G ["declare_constraint failed: adding this constraint fired a CHR rule that failed"],
   fail.
+
+% [suspension-clauses K Ctx Cs]: the local clauses in force for the
+% goal suspended as K in the context Ctx: its context for the bridges,
+% and its number for the guards of the CHR rules and the store (none on
+% the fast path, where K is 0).
+:nooc
+pred suspension-clauses i:int, o:ctx, o:list (pred).
+suspension-clauses 0 Ctx [current-ctx (woken 0) Ctx] :- !.
+suspension-clauses K Ctx [current-ctx (woken K) Ctx, suspended-as K].
 
 % [suspension-number K]: the number of a new suspension (0 on the fast path).
 pred suspension-number o:int.

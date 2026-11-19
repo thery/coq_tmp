@@ -4,7 +4,8 @@
 % An event is a port of a call (call, exit, redo, fail; resume for a woken
 % goal), or a step of λProlog inside a call: the head unification of the
 % selected clause (unify), the entry into pi (pi) or into H => G (assume),
-% the suspension of a goal (delay), a cut.
+% the suspension of a goal (delay), a cut; or an attempt of a CHR rule
+% and its outcome (chr.elpi).
 
 
 data event-kind.
@@ -20,6 +21,8 @@ symb delay-step event-kind.
 symb cut-step event-kind.
 symb try-step event-kind.      % a candidate clause tried (recorded for the profile only)
 symb start-step event-kind.    % the start of a run, before its first event (option machine)
+symb rule-attempt-step event-kind.  % a CHR rule tried on constraints that match its heads (chr.elpi)
+symb rule-outcome-step event-kind.  % the outcome of its guard: the rule fires or not
 
 func event-label event-kind -> string.
 event-label call-port "Call:".
@@ -34,6 +37,8 @@ event-label delay-step "Delay:".
 event-label cut-step "Cut:".
 event-label try-step "Try:".
 event-label start-step "Start:".
+event-label rule-attempt-step "Rule:".
+event-label rule-outcome-step "Rule:".
 
 % [box-event K]: K is a port of a call.
 pred box-event i:event-kind.
@@ -136,6 +141,8 @@ port-text Kind Tag Frame Lines [Tag | T] :-
 func premise-note event-kind, frame -> string.
 premise-note call-port (frame _ _ _ _ (called-from Premise)) Note :- !,
   Note is "   (" ^ {premise-string Premise} ^ ")".
+premise-note call-port (frame _ _ _ _ (by-rule Loc)) Note :- !,
+  Note is "   (goal of the CHR rule at " ^ {origin-string (at Loc [])} ^ ")".
 premise-note _ _ "".
 
 % [premise-string Premise S]: "premise N of file:line", or "premise N of

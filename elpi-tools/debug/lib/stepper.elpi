@@ -64,6 +64,7 @@ shown-in-mode tracing _ _.
 shown-in-mode (skip Id) Kind (focus (frame Id _ _ _ _) _) :- end-event Kind.
 shown-in-mode _ Kind (focus (frame _ _ P _ _) _) :- box-event Kind, breakpoint-on P.
 shown-in-mode _ unify-step (focus (frame Id _ _ _ _) _) :- runs Id Origin, clause-breakpoint-on Origin.
+shown-in-mode _ rule-attempt-step _ :- tried-rule Loc, clause-breakpoint-on (at Loc []).
 
 % Why the interpreter stops at an event.
 data stop-reason.
@@ -74,7 +75,7 @@ symb started stop-reason.        % the start of the run, before its first event 
 
 % [stop-reason Kind F Reason]: the interpreter stops at the event, for
 % Reason: the entry into a call with a breakpoint, the unify step of a
-% clause with a breakpoint, a pause asked, or, in interactive mode, as the
+% clause with a breakpoint, the attempt of a CHR rule with a breakpoint, a pause asked, or, in interactive mode, as the
 % stepping mode says.
 :nooc
 pred stop-reason i:event-kind, o:focus, o:stop-reason.
@@ -82,6 +83,8 @@ stop-reason Kind (focus (frame _ _ P _ _) _) at-breakpoint :-
   entry-event Kind, breakpoint-on P, not (current-mode nodebug), !.
 stop-reason unify-step (focus (frame Id _ _ _ _) _) at-breakpoint :-
   runs Id Origin, clause-breakpoint-on Origin, not (current-mode nodebug), !.
+stop-reason rule-attempt-step _ at-breakpoint :-
+  tried-rule Loc, clause-breakpoint-on (at Loc []), not (current-mode nodebug), !.
 stop-reason _ _ paused :- opt machine, not (current-mode nodebug), pause-requested, !.
 stop-reason Kind F stepped :- opt interactive, current-mode M, stops-in-mode M Kind F.
 
@@ -140,7 +143,8 @@ frame-has-id Id (frame Id _ _ _ _).
 %
 % A breakpoint is on a predicate (every call of it stops at its call
 % port) or on a clause (the call stops at the unify step of the clause,
-% when the clause is selected).  The breakpoints are those of option
+% when the clause is selected; for a CHR rule, the run stops at each
+% attempt of the rule, chr.elpi).  The breakpoints are those of option
 % break, then the changes made at the prompt (+ P, - P, + clause N,
 % - clause N), kept in the safe "breaks" as pairs (change, breakpoint).
 
@@ -266,6 +270,7 @@ run-command ["p"] Kind F :- !, show-focus F, command-loop Kind F.
 run-command ["g"] Kind (focus _ Above as F) :- !, show-backtrace Above, command-loop Kind F.
 run-command ["scope"] Kind (focus (frame _ _ _ G _) _ as F) :- !, show-scope G, command-loop Kind F.
 run-command ["hyps"] Kind F :- !, show-hyps, command-loop Kind F.
+run-command ["store"] Kind F :- !, show-store, command-loop Kind F.
 run-command ["e"] Kind F :- !, show-deepest-failure, command-loop Kind F.
 run-command ["h"] Kind F :- !, show-help, command-loop Kind F.
 run-command ["?"] Kind F :- !, show-help, command-loop Kind F.
@@ -293,8 +298,9 @@ show-help :- std.forall [
   "    g            the calls above (goals)",
   "    scope        the eigenvariables in force and what each logic variable may depend on",
   "    hyps         the local program: the clauses added by =>",
+  "    store        the constraint store: the goals suspended by declare_constraint",
   "    + P, - P     set, remove a breakpoint on the predicate P",
-  "    + clause N, - clause N   set, remove a breakpoint on the clause N (option -machine lists them)",
+  "    + clause N, - clause N   set, remove a breakpoint on the clause N (a rule, or a CHR rule: option -machine lists them)",
   "    e            the deepest failure so far",
   "    a            abort"] (s\ print s).
 

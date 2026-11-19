@@ -4,7 +4,7 @@
 % The interpreter is in the files of this directory: fragments of one
 % block [namespace debug { }], which dune's rule (../dune) writes around
 % their concatenation, in the order: state, program, strategy, interpreter, compiled,
-% natives, lprolog, primitives, ports, stepper, machine, explain, profile.  README.md, section
+% natives, chr, lprolog, primitives, ports, stepper, machine, explain, profile.  README.md, section
 % "How the interpreter works", reads them side by side.
 
 
@@ -76,12 +76,13 @@ symb frame int -> int -> any -> (pred) -> entry -> frame.
 
 % How a call was entered: called from a premise of a clause; called with
 % no premise known (a goal of the query, or any call on the fast path,
-% where no event is shown and the premise is not kept); or woken by CHR
-% from its suspension N.
+% where no event is shown and the premise is not kept); woken by CHR
+% from its suspension N; or run as the goal of a CHR rule.
 data entry.
 symb called-from premise -> entry.
 symb called entry.
 symb woken int -> entry.
+symb by-rule reflect.srcloc -> entry.   % a goal of the CHR rule at Loc (chr.elpi)
 
 % Where a call is written: [premise Origin N], the goal N (from 1) of the
 % body of the clause from Origin, as the goals of its top-level conjunction

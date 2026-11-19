@@ -369,11 +369,23 @@ let sequent_data ~pattern (q : Term.t Chr.sequent) =
   let part t = Print.term (if pattern then data_of_pattern t else t) in
   "(reflect.sequent " ^ part q.eigen ^ " " ^ part q.context ^ " " ^ part q.conclusion ^ ")"
 
+(* [chr_rule_loc r]: where the CHR rule r is written: at its first head.
+   (Elpi's own location of a rule without attributes starts at the end of
+   the token before it, the { of its block or the dot of the rule before:
+   often the line above.)  The location of a sequent is the earliest of
+   its parts (a part the rule does not write has the location of the
+   whole sequent). *)
+let chr_rule_loc (r : (_, Term.t) Chr.t) =
+  let earliest (a : Loc.t) (b : Loc.t) = if b.source_start < a.source_start then b else a in
+  match r.to_match @ r.to_remove with
+  | s :: _ -> earliest (earliest s.eigen.loc s.context.loc) s.conclusion.loc
+  | [] -> r.loc
+
 let chr_fact index clique (r : (raw_attribute list, Term.t) Chr.t) =
   let list l = "[" ^ String.concat ", " l ^ "]" in
   let option f = function None -> "none" | Some x -> "(some " ^ f x ^ ")" in
   fact "chr-rule"
-    [ string_of_int index; srcloc r.loc; list (List.filter_map attribute_data r.attributes);
+    [ string_of_int index; srcloc (chr_rule_loc r); list (List.filter_map attribute_data r.attributes);
       list (List.map Print.constant clique);
       list (List.map (sequent_data ~pattern:true) r.to_match);
       list (List.map (sequent_data ~pattern:true) r.to_remove);

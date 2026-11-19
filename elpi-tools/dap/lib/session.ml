@@ -3,7 +3,8 @@
    turned into responses and events.
 
    The mapping (README.md):
-   - setBreakpoints (file:line): + clause N, N the rule that holds the line;
+   - setBreakpoints (file:line): + clause N, N the rule (or CHR rule) that
+     holds the line;
      setFunctionBreakpoints: + P, a breakpoint on the predicate P;
    - stepIn: c (creep); next: s (skip) at the ports of a call, c at a step
      inside a call (unify, pi, =>, cut, delay); stepOut: o; continue: l
@@ -16,7 +17,7 @@
      an exit port), the query (its variables by their source names, with
      their values), the local program (the clauses added by =>), the
      eigenvariables (and what each logic variable of the goal may depend
-     on);
+     on), the constraint store;
    - evaluate: in the debug console, any command of elpi-debug; a watch
      expression, a variable of the query by its name, or a variable X3
      (as elpi-debug names it), from the description of the stop.
@@ -212,12 +213,10 @@ let client_column s column = if s.columns_start_at_1 then column + 1 else column
 let current_frames s = match s.stop with Some stop -> stop.frames | None -> []
 
 (* Where a call of the stack is shown: a range of a file (the goal of a
-   clause being run), the line of a clause, a hypothetical clause, or no
-   clause. *)
-type shown_at = Range of span | Line of location | In_hypothesis of string | Nowhere
-
-(* [premise_span f]: the place of the goal that the call f comes from. *)
-let premise_span (f : frame) = Option.bind f.premise (fun p -> p.place)
+   clause being run), the line of a clause, a hypothetical clause, no
+   clause, or (the call in focus at a stop at a CHR rule) the line of the
+   rule. *)
+type shown_at = Range of span | Line of location | In_hypothesis of string | Nowhere | At_rule of location
 
 (* [premise_in at f]: the place of the goal that the call f comes from,
    when that goal is a premise of the rule at [at]. *)
@@ -231,8 +230,8 @@ let premise_in (at : location) (f : frame) =
    just below it in the stack (index - 1), as debuggers show a caller at
    the call it made; for the call in focus, at the clause.  At its own
    ports, where it runs no clause: at the goal it comes from, where it is
-   written; for a call with no such goal (of the query, or woken), where
-   its caller is. *)
+   written (at the line of the CHR rule, for a goal of a rule); for a call
+   with no such goal (of the query, or woken), where its caller is. *)
 let rec frame_location frames index =
   match List.nth_opt frames index with
   | None -> Nowhere
@@ -243,21 +242,35 @@ let rec frame_location frames index =
           | Some span -> Range span
           | None -> Line at)
       | Hypothesis origin -> In_hypothesis origin
-      | No_clause -> ( match premise_span f with Some span -> Range span | None -> frame_location frames (index + 1)))
+      | No_clause -> (
+          match f.premise with
+          | Some { place = Some span; _ } -> Range span
+          | Some { written_in = Rule_at at; place = None; _ } -> Line at
+          | _ -> frame_location frames (index + 1)))
 
 let source_of file = `Assoc [ ("name", `String (Filename.basename file)); ("path", `String file) ]
 
+(* [shown_at stop index]: where the call [index] of the stack of the stop
+   is shown: at a stop at a CHR rule (its attempt, its outcome), the call
+   in focus (the one whose constraint the rule was tried on, or the query)
+   at the rule; otherwise as [frame_location] says. *)
+let shown_at stop index =
+  match stop.rule with Some at when index = 0 -> At_rule at | _ -> frame_location stop.frames index
+
 (* [stack_frame s stop index f]: the DAP stack frame of the call f; the
-   name of the call in focus starts with the port of the stop.  A range
-   is given with its end (endLine, endColumn: the position just after its
-   last character), so that the editor highlights just that goal. *)
+   name of the call in focus starts with the port of the stop (at a CHR
+   rule, the name is the text of the event: the rule, the constraints it
+   is tried on).  A range is given with its end (endLine, endColumn: the
+   position just after its last character), so that the editor highlights
+   just that goal. *)
 let stack_frame s stop index f =
   let name = if f.id = 0 then f.goal else Printf.sprintf "#%d %s" f.id f.goal in
   let name = if index = 0 then stop.port ^ ": " ^ name else name in
   let frame ?(name = name) ?(column = 0) fields =
     `Assoc ((("name", `String name) :: ("id", `Int f.id) :: ("column", `Int (client_column s column)) :: fields)) in
-  let whole_line file line = frame [ ("source", source_of file); ("line", `Int (client_line s line)) ] in
-  match frame_location stop.frames index with
+  let whole_line ?name file line = frame ?name [ ("source", source_of file); ("line", `Int (client_line s line)) ] in
+  match shown_at stop index with
+  | At_rule at -> whole_line ~name:stop.text at.file at.line
   | Range span ->
       frame ~column:span.start_column
         [ ("source", source_of span.span_file); ("line", `Int (client_line s span.start_line));
@@ -269,20 +282,21 @@ let stack_frame s stop index f =
       | Some (file, line) -> whole_line file line
       | None -> frame [ ("line", `Int 0) ])
 
-(* The scopes of a frame: references index * 4 + 1 .. + 4 (index: its
+(* The scopes of a frame: references index * 5 + 1 .. + 5 (index: its
    place in the stack, from 0); valid while the stop lasts. *)
-type scope = Goal | Query | Local_program | Eigenvariables
+type scope = Goal | Query | Local_program | Eigenvariables | Constraints
 
 let scope_reference index scope =
-  (index * 4) + match scope with Goal -> 1 | Query -> 2 | Local_program -> 3 | Eigenvariables -> 4
+  (index * 5) + match scope with Goal -> 1 | Query -> 2 | Local_program -> 3 | Eigenvariables -> 4 | Constraints -> 5
 
 let scope_of_reference reference =
-  let index = (reference - 1) / 4 in
-  match (reference - 1) mod 4 with
+  let index = (reference - 1) / 5 in
+  match (reference - 1) mod 5 with
   | 0 -> (index, Goal)
   | 1 -> (index, Query)
   | 2 -> (index, Local_program)
-  | _ -> (index, Eigenvariables)
+  | 3 -> (index, Eigenvariables)
+  | _ -> (index, Constraints)
 
 let variable name value = `Assoc [ ("name", `String name); ("value", `String value); ("variablesReference", `Int 0) ]
 
@@ -299,6 +313,13 @@ let goal_variables stop index f =
 let query_variables stop = List.map (fun (q : query_var) -> variable q.name q.value) stop.query_vars
 
 let local_program_variables stop = List.map (fun h -> variable h.clause h.origin) stop.hypotheses
+
+(* [constraint_variables stop]: the goals of the constraint store, most
+   recent first, each named by its suspension ([S2]; [S?] when not
+   numbered), the same for every frame. *)
+let constraint_variables stop =
+  let name (g : stored) = if g.suspension = 0 then "[S?]" else Printf.sprintf "[S%d]" g.suspension in
+  List.map (fun g -> variable (name g) g.stored_goal) stop.store
 
 (* [eigenvariable_variables stop f]: the eigenvariables in force, then
    what each logic variable of the goal may depend on. *)
@@ -470,7 +491,8 @@ let scopes s (r : P.request) =
               [ ("scopes",
                  `List [ scope "Goal" "arguments" Goal; scope "Query" "locals" Query;
                          scope "Local program (=>)" "locals" Local_program;
-                         scope "Eigenvariables" "locals" Eigenvariables ]) ]))
+                         scope "Eigenvariables" "locals" Eigenvariables;
+                         scope "Constraints" "locals" Constraints ]) ]))
 
 let variables s (r : P.request) =
   let empty () = respond s r (`Assoc [ ("variables", `List []) ]) in
@@ -486,6 +508,7 @@ let variables s (r : P.request) =
             | Query -> query_variables stop
             | Local_program -> local_program_variables stop
             | Eigenvariables -> eigenvariable_variables stop f
+            | Constraints -> constraint_variables stop
           in
           respond s r (`Assoc [ ("variables", `List vars) ]))
   | _ -> empty ()

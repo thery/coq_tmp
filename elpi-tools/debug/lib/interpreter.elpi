@@ -12,6 +12,8 @@
 
 % [run Options Goal]: Goal interpreted under Options; one success per
 % solution; on the final failure, the explanation of the deepest failure.
+% When the program has CHR rules, the runner of their goals is suspended
+% first, under the local clauses of the run (chr.elpi).
 pred run i:list option, o:(pred).
 run Options Goal :-
   seed-random Options,
@@ -23,7 +25,7 @@ run Options Goal :-
   strategy-of Options Strategy,
   std.flatten [OptionClauses, Quiet, States, Decls, {strategy-clauses Strategy},
                [the-strategy Strategy, current-ctx called (ctx 0 [])]] Local,
-  Local => (rule-clauses Rules, Rules => run-query Goal).
+  Local => (rule-clauses Rules, Rules => (start-rule-runner-if-needed, run-query Goal)).
 
 % [new-state Name C]: the clause [state Name S] for a new safe S.
 func new-state string -> (pred).
