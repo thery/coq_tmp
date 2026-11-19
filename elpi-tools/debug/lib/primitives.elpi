@@ -47,9 +47,11 @@
 %
 % The other stand-ins of elpi-debug, outside this file: the CHR hooks
 % (chr-hooks.elpi, §4-§6), the bridges as static rules (program.elpi,
-% §7), the unwinding of retry (stepper.elpi, "Unwinding", §10), and in the
-% driver (../bin): the parsed program given to the API (§8) and the CHR
-% rules rewritten (chr_in_view.ml, §4-§6).
+% §7), the unwinding of retry (stepper.elpi, "Unwinding", §10); in the
+% driver (../bin): the parsed program given to the API (§8), the CHR rules
+% rewritten (chr_in_view.ml, §4-§6), the names of the query variables
+% (§15); and elpi-reflect itself, for the rules of the program as data
+% (§12, §14).  ../ELPI-WISHLIST.md lists them all.
 %
 % THE STAND-INS (below), and their limits
 %

@@ -81,6 +81,7 @@ program-signature P Loc :- not (var P), not (builtin-loc Loc).
 pred builtin-loc i:reflect.srcloc.
 builtin-loc (reflect.srcloc File _ _) :- rex.match "^builtin[a-z_]*\\.elpi$" File.
 
+% [arg-mode A M]: the mode M of the argument A of a signature.
 func arg-mode reflect.arg -> mode.
 arg-mode (reflect.arg reflect.in _) i.
 arg-mode (reflect.arg reflect.out _) o.

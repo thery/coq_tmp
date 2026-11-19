@@ -372,7 +372,8 @@ and one module per tool.
   logpoints, data breakpoints, hovers, or changes of variables.  One
   thread.
 - Logic variables are printed by Elpi's printer, which may give one
-  variable different names in two places (two panels, or two lines).
+  variable different names in two places (two panels, or two lines; item
+  2 of [`../debug/ELPI-WISHLIST.md`](../debug/ELPI-WISHLIST.md)).
 - Under a directory named `_build` (as in dune's sandbox), Elpi's file
   resolver gives the program paths that do not exist, and breakpoints on
   lines are not found there (the tests run in a copy of their files).

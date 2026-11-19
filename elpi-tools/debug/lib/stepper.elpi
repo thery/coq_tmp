@@ -42,9 +42,11 @@ symb leap stepping.         % stop at breakpoints only
 symb tracing stepping.      % show every event, stop at breakpoints only
 symb nodebug stepping.      % show nothing, stop nowhere
 
+% [current-mode M]: the stepping mode now.
 pred current-mode o:stepping.
 current-mode M :- latest "mode" leap M.
 
+% [set-mode M]: M is the stepping mode from now on.
 pred set-mode i:stepping.
 set-mode M :- state "mode" S, stash_in_safe S M.
 
@@ -54,6 +56,7 @@ func initial-mode list option -> stepping.
 initial-mode Options creep :- std.mem! Options interactive, not (std.exists Options is-break), !.
 initial-mode _ leap.
 
+% [is-break O]: the option O is a breakpoint on a predicate.
 pred is-break i:option.
 is-break (break _).
 
@@ -157,6 +160,7 @@ ask-retry Id :-
 pred call-in-stack i:int, o:focus.
 call-in-stack Id (focus Frame Above) :- std.exists [Frame | Above] (frame-has-id Id).
 
+% [frame-has-id Id F]: F is the frame of call Id.
 pred frame-has-id i:int, i:frame.
 frame-has-id Id (frame Id _ _ _ _).
 
@@ -173,6 +177,7 @@ data breakpoint.
 symb on-predicate string -> breakpoint.     % by the name of the predicate
 symb on-clause reflect.srcloc -> breakpoint. % by the location of the clause
 
+% [breakpoint-on P]: a breakpoint is set on the predicate P.
 pred breakpoint-on i:any.
 breakpoint-on P :- term_to_string P Name, breakpoint-set (on-predicate Name).
 
@@ -180,6 +185,7 @@ breakpoint-on P :- term_to_string P Name, breakpoint-set (on-predicate Name).
 pred clause-breakpoint-on i:origin.
 clause-breakpoint-on (at Loc _) :- breakpoint-set (on-clause Loc).
 
+% [breakpoint-set B]: the breakpoint B is set.
 pred breakpoint-set i:breakpoint.
 breakpoint-set B :- state "breaks" S, open_safe S L, std.rev L Recent, last-change Recent B C, !, C = "+".
 breakpoint-set (on-predicate Name) :- opt (break Name), !.
@@ -191,6 +197,8 @@ pred last-change i:list (pair string breakpoint), i:breakpoint, o:string.
 last-change [pr C B | _] B C :- !.
 last-change [_ | L] B C :- last-change L B C.
 
+% [change-breakpoint C B]: records the change C ("+" set, "-" remove) of the
+% breakpoint B.
 pred change-breakpoint i:string, i:breakpoint.
 change-breakpoint C B :- state "breaks" S, stash_in_safe S (pr C B).
 
@@ -202,6 +210,8 @@ change-clause-breakpoint C N :- rex.match "^[0-9]+$" N, I is string_to_int N, cl
   say 1 [{breakpoint-verb C}, " on the clause at ", {origin-string (at Loc [])}].
 change-clause-breakpoint _ N :- say 1 ["no clause numbered ", N].
 
+% [breakpoint-verb C S]: the word for the change C in messages ("breakpoint"
+% or "no breakpoint").
 func breakpoint-verb string -> string.
 breakpoint-verb "+" "breakpoint" :- !.
 breakpoint-verb _ "no breakpoint".
@@ -304,6 +314,7 @@ run-command ["-", Name] Kind F :- !, change-breakpoint "-" (on-predicate Name), 
 run-command ["a"] _ _ :- !, halt "debug: aborted".
 run-command _ Kind F :- print "    unknown command (h for help)", command-loop Kind F.
 
+% [show-help]: the commands at a stop (command h).
 pred show-help.
 show-help :- std.forall [
   "    c or return  creep: go to the next event",
@@ -333,9 +344,11 @@ show-focus (focus (frame Id _ _ G _) _) :-
   say 1 [{box-name Id}, " ", {show-term G}],
   show-hyps, show-scope G.
 
+% [show-backtrace Fs]: the calls of the stack Fs (command g).
 pred show-backtrace i:list frame.
 show-backtrace Above :- print "  called from:", show-frames Above.
 
+% [show-frames Fs]: one line per frame of Fs.
 pred show-frames i:list frame.
 show-frames [].
 show-frames [F|Fs] :- say 2 [{frame-string F}], show-frames Fs.
@@ -351,6 +364,7 @@ show-hyps :- print "  local program (clauses added by =>, most recent first):", 
 show-hyps :- hyp _ Origin C, say 2 [{show-term C}, "    (", {origin-string Origin}, ")"], fail.
 show-hyps.
 
+% [show-eigenvariables]: the eigenvariables in scope, by their names.
 pred show-eigenvariables.
 show-eigenvariables :- names Es, eigen-names Es Ns, say 1 ["eigenvariables in scope: ", {names-or-none Ns}].
 

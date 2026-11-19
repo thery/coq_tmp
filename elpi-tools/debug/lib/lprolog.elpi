@@ -18,12 +18,14 @@
 pred binder-count i:any, o:int.
 binder-count T N :- shape-of T S, shape-binder-count S N.
 
+% [shape-binder-count S N]: [binder-count] for a term of shape S.
 pred shape-binder-count i:shape, o:int.
 shape-binder-count (flexible _) 0.
 shape-binder-count leaf 0.
 shape-binder-count (node _ Ts) N :- binder-counts Ts N.
 shape-binder-count (binder F) N :- pi x\ sigma B\ binder-body F x B, binder-count B M, N is M + 1.
 
+% [binder-counts Ts N]: the binders of the terms Ts, in all.
 pred binder-counts i:list any, o:int.
 binder-counts [] 0.
 binder-counts [T|Ts] N :- binder-count T A, binder-counts Ts B, N is A + B.
@@ -40,6 +42,7 @@ func rule-binder-names list reflect.attribute -> list string.
 rule-binder-names Attrs Names :- std.mem! Attrs (reflect.binders Bs), !, std.map Bs binder-source-name Names.
 rule-binder-names _ [].
 
+% [binder-source-name B S]: the source name S of the binder B.
 func binder-source-name reflect.binder -> string.
 binder-source-name (reflect.binder S _) S.
 
@@ -72,15 +75,18 @@ show-scope G :-
   vars-of G Vs,
   show-var-scopes Vs.
 
+% [show-var-scopes Vs]: [show-var-scope] for each variable of Vs.
 pred show-var-scopes i:list any.
 show-var-scopes [].
 show-var-scopes [V|Vs] :- show-var-scope V, show-var-scopes Vs.
 
+% [show-var-scope V]: "X3 may depend on: x#1, y#2".
 pred show-var-scope i:any.
 show-var-scope V :-
   visible-eigens V Es, eigen-names Es Ns,
   say 1 ["  ", {uuid-name V}, " may depend on: ", {names-or-none Ns}].
 
+% [names-or-none Ns S]: the names Ns separated by commas, or "no eigenvariable".
 func names-or-none list string -> string.
 names-or-none [] "no eigenvariable" :- !.
 names-or-none Ns S :- std.string.concat ", " Ns S.
