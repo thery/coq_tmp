@@ -16,6 +16,8 @@ pred tactic-name o:string, o:string.
 % cyp's own ones (default-ltac in cyp.db)
 pred proof-default o:string.
 
+% [close G]: close the goal G by the rules: a conjunction split, one side of
+% a disjunction, else a rule of the proof (justify_first, named, justify)
 pred close i:goal.
 close (goal _ _ {{ _ /\ _ }} _ _ as G) :-
   coq.ltac.call-ltac1 "cyp_split" G GL, subgoals GL.
@@ -100,7 +102,7 @@ run-name N G :- prooftext.tactic N, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
 % (the paper reorders the assumptions by the justification, 2003, §2.3);
 % so are the hypotheses that the facts of the node are.  With no rule or
 % tactic name, the names given are applied, one after the other, as a
-% single *by X* is today; with no name at all, the rules and the default
+% single justification *X*{.just} is; with no name at all, the rules and the default
 % tactics run.
 
 % [classify Names Methods Given Unknown]: the names of the justifications
