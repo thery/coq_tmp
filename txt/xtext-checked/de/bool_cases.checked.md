@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Sei `b : bool`{.var}. Wir zeigen `b = true \/ b = false`{.claim}.
 
-- ✅ Wir zeigen `b = true \/ b = false` durch Fallunterscheidung über `b` (bool, match):
+- ✅ Wir zeigen `b = true \/ b = false` durch Fallunterscheidung über *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ Fall 1: wir zeigen `true = true \/ true = false`{.claim}.
     - ✅ Nach Definition von eq (*eq_refl*{.just}), es gilt `true = true`{.claim}.
     - ✅ Nach Definition von or (*or_introl*{.just}), es gilt `true = true \/ true = false`{.claim}.

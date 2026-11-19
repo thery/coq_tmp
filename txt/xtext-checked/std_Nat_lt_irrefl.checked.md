@@ -43,13 +43,13 @@ by: tauto | congruence | lia | firstorder | auto
 - ✅ Rewriting with `(x ?= x) = Eq`{.fact} from right to left (eq_ind_r), we get `(x ?= x) <> Lt`{.claim}.
   - ✅ We have proved `Eq = Lt -> False`{.claim}.
     - ✅ Assume `Eq = Lt`{.hyp} (H).
-      - ✅ Going back to the definition of eq (match) in *H*{.just}, we prove `Lt = Lt -> False`{.claim} (H0):
+      - ✅ Going back to the definition of *eq*{.just} (*match*{.just}) in *H*{.just}, we prove `Lt = Lt -> False`{.claim} (H0):
         - ✅ Assume `Eq = Lt`{.hyp} (H0).
           - ✅ Rewriting with `Eq = Lt`{.fact} from left to right (eq_ind), we get `match Lt with | Eq => True | _ => False end`{.claim} (H1).
             - ✅ By *I*{.just} we have `True`{.claim}.
             - ✅ By *H0*{.just} we have `Eq = Lt`{.claim}.
 
-          By contradiction (False, *False_ind*{.just}), from *H1*{.just} we can deduce `False`{.claim}.
+          By contradiction (*False*{.just}, *match*{.just}), from *H1*{.just} we can deduce `False`{.claim}.
       - ✅ By definition of eq (*eq_refl*{.just}), we have `Lt = Lt`{.claim}.
 
       Applying *H0*{.just}, we have `False`{.claim}.

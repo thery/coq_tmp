@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `b : bool`{.var}. We prove `b || false = b`{.claim}.
 
-- ✅ We prove `b || false = b` by case analysis on `b` (bool, match):
+- ✅ We prove `b || false = b` by case analysis on *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ Case 1: we prove `true || false = true`{.claim}.
     - ✅ By definition of eq (*eq_refl*{.just}), we have `true = true`{.claim}.
   - ✅ Case 2: we prove `false || false = false`{.claim}.

@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ `m : nat`{.var} 라 하자. `m + 0 = m`{.claim} 임을 보이자.
 
-- ✅ `m + 0 = m` 임을 보이자 `m` (nat, *nat_ind*{.just}) 에 대한 귀납법으로:
+- ✅ `m + 0 = m` 임을 보이자 *m*{.just} (*nat*{.just}, *induction*{.just}) 에 대한 귀납법으로:
   - ✅ 경우 1 (기저): `0 + 0 = 0 + 0`{.claim} 임을 보이자.
     - ✅ eq (*eq_refl*{.just}) 의 정의에 의해, `0 + 0 = 0 + 0`{.claim} 이다.
   - ✅ 경우 2 (귀납): `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim} 임을 보이자.

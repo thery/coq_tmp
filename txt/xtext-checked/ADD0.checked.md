@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `m : nat`{.var}. We prove `m + 0 = m`{.claim}.
 
-- ✅ We prove `m + 0 = m` by induction on `m` (nat, *nat_ind*{.just}):
+- ✅ We prove `m + 0 = m` by induction on *m*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ Case 1 (base): we prove `0 + 0 = 0 + 0`{.claim}.
     - ✅ By definition of eq (*eq_refl*{.just}), we have `0 + 0 = 0 + 0`{.claim}.
   - ✅ Case 2 (inductive): we prove `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.

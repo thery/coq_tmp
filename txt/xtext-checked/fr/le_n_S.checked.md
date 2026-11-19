@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Soient `n m : nat`{.var}. Supposons `n <= m`{.hyp} (H). Montrons `S n <= S m`{.claim}.
 
-- ✅ Montrons `S n <= S m` par récurrence sur *H*{.just} (le, le_ind):
+- ✅ Montrons `S n <= S m` par récurrence sur *H*{.just} (*le*{.just}, *induction*{.just}):
   - ✅ Cas 1 (base): montrons `S n <= S n`{.claim}.
     - ✅ Par définition de le (*le_n*{.just}), nous avons `S n <= S n`{.claim}.
   - ✅ Cas 2 (inductif): montrons `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.

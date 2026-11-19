@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Пусть `n m : nat`{.var}. Докажем, что `S (n + m) = n + S m`{.claim}.
 
-- ✅ Докажем, что `S (n + m) = n + S m` индукцией по `n` (nat, *nat_ind*{.just}):
+- ✅ Докажем, что `S (n + m) = n + S m` индукцией по *n*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ Случай 1 (база): докажем, что `0 + S m = 0 + S m`{.claim}.
     - ✅ По определению eq (*eq_refl*{.just}), имеем `0 + S m = 0 + S m`{.claim}.
   - ✅ Случай 2 (шаг): докажем, что `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

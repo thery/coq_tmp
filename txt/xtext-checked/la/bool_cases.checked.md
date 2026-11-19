@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Sit `b : bool`{.var}. Ostendamus `b = true \/ b = false`{.claim}.
 
-- ✅ Ostendamus `b = true \/ b = false` per casus in `b` (bool, match):
+- ✅ Ostendamus `b = true \/ b = false` per casus in *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ Casus 1: ostendamus `true = true \/ true = false`{.claim}.
     - ✅ Ex definitione eq (*eq_refl*{.just}), habemus `true = true`{.claim}.
     - ✅ Ex definitione or (*or_introl*{.just}), habemus `true = true \/ true = false`{.claim}.

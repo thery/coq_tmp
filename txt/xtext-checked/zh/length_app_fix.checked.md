@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 ✅ 我们证明 `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim}.
 
 - ✅ 我们证明 `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} 用递归，对 `l1` (fix length_app'):
-  - ✅ 设 `A : Type`{.var} 且 `l1 l2 : list A`{.var}. 我们证明 `length (l1 ++ l2) = length l1 + length l2` 用归纳法，对 `l1` (list, match):
+  - ✅ 设 `A : Type`{.var} 且 `l1 l2 : list A`{.var}. 我们证明 `length (l1 ++ l2) = length l1 + length l2` 用归纳法，对 *l1*{.just} (*list*{.just}, *induction*{.just}):
     - ✅ 情形 1 (基础): 我们证明 `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
       - ✅ 根据定义 eq (*eq_refl*{.just}), 我们有 `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
     - ✅ 情形 2 (归纳): 我们证明 `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim}.

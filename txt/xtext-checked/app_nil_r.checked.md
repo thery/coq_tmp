@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `l ++ [] = l`{.claim}.
 
-- ✅ We prove `l ++ [] = l` by induction on `l` (list, *list_ind*{.just}):
+- ✅ We prove `l ++ [] = l` by induction on *l*{.just} (*list*{.just}, *induction*{.just}):
   - ✅ Case 1 (base): we prove `[] = (@nil A)`{.claim}.
     - ✅ By definition of eq (*eq_refl*{.just}), we have `[] = (@nil A)`{.claim}.
   - ✅ Case 2 (inductive): we prove `forall (x : A) (l0 : list A), l0 ++ [] = l0 -> (x :: l0) ++ [] = x :: l0`{.claim}.

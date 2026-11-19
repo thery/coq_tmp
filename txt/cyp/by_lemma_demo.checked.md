@@ -7,6 +7,6 @@ rules: empty.elpi
 
 # by_lemma_demo
 
-✅ Let `a b c d : R`{.var}. If `0 <= a <= b`{.hyp} and `0 <= c <= d`{.hyp} then `a * c <= b * d`{.claim}.
+✅ Let `a b c d : R`. If `0 <= a <= b` and `0 <= c <= d` then `a * c <= b * d`.
 
-- ✅ By monotonicity of the product (*Rmult_le_compat*{.just}), we have `a * c <= b * d`{.claim}.
+- ✅ By monotonicity of the product, we have `a * c <= b * d`. *by Rmult_le_compat*

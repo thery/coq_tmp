@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Laat `n m : nat`{.var}. We bewijzen `S (n + m) = n + S m`{.claim}.
 
-- ✅ We bewijzen `S (n + m) = n + S m` met inductie naar `n` (nat, *nat_ind*{.just}):
+- ✅ We bewijzen `S (n + m) = n + S m` met inductie naar *n*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ Geval 1 (basis): we bewijzen `0 + S m = 0 + S m`{.claim}.
     - ✅ Volgens de definitie van eq (*eq_refl*{.just}), er geldt `0 + S m = 0 + S m`{.claim}.
   - ✅ Geval 2 (inductief): we bewijzen `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

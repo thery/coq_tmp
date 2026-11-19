@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 سنثبت أن `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim}.
 
 - سنثبت أن `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} بالتكرار على `l1` (fix length_app'):
-  - ليكن `A : Type`{.var} و `l1 l2 : list A`{.var}. سنثبت أن `length (l1 ++ l2) = length l1 + length l2` بالاستقراء على `l1` (list, match):
+  - ليكن `A : Type`{.var} و `l1 l2 : list A`{.var}. سنثبت أن `length (l1 ++ l2) = length l1 + length l2` بالاستقراء على *l1*{.just} (*list*{.just}, *induction*{.just}):
     - الحالة 1 (الأساس): سنثبت أن `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
       - حسب تعريف eq (*eq_refl*{.just}), لدينا `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
     - الحالة 2 (الاستقرائية): سنثبت أن `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim}.

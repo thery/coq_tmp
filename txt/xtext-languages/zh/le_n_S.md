@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 设 `n m : nat`{.var}. 假设 `n <= m`{.hyp} (H). 我们证明 `S n <= S m`{.claim}.
 
-- 我们证明 `S n <= S m` 用归纳法，对 *H*{.just} (le, le_ind):
+- 我们证明 `S n <= S m` 用归纳法，对 *H*{.just} (*le*{.just}, *induction*{.just}):
   - 情形 1 (基础): 我们证明 `S n <= S n`{.claim}.
     - 根据定义 le (*le_n*{.just}), 我们有 `S n <= S n`{.claim}.
   - 情形 2 (归纳): 我们证明 `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.

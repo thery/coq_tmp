@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Seien `n m : nat`{.var}. Angenommen `n <= m`{.hyp} (H). Wir zeigen `S n <= S m`{.claim}.
 
-- Wir zeigen `S n <= S m` durch Induktion über *H*{.just} (le, le_ind):
+- Wir zeigen `S n <= S m` durch Induktion über *H*{.just} (*le*{.just}, *induction*{.just}):
   - Fall 1 (Anfang): wir zeigen `S n <= S n`{.claim}.
     - Nach Definition von le (*le_n*{.just}), es gilt `S n <= S n`{.claim}.
   - Fall 2 (Schritt): wir zeigen `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim}.

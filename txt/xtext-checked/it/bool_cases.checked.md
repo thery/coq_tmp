@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Sia `b : bool`{.var}. Dimostriamo `b = true \/ b = false`{.claim}.
 
-- ✅ Dimostriamo `b = true \/ b = false` per casi su `b` (bool, match):
+- ✅ Dimostriamo `b = true \/ b = false` per casi su *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ Caso 1: dimostriamo `true = true \/ true = false`{.claim}.
     - ✅ Per definizione di eq (*eq_refl*{.just}), abbiamo `true = true`{.claim}.
     - ✅ Per definizione di or (*or_introl*{.just}), abbiamo `true = true \/ true = false`{.claim}.

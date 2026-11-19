@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ ليكن `b : bool`{.var}. سنثبت أن `b = true \/ b = false`{.claim}.
 
-- ✅ سنثبت أن `b = true \/ b = false` بدراسة الحالات على `b` (bool, match):
+- ✅ سنثبت أن `b = true \/ b = false` بدراسة الحالات على *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ الحالة 1: سنثبت أن `true = true \/ true = false`{.claim}.
     - ✅ حسب تعريف eq (*eq_refl*{.just}), لدينا `true = true`{.claim}.
     - ✅ حسب تعريف or (*or_introl*{.just}), لدينا `true = true \/ true = false`{.claim}.

@@ -10,7 +10,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 - ✅ Applicando *Classical_Prop.classic*{.just}, habemus `(forall z : A, P z) \/ ~ (forall z : A, P z)`{.claim} (o).
   - ▫️ Elementum `forall z : A, P z` pertinet ad `Prop`.
-- ✅ Ostendamus `exists x : A, P x -> forall z : A, P z` per casus in *o*{.just} (or, match):
+- ✅ Ostendamus `exists x : A, P x -> forall z : A, P z` per casus in *o*{.just} (*or*{.just}, *match*{.just}):
   - ✅ Casus 1: ostendamus `(forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
     - ✅ Ponamus `forall z : A, P z`{.hyp} (H).
       - ✅ Ponamus `P y`{.hyp} (_H). Per *H*{.just} habemus `forall z : A, P z`{.claim}.
@@ -20,13 +20,13 @@ by: tauto | congruence | lia | firstorder | auto
   - ✅ Casus 2: ostendamus `~ (forall z : A, P z) -> exists x : A, P x -> forall z : A, P z`{.claim}.
     - ✅ Ponamus `~ (forall z : A, P z)`{.hyp} (H).
       - ✅ Applicando *Classical_Pred_Type.not_all_ex_not*{.just} ad A, P et *H*{.just}, habemus `exists n : A, ~ P n`{.claim} (e).
-      - ✅ Redeuntes ad definitionem ex (match) in *e*{.just}, ostendamus `exists x : A, P x -> forall z : A, P z`{.claim}:
+      - ✅ Redeuntes ad definitionem *ex*{.just} (*match*{.just}) in *e*{.just}, ostendamus `exists x : A, P x -> forall z : A, P z`{.claim}:
         - ✅ Eligamus quaelibet `t : A`{.var}; ponamus `~ P t`{.hyp} (i).
           - ✅ Ponamus `P t`{.hyp} (h).
             - ✅ Per applicationem, cum *h*{.just}, habemus `False`{.claim} (f).
               - ✅ Per *i*{.just} habemus `~ P t`, id est `P t -> False`{.claim}.
 
-            Per absurdum (False, match), ex *f*{.just} deducere possumus `forall z : A, P z`{.claim}.
+            Per absurdum (*False*{.just}, *match*{.just}), ex *f*{.just} deducere possumus `forall z : A, P z`{.claim}.
           - ✅ Ostendimus `P t -> forall z : A, P z`{.claim}.
 
           Ex definitione ex (*ex_intro*{.just}) cum teste `t`, habemus `exists x : A, P x -> forall z : A, P z`{.claim}.

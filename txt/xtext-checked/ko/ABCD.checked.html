@@ -99,7 +99,7 @@ li.step > p.para { margin: 0.3em 0; }
 .p { border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 li.p.cur, div.p.cur:not([data-id="0"]) { background: rgba(0, 0, 0, 0.03); }
 .p.sub { background: rgba(0, 114, 178, 0.10); }
-.formula.claim.c-cur { outline: 1.5px solid #333; }
+.formula.claim.c-cur, .formula.goal.c-cur { outline: 1.5px solid #333; }
 .formula.hyp.h-cur { outline: 1.5px dashed #333; }
 .ref-target { outline: 2px solid #0072b2; }
 .formula.var { background: #d4ebf9; }
@@ -110,6 +110,9 @@ body:has(#show-hyp:not(:checked)) .formula.hyp:not(footer.legend .formula) { bac
 .formula.claim { background: #fcf6c6; }
 footer.legend .formula.claim { border: 1px solid #4d4d4d; }
 body:has(#show-claim:not(:checked)) .formula.claim:not(footer.legend .formula) { background: none; }
+.formula.goal { background: #fcf6c6; }
+.formula.goal { border: 2px solid #4d4d4d; }
+body:has(#show-goal:not(:checked)) .formula.goal:not(footer.legend .formula) { background: none; }
 .formula.fact { background: #e3e3e3; }
 footer.legend .formula.fact { border-bottom: 1px dotted #4d4d4d; }
 body:has(#show-fact:not(:checked)) .formula.fact:not(footer.legend .formula) { background: none; }
@@ -144,7 +147,7 @@ function named(a) {
 // the last hypothesis or conclusion before the fact f with its text
 function repeated(f) {
   let found = null;
-  for (const g of document.querySelectorAll('.p .formula.hyp, .p .formula.claim'))
+  for (const g of document.querySelectorAll('.p .formula.hyp, .p .formula.claim, .p .formula.goal'))
     if ((g.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING)
         && g.textContent === f.textContent) found = g;
   return found;
@@ -155,7 +158,7 @@ function show(p) {
   p.classList.add('cur');
   for (const q of p.querySelectorAll('.p'))
     if (q.parentElement.closest('.p') === p) q.classList.add('sub');
-  own(p, '.formula.claim').forEach(c => c.classList.add('c-cur'));
+  own(p, '.formula.claim, .formula.goal').forEach(c => c.classList.add('c-cur'));
   own(p, '.formula.hyp').forEach(h => h.classList.add('h-cur'));
   const targets = own(p, 'a[href^="#"]').map(named)
     .concat(own(p, '.formula.fact').map(repeated));

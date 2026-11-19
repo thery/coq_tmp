@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Soient `n m : nat`{.var}. Montrons `S (n + m) = n + S m`{.claim}.
 
-- ✅ Montrons `S (n + m) = n + S m` par récurrence sur `n` (nat, *nat_ind*{.just}):
+- ✅ Montrons `S (n + m) = n + S m` par récurrence sur *n*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ Cas 1 (base): montrons `0 + S m = 0 + S m`{.claim}.
     - ✅ Par définition de eq (*eq_refl*{.just}), nous avons `0 + S m = 0 + S m`{.claim}.
   - ✅ Cas 2 (inductif): montrons `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

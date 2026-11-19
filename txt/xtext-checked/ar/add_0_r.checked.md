@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ ليكن `n : nat`{.var}. سنثبت أن `n + 0 = n`{.claim}.
 
-- ✅ سنثبت أن `n + 0 = n` بالاستقراء على `n` (nat, *nat_ind*{.just}):
+- ✅ سنثبت أن `n + 0 = n` بالاستقراء على *n*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ الحالة 1 (الأساس): سنثبت أن `0 = 0`{.claim}.
     - ✅ حسب تعريف eq (*eq_refl*{.just}), لدينا `0 = 0`{.claim}.
   - ✅ الحالة 2 (الاستقرائية): سنثبت أن `forall m : nat, m + 0 = m -> S m + 0 = S m`{.claim}.

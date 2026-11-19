@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `n m : nat`{.var}. We prove `S (n + m) = n + S m`{.claim}.
 
-- ✅ We prove `S (n + m) = n + S m` by induction on `n` (nat, *nat_ind*{.just}):
+- ✅ We prove `S (n + m) = n + S m` by induction on *n*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ Case 1 (base): we prove `S (0 + m) = 0 + S m`{.claim}.
     - ✅ By definition of eq (*eq_refl*{.just}), we have `S m = S m`{.claim}.
   - ✅ Case 2 (inductive): we prove `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

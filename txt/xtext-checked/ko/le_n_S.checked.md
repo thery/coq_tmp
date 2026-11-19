@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ `n m : nat`{.var} 라 하자. `n <= m`{.hyp} (H) 라고 가정하자. `S n <= S m`{.claim} 임을 보이자.
 
-- ✅ `S n <= S m` 임을 보이자 *H*{.just} (le, le_ind) 에 대한 귀납법으로:
+- ✅ `S n <= S m` 임을 보이자 *H*{.just} (*le*{.just}, *induction*{.just}) 에 대한 귀납법으로:
   - ✅ 경우 1 (기저): `S n <= S n`{.claim} 임을 보이자.
     - ✅ le (*le_n*{.just}) 의 정의에 의해, `S n <= S n`{.claim} 이다.
   - ✅ 경우 2 (귀납): `forall m0 : nat, n <= m0 -> S n <= S m0 -> S n <= S (S m0)`{.claim} 임을 보이자.

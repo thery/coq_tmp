@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ 设 `m : nat`{.var}. 我们证明 `m + 0 = m`{.claim}.
 
-- ✅ 我们证明 `m + 0 = m` 用归纳法，对 `m` (nat, *nat_ind*{.just}):
+- ✅ 我们证明 `m + 0 = m` 用归纳法，对 *m*{.just} (*nat*{.just}, *induction*{.just}):
   - ✅ 情形 1 (基础): 我们证明 `0 + 0 = 0 + 0`{.claim}.
     - ✅ 根据定义 eq (*eq_refl*{.just}), 我们有 `0 + 0 = 0 + 0`{.claim}.
   - ✅ 情形 2 (归纳): 我们证明 `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.

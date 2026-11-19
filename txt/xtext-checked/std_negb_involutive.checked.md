@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `b : bool`{.var}. We prove `negb (negb b) = b`{.claim}.
 
-- ✅ We prove `negb (negb b) = b` by case analysis on `b` (bool, match):
+- ✅ We prove `negb (negb b) = b` by case analysis on *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ Case 1: we prove `negb (negb true) = true`{.claim}.
     - ✅ By definition of eq (*eq_refl*{.just}), we have `true = true`{.claim}.
   - ✅ Case 2: we prove `negb (negb false) = false`{.claim}.

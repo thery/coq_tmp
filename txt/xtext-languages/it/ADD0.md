@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Sia `m : nat`{.var}. Dimostriamo `m + 0 = m`{.claim}.
 
-- Dimostriamo `m + 0 = m` per induzione su `m` (nat, *nat_ind*{.just}):
+- Dimostriamo `m + 0 = m` per induzione su *m*{.just} (*nat*{.just}, *induction*{.just}):
   - Caso 1 (base): dimostriamo `0 + 0 = 0 + 0`{.claim}.
     - Per definizione di eq (*eq_refl*{.just}), abbiamo `0 + 0 = 0 + 0`{.claim}.
   - Caso 2 (induttivo): dimostriamo `forall m0 : nat, m0 + 0 = m0 -> S (m0 + 0) = S m0`{.claim}.

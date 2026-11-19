@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 Seien `n m : nat`{.var}. Wir zeigen `S (n + m) = n + S m`{.claim}.
 
-- Wir zeigen `S (n + m) = n + S m` durch Induktion über `n` (nat, *nat_ind*{.just}):
+- Wir zeigen `S (n + m) = n + S m` durch Induktion über *n*{.just} (*nat*{.just}, *induction*{.just}):
   - Fall 1 (Anfang): wir zeigen `0 + S m = 0 + S m`{.claim}.
     - Nach Definition von eq (*eq_refl*{.just}), es gilt `0 + S m = 0 + S m`{.claim}.
   - Fall 2 (Schritt): wir zeigen `forall n0 : nat, S (n0 + m) = n0 + S m -> S (S n0 + m) = S n0 + S m`{.claim}.

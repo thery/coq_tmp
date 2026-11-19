@@ -9,7 +9,7 @@ by: tauto | congruence | lia | firstorder | auto
 ✅ Dimostriamo `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim}.
 
 - ✅ Dimostriamo `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + length l2`{.claim} per ricorsione su `l1` (fix length_app'):
-  - ✅ Sia `A : Type`{.var} e `l1 l2 : list A`{.var}. Dimostriamo `length (l1 ++ l2) = length l1 + length l2` per induzione su `l1` (list, match):
+  - ✅ Sia `A : Type`{.var} e `l1 l2 : list A`{.var}. Dimostriamo `length (l1 ++ l2) = length l1 + length l2` per induzione su *l1*{.just} (*list*{.just}, *induction*{.just}):
     - ✅ Caso 1 (base): dimostriamo `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
       - ✅ Per definizione di eq (*eq_refl*{.just}), abbiamo `length (nil ++ l2) = length (nil ++ l2)`{.claim}.
     - ✅ Caso 2 (induttivo): dimostriamo `A -> forall l : list A, S (length (l ++ l2)) = S (length l + length l2)`{.claim}.

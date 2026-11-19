@@ -7,7 +7,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `b : bool`{.var}. We prove `b = true \/ b = false`{.claim}.
 
-- ✅ We prove `b = true \/ b = false` by case analysis on `b` (bool, match):
+- ✅ We prove `b = true \/ b = false` by case analysis on *b*{.just} (*bool*{.just}, *match*{.just}):
   - ✅ Case 1: we prove `true = true \/ true = false`{.claim}.
     - ✅ By definition of eq (*eq_refl*{.just}), we have `true = true`{.claim}.
     - ✅ By definition of or (*or_introl*{.just}), we have `true = true \/ true = false`{.claim}.

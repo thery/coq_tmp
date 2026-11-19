@@ -8,7 +8,7 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Sint `A B : Prop`{.var}. Ponamus `A \/ B`{.hyp} (h). Ostendamus `B \/ A`{.claim}.
 
-- ✅ Ostendamus `B \/ A` per casus in *h*{.just} (or, *or_ind*{.just}):
+- ✅ Ostendamus `B \/ A` per casus in *h*{.just} (*or*{.just}, *match*{.just}):
   - ✅ Casus 1: ostendamus `A -> B \/ A`{.claim}.
     - ✅ Ponamus `A`{.hyp} (i). Ex definitione or (*or_intror*{.just}), ex *i*{.just} unde sequitur `B \/ A`{.claim}.
   - ✅ Casus 2: ostendamus `B -> B \/ A`{.claim}.

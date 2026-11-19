@@ -7,10 +7,13 @@ by: tauto | congruence | lia | firstorder | auto
 
 ✅ Let `x y z t : Prop`{.var}. Assume `(x -> z) /\ (y -> t)`{.hyp} (H). We prove `x /\ y -> z /\ t`{.claim}.
 
-- ✅ Going back to the definition of and (match) in *H*{.just}, we prove `x /\ y -> z /\ t`{.claim}:
-  - ✅ Assume `x -> z`{.hyp} (Hxz), `y -> t`{.hyp} (Hyt) and `x /\ y`{.hyp} (H0). Going back to the definition of and (match) in *H0*{.just}, we prove `z /\ t`{.claim}:
+- ✅ Going back to the definition of *and*{.just} (*match*{.just}) in *H*{.just}, we prove `x /\ y -> z /\ t`{.claim}:
+  - ✅ Assume `x -> z`{.hyp} (Hxz), `y -> t`{.hyp} (Hyt) and `x /\ y`{.hyp} (H0). Going back to the definition of *and*{.just} (*match*{.just}) in *H0*{.just}, we prove `z /\ t`{.claim}:
     - ✅ Assume `x`{.hyp} (Hx) and `y`{.hyp} (Hy).
       - ✅ Applying *Hxz*{.just} to *Hx*{.just}, we have `z`{.claim}.
-      - ✅ Prove `t`{.claim}.
+      - 🔶 **[1.1.1.2]** Prove `t`{.goal}.
+
+        <details><summary>open goal of the text, not tried: condition 1.1.1.2, to prove in the Proof block: t</summary></details>
+
 
       So by definition of and (*conj*{.just}), we have `z /\ t`{.claim}.
