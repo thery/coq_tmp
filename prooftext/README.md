@@ -213,7 +213,7 @@ that names no formula in scope).
   `.checked.md`): `status-mark Status Mark` (`ok` ✅, `ko` ❌, `todo` 🔶,
   `none` ▫️, cyp's names of the statuses), `message-block M S` (the
   folded block `<details><summary>M</summary></details>` under a step),
-  `conditions-mark Ids S` (`**[2a, 2b]**`, the conditions left to a Proof
+  `conditions-mark Ids S` (`**[2.1]**`, the condition left to a Proof
   block), and their reading, `split-checked Text (checked Status
   Conditions Message) Rest`.  cyp writes its marks with these predicates;
 - `typst.elpi`: the Typst writer, `write-typst-tree Style T Text` (the
@@ -398,7 +398,8 @@ and writes only under the home directory, not in `/tmp`.
   source only calls the template's functions; the colours, fonts and
   spacing are set in one place, the template.
 
-A Typst source (xtext's `and_swap`, shortened):
+A Typst source (xtext's `examples-typst/and_swap.typ`, without its two lines
+of comments, its `require` line shortened):
 
 ```typst
 #import "@local/prooftext:0.1.0": *
@@ -411,13 +412,9 @@ A Typst source (xtext's `and_swap`, shortened):
 
 #proof([#"Let "#var($A , B : "Prop"$)#". Assume "#hyp($A ∧ B$)#" "#name("H", label: "statement:H")#". We prove "#claim($B ∧ A$)#"."], (
   steps((
-    step("1", [#"Going back to the definition of and in "#fact($A ∧ B$)#" "#name("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
+    step("1", [#"Going back to the definition of and (match) in "#just("H", target: "statement:H")#", we prove "#claim($B ∧ A$)#":"], (
       steps((
-        step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#"."], (
-          steps((
-            step("1.1.1", [#"By definition of and ("#just("conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), we have "#claim($B ∧ A$)#"."], ()),
-          )),
-        )),
+        step("1.1", [#"Assume "#hyp($A$)#" "#name("a", label: "1.1:a")#" and "#hyp($B$)#" "#name("b", label: "1.1:b")#". By definition of and ("#just("conj", url: "https://rocq-prover.org/corelib/Corelib.Init.Logic.html#conj")#"), from "#just("b", target: "1.1:b")#" and "#just("a", target: "1.1:a")#" we deduce "#claim($B ∧ A$)#"."], ()),
       )),
     )),
   )),
@@ -505,8 +502,8 @@ form of the texts written before the tree, `*by X*`, is shown as the word
   spans as text.
 - **A text checked by cyp** has a coloured mark in place of the bullet of
   each item: ✔ green, proved (✅); ✘ red, not proved (❌); ◆ orange, left
-  to a Proof block (🔶), with the numbers of the conditions left; ▫ grey,
-  nothing to check (▫️).  The statement has its mark too, in front of it.
+  to a Proof block (🔶), with the number of its condition; ▫ grey,
+  nothing to check: a remark (▫️).  The statement has its mark too, in front of it.
   A span or a div has its mark (a little smaller) inline, at the start of
   its text, where cyp wrote it: the one place where a free text shows
   where a node starts.  cyp's message is in a tinted box where cyp wrote
@@ -591,7 +588,7 @@ At the end of the text, a small legend recalls the look of the roles:
 the words variable, hypothesis, claim, fact and justification, each in the look of its
 role, and, for a text checked by cyp, the status marks with their
 meanings (✔ proved, ✘ not proved, ◆ left to a Proof block, ▫ nothing to
-check).  Its words are in the language of the text: the uses
+check, the mark of a remark).  Its words are in the language of the text: the uses
 `legend-var`, `legend-hyp`, `legend-claim`, `legend-fact`, `legend-just`,
 `legend-ok`, ..., `legend-none` of the lexicon, in its ten languages
 (`write-word`).  In the web page it is a `footer class="legend"`, and each
@@ -786,7 +783,8 @@ For the PDF and the HTML page it is shown as mathematics, ∀ n ∈ ℕ, n + 0
    (`coq.parse.argument`), in the notation scope of the header (`scope`).
    The variables a formula uses are those declared before it: each `Let`
    (a formula of class `var`, `a b : Z` or `u := e`, or a formula without
-   a class that has the form of a declaration) puts its variables in the
+   a class that has the form of a declaration, but not one that starts
+   with a binder, `forall z : A, P z`) puts its variables in the
    context of the formulas after it, in the statement and in the steps.
    As in cyp, a declaration in a step holds in its sub-steps and in the
    steps after it in its list.  This is simpler than cyp's elaboration,
