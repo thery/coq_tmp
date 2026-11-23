@@ -280,8 +280,8 @@ Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   % #[bare]: the conditions are printed, nothing is tried or defined
@@ -314,8 +314,8 @@ Elpi Export CypFile.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   % A step written in Rocq is a node of the tree, as a list item of a
@@ -423,8 +423,8 @@ Elpi Accumulate lp:{{
 Elpi Command CypQed.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   main-interp-qed _ _ Proof _ (qed-data Name Lang Ty) :-

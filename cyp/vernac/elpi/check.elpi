@@ -15,25 +15,28 @@
 % cyp's own ones (default-ltac in cyp.db)
 pred proof-default o:string.
 
-% [close G]: close the goal G by the rules: a conjunction split, one side of
-% a disjunction, else a rule of the proof (justify_first, named, justify)
-pred close i:goal.
-close (goal _ _ {{ _ /\ _ }} _ _ as G) :-
-  coq.ltac.call-ltac1 "cyp_split" G GL, subgoals GL.
-close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
-  coq.ltac.call-ltac1 "cyp_left" G GL, subgoals GL.
-close (goal _ _ {{ _ \/ _ }} _ _ as G) :-
-  coq.ltac.call-ltac1 "cyp_right" G GL, subgoals GL.
-close (goal _ _ Ty _ _ as G) :- justify_first Ty Tac, run Tac G.
-close (goal _ _ Ty _ _ as G) :- named _ Ty Tac, run Tac G.
-close (goal _ _ Ty _ _ as G) :- justify Ty Tac, run Tac G.
+% [close G How]: close the goal G by the rules: a conjunction split, one
+% side of a disjunction, else a rule of the proof (justify_first, named,
+% justify); How, how it was closed (timing.elpi)
+pred close i:goal, o:string.
+close (goal _ _ {{ _ /\ _ }} _ _ as G) How :-
+  coq.ltac.call-ltac1 "cyp_split" G GL, subgoals GL Hs, how-call "split" Hs How.
+close (goal _ _ {{ _ \/ _ }} _ _ as G) How :-
+  coq.ltac.call-ltac1 "cyp_left" G GL, subgoals GL Hs, how-call "left" Hs How.
+close (goal _ _ {{ _ \/ _ }} _ _ as G) How :-
+  coq.ltac.call-ltac1 "cyp_right" G GL, subgoals GL Hs, how-call "right" Hs How.
+close (goal _ _ Ty _ _ as G) How :- justify_first Ty Tac, run Tac G H, How is "rule " ^ H.
+close (goal _ _ Ty _ _ as G) How :- named N Ty Tac, run Tac G H, How is "rule " ^ N ^ ": " ^ H.
+close (goal _ _ Ty _ _ as G) How :- justify Ty Tac, run Tac G H, How is "rule " ^ H.
 
-% [run Tac G]: the tactic Tac of a rule run on G: an Ltac tactic that closes
-% it, or a lemma whose premises are then closed (premises)
-pred run i:cyptac, i:goal.
-run (ltac N) G :- coq.ltac.call-ltac1 N G [].
-run (lemma T) G :- refine T G GL, premises GL.
-run (apply T) G :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL.
+% [run Tac G How]: the tactic Tac of a rule run on G: an Ltac tactic that
+% closes it, or a lemma whose premises are then closed (premises)
+pred run i:cyptac, i:goal, o:string.
+run (ltac N) G N :- coq.ltac.call-ltac1 N G [].
+run (lemma T) G How :- refine T G GL, premises GL Hs,
+  how-call {calc ("lemma " ^ {head-name T})} Hs How.
+run (apply T) G How :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL Hs,
+  how-call {calc ("apply " ^ {head-name T})} Hs How.
 
 % the premises of a lemma: the rules, else the default tactics.  A premise
 % may be closed by another lemma, whose premises are closed the same way:
@@ -42,21 +45,28 @@ run (apply T) G :- coq.ltac.call "cyp_eapply" [trm T] G GL, premises GL.
 pred premise-depth o:int.
 premise-depth 0.
 
-% [subgoals GL]: the goals of a conjunction or of one side of a
-% disjunction, closed like premises at the same depth
-pred subgoals i:list sealed-goal.
-subgoals GL :- coq.ltac.all (coq.ltac.open close-tac) GL [].
+% [all-how K GL Hows]: the tactic K run on each goal of GL, one after the
+% other, leaving no goal, as coq.ltac.all does; Hows, how each was closed
+% (a variable for a goal already solved by another one's solution)
+pred all-how i:(pred i:goal, o:list sealed-goal, o:string), i:list sealed-goal, o:list string.
+all-how _ [] [].
+all-how K [SG | GL] [H | Hs] :- coq.ltac.open (g\ gl\ K g gl H) SG [], all-how K GL Hs.
 
-% [premises GL]: the premises GL of a lemma closed, one lemma deeper (fails
-% at premise-depth-max)
-pred premises i:list sealed-goal.
-premises GL :-
+% [subgoals GL Hows]: the goals of a conjunction or of one side of a
+% disjunction, closed like premises at the same depth; Hows, how
+pred subgoals i:list sealed-goal, o:list string.
+subgoals GL Hs :- all-how close-tac GL Hs.
+
+% [premises GL Hows]: the premises GL of a lemma closed, one lemma deeper
+% (fails at premise-depth-max)
+pred premises i:list sealed-goal, o:list string.
+premises GL Hs :-
   premise-depth D, !, premise-depth-max Max, D < Max, D1 is D + 1,
-  premise-depth D1 => subgoals GL.
+  premise-depth D1 => subgoals GL Hs.
 
-% [close-tac G GL]: close-default as a tactic, leaving no goal
-pred close-tac i:goal, o:list sealed-goal.
-close-tac G [] :- close-default G.
+% [close-tac G GL How]: close-default as a tactic, leaving no goal
+pred close-tac i:goal, o:list sealed-goal, o:string.
+close-tac G [] How :- close-default G How.
 
 % a hypothesis that is the goal (cyp_hypothesis, Cyp.v; cheap, and it often happens: the claims of
 % the steps before are hypotheses), else the rules, else the default
@@ -64,30 +74,33 @@ close-tac G [] :- close-default G.
 % default tactic may take very long on a goal it would close: tauto runs
 % for minutes on ((A \/ B) \/ C -> A \/ B -> A \/ B \/ C) ->
 % ((A \/ B) \/ C -> A \/ B \/ C) -> (A \/ B) \/ C -> A \/ B \/ C
-pred close-default i:goal.
-close-default G :- coq.ltac.call-ltac1 "cyp_hypothesis" G [], !.
-close-default G :- close G, !.
+pred close-default i:goal, o:string.
+close-default G "hypothesis" :- coq.ltac.call-ltac1 "cyp_hypothesis" G [], !.
+close-default G How :- close G How, !.
 % the tactics only on a goal with no existential variable (a premise of a
 % lemma that is still to be found: a tactic could run for very long, e.g.
 % firstorder on z /\ ?B after eapply proj1)
-close-default G :- coq.ltac.call-ltac1 "cyp_evar_free" G _, proof-default N, run-name N G, !.
-close-default G :- coq.ltac.call-ltac1 "cyp_evar_free" G _, default-ltac N, coq.ltac.call-ltac1 N G [], !.
+close-default G How :- coq.ltac.call-ltac1 "cyp_evar_free" G _, proof-default N, run-name N G How, !.
+close-default G How :- coq.ltac.call-ltac1 "cyp_evar_free" G _, default-ltac N, coq.ltac.call-ltac1 N G [], !,
+  ltac-how N How.
 % at last, once, the goal with its head unfolded (its weak head normal form):
 % a text may state a conclusion with a definition that the steps before it
 % prove unfolded ("R z x, that is `Inv E R x z`{.claim}", Inv E R x z being
 % R z x by definition), and the default tactics do not unfold it
-close-default G :- not head-unfolded,
+close-default G How :- not head-unfolded,
   coq.ltac.call-ltac1 "cyp_head_unfolded" G [SG],
-  coq.ltac.open (g\ gl\ head-unfolded => close-tac g gl) SG [], !.
+  coq.ltac.open (g\ gl\ head-unfolded => close-tac g gl H) SG [], !,
+  How is "hnf, " ^ H.
 
 % [head-unfolded]: the goal is already in weak head normal form
 pred head-unfolded.
 
-% [run-name N G]: the declared word N run on G: its Ltac tactic, or its
-% rules (only them)
-pred run-name i:string, i:goal.
-run-name N G :- justification-word N (meaning-tactic L) _, !, coq.ltac.call-ltac1 L G [].
-run-name N (goal _ _ Ty _ _ as G) :- justification-word N meaning-rules _, !, named N Ty T, run T G.
+% [run-name N G How]: the declared word N run on G: its Ltac tactic, or
+% its rules (only them); How, how
+pred run-name i:string, i:goal, o:string.
+run-name N G N :- justification-word N (meaning-tactic L) _, !, coq.ltac.call-ltac1 L G [].
+run-name N (goal _ _ Ty _ _ as G) How :- justification-word N meaning-rules _, !, named N Ty T, run T G H,
+  How is "rule " ^ N ^ ": " ^ H.
 
 % ------------------------------------------------------------------ %
 % The justifications of a node (rule 9 of the format): the declared words
@@ -124,45 +137,47 @@ classify [X | Xs] Ms [given-lemma GR | Gs] Us :-
   prooftext.is-name X, coq.locate-all X L, std.mem L (loc-gref GR), !, classify Xs Ms Gs Us.
 classify [X | Xs] Ms Gs [X | Us] :- classify Xs Ms Gs Us.
 
-% [justify-step M G]: the goal G closed by the method M
-pred justify-step i:method, i:goal.
+% [justify-step M G How]: the goal G closed by the method M; How, how
+pred justify-step i:method, i:goal, o:string.
 % a fixed method, match or induction: the case analysis or the induction
 % on each object named (eliminate), then each case closed by the rest of
 % the method (the other names, the rules, the default tactics)
-justify-step (eliminating E Ts M) G :- !,
-  eliminate E Ts G GL, coq.ltac.all (coq.ltac.open (solve-step M)) GL [].
+justify-step (eliminating E Ts M) G How :- !,
+  eliminate E Ts G GL, all-how (solve-step M) GL Hs,
+  std.string.concat " " [E | Ts] Head, how-call Head Hs How.
 % no name: the rules and the default tactics, the facts first
-justify-step (method [] [] Fs) G :- !,
-  std.map Fs (f\ g\ g = given-local f) First, with-first First close-default G.
+justify-step (method [] [] Fs) G How :- !,
+  std.map Fs (f\ g\ g = given-local f) First, with-first First close-default G How.
 % names given, no declared word: each applied in turn, its premises closed
 % by the rules; when none of them applies, the rules and the default
 % tactics, with the names given and the facts first (a text may name the
 % lemma a step comes from without its conclusion being the step's: "Applying
 % *proj1*{.just}, we have z", from (proj1 H1) x)
-justify-step (method [] Gs Fs) G :- !,
-  (std.mem Gs X, std.filter Gs (g\ not (g = X)) Others, apply-given X Others G, !
+justify-step (method [] Gs Fs) G How :- !,
+  (std.mem Gs X, std.filter Gs (g\ not (g = X)) Others, apply-given X Others G How, !
   ; std.map Fs (f\ g\ g = given-local f) FGs, std.append Gs FGs First,
-    with-first First close-default G).
+    with-first First close-default G H, How is "no name applies, " ^ H).
 % declared words (rules, tactics): each tried in turn, the names given and the facts
 % first in the context
-justify-step (method Ms Gs Fs) G :-
+justify-step (method Ms Gs Fs) G How :-
   std.map Fs (f\ g\ g = given-local f) FGs, std.append Gs FGs First,
-  with-first First (g\ std.mem Ms M, run-name M g, !) G.
+  with-first First (g\ h\ std.mem Ms M, run-name M g h, !) G How.
 
-% [apply-given X Others G]: the name given X applied to the goal G; its
+% [apply-given X Others G How]: the name given X applied to the goal G; its
 % premises that are one of the other names given, Others, closed by them
 % first (so that the premises after them have no hole left: "and_ind in
 % h1"), the others by the rules
-pred apply-given i:given, i:list given, i:goal.
-apply-given (given-local X) Others (goal Ctx _ _ _ _ as G) :-
-  local-name Ctx X H, coq.ltac.call "cyp_eapply" [trm H] G GL, given-premises Others GL.
-apply-given (given-lemma GR) Others G :- apply-lemma GR Others G.
+pred apply-given i:given, i:list given, i:goal, o:string.
+apply-given (given-local X) Others (goal Ctx _ _ _ _ as G) How :-
+  local-name Ctx X H, coq.ltac.call "cyp_eapply" [trm H] G GL, given-premises Others GL Hs,
+  how-call {calc ("apply " ^ X)} Hs How.
+apply-given (given-lemma GR) Others G How :- apply-lemma GR Others G How.
 
-% [given-premises Others GL]: the premises GL, those that a name of Others
-% is closed by it, then the rest by the rules
-pred given-premises i:list given, i:list sealed-goal.
-given-premises Others GL :-
-  coq.ltac.all (coq.ltac.open (premise-by-given Others)) GL Rest, premises Rest.
+% [given-premises Others GL Hows]: the premises GL, those that a name of
+% Others is closed by it, then the rest by the rules (Hows: how)
+pred given-premises i:list given, i:list sealed-goal, o:list string.
+given-premises Others GL Hs :-
+  coq.ltac.all (coq.ltac.open (premise-by-given Others)) GL Rest, premises Rest Hs.
 
 % [premise-by-given Others G GL]: G closed by one of the names Others (GL =
 % []), or left as it is
@@ -181,20 +196,20 @@ eliminate E [T | Ts] (goal Ctx _ _ _ _ as G) GL :-
   local-name Ctx T H, L is "cyp_" ^ E, coq.ltac.call L [trm H] G GL1,
   coq.ltac.all (coq.ltac.open (eliminate E Ts)) GL1 GL.
 
-% [with-first Gs K G]: K run on the goal G with the hypotheses given Gs
+% [with-first Gs K G How]: K run on the goal G with the hypotheses given Gs
 % moved last in its context (where tactics look first), and the lemmas
-% given added to it (cyp_first, Cyp.v)
-pred with-first i:list given, i:(pred i:goal), i:goal.
-with-first [] K G :- K G.
-with-first [X | Ns] K (goal Ctx _ _ _ _ as G) :-
+% given added to it (cyp_first, Cyp.v); How, how K closed it
+pred with-first i:list given, i:(pred i:goal, o:string), i:goal, o:string.
+with-first [] K G How :- K G How.
+with-first [X | Ns] K (goal Ctx _ _ _ _ as G) How :-
   given-term Ctx X H,
   coq.ltac.call "cyp_first" [trm H] G [SG], !,
-  coq.ltac.open (with-first-tactic Ns K) SG [].
-with-first [_ | Ns] K G :- with-first Ns K G.
+  coq.ltac.open (g\ gl\ with-first-tactic Ns K g gl How) SG [].
+with-first [_ | Ns] K G How :- with-first Ns K G How.
 
-% [with-first-tactic Ns K G GL]: with-first as a tactic, leaving no goal
-pred with-first-tactic i:list given, i:(pred i:goal), i:goal, o:list sealed-goal.
-with-first-tactic Ns K G [] :- with-first Ns K G.
+% [with-first-tactic Ns K G GL How]: with-first as a tactic, leaving no goal
+pred with-first-tactic i:list given, i:(pred i:goal, o:string), i:goal, o:list sealed-goal, o:string.
+with-first-tactic Ns K G [] How :- with-first Ns K G How.
 
 % [given-term Ctx X H]: the term of the name given X, in the context Ctx of
 % a goal
@@ -208,19 +223,21 @@ pred local-name i:goal-ctx, i:string, o:term.
 local-name Ctx X H :- std.mem Ctx (decl H N _), coq.name->id N X.
 local-name Ctx X H :- std.mem Ctx (def H N _ _), coq.name->id N X.
 
-% [apply-lemma GR Others G]: the lemma GR applied to the goal, its premises
+% [apply-lemma GR Others G How]: the lemma GR applied to the goal, its premises
 % closed by the other names given (given-premises) and the rules: directly (its conclusion unified with the goal), else, for
 % an elimination principle (its first argument is the predicate it proves,
 % the motive), as Rocq's elim does: the goal abstracted over one of its
 % variables, so that the motive is that abstraction (eapply alone unifies
 % ?P ?x with the goal first-order: on n <= n + m it takes P := le n)
-pred apply-lemma i:gref, i:list given, i:goal.
-apply-lemma GR Others G :-
-  coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, given-premises Others GL, !.
-apply-lemma GR Others (goal Ctx _ Ty _ _ as G) :-
+pred apply-lemma i:gref, i:list given, i:goal, o:string.
+apply-lemma GR Others G How :-
+  coq.ltac.call "cyp_eapply" [trm (global GR)] G GL, given-premises Others GL Hs, !,
+  how-call {calc ("apply " ^ {coq.gref->id GR})} Hs How.
+apply-lemma GR Others (goal Ctx _ Ty _ _ as G) How :-
   elimination-principle GR,
   std.mem Ctx (decl X _ _), occurs X Ty,
-  coq.ltac.call "cyp_elim_on" [trm (global GR), trm X] G GL, given-premises Others GL, !.
+  coq.ltac.call "cyp_elim_on" [trm (global GR), trm X] G GL, given-premises Others GL Hs, !,
+  how-call {calc ("elim " ^ {coq.gref->id GR})} Hs How.
 
 % [elimination-principle GR]: the type of GR starts with a predicate
 % (forall P : ... -> Prop or Type or Set, ...)
@@ -233,21 +250,24 @@ conclusion-sort (sort _).
 conclusion-sort (prod _ _ B) :- pi x\ conclusion-sort (B x).
 
 
-% [solve-step M G]: as [justify-step], and again after introducing the
-% premises of the goal
-pred solve-step i:method, i:goal, o:list sealed-goal.
-solve-step M G [] :- justify-step M G, !.
-solve-step M G [] :-
-  coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (solve-step M) SG [].
+% [solve-step M G GL How]: as [justify-step], and again after introducing
+% the premises of the goal
+pred solve-step i:method, i:goal, o:list sealed-goal, o:string.
+solve-step M G [] How :- justify-step M G How, !.
+solve-step M G [] How :-
+  coq.ltac.call-ltac1 "cyp_intros" G [SG], coq.ltac.open (g\ gl\ solve-step M g gl H) SG [],
+  How is "intros, " ^ H.
 
-% [prove M T P]: a proof P of T, in the current context, by the method M
-pred prove i:method, i:term, o:term.
-prove M T P :-
+% [prove M T P How]: a proof P of T, in the current context, by the method
+% M; How, how (timing.elpi)
+pred prove i:method, i:term, o:term, o:string.
+prove M T P How :-
   coq.typecheck P T ok,
   coq.ltac.collect-goals P [SG] _,
-  coq.ltac.open (solve-step M) SG [].
+  coq.ltac.open (g\ gl\ solve-step M g gl How) SG [].
 % else the coarse gap tactic (gaps.elpi)
-prove M T P :-
+prove M T P How :-
   coq.typecheck P T ok,
   coq.ltac.collect-goals P [SG] _,
+  gap-how How,
   coq.ltac.open (close-gap M) SG [].
