@@ -238,7 +238,14 @@ lines-of [cand D Lift Ps Ty _|Cs] [B|Bs] L Tys :-
 
 % Tau follows from the premises Tys, by the tactic By
 pred guard i:list term, i:term, o:string.
-guard Tys Tau By :- arrows Tys Tau G, xtext-guard-tactic L By, try-tactic L G, !.
+guard Tys Tau By :- arrows Tys Tau G, guard-tactic Tau L By, try-tactic L G, !.
+
+% [guard-tactic Tau L By]: the tactics of the guard for the conclusion Tau:
+% arith first when Tau is arithmetic, then those of xtext-guard-tactic
+pred guard-tactic i:term, o:string, o:string.
+guard-tactic Tau L By :- arith-conclusion Tau, xtext-arith-tactic L By.
+guard-tactic _ L By :- xtext-guard-tactic L By.
+
 
 % [arrows As T G]: the implication A1 -> ... -> An -> T
 pred arrows i:list term, i:term, o:term.

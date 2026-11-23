@@ -7,4 +7,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n m : nat`{.var}. We prove `n + m = m + n`{.claim}.
 
-- By *lia*{.just} we have `n + m = m + n`{.claim}.
+- By *arith*{.just} we have `n + m = m + n`{.claim}.

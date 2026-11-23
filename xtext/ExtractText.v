@@ -79,17 +79,23 @@ From XText Extra Dependency "elpi/subproofs.elpi" as xt_subproofs.
      steps, then eauto 4 or congruence;
    - congruence: ends (a closure over the terms of the goal);
    - lia: no bound in Rocq 9.1 (the options Lia Depth and Lra Depth are not
-     read by the search); not seen running away on xtext's examples. *)
+     read by the search); it runs behind lia_guard (../prooftext/Tactics.v),
+     a check of the goal's shape (its case splits and hypotheses), with no
+     search, as guarded_lia;
+   - arith: first [ guarded_lia | itauto auto ], cyp's cyp_arith, the name
+     of a step whose conclusion is arithmetic (xtext-arith-tactic). *)
 From Cdcl Require Import Itauto.
 #[export] Set Itauto Classic.
 Ltac xtext_tauto := itauto auto.
-Ltac xtext_lia := lia.
+Ltac xtext_lia := guarded_lia.
 (* the tactics that check a contraction (those of cyp's default "by") *)
 Ltac xtext_g_tauto := itauto auto.
 Ltac xtext_g_congruence := congruence.
-Ltac xtext_g_lia := lia.
+Ltac xtext_g_lia := guarded_lia.
 Ltac xtext_g_firstorder := bounded_firstorder.
 Ltac xtext_g_auto := auto.
+(* the tactic of a step whose conclusion is arithmetic (cyp_arith) *)
+Ltac xtext_arith := first [ guarded_lia | itauto auto ].
 
 Elpi Db xtext.db lp:{{
   % [xtext-tactic Ltac Text]: the Ltac definition Ltac is tried on a long
@@ -113,6 +119,15 @@ Elpi Db xtext.db lp:{{
   xtext-guard-tactic "xtext_g_lia" "lia".
   xtext-guard-tactic "xtext_g_firstorder" "firstorder".
   xtext-guard-tactic "xtext_g_auto" "auto".
+  % [xtext-arith-tactic Ltac Text]: a step closed by xtext-tactic or by the
+  % guard whose conclusion is arithmetic (arith-conclusion, transducer.elpi:
+  % under its foralls and implications, an equality, a disequality or an
+  % order on nat, Z, N or R) is first tried with this tactic, and then
+  % reads "By *arith*{.just} ..."; the others keep the tactic that closes
+  % them.  arith runs lia and itauto auto, which both lists have: the same
+  % steps are closed, only their name changes.
+  pred xtext-arith-tactic o:string, o:string.
+  xtext-arith-tactic "xtext_arith" "arith".
   % [xtext-implicit-choice-limit N]: a formula whose applications with
   % implicit arguments do not all type-check again without them is printed
   % with the arguments of each application decided one by one (doc/generic-mechanisms.md,

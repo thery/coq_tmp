@@ -63,7 +63,9 @@ Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
    proof declares its own words the same way:
      Ltac my_tac := ...
      CypJustification "my" := my_tac. *)
-Ltac cyp_lia := lia.            Ltac cyp_nia := nia.
+(* lia and nia behind lia_guard (prooftext/Tactics.v): a check of the
+   goal's shape, with no search, before a search that has no bound *)
+Ltac cyp_lia := guarded_lia.    Ltac cyp_nia := guarded_nia.
 Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
 Ltac cyp_ring := ring.          Ltac cyp_field := field.
 Ltac cyp_tauto := itauto auto.        Ltac cyp_auto := auto.
@@ -72,6 +74,9 @@ Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
 (* firstorder, bounded (prooftext/Tactics.v, shared with xtext): firstorder has no bound (on a condition
    of xtext's half_le it ran over 30 s and took up to 7 GB) *)
 Ltac cyp_firstorder := bounded_firstorder.
+(* arith: the name xtext gives to a step whose conclusion is arithmetic
+   (an equality or an order on nat, Z, N or R), closed by lia or by tauto *)
+Ltac cyp_arith := first [ guarded_lia | itauto auto ].
 (* used by cyp itself *)
 (* a hypothesis that is the goal, when the goal has no existential variable
    (on a premise of a lemma still to be found, a hypothesis would fix it) *)
@@ -452,6 +457,7 @@ CypJustification "reflexivity" := cyp_reflexivity.
 CypJustification "assumption" := cyp_assumption.
 CypJustification "congruence" := cyp_congruence.
 CypJustification "firstorder" := cyp_firstorder.
+CypJustification "arith" := cyp_arith.
 
 (* every word of prooftext/tactics.elpi is declared above *)
 Elpi Command cyp_words_declared.

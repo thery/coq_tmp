@@ -21,7 +21,8 @@ text (`cyp-check/results.tsv`, all rerun 2026-11-19, in the tree format):
 | before the tree (`*by X*`, nodes without conclusion) | 666 | 17 | 504 not checked | 176 s |
 | the tree | 684 | 2 | 279 | 107 s |
 | open goals and fixed justifications | 678 (+ 6 open goals ◆) | 2 | 279 | 114 s |
-| no time limit in xtext (now, 2026-11-23) | 650 (+ 6 open goals ◆) | 2 | 279 | 102 s |
+| no time limit in xtext (2026-11-23) | 650 (+ 6 open goals ◆) | 2 | 279 | 102 s |
+| the word `arith`, `lia_guard` (now, 2026-11-23) | 650 (+ 6 open goals ◆) | 2 | 279 | 113 s |
 
 - all 80 texts are checked, none times out;
 - with no time limit in xtext (2026-11-23, `tauto` run as `itauto auto`,
@@ -34,6 +35,11 @@ text (`cyp-check/results.tsv`, all rerun 2026-11-19, in the tree format):
   they said `*lia*{.just}`, with the same counts.  Every other text has
   the counts it had, text by text; the 108 texts in the other languages
   too (711 proved, 0 not proved, 90 remarks, 146 s);
+- with the word `arith` (the 5 texts `std_Nat_add_0_r`, `std_Nat_add_succ_r`,
+  `std_Nat_add_assoc`, `std_Nat_add_comm`, `std_Nat_mul_comm` say
+  `*arith*{.just}` where they said `*tauto*{.just}` or `*lia*{.just}`) and
+  cyp's `lia`, `nia` behind `lia_guard`: the same counts, text by text, in
+  English and in the other languages (711, 0, 90, 156 s);
 - with the open goals tagged `{.goal}` and the eliminations justified by
   `*match*{.just}` and `*induction*{.just}` (rerun 2026-11-19): every
   node has the status it had, except the 6 open goals of the 4 texts in

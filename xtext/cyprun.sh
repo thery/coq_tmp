@@ -5,7 +5,10 @@
 #   usage: sh cyprun.sh LIMIT name...
 # LIMIT only guards the run (a text cyp does not finish is reported
 # "timeout"); cyp itself has no time limit: the verdicts of a run that
-# finishes do not depend on LIMIT.
+# finishes do not depend on LIMIT.  It is kept because not every search of
+# cyp has a bound: lia and nia (behind lia_guard, a check of the goal's
+# shape, not of the search), lra, nra and Rocq's reduction (cyp's README,
+# "Deterministic bounds").
 # The copy gets a flags: line, so that the require: line written by xtext
 # (Require Import XText.<file>) finds the compiled example files.
 # Needs: the cyp library compiled in CYP_LIB, loading the lexicon (../lexicon,

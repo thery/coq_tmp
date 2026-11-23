@@ -4,7 +4,7 @@
      phrases of roles are in lower case.  How a reader reads them is
      checked by cyp-check/roles_check.sh (optional, with cyp).
    - The tactics: every name written after *by* or in the header's by
-     field (the texts of xtext-tactic and xtext-guard-tactic, ExtractText.v) is
+     field (the texts of xtext-tactic, xtext-guard-tactic and xtext-arith-tactic, ExtractText.v) is
      a tactic a proof text may name (../prooftext/tactics.elpi), so that
      cyp can run it. *)
 From XText Require Import ExtractText.
@@ -20,7 +20,9 @@ Elpi Query ExtractText lp:{{
   std.findall (xtext-tactic _ _) Ts, std.findall (xtext-guard-tactic _ _) Gs,
   std.map Ts (t\ n\ sigma L\ t = xtext-tactic L n) Ns1,
   std.map Gs (g\ n\ sigma L\ g = xtext-guard-tactic L n) Ns2,
-  std.append Ns1 Ns2 Names,
+  std.findall (xtext-arith-tactic _ _) As,
+  std.map As (a\ n\ sigma L\ a = xtext-arith-tactic L n) Ns3,
+  std.flatten [Ns1, Ns2, Ns3] Names,
   prooftext.unknown-tactics Names Unknown,
   if (Unknown = []) (coq.say "tactic names: ok")
      (coq.error "xtext names tactics that a proof text may not name:" Unknown)

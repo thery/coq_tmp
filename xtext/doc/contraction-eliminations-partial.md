@@ -48,7 +48,22 @@ bounds"](../../cyp/README.md#deterministic-bounds)), with the same bound:
 | `auto` | `auto` | depth 5 |
 | `firstorder` | `bounded_firstorder` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | at most 200 steps taking the goal and its hypotheses apart, then `eauto 4` or `congruence` |
 | `congruence` | `congruence` | ends (a closure over the terms of the goal) |
-| `lia` | `lia` | **no bound** in Rocq 9.1 (the options `Lia Depth` and `Lra Depth` are not read by the search, as cyp's README says); not seen running away on xtext's examples |
+| `lia` | `guarded_lia`: `lia_guard`, then `lia` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | `lia` has **no bound** in Rocq 9.1 (the options `Lia Depth` and `Lra Depth` are not read by the search, as cyp's README says); `lia_guard` refuses a goal with more than 50 case splits or 16 hypotheses (a count on the goal's shape, no search), measured on every call of the texts (`../gaps/README.md`, "No time limit"); it bounds what `lia` is given, not its search |
+| `arith` | `first [ guarded_lia \| itauto auto ]` (cyp's `cyp_arith`) | those of `lia` and `tauto` |
+
+**The word `arith`.**  A step closed by the guard, or a long subproof
+closed by a tactic of `xtext-tactic`, whose conclusion is arithmetic is
+first tried with `arith` (`xtext-arith-tactic`), and then reads `By
+*arith*{.just} ...`.  The rule is on the conclusion's shape only
+(`arith-conclusion`, `elpi/transducer.elpi`): under its `forall`s and
+implications (the step's premises), an equality on `nat`, `Z`, `N` or `R`,
+an order `<=`, `<`, `>=`, `>` on them, or the negation of one of these
+(`<>`).  `arith` runs `lia`, then `tauto` (`itauto auto`), the same
+tactic as cyp's word `arith`; both lists already have `lia` and `tauto`,
+so the same steps are closed and only their name changes.  A step whose
+conclusion is arithmetic but that only `congruence`, `firstorder` or
+`auto` closes keeps that name, and an equivalence (`<->`) is not
+arithmetic.
 
 Parameters: the switch `contraction` (see ["Switches"](../README.md#switches)) and, in `xtext.db`,
 `xtext-guard-tactic Ltac Text`.  The decision is greedy, premise by premise,
@@ -168,6 +183,18 @@ the same premises), and changed the texts in two ways, both because
   `std_andb_assoc`, a case analysis on its three booleans before, that
   neither `tauto` nor `lia` closed, is now one step, `By *tauto*{.just} we
   have ...`.
+
+Then the word `arith` (same day): every step above whose conclusion is
+arithmetic reads `By *arith*{.just}`, with no other change (the table
+above is of the texts before it).  In `examples/`: `std_Nat_add_0_r` and
+`std_Nat_add_succ_r` (tauto), `std_Nat_add_assoc`, `std_Nat_add_comm`,
+`std_Nat_mul_comm` (lia); `std_andb_assoc` (an equality on `bool`) stays
+`tauto`, and the three `lia` steps whose conclusion is a disjunction
+(`even_or_odd`, `std_Nat_le_trans`) stay `lia`.  In `examples-direct/`, 10
+steps of 10 texts: 5 from `tauto` (`length_app_fix`, `std_length_app`,
+`std_Nat_add_0_r`, `std_Nat_add_succ_r`, `std_Nat_mul_1_r`) and 5 from
+`lia` (`half_le`, `std_Nat_add_assoc`, `std_Nat_add_comm`,
+`std_Nat_lt_irrefl`, `std_Nat_mul_comm`).
 
 Texts that change with the strategy (the earlier round, direct
 translation, not rerun):

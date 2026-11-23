@@ -3,6 +3,10 @@
 # open in xtext's texts, one text at a time, under nice, with a time limit
 # per text and at most CYP_MEMORY_GB (default 8) GB of memory.
 #   usage: [PROBE=gap_final] sh probe.sh LIMIT OUTDIR text.md...
+# LIMIT guards the run only (a text that does not finish has no line of
+# results); the candidates have no time limit: each is bounded, or ends,
+# or is lia/nia behind lia_guard, whose search has no bound (README.md,
+# "No time limit"), which is why the guard is kept.
 # BARE=1: every condition of the text, nothing tried by cyp (#[bare]).
 # PROBE: the Ltac run on each open condition, gap_probe (the candidates,
 # default) or gap_final (cyp_gap alone); CYP_LIB: the cyp library to use.
