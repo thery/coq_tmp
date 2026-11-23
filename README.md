@@ -205,3 +205,244 @@ parse (an error); a hypothesis that others depend on cannot be
 generalized by `move:`; the printing of the goal by coq-lsp and by
 `coq.term->string` was compared on the goals of the tests only (equal up
 to blanks).
+
+### Pointing actions: the protocol for the interfaces
+
+[point_actions.v](point_actions.v) makes the actions offered on a
+selection a list declared in Rocq (tests:
+[point_actions_test.v](point_actions_test.v)).  An interface does not
+know `pbp`: it asks for the list of the actions, shows them as buttons,
+and runs the one chosen.  Any loaded file can add actions.  `pbp_pattern`
+is kept as it is until the interfaces use this protocol.
+
+A demo to step through: [point_actions_demo.v](point_actions_demo.v).
+It declares everyday actions from templates (`Commute here`, `Case on
+this`, `Induction on this`, `Generalize this`, `Name this`), runs one
+action with the path methods `pbp`, `occ` and `at`, and one with the
+strategies `in`, `forward` and `revert`, declares a link action in Elpi
+(`Rewrite with this equation`) and an action that chooses its tactic
+(`Solve`: `ring`, `lia` or `ring_simplify`), and shows how a tactic of
+one's own is made pointable and how `pbp` is hooked.  Each line a button
+writes is in the file, after a comment saying what to select; `sh
+point_actions_demo_check.sh` checks that these are the lines `point_run`
+gives, and that the excerpts the demo quotes are verbatim in their files.
+
+The actions it declares:
+
+| action | kind | line | e.g. on `1 + 1 + a = double (1 + a)` |
+|---|---|---|---|
+| `Point` | point | `{pre:revert}pbp {path:pbp}{post:revert}.` | `pbp [X in X + _ = _].` (`0 3`) |
+| `Link` | link | `{pre:revert}pbp {path:pbp}{post:revert}.` | `pbp [X Y in X + _ = double Y].` (`0 3 13 16`) |
+| `Simplify here` | point | `{pre:in}rewrite {local:pbp}/={post:in}.` | `rewrite [X in X + _ = _]/=.` (`0 3`: `1 + 1` becomes `2`) |
+| `Unfold here` | point | `{pre:in}rewrite {local:pbp}/{head}{post:in}.` | `rewrite [X in _ = X]/double.` (`6 17`) |
+| `Name occurrence` | point | `{pre:in}set x := {local:occ}({text}){post:in}.` | `set x := {2}(a).` (`15 16`, the second `a`) |
+
+`Point` and `Link` print exactly what `pbp_pattern` prints.  `Simplify
+here`, `Unfold here` and `Name occurrence` change the selected subterm only, in the
+conclusion or, for a selection in a hypothesis `H`, in `H` (`rewrite
+[X in X + _ = _]/= in H.`).
+
+**1. The list.**  Sent as `pbp_pattern` is (a tactic, after the sentence
+where the goals are shown; the goal is unchanged):
+
+```
+elpi point_actions.
+```
+
+It prints one notice, a JSON array, in the order of the declarations:
+
+```
+[{"name":"Point","kind":"point","doc":"pbp: bring ..."},{"name":"Link","kind":"link","doc":"..."},...]
+```
+
+`kind` is `point` (the action takes one selection) or `link` (two).
+`doc` is a sentence for a tooltip (may be `""`).  The list is the same in
+every goal (an action that does not apply to a selection fails with a
+message when it is run); it changes only when a file that declares
+actions is loaded, so it may be asked once per document position.
+
+**2. Running an action.**
+
+```
+elpi point_run "Name" S E.             (* kind point: in the conclusion *)
+elpi point_run "Name" H S E.           (* in the type of hypothesis H *)
+elpi point_run "Name" S E S' E'.       (* kind link: two selections *)
+elpi point_run "Name" H S E S' E'.     (* ... in H and in the conclusion *)
+elpi point_run "Name" H S E H' S' E'.  (* ... in two hypotheses *)
+```
+
+- `"Name"` is the `name` of the list, in double quotes (a `"` in it is
+  written `""`, as in any Rocq string).
+- The selections are those of `pbp_pattern` (above): `S E` counts the
+  characters that are not blanks, `S` included, `E` excluded, an empty
+  range is a click.  The first selection is `X` of the pattern, the
+  second `Y`.
+- The goal: the action runs on the first goal; for the goal `n` (from 1)
+  the command is prefixed by `n: ` and so is the line inserted (`2: elpi
+  point_run "Point" 0 1.`, then `2: pbp [X in X].`).  The two selections
+  of a link are in the same goal.
+- The output: zero or more warnings `point_run: the selection is widened
+  to T` (warning `pbp-widened`), then one notice, the line to insert,
+  e.g. `pbp [X in X + _ = _].`
+- The errors: `Tactic failure: point_run: ...`, e.g. `no action
+  Rewrite (elpi point_actions lists them)`, `the action Point is of kind
+  point and takes 1 selection(s), not 2`, `the range 30 31 is not in the printed term`,
+  `the range 3 1 ends before it starts`, `no hypothesis H`, `the two
+  selections are the same subterm or one is inside the other`, `the
+  selection is not a constant nor an application of a constant` (Unfold
+  here on a variable), `the action Never does not apply to the
+  selection` (an action that fails without saying why).  The interface
+  shows the text after `point_run: `.
+
+**3. Declaring an action.**  With a template:
+
+```
+PointAction "Name it" point "set x := ({text})." "name the selected subterm".
+```
+
+The kind is `point` or `link`; the last string (optional) is the `doc`.
+A name is declared once.  The placeholders of the template:
+
+| placeholder | is |
+|---|---|
+| `{path:M}` | where the selections are, written by the path method `M`, in the goal where the hypotheses of the selections are generalized (for the strategy `revert`) |
+| `{local:M}` | the same in the part the selections are in: the conclusion, or the type of their hypothesis (for the strategies `in` and `forward`) |
+| `{pre:S}` | what the hypothesis strategy `S` writes before the core of the line |
+| `{post:S}` | what it writes after the core (before the final dot) |
+| `{head}` | the constant the first selection is, or is an application of |
+| `{text}` | the first selected subterm, as printed |
+| `{pattern}` `{local}` `{revert}` `{in}` | the former names of `{path:pbp}` `{local:pbp}` `{pre:revert}` `{post:in}`, kept |
+
+The path methods (`PointPaths.` lists them), on the first and the last
+`a` of `a + b = b + a` (`0 1`, `6 7`), and on the first `a` of a
+hypothesis `H : a + b = b + a` (`H 0 1`), `{path:M}` then `{local:M}`:
+
+| method | `0 1` | `6 7` | `H 0 1` | is |
+|---|---|---|---|---|
+| `pbp` | `[X in X + _ = _]` | `[X in _ = _ + X]` | `[X in X + _ = _ -> _]`, `[X in X + _ = _]` | pbp's pattern |
+| `occ` | `{1}` | `{2}` | `{1}` | ssreflect's occurrences of the selected term (`set x := {2}(a)`, `rewrite {2}[a]...`) |
+| `at` | `1` | `2` | `1` | Rocq's (`pattern a at 2`, `unfold ... at`) |
+| `path` | `[2, 1]` | `[3, 2]` | `[0, 2, 1]`, `[2, 1]` | the position in the term, for Elpi tools |
+
+- The occurrences count the subterms equal to the selected one, left to
+  right in the term (heads before arguments, the type of a binder before
+  its body, implicit arguments included); ssreflect's `{n}` and Rocq's
+  `at n` count them so on the goals tried (by hand: several `a`, under a
+  binder, in a match, an implicit `nat`; in the tests, where the lines
+  are run: several `a`, under a binder): the two methods differ only in
+  how they write the number.  Two selections of the same term give `{1
+  4}` and `1 4`; of different terms, an error; a selection that uses a
+  variable bound in the goal (`n` in `forall n, n = a`) has no occurrence
+  number (an error).
+- `path`: in an application the head is 0 and the arguments 1, 2, ...;
+  in a product or an abstraction the type is 0 and the body 1; in a let
+  the type 0, the value 1, the body 2; in a match the matched term 0, the
+  return type 1, the branches 2, 3, ...  In the goal with the hypothesis
+  `H` generalized (`{path:path}`), `H`'s type is `[0, ...]` and the
+  conclusion `[1, ...]`.  Two selections give two lists.
+
+The hypothesis strategies (`PointStrategies.` lists them), for a
+selection in the hypothesis `H` (for selections in the conclusion they
+write nothing):
+
+| strategy | before | after | e.g. Simplify on `H : 1 + 1 + a = a` (`H 0 3`) |
+|---|---|---|---|
+| `revert` | `move: H; ` (`move: H H'; ` for two) | | `move: H; rewrite [X in X + _ = _ -> _]/=.` (with `{path:pbp}`) |
+| `in` | | ` in H` | `rewrite [X in X + _ = _]/= in H.` |
+| `forward` | `have H' := H; ` | ` in H'` | `have H' := H; rewrite [X in X + _ = _]/= in H'.` (`H'0`, ... if `H'` is taken) |
+
+`in` and `forward` need the selections in one hypothesis (an error for
+two hypotheses, or a hypothesis and the conclusion); whether the core
+can act `in H` is the action's business (a `rewrite`, `set`, `pattern`
+can; pbp cannot, so `Point` uses `revert`).
+
+Or in Elpi, for an action that computes its line: a predicate `pred
+p i:point-in, o:string` from the selections, resolved to subterms of the
+goal, to the line, declared by a clause of `point-action` in the
+database `pbp_select.db`:
+
+```
+Elpi Accumulate pbp_select.db lp:{{
+pred same-text i:point-in, o:string.
+same-text In Line :-
+  point-text In 0 A, point-text In 1 B,
+  (A = B, !, Line = "(* the same text *)" ;
+   Line is "(* " ^ A ^ " and " ^ B ^ " *)").
+point-action "Compare" link "compare the two selections" same-text.
+}}.
+```
+
+The predicates on the selections (pbp_select.v) are the ones of the
+placeholders: `point-pattern`, `point-revert`, `point-local-pattern`,
+`point-in-hyp`, `point-head In I GR`, `point-text In I S` (selection `I`,
+from 0), `point-hyps` (the hypotheses of the selections), `point-names`
+(all the hypotheses of the goal), and `point-count`; point_actions.v adds
+`scope-term Scope In T Ps` (the term and the paths of the selections in
+it, for `path-goal` or `path-part`) and `occurrences Scope In Ns`.  An
+error is `coq.ltac.fail 0 {msg "..."}` (`msg` adds `point_run: `).
+
+A path method or a strategy is declared in Elpi only (they compute), by a
+clause in `pbp_select.db`, e.g. (point_actions_test.v):
+
+```
+Elpi Accumulate pbp_select.db lp:{{
+pred path-depth i:point-scope, i:point-in, o:string.
+path-depth Sc In S :-
+  scope-term Sc In _ Ps,
+  std.map Ps (p\ s\ sigma N\ std.length p N, s is int_to_string N) Ss,
+  std.string.concat " " Ss S.
+point-path "depth" "the depth of the selections" path-depth.
+
+pred hyp-copy i:point-in, o:string, o:string.
+hyp-copy In Pre "" :-
+  point-hyps In Hs,
+  (Hs = [], !, Pre = "" ;
+   std.map Hs (h\ s\ s is "(" ^ h ^ ")") Cs, std.string.concat " " Cs S,
+   Pre is "move: " ^ S ^ "; ").
+point-hyp-strategy "copy" "generalize copies of the hypotheses" hyp-copy.
+}}.
+PointAction "Point (copy)" point "{pre:copy}pbp {path:pbp}{post:copy}.".
+```
+
+A template may use only the methods and strategies declared before it.
+
+**4. Seeing the actions.**  For a human reader (not for the interfaces,
+which use `elpi point_actions`), the command
+
+```
+PointActions.
+```
+
+prints, at that point of the file (in a proof or not), the actions in
+the order of their declarations: name, kind, where it was declared (the
+library and the line, for `PointAction`; an action declared by an Elpi
+clause has no recorded place), its template or its Elpi predicate, its
+doc:
+
+```
+7 pointing action(s):
+Point (point), declared in coq_tmp.point_actions, line 495
+  template: {pre:revert}pbp {path:pbp}{post:revert}.
+  doc: pbp: bring the selected subformula to the surface of the goal
+...
+Name it (point), declared in coq_tmp.point_actions_test, line 187
+  template: set x := ({text}).
+  doc: name the selected subterm
+Compare (link), declared by an Elpi clause
+  Elpi: same-text
+  doc: compare the two selections
+```
+
+`PointPaths.` and `PointStrategies.` print the path methods and the
+hypothesis strategies the same way (name, Elpi predicate, doc).
+
+A goal with a `match` cannot be pointed at (an anomaly of the printing
+of the marked goal, already in `pbp_pattern` on main).
+
+Limits: the rewrite actions use ssreflect's `rewrite [X in ...]/=` and
+`/c`, which are conversions, so they work under binders too, but a
+selection that uses a bound variable is the function `X n` of the
+pattern, and simplifying it leaves a `(fun m => ...) n`; the `{head}` is
+printed as Rocq prints the constant in the goal's context
+(`Init.Nat.add` for `+` when PeanoNat is loaded); the list is not
+filtered by the selection.

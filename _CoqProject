@@ -10,6 +10,9 @@ pprimeZ.v
 pbp.v
 pbp_select.v
 pbp_select_test.v
+point_actions.v
+point_actions_test.v
+point_actions_demo.v
 mode_elpi.v
 
 
