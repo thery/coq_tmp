@@ -31,6 +31,10 @@ me=point_actions_tutorial_check
 
 # name|selection|line (or !message), in the order of the tutorial
 cat > "$tmp/table" <<'EOF'
+Point|0 1|pbp [X in X /\ _].
+Link|"ab" 3 4 0 1|move: ab; pbp [X Y in (_ -> X) -> Y].
+Link|"a" 0 1 0 1|move: a; pbp [X Y in X -> Y].
+Simplify here|0 5|rewrite [X in X = _]/=.
 Name occurrence|11 14|set x := {1}(c + b).
 Name occurrence|"H" 0 3|set x := {1}(a + b) in H.
 Where|0 1|idtac "[X in X + _ = _]  {1}  1  [2, 1]".

@@ -12,10 +12,11 @@
    them) and things to try.  Where a button is to be used, a
    comment says what to select, which button to click, and, after an
    arrow, the line the button writes (after a cross, the error the bar
-   shows instead).  The line is not in the file: the file compiles
-   without any click, and each try ends with Abort.  After the click,
-   step the new line to see what it does.
+   shows instead).  From section 1 on, the line is not in the file: the
+   file compiles without any click, and each try ends with Abort.  After
+   the click, step the new line to see what it does.
 
+   0. What pointing does: a proof made by clicks
    1. The pipeline: from the mouse to the line
    2. The parametrized pieces: actions, templates, path methods,
       hypothesis strategies
@@ -25,6 +26,48 @@
 
 From Stdlib Require Import ssreflect PeanoNat.
 From coq_tmp Require Import point_actions.
+
+(* ================ 0. What pointing does ================
+
+   A whole proof made with four clicks and one typed step.  The lines are
+   in the file this time, so that you can step through the result first;
+   before each one, a comment says what was selected and clicked.  Then
+   do it yourself on the copy below. *)
+
+Lemma pointing_demo (A B : Prop) (n : nat) (ab : A -> B) (a : A) :
+  B /\ 1 + 1 + n = S (S n).
+Proof.
+(* select the B of the conclusion, click "Point": pbp brings it to the
+   surface, the conjunction is split into two goals, B first
+   → pbp [X in X /\ _]. *)
+pbp [X in X /\ _].
+(* select the B in the type of ab (A -> B), click "Link…", then select
+   the B of the conclusion and click "Link": B follows from ab, A is left
+   → move: ab; pbp [X Y in (_ -> X) -> Y]. *)
+move: ab; pbp [X Y in (_ -> X) -> Y].
+(* select the A in the type of a, click "Link…", select the conclusion A,
+   click "Link": this goal is closed
+   → move: a; pbp [X Y in X -> Y]. *)
+move: a; pbp [X Y in X -> Y].
+(* the second goal: select 1 + 1 + n, click "Simplify here": the left
+   side is computed, S (S n) = S (S n) is left
+   → rewrite [X in X = _]/=. *)
+rewrite [X in X = _]/=.
+(* the last step is typed: *)
+by [].
+Qed.
+
+(* Your turn: the same lemma, no proof.  Step to Proof, then make the four
+   clicks above, stepping each line the bar writes ("check" in the bar does
+   it for you), and type by []. at the end. *)
+Lemma pointing_yourself (A B : Prop) (n : nat) (ab : A -> B) (a : A) :
+  B /\ 1 + 1 + n = S (S n).
+Proof.
+Abort.
+
+(* Point, Link, Simplify here are three of the pointing actions of
+   point_actions.v.  The rest of this file shows how such an action is
+   made, and how to make yours. *)
 
 (* ================ 1. The pipeline ================
 
