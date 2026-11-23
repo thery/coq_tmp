@@ -1,2 +1,4 @@
 # the expected outputs of the tutorial are tracked (cyp/.gitignore ignores *.checked.md)
 !expected/**/*.checked.md
+# a cache that nia writes where cyp runs
+.nia.cache

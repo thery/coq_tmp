@@ -1,3 +1,4 @@
-cyp: double_gt
-cyp: double_gt proved, 3 steps
-exit 0
+cyp: sqrt_le
+Error:
+cyp: 1 of 4 steps of sqrt_le not proved (1), see cyp-tutorial/ch01_first.checked.md
+exit 1

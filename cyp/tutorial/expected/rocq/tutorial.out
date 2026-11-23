@@ -1,11 +1,63 @@
-cyp: double_gt
+cyp: sqrt_le_bare
+cyp: sqrt_le_bare, 4 steps, 4 condition(s) left for the Proof block: 0, 1, 2, 3
+  🔶 condition 0: Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+  🔶 condition 1: Nat.sqrt a <= a
+  🔶 condition 2: 0 < b
+  🔶 condition 3: Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+goal c1 (?c1) is:
+  
+  a, b : nat
+  h : a <= b
+  ============================
+  Nat.sqrt a <= a
+goal c2 (?c2) is:
+  
+  a, b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  ha : 0 < a
+  ============================
+  0 < b
+goal c3 (?c3) is:
+  
+  a, b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  c2 : 0 < a -> 0 < b
+  ============================
+  Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+goal c0 (?c0) is:
+  
+  a, b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  c2 : 0 < a -> 0 < b
+  c3 : Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+  ============================
+  Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+cyp: sqrt_le_bare proved
+cyp: sqrt_le
+  ✅ 0
+  ✅ 2
+  ✅ 3
+cyp: sqrt_le, 4 steps, 1 condition(s) left for the Proof block: 1
+  🔶 condition 1: Nat.sqrt a <= a
+1 goal (?c1)
+  
+  a, b : nat
+  h : a <= b
+  ============================
+  Nat.sqrt a <= a
+cyp: sqrt_le proved
+cyp: sqrt_le_just
   ✅ 0
   ✅ 1
   ✅ 2
-cyp: double_gt, 3 steps, every condition discharged
-cyp: double_gt proved
-double_gt
-     : forall n : nat, 0 < n -> n < 2 * n
+  ✅ 3
+cyp: sqrt_le_just, 4 steps, every condition discharged
+cyp: sqrt_le_just proved
+sqrt_le_just
+     : forall a b : nat, a <= b -> Nat.sqrt a <= b /\ (0 < a -> 0 < b)
 cyp: roles
   ✅ 0
   ✅ 2

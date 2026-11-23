@@ -14,7 +14,7 @@
 
      Let `n : nat`{.var}. Assume `0 < n`{.hyp} (h). We prove `n < 2 * n`{.claim}.
 
-     - From `0 < n`{.fact} we get `n + 0 < n + n`{.claim}.
+     - We have `n + 0 < n + n`{.claim}.
      - This is `n < 2 * n`{.claim}, since `2 * n` is `n + n`.
 
    and the program cyp, or the command CypFile "proof.md", checks it.
@@ -56,27 +56,100 @@ Open Scope pstring_scope.
    are the variables, hypotheses and claim of the text's first line.
    Each step is a list of strings (words) and Rocq terms (formulas).  The
    string right after a formula starts with its class: "{.claim}" for the
-   conclusion of the step, "{.fact}" for a fact it uses.  The Markdown form
-   is the proof at the top of this file.
+   claim of the step.  A string may also hold formulas written as in
+   Markdown, between backquotes with their tag: "`0 < a`{.hyp} (ha)".
 
-   Look at: ✅ 0, ✅ 1, ✅ 2 and "cyp: double_gt proved".  The proof ends
-   with CypQed (not Qed). *)
-Cyp Lemma double_gt (n : nat) (h : 0 < n) : n < 2 * n :=
-  [ "From" (0 < n) "{.fact} we get" (n + 0 < n + n) "{.claim}." ;
-    "This is" (n < 2 * n) "{.claim}, since `2 * n` is `n + n`." ].
+   The text, in Markdown:
+
+     # sqrt_le
+
+     Let `a b : nat`{.var}. Assume `a <= b`{.hyp} (h). We prove `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
+
+     - We have `Nat.sqrt a <= a`{.claim}.
+     - Assume `0 < a`{.hyp} (ha). Then `0 < b`{.claim}.
+     - Hence `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
+
+   It says what each step claims, never how it is proved: there is no
+   justification yet.
+
+   2.1 The conditions.  Each step gives one condition, a Rocq goal: the
+   step's claim, below
+   - the variables and hypotheses in scope: those of the statement, and
+     the step's own (ha for step 2);
+   - the claims of the steps before it, as hypotheses c1, c2, ...;  a
+     step with a hypothesis is seen from the steps after it as an
+     implication: step 2 is c2 : 0 < a -> 0 < b.
+   The statement gives the last condition, 0: its claim, from the claims
+   of its steps.
+
+   With #[bare], cyp tries nothing: each condition is a goal of the
+   Proof block, named after its step.  Step to each Show and read the
+   goal:
+   - c1: from h, prove Nat.sqrt a <= a;
+   - c2: ha is there (the step's own hypothesis), and c1 (step 1 is
+     before step 2);
+   - c3: ha is gone (it holds only inside step 2), and step 2 is
+     c2 : 0 < a -> 0 < b;
+   - c0: the statement, from c1, c2, c3.
+   They are ordinary Rocq goals: we prove them by hand.  The program cyp
+   prints the same conditions for a Markdown text with
+   "cyp --conditions proof.md". *)
+#[bare]
+Cyp Lemma sqrt_le_bare (a b : nat) (h : a <= b) : Nat.sqrt a <= b /\ (0 < a -> 0 < b) :=
+  [ "We have" (Nat.sqrt a <= a) "{.claim}." ;
+    "Assume `0 < a`{.hyp} (ha). Then" (0 < b) "{.claim}." ;
+    "Hence" (Nat.sqrt a <= b /\ (0 < a -> 0 < b)) "{.claim}." ].
+Proof.
+  Show c1.
+  Show c2.
+  Show c3.
+  Show c0.
+  [c1]: apply Nat.sqrt_le_lin.
+  [c2]: lia.
+  [c3]: split; [lia | exact c2].
+  [c0]: exact c3.
+CypQed.
+
+(* 2.2 What cyp proves by itself.  Without #[bare], cyp tries to prove
+   each condition itself: with its rules, then its default tactics
+   (tauto, lia, nia, lra; in Markdown, first those of the header's "by:"
+   line), and a last short search.  Look at: ✅ 0, ✅ 2, ✅ 3, and
+   "🔶 condition 1": lia knows nothing of Nat.sqrt, so the same goal ?c1
+   is left to the Proof block. *)
+Cyp Lemma sqrt_le (a b : nat) (h : a <= b) : Nat.sqrt a <= b /\ (0 < a -> 0 < b) :=
+  [ "We have" (Nat.sqrt a <= a) "{.claim}." ;
+    "Assume `0 < a`{.hyp} (ha). Then" (0 < b) "{.claim}." ;
+    "Hence" (Nat.sqrt a <= b /\ (0 < a -> 0 < b)) "{.claim}." ].
+Proof.
+  Show.
+  [c1]: apply Nat.sqrt_le_lin.
+CypQed.
+
+(* 2.3 Telling cyp how: justifications.  *X*{.just} says how to prove a
+   step's condition: a lemma, a hypothesis, an earlier step, or a declared
+   word such as a tactic (sections 3 and 6).  Step 1 now names the lemma
+   that proves it.  Markdown:
+
+     - By the lemma *Nat.sqrt_le_lin*{.just}, we have `Nat.sqrt a <= a`{.claim}.
+
+   The condition of step 1 is the same goal; cyp hands the lemma to its
+   tactics and closes it: ✅ 1, every step is proved, and the lemma is
+   defined with no Proof block.  This is the whole method: the text gives
+   the conditions, cyp proves what it can, justifications help it where
+   it cannot, and what is left is yours, in the Proof block. *)
+Cyp Lemma sqrt_le_just (a b : nat) (h : a <= b) : Nat.sqrt a <= b /\ (0 < a -> 0 < b) :=
+  [ "By the lemma *Nat.sqrt_le_lin*{.just}, we have" (Nat.sqrt a <= a) "{.claim}." ;
+    "Assume `0 < a`{.hyp} (ha). Then" (0 < b) "{.claim}." ;
+    "Hence" (Nat.sqrt a <= b /\ (0 < a -> 0 < b)) "{.claim}." ].
 Proof. CypQed.
-Check double_gt.
+Check sqrt_le_just.
 
-(* `2 * n` has no tag: it is plain text, not used by cyp.  The words
-   "From", "we get", "This is" mean nothing to cyp either.
-
-   A string may also hold formulas written as in Markdown, between
-   backquotes with their tag: "`n < 2 * n`{.claim}".  Both forms are used
-   below.  A formula written as a Rocq term is checked by Rocq when the
+(* A formula written as a Rocq term, (0 < b), is checked by Rocq when the
    command is read, so it may only use the names of the statement; a
    formula in a string is read by cyp in the context of its step, so it
    may use the names that the text introduces (section 3, case
-   analysis). *)
+   analysis).  A formula with no tag, in a string or as a term, is plain
+   text: cyp does not use it. *)
 
 (* ------------------------------------------------------------------ *)
 (* 3. The roles                                                        *)

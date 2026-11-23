@@ -50,6 +50,8 @@ tags and Rocq as the checker.
 
 ## 2. A first proof
 
+### The text
+
 [tutorial/ch01_first.md](tutorial/ch01_first.md):
 
 <!-- tutorial: ch01_first.md -->
@@ -59,65 +61,238 @@ require: From Stdlib Require Import Arith Lia.
 by: lia
 ---
 
-# double_gt
+# sqrt_le
 
-Let `n : nat`{.var}. Assume `0 < n`{.hyp} (h). We prove `n < 2 * n`{.claim}.
+Let `a b : nat`{.var}. Assume `a <= b`{.hyp} (h). We prove `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
 
-- From `0 < n`{.fact} we get `n + 0 < n + n`{.claim}.
-- This is `n < 2 * n`{.claim}, since `2 * n` is `n + n`.
+- We have `Nat.sqrt a <= a`{.claim}.
+- Assume `0 < a`{.hyp} (ha). Then `0 < b`{.claim}.
+- Hence `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
 ```
 
 It has three parts.
 
 - **The header**, between the two lines `---`.  `require:` is the Rocq
   text run before the proof (the libraries it needs).  `by:` lists the
-  tactics tried on a step that says nothing about how it is proved.
-- **The title**, `# double_gt`: the name of the lemma.
+  tactics that cyp tries on each step.
+- **The title**, `# sqrt_le`: the name of the lemma.
 - **The statement and its proof.**  The paragraph after the title is the
-  statement.  `` `n : nat`{.var} `` is a variable, `` `0 < n`{.hyp} (h) ``
-  a hypothesis named `h`, `` `n < 2 * n`{.claim} `` what is to be proved.
-  Each list item after it is one step of the proof.
+  statement: `` `a b : nat`{.var} `` are variables, `` `a <= b`{.hyp} (h) ``
+  a hypothesis named `h`, and the `{.claim}` is what is to be proved.
+  Each list item after it is one step of the proof, with its own claim;
+  step 2 also has its own hypothesis, `ha`.
 
-The words "Let", "Assume", "We prove", "we get" mean nothing to cyp.  Only
-the tags do.  The last step has a formula without a tag, `` `2 * n` ``:
-it is plain text, shown in the PDF and not used.
+The words "Let", "Assume", "We prove", "Then" mean nothing to cyp.  Only
+the tags do.  This text says *what* each step claims, never *how* it is
+proved: it has no justification.  We start there.
 
-**Running cyp.**  Build cyp as in [README.md](README.md), set `CYP_LIB`
-to the directory `cyp/vernac`, and run the program on the text:
+### 2.1 The conditions
+
+Each step gives one **condition**: a Rocq goal whose conclusion is the
+step's claim.  Its context is made of
+
+- the variables and hypotheses in scope: those of the statement, and
+  those of the step itself (`ha` for step 2);
+- the claims of the steps before it, each as a hypothesis named after its
+  step (`c1`, `c2`, ...).  A step with a hypothesis is seen from the steps
+  after it as an implication: step 2 is `c2 : 0 < a -> 0 < b`.
+
+The statement itself gives the last condition, number 0: its claim, from
+the claims of all its steps.  `cyp --conditions` prints them, in the order
+of the text, and tries none of them:
+
+```sh
+cyp --conditions ch01_first.md
+```
+
+<!-- tutorial: expected/cyp/ch01_first.conditions.out -->
+```
+cyp: sqrt_le
+  a : nat
+  b : nat
+  h : a <= b
+  ============================
+  Nat.sqrt a <= a
+
+  a : nat
+  b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  ha : 0 < a
+  ============================
+  0 < b
+
+  a : nat
+  b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  c2 : 0 < a -> 0 < b
+  ============================
+  Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+
+  a : nat
+  b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  c2 : 0 < a -> 0 < b
+  c3 : Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+  ============================
+  Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+
+cyp: sqrt_le, 4 steps, 4 conditions
+
+exit 0
+```
+
+Read them one by one:
+
+- **step 1**: from `h`, prove `Nat.sqrt a <= a`;
+- **step 2**: `ha` is in its context, because it is the step's own
+  hypothesis; `c1` is there because step 1 comes before it;
+- **step 3**: `ha` is gone (it holds only inside step 2), and step 2 is
+  `c2 : 0 < a -> 0 < b`, the step seen from outside;
+- **step 0**, the statement: its claim, from the claims of its three
+  steps.
+
+These are ordinary Rocq goals.  In Rocq, `#[bare] Cyp File` makes each of
+them a goal of the Proof block that follows, named after its step (`?c1`,
+`?c2`, `?c3`, `?c0`), and `Show c2` shows one.  Here they are proved by
+hand, with ordinary tactics
+([tutorial/ch01_first.v](tutorial/ch01_first.v); the module only keeps the
+name `sqrt_le` free for the next run):
+
+<!-- tutorial: ch01_first.v -->
+```coq
+Module Conditions.
+#[bare] Cyp File "cyp-tutorial/ch01_first.md".
+Proof.
+  Show c1.
+  Show c2.
+  Show c3.
+  Show c0.
+  [c1]: apply Nat.sqrt_le_lin.
+  [c2]: lia.
+  [c3]: split; [lia | exact c2].
+  [c0]: exact c3.
+CypQed.
+End Conditions.
+```
+
+Rocq prints the same four goals (`Show c2` gives `goal c2 (?c2) is:` and
+the context above), then `cyp: sqrt_le proved`: the lemma is defined.
+
+### 2.2 What cyp proves by itself
+
+Without `#[bare]`, cyp tries to prove each condition itself: with the
+rules of the text (none here), then the tactics of the header's `by:`
+line (`lia`), then its own (`tauto`, `lia`, `nia`, `lra`), and a last
+short search.  What it cannot prove is left.  The program `cyp` runs the
+text this way:
 
 ```sh
 cyp ch01_first.md
 ```
 
-It prints
-
 <!-- tutorial: expected/cyp/ch01_first.out -->
 ```
-cyp: double_gt
-cyp: double_gt proved, 3 steps
-exit 0
+cyp: sqrt_le
+Error:
+cyp: 1 of 4 steps of sqrt_le not proved (1), see cyp-tutorial/ch01_first.checked.md
+exit 1
 ```
 
-(The line `exit 0` is the exit code, added by check.sh.)  There are three
-steps: the statement and the two items.  cyp also writes
-`ch01_first.checked.md`, the same text with a mark in front of each step:
+(The line `exit 1` is the exit code, added by check.sh: 1 means the lemma
+is not defined.)  It also writes `ch01_first.checked.md`, the text with a
+mark in front of each step:
 
 <!-- tutorial: expected/cyp/ch01_first.checked.md -->
 ```markdown
-# double_gt
+✅ Let `a b : nat`{.var}. Assume `a <= b`{.hyp} (h). We prove `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
 
-✅ Let `n : nat`{.var}. Assume `0 < n`{.hyp} (h). We prove `n < 2 * n`{.claim}.
+- ❌ We have `Nat.sqrt a <= a`{.claim}.
 
-- ✅ From `0 < n`{.fact} we get `n + 0 < n + n`{.claim}.
-- ✅ This is `n < 2 * n`{.claim}, since `2 * n` is `n + n`.
+  <details><summary>not proved: Nat.sqrt a <= a</summary></details>
+
+- ✅ Assume `0 < a`{.hyp} (ha). Then `0 < b`{.claim}.
+- ✅ Hence `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
 ```
 
-The marks of the checked Markdown are ✅ (proved), ❌ (not proved, or an
-error), 🔶 (left to a Proof block, [section 8](TUTORIAL-2.md#8-the-rocq-side-cyp-file-and-cyp-lemma)) and ▫️ (a remark: nothing to
-check).  Under a ❌ or a 🔶, a folded block gives the reason.
+`lia` proves the conditions of steps 2, 3 and 0, but knows nothing of
+`Nat.sqrt`: step 1 is ❌.  The marks of the checked Markdown are ✅
+(proved), ❌ (not proved, or an error), 🔶 (left to a Proof block) and ▫️
+(a remark: nothing to check).  Under a ❌ or a 🔶, a folded block gives
+the reason.
 
-**The PDF and the web page.**  [../prooftext/pdf.sh](../prooftext/pdf.sh)
-makes a PDF of a checked text with Typst (`--html` for a web page):
+In Rocq, `Cyp File` (without `#[bare]`) leaves only that condition to the
+Proof block:
+
+<!-- tutorial: ch01_first.v -->
+```coq
+Module Tried.
+Cyp File "cyp-tutorial/ch01_first.md".
+Proof.
+  Show.
+  [c1]: apply Nat.sqrt_le_lin.
+CypQed.
+End Tried.
+```
+
+<!-- tutorial: expected/rocq/ch01_first.out -->
+```
+cyp: sqrt_le
+  ✅ 0
+  ✅ 2
+  ✅ 3
+cyp: sqrt_le, 4 steps, 1 condition(s) left for the Proof block: 1
+  🔶 condition 1: Nat.sqrt a <= a
+1 goal (?c1)
+  
+  a, b : nat
+  h : a <= b
+  ============================
+  Nat.sqrt a <= a
+cyp: sqrt_le proved
+```
+
+### 2.3 Telling cyp how: justifications
+
+A **justification** `*X*{.just}` says how to prove a step's condition: a
+lemma, a hypothesis, an earlier step, or a declared word such as a tactic
+(section 3 and [section 6](#6-justifications-in-depth)).  In
+[tutorial/ch01_first_just.md](tutorial/ch01_first_just.md), step 1 names
+the lemma that proves it:
+
+<!-- tutorial: ch01_first_just.md -->
+```markdown
+- By the lemma *Nat.sqrt_le_lin*{.just}, we have `Nat.sqrt a <= a`{.claim}.
+```
+
+The condition of step 1 is the same goal as before; cyp now hands the
+lemma to its tactics, and the goal is closed:
+
+<!-- tutorial: expected/cyp/ch01_first_just.checked.md -->
+```markdown
+- ✅ By the lemma *Nat.sqrt_le_lin*{.just}, we have `Nat.sqrt a <= a`{.claim}.
+- ✅ Assume `0 < a`{.hyp} (ha). Then `0 < b`{.claim}.
+- ✅ Hence `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
+```
+
+<!-- tutorial: expected/cyp/ch01_first_just.out -->
+```
+cyp: sqrt_le_just
+cyp: sqrt_le_just proved, 4 steps
+exit 0
+```
+
+Every step is proved, so the lemma is defined, with no Proof block.  This
+is the whole method of cyp: the text gives the conditions; cyp proves
+what it can; justifications help it where it cannot; what is left is
+yours, in a Proof block.
+
+### The PDF and the web page
+
+[../prooftext/pdf.sh](../prooftext/pdf.sh) makes a PDF of a checked text
+with Typst (`--html` for a web page):
 
 ```sh
 ../prooftext/pdf.sh ch01_first.checked.md     # writes ch01_first.checked.pdf
@@ -131,11 +306,9 @@ goal), ▫ a remark.  The PDF of example 03 (section 3) looks like this:
 ![The PDF of ch03_facts.checked.md](tutorial/ch03_facts.png)
 
 In the browser: step to section 2 of [tutorial.v](tutorial/tutorial.v),
-where the same proof is a `Cyp Lemma` ([section 8](TUTORIAL-2.md#8-the-rocq-side-cyp-file-and-cyp-lemma)).  Change a
-formula there, step again, and see which step is no longer ✅.  In a
-terminal, [tutorial/ch01_first.v](tutorial/ch01_first.v) runs the Rocq
-command `CypFile "cyp-tutorial/ch01_first.md".`, which is what the program
-`cyp` does.
+where the same text is a `Cyp Lemma`, run bare, then tried, then
+justified.  Change a formula there, step again, and see which condition
+changes.
 
 ## 3. The roles
 
@@ -273,8 +446,9 @@ In the browser: step to section 3 of [tutorial.v](tutorial/tutorial.v).
 ### Justifications
 
 `*X*{.just}` (an emphasised name with the tag `just`) names something the
-step uses, where the sentence mentions it.  A step may have several.  X
-may be a hypothesis, an earlier step, a lemma, or a word such as a tactic.
+step uses, where the sentence mentions it: it tells cyp how to prove the
+step's condition (section 2.3).  A step may have several.  X may be a
+hypothesis, an earlier step, a lemma, or a word such as a tactic.
 [tutorial/ch04_justifications.md](tutorial/ch04_justifications.md):
 
 <!-- tutorial: ch04_justifications.md -->
@@ -416,7 +590,7 @@ Step 1 assumes `P`; its two sub-steps use `p`; its conclusion `R /\ Q` is
 in the closing paragraph.  Step 2 does not see `p`, `q` or `r`: it sees
 step 1 from outside, as `P -> R /\ Q`.
 
-**The conditions.**  `cyp --conditions` prints the goal of each step, in
+**The conditions** (section 2.1).  `cyp --conditions` prints the goal of each step, in
 the order of the text, and tries none of them (`#[bare] CypFile` in
 Rocq).  Each goal is the step's conclusion, below the variables,
 hypotheses and earlier steps it can see:

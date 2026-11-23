@@ -34,7 +34,9 @@ for md in ch*.md; do
   [ -f "$n.checked.md" ] && mv "$n.checked.md" "$tmp/out/cyp/"
   rm -f "$n.cyp.json"
 done
-{ nice "$exe" --conditions ch07_structure.md 2>&1; echo "exit $?"; } | clean > "$tmp/out/cyp/ch07_structure.conditions.out"
+for n in ch01_first ch07_structure; do
+  { nice "$exe" --conditions $n.md 2>&1; echo "exit $?"; } | clean > "$tmp/out/cyp/$n.conditions.out"
+done
 
 # 2. Rocq on each chapter file, from the parent directory, as in rocq-web
 cd "$tmp" || exit 2
@@ -52,6 +54,10 @@ sed -n '/^(\* rules: begin \*)$/,/^(\* rules: end \*)$/p' "$here/ch09_words.v" |
   sed '1d;$d' | cmp -s - "$here/ch09_words_rules.v" ||
   { echo "check.sh: ch09_words.v does not hold ch09_words_rules.v"; exit 1; }
 
+if [ "$1" = "--update" ]; then
+  rm -rf "$here/expected"; cp -r "$tmp/out" "$here/expected"
+  echo "check.sh: expected/ rewritten"
+fi
 # 4. each block of ../TUTORIAL*.md after a line "<!-- tutorial: PATH -->" is
 #    an exact excerpt (consecutive whole lines) of PATH, relative to here
 mkdir -p "$tmp/blocks"
@@ -74,10 +80,7 @@ done < "$tmp/blocks/list"
 [ $bad = 0 ] || exit 1
 echo "check.sh: the $k blocks of the tutorial are excerpts of their files"
 
-if [ "$1" = "--update" ]; then
-  rm -rf "$here/expected"; cp -r "$tmp/out" "$here/expected"
-  echo "check.sh: expected/ rewritten"; exit 0
-fi
+if [ "$1" = "--update" ]; then exit 0; fi
 if diff -r "$here/expected" "$tmp/out"; then
   echo "check.sh: all $(ls "$tmp"/out/cyp/*.out "$tmp"/out/rocq/*.out | wc -l) runs as expected"
 else

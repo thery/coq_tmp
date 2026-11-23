@@ -254,7 +254,7 @@ In the browser: step to section 8 of [tutorial.v](tutorial/tutorial.v).
 
 ### Cyp Lemma
 
-The proof of [section 2](TUTORIAL.md#2-a-first-proof) as a Rocq command,
+A short proof as a Rocq command,
 [tutorial/ch13_lemma.v](tutorial/ch13_lemma.v):
 
 <!-- tutorial: ch13_lemma.v -->

@@ -3,9 +3,13 @@ require: From Stdlib Require Import Arith Lia.
 by: lia
 ---
 
-# double_gt
+# sqrt_le
 
-✅ Let `n : nat`{.var}. Assume `0 < n`{.hyp} (h). We prove `n < 2 * n`{.claim}.
+✅ Let `a b : nat`{.var}. Assume `a <= b`{.hyp} (h). We prove `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.
 
-- ✅ From `0 < n`{.fact} we get `n + 0 < n + n`{.claim}.
-- ✅ This is `n < 2 * n`{.claim}, since `2 * n` is `n + n`.
+- ❌ We have `Nat.sqrt a <= a`{.claim}.
+
+  <details><summary>not proved: Nat.sqrt a <= a</summary></details>
+
+- ✅ Assume `0 < a`{.hyp} (ha). Then `0 < b`{.claim}.
+- ✅ Hence `Nat.sqrt a <= b /\ (0 < a -> 0 < b)`{.claim}.

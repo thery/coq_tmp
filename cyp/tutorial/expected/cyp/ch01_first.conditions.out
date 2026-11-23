@@ -1,0 +1,35 @@
+cyp: sqrt_le
+  a : nat
+  b : nat
+  h : a <= b
+  ============================
+  Nat.sqrt a <= a
+
+  a : nat
+  b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  ha : 0 < a
+  ============================
+  0 < b
+
+  a : nat
+  b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  c2 : 0 < a -> 0 < b
+  ============================
+  Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+
+  a : nat
+  b : nat
+  h : a <= b
+  c1 : Nat.sqrt a <= a
+  c2 : 0 < a -> 0 < b
+  c3 : Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+  ============================
+  Nat.sqrt a <= b /\ (0 < a -> 0 < b)
+
+cyp: sqrt_le, 4 steps, 4 conditions
+
+exit 0
