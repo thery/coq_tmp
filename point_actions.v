@@ -502,3 +502,59 @@ PointAction "Unfold here" point "{pre:in}rewrite {local:pbp}/{head}{post:in}."
   "unfold the constant at the head of the selected subterm, in it".
 PointAction "Name occurrence" point "{pre:in}set x := {local:occ}({text}){post:in}."
   "name x this occurrence of the selected subterm (ssreflect's set x := {n}(t))".
+
+(* ---------------- Seeing a selection ---------------- *)
+
+(* [elpi point_show Sel ...] prints, for a human reader, what an action is
+   given for the selections (as for point_run: [S E] or [H S E]): the
+   point-in value, field by field, with the printed subterms of each part
+   (shown P S E T: the subterm at path P is printed from the character S
+   to E, as T).  The goal is unchanged. *)
+Elpi Tactic point_show.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+pred show-path i:list int, o:string.
+show-path P S :-
+  std.map P (n\ s\ s is int_to_string n) Ss, std.string.concat ", " Ss B,
+  S is "[" ^ B ^ "]".
+
+pred show-strings i:list string, o:string.
+show-strings L S :- std.string.concat ", " L B, S is "[" ^ B ^ "]".
+
+pred show-shown i:shown, o:string.
+show-shown (shown P S E T) R :-
+  show-path P PS,
+  R is "      shown " ^ PS ^ " " ^ int_to_string S ^ " " ^ int_to_string E ^ " \"" ^ T ^ "\"".
+
+% [show-part Hs I P S] S describes the part number I
+pred show-part i:list string, i:int, i:part, o:string.
+show-part Hs I (part B T Shs) S :-
+  std.length Hs N,
+  (I = N, !, What = "the conclusion" ; std.nth I Hs H, What is "the type of " ^ H),
+  coq.term->string T TS0, one-line TS0 TS, show-path B BS,
+  std.map Shs show-shown Ls, std.string.concat "\n" Ls L,
+  S is "    " ^ int_to_string I ^ ": part " ^ BS ^ " (" ^ What ^ "): " ^ TS ^ "\n" ^ L.
+
+% [show-loc C L S] S describes the selection L of the goal C
+pred show-loc i:term, i:loc, o:string.
+show-loc C (loc P I P0) S :-
+  show-path P PS, show-path P0 P0S, text-at P C Txt,
+  (term-at P C T, !, term_to_string T TE ; TE = "(uses a variable bound in the goal)"),
+  S is "    loc " ^ PS ^ " " ^ int_to_string I ^ " " ^ P0S ^ "\n      the subterm: " ^ Txt ^ "\n      in Elpi: " ^ TE.
+
+pred show-in i:point-in, o:string.
+show-in (point-in Names Hs C Parts Ls) S :-
+  show-strings Names NS, show-strings Hs HS,
+  coq.term->string C CS0, one-line CS0 CS,
+  std.map-i Parts (show-part Hs) PSs, std.string.concat "\n" PSs PS,
+  std.map Ls (show-loc C) LSs, std.string.concat "\n" LSs LS,
+  S is "point-in\n  Names = " ^ NS ^ "\n  Hs = " ^ HS ^ "\n  C = " ^ CS ^
+       "\n  Parts =\n" ^ PS ^ "\n  Ls =\n" ^ LS.
+
+solve (goal Ctx _ Ty _ Args as G) [seal G] :-
+  (tool-name "point_show" => (
+     parse-sels Args Sels, point-resolve Ctx Ty Sels In Ws,
+     msg "the selection is widened to" M)),
+  std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
+  show-in In S, coq.say S.
+}}.
