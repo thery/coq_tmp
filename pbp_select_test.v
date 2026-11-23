@@ -1,0 +1,343 @@
+(* Tests of pbp_pattern (pbp_select.v): from a selection in the printed
+   goal to the pbp call.
+
+   [elpi pbp_pattern_expect Line Ws Sel ...] checks that pbp_pattern gives
+   the line Line for the selections Sel (Ws: the subterms that selections
+   were widened to, "" for none); a selection [S E] is a range of the
+   printed conclusion, [H S E] one of the printed type of the hypothesis
+   H, in characters that are not blanks, from 0, E excluded.  The line is
+   then run.  The patterns of pbp.v's tests are compared to the hand-written
+   ones: the two proofs are the same term. *)
+
+From Stdlib Require Import ssreflect PeanoNat List.
+From Stdlib Require Utf8.
+From elpi Require Import elpi.
+From coq_tmp Require Import pbp_select.
+
+(* ---------- Arithmetic: the two occurrences of a and of b ---------- *)
+
+(* a + b = b + a  is  a+b=b+a  without blanks: a is 0 and 6, b is 2 and 4 *)
+Goal forall a b : nat, a + b = b + a.
+Proof.
+move=> a b.
+elpi pbp_pattern_expect "pbp [X in X + _ = _]." "" 0 1.
+elpi pbp_pattern_expect "pbp [X in _ = _ + X]." "" 6 7.
+elpi pbp_pattern_expect "pbp [X in _ + X = _]." "" 2 3.
+elpi pbp_pattern_expect "pbp [X in _ = X + _]." "" 4 5.
+elpi pbp_pattern_expect "pbp [X in X = _]." "" 0 3.
+(* a click (an empty range) is the subterm under the pointer *)
+elpi pbp_pattern_expect "pbp [X in X + _ = _]." "" 0 0.
+(* pbp has no rule for =, but the patterns are ssreflect's: rewriting at
+   the pattern shows the occurrence it denotes *)
+rewrite -[X in X + _ = _]Nat.add_0_r.
+lazymatch goal with |- (a + 0) + b = b + a => idtac end.
+rewrite -[X in _ = _ + X]Nat.add_0_r.
+lazymatch goal with |- (a + 0) + b = b + (a + 0) => idtac end.
+rewrite -[X in _ + X = _]Nat.add_0_r.
+lazymatch goal with |- (a + 0) + (b + 0) = b + (a + 0) => idtac end.
+rewrite -[X in _ = X + _]Nat.add_0_r.
+lazymatch goal with |- (a + 0) + (b + 0) = (b + 0) + (a + 0) => idtac end.
+by rewrite Nat.add_comm.
+Qed.
+
+(* ---------- A selection that is not a subterm ---------- *)
+
+(* a+b+c=c: "b+c" (2 5) and "+" (1 2) are not subterms of (a + b) + c *)
+Goal forall a b c : nat, a + b + c = c.
+Proof.
+move=> a b c.
+elpi pbp_pattern_expect "pbp [X in X = _]." "a + b + c" 2 5.
+elpi pbp_pattern_expect "pbp [X in X + _ = _]." "a + b" 1 2.
+elpi pbp_pattern_expect "pbp [X in X + _ = _]." "" 0 3.
+Abort.
+
+(* ---------- The tests of pbp.v: hand-written and produced patterns ------ *)
+
+(* Each test of pbp.v is proved twice: [_hand] is pbp.v's script, [_gen]
+   uses the patterns that pbp_pattern produces (where pbp.v names an
+   assumption with a free variable, the produced pattern has _, and the
+   assumption is called pbp).  The two proofs are the same term. *)
+
+Lemma test_pbp0_hand (A B C : Prop) : A /\ B -> B /\ A.
+Proof.
+pbp [Z in  _ -> _ /\ Z].
+move: pbp.
+by pbp [X in X /\ _ -> _].
+move: pbp.
+by pbp [X in Y /\ X -> _].
+Defined.
+
+(* A/\B->B/\A *)
+Lemma test_pbp0_gen (A B C : Prop) : A /\ B -> B /\ A.
+Proof.
+elpi pbp_pattern_expect "pbp [X in _ -> _ /\ X]." "" 9 10.
+pbp [X in _ -> _ /\ X].
+move: pbp.
+elpi pbp_pattern_expect "pbp [X in X /\ _ -> _]." "" 0 1.
+by pbp [X in X /\ _ -> _].
+move: pbp.
+elpi pbp_pattern_expect "pbp [X in _ /\ X -> _]." "" 3 4.
+by pbp [X in _ /\ X -> _].
+Defined.
+
+Check (eq_refl : test_pbp0_gen = test_pbp0_hand).
+
+Lemma test_pbp1_hand (A B C : Prop) : A /\ B -> A /\ B.
+Proof.
+pbp  [ X Y in  X /\ Z -> Y /\ _].
+move: Z.
+pbp  [ X Y in  X -> _ -> Y].
+Defined.
+
+(* A/\B->A/\B, then B->A->B *)
+Lemma test_pbp1_gen (A B C : Prop) : A /\ B -> A /\ B.
+Proof.
+elpi pbp_pattern_expect "pbp [X Y in X /\ _ -> Y /\ _]." "" 0 1 6 7.
+pbp [X Y in X /\ _ -> Y /\ _].
+move: pbp.
+elpi pbp_pattern_expect "pbp [X Y in X -> _ -> Y]." "" 0 1 6 7.
+pbp [X Y in X -> _ -> Y].
+Defined.
+
+Check (eq_refl : test_pbp1_gen = test_pbp1_hand).
+
+Lemma test_pbp2_hand (A B C : Prop) : A \/ B -> A\/ B.
+Proof.
+pbp  [ X in  X \/ Y -> _].
+by pbp [X in X \/ _].
+by pbp [X in _ \/ X].
+Defined.
+
+(* A\/B->A\/B, then A\/B twice *)
+Lemma test_pbp2_gen (A B C : Prop) : A \/ B -> A\/ B.
+Proof.
+elpi pbp_pattern_expect "pbp [X in X \/ _ -> _]." "" 0 1.
+pbp [X in X \/ _ -> _].
+elpi pbp_pattern_expect "pbp [X in X \/ _]." "" 0 1.
+by pbp [X in X \/ _].
+elpi pbp_pattern_expect "pbp [X in _ \/ X]." "" 3 4.
+by pbp [X in _ \/ X].
+Defined.
+
+Check (eq_refl : test_pbp2_gen = test_pbp2_hand).
+
+Lemma test_pbp3_hand (A B C : Prop) : A \/ B -> B \/ A.
+Proof.
+pbp  [ X Y in  X \/ Z -> _ \/ Y].
+move: Z.
+pbp  [ X Y in  X  -> Y \/ _].
+Defined.
+
+(* A\/B->B\/A, then B->B\/A *)
+Lemma test_pbp3_gen (A B C : Prop) : A \/ B -> B \/ A.
+Proof.
+elpi pbp_pattern_expect "pbp [X Y in X \/ _ -> _ \/ Y]." "" 0 1 9 10.
+pbp [X Y in X \/ _ -> _ \/ Y].
+move: pbp.
+elpi pbp_pattern_expect "pbp [X Y in X -> Y \/ _]." "" 0 1 3 4.
+pbp [X Y in X -> Y \/ _].
+Defined.
+
+Check (eq_refl : test_pbp3_gen = test_pbp3_hand).
+
+Lemma test_pbp4_hand (A B : Prop) : (B -> A) -> B -> A.
+Proof.
+by pbp  [X Y in (_ -> X) -> H -> Y].
+Defined.
+
+(* (B->A)->B->A *)
+Lemma test_pbp4_gen (A B : Prop) : (B -> A) -> B -> A.
+Proof.
+elpi pbp_pattern_expect "pbp [X Y in (_ -> X) -> _ -> Y]." "" 4 5 11 12.
+by pbp [X Y in (_ -> X) -> _ -> Y].
+Defined.
+
+Check (eq_refl : test_pbp4_gen = test_pbp4_hand).
+
+Lemma test_pbp5_hand (A B : Prop) : (B -> A) -> B -> A.
+Proof.
+pbp  [X Y in (X -> H) -> Y -> _].
+move: H.
+pbp  [X Y in X -> _ -> Y].
+Defined.
+
+(* (B->A)->B->A, then A->B->A *)
+Lemma test_pbp5_gen (A B : Prop) : (B -> A) -> B -> A.
+Proof.
+elpi pbp_pattern_expect "pbp [X Y in (X -> _) -> Y -> _]." "" 1 2 8 9.
+pbp [X Y in (X -> _) -> Y -> _].
+move: pbp.
+elpi pbp_pattern_expect "pbp [X Y in X -> _ -> Y]." "" 0 1 6 7.
+pbp [X Y in X -> _ -> Y].
+Defined.
+
+Check (eq_refl : test_pbp5_gen = test_pbp5_hand).
+
+Lemma test_pb6_hand (A B : Prop) : (A -> B) /\ A -> B.
+Proof.
+pbp  [X Y in (X -> H) /\ Y -> _].
+move: H.
+pbp  [X Y in X -> _ -> Y].
+Defined.
+
+(* (A->B)/\A->B, then B->A->B *)
+Lemma test_pb6_gen (A B : Prop) : (A -> B) /\ A -> B.
+Proof.
+elpi pbp_pattern_expect "pbp [X Y in (X -> _) /\ Y -> _]." "" 1 2 8 9.
+pbp [X Y in (X -> _) /\ Y -> _].
+move: pbp.
+elpi pbp_pattern_expect "pbp [X Y in X -> _ -> Y]." "" 0 1 6 7.
+pbp [X Y in X -> _ -> Y].
+Defined.
+
+Check (eq_refl : test_pb6_gen = test_pb6_hand).
+
+(* Two selections must be apart: B (1 2) is inside B->A (7 8 is ->) *)
+Goal forall A B : Prop, (B -> A) -> B -> A.
+Proof.
+move=> A B.
+Fail elpi pbp_pattern 1 2 7 8.
+Abort.
+
+(* ---------- Notations: lists ---------- *)
+
+(* x::l1++l2=(x::l1)++l2 *)
+Goal forall (x : nat) (l1 l2 : list nat), x :: l1 ++ l2 = (x :: l1) ++ l2.
+Proof.
+move=> x l1 l2.
+elpi pbp_pattern_expect "pbp [X in X :: _ = _]." "" 0 1.
+elpi pbp_pattern_expect "pbp [X in _ :: X ++ _ = _]." "" 3 5.
+elpi pbp_pattern_expect "pbp [X in _ :: X = _]." "" 3 9.
+elpi pbp_pattern_expect "pbp [X in _ = X ++ _]." "" 10 17.
+elpi pbp_pattern_expect "pbp [X in _ = X ++ _]." "" 11 16.
+elpi pbp_pattern_expect "pbp [X in _ = (_ :: X) ++ _]." "" 14 16.
+elpi pbp_pattern_expect "pbp [X in X = _]." "" 0 9.
+rewrite -[X in _ = X ++ _]app_nil_r.
+lazymatch goal with |- x :: l1 ++ l2 = ((x :: l1) ++ nil) ++ l2 => idtac end.
+by rewrite app_nil_r.
+Qed.
+
+(* ListNotations' [x] and pbp's [X in ...] are incompatible notations
+   (Rocq warns of it): with ListNotations, the pattern is not parsed *)
+Module ListNotationsClash.
+Import ListNotations.
+Goal forall x : nat, [x] ++ [] = [x].
+Proof.
+move=> x.
+Fail elpi pbp_pattern 1 2.
+Abort.
+End ListNotationsClash.
+
+(* ---------- Implicit arguments ---------- *)
+
+(* length(revl)=lengthl: the type argument of length, rev and = is not
+   printed; the head length, applied to it, is not a printed subterm *)
+Goal forall (A : Type) (l : list A), length (rev l) = length l.
+Proof.
+move=> A l.
+elpi pbp_pattern_expect "pbp [X in length X = _]." "" 6 12.
+elpi pbp_pattern_expect "pbp [X in length X = _]." "" 7 11.
+elpi pbp_pattern_expect "pbp [X in length (rev X) = _]." "" 10 11.
+elpi pbp_pattern_expect "pbp [X in _ = length X]." "" 19 20.
+elpi pbp_pattern_expect "pbp [X in X = _]." "length (rev l)" 0 6.
+elpi pbp_pattern_expect "pbp [X in length X = _]." "rev l" 7 10.
+rewrite -[X in length X = _]app_nil_r.
+lazymatch goal with |- length (rev l ++ nil) = length l => idtac end.
+by rewrite app_nil_r length_rev.
+Qed.
+
+(* ---------- Binders ---------- *)
+
+(* foralln:nat,existsm:nat,n+m=m+n: a selection that uses bound variables
+   is the variable of the pattern applied to them *)
+Goal forall n : nat, exists m : nat, n + m = m + n.
+Proof.
+elpi pbp_pattern_expect
+  "pbp [X in forall n : nat, exists m : nat, X n + _ = _]." "" 24 25.
+elpi pbp_pattern_expect
+  "pbp [X in forall n : nat, exists m : nat, _ + X m = _]." "" 26 27.
+elpi pbp_pattern_expect
+  "pbp [X in forall n : nat, exists m : nat, X n m = _]." "" 24 27.
+elpi pbp_pattern_expect "pbp [X in forall n : nat, X n]." "" 12 31.
+(* the type nat of n cannot be abstracted: n + m needs it *)
+Fail elpi pbp_pattern 8 11.
+Abort.
+
+(* ---------- Hypotheses ---------- *)
+
+(* a selection in a hypothesis H generalizes it (move: H) and points in
+   the premise *)
+Goal forall A B : Prop, A /\ B -> B /\ A.
+Proof.
+move=> A B H.
+elpi pbp_pattern_expect "move: H; pbp [X in X /\ _ -> _]." "" H 0 1.
+move: H; pbp [X in X /\ _ -> _].
+Abort.
+
+(* Linking a hypothesis and the conclusion: back-chaining (the paper's
+   A -> (A -> B) -> B, the B's linked) *)
+Goal forall A B : Prop, A -> (A -> B) -> B.
+Proof.
+move=> A B a ab.
+(* A->B *)
+elpi pbp_pattern_expect "move: ab; pbp [X Y in (_ -> X) -> Y]." "" ab 3 4 0 1.
+move: ab; pbp [X Y in (_ -> X) -> Y].
+exact: a.
+Qed.
+
+(* Linking two hypotheses: forward chaining (the A's linked) *)
+Goal forall A B : Prop, A -> (A -> B) -> B.
+Proof.
+move=> A B a ab.
+elpi pbp_pattern_expect "move: a ab; pbp [X Y in X -> (Y -> _) -> _]."
+  "" a 0 1 ab 0 1.
+(* the order of the selections does not change the generalization *)
+elpi pbp_pattern_expect "move: a ab; pbp [X Y in Y -> (X -> _) -> _]."
+  "" ab 0 1 a 0 1.
+move: a ab; pbp [X Y in X -> (Y -> _) -> _].
+by move=> _.
+Qed.
+
+(* The variables of the pattern avoid the names of the goal *)
+Goal forall X Y : Prop, X /\ Y -> Y /\ X.
+Proof.
+move=> X Y.
+elpi pbp_pattern_expect "pbp [X0 in X0 /\ _ -> _]." "" 0 1.
+elpi pbp_pattern_expect "pbp [X0 Y0 in X0 /\ _ -> _ /\ Y0]." "" 0 1 9 10.
+pbp [X0 Y0 in X0 /\ _ -> _ /\ Y0].
+Abort.
+
+(* ---------- Several goals, line breaks ---------- *)
+
+Goal forall Alpha Beta Gamma Delta : Prop,
+  Alpha \/ Beta \/ Gamma \/ Delta ->
+  (Alpha \/ Beta \/ Gamma \/ Delta) \/ (Alpha \/ Beta \/ Gamma \/ Delta)
+  \/ (Delta \/ Gamma \/ Beta \/ Alpha).
+Proof.
+move=> Alpha Beta Gamma Delta H.
+(* printed on two lines; without blanks:
+   (Alpha\/Beta\/Gamma\/Delta)\/(Alpha\/Beta\/Gamma\/Delta)\/Delta\/Gamma... *)
+elpi pbp_pattern_expect "pbp [X in _ \/ _ \/ _ \/ X \/ _]." "" 65 70.
+pbp [X in _ \/ _ \/ _ \/ X \/ _].
+lazymatch goal with |- Gamma => idtac end.
+Abort.
+
+(* A goal selector: the call is for the goal it selects *)
+Goal forall A B : Prop, A -> B -> A /\ B.
+Proof.
+move=> A B a b; split.
+2: elpi pbp_pattern_expect "pbp [X in X]." "" 0 1.
+Abort.
+
+(* ---------- Unicode notations ---------- *)
+
+Module Unicode.
+Import Utf8.
+
+(* ∀n:nat,n+0=n: the characters are Unicode characters, not bytes *)
+Goal forall n : nat, n + 0 = n.
+Proof.
+elpi pbp_pattern_expect "pbp [X in ∀ n : nat, X n + _ = _]." "" 7 8.
+elpi pbp_pattern_expect "pbp [X in ∀ n : nat, _ + X = _]." "" 9 10.
+Abort.
+End Unicode.
