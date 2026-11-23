@@ -116,12 +116,43 @@ json-string S J :-
   rex.replace "\n" "\\\\n" S2 S3, J is "\"" ^ S3 ^ "\"".
 
 % [write-json Out Top Rs]: the JSON file Out for the editor: each node of
-% the tree of Top, in the order of the text
+% the tree of Top, in the order of the text; then the declared words that
+% its justifications use, one per line, each with its meaning and the
+% place of its declaration (for the links of the PDF and the HTML page:
+% prooftext/pdf.sh reads them)
 pred write-json i:string, i:prooftext.node, i:list report.
 write-json Out Top Rs :-
   prooftext.all-nodes "0" Top All,
   std.map All (json-node Rs) Js, std.string.concat "," Js J,
-  open_out Out O, output O {calc ("{\"steps\":[" ^ J ^ "]}\n")}, close_out O.
+  json-justifications All JW,
+  open_out Out O, output O {calc ("{\"steps\":[" ^ J ^ "]," ^ JW ^ "}\n")}, close_out O.
+
+% [json-justifications Nodes J]: "justifications":[...], the declared
+% words of the justifications of the nodes (justification-word, Cyp.v),
+% each once
+pred json-justifications i:list (pair string prooftext.node), o:string.
+json-justifications All J :-
+  std.map All (p\ ws\ sigma N Ps\ p = pr _ N, prooftext.node-parts N Ps,
+                 std.map-filter Ps justification-of-part ws) Wss,
+  std.flatten Wss Ws0, undup Ws0 Ws,
+  std.map-filter Ws json-word Es,
+  if (Es = []) (J = "\"justifications\":[]")
+     (std.string.concat ",\n" Es EJ, J is "\"justifications\":[\n" ^ EJ ^ "]").
+
+% [justification-of-part P W]: the word W of a justification part
+pred justification-of-part i:prooftext.text-part, o:string.
+justification-of-part (prooftext.tagged-name C W) W :- prooftext.justification-class C.
+justification-of-part (prooftext.by-part W) W.
+
+% [json-word W J]: the declared word W as a JSON object (fails when W is
+% not declared)
+pred json-word i:string, o:string.
+json-word W J :-
+  justification-word W M (declared-at Lib F L), !,
+  (M = meaning-tactic T, Meaning is "tactic " ^ T ; M = meaning-rules, Meaning = "rules"), !,
+  J is "{\"word\":" ^ {json-string W} ^ ",\"meaning\":" ^ {json-string Meaning} ^
+       ",\"library\":" ^ {json-string Lib} ^ ",\"file\":" ^ {json-string F} ^
+       ",\"line\":" ^ {std.any->string L} ^ "}".
 
 % [json-node Rs Node J]: the JSON object of a numbered node
 pred json-node i:list report, i:pair string prooftext.node, o:string.

@@ -23,7 +23,7 @@ gaps-clauses _ [].
 % whose justifications name no rule (a node justified by named rules,
 % *monotonicity*{.just}, is closed by them only)
 pred gap-justification i:method.
-gap-justification (method Ms _ _) :- not (std.exists Ms (m\ named m _ _)).
+gap-justification (method Ms _ _) :- not (std.exists Ms (m\ justification-word m meaning-rules _)).
 gap-justification (eliminating _ _ M) :- gap-justification M.
 
 % [close-gap M G]: the condition G, closed by the method M, closed by the

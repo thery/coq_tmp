@@ -56,7 +56,7 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
 
 - **The header** (between the two `---`): `require`, the Rocq preamble;
   `scope`, a scope to open; `by`, the tactics tried on a node with no
-  rule or tactic name; `rules`, files of rules (below), separated by
+  declared word (declared words: `lia | nia`); `rules`, files of rules (below), separated by
   spaces, copied in order after the preamble; `flags`, options given to
   `rocq c` (e.g. `-Q dir Name`; the directories of `-Q`, `-R`, `-I` and
   the rule files are relative to the directory of the proof, and
@@ -93,19 +93,35 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   node sees, up to conversion (a fact that is none is an error); the
   hypothesis it is, is put first for the proof of the node.
 - **Justifications**, `*X*{.just}`, any number in a node, written where
-  the sentence mentions them ("Applying *i*{.just} to *k*{.just}"):
-  - a name of rules (`named`, below) or of a tactic (`lia`, `lra`, `nia`,
-    `nra`, `ring`, `field`, `tauto`, `auto`, `easy`, `reflexivity`,
-    `assumption`, `congruence`, `firstorder`, or one that the rules of the
-    proof add with `tactic-name Name Ltac`) chooses the method; several are
-    tried in turn.  `firstorder` is run bounded, as `bounded_firstorder` of
+  the sentence mentions them ("Applying *i*{.just} to *k*{.just}").  What
+  a word means is written in the files of the proof, never hidden in cyp:
+  a word is a name of the text, of a lemma, or a word declared by
+  `CypJustification` (below, "Declaring justification words").  A word X
+  is looked up in this order:
+  1. `match` and `induction`, the two fixed methods (below);
+  2. a name of the text in scope: a hypothesis, a node (`n`, or `c2` for
+     node 2 when it has none), a variable (the text's own names come
+     first, as a local name hides a global one in Rocq);
+  3. a word declared by `CypJustification "X" := ...`: an Ltac tactic or
+     the rules named X;
+  4. a lemma (possibly qualified, `Nat.add_comm`);
+  5. else the node has an error, "X names nothing known ... (declare it:
+     `CypJustification "X" := tactic.` or `:= rules.`)".
+
+  What each kind does:
+  - a declared word chooses the method; several are tried in turn.  The
+    tactics that every proof text may name (`lia`, `lra`, `nia`, `nra`,
+    `ring`, `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
+    `congruence`, `firstorder`: [../prooftext/tactics.elpi](../prooftext/tactics.elpi),
+    the only ones xtext writes) are declared at the end of
+    [vernac/Cyp.v](vernac/Cyp.v), each the Ltac `cyp_N` above them, with
+    the same command.  `firstorder` is run bounded, as `bounded_firstorder` of
     [../prooftext/Tactics.v](../prooftext/Tactics.v), shared with xtext: the
     tactic itself has no bound (more than 30 s and 7 GB on one step of a
     text);
-  - a name of a hypothesis, of a node (`n`, or `c2` for node 2 when it has
-    none) or of a variable, or of a lemma (possibly qualified,
-    `Nat.add_comm`) is handed to the method: put first in the context, a
-    lemma added to it (Ltac `cyp_first`);
+  - a name of a hypothesis, of a node or of a variable, or of a lemma is
+    handed to the method: put first in the context, a lemma added to it
+    (Ltac `cyp_first`);
   - the two fixed justifications state how the step eliminates an object,
     the way an author says it: `*match*{.just}`, a case analysis (Rocq's
     `destruct`, `cyp_match`), and `*induction*{.just}`, an induction
@@ -123,7 +139,7 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     error ("*and* is an inductive type: it justifies a step only with
     *match* or *induction*").  `induction` is a name Rocq accepts for a
     lemma, but as a justification it is the method;
-  - with no rule or tactic name, the names handed are applied one after
+  - with no declared word, the names handed are applied one after
     the other, like a lemma, the premises that are one of the other names
     closed by it first, the others by the rules or the default tactics
     ("*and_ind*{.just} in *h1*{.just}"); a single `*X*{.just}` so means
@@ -138,10 +154,9 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     last, once, on the goal with its head unfolded (its weak head normal
     form: a conclusion `Inv E R x z`{.claim} that the steps before prove as
     `R z x`);
-  - a name that is none of these (and no name of the text in scope) is an
-    error.  X cannot be tactic code (`interval with (i_prec 100)`):
-    Rocq-Elpi cannot yet turn a string into a tactic; name an Ltac
-    definition instead (`tactic-name`).
+  - X cannot be tactic code (`interval with (i_prec 100)`): Rocq-Elpi
+    cannot yet keep a tactic given as code; name an Ltac definition and
+    declare a word for it (`CypJustification "bounds" := my_interval.`).
 - **Open goals.**  A node whose conclusion is `` `C`{.goal} `` (a proof
   in progress: xtext's `ExtractText_partial` writes "Prove
   `C`{.goal}.") is not tried, even when it is easy: the author left it
@@ -179,7 +194,7 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   steps that follow from earlier claims by a few applications) it closed
   99% (measured on the texts written before the tree,
   [../xtext/gaps/](../xtext/gaps/README.md)).  It is not tried on a
-  node justified by named rules (*monotonicity*{.just}: those rules only).
+  node justified by a word declared as rules (*monotonicity*{.just}: those rules only).
   The header line `gaps: off` turns it off
   ([examples/gaps_demo.md](examples/gaps_demo.md) is proved with it, not
   without).
@@ -215,7 +230,8 @@ status at the start of its own text (`- ✅ ...` for an item, `[✅ ...]{.p}`
 for a span) and its message in a folded block after the paragraph where it
 starts.  **The JSON** (`cyp --json`) gives, for each node, its number,
 its first and last lines (numbered from 0), its status, its formulas and
-its message.
+its message; then the declared words that its justifications use, with
+the place of their declaration ("Declaring justification words", below).
 
 ## Rules: choosing the justification with Elpi
 
@@ -246,13 +262,15 @@ justify {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat }}).
 - `justify_first Pattern Tac`: a rule tried before every `justify` rule,
   for the rules of one proof that must win over shared ones.
 - `named "name" Pattern Tac`: a rule with a name, tried like the others,
-  and the only kind tried when a node is justified by `*name*{.just}`: the
-  text says why a node holds (*monotonicity*{.just}), the rule file says what that means,
-  and Rocq checks that this reason, and no other, closes the step
-  ([examples/named_demo.md](examples/named_demo.md)).
+  and, once the word is declared with `CypJustification "name" := rules.`
+  (below), the only kind tried when a node is justified by
+  `*name*{.just}`: the text says why a node holds (*monotonicity*{.just}),
+  the proof's files say what that means, and Rocq checks that this reason,
+  and no other, closes the step ([examples/named_demo.md](examples/named_demo.md)
+  with its rule file [examples/named_demo.v](examples/named_demo.v)).
 
 A rule is an Elpi clause, so it may have a body, for example to fire only
-when another rule applies.  On a node with no rule or tactic name, the rules are
+when another rule applies.  On a node with no declared word, the rules are
 tried in order, then the default tactics.  Conjunctions and disjunctions
 are split by cyp itself.  A rule file may also be a `.v` file of Rocq
 text, copied into the proof as it is.  The lemmas of a field go in a
@@ -265,6 +283,78 @@ Example: [examples/rules_demo.md](examples/rules_demo.md) with
 nodes; without the rule file, `lra` proves only one.
 A larger case study, a floating-point paper with a library of lemmas and
 shared rules, is kept in a private branch.
+
+## Declaring justification words
+
+What a justification word means is written in the files of the proof, with
+a Rocq command of [vernac/Cyp.v](vernac/Cyp.v), not hidden in cyp:
+
+```coq
+Ltac easy_check := lra.
+CypJustification "checked" := easy_check.        (* *checked*{.just} runs easy_check *)
+
+Elpi Accumulate cyp.db lp:{{
+  named "monotonicity" {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat_r }}).
+  named "monotonicity" {{ (_ * _ <= _ * _)%R }} (apply {{ Rmult_le_compat_l }}).
+}}.
+CypJustification "monotonicity" := rules.        (* *monotonicity*{.just}: these rules only *)
+```
+
+- `CypJustification "word" := tac.`: the word means the Ltac tactic `tac`
+  (a name, possibly qualified, defined by `Ltac` before; tactic code
+  `ltac:(...)` is not accepted, Rocq-Elpi cannot keep it).  Rocq resolves
+  the name at the declaration: the tactic is run once on the goal `True`,
+  and a name that is no Ltac tactic stops there with Rocq's error
+  "Ltac1 tactic ... not found".
+- `CypJustification "word" := rules.`: the word means the rules
+  `named "word" ...` of `cyp.db`, which must be accumulated before (else
+  an error); a node justified by it is closed by these rules only (no gap
+  tactic either).
+- A word is declared once: a second declaration is an error that gives
+  the file and the line of the first.  A word that is also the name of a
+  lemma hides it in the justifications (a warning at the declaration).  A
+  name of the text in scope (a hypothesis, a node, a variable) hides a
+  declared word (the order is in "The format", above).
+- The binding is kept in `cyp.db` (`justification-word Word Meaning
+  Origin`), visible where the file of the declaration is imported, with
+  the place of the declaration: its file and line, and its library
+  (`CypV.Cyp`).  A declaration in a rule file `.v` of a Markdown proof has
+  its place in that file (the program `cyp` copies the file into the one it
+  runs, and tells cyp where its lines come from).
+- The tactics every proof text may name (`lia`, `tauto`, ...: prooftext's
+  [tactics.elpi](../prooftext/tactics.elpi)) are declared at the end of
+  [vernac/Cyp.v](vernac/Cyp.v) with the same command,
+  `CypJustification "lia" := cyp_lia.`, so that every word has a visible
+  declaration; `Cyp.v` checks that none of prooftext's is missing.  They
+  are also the names a header's `by:` gives (each a declared word).
+- A word that is declared nowhere, and is no name of the text or lemma,
+  is an error of its node, which says how to declare it.
+
+Where to write the declarations: in a rule file `.v` of the header
+(`rules: named_demo.v`, as [examples/named_demo.v](examples/named_demo.v)),
+in a library of the `require:` line, or, for `Cyp Lemma`, in the `.v` file
+itself ([vernac/named_v.v](vernac/named_v.v)).
+
+**Links.**  The JSON of a checked text (`proof.cyp.json`) lists the
+declared words that its justifications use, one per line, with their
+meaning and the place of their declaration:
+
+```json
+{"word":"monotonicity","meaning":"rules","library":"","file":"/…/cyp/examples/named_demo.v","line":8}
+{"word":"lia","meaning":"tactic cyp_lia","library":"CypV.Cyp","file":"./Cyp.v","line":442}
+```
+
+`prooftext/pdf.sh --source-root ROOT=URL` (and `gallery.sh`, which passes
+it on and copies the JSON with each text) makes each such word a link to
+its declaration in the PDF and the web page: `URL` followed by the file's
+path under `ROOT` and `#L` with its line (GitHub's line anchors), `ROOT`
+a directory (`/…/coq_tmp`) or a logical prefix (`CypV`: `CypV.Cyp` is
+`Cyp.v`):
+
+```sh
+../prooftext/pdf.sh --html --source-root "$(cd .. && pwd)=https://github.com/thery/coq_tmp/blob/main/" \
+  --source-root CypV=https://github.com/thery/coq_tmp/blob/main/cyp/vernac/ examples/named_demo.checked.md
+```
 
 ## The PDF
 
@@ -327,8 +417,8 @@ The departures:
   in the prose), mixed at any depth;
 - several justifications per node, each one name, where the sentence
   mentions it (the paper has at most one `<j>` per `<p>`, which may hold
-  several names); rule and tactic names choose the method, the other
-  names are handed to it;
+  several names); declared words (`CypJustification`: a tactic, rules) choose the method, the other
+  names are handed to it; what a word means is declared in the proof's files;
 - remarks: a text with no tag is shown and not checked;
 - the method of a node may also be chosen by Elpi rules from the shape
   of its goal, written per field in a rule file;

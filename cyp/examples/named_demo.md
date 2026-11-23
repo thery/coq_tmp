@@ -2,7 +2,7 @@
 require: From Stdlib Require Import Reals Lra.
 scope: R_scope
 by: lra
-rules: named_demo.elpi
+rules: named_demo.v
 ---
 
 # named_demo

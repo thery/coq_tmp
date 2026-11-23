@@ -31,7 +31,17 @@
    proof of a statement from its tree), markdown.elpi (the checked Markdown
    and the JSON).  The tree is read by prooftext's reader
    (prooftext/tree.elpi, nodes.elpi).  The rules of a field are added to
-   the database cyp.db (justify, justify_first, named). *)
+   the database cyp.db (justify, justify_first, named).
+
+     CypJustification "word" := tac.
+     CypJustification "word" := rules.
+       declares what the justification *word*{.just} means: the Ltac
+       tactic tac (checked to exist when declared), or the rules named
+       "word" (named "word" Pattern Tac in cyp.db, accumulated before).
+       The binding is kept in cyp.db (justification-word), with the file
+       and the line of the declaration, for the links of the PDF and the
+       HTML page; the words of prooftext/tactics.elpi are declared at the
+       end of this file. *)
 
 From Stdlib Require Import PrimString List Lia Lra Ring Field.
 From elpi Require Import elpi.
@@ -47,10 +57,12 @@ From Cdcl Require Import Itauto.
 (* a claim C of the text, proved by p, is a hypothesis of the rest k *)
 Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
 
-(* The tactics a proof may name in a justification *X*{.just} or in its
-   header's by:, those of
-   prooftext/tactics.elpi: the name N runs cyp_N, below.  More with
-     Ltac my_tac := ...  Elpi Accumulate cyp.db lp:{{ tactic-name "my" "my_tac". }}. *)
+(* The tactics that the words of prooftext/tactics.elpi (lia, tauto, ...)
+   mean, in a justification *X*{.just} or in a header's by:: the word N is
+   declared to mean cyp_N at the end of this file (CypJustification).  A
+   proof declares its own words the same way:
+     Ltac my_tac := ...
+     CypJustification "my" := my_tac. *)
 Ltac cyp_lia := lia.            Ltac cyp_nia := nia.
 Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
 Ltac cyp_ring := ring.          Ltac cyp_field := field.
@@ -105,11 +117,27 @@ Elpi Db cyp.db lp:{{
   pred justify_first i:term, o:cyptac.
   % [named Name Pattern Tac]: a rule with a name, tried like the others,
   % and the only ones tried when a node is justified by *Name*{.just}
+  % (the word Name declared by CypJustification "Name" := rules.)
   pred named o:string, o:term, o:cyptac.
 
-  % [tactic-name Name Ltac]: a tactic that the rules of a proof add to
-  % those of prooftext (elpi/check.elpi)
-  pred tactic-name o:string, o:string.
+  % [justification-word Word Meaning Origin]: the justification word Word
+  % (*Word*{.just}, or a name of a header's by:) means Meaning; it was
+  % declared by CypJustification at Origin (elpi/check.elpi)
+  kind justification-meaning type.
+  type meaning-tactic string -> justification-meaning. % the Ltac tactic of that name
+  type meaning-rules justification-meaning.            % the rules named Word
+  kind origin type.
+  % the library (a logical path, CypV.Cyp; "" when unknown), the file (as
+  % Rocq was given it, or the rule file that the program cyp copied in),
+  % the line
+  type declared-at string -> string -> int -> origin.
+  pred justification-word o:string, o:justification-meaning, o:origin.
+
+  % [copied-lines Gen First Last File]: the lines First to Last of the file
+  % Gen are a copy of the file File (the program cyp copies a rule file .v
+  % into the file it runs, bin/cyp.ml), so that a declaration there has
+  % its place in File
+  pred copied-lines o:string, o:int, o:int, o:string.
 
   % [premise-depth-max N]: when a lemma is applied, its premises are
   % closed by the rules, which may apply lemmas in turn: at most N
@@ -152,6 +180,101 @@ From CypV Extra Dependency "elpi/timing.elpi" as cyp_timing.
 From CypV Extra Dependency "elpi/messages_en.elpi" as cyp_messages_en.
 From CypV Extra Dependency "elpi/messages_fr.elpi" as cyp_messages_fr.
 From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
+
+(* ------------------------------------------------------------------ *)
+(* Declaring a justification word: what *word*{.just} means is written in
+   the files of the proof, not in cyp.
+
+     CypJustification "checked" := easy_check.
+       the word checked runs the Ltac tactic easy_check (defined by Ltac
+       before; tactic code, ltac:(...), is not accepted: Rocq-Elpi cannot
+       keep it, name an Ltac definition instead).  Rocq resolves the name
+       at the declaration: the tactic is run once on the goal True, and a
+       name that is no Ltac tactic is Rocq's error "Ltac1 tactic ... not
+       found";
+     CypJustification "monotonicity" := rules.
+       the word monotonicity means the rules named "monotonicity" of cyp.db
+       (named "monotonicity" Pattern Tac, in a rule file loaded before):
+       only they are tried on a node it justifies.
+
+   A word is declared once (a second declaration is an error); a word that
+   is also the name of a lemma hides it (a warning).  The binding is
+   accumulated in cyp.db, visible where the file of the declaration is
+   imported, with the place of the declaration (the file and the line, and
+   the library), which the JSON of a checked text gives for the links of
+   its PDF and HTML page (elpi/markdown.elpi). *)
+Elpi Command CypJustification.
+Elpi Accumulate Db cyp.db.
+Elpi Accumulate lp:{{
+  main [str W, str ":=", str "rules"] :- !,
+    word-not-declared W,
+    if (std.findall (named W _ _) [_ | _]) true
+       (coq.error {calc ("CypJustification: no rule is named \"" ^ W ^
+          "\" (named \"" ^ W ^ "\" Pattern Tac): accumulate the rules in cyp.db before declaring the word")}),
+    declare W meaning-rules.
+  main [str W, str ":=", str T] :- !,
+    word-not-declared W,
+    tactic-exists T,
+    declare W (meaning-tactic T).
+  main _ :-
+    coq.error "usage: CypJustification \"word\" := ltac_name.  or  CypJustification \"word\" := rules.".
+
+  % [declare W M]: the binding of W to M, at the place of the command
+  pred declare i:string, i:justification-meaning.
+  declare W M :-
+    lemma-hidden W, origin O,
+    coq.elpi.accumulate _ "cyp.db" (clause _ _ (justification-word W M O)).
+
+  % [word-not-declared W]: W has no declaration yet (else an error)
+  pred word-not-declared i:string.
+  word-not-declared W :- justification-word W _ (declared-at _ F L), !,
+    coq.error {calc ("CypJustification: the word \"" ^ W ^ "\" is already declared (" ^
+                     F ^ ", line " ^ {std.any->string L} ^ ")")}.
+  word-not-declared _.
+
+  % [lemma-hidden W]: a warning when W is also the name of a lemma (the
+  % declared word wins over it in a justification, elpi/check.elpi)
+  pred lemma-hidden i:string.
+  lemma-hidden W :- coq.locate-all W L, std.mem L (loc-gref _), !,
+    coq.warning "cyp" "cyp.justification"
+      {calc ("the justification word \"" ^ W ^ "\" hides the lemma " ^ W ^ " in the justifications")}.
+  lemma-hidden _.
+
+  % [tactic-exists T]: T is an Ltac tactic: run once on the goal True
+  % (whatever it does there); a name that is no tactic is Rocq's error
+  pred tactic-exists i:string.
+  tactic-exists T :-
+    coq.typecheck P {{ True }} ok, coq.ltac.collect-goals P [SG] _,
+    coq.ltac.open (g\ gl\ coq.ltac.call-ltac1 T g gl _, (var gl, gl = [] ; true)) SG _.
+
+  % [origin O]: the place of the command: its file and line (in the rule
+  % file that the program cyp copied in, if it is in such a copy), and
+  % its library
+  pred origin o:origin.
+  origin (declared-at Lib File Line) :-
+    attributes As, std.mem As (attribute "elpi.loc" (leaf-loc Loc)), !,
+    loc.fields Loc F _ _ L _,
+    if (copied-lines F First Last Orig, L >= First, L =< Last)
+       (File = Orig, Line is L - First + 1, Lib = "")
+       (File = F, Line = L, library-of F Lib).
+  origin (declared-at "" "" 0).
+
+  % [library-of F Lib]: the logical path of the library of the file F, the
+  % current module path up to the name of the file (CypV.Cyp for Cyp.v);
+  % "" when the file's name is not in it
+  pred library-of i:string, o:string.
+  library-of F Lib :-
+    rex.replace "^.*/" "" F B, rex.replace "[.]v$" "" B Base,
+    coq.env.current-path P, path-up-to Base P Pre, !,
+    std.string.concat "." Pre Lib.
+  library-of _ "".
+
+  % [path-up-to X P Pre]: the components of P up to the first X, included
+  pred path-up-to i:string, i:list string, o:list string.
+  path-up-to X [X | _] [X] :- !.
+  path-up-to X [Y | P] [Y | Pre] :- path-up-to X P Pre.
+}}.
+Elpi Export CypJustification.
 
 (* ------------------------------------------------------------------ *)
 
@@ -312,3 +435,33 @@ Elpi Accumulate lp:{{
       say "proved-lemma" [Name]).
 }}.
 #[proof="end"] Elpi Export CypQed.
+
+(* ------------------------------------------------------------------ *)
+(* The words of prooftext/tactics.elpi, the tactics every proof text may
+   name (xtext writes only these): each means the Ltac cyp_N above *)
+CypJustification "lia" := cyp_lia.
+CypJustification "nia" := cyp_nia.
+CypJustification "lra" := cyp_lra.
+CypJustification "nra" := cyp_nra.
+CypJustification "ring" := cyp_ring.
+CypJustification "field" := cyp_field.
+CypJustification "tauto" := cyp_tauto.
+CypJustification "auto" := cyp_auto.
+CypJustification "easy" := cyp_easy.
+CypJustification "reflexivity" := cyp_reflexivity.
+CypJustification "assumption" := cyp_assumption.
+CypJustification "congruence" := cyp_congruence.
+CypJustification "firstorder" := cyp_firstorder.
+
+(* every word of prooftext/tactics.elpi is declared above *)
+Elpi Command cyp_words_declared.
+Elpi Accumulate Db cyp.db.
+Elpi Accumulate File pt_tactics.
+Elpi Accumulate lp:{{
+  main [] :-
+    std.findall (prooftext.tactic _) Ts,
+    std.map-filter Ts (t\ n\ t = prooftext.tactic n, not (justification-word n _ _)) Missing,
+    if (Missing = []) true
+       (coq.error "Cyp.v: words of prooftext/tactics.elpi not declared:" Missing).
+}}.
+Elpi cyp_words_declared.

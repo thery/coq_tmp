@@ -1,6 +1,7 @@
 % prooftext: the tactics a proof text may name, in a justification *X*{.just}
 % or in the by field of its header.  The reader runs the tactic of that
-% name (cyp: tactic-name Name Ltac, cyp/vernac/Cyp.v, the Ltac it calls);
+% name (cyp: each is declared by CypJustification "Name" := cyp_Name. at the
+% end of cyp/vernac/Cyp.v, the Ltac it runs);
 % the writer writes only these names (xtext: the second argument of
 % xtext-tactic and xtext-guard-tactic, xtext/ExtractText.v, checked by
 % xtext/vocab_check.v).  A tool may run a tactic its own way (a time

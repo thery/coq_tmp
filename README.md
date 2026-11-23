@@ -11,8 +11,11 @@ papers (in development):
   `[…]{.p}`, its formulas tagged `{.claim}`, `{.hyp}`, ..., its
   justifications `*X*{.just}`, among them the two fixed methods
   `*match*{.just}` and `*induction*{.just}`), is checked node by node with Rocq and
-  written back with ✅ / ❌ on each node; Elpi rules choose how each node
-  is proved; an open goal of a proof in progress (`` `G`{.goal} ``) is not
+  written back with ✅ / ❌ on each node; what a justification word means
+  is declared in the proof's files (`CypJustification "word" := tac.`, or
+  `:= rules.` for Elpi rules that choose how a node is proved by the shape
+  of its goal; `lia`, `tauto`, ... are declared so in `cyp/vernac/Cyp.v`),
+  and links to its declaration in the PDF and the web page; an open goal of a proof in progress (`` `G`{.goal} ``) is not
   tried and left to a Proof block.  cyp always succeeds: what it cannot prove is reported and
   left as named goals for a Proof block.  The checker is written in
   Rocq-Elpi (opam switch `elpi5`); the text may be in any language (cyp

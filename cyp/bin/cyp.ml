@@ -98,19 +98,35 @@ let main ~json ~conditions md =
   let h = header (read_file md) in
   let tmp = temp_dir () in
   let rules = List.mapi (fun k f -> (k, absolute dir f)) (words (field h "rules")) in
+  let src = Filename.concat tmp "cyp_check.v" in
+  let scope = match field h "scope" with "" -> [] | s -> [ "Open Scope " ^ s ^ "." ] in
+  let head = [ field h "require"; "From CypV Require Import Cyp." ] @ scope in
+  (* the number of lines of a list of lines (each may hold newlines) *)
+  let count ls =
+    List.fold_left (fun n l ->
+        n + 1 + List.length (String.split_on_char '\n' l) - 1) 0 ls in
+  (* each rule file: .elpi, accumulated in cyp.db; .v, copied in, after a
+     clause copied-lines that gives the place of its lines in the file
+     (Cyp.v: a CypJustification there is declared at its line of the
+     rule file, for the links) *)
   let rule_lines =
-    List.concat_map (fun (k, f) ->
+    List.fold_left (fun acc (k, f) ->
         if Filename.check_suffix f ".elpi" then begin
           let link = Filename.concat tmp (Printf.sprintf "rules%d.elpi" k) in
           Unix.symlink f link;
-          [ Printf.sprintf "From CypRules Extra Dependency \"rules%d.elpi\" as cyp_rules%d." k k;
-            Printf.sprintf "Elpi Accumulate cyp.db File cyp_rules%d." k ]
-        end else [ read_file f ]) rules in
-  let scope = match field h "scope" with "" -> [] | s -> [ "Open Scope " ^ s ^ "." ] in
+          acc @ [ Printf.sprintf "From CypRules Extra Dependency \"rules%d.elpi\" as cyp_rules%d." k k;
+                  Printf.sprintf "Elpi Accumulate cyp.db File cyp_rules%d." k ]
+        end else begin
+          let text = read_file f in
+          let first = count (head @ acc) + 2 in
+          let last = first + List.length (String.split_on_char '\n' text) - 1 in
+          acc @ [ Printf.sprintf "Elpi Accumulate cyp.db lp:{{ copied-lines %S %d %d %S. }}."
+                    src first last f;
+                  text ]
+        end) [] rules in
   let v =
-    [ field h "require"; "From CypV Require Import Cyp." ] @ scope @ rule_lines
+    head @ rule_lines
     @ [ Printf.sprintf "%sCypFile %S." (if conditions then "#[bare] " else "") md ] in
-  let src = Filename.concat tmp "cyp_check.v" in
   write_file src (String.concat "\n" v ^ "\n");
   let flags = relative_flags dir (words (expand (field h "flags"))) in
   let out = Filename.concat tmp "cyp_check.out" in

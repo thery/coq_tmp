@@ -20,7 +20,7 @@ message "fr" "variables-not-parsed" "les variables %1 ne s'analysent pas : %2".
 message "fr" "hypothesis-not-parsed" "l'hypothèse %1 ne s'analyse pas : %2".
 message "fr" "conclusion-not-prop" "la conclusion %1 n'est pas une proposition".
 message "fr" "fact-unknown" "le fait %1 n'est ni une hypothèse ni une conclusion visible ici".
-message "fr" "name-unknown" "%1 ne nomme rien de connu : ni hypothèse, ni nœud, ni lemme, ni règle, ni tactique".
+message "fr" "name-unknown" "%1 ne nomme rien de connu : ni hypothèse, ni nœud, ni lemme, ni mot de justification déclaré (le déclarer : CypJustification \"%1\" := tactique. ou := rules.)".
 message "fr" "at-line" "ligne %1 : %2".
 message "fr" "no-conclusion" "un nœud sans conclusion : il a des balises, mais pas de {.claim}".
 message "fr" "two-conclusions" "un nœud à deux conclusions, %1 et %2".

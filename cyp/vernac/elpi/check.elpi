@@ -5,12 +5,11 @@
 % [justify] clauses, tried in this order; their tactics [ltac N], [apply T]
 % and [lemma T].  Conjunctions and disjunctions are split here.
 
-% [tactic-name Name Ltac]: a tactic added by a proof's rules, and the Ltac
-% definition that runs it (Cyp.v).  The tactics every proof text may name
-% are prooftext's (prooftext/tactics.elpi): the tactic Name runs the Ltac
-% cyp_Name (Cyp.v).  A tactic of the proof, defined with Ltac, is named by a
-% clause tactic-name Name Ltac in its rules
-pred tactic-name o:string, o:string.
+% The words of the justifications are declared (CypJustification, Cyp.v):
+% [justification-word Word Meaning Origin] in cyp.db, Meaning an Ltac
+% tactic (meaning-tactic) or the rules named Word (meaning-rules).  The
+% tactics every proof text may name (prooftext/tactics.elpi) are declared
+% at the end of Cyp.v, each the Ltac cyp_Name.
 
 % the default tactics of the proof being checked (its header's by:), then
 % cyp's own ones (default-ltac in cyp.db)
@@ -84,45 +83,45 @@ close-default G :- not head-unfolded,
 % [head-unfolded]: the goal is already in weak head normal form
 pred head-unfolded.
 
-% [tactic-known X]: X names a tactic: prooftext's, or one that the rules
-% of the proof add (tactic-name)
-pred tactic-known i:string.
-tactic-known X :- tactic-name X _, !.
-tactic-known X :- prooftext.tactic X.
-
-% [run-name N G]: the tactic named N run on G
+% [run-name N G]: the declared word N run on G: its Ltac tactic, or its
+% rules (only them)
 pred run-name i:string, i:goal.
-run-name N G :- tactic-name N L, !, coq.ltac.call-ltac1 L G [].
-run-name N G :- prooftext.tactic N, L is "cyp_" ^ N, coq.ltac.call-ltac1 L G [].
+run-name N G :- justification-word N (meaning-tactic L) _, !, coq.ltac.call-ltac1 L G [].
+run-name N (goal _ _ Ty _ _ as G) :- justification-word N meaning-rules _, !, named N Ty T, run T G.
 
 % ------------------------------------------------------------------ %
-% The justifications of a node (rule 9 of the format): the names of rules
-% and tactics choose the method, tried in turn; the names of hypotheses,
-% nodes and lemmas are what the method is given, put first in the context
-% (the paper reorders the assumptions by the justification, 2003, §2.3);
-% so are the hypotheses that the facts of the node are.  With no rule or
-% tactic name, the names given are applied, one after the other, as a
-% single justification *X*{.just} is; with no name at all, the rules and the default
-% tactics run.  The fixed methods *match* and *induction* (prooftext's
-% method) first eliminate the objects named (proof.elpi, node-method),
-% then close each case so.
+% The justifications of a node (rule 9 of the format): the declared words
+% (rules and tactics) choose the method, tried in turn; the names of
+% hypotheses, nodes and lemmas are what the method is given, put first in
+% the context (the paper reorders the assumptions by the justification,
+% 2003, §2.3); so are the hypotheses that the facts of the node are.  With
+% no declared word, the names given are applied, one after the other, as a
+% single justification *X*{.just} is; with no name at all, the rules and
+% the default tactics run.  The fixed methods *match* and *induction*
+% (prooftext's method) first eliminate the objects named (proof.elpi,
+% node-method), then close each case so.
 
 % [classify Names Methods Given Unknown]: the names of the justifications
-% of a node sorted: rule and tactic names (Methods), names given (Given),
-% and the names that name nothing known.  A name is, in this order: the
-% name of rules, a local name (a hypothesis, the conclusion of a node, a
-% variable: it hides a lemma of that name, as in Rocq), a lemma (a name,
-% possibly qualified), a tactic
+% of a node sorted: methods (the fixed ones and the declared words),
+% names given (Given), and the names that name nothing known.  A name is,
+% in this order:
+%   1. a fixed method, match or induction;
+%   2. a local name: a hypothesis, the conclusion of a node, a variable
+%      (the text's own names come first, as in Rocq a local name hides a
+%      global one);
+%   3. a word declared by CypJustification (justification-word: a tactic
+%      or rules);
+%   4. a lemma (a name, possibly qualified), applied or given;
+% else it names nothing known (an error of the node)
 pred classify i:list string, o:list string, o:list given, o:list string.
 classify [] [] [] [].
 % the fixed methods match and induction first: induction may also be a
 % name of Rocq, but as a justification it is the method
 classify [X | Xs] [X | Ms] Gs Us :- prooftext.method X, !, classify Xs Ms Gs Us.
-classify [X | Xs] [X | Ms] Gs Us :- std.findall (named X _ _) [_ | _], !, classify Xs Ms Gs Us.
 classify [X | Xs] Ms [given-local X | Gs] Us :- local-in-scope _ X _, !, classify Xs Ms Gs Us.
+classify [X | Xs] [X | Ms] Gs Us :- justification-word X _ _, !, classify Xs Ms Gs Us.
 classify [X | Xs] Ms [given-lemma GR | Gs] Us :-
   prooftext.is-name X, coq.locate-all X L, std.mem L (loc-gref GR), !, classify Xs Ms Gs Us.
-classify [X | Xs] [X | Ms] Gs Us :- tactic-known X, !, classify Xs Ms Gs Us.
 classify [X | Xs] Ms Gs [X | Us] :- classify Xs Ms Gs Us.
 
 % [justify-step M G]: the goal G closed by the method M
@@ -135,7 +134,7 @@ justify-step (eliminating E Ts M) G :- !,
 % no name: the rules and the default tactics, the facts first
 justify-step (method [] [] Fs) G :- !,
   std.map Fs (f\ g\ g = given-local f) First, with-first First close-default G.
-% names given, no rule or tactic: each applied in turn, its premises closed
+% names given, no declared word: each applied in turn, its premises closed
 % by the rules; when none of them applies, the rules and the default
 % tactics, with the names given and the facts first (a text may name the
 % lemma a step comes from without its conclusion being the step's: "Applying
@@ -144,11 +143,11 @@ justify-step (method [] Gs Fs) G :- !,
   (std.mem Gs X, std.filter Gs (g\ not (g = X)) Others, apply-given X Others G, !
   ; std.map Fs (f\ g\ g = given-local f) FGs, std.append Gs FGs First,
     with-first First close-default G).
-% rule or tactic names: each tried in turn, the names given and the facts
+% declared words (rules, tactics): each tried in turn, the names given and the facts
 % first in the context
 justify-step (method Ms Gs Fs) G :-
   std.map Fs (f\ g\ g = given-local f) FGs, std.append Gs FGs First,
-  with-first First (g\ std.mem Ms M, run-method M g, !) G.
+  with-first First (g\ std.mem Ms M, run-name M g, !) G.
 
 % [apply-given X Others G]: the name given X applied to the goal G; its
 % premises that are one of the other names given, Others, closed by them
@@ -181,13 +180,6 @@ eliminate _ [] G GL :- coq.ltac.call-ltac1 "idtac" G GL.
 eliminate E [T | Ts] (goal Ctx _ _ _ _ as G) GL :-
   local-name Ctx T H, L is "cyp_" ^ E, coq.ltac.call L [trm H] G GL1,
   coq.ltac.all (coq.ltac.open (eliminate E Ts)) GL1 GL.
-
-% [run-method M G]: the rules named M (only them, if there are any), or
-% the tactic M, run on G
-pred run-method i:string, i:goal.
-run-method M (goal _ _ Ty _ _ as G) :-
-  std.findall (named M _ _) [_ | _], !, named M Ty T, run T G.
-run-method M G :- run-name M G.
 
 % [with-first Gs K G]: K run on the goal G with the hypotheses given Gs
 % moved last in its context (where tactics look first), and the lemmas

@@ -20,7 +20,7 @@ message "it" "variables-not-parsed" "le variabili %1 non si analizzano: %2".
 message "it" "hypothesis-not-parsed" "l'ipotesi %1 non si analizza: %2".
 message "it" "conclusion-not-prop" "la conclusione %1 non è una proposizione".
 message "it" "fact-unknown" "il fatto %1 non è né un'ipotesi né una conclusione visibile qui".
-message "it" "name-unknown" "%1 non nomina niente di noto: né ipotesi, né nodo, né lemma, né regola, né tattica".
+message "it" "name-unknown" "%1 non nomina niente di noto: né ipotesi, né nodo, né lemma, né parola di giustificazione dichiarata (dichiararla: CypJustification \"%1\" := tattica. o := rules.)".
 message "it" "at-line" "riga %1: %2".
 message "it" "no-conclusion" "un nodo senza conclusione: ha dei tag, ma nessun {.claim}".
 message "it" "two-conclusions" "un nodo con due conclusioni, %1 e %2".

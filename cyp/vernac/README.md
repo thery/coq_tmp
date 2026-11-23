@@ -145,9 +145,27 @@ the header line `gaps: off` of a Markdown proof) turns it off.
 **Timing.**  With the environment variable `CYP_TIME` set, cyp prints the
 time spent on each condition (`cyp: time 2.1 1234 ms`).
 
-**Justifications.**  A justification that names no rule, hypothesis, node,
-variable, lemma or tactic (for instance tactic code) is an error of its
-node (../README.md, "The format").
+**Justifications.**  A justification `*X*{.just}` is, in this order, a
+fixed method (`match`, `induction`), a name of the text in scope (a
+hypothesis, a node, a variable), a word declared by `CypJustification`,
+or a lemma; anything else (for instance tactic code) is an error of its
+node, whose message says how to declare the word (../README.md, "The
+format" and "Declaring justification words").
+
+**CypJustification.**  `CypJustification "checked" := easy_check.`
+declares that the word *checked*{.just} runs the Ltac tactic
+`easy_check` (Rocq resolves the name at once: the tactic is run on the
+goal `True`, an unknown name is Rocq's error);
+`CypJustification "monotonicity" := rules.` that *monotonicity*{.just}
+means the rules `named "monotonicity" ...` accumulated before in
+`cyp.db`, and only them.  A word is declared once; the binding
+(`justification-word` in `cyp.db`) keeps the file, the line and the
+library of the declaration, which the JSON of a checked text gives for
+the links of its PDF and web page.  The words of prooftext's
+`tactics.elpi` (`lia`, `tauto`, ...) are declared at the end of
+[Cyp.v](Cyp.v) in the same way.  [named_v.v](named_v.v) tests the two
+forms and the errors (a word declared twice, a name that is no tactic,
+rules that do not exist, a word declared nowhere).
 
 ## Cyp Lemma: the same proof as a Rocq command
 
@@ -193,7 +211,7 @@ text may name):
 - `text.elpi`: what cyp takes from the text of a node, its tagged parts
   only (a formula's role is its class; no word gives a role);
 - `check.elpi`: closing a goal by the justifications and the facts of its
-  node (the rule and tactic names choose the method, the other names are
+  node (the declared words, CypJustification, choose the method, the other names are
   handed to it, put first by `cyp_first`), the rules of the database
   `cyp.db`, or the default tactics;
 - `gaps.elpi`: the gap tactic, a last try on a condition left open
@@ -209,9 +227,10 @@ text may name):
 - `markdown.elpi`: the checked Markdown (the lines of the text, with the
   marks and messages of the nodes inserted) and the JSON for the editor.
 
-The default tactics (`lia`, `lra`, ...) are called through a table of Ltac
-definitions in [Cyp.v](Cyp.v): Rocq-Elpi cannot yet run a tactic given by
-its name or its code as a string.
+The words of the default tactics (`lia`, `lra`, ...) are declared to mean
+Ltac definitions of [Cyp.v](Cyp.v) (`cyp_lia := lia`): Rocq-Elpi runs an
+Ltac definition by its name, not a builtin tactic nor tactic code given as
+a string.
 
 The proof term is built by cyp and type-checked by Rocq before the lemma is
 defined: `Print Assumptions` shows only the axioms of the libraries used.
