@@ -120,4 +120,4 @@ Let `n m p : nat`{.var}. We prove `n <= m -> m <= p -> n <= p`{.claim}.
           - Using *Morphisms.subrelation_proper*{.just} we get `forall (A : Type) (R' : Relation_Definitions.relation A) (m0 : A), Morphisms.Proper R' m0 -> forall R : Relation_Definitions.relation A, Init.Unconvertible (Relation_Definitions.relation A) R R' -> RelationClasses.subrelation R' R -> Morphisms.Proper R m0`{.claim}.
 
     We deduce `Basics.flip Basics.impl (Basics.impl (n <= m) (m <= p -> n <= p)) (Basics.impl (n < m \/ n = m) (m <= p -> n <= p))`{.claim}.
-- By *firstorder*{.just} we deduce `Basics.impl (n <= m) (m <= p -> n <= p)`, that is `n <= m -> m <= p -> n <= p`{.claim}.
+- By *tauto*{.just} we deduce `Basics.impl (n <= m) (m <= p -> n <= p)`, that is `n <= m -> m <= p -> n <= p`{.claim}.

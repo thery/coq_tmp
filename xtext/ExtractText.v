@@ -64,17 +64,38 @@ From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
 From XText Extra Dependency "elpi/staged.elpi" as xt_staged.
 From XText Extra Dependency "elpi/subproofs.elpi" as xt_subproofs.
 
-(* The tactics tried on long subproofs (see xtext-tactic below).  Each is
-   an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
-   time limit. *)
-Ltac xtext_tauto := timeout 2 tauto.
-Ltac xtext_lia := timeout 2 lia.
+(* The tactics tried on long subproofs (see xtext-tactic below) and those
+   that check a guarded contraction (xtext-guard-tactic).  Each is an Ltac
+   definition (rocq-elpi calls Ltac definitions by name).  None has a time
+   limit: a time limit makes the text depend on the speed of the machine.
+   Each runs the tactic that cyp runs for the name the text gives it
+   (cyp/vernac/Cyp.v, cyp_N), so that cyp closes the step the same way;
+   the bounds are those of cyp's README ("Deterministic bounds"):
+   - tauto: itauto auto (coq-itauto), a reflexive SAT solver whose fuel is
+     computed from the size of the formula, classical as tauto with the
+     flag Itauto Classic; its leaf tactic auto is of depth 5;
+   - auto: depth 5;
+   - firstorder: bounded_firstorder (../prooftext/Tactics.v), at most 200
+     steps, then eauto 4 or congruence;
+   - congruence: ends (a closure over the terms of the goal);
+   - lia: no bound in Rocq 9.1 (the options Lia Depth and Lra Depth are not
+     read by the search); it runs behind lia_guard (../prooftext/Tactics.v),
+     a check of the goal's shape (its case splits and hypotheses), with no
+     search, as guarded_lia;
+   - arith: first [ guarded_lia | itauto auto ], cyp's cyp_arith, the name
+     of a step whose conclusion is arithmetic (xtext-arith-tactic). *)
+From Cdcl Require Import Itauto.
+#[export] Set Itauto Classic.
+Ltac xtext_tauto := itauto auto.
+Ltac xtext_lia := guarded_lia.
 (* the tactics that check a contraction (those of cyp's default "by") *)
-Ltac xtext_g_tauto := timeout 1 tauto.
-Ltac xtext_g_congruence := timeout 1 congruence.
-Ltac xtext_g_lia := timeout 1 lia.
-Ltac xtext_g_firstorder := bounded_firstorder.   (* the one cyp runs *)
-Ltac xtext_g_auto := timeout 1 auto.
+Ltac xtext_g_tauto := itauto auto.
+Ltac xtext_g_congruence := congruence.
+Ltac xtext_g_lia := guarded_lia.
+Ltac xtext_g_firstorder := bounded_firstorder.
+Ltac xtext_g_auto := auto.
+(* the tactic of a step whose conclusion is arithmetic (cyp_arith) *)
+Ltac xtext_arith := first [ guarded_lia | itauto auto ].
 
 Elpi Db xtext.db lp:{{
   % [xtext-tactic Ltac Text]: the Ltac definition Ltac is tried on a long
@@ -98,6 +119,15 @@ Elpi Db xtext.db lp:{{
   xtext-guard-tactic "xtext_g_lia" "lia".
   xtext-guard-tactic "xtext_g_firstorder" "firstorder".
   xtext-guard-tactic "xtext_g_auto" "auto".
+  % [xtext-arith-tactic Ltac Text]: a step closed by xtext-tactic or by the
+  % guard whose conclusion is arithmetic (arith-conclusion, transducer.elpi:
+  % under its foralls and implications, an equality, a disequality or an
+  % order on nat, Z, N or R) is first tried with this tactic, and then
+  % reads "By *arith*{.just} ..."; the others keep the tactic that closes
+  % them.  arith runs lia and itauto auto, which both lists have: the same
+  % steps are closed, only their name changes.
+  pred xtext-arith-tactic o:string, o:string.
+  xtext-arith-tactic "xtext_arith" "arith".
   % [xtext-implicit-choice-limit N]: a formula whose applications with
   % implicit arguments do not all type-check again without them is printed
   % with the arguments of each application decided one by one (doc/generic-mechanisms.md,

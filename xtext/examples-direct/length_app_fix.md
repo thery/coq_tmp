@@ -16,6 +16,6 @@ We prove `forall (A : Type) (l1 l2 : list A), length (l1 ++ l2) = length l1 + le
         - By induction hypothesis (the recursive call length_app') we have `forall (A0 : Type) (l10 l20 : list A0), length (l10 ++ l20) = length l10 + length l20`{.claim}.
         - Using *f_equal*{.just} we get `forall (A0 B : Type) (f : A0 -> B) (x0 y : A0), x0 = y -> f x0 = f y`{.claim}.
 
-        By *congruence*{.just} we deduce `S (length (l ++ l2)) = S (length l + length l2)`{.claim}.
+        By *tauto*{.just} we deduce `S (length (l ++ l2)) = S (length l + length l2)`{.claim}.
 
     These cases being exhaustive, we deduce `length (l1 ++ l2) = length l1 + length l2`{.claim}.

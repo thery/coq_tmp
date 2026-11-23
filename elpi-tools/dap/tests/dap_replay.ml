@@ -13,7 +13,6 @@
    At the end of the script the replay closes the adapter's stdin and
    prints what is left. *)
 
-let timeout = 30.0
 
 let fail fmt = Printf.ksprintf (fun s -> print_endline ("dap_replay: " ^ s); exit 1) fmt
 
@@ -35,15 +34,13 @@ let send a json =
   let framed = Printf.sprintf "Content-Length: %d\r\n\r\n%s" (String.length body) body in
   ignore (Unix.write_substring a.to_adapter framed 0 (String.length framed))
 
-(* [read_more a]: wait for bytes from the adapter; false at its end. *)
+(* [read_more a]: wait for bytes from the adapter (a blocking read, no
+   time limit); false at its end. *)
 let read_more a =
-  match Unix.select [ a.from_adapter ] [] [] timeout with
-  | [], _, _ -> fail "no message from the adapter for %.0f s" timeout
-  | _ ->
-      let chunk = Bytes.create 65536 in
-      let n = Unix.read a.from_adapter chunk 0 (Bytes.length chunk) in
-      Buffer.add_subbytes a.pending chunk 0 n;
-      n > 0
+  let chunk = Bytes.create 65536 in
+  let n = Unix.read a.from_adapter chunk 0 (Bytes.length chunk) in
+  Buffer.add_subbytes a.pending chunk 0 n;
+  n > 0
 
 (* [split_message s]: the body of the first complete message of s and
    the rest. *)

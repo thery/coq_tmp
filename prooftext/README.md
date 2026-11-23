@@ -278,8 +278,8 @@ that names no formula in scope).
   `CypJustification "Name" := cyp_Name.` (`cyp/vernac/Cyp.v`; a proof
   declares its own words the same way); xtext writes only these
   names (the text of its tactics, `xtext-tactic Ltac Name` and
-  `xtext-guard-tactic Ltac Name` in `xtext/ExtractText.v`, which run them with
-  a time limit), and `xtext/vocab_check.v` checks it.  A name added to one
+  `xtext-guard-tactic Ltac Name` in `xtext/ExtractText.v`, which run them as
+  cyp does, with no time limit), and `xtext/vocab_check.v` checks it.  A name added to one
   tool's table goes here first.
 
 ## Writing a proof text

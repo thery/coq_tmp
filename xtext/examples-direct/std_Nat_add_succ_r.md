@@ -15,7 +15,7 @@ Let `n m : nat`{.var}. We prove `n + S m = S (n + m)`{.claim}.
       - Using *RelationClasses.iff_Reflexive*{.just} we get `RelationClasses.Reflexive iff`{.claim}.
       - Using *RelationClasses.reflexivity*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x0 : A, R x0 x0`{.claim}.
       - We deduce `forall x0 : Prop, x0 <-> x0`{.claim}.
-      - By *congruence*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + S m = S (x + m))) (iff (y + S m = S (y + m)))`, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x + S m = S (x + m) <-> x0) (y + S m = S (y + m) <-> y0)`{.claim}.
+      - By *tauto*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + S m = S (x + m))) (iff (y + S m = S (y + m)))`, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x + S m = S (x + m) <-> x0) (y + S m = S (y + m) <-> y0)`{.claim}.
         - In particular `Morphisms.ProperProxy eq m`, that is `m = m`{.claim}.
           - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
             - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
@@ -28,7 +28,7 @@ Let `n m : nat`{.var}. We prove `n + S m = S (n + m)`{.claim}.
           - By *H*{.just} we have `x = y`{.claim}.
           - Using *PeanoNat.Nat.add_wd*{.just} we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.add`, that is `forall x0 y0 : nat, x0 = y0 -> Morphisms.respectful eq eq (Init.Nat.add x0) (Init.Nat.add y0)`{.claim}.
         - Using *PeanoNat.Nat.succ_wd*{.just} we get `Morphisms.Proper (Morphisms.respectful eq eq) S`, that is `forall x0 y0 : nat, x0 = y0 -> S x0 = S y0`{.claim}.
-        - By *firstorder*{.just} we deduce `Morphisms.respectful eq iff (eq (x + S m)) (eq (y + S m))`, that is `forall x0 y0 : nat, x0 = y0 -> x + S m = x0 <-> y + S m = y0`{.claim}.
+        - By *tauto*{.just} we deduce `Morphisms.respectful eq iff (eq (x + S m)) (eq (y + S m))`, that is `forall x0 y0 : nat, x0 = y0 -> x + S m = x0 <-> y + S m = y0`{.claim}.
           - In particular `Morphisms.ProperProxy eq (S m)`, that is `S m = S m`{.claim}.
             - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
               - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
@@ -49,7 +49,7 @@ Let `n m : nat`{.var}. We prove `n + S m = S (n + m)`{.claim}.
           - Using *RelationClasses.iff_Transitive*{.just} we get `RelationClasses.Transitive iff`{.claim}.
           - Using *Morphisms.trans_co_eq_inv_impl_morphism*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim}.
 
-      By *lia*{.just} we deduce `x + S m = S (x + m) <-> y + S m = S (y + m)`{.claim}.
+      By *tauto*{.just} we deduce `x + S m = S (x + m) <-> y + S m = S (y + m)`{.claim}.
 
     We have proved `x = y -> x + S m = S (x + m) <-> y + S m = S (y + m)`{.claim}.
 - Using *PeanoNat.Nat.add_0_l*{.just} we get `forall n0 : nat, 0 + n0 = n0`{.claim}.
@@ -82,7 +82,7 @@ Let `n m : nat`{.var}. We prove `n + S m = S (n + m)`{.claim}.
         - Using *Morphisms.trans_co_eq_inv_impl_morphism*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim}.
 
     We deduce `Basics.flip Basics.impl (0 + S m = S (0 + m)) (S m = S (0 + m))`{.claim}.
-- By *lia*{.just} we have `forall n0 : nat, n0 + S m = S (n0 + m) <-> S n0 + S m = S (S n0 + m)`{.claim}.
+- By *tauto*{.just} we have `forall n0 : nat, n0 + S m = S (n0 + m) <-> S n0 + S m = S (S n0 + m)`{.claim}.
 - Using *PeanoNat.Nat.bi_induction*{.just} we get `forall A : nat -> Prop, Morphisms.Proper (Morphisms.respectful eq iff) A -> A 0 -> (forall n0 : nat, A n0 <-> A (S n0)) -> forall n0 : nat, A n0`{.claim}.
-- By *lia*{.just} we deduce `forall n0 : nat, n0 + S m = S (n0 + m)`{.claim}.
+- By *tauto*{.just} we deduce `forall n0 : nat, n0 + S m = S (n0 + m)`{.claim}.
 - In particular `n + S m = S (n + m)`{.claim}.

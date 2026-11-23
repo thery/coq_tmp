@@ -3,9 +3,11 @@
 % name (cyp: each is declared by CypJustification "Name" := cyp_Name. at the
 % end of cyp/vernac/Cyp.v, the Ltac it runs);
 % the writer writes only these names (xtext: the second argument of
-% xtext-tactic and xtext-guard-tactic, xtext/ExtractText.v, checked by
-% xtext/vocab_check.v).  A tool may run a tactic its own way (a time
-% limit, options): the name is what the text says.
+% xtext-tactic, xtext-guard-tactic and xtext-arith-tactic, xtext/ExtractText.v, checked by
+% xtext/vocab_check.v).  A tool may run a tactic its own way (a
+% bound, options; cyp and xtext run the same, ../prooftext/Tactics.v):
+% the name is what the text says.  arith: lia, then tauto (the word xtext
+% gives to a step whose conclusion is arithmetic).
 
 namespace prooftext {
 
@@ -17,7 +19,7 @@ tactic "ring".         tactic "field".
 tactic "tauto".        tactic "auto".
 tactic "easy".         tactic "reflexivity".
 tactic "assumption".   tactic "congruence".
-tactic "firstorder".
+tactic "firstorder".   tactic "arith".
 
 % [method Name]: Name is one of the two fixed justifications of a proof
 % text, which state how a step eliminates the objects that its other

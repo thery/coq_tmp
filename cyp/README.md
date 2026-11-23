@@ -123,7 +123,7 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   - a declared word chooses the method; several are tried in turn.  The
     tactics that every proof text may name (`lia`, `lra`, `nia`, `nra`,
     `ring`, `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
-    `congruence`, `firstorder`: [../prooftext/tactics.elpi](../prooftext/tactics.elpi),
+    `congruence`, `firstorder`, `arith`: [../prooftext/tactics.elpi](../prooftext/tactics.elpi),
     the only ones xtext writes) are declared at the end of
     [vernac/Cyp.v](vernac/Cyp.v), each the Ltac `cyp_N` above them, with
     the same command.  `firstorder` is run bounded, as `bounded_firstorder` of
@@ -131,6 +131,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     tactic itself has no bound (more than 30 s and 7 GB on one step of a
     text): the goal and its hypotheses taken apart, at most 200 steps, then
     a proof search of depth 4 or `congruence`;
+    `arith` is `first [ guarded_lia | itauto auto ]` (`cyp_arith`), the word
+    xtext gives to a step whose conclusion is arithmetic;
   - a name of a hypothesis, of a node or of a variable, or of a lemma is
     handed to the method: put first in the context, a lemma added to it
     (Ltac `cyp_first`);
@@ -267,7 +269,8 @@ tactics, the gap tactic and cyp's own search:
 | `congruence` | `congruence` | ends (a closure over the terms of the goal) |
 | `ring`, `field` | `ring`, `field` | end (normal forms of polynomials) |
 | `lra` (default), `nra` | Micromega: the simplex on the rationals; `nra` first adds the products of pairs of hypotheses (degree 2) | end; the size of the problem is not bounded |
-| `lia` (default), `nia` (default) | Micromega: the simplex, then cuts and case splits on integer variables; `nia` first adds products (degree 2) | **no bound**: Rocq 9.1 has the options `Lia Depth` and `Lra Depth`, but the search does not read them (`plugins/micromega/certificate.ml`: the depth only sets `max_nb_cstr`, which nothing uses), and there is no other one.  Not seen running away on cyp's texts |
+| `lia` (default), `nia` (default) | `guarded_lia`, `guarded_nia` ([../prooftext/Tactics.v](../prooftext/Tactics.v)): `lia_guard`, then Micromega: the simplex, then cuts and case splits on integer variables; `nia` first adds products (degree 2) | **no bound** for the search: Rocq 9.1 has the options `Lia Depth` and `Lra Depth`, but the search does not read them (`plugins/micromega/certificate.ml`: the depth only sets `max_nb_cstr`, which nothing uses), and there is no other one.  `lia_guard` refuses, with a message, a goal with more than 50 case splits (disjunctions, `<>`, `-`, `max`, `min`, `abs`, `div`, `mod`, ... counted on the goal and the hypotheses, no search) or more than 16 hypotheses: it bounds what lia is given, not its search; the bounds are 1.5 and 2 times the largest call that succeeded in the measurement (`../xtext/gaps/README.md`, "No time limit"), and change no result of cyp's examples or of xtext's texts |
+| `arith` | `first [ guarded_lia \| itauto auto ]` | those of `lia` and `tauto` |
 | `reflexivity`, `assumption`, and every unification | Rocq's conversion | ends (a well-typed term has a normal form), but there is no bound on the number of reduction steps: a step that asks Rocq to compute a large value takes as long as the computation |
 | cyp's search (rules) | `close`, `premises` ([vernac/elpi/check.elpi](vernac/elpi/check.elpi)) | a lemma applied to close a premise of a lemma: at most `premise-depth-max` lemmas deep (4); the goal with its head unfolded: once; a conjunction or a disjunction: split along the formula |
 

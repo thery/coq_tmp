@@ -26,17 +26,16 @@ constructor.
 - `make_mode.sh CONTRACTION ANNOTATION OUTDIR`: all the English texts of
   xtext written with one setting of `XTEXT_CONTRACTION` and
   `XTEXT_ANNOTATION`, from a copy of `xtext/` (nothing here is touched);
-- `probe.sh LIMIT OUTDIR text.md...`: each text checked by `Cyp File` with
-  a Proof block, one text at a time, under `nice`, with a time limit per
-  text and at most `CYP_MEMORY_GB` (default 8) GB of memory; it prints the
+- `probe.sh OUTDIR text.md...`: each text checked by `Cyp File` with
+  a Proof block, one text at a time, under `nice`, with no time limit
+  (see "No time limit" below) and at most `CYP_MEMORY_GB` (default 8) GB of memory; it prints the
   time, the conditions and the maximum memory of each text.  On each
   condition left open (every condition with `BARE=1`) it runs the Ltac
   `PROBE` of `Probe.v`: `gap_probe` (the candidates for `cyp_gap`),
-  `gap_final` (`cyp_gap` alone), `fo_probe` and `fo2_probe` (`firstorder`
-  and bounded searches), `fo_diff` (the goals `firstorder` closes and the
-  bounded search does not), `idtac` (nothing: the conditions cyp leaves).
-  Each candidate must close the goal within 2 s: a limit of the
-  measurement only.  `CYP_LIB` is the cyp library used;
+  `gap_final` (`cyp_gap` alone), `fo_probe` and `fo2_probe` (bounded
+  searches), `idtac` (nothing: the conditions cyp leaves).  Each candidate
+  must close the goal, with no time limit (see "No time limit" below).
+  `CYP_LIB` is the cyp library used;
 - `table.sh OUTDIR/*.log`: one line per condition and candidate (text,
   condition, candidate, OK or KO, seconds); Ltac cannot read the name of a
   goal (`?c2a`), so the k-th probed goal is the k-th condition that cyp
@@ -158,3 +157,61 @@ texts that now finish (`half_le`, `std_Nat_le_trans`).  On cyp's own
 examples and demos (`cyp/gaps_regress.sh`) the results are the same, and
 the times too (33.1 s before, 33.4 s now for the same files, within the
 noise of a run).
+
+## No time limit (2026-11-23)
+
+`Probe.v` has no time limit any more (it had `timeout 2` on each
+candidate).  Each candidate is now the bounded version that cyp and
+xtext run: `tauto` is `itauto auto` (and `intuition t` is `itauto t`),
+`firstorder` is `bounded_firstorder`, `typeclasses eauto` has depth 5,
+the rewriting with the hypotheses is done at most 5 times
+(`rewrite_steps`; at 20 the terms of `even_or_odd` grew past 7 GB), the
+local unbounded `decompose_all` is replaced by the bounded one of
+`../../prooftext/Tactics.v`, and `lia`, `nia` run behind `lia_guard`.
+Three candidates are gone, as they have no bounded version: `solve_proper`
+(its rewriting runs a search for instances with no bound; it closed 152
+conditions, each also closed by another candidate),
+`dintuition (eauto 3)` (`itauto (eauto 3)` is there), and `fo_diff` (the
+goals that `firstorder` closes and the bounded search does not: it needs
+`firstorder` itself, with a time limit).  The measurements of `firstorder`
+above were made with the time limit, and are not rerun.
+
+On the 80 English texts (`BARE=1`, every condition, 738), each candidate
+closes as many conditions as before, except: `tauto` 466 → 581, `firstorder`
+631 → 656, `simpl_firstorder` 631 → 647, `induction_firstorder` 92 → 101
+(the bounded versions, with no limit of 2 s, close more), `rewrite_hyps`
+528 → 538, and `solve_proper` (152) is gone.  The whole probe takes 176 s
+(325 s with the time limits), the slowest text 10 s.  `gap_probe`,
+`fo_probe`, `fo2_probe` and `gap_final` run on all 80 texts, none stopped
+by the time limit of the run (900 s).
+
+### lia_guard
+
+`lia` and `nia` have no bound in Rocq 9.1.  `lia_guard`
+(`../../prooftext/Tactics.v`) is a check of the goal's shape before them,
+with no search: it counts the case splits that `lia` may make (each
+disjunction, equivalence, negation, implication inside a hypothesis; in
+the goal, a conjunction or an equality; each `-`, `pred`, `max`, `min`,
+`abs`, `div`, `mod`, ...) and the hypotheses that are propositions, and
+refuses above 50 case splits or 16 hypotheses ("lia_guard: N case
+splits, at most 50").  `lia_stats` prints the two counts.  Measured on
+every call of `lia` and `nia` (with the counts printed, then whether the
+call succeeded):
+
+| calls of | calls | succeeded | largest success: splits, hypotheses | largest failure: splits, hypotheses |
+|---|---|---|---|---|
+| xtext, default texts (`xtext_lia`) | 38 | 6 | 6, 3 | 7, 3 |
+| xtext, direct translation (`xtext_lia`, `xtext_g_lia`) | 44 | 20 | 19, 3 | 36, 4 |
+| cyp on the 188 texts (English and languages) | 357 | 8 | 28, 6 | 42, 8 |
+| cyp on its examples (`cyp/gaps_regress.sh`) | 220 | 128 | 7, 8 | 4, 5 |
+| the probe (`t_lia`, `t_nia`, `t_simpl_lia`, `BARE=1`) | 2214 | 677 | 34, 7 | 34, 9 |
+
+The bounds are the largest successes, 34 splits and 8 hypotheses, times
+about 1.5 and 2.  No call measured is refused: cyp's results on its
+examples and on xtext's texts, xtext's texts and the probe's counts are
+the same with the guard (and cyp's `cyp_lia`, `cyp_nia` now run
+`guarded_lia`, `guarded_nia`).  The guard bounds what `lia` is given, not
+its search: a goal under the bounds may still be hard; none of the
+measured calls ran away.  No run has a time limit either: `probe.sh`,
+`cyprun.sh` and `cyp/gaps_regress.sh` run each text to its end (lra,
+nra and Rocq's reduction end, but have no bound).
