@@ -108,3 +108,96 @@ development), in [elpi-tools/](elpi-tools) (how they work and why:
   ([`demo/.vscode/launch.json`](elpi-tools/demo/.vscode/launch.json)).
 
 Build and test: `cd elpi-tools && dune build && dune build @runtest`.
+
+## pbp: proof by pointing
+
+[pbp.v](pbp.v) is the tactic of *Proof by Pointing Revisited*: `pbp [X in
+X /\ _ -> _]` brings the subformula at `X` to the surface of the goal
+(rules for `/\`, `\/`, `->`, `~`), and `pbp [X Y in X -> (Y -> _) -> _]`
+links two subformulas (proof by linking).  A free variable of the
+pattern names the assumption introduced at its place (`[X in Y /\ X ->
+_]`), else it is called `pbp`.
+
+[pbp_select.v](pbp_select.v) writes the pbp call from a selection in the
+printed goal, for an interface where one selects with the mouse
+(tests: [pbp_select_test.v](pbp_select_test.v)):
+
+| goal | selection | `elpi pbp_pattern ...` prints |
+|---|---|---|
+| `a + b = b + a` | the first `a` | `pbp [X in X + _ = _].` (`0 1`) |
+| `a + b = b + a` | the last `a` | `pbp [X in _ = _ + X].` (`6 7`) |
+| `A /\ B -> B /\ A` | the last `A` | `pbp [X in _ -> _ /\ X].` (`9 10`) |
+| `A /\ B -> A /\ B` | the two `A` | `pbp [X Y in X /\ _ -> Y /\ _].` (`0 1 6 7`) |
+| `a + b + c = c` | `b + c` (not a subterm) | `pbp [X in X = _].`, warning: widened to `a + b + c` |
+| `forall n : nat, exists m : nat, n + m = m + n` | the first `n + m` | `pbp [X in forall n : nat, exists m : nat, X n m = _].` |
+| `B`, with `ab : A -> B` | `B` in `ab`, then `B` | `move: ab; pbp [X Y in (_ -> X) -> Y].` (`ab 3 4 0 1`) |
+
+### The command, for the interface
+
+```
+elpi pbp_pattern S E.               (* a range of the conclusion *)
+elpi pbp_pattern H S E.             (* a range of the type of hypothesis H *)
+elpi pbp_pattern S E S' E'.         (* two selections: linking *)
+elpi pbp_pattern H S E S' E'.       (* hypothesis H and the conclusion *)
+elpi pbp_pattern H S E H' S' E'.    (* two hypotheses *)
+```
+
+- `S E` is a range of the goal as it is displayed (the conclusion, or
+  the type of the hypothesis, as coq-lsp's `proof/goals` gives them):
+  `S` included, `E` excluded, counting from 0 **only the characters that
+  are not blanks** (spaces, tabs, line breaks), each Unicode character
+  counting one.  The range then does not depend on the width the goal is
+  printed at, its line breaks or its indentation (coq-lsp and
+  `coq.term->string` break lines at different places).  An empty range
+  (`S = E`) is a click on the character `S`.  In JavaScript:
+  `const nb = (s, i) => [...s.slice(0, i)].filter(c => !/\s/.test(c)).length;`
+  gives the count for the offset `i` of the displayed string `s`.
+- It is a tactic: it is sent after the sentence where the goal is shown
+  (as rocq-web's queries are, with `petanque/run_at_point`), prefixed by a
+  goal selector for another goal than the first (`2: elpi pbp_pattern 0
+  1.`, and the line inserted is then `2: pbp ...`).  The goal is unchanged.
+- It prints one message, the line to insert, e.g. `pbp [X in X + _ = _].`
+  (a notice).  A selection that is not a subterm (`+ b`, half a name)
+  stands for the smallest subterm that contains it, with a warning
+  `pbp_pattern: the selection is widened to a + b` (warning
+  `pbp-widened`).  A selection in a hypothesis `H` generalizes it: the
+  line is `move: H; pbp [...]`.  The errors (`Tactic failure:
+  pbp_pattern: ...`): a range outside the printed term, two selections
+  one inside the other, a subterm that cannot be abstracted (the type
+  `nat` of `forall n : nat, n + 0 = n`), a pattern that does not parse.
+
+### How
+
+The printed goal is matched with the term by Rocq's printer itself: for
+each subterm, the goal is printed again with this subterm replaced by a
+marker `pbp_mark` whose two arguments (its type and the subterm) are
+implicit, so it prints as one word and the binders above it print as
+before; what is printed before and after the marker is what is printed
+before and after the subterm (up to the parentheses around it).  So the
+notations, implicit arguments, coercions and parentheses are those of the
+goal, and two occurrences that print alike (the two `a` of `a + b = b +
+a`) are told apart by their places.  A subterm that is not printed as a
+whole has no range and cannot be selected: the function behind a
+notation (`Nat.add` behind `+`), an implicit argument, `S O` inside the
+numeral `2`, the head of an application with implicit arguments
+(`length` in `length (rev l)`).  The selection is the smallest subterm
+whose range contains the range (among subterms with the same range, the
+outermost).
+
+The pattern is the goal where the selection is the variable `X` (applied
+to the variables bound above it that it uses: `X n m`), where the largest
+printed subterms beside the path to the selection are holes `_`, and
+where the rest is kept: heads of applications, what is not printed, the
+types of dependent binders.  `X`, `Y` are renamed (`X0`, ...) if the goal
+uses these names.  The pattern is then checked: its text is parsed and
+elaborated again (`coq.parse.argument`), and it must unify with the goal
+where the selections are its variables, at their places.
+
+Limits: pbp itself has rules for the logical connectives only (`pbp [X
+in X + _ = _]` is a valid pattern, for `rewrite [X in X + _ = _]...` too,
+but pbp fails on it); pbp's notation `[X in ...]` clashes with
+ListNotations' `[x]`, so with ListNotations imported the pattern does not
+parse (an error); a hypothesis that others depend on cannot be
+generalized by `move:`; the printing of the goal by coq-lsp and by
+`coq.term->string` was compared on the goals of the tests only (equal up
+to blanks).
