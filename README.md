@@ -215,6 +215,18 @@ know `pbp`: it asks for the list of the actions, shows them as buttons,
 and runs the one chosen.  Any loaded file can add actions.  `pbp_pattern`
 is kept as it is until the interfaces use this protocol.
 
+A demo to step through: [point_actions_demo.v](point_actions_demo.v).
+It declares everyday actions from templates (`Commute here`, `Case on
+this`, `Induction on this`, `Generalize this`, `Name this`), runs one
+action with the path methods `pbp`, `occ` and `at`, and one with the
+strategies `in`, `forward` and `revert`, declares a link action in Elpi
+(`Rewrite with this equation`) and an action that chooses its tactic
+(`Solve`: `ring`, `lia` or `ring_simplify`), and shows how a tactic of
+one's own is made pointable and how `pbp` is hooked.  Each line a button
+writes is in the file, after a comment saying what to select; `sh
+point_actions_demo_check.sh` checks that these are the lines `point_run`
+gives, and that the excerpts the demo quotes are verbatim in their files.
+
 The actions it declares:
 
 | action | kind | line | e.g. on `1 + 1 + a = double (1 + a)` |
