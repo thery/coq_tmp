@@ -144,8 +144,7 @@ goal 4 (?c5) is:
 Steps 4, 6, 7 and 8 have no conclusion that can be read, so they give no
 goal.  The commands fail only when the statement itself cannot be read.
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch11_errors.v>.
+In the browser: step to section 7 of [tutorial.v](tutorial/tutorial.v).
 
 ## 8. The Rocq side: Cyp File and Cyp Lemma
 
@@ -251,8 +250,7 @@ step 2 🔶, and exits with 1.  A text and a Proof block together give a
 proof where the easy steps are checked by cyp and the hard ones are
 proved by tactics.
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch12_goals.v>.
+In the browser: step to section 8 of [tutorial.v](tutorial/tutorial.v).
 
 ### Cyp Lemma
 
@@ -301,8 +299,7 @@ cyp: wrong, 3 steps, 1 condition(s) left for the Proof block: 1
   2 * n < n
 ```
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch13_lemma.v>.
+In the browser: step to section 8 of [tutorial.v](tutorial/tutorial.v).
 
 **Timing.**  With the environment variable `CYP_TIME` set, cyp prints the
 time spent on each condition (`cyp: time 2.1 1234 ms`).
@@ -387,12 +384,13 @@ lia nia lra`, then the gap tactic.
 The examples are in [tutorial/](tutorial): for each example NN, the text
 `chNN_*.md` and a Rocq file `chNN_*.v` that explains it in comments and
 runs it (`CypFile`, `Cyp File`, `Cyp Lemma`).  The Rocq files name their
-texts `"cyp-tutorial/chNN_*.md"`, as rocq-web needs (Rocq runs there from
-the root of the files).
+texts `"cyp-tutorial/chNN_*.md"`, from the directory above the examples.
+[tutorial/tutorial.v](tutorial/tutorial.v) is the whole tutorial in one
+Rocq file, with `Cyp Lemma` only, for rocq-web.
 
 [tutorial/check.sh](tutorial/check.sh) copies the directory to a
 temporary `cyp-tutorial/`, runs the program `cyp` on every text and Rocq
-on every chapter file (from the parent directory, as in rocq-web), and
+on every chapter file and on tutorial.v (from the parent directory), and
 compares what they print and the checked texts with
 [tutorial/expected/](tutorial/expected).  It also checks that each block
 of the two pages marked with its file is an exact excerpt of that file.
@@ -402,7 +400,7 @@ sh tutorial/check.sh            # compare; exit 1 on a difference
 sh tutorial/check.sh --update   # rewrite expected/ after a change
 ```
 
-[tutorial/rocq-web.sh](tutorial/rocq-web.sh) installs the examples in a
+[tutorial/rocq-web.sh](tutorial/rocq-web.sh) installs tutorial.v in a
 rocq-web checkout: `sh tutorial/rocq-web.sh ROCQWEB/app/public/examples`
-copies them to the example folder `cyp-tutorial` and adds its entry to
+copies it to the example folder `cyp-tutorial` and adds its entry to
 `index.json`.

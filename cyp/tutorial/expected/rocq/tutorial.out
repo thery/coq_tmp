@@ -1,0 +1,183 @@
+cyp: double_gt
+  ✅ 0
+  ✅ 1
+  ✅ 2
+cyp: double_gt, 3 steps, every condition discharged
+cyp: double_gt proved
+double_gt
+     : forall n : nat, 0 < n -> n < 2 * n
+cyp: roles
+  ✅ 0
+  ✅ 2
+  ✅ 3
+  ✅ 4
+cyp: roles, 4 steps, every condition discharged
+cyp: roles proved
+cyp: facts
+  ✅ 0
+  ✅ 1
+  ✅ 2
+  ✅ 4
+  ❌ 5 the fact n <= 1 is no hypothesis or conclusion visible here
+  ✅ 6
+cyp: facts, 1 node(s) with an error (❌ above): 5
+cyp: facts, 7 steps, 2 condition(s) left for the Proof block: 3, 5
+  🔶 condition 3: n <= 2
+  🔶 condition 5: n <= 8
+2 goals (?c3)
+  
+  n : nat
+  h : n <= 3
+  c1 : n <= 4
+  c2 : n <= 6
+  ============================
+  n <= 2
+
+goal 2 (?c5) is:
+ n <= 8
+cyp: justifications
+  ✅ 0
+  ✅ 1
+  ✅ 2
+  ✅ 3
+  ✅ 4
+  ✅ 5
+  ✅ 6
+  ✅ 7
+cyp: justifications, 8 steps, every condition discharged
+cyp: justifications proved
+cyp: even_plus_two
+  ✅ 0
+  ✅ 1
+  ✅ 1.1
+  ✅ 1.1.1
+cyp: even_plus_two, 4 steps, every condition discharged
+cyp: even_plus_two proved
+cyp: length_app
+  ✅ 0
+  ✅ 1
+  ✅ 1.1
+  ✅ 1.2
+  ✅ 1.2.1
+cyp: length_app, 5 steps, every condition discharged
+cyp: length_app proved
+cyp: structure
+cyp: structure, 5 steps, 5 condition(s) left for the Proof block: 0, 1, 1.1, 1.2, 2
+  🔶 condition 0: P -> R /\ Q
+  🔶 condition 1: R /\ Q
+  🔶 condition 1.1: Q
+  🔶 condition 1.2: R
+  🔶 condition 2: P -> R /\ Q
+5 goals (?c1_1)
+  
+  P, Q, R : Prop
+  pq : P -> Q
+  qr : Q -> R
+  p : P
+  ============================
+  Q
+
+goal 2 (?c1_2) is:
+ R
+goal 3 (?c1) is:
+ R /\ Q
+goal 4 (?c2) is:
+ P -> R /\ Q
+goal 5 (?c0) is:
+ P -> R /\ Q
+goal c2 (?c2) is:
+  
+  P, Q, R : Prop
+  pq : P -> Q
+  qr : Q -> R
+  c1 : P -> R /\ Q
+  ============================
+  P -> R /\ Q
+cyp: structure proved
+cyp: words
+  ✅ 0
+  ✅ 1
+  ✅ 2
+  ✅ 3
+cyp: words, 5 steps, 1 condition(s) left for the Proof block: 4
+  🔶 condition 4: a + c <= b + d
+1 goal (?c4)
+  
+  a, b, c, d : nat
+  hab : a <= b
+  hcd : c <= d
+  s1 : a * c <= b * c
+  s2 : b * c <= b * d
+  c3 : a * c <= b * d
+  ============================
+  a + c <= b + d
+cyp: words proved
+cyp: defaults
+  ✅ 0
+  ✅ 1
+  ✅ 2
+cyp: defaults, 3 steps, every condition discharged
+cyp: defaults proved
+cyp: defaults_no_gaps
+  ✅ 0
+  ✅ 1
+cyp: defaults_no_gaps, 3 steps, 1 condition(s) left for the Proof block: 2
+  🔶 condition 2: option_map (fun x : nat => x) o = o
+1 goal (?c2)
+  
+  o : option nat
+  n : nat
+  h : n < 3
+  c1 : n <= 2
+  ============================
+  option_map (fun x : nat => x) o = o
+cyp: defaults_no_gaps proved
+cyp: errors
+  ✅ 0
+  ❌ 2 no_such_lemma names nothing known: no hypothesis, node, lemma or declared justification word (declare it: CypJustification "no_such_lemma" := tactic. or := rules.)
+  ❌ 3 the fact n <= 1 is no hypothesis or conclusion visible here
+  ❌ 4 a node with no conclusion: it has tags, but no {.claim}
+  ✅ 4.1
+  ❌ 5 k is out of scope here
+  ❌ 6 a node with two conclusions, n <= 9 and n <= 9
+  ✅ 6.1
+  ❌ 7 an unknown class, {.clam}; a node with no conclusion: it has tags, but no {.claim}
+  ❌ 8 does not parse: Syntax error: [term] expected after '<=' (in [term]).
+  ✅ 9
+cyp: errors, 7 node(s) with an error (❌ above): 2, 3, 4, 5, 6, 7, 8
+cyp: errors, 12 steps, 4 condition(s) left for the Proof block: 1, 2, 3, 5
+  🔶 condition 1: n <= 2
+  🔶 condition 2: n <= 6
+  🔶 condition 3: n <= 7
+  🔶 condition 5: n <= 8
+4 goals (?c1)
+  
+  n : nat
+  h : n <= 3
+  ============================
+  n <= 2
+
+goal 2 (?c2) is:
+ n <= 6
+goal 3 (?c3) is:
+ n <= 7
+goal 4 (?c5) is:
+ n <= 8
+cyp: goals
+  ✅ 0
+  ✅ 3
+cyp: goals, 4 steps, 2 condition(s) left for the Proof block: 1, 2
+  🔶 condition 1: Nat.sqrt a <= a
+  🔶 open goal 2 of the text: Nat.sqrt b <= b
+2 goals (?c1)
+  
+  a, b : nat
+  ============================
+  Nat.sqrt a <= a
+
+goal 2 (?c2) is:
+ Nat.sqrt b <= b
+cyp: goals proved
+goals
+     : forall a b : nat, Nat.sqrt a + Nat.sqrt b <= a + b
+exit 0

@@ -2,8 +2,8 @@
 
 **New to cyp?**  Start with the tutorial, [TUTORIAL.md](TUTORIAL.md) and
 [TUTORIAL-2.md](TUTORIAL-2.md): small checked examples, from a first proof
-to the Rocq commands, each one also runnable in the browser
-([rocq-web](https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch01_first.v)).
+to the Rocq commands; also one Rocq file to step through in the browser
+([rocq-web](https://thery.github.io/rocq-web/?example=cyp-tutorial&file=tutorial.v)).
 This README is the reference.
 
 A proof is written in Markdown, as on paper.  cyp turns each node of its tree into a

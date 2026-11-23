@@ -9,9 +9,13 @@ compares the results with the ones shown here ([section 11](TUTORIAL-2.md#11-kee
 tutorial stays true.  The reference is [README.md](README.md); this page
 does not replace it.
 
-Each example can also be run in the browser, in
-[rocq-web](https://thery.github.io/rocq-web/): the links "Try it in the
-browser" open its Rocq file there.
+**In the browser.**  The whole tutorial is also one Rocq file to step
+through, [tutorial/tutorial.v](tutorial/tutorial.v), with the same
+sections: each proof is written as a `Cyp Lemma` (the Rocq form of a cyp
+text), its Markdown form in a comment beside it.  Open it in rocq-web:
+<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=tutorial.v>,
+and step through it (Alt+↓).  rocq-web cannot open a file at a given
+line, so each section below says which section of tutorial.v to step to.
 
 Contents:
 
@@ -126,12 +130,12 @@ goal), ▫ a remark.  The PDF of example 03 (section 3) looks like this:
 
 ![The PDF of ch03_facts.checked.md](tutorial/ch03_facts.png)
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch01_first.v>.
-In rocq-web, the file [tutorial/ch01_first.v](tutorial/ch01_first.v) runs
-the Rocq command `CypFile "cyp-tutorial/ch01_first.md".`, which is what
-the program `cyp` does ([section 8](TUTORIAL-2.md#8-the-rocq-side-cyp-file-and-cyp-lemma)).  Edit the text, check the `.v` file
-again, and see which step turns red.
+In the browser: step to section 2 of [tutorial.v](tutorial/tutorial.v),
+where the same proof is a `Cyp Lemma` ([section 8](TUTORIAL-2.md#8-the-rocq-side-cyp-file-and-cyp-lemma)).  Change a
+formula there, step again, and see which step is no longer ✅.  In a
+terminal, [tutorial/ch01_first.v](tutorial/ch01_first.v) runs the Rocq
+command `CypFile "cyp-tutorial/ch01_first.md".`, which is what the program
+`cyp` does.
 
 ## 3. The roles
 
@@ -185,8 +189,7 @@ The result:
 - ✅ As `s` is `a + b`, we have `s <= 20`{.claim}.
 ```
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch02_roles.v>.
+In the browser: step to section 3 of [tutorial.v](tutorial/tutorial.v).
 
 ### Claim or fact?
 
@@ -265,8 +268,7 @@ cyp: 2 of 7 steps of facts not proved (3, 5), see cyp-tutorial/ch03_facts.checke
 exit 1
 ```
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch03_facts.v>.
+In the browser: step to section 3 of [tutorial.v](tutorial/tutorial.v).
 
 ### Justifications
 
@@ -304,8 +306,7 @@ Let `P Q : nat -> Prop`{.var} and `n : nat`{.var}. Assume `forall m, m <= n -> P
   names are handed to it (section 6).
 
 Every step is ✅ (the output is in
-[tutorial/expected/cyp/](tutorial/expected/cyp)).  Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch04_justifications.v>.
+[tutorial/expected/cyp/](tutorial/expected/cyp)).  In the browser: step to section 3 of [tutorial.v](tutorial/tutorial.v).
 
 ### Case analysis and induction
 
@@ -338,8 +339,7 @@ Let `n : nat`{.var}. Assume `exists k, n = 2 * k`{.hyp} (h). We prove `exists k,
 
 The one case has a variable `k` and a hypothesis `hk`, and its claim is in
 its last paragraph (the *closing paragraph*, section 4).  All four steps
-are ✅.  Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch05_match.v>.
+are ✅.  In the browser: step to section 3 of [tutorial.v](tutorial/tutorial.v).
 
 [tutorial/ch06_induction.md](tutorial/ch06_induction.md), an induction on
 a list:
@@ -363,8 +363,7 @@ Let `A : Type`{.var} and `l m : list A`{.var}. We prove `length (l ++ m) = lengt
 
 The second case states the induction hypothesis itself, as a hypothesis
 `(IH)`; cyp checks that the cases given prove the step.  All five steps
-are ✅.  Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch06_induction.v>.
+are ✅.  In the browser: step to section 3 of [tutorial.v](tutorial/tutorial.v).
 
 ### Open goals
 
@@ -485,8 +484,7 @@ proved from its steps.  In the goal of step 2, step 1 is the hypothesis
 each step gives one condition, and cyp proves each with the step's
 justifications and facts, or its default tactics.  All five are ✅.
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch07_structure.v>.
+In the browser: step to section 4 of [tutorial.v](tutorial/tutorial.v).
 
 ## 5. Two syntaxes: lists and prose
 
@@ -564,8 +562,8 @@ suit a proof written for cyp.  Prose keeps the paragraphs of a paper as
 they are: you colour an existing text without rewriting it.  This is how
 the 2003 paper coloured its proofs.
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch08_syntaxes.v>.
+In the browser: this one needs Markdown files; section 5 of
+[tutorial.v](tutorial/tutorial.v) only says so.
 
 ## 6. Justifications in depth
 
@@ -668,9 +666,8 @@ The tactics every text may name (`lia`, `lra`, `nia`, `nra`, `ring`,
 [vernac/Cyp.v](vernac/Cyp.v).  A word is declared once.  A name of the
 text hides a declared word, which hides a lemma of the same name.
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch09_words.v>
-(there the rule file is run by the `.v` file itself, before `CypFile`).
+In the browser: step to section 6 of [tutorial.v](tutorial/tutorial.v),
+where the words are declared in the file itself.
 
 ### When no justification is given
 
@@ -715,8 +712,7 @@ with `gaps: off` in its header, and step 2 is no longer proved:
 The gap tactic makes short texts pass, but it says nothing to the reader.
 A justification (*match*{.just} on *o*{.just}) says how the step holds.
 
-Try it in the browser:
-<https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch10_defaults.v>.
+In the browser: step to section 6 of [tutorial.v](tutorial/tutorial.v).
 
 The tutorial goes on in [part 2](TUTORIAL-2.md): when something is wrong,
 the Rocq commands, xtext, and a reference card.

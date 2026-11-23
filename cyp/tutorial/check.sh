@@ -1,6 +1,7 @@
 #!/bin/sh
 # Checks that the tutorial (../TUTORIAL.md, ../TUTORIAL-2.md) is still true: runs the program
-# cyp on every text chNN_*.md, and Rocq on every chapter file chNN_*.v,
+# cyp on every text chNN_*.md, and Rocq on every chapter file chNN_*.v and
+# on tutorial.v (the whole tutorial in one file, for rocq-web),
 # and compares what they print and the checked texts they write with the
 # expected outputs in expected/.
 #   usage: sh check.sh            compare (exit 1 on a difference)
@@ -20,7 +21,7 @@ tmp=$(mktemp -d) || exit 2
 trap 'rm -rf "$tmp"' EXIT
 work=$tmp/cyp-tutorial
 mkdir -p "$work" "$tmp/out/cyp" "$tmp/out/rocq"
-cp "$here"/ch*.md "$here"/ch*.v "$work"/
+cp "$here"/ch*.md "$here"/ch*.v "$here"/tutorial.v "$work"/
 rm -f "$work"/*.checked.md "$work"/*.cyp.json
 # the absolute paths of this run, which differ from run to run
 clean() { sed -e "s|$tmp/||g"; }
@@ -37,7 +38,7 @@ done
 
 # 2. Rocq on each chapter file, from the parent directory, as in rocq-web
 cd "$tmp" || exit 2
-for v in cyp-tutorial/ch*.v; do
+for v in cyp-tutorial/ch*.v cyp-tutorial/tutorial.v; do
   n=$(basename "$v" .v)
   case $n in *_rules) continue ;; esac
   { nice rocq c -Q "$root/cyp/vernac" CypV -Q "$root/lexicon" Lexicon \
