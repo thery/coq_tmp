@@ -180,7 +180,7 @@ Abort.
 
 (* ---- 2b. Reading the selection ----
 
-   What the action is given, a value of type point-in (pbp_select.v:443),
+   What the action is given, a value of type point-in (pbp_select.v:502),
    has five fields: point-in Names Hs C Parts Ls, where
    - Names are the names of the hypotheses of the goal (the last one
      first);
@@ -189,8 +189,8 @@ Abort.
    - C is the goal with the hypotheses Hs moved into it (what pbp works
      on);
    - Parts are the hypotheses Hs, then the conclusion, each as
-     part B T Shs (pbp_select.v:307), T being the term;
-   - Ls are the selections, each loc P I P0 (pbp_select.v:322): the path
+     part B T Shs (pbp_select.v:352), T being the term;
+   - Ls are the selections, each loc P I P0 (pbp_select.v:367): the path
      P in C, the number I of its part in Parts, the path P0 in that part.
    A path lists the positions of the subterms to go through, from the
    root: in an application, the function is 0 and the arguments 1, 2, ...
@@ -199,7 +199,7 @@ Abort.
    run on a goal, goal Ctx _ Ty _ Args (the hypotheses, the conclusion,
    the arguments of the tactic); [seal G] says that the goal is left as
    it is.  It reads the selection as point_run does (parse-sels,
-   pbp_select.v:266; point-resolve, pbp_select.v:453), then matches the
+   pbp_select.v:311; point-resolve, pbp_select.v:512), then matches the
    point-in value against its five fields.  In a clause, :- reads "if",
    a comma "and"; coq.say prints its arguments; coq.term->string T S
    gives the text S of the term T, and {coq.term->string T} is that text
@@ -346,7 +346,7 @@ my-pattern-text P T S R :-
 
 (* A tactic to see the walk at work: it prints the pattern as a term of
    Elpi, then as the text the action writes (one-line,
-   pbp_select.v:67, puts a text on one line).  In the term, c0 is the
+   pbp_select.v:73, puts a text on one line).  In the term, c0 is the
    variable a of the context and c1 the X of the pattern. *)
 Elpi Tactic show_pattern.
 Elpi Accumulate Db pbp_select.db.
