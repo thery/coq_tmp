@@ -49,7 +49,9 @@ dropped by name.
 A proper subproof whose proof term has at least `xtext-threshold` nodes
 (default 300) is first tried with the tactics of `xtext-tactic`, in
 order, on its statement in its own context.  The defaults are
-`tauto` then `lia`, each with a 2 s time limit.  The first tactic that
+`tauto` then `lia`, with no time limit (`tauto` is run as cyp runs it,
+`itauto auto`, bounded; `lia` has no bound in Rocq 9.1: see ["No time
+limit"](contraction-eliminations-partial.md#2-contraction-of-application-steps-thesis-342-fig-311-313)).  The first tactic that
 closes it gives one step, `By *lia*{.just} we have P`, instead of the walk
 through the term.  The success of the tactic is the guarantee; no
 constant is recognised by its name.
@@ -61,8 +63,8 @@ constant is recognised by its name.
 - Parameters, in the Elpi database `xtext.db` (`ExtractText.v`):
   `xtext-tactic Ltac Text` (an Ltac definition, and the name the text
   gives as the justification, `*lia*{.just}`), `xtext-threshold N`.  To
-  add `lra`, write `Ltac my_lra := timeout
-  2 lra.` then `Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra".
+  add `lra`, write `Ltac my_lra := lra.` (no time limit: a
+  time limit makes the text depend on the machine) then `Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra".
   }}`.  To change the threshold, write `:before "xtext-threshold"
   xtext-threshold 50 :- !.`
 - Limits: a subproof that a tactic closes loses its explanation, even if

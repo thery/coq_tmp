@@ -15,6 +15,6 @@ Let `A : Type`{.var}. Let `l : list A`{.var}. We prove `forall l' : list A, leng
       - By *IHl*{.just} we have `forall l'0 : list A, length (l0 ++ l'0) = length l0 + length l'0`{.claim}.
       - Using *f_equal_nat*{.just} we get `forall (B : Type) (f : nat -> B) (x y : nat), x = y -> f x = f y`{.claim}.
 
-      By *congruence*{.just} we deduce `S (length (l0 ++ l')) = S (length l0 + length l')`{.claim}.
+      By *tauto*{.just} we deduce `S (length (l0 ++ l')) = S (length l0 + length l')`{.claim}.
 
   These cases being exhaustive, we deduce `forall l' : list A, length (l ++ l') = length l + length l'`{.claim}.

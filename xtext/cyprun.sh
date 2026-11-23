@@ -3,6 +3,9 @@
 # examples, copied to cyp-check/, with a time limit per text; print: name,
 # seconds, the nodes proved, not proved, and the remarks (▫️), or "timeout".
 #   usage: sh cyprun.sh LIMIT name...
+# LIMIT only guards the run (a text cyp does not finish is reported
+# "timeout"); cyp itself has no time limit: the verdicts of a run that
+# finishes do not depend on LIMIT.
 # The copy gets a flags: line, so that the require: line written by xtext
 # (Require Import XText.<file>) finds the compiled example files.
 # Needs: the cyp library compiled in CYP_LIB, loading the lexicon (../lexicon,

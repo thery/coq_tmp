@@ -20,9 +20,20 @@ text (`cyp-check/results.tsv`, all rerun 2026-11-19, in the tree format):
 |---|---|---|---|---|
 | before the tree (`*by X*`, nodes without conclusion) | 666 | 17 | 504 not checked | 176 s |
 | the tree | 684 | 2 | 279 | 107 s |
-| open goals and fixed justifications (now) | 678 (+ 6 open goals ◆) | 2 | 279 | 114 s |
+| open goals and fixed justifications | 678 (+ 6 open goals ◆) | 2 | 279 | 114 s |
+| no time limit in xtext (now, 2026-11-23) | 650 (+ 6 open goals ◆) | 2 | 279 | 102 s |
 
 - all 80 texts are checked, none times out;
+- with no time limit in xtext (2026-11-23, `tauto` run as `itauto auto`,
+  as cyp runs it; see ["No time
+  limit"](contraction-eliminations-partial.md#2-contraction-of-application-steps-thesis-342-fig-311-313)):
+  three texts change.  `std_andb_assoc` is one step, `By *tauto*{.just}
+  we have ...` (29 nodes proved before, a case analysis on three
+  booleans; 1 now, proved), which makes the 28 nodes fewer;
+  `std_Nat_add_0_r` and `std_Nat_add_succ_r` say `*tauto*{.just}` where
+  they said `*lia*{.just}`, with the same counts.  Every other text has
+  the counts it had, text by text; the 108 texts in the other languages
+  too (711 proved, 0 not proved, 90 remarks, 146 s);
 - with the open goals tagged `{.goal}` and the eliminations justified by
   `*match*{.just}` and `*induction*{.just}` (rerun 2026-11-19): every
   node has the status it had, except the 6 open goals of the 4 texts in

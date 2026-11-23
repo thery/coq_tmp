@@ -18,12 +18,37 @@ l'application" (Fig. 3.11), applied to the text.  Three strategies:
 - `guarded` (default): a premise is contracted only if (1) the step still
   follows from its new premises, checked by one of the tactics of
   `xtext-guard-tactic` (cyp's default ones: `tauto`, `congruence`, `lia`,
-  `firstorder`, `auto`, 1 s each).  The tactic that closes the last
+  `firstorder`, `auto`, with no time limit and the bounds below).  The tactic that closes the last
   accepted configuration becomes the step's justification (`By
   *auto*{.just} we deduce C`), so that cyp runs the same tactic.  (2) Its line has no "that
   is", so
   no conversion step is hidden (the thesis's guarded contraction keeps the
   type expressions that belong to a conversion, Fig. 3.13).
+
+**What is the thesis's and what is xtext's.**  The thesis's guarded
+contraction (3.4.2, Fig. 3.11 and 3.13) is syntactic: it contracts only
+where no type expression of a conversion is lost (condition (2)); it runs
+no tactic.  It is what the staged translation (the default) does
+(`staged.elpi`, see ["The staged translation"](staged-translation.md)).
+Condition (1), "the contracted step still follows by one of the
+tactics", is not the thesis's: it is xtext's addition, in the direct
+translation's contraction (`applications.elpi`), made so that cyp can
+check the text: the tactic that closed the step is named in it, and cyp
+runs that tactic the same way.
+
+**No time limit.**  The guard's tactics, and the tactics tried on long
+subproofs (`xtext-tactic`, see ["Tactic-built subproofs"](generic-mechanisms.md#5-tactic-built-subproofs-thesis-54-the-pragmatic-method)), run with no time limit, so that the
+text does not depend on the speed of the machine.  Each is the tactic
+that cyp runs for its name ([cyp's README, "Deterministic
+bounds"](../../cyp/README.md#deterministic-bounds)), with the same bound:
+
+| name in the text | what xtext runs (`ExtractText.v`) | bound |
+|---|---|---|
+| `tauto` | `itauto auto` (coq-itauto, with `Itauto Classic`) | itauto's SAT solver runs on a fuel computed from the size of the formula; its leaf tactic `auto` is of depth 5 |
+| `auto` | `auto` | depth 5 |
+| `firstorder` | `bounded_firstorder` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | at most 200 steps taking the goal and its hypotheses apart, then `eauto 4` or `congruence` |
+| `congruence` | `congruence` | ends (a closure over the terms of the goal) |
+| `lia` | `lia` | **no bound** in Rocq 9.1 (the options `Lia Depth` and `Lra Depth` are not read by the search, as cyp's README says); not seen running away on xtext's examples |
 
 Parameters: the switch `contraction` (see ["Switches"](../README.md#switches)) and, in `xtext.db`,
 `xtext-guard-tactic Ltac Text`.  The decision is greedy, premise by premise,
@@ -102,19 +127,50 @@ Tests (`partial.v`, texts `examples/*_partial*.md`):
 
 ## Measurements
 
-All 78 texts (the 76 earlier ones and the two of `elim_type.v`), with each
-contraction strategy, in the direct translation (measured in an earlier
-round, before the staged translation and the tree; not rerun).  The
-generation time is the sum of Rocq's `Time`
-over the texts; the guard costs it.
+The texts of the seven example files of `make_variant.sh` (`paper`,
+`lemmas`, `inductive`, `thesis`, `stdlib`, `elim_type`, `partial`; 73
+texts, the texts in progress left out of the counts), rerun 2026-11-23
+with each contraction strategy in both translations, before and after
+the time limits were removed (the guard's tactics had 1 s each, the
+tactics of long subproofs 2 s).  The generation time is the sum of
+Rocq's `Time` over the files, on one machine (it is a measurement, not a
+bound: the texts no longer depend on it).
 
-| strategy | list items | characters | generation time (s) |
-|---|---|---|---|
-| none | 1919 | 288045 | 13.6 |
-| maximal | 1720 | 267311 | 13.6 |
-| guarded | 1818 | 279926 | 33.5 |
+| translation | strategy | list items | characters | time with limits (s) | time without (s) |
+|---|---|---|---|---|---|
+| staged | none | 1414 | 205233 | 7.7 | 8.3 |
+| staged | maximal | 872 | 106023 | 6.1 | 6.6 |
+| staged | guarded | 905 | 113547 | 6.3 | 6.9 |
+| direct | none | 1258 | 173166 | 7.7 | 8.1 |
+| direct | maximal | 1069 | 154870 | 7.7 | 8.0 |
+| direct | guarded | 1167 | 166532 | 8.7 | 9.2 |
 
-Texts that change with the strategy:
+(items and characters: without time limits.)  In the staged
+translation the guarded contraction is the thesis's, syntactic, and
+costs nothing; in the direct translation the guard's tactics cost about
+1 s.  An earlier round (before the staged translation and the tree, 78
+texts) had measured 13.6 s for none and maximal and 33.5 s for guarded,
+in the direct translation.
+
+Removing the time limits changed no contraction (every strategy contracts
+the same premises), and changed the texts in two ways, both because
+`tauto` is now run as cyp runs it, `itauto auto`, whose leaf tactic
+`auto` uses the hints of the standard library (`plus_n_O`, `plus_n_Sm`,
+...), where `tauto` only reasoned on the connectives:
+
+- a contracted step that `congruence`, `firstorder` or `lia` closed is
+  now closed by `tauto`, the first tactic of `xtext-guard-tactic`, and
+  says so (`By *tauto*{.just} we deduce ...`): 23 steps of 10 texts of
+  `examples-direct/`;
+- a long subproof that `lia` closed is now closed by `tauto`, the first
+  of `xtext-tactic` (`std_Nat_add_0_r`, `std_Nat_add_succ_r`, and a step
+  of `examples-direct/std_Nat_add_succ_r.md`), and the proof of
+  `std_andb_assoc`, a case analysis on its three booleans before, that
+  neither `tauto` nor `lia` closed, is now one step, `By *tauto*{.just} we
+  have ...`.
+
+Texts that change with the strategy (the earlier round, direct
+translation, not rerun):
 
 | example | items none / maximal / guarded | chars none → guarded |
 |---|---|---|

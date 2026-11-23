@@ -15,7 +15,7 @@ Let `n m : nat`{.var}. We prove `n * m = m * n`{.claim}.
       - Using *RelationClasses.iff_Reflexive*{.just} we get `RelationClasses.Reflexive iff`{.claim}.
       - Using *RelationClasses.reflexivity*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x0 : A, R x0 x0`{.claim}.
       - We deduce `forall x0 : Prop, x0 <-> x0`{.claim}.
-      - By *congruence*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x * m = m * x)) (iff (y * m = m * y))`, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x * m = m * x <-> x0) (y * m = m * y <-> y0)`{.claim}.
+      - By *tauto*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x * m = m * x)) (iff (y * m = m * y))`, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x * m = m * x <-> x0) (y * m = m * y <-> y0)`{.claim}.
         - By *H*{.just} we have `x = y`{.claim}.
         - We deduce `Morphisms.Proper (Morphisms.respectful eq eq) (Nat.mul m)`, that is `forall x0 y0 : nat, x0 = y0 -> m * x0 = m * y0`{.claim}.
           - In particular `Morphisms.ProperProxy eq m`{.claim}.
@@ -29,7 +29,7 @@ Let `n m : nat`{.var}. We prove `n * m = m * n`{.claim}.
           - We deduce `forall x0 : nat, Morphisms.ProperProxy eq x0 -> Morphisms.Proper (Morphisms.respectful eq eq) (Nat.mul x0)`{.claim}.
             - Using *PeanoNat.Nat.mul_wd*{.just} we get `Morphisms.Proper (Morphisms.respectful eq (Morphisms.respectful eq eq)) Init.Nat.mul`{.claim}.
             - Using *Morphisms.Reflexive_partial_app_morphism*{.just} we get `forall (A B : Type) (R : Relation_Definitions.relation A) (R' : Relation_Definitions.relation B) (m0 : A -> B), Morphisms.Proper (Morphisms.respectful R R') m0 -> forall x0 : A, Morphisms.ProperProxy R x0 -> Morphisms.Proper R' (m0 x0)`{.claim}.
-        - By *firstorder*{.just} we deduce `Morphisms.respectful eq iff (eq (x * m)) (eq (y * m))`, that is `forall x0 y0 : nat, x0 = y0 -> x * m = x0 <-> y * m = y0`{.claim}.
+        - By *tauto*{.just} we deduce `Morphisms.respectful eq iff (eq (x * m)) (eq (y * m))`, that is `forall x0 y0 : nat, x0 = y0 -> x * m = x0 <-> y * m = y0`{.claim}.
           - In particular `Morphisms.ProperProxy eq m`, that is `m = m`{.claim}.
             - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
               - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.

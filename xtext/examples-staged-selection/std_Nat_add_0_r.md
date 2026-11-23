@@ -7,4 +7,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
 
-- By *lia*{.just} we have `n + 0 = n`{.claim}.
+- By *tauto*{.just} we have `n + 0 = n`{.claim}.
