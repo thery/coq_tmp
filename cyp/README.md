@@ -69,7 +69,12 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   `${NAME}` is the environment variable NAME, so that a proof does not
   name the directories of one machine); `lang`, the language of cyp's
   messages (`en`, `fr`, `it`; the text itself may be in any language);
-  `gaps: off`, no gap tactic (below).  There is no time limit per node.
+  `gaps: off`, no gap tactic (below).  There is no time limit: what cyp
+  proves never depends on time or on the machine, every search it runs has
+  a fixed bound ([Deterministic bounds](#deterministic-bounds)).  A header
+  line with any other key is ignored, and cyp says so (`cyp: the header
+  line timeout: is ignored, timeout is no key of a header`: `timeout:`
+  was a key of a draft of cyp).
 - **cyp uses only what is tagged.**  A formula's role is its class:
   `` `x y : T`{.var} `` (variables; `` `u := e`{.var} `` a local
   definition), `` `A`{.hyp} (h) `` (a hypothesis and its name; without a
@@ -124,7 +129,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     the same command.  `firstorder` is run bounded, as `bounded_firstorder` of
     [../prooftext/Tactics.v](../prooftext/Tactics.v), shared with xtext: the
     tactic itself has no bound (more than 30 s and 7 GB on one step of a
-    text);
+    text): the goal and its hypotheses taken apart, at most 200 steps, then
+    a proof search of depth 4 or `congruence`;
   - a name of a hypothesis, of a node or of a variable, or of a lemma is
     handed to the method: put first in the context, a lemma added to it
     (Ltac `cyp_first`);
@@ -191,7 +197,7 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
 - **The gap tactic.**  A condition that its justifications, the rules and
   the default tactics leave open gets a last, coarse try: `cyp_gap`
   ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (the goal and
-  the hypotheses taken apart, then a proof search of depth 4 or
+  the hypotheses taken apart, at most 200 steps, then a proof search of depth 4 or
   `congruence`; a case analysis on the booleans; an induction on a binder
   of the goal; a case analysis on a variable; a constructor whose arguments
   the search finds), with no time limit: a condition it cannot close costs
@@ -240,6 +246,32 @@ starts.  **The JSON** (`cyp --json`) gives, for each node, its number,
 its first and last lines (numbered from 0), its status, its formulas and
 its message; then the declared words that its justifications use, with
 the place of their declaration ("Declaring justification words", below).
+
+## Deterministic bounds
+
+cyp has no time limit: a time limit makes the verdict depend on the
+machine and on its load.  Instead, every search that cyp runs has a fixed
+bound, the same on every machine, or is a decision procedure that ends;
+two have no bound at all in Rocq 9.1, and say so below: `lia` (and `nia`)
+and Rocq's reduction.
+The tactics that a text may name (`prooftext/tactics.elpi`), the default
+tactics, the gap tactic and cyp's own search:
+
+| tactic | what cyp runs | bound |
+|---|---|---|
+| `tauto` (default) | `itauto auto` | itauto's SAT solver runs on a fuel computed from the size of the formula; its leaf tactic `auto` is of depth 5 |
+| `auto` | `auto` | depth 5 |
+| `easy` | `easy` | a fixed set of steps |
+| `firstorder` | `bounded_firstorder` ([../prooftext/Tactics.v](../prooftext/Tactics.v)) | the goal and its hypotheses taken apart, at most 200 steps (`decompose_steps`; without it, `split` on `Inductive U : nat -> Prop := cu : forall n, U (S n) -> U n` goes on for ever), then `eauto 4` (depth 4) or `congruence` |
+| the gap tactic | `cyp_gap` ([vernac/Gaps.v](vernac/Gaps.v)) | `bounded_firstorder`; a case analysis on each boolean of the context, once; an induction on one binder of the goal, each tried once; a case analysis on one variable, each tried once; one constructor; each case closed by `eauto 4` or `congruence` |
+| `congruence` | `congruence` | ends (a closure over the terms of the goal) |
+| `ring`, `field` | `ring`, `field` | end (normal forms of polynomials) |
+| `lra` (default), `nra` | Micromega: the simplex on the rationals; `nra` first adds the products of pairs of hypotheses (degree 2) | end; the size of the problem is not bounded |
+| `lia` (default), `nia` (default) | Micromega: the simplex, then cuts and case splits on integer variables; `nia` first adds products (degree 2) | **no bound**: Rocq 9.1 has the options `Lia Depth` and `Lra Depth`, but the search does not read them (`plugins/micromega/certificate.ml`: the depth only sets `max_nb_cstr`, which nothing uses), and there is no other one.  Not seen running away on cyp's texts |
+| `reflexivity`, `assumption`, and every unification | Rocq's conversion | ends (a well-typed term has a normal form), but there is no bound on the number of reduction steps: a step that asks Rocq to compute a large value takes as long as the computation |
+| cyp's search (rules) | `close`, `premises` ([vernac/elpi/check.elpi](vernac/elpi/check.elpi)) | a lemma applied to close a premise of a lemma: at most `premise-depth-max` lemmas deep (4); the goal with its head unfolded: once; a conjunction or a disjunction: split along the formula |
+
+cyp itself never runs `interval`.
 
 ## Rules: choosing the justification with Elpi
 
