@@ -215,19 +215,27 @@ know `pbp`: it asks for the list of the actions, shows them as buttons,
 and runs the one chosen.  Any loaded file can add actions.  `pbp_pattern`
 is kept as it is until the interfaces use this protocol.
 
-A demo to step through: [point_actions_demo.v](point_actions_demo.v).
-It declares everyday actions from templates (`Commute here`, `Case on
-this`, `Induction on this`, `Generalize this`, `Name this`), runs one
-action with the path methods `pbp`, `occ` and `at`, and one with the
-strategies `in`, `forward` and `revert`, declares a link action in Elpi
-(`Rewrite with this equation`) and an action that chooses its tactic
-(`Solve`: `ring`, `lia` or `ring_simplify`), and shows how a tactic of
-one's own is made pointable and how `pbp` is hooked.  Each line a button
-writes is in the file, after a comment saying what to select; `sh
-point_actions_demo_check.sh` checks that these are the lines `point_run`
-gives, and that the excerpts the demo quotes are verbatim in their files.
+A tutorial to step through, centred on the Elpi code:
+[point_actions_tutorial.v](point_actions_tutorial.v).  It shows the
+pipeline from the mouse to the line (the `point-in` value an action is
+given, printed by `elpi point_show`), the open predicates with their
+code quoted (`point-action`, how `PointAction` turns a template into
+one, `point-path` with the methods `pbp` and `occ`,
+`point-hyp-strategy` with `revert` and `in`), then writes new pieces
+in Elpi and uses them at once: a path method `others` (ssreflect's
+`{-n}`), a strategy `around` (`move: H; ...; move=> H`), and two
+actions that look at the selection (`Induction on this`, only on a
+variable; `Rewrite with this equation`, a link that chooses the
+direction and calls the method `occ` through its registry).  It ends
+with templates as a short-hand for Elpi actions and with how `pbp` (or
+a tactic of one's own) is hooked.  The lines the buttons write are left
+to the reader: a comment says what to select and which button to click,
+and gives the line after an arrow; the file compiles without any click.
+`sh point_actions_tutorial_check.sh` checks, from its own table of the
+selections, that these lines (and the errors promised) are the ones
+`point_run` gives, and that the excerpts are verbatim in their files.
 
-The actions it declares:
+The actions point_actions.v declares:
 
 | action | kind | line | e.g. on `1 + 1 + a = double (1 + a)` |
 |---|---|---|---|
@@ -435,6 +443,11 @@ Compare (link), declared by an Elpi clause
 
 `PointPaths.` and `PointStrategies.` print the path methods and the
 hypothesis strategies the same way (name, Elpi predicate, doc).
+
+`elpi point_show Sel ...` (a tactic, selections as for `point_run`)
+prints the `point-in` value an action is given for the selections,
+field by field, with the printed subterms of each part (`shown P S E
+T`): what to look at when writing an action in Elpi.
 
 A goal with a `match` cannot be pointed at (an anomaly of the printing
 of the marked goal, already in `pbp_pattern` on main).

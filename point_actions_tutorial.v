@@ -9,7 +9,7 @@
 
    How to read it: step through it.  Each section shows real code (the
    quoted excerpts are verbatim: point_actions_tutorial_check.sh checks
-   them) and ends with something to try.  Where a button is to be used, a
+   them) and things to try.  Where a button is to be used, a
    comment says what to select, which button to click, and, after an
    arrow, the line the button writes (after a cross, the error the bar
    shows instead).  The line is not in the file: the file compiles
@@ -123,11 +123,11 @@ Abort.
 
 (* ================ 2. The parametrized pieces ================
 
-   Four things are open, each an Elpi predicate of the database
-   pbp_select.db to which any file can add clauses: the actions
-   (point-action), the path methods (point-path), the hypothesis
-   strategies (point-hyp-strategy), and, through the PointAction command,
-   the templates.  Fixed: how a selection becomes a point-in value
+   Three Elpi predicates of the database pbp_select.db are open: any
+   file can add clauses to them.  They are the actions (point-action),
+   the path methods (point-path) and the hypothesis strategies
+   (point-hyp-strategy).  The PointAction command is a short way to add
+   an action, from a template.  Fixed: how a selection becomes a point-in value
    (pbp_select.v), the type point-in itself, the syntax of the templates
    and their fixed placeholders ({head}, {text}), and the protocol of the
    interfaces (elpi point_actions, elpi point_run).
@@ -183,8 +183,10 @@ kind tpart type.
 type tlit string -> tpart.    % a text
 type thole string -> tpart.   % a placeholder {name}
 *)
-(* For instance (Elpi Query runs a query in the program of a command, here
-   PointActions, which holds pbp_select.db): *)
+(* tpl-parse (lines 196-220) walks the string: text up to a {, then the
+   name up to the next }, and so on.  For instance (Elpi Query runs a
+   query in the program of a command, here PointActions, which holds
+   pbp_select.db): *)
 Elpi Query PointActions lp:{{
   tpl-parse "{pre:in}rewrite {local:pbp}/={post:in}." Ps
 }}.
@@ -253,12 +255,32 @@ point-path "pbp" "pbp's pattern: [X in X + _ = _] ([X Y in ...] for two selectio
 point-path "occ" "ssreflect's occurrences of the selected term: {2} ({1 3} for two selections of the same term)" path-occ.
 *)
 (* pbp's pattern is built by point-pattern and point-local-pattern of
-   pbp_select.v; occ calls occurrences (lines 106-121), which counts the
-   subterms equal to the selected one, left to right, in the term of the
-   scope, as ssreflect's {n} counts them.  Two helpers that a method of
-   your own can use: scope-term Sc In T Ps (T is the term of the scope,
-   Ps the paths of the selections in it) and term-at P T R (R is the
-   subterm of T at path P). *)
+   pbp_select.v.  occ is ints-text (the numbers, separated by spaces)
+   around occurrences, which does the work: *)
+(* point_actions.v, lines 106-121:
+% [occurrences Sc In Ns] the selections In are the occurrences number Ns
+% (from 1) of their subterm, in the scope Sc: the subterms equal to it,
+% left to right (heads before arguments, binder types before bodies), as
+% ssreflect's {n} and Rocq's "at n" count them
+pred occurrences i:point-scope, i:point-in, o:list int.
+occurrences Sc In Ns :-
+  scope-term Sc In T Ps,
+  msg "the selection uses a variable bound in the goal: it has no occurrence number" M1,
+  std.map Ps (p\ r\ (term-at p T r, ! ; coq.ltac.fail 0 M1)) [R|Rs],
+  (std.forall Rs (r\ r == R), ! ;
+   coq.ltac.fail 0 {msg "the two selections are not the same term: they have no common occurrence numbers"}),
+  std.findall (path-of T P_) Sols,
+  std.map-filter Sols (s\ p\ sigma R1\ s = path-of T p, term-at p T R1, R1 == R)
+    Occs,
+  std.map Ps (p\ n\ occurrence-number Occs p 1 n) Ns0,
+  (Ns0 = [A, B], A > B, !, Ns = [B, A] ; Ns = Ns0).
+*)
+(* It takes the term T of the scope and the paths Ps of the selections
+   (scope-term), the selected term R (term-at), checks that two
+   selections are the same term, lists the paths of all the subterms of T
+   (path-of, the root first, heads before arguments), keeps those equal
+   to R, and gives the rank of each selection among them.  scope-term and
+   term-at are there for your own methods too (3a). *)
 PointPaths.
 
 (* A template that prints what each method writes (in a Rocq string, a
@@ -378,9 +400,9 @@ Abort.
    revert moves H to the goal and leaves it there; in needs a tactic that
    has an "in H" form, and one hypothesis.  "around" moves the hypotheses
    to the goal, lets the core act there, then brings them back under
-   their names: for any tactic, and for selections in several
-   hypotheses.  It reuses point-revert of pbp_select.v (lines 510-515),
-   the helper of revert. *)
+   their names.  It suits a core that leaves the hypotheses in front of
+   the goal (a rewrite does; pbp does not).  It reuses point-revert of
+   pbp_select.v (lines 510-515), the helper of revert (section 5). *)
 Elpi Accumulate pbp_select.db lp:{{
 pred hyp-around i:point-in, o:string, o:string.
 hyp-around In Pre Post :-
@@ -415,7 +437,8 @@ PointStrategies.
 Elpi Accumulate pbp_select.db lp:{{
 pred induction-line i:point-in, o:string.
 induction-line (point-in _ _ C _ [loc P _ _]) Line :-
-  % T: the selected subterm (term-at fails under a binder of the goal)
+  % T: the selected subterm (term-at fails if it uses a variable bound
+  % in the goal, the n of forall n, ...)
   (term-at P C T, ! ;
    coq.ltac.fail 0 {msg "the selection uses a variable bound in the goal: introduce it first"}),
   % a variable of the context is an Elpi name with a decl
