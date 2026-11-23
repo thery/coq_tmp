@@ -477,3 +477,11 @@ ltac2:(fails_with "point_run: the selections are in two places: they cannot be c
   (fun () => ltac1:(elpi point_run "Link in" a 0 1 a' 0 1))).
 Abort.
 Fail PointAction "Bad" point "{pre:nostrategy}idtac.".   (* no strategy *)
+
+(* a goal with an if (a match): the return type of the match is not
+   printed, so it is never marked (it gave an anomaly before) *)
+Goal forall n m, n <= (if Nat.leb n m then m else n).
+Proof.
+intros n m.
+elpi point_run_expect "Name occurrence" "set x := {1}(n)." "" 0 1.
+Abort.

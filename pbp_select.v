@@ -206,8 +206,19 @@ pred shown-all i:term, o:list shown.
 shown-all T Shs :-
   coq.term->string T S, flat S O,
   std.findall (path-of T P_) Sols,
-  std.map-filter Sols (s\ sh\ sigma P\ s = path-of T P, shown-at T O P sh)
+  std.map-filter Sols (s\ sh\ sigma P\ s = path-of T P, 
+                          not (through-return T P), shown-at T O P sh)
     Shs.
+
+% [through-return T P] the path P of T goes through the return type of a
+% match (never printed as a subterm; marking it breaks the printing)
+pred through-return i:term, i:list int.
+through-return (match _ _ _) [1|_] :- !.
+through-return T [I|P] :- kids T Ks, std.nth I Ks K, kid-through P K.
+
+pred kid-through i:list int, i:kid.
+kid-through P (kt T) :- through-return T P.
+kid-through P (kb _ _ B) :- pi x\ through-return (B x) P.
 
 % [text-at P T S] S is the subterm of T at path P, printed on one line
 pred text-at i:list int, i:term, o:string.

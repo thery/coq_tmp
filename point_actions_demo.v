@@ -457,7 +457,7 @@ hyp-revert In Pre "" :- point-revert In Pre.
 (* point_actions.v, line 186:
 point-hyp-strategy "revert" "move the hypotheses to the goal first (move: H; ...), the core acts on the goal" hyp-revert.
 *)
-(* pbp_select.v, lines 501-504:
+(* pbp_select.v, lines 512-515:
 pred point-revert i:point-in, o:string.
 point-revert (point-in _ [] _ _ _) "" :- !.
 point-revert (point-in _ Hs _ _ _) M :-
