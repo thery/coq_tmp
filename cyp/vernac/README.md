@@ -265,7 +265,7 @@ text may name):
   spent on each condition and on each phase of a check.
 
 The words of the default tactics (`lia`, `lra`, ...) are declared to mean
-Ltac definitions of [Cyp.v](Cyp.v) (`cyp_lra := lra`, `cyp_lia := guarded_lia`): Rocq-Elpi runs an
+Ltac definitions of [../../prooftext/Tactics.v](../../prooftext/Tactics.v) (`word_lra := lra`, `word_lia := guarded_lia`): Rocq-Elpi runs an
 Ltac definition by its name, not a builtin tactic nor tactic code given as
 a string.
 

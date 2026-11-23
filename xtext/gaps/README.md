@@ -100,7 +100,7 @@ of the conditions that only `firstorder` closes are the statements of the
 lemmas a step uses (*Using lt_eq_cases we get ...*), which cyp closes by
 the lemma itself, and setoid steps (`Basics.impl`, `Morphisms.Proper`).
 
-In cyp, with `cyp_firstorder := bounded_firstorder` and no gap tactic
+In cyp, with `firstorder` run as `bounded_firstorder` (now `word_firstorder`) and no gap tactic
 (texts with `by:`):
 
 | set | before: open, no result, total time | after: open, no result, total time |
@@ -197,8 +197,8 @@ call succeeded):
 
 | calls of | calls | succeeded | largest success: splits, hypotheses | largest failure: splits, hypotheses |
 |---|---|---|---|---|
-| xtext, default texts (`xtext_lia`) | 38 | 6 | 6, 3 | 7, 3 |
-| xtext, direct translation (`xtext_lia`, `xtext_g_lia`) | 44 | 20 | 19, 3 | 36, 4 |
+| xtext, default texts (`word_lia`) | 38 | 6 | 6, 3 | 7, 3 |
+| xtext, direct translation (`word_lia`, tactic-built steps and guard) | 44 | 20 | 19, 3 | 36, 4 |
 | cyp on the 188 texts (English and languages) | 357 | 8 | 28, 6 | 42, 8 |
 | cyp on its examples (`cyp/gaps_regress.sh`) | 220 | 128 | 7, 8 | 4, 5 |
 | the probe (`t_lia`, `t_nia`, `t_simpl_lia`, `BARE=1`) | 2214 | 677 | 34, 7 | 34, 9 |
@@ -206,7 +206,7 @@ call succeeded):
 The bounds are the largest successes, 34 splits and 8 hypotheses, times
 about 1.5 and 2.  No call measured is refused: cyp's results on its
 examples and on xtext's texts, xtext's texts and the probe's counts are
-the same with the guard (and cyp's `cyp_lia`, `cyp_nia` now run
+the same with the guard (and `word_lia`, `word_nia`, which cyp and xtext run, are
 `guarded_lia`, `guarded_nia`).  The guard bounds what `lia` is given, not
 its search: a goal under the bounds may still be hard; none of the
 measured calls ran away.  No run has a time limit either: `probe.sh`,

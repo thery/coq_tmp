@@ -1,4 +1,5 @@
-(* prooftext: the bounded searches that the tools run for a tactic a proof
+(* prooftext: the tactics that the words of a proof text mean (word_N,
+   at the end), and the bounded searches that the tools run for a tactic a proof
    text may name (tactics.elpi), so that the reader (cyp) and the writer
    (xtext) run the same one.  firstorder has no bound: on some goals it
    runs for minutes and gigabytes; for the name firstorder both tools run
@@ -109,3 +110,31 @@ Ltac lia_stats := elpi lia_guard "stats".
 (* lia and nia behind the guard *)
 Ltac guarded_lia := lia_guard; lia.
 Ltac guarded_nia := lia_guard; nia.
+
+(* itauto (coq-itauto): a reflexive SAT solver for propositional logic, run
+   for the word tauto: tauto may run for minutes on goals that itauto
+   closes at once.  With the flag Itauto Classic, itauto reasons
+   classically when the classical axiom is loaded, as tauto does *)
+From Stdlib Require Import Lra Ring Field.
+From Cdcl Require Import Itauto.
+#[export] Set Itauto Classic.
+
+(* The tactics that the words of tactics.elpi mean, in a justification
+   *N*{.just} or in a header's by: word_N is the tactic the justification
+   word N means, for cyp and xtext alike (cyp declares
+   CypJustification "N" := word_N. at the end of cyp/vernac/Cyp.v; xtext
+   runs word_N for the steps it justifies by N, xtext/ExtractText.v).  The
+   bound of each: cyp/README.md, "Deterministic bounds". *)
+(* lia and nia behind lia_guard (above) *)
+Ltac word_lia := guarded_lia.          Ltac word_nia := guarded_nia.
+Ltac word_lra := lra.                  Ltac word_nra := nra.
+Ltac word_ring := ring.                Ltac word_field := field.
+Ltac word_tauto := itauto auto.        Ltac word_auto := auto.
+Ltac word_easy := easy.                Ltac word_reflexivity := reflexivity.
+Ltac word_assumption := assumption.    Ltac word_congruence := congruence.
+(* firstorder, bounded (above): firstorder has no bound (on a condition of
+   xtext's half_le it ran over 30 s and took up to 7 GB) *)
+Ltac word_firstorder := bounded_firstorder.
+(* arith: the word xtext gives to a step whose conclusion is arithmetic
+   (an equality or an order on nat, Z, N or R), closed by lia or by tauto *)
+Ltac word_arith := first [ guarded_lia | itauto auto ].

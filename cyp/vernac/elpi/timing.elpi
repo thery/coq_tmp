@@ -51,8 +51,8 @@ head-name T S :- coq.term->string T S.
 
 % [ltac-how N How]: the name of a default tactic of cyp.db (an Ltac name)
 pred ltac-how i:string, o:string.
-ltac-how "cyp_tauto" "tauto (itauto)" :- !.
-ltac-how N How :- rex.match "^cyp_" N, !, rex.replace "^cyp_" "" N How.
+ltac-how "word_tauto" "tauto (itauto)" :- !.
+ltac-how N How :- rex.match "^word_" N, !, rex.replace "^word_" "" N How.
 ltac-how N N.
 
 % [gap-how How]: How for a condition closed by the gap tactic, with the

@@ -134,7 +134,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     `ring`, `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
     `congruence`, `firstorder`, `arith`: [../prooftext/tactics.elpi](../prooftext/tactics.elpi),
     the only ones xtext writes) are declared at the end of
-    [vernac/Cyp.v](vernac/Cyp.v), each the Ltac `cyp_N` above them, with
+    [vernac/Cyp.v](vernac/Cyp.v), each the Ltac `word_N` of
+    [../prooftext/Tactics.v](../prooftext/Tactics.v) (the same for xtext), with
     the same command; what each runs and its bound:
     [Deterministic bounds](#deterministic-bounds) below (`firstorder` is
     run bounded, `lia` and `nia` behind a guard; `arith` is the word xtext
@@ -264,7 +265,7 @@ and Rocq's reduction.
 The tactics that a text may name (`prooftext/tactics.elpi`), the default
 tactics, the gap tactic and cyp's own search:
 
-| tactic | what cyp runs | bound |
+| tactic | what cyp runs (`word_N` of [../prooftext/Tactics.v](../prooftext/Tactics.v) for a word N; xtext runs the same) | bound |
 |---|---|---|
 | `tauto` (default) | `itauto auto` | itauto's SAT solver runs on a fuel computed from the size of the formula; its leaf tactic `auto` is of depth 5 |
 | `auto` | `auto` | depth 5 |
@@ -372,7 +373,7 @@ CypJustification "monotonicity" := rules.        (* *monotonicity*{.just}: these
 - The tactics every proof text may name (`lia`, `tauto`, ...: prooftext's
   [tactics.elpi](../prooftext/tactics.elpi)) are declared at the end of
   [vernac/Cyp.v](vernac/Cyp.v) with the same command,
-  `CypJustification "lia" := cyp_lia.`, so that every word has a visible
+  `CypJustification "lia" := word_lia.`, so that every word has a visible
   declaration; `Cyp.v` checks that none of prooftext's is missing.  They
   are also the names a header's `by:` gives (each a declared word).
 - A word that is declared nowhere, and is no name of the text or lemma,
@@ -389,7 +390,7 @@ meaning and the place of their declaration:
 
 ```json
 {"word":"monotonicity","meaning":"rules","library":"","file":"/…/cyp/examples/named_demo.v","line":8}
-{"word":"lia","meaning":"tactic cyp_lia","library":"CypV.Cyp","file":"./Cyp.v","line":440}
+{"word":"lia","meaning":"tactic word_lia","library":"CypV.Cyp","file":"./Cyp.v","line":426}
 ```
 
 `prooftext/pdf.sh --source-root ROOT=URL` (and `gallery.sh`, which passes

@@ -275,7 +275,8 @@ that names no formula in scope).
   Name`, the two fixed justifications `match` and `induction` (no
   tactics: a `by` field does not name them).  Each tool
   runs a name its own way: in cyp each is a word declared by
-  `CypJustification "Name" := cyp_Name.` (`cyp/vernac/Cyp.v`; a proof
+  `CypJustification "Name" := word_Name.` (`cyp/vernac/Cyp.v`; `word_Name`
+  is the Ltac of `prooftext/Tactics.v` that xtext runs too; a proof
   declares its own words the same way); xtext writes only these
   names (the text of its tactics, `xtext-tactic Ltac Name` and
   `xtext-guard-tactic Ltac Name` in `xtext/ExtractText.v`, which run them as

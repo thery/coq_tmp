@@ -9,7 +9,7 @@
 % [justification-word Word Meaning Origin] in cyp.db, Meaning an Ltac
 % tactic (meaning-tactic) or the rules named Word (meaning-rules).  The
 % tactics every proof text may name (prooftext/tactics.elpi) are declared
-% at the end of Cyp.v, each the Ltac cyp_Name.
+% at the end of Cyp.v, each the Ltac word_Name of prooftext/Tactics.v.
 
 % the default tactics of the proof being checked (its header's by:), then
 % cyp's own ones (default-ltac in cyp.db)
