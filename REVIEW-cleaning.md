@@ -205,7 +205,10 @@ commit: identical, except where said.  elpi-tools: `dune build
   the keys against prooftext's `header-key`.
 - cyp `undup` (text.elpi now, command.elpi then; Elpi's std has none: fine as it is).
 - missing comments in elpi-tools/check/lib (about 15 predicates: run.elpi
-  5, analyse.elpi 4, ...).
+  5, analyse.elpi 4, ...).  On 2026-11-23: 35 `pred` or `func` lines with
+  no comment line just before them (run.elpi 13, generate.elpi 7,
+  analyse.elpi 5, shrink.elpi 3, types.elpi 3, goals, json, random and
+  replay 1 each), many of them helpers of a commented predicate.
 - elpi-tools/debug/lib and dap/lib: not reviewed in depth.
 - cyp's `*by h*` with the name of a hypothesis is read as a tactic
   ("Ltac1 tactic h not found"), though cyp's README says a name is given
