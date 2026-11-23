@@ -76,12 +76,12 @@ cat > "$tmp/refs" <<'EOF'
 point_actions.v:64|pred point-action o:string
 pbp_select.v:45|Definition pbp_hole
 pbp_select.v:57|pred msg i:string
-pbp_select.v:67|pred one-line i:string
-pbp_select.v:266|pred parse-sels i:list argument
-pbp_select.v:307|kind part type.
-pbp_select.v:322|kind loc type.
-pbp_select.v:443|kind point-in type.
-pbp_select.v:453|pred point-resolve i:goal-ctx
+pbp_select.v:73|pred one-line i:string
+pbp_select.v:311|pred parse-sels i:list argument
+pbp_select.v:352|kind part type.
+pbp_select.v:367|kind loc type.
+pbp_select.v:502|kind point-in type.
+pbp_select.v:512|pred point-resolve i:goal-ctx
 EOF
 
 # fails_with M t: the tactic t fails with a message that contains M,
