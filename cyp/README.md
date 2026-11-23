@@ -201,9 +201,11 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   99% (measured on the texts written before the tree,
   [../xtext/gaps/](../xtext/gaps/README.md)).  It is not tried on a
   node justified by a word declared as rules (*monotonicity*{.just}: those rules only).
-  The header line `gaps: off` turns it off
-  ([examples/gaps_demo.md](examples/gaps_demo.md) is proved with it, not
-  without).
+  The header line `gaps: off` turns it off (the tutorial's
+  [ch10_defaults.md](tutorial/ch10_defaults.md) is proved with it, and its
+  copy [ch10_no_gaps.md](tutorial/ch10_no_gaps.md) with `gaps: off` is not;
+  [examples/gaps_demo.md](examples/gaps_demo.md), written before cyp's
+  other tactics improved, is now proved either way).
 
 A conclusion that does not hold makes the nodes after it easier to prove,
 as on paper: a red node is the one to look at first.

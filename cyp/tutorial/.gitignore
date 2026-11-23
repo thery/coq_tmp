@@ -1,0 +1,2 @@
+# the expected outputs of the tutorial are tracked (cyp/.gitignore ignores *.checked.md)
+!expected/**/*.checked.md
