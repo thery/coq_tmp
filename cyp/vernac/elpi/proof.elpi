@@ -92,6 +92,8 @@ type goal string -> status.             % an open goal of the text
 % conclusions seen by the subnodes after them, not outside the node).
 kind report type.
 type rep string -> status -> report.    % the number of the node
+type time-rep condition-time -> report. % the time of a condition (timing.elpi),
+                                        % taken out by check-tree
 
 % proof mode: the conditions not discharged are left to the Proof block
 pred proof-mode.
@@ -215,22 +217,28 @@ name-after L none L.
 % ------------------------------------------------------------------ %
 % Proving a condition
 
-% [step-proof M I T P R]: the condition I, of type T, proved by P (the
-% method M, check.elpi) or else left to the Proof block or not proved;
-% with CYP_TIME set, the time spent on it is printed
-pred step-proof i:method, i:string, i:term, o:term, o:report.
-step-proof M I T P R :-
-  gettimeofday T0, condition-proof M I T P R, gettimeofday T1,
-  say-time I {calc (T1 - T0)}.
+% [step-proof M I T P Rs]: the condition I, of type T, proved by P (the
+% method M, check.elpi) or else left to the Proof block or not proved: its
+% report; when timing-on (timing.elpi), the time spent on it and how it
+% was closed are printed, and given in a report time-rep for the summary
+pred step-proof i:method, i:string, i:term, o:term, o:list report.
+step-proof M I T P Rs :- timing-on, !,
+  gettimeofday T0, ((condition-start T0 :- !) => condition-proof M I T P R How), gettimeofday T1,
+  (not (How = ""), How1 = How ; tried-all M Tr, How1 is "failed after trying " ^ Tr), !,
+  Ms is floor ((T1 - T0) * 1000.0),
+  say "time-condition" [I, {std.any->string Ms}, How1],
+  Rs = [R, time-rep (condition-time I Ms How1)].
+step-proof M I T P [R] :- condition-proof M I T P R _.
 
-% [condition-proof M I T P R]: as step-proof, without the timing
-pred condition-proof i:method, i:string, i:term, o:term, o:report.
-condition-proof _ I T P (rep I (todo S)) :- bare-mode, !,
+% [condition-proof M I T P R How]: as step-proof, without the timing; How,
+% how the condition was closed ("" when it was not)
+pred condition-proof i:method, i:string, i:term, o:term, o:report, o:string.
+condition-proof _ I T P (rep I (todo S)) "not tried (bare)" :- bare-mode, !,
   condition-hole I T P, coq.term->string T S.
-condition-proof M I T P (rep I ok) :- prove M T P, !.
-condition-proof _ I T P (rep I (todo S)) :- proof-mode, !,
+condition-proof M I T P (rep I ok) How :- prove M T P How, !.
+condition-proof _ I T P (rep I (todo S)) "" :- proof-mode, !,
   condition-hole I T P, coq.term->string T S.
-condition-proof _ I T _ (rep I (ko S)) :- coq.term->string T S.
+condition-proof _ I T _ (rep I (ko S)) "" :- coq.term->string T S.
 
 % a hole for the condition I, of type T: a goal of the Proof block, named
 % after the node (condition-ident: the goal of 2.1 is ?c2_1)
@@ -260,7 +268,7 @@ condition Id Es C P Rs :-
   (if (NotNames = [X | _]) (Rs = [rep Id (bad {msg "name-unknown" [X]}) | Rs1], error-condition Id C P Rs1)
   (node-method Ms Gs Hs MF,
    if (MF = wrong M) (Rs = [rep Id (bad M) | Rs1], error-condition Id C P Rs1)
-   (MF = right Me, step-proof Me Id C P R, Rs = [R]))).
+   (MF = right Me, step-proof Me Id C P Rs))).
 
 % the method of a node, or why it has none
 kind method-found type.

@@ -36,7 +36,13 @@ dune build
 export CYP_LIB=$PWD/vernac
 dune exec cyp -- examples/square_pos.md   # writes square_pos.checked.md and square_pos.cyp.json
 dune exec cyp -- --conditions examples/square_pos.md   # prints the conditions, tries nothing
+dune exec cyp -- --time examples/square_pos.md   # the time of each condition, how it was closed, the ten slowest
 ```
+
+`--time` (`#[time]` on the Rocq commands; the environment variable
+`CYP_TIME` does the same) prints the time of each condition and how it
+was closed, then the ten slowest: [vernac/README.md](vernac/README.md#the-text-as-a-verification-condition-generator),
+"Timing".  It is a measure only: it changes nothing that cyp tries.
 
 ## The format
 

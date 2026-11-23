@@ -1,13 +1,124 @@
-% Timing: with the environment variable CYP_TIME set, cyp prints the time
-% spent on each condition and on each phase of a check.
+% Timing: with the attribute #[time] (Cyp File, Cyp Lemma, CypFile: the
+% program's option --time) or the environment variable CYP_TIME set, cyp
+% prints the time spent on each condition and how it was closed, the time
+% of each phase of a check, and at the end the slowest conditions.  It is
+% a measure only: nothing that cyp tries or decides depends on it.
 
-% [timed Label P]: P, its time printed as that of Label when CYP_TIME is set
+% [timing-on]: the times are printed
+pred timing-on.
+timing-on :- attributes A, std.mem A (attribute "time" _), !.
+timing-on :- getenv "CYP_TIME" (some _).
+
+% [timed Label P]: P, its time printed as that of Label when timing-on
 pred timed i:string, i:prop.
 timed L P :- gettimeofday T0, P, gettimeofday T1, say-time L {calc (T1 - T0)}.
 
-% [say-time Label D]: the time D (seconds) of Label printed, when CYP_TIME
-% is set
+% [say-time Label D]: the time D (seconds) of Label printed, when timing-on
 pred say-time i:string, i:float.
-say-time I D :- getenv "CYP_TIME" (some _), !,
-  Ms is floor (D * 1000.0), say "time" [I, {std.any->string Ms}].
+say-time I D :- timing-on, !, say "time" [I, {ms D}].
 say-time _ _.
+
+% [ms D S]: the time D (seconds) in milliseconds, as a string
+pred ms i:float, o:string.
+ms D S :- Ms is floor (D * 1000.0), std.any->string Ms S.
+
+% [condition-start T]: the condition being proved was started at the time
+% T (set by step-proof, proof.elpi, when timing-on)
+pred condition-start o:float.
+
+% ------------------------------------------------------------------ %
+% How a goal was closed, as a string: "hypothesis", the name of a tactic
+% (a declared word, a tactic of the header's by:, a default tactic),
+% "rule R: ..." (a rule of cyp.db, R its name if it has one), "apply
+% L(...)" (a lemma, then how each premise was closed), "split(...)",
+% "match h(...)", "hnf, ..." (the goal unfolded at last), "intros, ...",
+% "gap tactic"
+
+% [how-call Head Hows How]: Head followed by how its subgoals were closed,
+% "Head(how1; how2)"; a subgoal closed by another one's solution is "_"
+pred how-call i:string, i:list string, o:string.
+how-call Head [] Head :- !.
+how-call Head Hs How :-
+  std.map Hs (h\ s\ if (var h) (s = "_") (s = h)) Ss,
+  std.string.concat "; " Ss S, How is Head ^ "(" ^ S ^ ")".
+
+% [head-name T S]: the name of the head constant of the term T
+pred head-name i:term, o:string.
+head-name (global GR) S :- !, coq.gref->id GR S.
+head-name (pglobal GR _) S :- !, coq.gref->id GR S.
+head-name (app [H | _]) S :- !, head-name H S.
+head-name T S :- coq.term->string T S.
+
+% [ltac-how N How]: the name of a default tactic of cyp.db (an Ltac name)
+pred ltac-how i:string, o:string.
+ltac-how "cyp_tauto" "tauto (itauto)" :- !.
+ltac-how N How :- rex.match "^cyp_" N, !, rex.replace "^cyp_" "" N How.
+ltac-how N N.
+
+% [gap-how How]: How for a condition closed by the gap tactic, with the
+% time of the tries before it when timing-on
+pred gap-how o:string.
+gap-how How :- condition-start T0, !, gettimeofday T1,
+  How is "gap tactic (after " ^ {ms {calc (T1 - T0)}} ^ " ms of failed tries)".
+gap-how "gap tactic".
+
+% [tried-how M S]: what a condition of method M is tried with, in order,
+% for a condition that nothing closes
+pred tried-how i:method, o:string.
+tried-how (eliminating E Ts M) S :- !,
+  std.string.concat " " [E | Ts] H, tried-how M S0,
+  S is H ^ ", then in each case " ^ S0.
+tried-how (method [] [] _) "the hypotheses, the rules, the default tactics, hnf" :- !.
+tried-how (method [] Gs _) S :- !,
+  std.map Gs given-text Ns, std.string.concat ", " Ns N,
+  S is "applying " ^ N ^ ", then the hypotheses, the rules, the default tactics, hnf".
+tried-how (method Ms _ _) S :- std.string.concat ", " Ms S.
+
+% [tried-all M S]: tried-how, again after intros, then the gap tactic if it
+% is tried
+pred tried-all i:method, o:string.
+tried-all M S :-
+  tried-how M S0,
+  if (not gaps-off, gap-justification M) (S is S0 ^ "; again after intros; the gap tactic")
+     (S is S0 ^ "; again after intros").
+
+% [given-text G S]: the name of a name given
+pred given-text i:given, o:string.
+given-text (given-local X) X.
+given-text (given-lemma GR) S :- coq.gref->id GR S.
+
+% ------------------------------------------------------------------ %
+% The times of the conditions, gathered for the summary
+
+% [condition-time Id Ms How]: condition Id took Ms milliseconds, How
+kind condition-time type.
+type condition-time string -> int -> string -> condition-time.
+
+% [say-slowest Ts All]: the ten slowest conditions of Ts printed, slowest
+% first, each with the first line of its node (All: the numbered nodes)
+pred say-slowest i:list condition-time, i:list (pair string prooftext.node).
+say-slowest [] _ :- !.
+say-slowest Ts All :-
+  std.length Ts N, std.fold Ts 0 (t\ a\ b\ sigma M\ t = condition-time _ M _, b is a + M) Total,
+  say "time-slowest" [{std.any->string N}, {std.any->string Total}],
+  slowest 10 Ts All.
+
+% [slowest K Ts All]: the K slowest conditions of Ts printed, slowest first
+pred slowest i:int, i:list condition-time, i:list (pair string prooftext.node).
+slowest 0 _ _ :- !.
+slowest _ [] _ :- !.
+slowest K Ts All :-
+  std.fold Ts (condition-time "" -1 "") (t\ a\ b\ sigma M Ma\ t = condition-time _ M _,
+    a = condition-time _ Ma _, if (M > Ma) (b = t) (b = a)) (condition-time Id Ms How),
+  (std.lookup All Id N, first-line N L, ! ; L = ""),
+  say "time-slow-line" [Id, {std.any->string Ms}, How, L],
+  std.filter Ts (t\ not (t = condition-time Id Ms How)) Rest,
+  K1 is K - 1, slowest K1 Rest All.
+
+% [first-line N L]: the first line of the own text of the node N (at most
+% 80 characters)
+pred first-line i:prooftext.node, o:string.
+first-line (prooftext.node _ _ _ _ Cs) L :-
+  std.mem Cs (prooftext.run S _), rex.split "\n" S Ls,
+  std.mem Ls L1, prooftext.trim L1 L0, not (L0 = ""), !,
+  if (size L0 > 80) (L is substring L0 0 80 ^ "...") (L = L0).

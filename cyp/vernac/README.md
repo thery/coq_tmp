@@ -142,8 +142,39 @@ leave open is tried with `cyp_gap` ([Gaps.v](Gaps.v)) before it is left
 to the Proof block; `#[gaps="off"]` (`#[gaps="off"] Cyp Lemma ...`, or
 the header line `gaps: off` of a Markdown proof) turns it off.
 
-**Timing.**  With the environment variable `CYP_TIME` set, cyp prints the
-time spent on each condition (`cyp: time 2.1 1234 ms`).
+**Timing.**  `#[time] Cyp File "p.md"`, `#[time] Cyp Lemma ...` and
+`#[time] CypFile "p.md"` (the program: `cyp --time p.md`) print, for each
+condition, its time and how it was closed, then the ten slowest
+conditions, each with the first line of its node (here on
+[../examples/square_pos.md](../examples/square_pos.md)):
+
+```
+cyp: time 1.1.1 10 ms, split(lia; lia)
+cyp: time 1.1 7 ms, nia
+cyp: time 3 35 ms, failed after trying the hypotheses, the rules, the default tactics, hnf; again after intros; the gap tactic
+...
+cyp: time of the 7 conditions: 66 ms; the slowest:
+cyp:   3  35 ms  failed after trying ...  | So `0 < a - b`{.claim}, a wrong step on purpose.
+cyp:   1.1.1  10 ms  split(lia; lia)  | From `0 < a < b`{.fact} we have `0 < b + a /\ 0 < b - a`{.claim}.
+```
+
+How a goal was closed: `hypothesis` (a hypothesis is the goal), the name
+of a tactic (a declared word such as `lia` or `arith`, a tactic of the
+header's `by:`, a default tactic: `tauto (itauto)`, `lia`, `nia`, `lra`),
+`rule R: ...` (a rule of the proof; `R` its name for a `named` rule),
+`apply L(h1; h2)` (the lemma or hypothesis L, then how each of its
+premises was closed, `_` for one solved by another's solution), `elim
+L(...)`, `split(...)`, `left(...)`, `right(...)`, `match h(...)` and
+`induction l(...)` (then how each case was closed), `hnf, ...` (the goal
+in weak head normal form, the last try), `intros, ...` (after
+introducing the premises of the goal), `no name applies, ...` (the names
+given apply to nothing: the rules and the default tactics), `gap tactic
+(after N ms of failed tries)`; for a condition not proved, what was
+tried.  The phases of a check are timed too (`cyp: time conditions 75
+ms`, `markdown`, `json`, `type-check`, `definition`).  The environment
+variable `CYP_TIME` set does the same as `#[time]`.  Timing is a
+measure only: what cyp tries, and its verdicts, are the same with it or
+without it.
 
 **Justifications.**  A justification `*X*{.just}` is, in this order, a
 fixed method (`match`, `induction`), a name of the text in scope (a

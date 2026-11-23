@@ -49,9 +49,14 @@ pred check-tree i:prooftext.node, o:term, o:term, o:list report, o:bool.
 check-tree Top Ty Proof Rs Stated :-
   prooftext.tree-errors Top Errors,
   proof-node Errors (pr "0" Top) Node,
-  timed "conditions" (node-proof Node Ty Proof Concluded Rs0),
+  timed "conditions" (node-proof Node Ty Proof Concluded Rs00),
+  % the times of the conditions (timing-on, timing.elpi): the slowest printed
+  std.map-filter Rs00 (r\ t\ r = time-rep t) Times,
+  std.filter Rs00 (r\ not (sigma T\ r = time-rep T)) Rs0,
+  prooftext.all-nodes "0" Top All,
+  say-slowest Times All,
   error-reports Errors Rs1, std.append Rs1 Rs0 Rs2,
-  prooftext.all-nodes "0" Top All, std.map All fst Ids,
+  std.map All fst Ids,
   in-text-order Ids Rs2 Rs,
   statement-read Concluded Rs Stated.
 
