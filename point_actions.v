@@ -554,3 +554,52 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
   std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
   show-in In S, coq.say S.
 }}.
+
+(* ---------------- Selections given by paths ---------------- *)
+
+Elpi Accumulate pbp_select.db lp:{{
+
+% [point-run-paths Ctx G Args Line] Line is the line of the action and the
+% path selections given by Args (point_run_path), in the goal G
+pred point-run-paths i:goal-ctx, i:term, i:list argument, o:string.
+point-run-paths _ _ [] _ :- !,
+  coq.ltac.fail 0 {msg "the first argument is the name of an action (elpi point_actions lists them)"}.
+point-run-paths Ctx G [str Name | As] Line :- !,
+  (point-action Name K _ Impl, ! ;
+   coq.ltac.fail 0 {msg "no action"} Name "(elpi point_actions lists them)"),
+  parse-psels As Sels, std.length Sels N, point-kind-name K KS KN,
+  (N = KN, ! ;
+   coq.ltac.fail 0 {msg "the action"} Name "is of kind" KS "and takes" KN
+     "selection(s), not" N),
+  point-resolve-paths Ctx G Sels In,
+  (Impl In Line, ! ;
+   coq.ltac.fail 0 {msg "the action"} Name "does not apply to the selection").
+point-run-paths _ _ _ _ :-
+  coq.ltac.fail 0 {msg "the first argument is the name of an action, a string"}.
+}}.
+
+(* [elpi point_run_path "Name" Sel ...] prints the line of the action Name
+   for selections given by paths instead of ranges: a selection is "P", the
+   subterm at path P of the conclusion, or "H" "P", the one of the type of
+   the hypothesis H.  A path is written "i.j.k" ("" for the whole part), in
+   the immediate subterms of pbp_select.v (kids), the paths that Rocq's
+   Set Printing Subterm Paths puts on the printed subterms (Pp tags
+   "path:i.j.k").  The part is not printed again and nothing is widened.
+   The goal is unchanged. *)
+Elpi Tactic point_run_path.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ Args as G) [seal G] :-
+  (tool-name "point_run_path" => point-run-paths Ctx Ty Args Line),
+  coq.say Line.
+}}.
+
+(* [elpi point_run_path_expect "Name" Line Sel ...], for the tests: fails
+   unless point_run_path gives the line Line *)
+Elpi Tactic point_run_path_expect.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ [str Name, str Exp | Args] as G) [seal G] :-
+  (tool-name "point_run_path" => point-run-paths Ctx Ty [str Name | Args] Line),
+  (Line = Exp, ! ; coq.ltac.fail 0 "point_run_path_expect: got" Line "expected" Exp).
+}}.

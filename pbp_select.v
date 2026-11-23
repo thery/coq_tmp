@@ -522,6 +522,95 @@ point-resolve Ctx G Sels (point-in Names Hs C Parts Ls) Ws :-
   (nested Ps, !,
    coq.ltac.fail 0 {msg "the two selections are the same subterm or one is inside the other"} ; true).
 
+/* ---------------- Selections given by paths ----------------
+   An interface whose goal display tags each printed subterm with its path
+   (Rocq's Set Printing Subterm Paths) sends the path of the selected
+   subterm in its part instead of a range: no character is counted and the
+   part is not printed again. */
+
+kind psel type.
+type psel-goal list int -> psel.          % a path in the conclusion
+type psel-hyp string -> list int -> psel. % a path in the type of a hypothesis
+
+% [path-of-string S P] S is the path P written "i.j.k" ("" for the root)
+pred path-of-string i:string, o:list int.
+path-of-string "" [] :- !.
+path-of-string S P :-
+  rex.split "\\." S Ss,
+  std.map Ss (s\ n\ (rex.match "^[0-9]+$" s, !, n is string_to_int s ;
+                     coq.ltac.fail 0 {msg "not a path:"} S)) P.
+
+% [is-path-string S] S is written as a path ("" or starting with a digit)
+pred is-path-string i:string.
+is-path-string "" :- !.
+is-path-string S :- rex.match "^[0-9]" S.
+
+% [parse-psels As Sels] the arguments As are the selections Sels: "P" (a
+% path in the conclusion) or "H" "P" (a path in the hypothesis H)
+pred parse-psels i:list argument, o:list psel.
+parse-psels [] [] :- !.
+parse-psels [str P | As] [psel-goal Q | Sels] :- is-path-string P, !,
+  path-of-string P Q, parse-psels As Sels.
+parse-psels [str H, str P | As] [psel-hyp H Q | Sels] :- is-path-string P, !,
+  path-of-string P Q, parse-psels As Sels.
+parse-psels _ _ :-
+  coq.ltac.fail 0 {msg "a selection is \"P\" (a path in the conclusion, \"i.j.k\", \"\" for the root) or \"H\" \"P\" (a path in the hypothesis H)"}.
+
+% [psel-sel S S1] the hypothesis of the path selection S, as a range
+% selection S1 (for sel-hyps)
+pred psel-sel i:psel, o:sel.
+psel-sel (psel-goal _) (sel-goal 0 0).
+psel-sel (psel-hyp H _) (sel-hyp H 0 0).
+
+% [all-shown T Shs] every subterm of T, as if printed as a whole (the
+% paths only: no range, no text), but those not-printed excludes; the
+% patterns may put a hole at any of them, the check of the pattern is what
+% tells that it is right
+pred all-shown i:term, o:list shown.
+all-shown T Shs :-
+  std.findall (path-of T P_) Sols,
+  std.map-filter Sols (s\ sh\ sigma P\ s = path-of T P, not (not-printed T P),
+                          sh = shown P 0 0 "") Shs.
+
+% [path-parts Ctx Hs G Ps] the parts of the goal G with the hypotheses Hs
+% generalized, as parts does, their subterms given by all-shown
+pred path-parts i:goal-ctx, i:list string, i:term, o:list part.
+path-parts Ctx Hs G Ps :-
+  std.map-i Hs (i\ h\ p\ sigma B0 B V T Shs\ ones i B0, std.append B0 [0] B,
+                        hyp-of Ctx h V T, all-shown T Shs, p = part B T Shs)
+    PHs,
+  std.length Hs N, ones N BG, all-shown G ShG,
+  std.append PHs [part BG G ShG] Ps.
+
+% [path-locate Hs Ps Sel L] the path selection Sel is L
+pred path-locate i:list string, i:list part, i:psel, o:loc.
+path-locate Hs Ps (psel-goal P0) (loc P N P0) :- !,
+  std.length Hs N, std.nth N Ps Part, path-locate-in Part P0 P.
+path-locate Hs Ps (psel-hyp H P0) (loc P I P0) :-
+  std.length Hs N, std.iota N Is, std.mem Is I, std.nth I Hs H, !,
+  std.nth I Ps Part, path-locate-in Part P0 P.
+
+pred path-locate-in i:part, i:list int, o:list int.
+path-locate-in (part B T _) P0 P :-
+  std.map P0 (n\ s\ s is int_to_string n) Ss, std.string.concat "." Ss S,
+  (path-of T P0, !, std.append B P0 P ;
+   coq.ltac.fail 0 {msg "no subterm at the path"} S),
+  (not-printed T P0, !,
+   coq.ltac.fail 0 {msg "the subterm at the path"} S "cannot be selected: it is the return type of a match or binds the variables of a branch" ; true).
+
+% [point-resolve-paths Ctx G Sels In] the path selections Sels of the goal
+% G (context Ctx) are In, the value point-resolve gives for ranges
+pred point-resolve-paths i:goal-ctx, i:term, i:list psel, o:point-in.
+point-resolve-paths Ctx G Sels (point-in Names Hs C Parts Ls) :-
+  std.map-filter Ctx (d\ h\ sigma V N T B\ (d = decl V N T ; d = def V N T B),
+                         coq.name->id N h) Names,
+  std.map Sels psel-sel Sels1,
+  sel-hyps Ctx Sels1 Hs, revert Ctx Hs G C, path-parts Ctx Hs G Parts,
+  std.map Sels (path-locate Hs Parts) Ls,
+  std.map Ls loc-path Ps,
+  (nested Ps, !,
+   coq.ltac.fail 0 {msg "the two selections are the same subterm or one is inside the other"} ; true).
+
 % [point-names In Ns] Ns are the names of the hypotheses of the goal
 pred point-names i:point-in, o:list string.
 point-names (point-in Ns _ _ _ _) Ns.

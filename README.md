@@ -308,6 +308,45 @@ elpi point_run "Name" H S E H' S' E'.  (* ... in two hypotheses *)
   selection` (an action that fails without saying why).  The interface
   shows the text after `point_run: `.
 
+**2b. Running an action on paths.**  An interface whose goal display
+tags each printed subterm with its path (Rocq's `Set Printing Subterm
+Paths`, a prototype in the branch `path-tags` of a Rocq clone: each
+subterm's Pp is tagged `path:i.j.k`) sends the path of the selected
+subterm instead of a range:
+
+```
+elpi point_run_path "Name" "P".          (* kind point: in the conclusion *)
+elpi point_run_path "Name" "H" "P".      (* in the type of hypothesis H *)
+elpi point_run_path "Name" "P" "P'".     (* kind link: two selections *)
+elpi point_run_path "Name" "H" "P" "P'". (* ... in H and in the conclusion *)
+elpi point_run_path "Name" "H" "P" "H'" "P'".
+```
+
+- A path is `"i.j.k"` (`""` for the whole part), the path of the subterm
+  in its part (the conclusion, or the type of `H`), in the immediate
+  subterms of `kids` (pbp_select.v): an application `f a1 .. an` has `f`
+  at 0 and `ai` at `i`, `forall`/`fun` the type at 0 and the body at 1,
+  `let` the type, the value, the body at 0, 1, 2, a `match` the
+  scrutinee at 0, the return type at 1 and its branches from 2 (a branch
+  is the `fun` of the arguments of its constructor), a cast the type at
+  0 and the term at 1.  It is the tag of the innermost tagged subterm
+  containing the selection.  On `1 + 1 + a = double (1 + a)`, `1 + 1` is
+  `"2.1"` (eq's type, not printed, is 1), `1 + a` is `"3.1"`.
+- A string that is `""` or starts with a digit is a path, any other a
+  hypothesis name, which a path follows.
+- The part is not printed again and nothing is counted: the display and
+  the selection cannot disagree.  The result is the one of `point_run`
+  (the same `point-in` value; the patterns may put a hole at any
+  subterm, and are checked as before).  No selection is widened.
+- The errors are those of `point_run` (with `point_run_path: `), and `no
+  subterm at the path 5`, `not a path: 2.x`, `the subterm at the path
+  2.3 cannot be selected: it is the return type of a match or binds the
+  variables of a branch` (the pattern variable `k` of `S k` is tagged
+  with the path of its `fun`).
+- Tests: [point_paths_test.v](point_paths_test.v) (`elpi
+  point_run_path_expect "Name" Line Sel ...`), the same lines as
+  `point_run` where both apply.
+
 **3. Declaring an action.**  With a template:
 
 ```
