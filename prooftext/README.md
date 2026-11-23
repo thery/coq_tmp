@@ -309,7 +309,9 @@ is the one reader of cyp and of the Typst back end.
 - **header**: if the first line is `---` (spaces around it ignored), the
   lines up to the next line `---` are fields; a field line is `key:
   value`, spaces before the key and around the value ignored.  The keys
-  that have a meaning are the `header-key`s; a reader ignores the others.
+  that have a meaning are the `header-key`s; a reader ignores the others
+  (`unknown-header-keys Lines Keys` gives them: cyp names each in a
+  warning).
   Without a first line `---`, the header is empty;
 - **title**: the first line after the header that starts with `# `; the
   rest of the line, trimmed, is the name;

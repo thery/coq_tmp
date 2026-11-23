@@ -106,6 +106,21 @@ header-fields [nl _ L | Ls] [prooftext.field Key Value | Fs] Body :-
   header-fields Ls Fs Body.
 header-fields [_ | Ls] Fs Body :- header-fields Ls Fs Body.
 
+% [unknown-header-keys Lines Keys]: the keys of the field lines "key:
+% value" of the header of Lines that are not header-keys (a reader
+% ignores them, header-fields; cyp says so)
+pred unknown-header-keys i:list string, o:list string.
+unknown-header-keys [L | Ls] Keys :- prooftext.trim L "---", !, unknown-header-lines Ls Keys.
+unknown-header-keys _ [].
+pred unknown-header-lines i:list string, o:list string.
+unknown-header-lines [] [].
+unknown-header-lines [L | _] [] :- prooftext.trim L "---", !.
+unknown-header-lines [L | Ls] [Key | Ks] :-
+  rex.match "^ *[A-Za-z_-]+ *:" L,
+  rex.replace "^ *\\([A-Za-z_-]+\\) *:.*" "\\1" L Key, not (prooftext.header-key Key), !,
+  unknown-header-lines Ls Ks.
+unknown-header-lines [_ | Ls] Ks :- unknown-header-lines Ls Ks.
+
 % [title-of Lines Name After]: the name in the first line "# name", and
 % the lines after it
 pred title-of i:list numbered-line, o:string, o:list numbered-line.

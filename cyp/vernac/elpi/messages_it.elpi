@@ -15,6 +15,7 @@ message "it" "md-not-proved" "non dimostrato: %1".
 message "it" "md-not-parsed" "non si analizza: %1".
 message "it" "md-todo" "condizione %1, da dimostrare nel blocco Proof: %2".
 message "it" "time" "cyp: tempo %1 %2 ms".
+message "it" "header-key-ignored" "cyp: la riga di intestazione %1: è ignorata, %1 non è una chiave di intestazione".
 message "it" "definition-not-parsed" "la definizione %1 non si analizza".
 message "it" "variables-not-parsed" "le variabili %1 non si analizzano: %2".
 message "it" "hypothesis-not-parsed" "l'ipotesi %1 non si analizza: %2".

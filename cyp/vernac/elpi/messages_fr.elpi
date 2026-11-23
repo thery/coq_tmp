@@ -15,6 +15,7 @@ message "fr" "md-not-proved" "non démontré : %1".
 message "fr" "md-not-parsed" "ne s'analyse pas : %1".
 message "fr" "md-todo" "condition %1, à démontrer dans le bloc Proof : %2".
 message "fr" "time" "cyp: temps %1 %2 ms".
+message "fr" "header-key-ignored" "cyp: la ligne d'en-tête %1: est ignorée, %1 n'est pas une clé d'en-tête".
 message "fr" "definition-not-parsed" "la définition %1 ne s'analyse pas".
 message "fr" "variables-not-parsed" "les variables %1 ne s'analysent pas : %2".
 message "fr" "hypothesis-not-parsed" "l'hypothèse %1 ne s'analyse pas : %2".

@@ -34,7 +34,9 @@ check-file F Lang Name Ty Proof Rs Stated :-
   prooftext.field-value H "gaps" Gaps, prooftext.header-lang H Lang,
   by-clauses By Cl0, gaps-clauses Gaps Off, std.append Off Cl0 Cl,
   coq.say "cyp:" Name,
+  prooftext.unknown-header-keys Lines Unknown,
   (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
+    std.forall Unknown (k\ say "header-key-ignored" [k]),
     check-tree Top Ty Proof Rs Stated,
     timed "markdown" (write-md OutMd Lines Top Rs),
     timed "json" (write-json OutJs Top Rs)).
