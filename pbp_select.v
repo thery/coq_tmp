@@ -430,17 +430,20 @@ check-open _ _ _ _ _ :-
    What the actions of point_actions.v are given (and pbp_pattern uses) */
 
 kind point-in type.
-% [point-in Hs C Parts Ls] selections in a goal: Hs are the hypotheses
-% they are in (generalized, in the order of the context), C the goal with
+% [point-in Names Hs C Parts Ls] selections in a goal: Names are the
+% names of its hypotheses, Hs the hypotheses the selections are in (generalized, in the order of the context), C the goal with
 % Hs generalized, Parts its parts, Ls the selections (in the order given)
-type point-in list string -> term -> list part -> list loc -> point-in.
+type point-in list string -> list string -> term -> list part -> list loc ->
+              point-in.
 
 % [point-resolve Ctx G Sels In Ws] the selections Sels of the goal G
 % (context Ctx) are In; Ws are the texts of the subterms that selections
 % were widened to
 pred point-resolve i:goal-ctx, i:term, i:list sel, o:point-in,
                    o:list string.
-point-resolve Ctx G Sels (point-in Hs C Parts Ls) Ws :-
+point-resolve Ctx G Sels (point-in Names Hs C Parts Ls) Ws :-
+  std.map-filter Ctx (d\ h\ sigma V N T B\ (d = decl V N T ; d = def V N T B),
+                         coq.name->id N h) Names,
   sel-hyps Ctx Sels Hs, revert Ctx Hs G C, parts Ctx Hs G Parts,
   std.map Sels (s\ lw\ sigma L W\ locate Ctx Hs Parts s L W, lw = pr L W)
     LWs,
@@ -449,9 +452,18 @@ point-resolve Ctx G Sels (point-in Hs C Parts Ls) Ws :-
   (nested Ps, !,
    coq.ltac.fail 0 {msg "the two selections are the same subterm or one is inside the other"} ; true).
 
+% [point-names In Ns] Ns are the names of the hypotheses of the goal
+pred point-names i:point-in, o:list string.
+point-names (point-in Ns _ _ _ _) Ns.
+
+% [point-hyps In Hs] Hs are the hypotheses the selections are in, in the
+% order of the context (none for selections in the conclusion)
+pred point-hyps i:point-in, o:list string.
+point-hyps (point-in _ Hs _ _ _) Hs.
+
 % [point-count In N] there are N selections
 pred point-count i:point-in, o:int.
-point-count (point-in _ _ _ Ls) N :- std.length Ls N.
+point-count (point-in _ _ _ _ Ls) N :- std.length Ls N.
 
 % [avoid-names Hs Parts Avoid] Avoid are the names the variables of a
 % pattern must not take: the hypotheses Hs and the words of the parts
@@ -476,7 +488,7 @@ pattern-of Avoid Ps T Vis Pat :-
 % [point-pattern In Pat] Pat is the pattern of the selections in the goal
 % with their hypotheses generalized (the one of pbp)
 pred point-pattern i:point-in, o:string.
-point-pattern (point-in Hs C Parts Ls) Pat :-
+point-pattern (point-in _ Hs C Parts Ls) Pat :-
   std.map Parts (p\ vs\ sigma B T Shs\ p = part B T Shs,
                    std.map Shs (sh\ v\ sigma P\ sh = shown P _ _ _,
                                          std.append B P v) vs) Viss,
@@ -487,13 +499,13 @@ point-pattern (point-in Hs C Parts Ls) Pat :-
 % [point-revert In M] M is the tactic that generalizes the hypotheses of
 % the selections, "move: H1 H2; ", or "" if there are none
 pred point-revert i:point-in, o:string.
-point-revert (point-in [] _ _ _) "" :- !.
-point-revert (point-in Hs _ _ _) M :-
+point-revert (point-in _ [] _ _ _) "" :- !.
+point-revert (point-in _ Hs _ _ _) M :-
   std.string.concat " " Hs HsS, M is "move: " ^ HsS ^ "; ".
 
 % [point-part In I] the selections are all in the part number I
 pred point-part i:point-in, o:int.
-point-part (point-in _ _ _ [loc _ I _ | Ls]) I :-
+point-part (point-in _ _ _ _ [loc _ I _ | Ls]) I :-
   std.forall Ls (l\ l = loc _ I _), !.
 point-part _ _ :-
   coq.ltac.fail 0 {msg "the selections are not in the same hypothesis or both in the conclusion"}.
@@ -501,7 +513,7 @@ point-part _ _ :-
 % [point-in-hyp In S] S is " in H" if the selections are in the hypothesis
 % H, "" if they are in the conclusion
 pred point-in-hyp i:point-in, o:string.
-point-in-hyp (point-in Hs _ _ _ as In) S :-
+point-in-hyp (point-in _ Hs _ _ _ as In) S :-
   point-part In I, std.length Hs N,
   (I = N, !, S = "" ; std.nth I Hs H, S is " in " ^ H).
 
@@ -509,7 +521,7 @@ point-in-hyp (point-in Hs _ _ _ as In) S :-
 % their own part, the conclusion or the type of their hypothesis (as for
 % rewrite ... in H)
 pred point-local-pattern i:point-in, o:string.
-point-local-pattern (point-in Hs _ Parts Ls as In) Pat :-
+point-local-pattern (point-in _ Hs _ Parts Ls as In) Pat :-
   point-part In I, std.nth I Parts (part _ T Shs),
   std.map Shs (sh\ v\ sh = shown v _ _ _) Vis,
   avoid-names Hs Parts Avoid,
@@ -519,13 +531,13 @@ point-local-pattern (point-in Hs _ Parts Ls as In) Pat :-
 % [point-text In I S] S is the text of the selection number I (from 0),
 % on one line
 pred point-text i:point-in, i:int, o:string.
-point-text (point-in _ C _ Ls) I S :-
+point-text (point-in _ _ C _ Ls) I S :-
   std.nth I Ls (loc P _ _), text-at P C S.
 
 % [point-head In I GR] GR is the head of the selection number I (from 0):
 % the selection is GR or an application of GR
 pred point-head i:point-in, i:int, o:gref.
-point-head (point-in _ C _ Ls) I GR :-
+point-head (point-in _ _ C _ Ls) I GR :-
   std.nth I Ls (loc P _ _), head-at P C GR.
 
 % [head-at P T GR] the subterm of T at path P is GR or an application of

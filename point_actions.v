@@ -6,7 +6,7 @@
    Rocq, by any loaded file; the interface only lists them and runs the
    chosen one:
 
-     PointAction "Point" point "{revert}pbp {pattern}." "...".
+     PointAction "Point" point "{pre:revert}pbp {path:pbp}{post:revert}." "...".
      elpi point_actions.              prints the actions (JSON)
      elpi point_run "Point" 0 1.      prints the line, pbp [X in X + _ = _].
 
@@ -20,15 +20,24 @@
    pbp_select.v), and gives the line; PointAction declares one from a
    template, a line with placeholders:
 
-     {pattern}  the pattern of pbp, [X in ...] or [X Y in ...], in the goal
-                where the hypotheses of the selections are generalized
-     {revert}   the tactic that generalizes them, "move: H; ", or ""
-     {local}    the pattern in the part of the goal the selections are in,
-                the conclusion or the type of the hypothesis H
-     {in}       " in H" if the selections are in the hypothesis H, else ""
+     {path:M}   where the selections are, written by the path method M
+                (pbp: [X in X + _ = _], occ: {2}, at: 2, path: [2, 1]), in
+                the goal where the hypotheses of the selections are
+                generalized
+     {local:M}  the same in the part the selections are in, the conclusion
+                or the type of their hypothesis
+     {pre:S}    what the hypothesis strategy S (revert: "move: H; ",
+                in: "", forward: "have H' := H; ") writes before the core
+     {post:S}   what it writes after the core (revert: "", in: " in H",
+                forward: " in H'")
      {head}     the constant that the (first) selection is, or that it is
                 an application of
      {text}     the (first) selected subterm, as printed
+     {pattern} {local} {revert} {in}: {path:pbp} {local:pbp} {pre:revert}
+                {post:in}, their former names
+
+   Path methods (point-path) and strategies (point-hyp-strategy) are
+   declared by Elpi clauses in pbp_select.db, as below.
 
    An action written in Elpi is declared by accumulating a clause of
    point-action in pbp_select.db (point_actions_test.v has one). *)
@@ -59,6 +68,124 @@ pred point-action o:string, o:point-kind, o:string,
 % PointAction in the library Lib, at the line Line (none for the actions
 % declared by an Elpi clause)
 pred point-action-origin o:string, o:string, o:int.
+
+/* ---------------- Path methods ----------------
+   A path method writes where the selections are, in a form a tactic
+   reads: pbp's pattern [X in ...], ssreflect's occurrences {2}, ... */
+
+kind point-scope type.
+type path-goal point-scope.   % in the goal where the hypotheses of the
+                              % selections are generalized
+type path-part point-scope.   % in their own part: the conclusion, or the
+                              % type of their hypothesis
+
+% [point-path Name Doc Impl] the path method Name, described by Doc, writes
+% Impl Scope In S for the selections In, in the scope Scope (or fails
+% with a message)
+pred point-path o:string, o:string,
+                o:(pred i:point-scope, i:point-in, o:string).
+
+% [scope-term Sc In T Ps] T is the term the selections In are in, for the
+% scope Sc, and Ps their paths in T
+pred scope-term i:point-scope, i:point-in, o:term, o:list (list int).
+scope-term path-goal (point-in _ _ C _ Ls) C Ps :- std.map Ls loc-path Ps.
+scope-term path-part (point-in _ _ _ Parts Ls as In) T Ps :-
+  point-part In I, std.nth I Parts (part _ T _),
+  std.map Ls (l\ p\ l = loc _ _ p) Ps.
+
+% [term-at P T R] R is the subterm of T at path P; it fails if R uses a
+% variable bound in T
+pred term-at i:list int, i:term, o:term.
+term-at [] T T.
+term-at [I|P] T R :- kids T Ks, std.nth I Ks K, kid-term P K R.
+
+pred kid-term i:list int, i:kid, o:term.
+kid-term P (kt T) R :- term-at P T R.
+kid-term P (kb _ _ B) R :- pi x\ term-at P (B x) R.
+
+% [occurrences Sc In Ns] the selections In are the occurrences number Ns
+% (from 1) of their subterm, in the scope Sc: the subterms equal to it,
+% left to right (heads before arguments, binder types before bodies), as
+% ssreflect's {n} and Rocq's "at n" count them
+pred occurrences i:point-scope, i:point-in, o:list int.
+occurrences Sc In Ns :-
+  scope-term Sc In T Ps,
+  msg "the selection uses a variable bound in the goal: it has no occurrence number" M1,
+  std.map Ps (p\ r\ (term-at p T r, ! ; coq.ltac.fail 0 M1)) [R|Rs],
+  (std.forall Rs (r\ r == R), ! ;
+   coq.ltac.fail 0 {msg "the two selections are not the same term: they have no common occurrence numbers"}),
+  std.findall (path-of T P_) Sols,
+  std.map-filter Sols (s\ p\ sigma R1\ s = path-of T p, term-at p T R1, R1 == R)
+    Occs,
+  std.map Ps (p\ n\ occurrence-number Occs p 1 n) Ns0,
+  (Ns0 = [A, B], A > B, !, Ns = [B, A] ; Ns = Ns0).
+
+pred occurrence-number i:list (list int), i:list int, i:int, o:int.
+occurrence-number [P|_] P N N :- !.
+occurrence-number [_|Ps] P N M :- N1 is N + 1, occurrence-number Ps P N1 M.
+
+% [ints-text Ns S] S is the numbers Ns separated by spaces
+pred ints-text i:list int, o:string.
+ints-text Ns S :- std.map Ns (n\ s\ s is int_to_string n) Ss,
+  std.string.concat " " Ss S.
+
+pred path-pbp i:point-scope, i:point-in, o:string.
+path-pbp path-goal In S :- point-pattern In S.
+path-pbp path-part In S :- point-local-pattern In S.
+
+pred path-occ i:point-scope, i:point-in, o:string.
+path-occ Sc In S :- occurrences Sc In Ns, ints-text Ns T, S is "{" ^ T ^ "}".
+
+pred path-at i:point-scope, i:point-in, o:string.
+path-at Sc In S :- occurrences Sc In Ns, ints-text Ns S.
+
+pred path-raw i:point-scope, i:point-in, o:string.
+path-raw Sc In S :-
+  scope-term Sc In _ Ps,
+  std.map Ps (p\ s\ sigma Ss B\ std.map p (n\ t\ t is int_to_string n) Ss,
+                    std.string.concat ", " Ss B, s is "[" ^ B ^ "]") Ts,
+  std.string.concat " " Ts S.
+
+point-path "pbp" "pbp's pattern: [X in X + _ = _] ([X Y in ...] for two selections)" path-pbp.
+point-path "occ" "ssreflect's occurrences of the selected term: {2} ({1 3} for two selections of the same term)" path-occ.
+point-path "at" "Rocq's occurrences (unfold, pattern ... at n): 2 (1 3 for two)" path-at.
+point-path "path" "the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its type is 0 and its body 1): [1, 2] (two lists for two selections)" path-raw.
+
+/* ---------------- Hypothesis strategies ----------------
+   How an action on selections in hypotheses is written: what comes before
+   the core of the line and what comes after it (before its final dot) */
+
+% [point-hyp-strategy Name Doc Impl] the strategy Name, described by Doc,
+% writes Impl In Pre Post around the core of the line, for the selections
+% In (or fails with a message)
+pred point-hyp-strategy o:string, o:string,
+                        o:(pred i:point-in, o:string, o:string).
+
+% [one-hyp In H] the selections are in the hypothesis H, or in the
+% conclusion (H = "")
+pred one-hyp i:point-in, o:string.
+one-hyp In H :-
+  point-hyps In Hs,
+  (Hs = [], !, H = "" ;
+   Hs = [H0], point-part In _, !, H = H0 ;
+   coq.ltac.fail 0 {msg "the selections are in two places: they cannot be changed in place"}).
+
+pred hyp-revert i:point-in, o:string, o:string.
+hyp-revert In Pre "" :- point-revert In Pre.
+
+pred hyp-in i:point-in, o:string, o:string.
+hyp-in In "" Post :- one-hyp In H, (H = "", !, Post = "" ; Post is " in " ^ H).
+
+pred hyp-forward i:point-in, o:string, o:string.
+hyp-forward In Pre Post :-
+  one-hyp In H,
+  (H = "", !, Pre = "", Post = "" ;
+   point-names In Names, fresh-name {calc (H ^ "'")} Names 0 H1,
+   Pre is "have " ^ H1 ^ " := " ^ H ^ "; ", Post is " in " ^ H1).
+
+point-hyp-strategy "revert" "move the hypotheses to the goal first (move: H; ...), the core acts on the goal" hyp-revert.
+point-hyp-strategy "in" "act in the hypothesis itself (... in H)" hyp-in.
+point-hyp-strategy "forward" "act in a copy of the hypothesis (have H' := H; ... in H'), H stays" hyp-forward.
 
 /* ---------------- Templates ---------------- */
 
@@ -92,27 +219,45 @@ pred tpl-lit i:string, i:int, i:int, i:list tpart, o:list tpart.
 tpl-lit _ St St Rest Rest :- !.
 tpl-lit S St I Rest [tlit T | Rest] :- T is substring S St (I - St).
 
-% [placeholder Name] Name is a placeholder of the templates
-pred placeholder o:string.
-placeholder "pattern".
-placeholder "revert".
-placeholder "local".
-placeholder "in".
-placeholder "head".
-placeholder "text".
+% [prefixed P S R] S is P followed by R
+pred prefixed i:string, i:string, o:string.
+prefixed P S R :- starts-with P S, R is substring S (size P) (size S - size P).
+
+% [placeholder Name] Name is a placeholder of the templates: a fixed one,
+% path:M or local:M for a path method M, pre:S or post:S for a strategy S
+pred placeholder i:string.
+placeholder N :- std.mem! ["pattern", "revert", "local", "in", "head", "text"] N, !.
+placeholder N :- (prefixed "path:" N M ; prefixed "local:" N M), point-path M _ _, !.
+placeholder N :- (prefixed "pre:" N S ; prefixed "post:" N S), point-hyp-strategy S _ _, !.
+
+% [placeholders-text S] S describes the placeholders, for an error
+pred placeholders-text o:string.
+placeholders-text S :-
+  std.findall (point-path M_ D_ I_) Ms, std.map Ms (c\ m\ c = point-path m _ _) MNs,
+  std.findall (point-hyp-strategy N_ E_ J_) Ss, std.map Ss (c\ m\ c = point-hyp-strategy m _ _) SNs,
+  std.string.concat ", " MNs MS, std.string.concat ", " SNs SS,
+  S is "{pattern} {revert} {local} {in} {head} {text}, {path:M} {local:M} for a path method M (" ^ MS ^ "), {pre:S} {post:S} for a hypothesis strategy S (" ^ SS ^ ")".
 
 % [placeholder-value Name In V] the placeholder Name is V for the
 % selections In
 pred placeholder-value i:string, i:point-in, o:string.
-placeholder-value "pattern" In V :- point-pattern In V.
-placeholder-value "revert" In V :- point-revert In V.
-placeholder-value "local" In V :- point-local-pattern In V.
-placeholder-value "in" In V :- point-in-hyp In V.
-placeholder-value "head" In V :-
+placeholder-value "pattern" In V :- !, placeholder-value "path:pbp" In V.
+placeholder-value "local" In V :- !, placeholder-value "local:pbp" In V.
+placeholder-value "revert" In V :- !, placeholder-value "pre:revert" In V.
+placeholder-value "in" In V :- !, placeholder-value "post:in" In V.
+placeholder-value "head" In V :- !,
   (point-head In 0 (const C), ! ;
    coq.ltac.fail 0 {msg "the selection is not a constant nor an application of a constant"}),
   coq.term->string (global (const C)) V0, rex.replace "^@" "" V0 V.
-placeholder-value "text" In V :- point-text In 0 V.
+placeholder-value "text" In V :- !, point-text In 0 V.
+placeholder-value N In V :- prefixed "path:" N M, !,
+  point-path M _ Impl, !, Impl path-goal In V.
+placeholder-value N In V :- prefixed "local:" N M, !,
+  point-path M _ Impl, !, Impl path-part In V.
+placeholder-value N In V :- prefixed "pre:" N S, !,
+  point-hyp-strategy S _ Impl, !, Impl In V _.
+placeholder-value N In V :- prefixed "post:" N S, !,
+  point-hyp-strategy S _ Impl, !, Impl In _ V.
 
 % [point-template T In Line] Line is the template T for the selections In
 pred point-template i:string, i:point-in, o:string.
@@ -199,8 +344,7 @@ main [str Name, str K, str T, str Doc] :- !,
    coq.error "PointAction: a { is not closed in the template" T),
   std.forall Ps (p\ sigma N\ (p = thole N, !,
     (placeholder N, ! ;
-     std.findall (placeholder N_) L, std.map L (c\ s\ sigma M\ c = placeholder M, s is "{" ^ M ^ "}") Ls,
-     std.string.concat " " Ls LS,
+     placeholders-text LS,
      coq.error "PointAction: unknown placeholder" {calc ("{" ^ N ^ "}")} "in the template; the placeholders are" LS) ; true)),
   coq.env.current-path Path, std.string.concat "." Path Lib,
   (attributes As, std.mem As (attribute "elpi.loc" (leaf-loc Loc)), !,
@@ -250,13 +394,52 @@ main _ :- coq.error "PointActions: no arguments".
 }}.
 Elpi Export PointActions.
 
-(* [Elpi point_actions_text_expect S], for the tests: fails unless
-   PointActions prints S *)
-Elpi Command point_actions_text_expect.
+(* [PointPaths] and [PointStrategies] print the path methods and the
+   hypothesis strategies declared at this point, in the order of their
+   declarations: name, Elpi predicate, doc.  Commands: outside proofs too. *)
+Elpi Accumulate pbp_select.db lp:{{
+% [paths-text S] S describes the path methods
+pred paths-text o:string.
+paths-text S :-
+  std.findall (point-path N_ D_ I_) Ps,
+  std.map Ps (c\ t\ sigma N D I P\ c = point-path N D I, term_to_string I P,
+                t is N ^ " (Elpi: " ^ P ^ ")\n  " ^ D) Ts,
+  std.length Ps Nb, std.string.concat "\n" Ts B,
+  S is "Path methods (" ^ int_to_string Nb ^ "), {path:M} or {local:M}:\n" ^ B.
+
+% [strategies-text S] S describes the hypothesis strategies
+pred strategies-text o:string.
+strategies-text S :-
+  std.findall (point-hyp-strategy N_ D_ I_) Ps,
+  std.map Ps (c\ t\ sigma N D I P\ c = point-hyp-strategy N D I, term_to_string I P,
+                t is N ^ " (Elpi: " ^ P ^ ")\n  " ^ D) Ts,
+  std.length Ps Nb, std.string.concat "\n" Ts B,
+  S is "Hypothesis strategies (" ^ int_to_string Nb ^ "), {pre:S} and {post:S}:\n" ^ B.
+}}.
+Elpi Command PointPaths.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
-main [str Exp] :- actions-text S,
-  (S = Exp, ! ; coq.error "point_actions_text_expect: got" S "expected" Exp).
+main [] :- !, paths-text S, coq.say S.
+main _ :- coq.error "PointPaths: no arguments".
+}}.
+Elpi Export PointPaths.
+Elpi Command PointStrategies.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+main [] :- !, strategies-text S, coq.say S.
+main _ :- coq.error "PointStrategies: no arguments".
+}}.
+Elpi Export PointStrategies.
+
+(* [Elpi point_text_expect What S], for the tests: fails unless the text
+   of What (actions, paths, strategies) is S *)
+Elpi Command point_text_expect.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+main [str W, str Exp] :-
+  (W = "actions", actions-text S ; W = "paths", paths-text S ;
+   W = "strategies", strategies-text S), !,
+  (S = Exp, ! ; coq.error "point_text_expect: got" S "expected" Exp).
 }}.
 
 (* [elpi point_actions] prints the actions, one message (a notice): a JSON
@@ -309,11 +492,13 @@ solve (goal _ _ _ _ [str Exp] as G) [seal G] :-
 
 (* ---------------- The actions declared here ---------------- *)
 
-PointAction "Point" point "{revert}pbp {pattern}."
+PointAction "Point" point "{pre:revert}pbp {path:pbp}{post:revert}."
   "pbp: bring the selected subformula to the surface of the goal".
-PointAction "Link" link "{revert}pbp {pattern}."
+PointAction "Link" link "{pre:revert}pbp {path:pbp}{post:revert}."
   "pbp: link the two selected subformulas".
-PointAction "Simplify here" point "rewrite {local}/={in}."
+PointAction "Simplify here" point "{pre:in}rewrite {local:pbp}/={post:in}."
   "simplify the selected subterm (ssreflect's rewrite /=, at the selection)".
-PointAction "Unfold here" point "rewrite {local}/{head}{in}."
+PointAction "Unfold here" point "{pre:in}rewrite {local:pbp}/{head}{post:in}."
   "unfold the constant at the head of the selected subterm, in it".
+PointAction "Name occurrence" point "{pre:in}set x := {local:occ}({text}){post:in}."
+  "name x this occurrence of the selected subterm (ssreflect's set x := {n}(t))".
