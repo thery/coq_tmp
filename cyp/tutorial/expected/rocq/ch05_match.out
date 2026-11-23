@@ -1,0 +1,6 @@
+cyp: even_plus_two
+cyp: even_plus_two proved, 4 steps
+even_plus_two
+     : forall n : nat,
+       (exists k : nat, n = 2 * k) -> exists k : nat, n + 2 = 2 * k
+exit 0

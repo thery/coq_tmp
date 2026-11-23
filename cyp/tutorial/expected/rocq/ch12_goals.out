@@ -1,0 +1,20 @@
+cyp: goals
+  ✅ 0
+  ✅ 3
+cyp: goals, 4 steps, 2 condition(s) left for the Proof block: 1, 2
+  🔶 condition 1: 0 <= Z.sqrt a
+  🔶 open goal 2 of the text: 0 <= Z.sqrt b
+2 goals (?c1)
+  
+  a, b : Z
+  H1 : 0 <= a
+  H2 : 0 <= b
+  ============================
+  0 <= Z.sqrt a
+
+goal 2 (?c2) is:
+ 0 <= Z.sqrt b
+cyp: goals proved
+goals
+     : forall a b : Z, 0 <= a -> 0 <= b -> 0 <= Z.sqrt a + Z.sqrt b + a
+exit 0

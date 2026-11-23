@@ -23,6 +23,7 @@ papers (in development):
   A larger case study (a floating-point paper) is kept in a private
   branch.  After *Colouring proofs: a lightweight approach to adding
   formal structure to proofs* (UITP 2003; ENTCS 103, 2004).
+  A tutorial with checked examples: [cyp/TUTORIAL.md](cyp/TUTORIAL.md).
 - [xtext/](xtext/README.md): **text from proofs**.  A Rocq-Elpi command,
   `ExtractText foo.`, that writes the proof term of `foo` as a coarse but
   faithful text, in ten languages (`in "fr"`): printed as plain text, or

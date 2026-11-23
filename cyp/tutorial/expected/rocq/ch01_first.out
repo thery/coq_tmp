@@ -1,0 +1,5 @@
+cyp: double_gt
+cyp: double_gt proved, 3 steps
+double_gt
+     : forall n : nat, 0 < n -> n < 2 * n
+exit 0

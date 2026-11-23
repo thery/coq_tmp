@@ -1,0 +1,6 @@
+cyp: length_app
+cyp: length_app proved, 5 steps
+length_app
+     : forall (A : Type) (l m : list A),
+       length (l ++ m) = length l + length m
+exit 0

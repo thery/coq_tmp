@@ -1,0 +1,4 @@
+cyp: goals
+Error:
+cyp: 2 of 4 steps of goals not proved (1, 2), see cyp-tutorial/ch12_goals.checked.md
+exit 1

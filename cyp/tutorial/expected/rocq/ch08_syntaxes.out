@@ -1,0 +1,9 @@
+cyp: praeclarum
+cyp: praeclarum proved, 6 steps
+cyp: praeclarum_free
+cyp: praeclarum_free proved, 6 steps
+praeclarum
+     : forall x y z t : Prop, (x -> z) -> (y -> t) -> x /\ y -> z /\ t
+praeclarum_free
+     : forall x y z t : Prop, (x -> z) -> (y -> t) -> x /\ y -> z /\ t
+exit 0

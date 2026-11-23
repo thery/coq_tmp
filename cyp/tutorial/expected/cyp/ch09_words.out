@@ -1,0 +1,4 @@
+cyp: words
+Error:
+cyp: 1 of 5 steps of words not proved (4), see cyp-tutorial/ch09_words.checked.md
+exit 1

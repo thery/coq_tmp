@@ -1,0 +1,33 @@
+cyp: errors
+cyp: errors
+  ✅ 0
+  ❌ 2 no_such_lemma names nothing known: no hypothesis, node, lemma or declared justification word (declare it: CypJustification "no_such_lemma" := tactic. or := rules.)
+  ❌ 3 the fact n <= 1 is no hypothesis or conclusion visible here
+  ❌ 4 line 13: a node with no conclusion: it has tags, but no {.claim}
+  ✅ 4.1
+  ❌ 5 line 15: k is out of scope here
+  ❌ 6 line 16: a node with two conclusions, n <= 9 and n <= 9
+  ✅ 6.1
+  ❌ 7 line 20: an unknown class, {.clam}; line 20: a node with no conclusion: it has tags, but no {.claim}
+  ❌ 8 does not parse: Syntax error: [term] expected after '<=' (in [term]).
+  ✅ 9
+cyp: errors, 7 node(s) with an error (❌ above): 2, 3, 4, 5, 6, 7, 8
+cyp: errors, 12 steps, 4 condition(s) left for the Proof block: 1, 2, 3, 5
+  🔶 condition 1: n <= 2
+  🔶 condition 2: n <= 6
+  🔶 condition 3: n <= 7
+  🔶 condition 5: n <= 8
+4 goals (?c1)
+  
+  n : nat
+  h : n <= 3
+  ============================
+  n <= 2
+
+goal 2 (?c2) is:
+ n <= 6
+goal 3 (?c3) is:
+ n <= 7
+goal 4 (?c5) is:
+ n <= 8
+exit 0

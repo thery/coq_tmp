@@ -1,0 +1,24 @@
+cyp: facts
+cyp: facts
+  ✅ 0
+  ✅ 1
+  ✅ 2
+  ✅ 4
+  ❌ 5 the fact n <= 1 is no hypothesis or conclusion visible here
+  ✅ 6
+cyp: facts, 1 node(s) with an error (❌ above): 5
+cyp: facts, 7 steps, 2 condition(s) left for the Proof block: 3, 5
+  🔶 condition 3: n <= 2
+  🔶 condition 5: n <= 8
+2 goals (?c3)
+  
+  n : nat
+  h : n <= 3
+  c1 : n <= 4
+  c2 : n <= 6
+  ============================
+  n <= 2
+
+goal 2 (?c5) is:
+ n <= 8
+exit 0

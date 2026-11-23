@@ -1,0 +1,5 @@
+cyp: roles
+cyp: roles proved, 4 steps
+roles
+     : forall a b : nat, a <= b -> b <= 10 -> a + b <= 20
+exit 0

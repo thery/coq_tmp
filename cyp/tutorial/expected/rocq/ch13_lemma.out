@@ -1,0 +1,20 @@
+cyp: double_gt'
+  ✅ 0
+  ✅ 1
+  ✅ 2
+cyp: double_gt', 3 steps, every condition discharged
+cyp: double_gt' proved
+double_gt'
+     : forall n : nat, 0 < n -> n < 2 * n
+cyp: wrong
+  ✅ 0
+  ✅ 2
+cyp: wrong, 3 steps, 1 condition(s) left for the Proof block: 1
+  🔶 condition 1: 2 * n < n
+1 goal (?c1)
+  
+  n : nat
+  h : 0 < n
+  ============================
+  2 * n < n
+exit 0

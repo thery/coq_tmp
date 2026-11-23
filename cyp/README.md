@@ -1,5 +1,11 @@
 # cyp: coloured proofs
 
+**New to cyp?**  Start with the tutorial, [TUTORIAL.md](TUTORIAL.md) and
+[TUTORIAL-2.md](TUTORIAL-2.md): small checked examples, from a first proof
+to the Rocq commands, each one also runnable in the browser
+([rocq-web](https://thery.github.io/rocq-web/?example=cyp-tutorial&file=ch01_first.v)).
+This README is the reference.
+
 A proof is written in Markdown, as on paper.  cyp turns each node of its tree into a
 Rocq goal, tries to prove it, and writes the proof back in Markdown, with
 ✅ in front of each proved node and ❌ in front of the others; under a ❌, a

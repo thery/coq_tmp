@@ -1,0 +1,7 @@
+cyp: justifications
+cyp: justifications proved, 8 steps
+justifications
+     : forall (P Q : nat -> Prop) (n : nat),
+       (forall m : nat, m <= n -> P m) ->
+       (forall m : nat, P m -> Q m) -> Q (n + 0) /\ n * 1 = n
+exit 0

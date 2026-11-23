@@ -1,0 +1,56 @@
+cyp: structure
+  P : Prop
+  Q : Prop
+  R : Prop
+  pq : P -> Q
+  qr : Q -> R
+  p : P
+  ============================
+  Q
+
+  P : Prop
+  Q : Prop
+  R : Prop
+  pq : P -> Q
+  qr : Q -> R
+  p : P
+  q : Q
+  ============================
+  R
+
+  P : Prop
+  Q : Prop
+  R : Prop
+  pq : P -> Q
+  qr : Q -> R
+  p : P
+  q : Q
+  r : R
+  ============================
+  R /\ Q
+
+  P : Prop
+  Q : Prop
+  R : Prop
+  pq : P -> Q
+  qr : Q -> R
+  c1 : P -> R /\ Q
+  ============================
+  P -> R /\ Q
+
+  P : Prop
+  Q : Prop
+  R : Prop
+  pq : P -> Q
+  qr : Q -> R
+  c1 : P -> R /\ Q
+  c2 : P -> R /\ Q
+  ============================
+  P -> R /\ Q
+
+cyp: structure, 5 steps, 5 conditions
+cyp: structure
+cyp: structure proved, 5 steps
+structure
+     : forall P Q R : Prop, (P -> Q) -> (Q -> R) -> P -> R /\ Q
+exit 0

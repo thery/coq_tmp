@@ -1,0 +1,4 @@
+cyp: facts
+Error:
+cyp: 2 of 7 steps of facts not proved (3, 5), see cyp-tutorial/ch03_facts.checked.md
+exit 1
