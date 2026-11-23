@@ -2,7 +2,7 @@
 
 # Checking the texts with cyp
 
-`sh cyprun.sh LIMIT name...` copies each text to `cyp-check/`, adds a
+`sh cyprun.sh name...` copies each text to `cyp-check/`, adds a
 `flags:` line to its header (so that `Require Import XText.<file>`
 finds the example files), and runs cyp's driver (`cyp/bin/cyp.ml`, which runs
 `Cyp File` in the switch `elpi5`; `CYP_LIB` the directory where

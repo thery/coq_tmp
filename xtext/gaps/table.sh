@@ -1,8 +1,9 @@
 #!/bin/sh
 # The results of probe.sh as one line per condition and candidate:
 #   text  condition  tactic  OK|KO  seconds
-# (a candidate stopped by its time limit has no time line: its seconds are
-# the limit, 2).  The goals of the Proof block are in the order of the
+# (the old tables, made with Probe.v under a time limit of 2 s, had no time
+# line for a candidate stopped by it; Probe.v has no time limit now).
+# The goals of the Proof block are in the order of the
 # text, the order of cyp's lines 🔶 (condition NUMBER: goal); Ltac cannot
 # read a goal's name, so the k-th line COND of Probe.v is the k-th of them.
 #   usage: sh table.sh OUTDIR/*.log

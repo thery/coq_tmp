@@ -26,9 +26,9 @@ constructor.
 - `make_mode.sh CONTRACTION ANNOTATION OUTDIR`: all the English texts of
   xtext written with one setting of `XTEXT_CONTRACTION` and
   `XTEXT_ANNOTATION`, from a copy of `xtext/` (nothing here is touched);
-- `probe.sh LIMIT OUTDIR text.md...`: each text checked by `Cyp File` with
-  a Proof block, one text at a time, under `nice`, with a time limit per
-  text (LIMIT, a guard of the run only: see "No time limit" below) and at most `CYP_MEMORY_GB` (default 8) GB of memory; it prints the
+- `probe.sh OUTDIR text.md...`: each text checked by `Cyp File` with
+  a Proof block, one text at a time, under `nice`, with no time limit
+  (see "No time limit" below) and at most `CYP_MEMORY_GB` (default 8) GB of memory; it prints the
   time, the conditions and the maximum memory of each text.  On each
   condition left open (every condition with `BARE=1`) it runs the Ltac
   `PROBE` of `Probe.v`: `gap_probe` (the candidates for `cyp_gap`),
@@ -212,6 +212,6 @@ examples and on xtext's texts, xtext's texts and the probe's counts are
 the same with the guard (and cyp's `cyp_lia`, `cyp_nia` now run
 `guarded_lia`, `guarded_nia`).  The guard bounds what `lia` is given, not
 its search: a goal under the bounds may still be hard; none of the
-measured calls ran away.  So the time limit of a whole run (`LIMIT` of
-`probe.sh` and `cyprun.sh`, `timeout 300` of `cyp/gaps_regress.sh`) is
-kept, as a guard of the run: it changes no result of a run that finishes.
+measured calls ran away.  No run has a time limit either: `probe.sh`,
+`cyprun.sh` and `cyp/gaps_regress.sh` run each text to its end (lra,
+nra and Rocq's reduction end, but have no bound).

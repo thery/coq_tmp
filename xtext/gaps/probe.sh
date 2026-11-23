@@ -1,19 +1,17 @@
 #!/bin/sh
 # Try the candidate tactics of Probe.v on the conditions that cyp leaves
-# open in xtext's texts, one text at a time, under nice, with a time limit
-# per text and at most CYP_MEMORY_GB (default 8) GB of memory.
-#   usage: [PROBE=gap_final] sh probe.sh LIMIT OUTDIR text.md...
-# LIMIT guards the run only (a text that does not finish has no line of
-# results); the candidates have no time limit: each is bounded, or ends,
-# or is lia/nia behind lia_guard, whose search has no bound (README.md,
-# "No time limit"), which is why the guard is kept.
+# open in xtext's texts, one text at a time, under nice, with at most
+# CYP_MEMORY_GB (default 8) GB of memory.
+#   usage: [PROBE=gap_final] sh probe.sh OUTDIR text.md...
+# No time limit: each candidate is bounded, or ends, or is lia/nia behind
+# lia_guard (README.md, "No time limit").
 # BARE=1: every condition of the text, nothing tried by cyp (#[bare]).
 # PROBE: the Ltac run on each open condition, gap_probe (the candidates,
 # default) or gap_final (cyp_gap alone); CYP_LIB: the cyp library to use.
 # For each text it writes OUTDIR/name.v (the header's require:, Cyp File
 # in proof mode, gap_probe on every open condition) and OUTDIR/name.log,
 # and prints: name, seconds, open conditions, maximum memory (KB).
-lim=$1; out=$2; shift 2
+out=$1; shift
 here=$(cd "$(dirname "$0")" && pwd)
 xt=$(cd "$here/.." && pwd)
 lex=$(cd "$xt/../lexicon" && pwd)
@@ -36,7 +34,7 @@ for md in "$@"; do
     echo "${BARE:+#[bare] }Cyp File \"$out/$n.md\"."
     echo "Proof. all: (match goal with |- _ => ${PROBE:-gap_probe} end). Abort."; } > "$out/$n.v"
   s=$(date +%s)
-  (cd "$out" && nice -n 19 timeout "$lim" /usr/bin/time -f "MAXRSS %M" rocq c -Q "$CYP_LIB" CypV -Q "$lex" Lexicon -Q "$pt" ProofText \
+  (cd "$out" && nice -n 19 /usr/bin/time -f "MAXRSS %M" rocq c -Q "$CYP_LIB" CypV -Q "$lex" Lexicon -Q "$pt" ProofText \
      -Q "$out/probe" Gaps -R "$xt" XText "$n.v" > "$n.log" 2>&1)
   printf "%s\t%s\t%s\t%s\n" "$n" "$(( $(date +%s) - s ))" "$(grep -c "^COND" "$out/$n.log")" "$(sed -n "s/^MAXRSS //p" "$out/$n.log")"
 done

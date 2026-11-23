@@ -14,13 +14,13 @@ for md in "$here"/examples/*.md "$here"/vernac/*.md; do
   case $md in *.checked.md|*/README.md) continue ;; esac
   n=$(basename "$md" .md)
   s=$(date +%s%N)
-  nice -n 19 timeout 300 "$exe" "$md" > "$out/$n.out" 2>&1
+  nice -n 19 "$exe" "$md" > "$out/$n.out" 2>&1
   echo "total $(( ($(date +%s%N) - s) / 1000000 )) ms" >> "$out/$n.out"
   j=${md%.md}.cyp.json; [ -f "$j" ] && cp "$j" "$out/$n.json"
 done
 cd "$here/vernac" || exit 1
 for v in vc_demo vc_file bare_demo square_pos named_v wrong errors_v errors_file goal_file match_v; do
   s=$(date +%s%N)
-  nice -n 19 timeout 300 rocq c -Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText $v.v > "$out/$v.v.out" 2>&1
+  nice -n 19 rocq c -Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText $v.v > "$out/$v.v.out" 2>&1
   echo "exit $? total $(( ($(date +%s%N) - s) / 1000000 )) ms" >> "$out/$v.v.out"
 done
