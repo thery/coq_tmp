@@ -46,6 +46,17 @@ Definition pbp_hole {A : Type} {a : A} : A := a.
 
 Elpi Db pbp_select.db lp:{{
 
+/* ---------------- Messages ---------------- */
+
+% [tool-name T] the errors and warnings start with T, the name of the
+% tactic that is run (point_run sets it for its own messages)
+pred tool-name o:string.
+tool-name "pbp_pattern".
+
+% [msg S M] M is the message S, after the name of the tactic
+pred msg i:string, o:string.
+msg S M :- tool-name T, !, M is T ^ ": " ^ S.
+
 /* ---------------- Strings ---------------- */
 
 % [flat S F] F is S without its blanks
@@ -248,15 +259,15 @@ parse-sels [int S, int E | As] [sel-goal S E | Sels] :- !,
 parse-sels [str H, int S, int E | As] [sel-hyp H S E | Sels] :- !,
   parse-sels As Sels.
 parse-sels _ _ :-
-  coq.ltac.fail 0 "pbp_pattern: a selection is S E (a range in the conclusion) or H S E (a range in the hypothesis H)".
+  coq.ltac.fail 0 {msg "a selection is S E (a range in the conclusion) or H S E (a range in the hypothesis H)"}.
 
 % [hyp-of Ctx H V T] H is the name of the hypothesis V of type T in Ctx
 % (not a local definition)
 pred hyp-of i:goal-ctx, i:string, o:term, o:term.
 hyp-of Ctx H V T :- std.mem Ctx (decl V N T), coq.name->id N H, !.
 hyp-of Ctx H _ _ :- std.mem Ctx (def _ N _ _), coq.name->id N H, !,
-  coq.ltac.fail 0 "pbp_pattern: the hypothesis" H "is a definition".
-hyp-of _ H _ _ :- coq.ltac.fail 0 "pbp_pattern: no hypothesis" H.
+  coq.ltac.fail 0 {msg "the hypothesis"} H "is a definition".
+hyp-of _ H _ _ :- coq.ltac.fail 0 {msg "no hypothesis"} H.
 
 % [sel-hyps Ctx Sels Hs] Hs are the hypotheses of the selections Sels, in
 % the order of the context (the oldest first)
@@ -297,27 +308,38 @@ parts Ctx Hs G Ps :-
   std.length Hs N, ones N BG, shown-all G ShG,
   std.append PHs [part BG G ShG] Ps.
 
-% [locate Ctx Hs Ps Sel P W] the selection Sel is the subterm at path P of
-% the generalized goal; W is its text if the selection had to be widened
-% to it, "" otherwise
-pred locate i:goal-ctx, i:list string, i:list part, i:sel, o:list int,
+kind loc type.
+% [loc P I P0] a selection: the subterm at path P of the generalized goal,
+% in its part number I (the hypotheses, then the conclusion), at path P0 of
+% that part
+type loc list int -> int -> list int -> loc.
+
+% [loc-path L P] P is the path of the selection L in the generalized goal
+pred loc-path i:loc, o:list int.
+loc-path (loc P _ _) P.
+
+% [locate Ctx Hs Ps Sel L W] the selection Sel is L; W is the text of the
+% subterm if the selection had to be widened to it, "" otherwise
+pred locate i:goal-ctx, i:list string, i:list part, i:sel, o:loc,
             o:string.
-locate _ Hs Ps (sel-goal S E) P W :- !,
-  std.length Hs N, std.nth N Ps Part, locate-in Part S E P W.
-locate _ Hs Ps (sel-hyp H S E) P W :-
+locate _ Hs Ps (sel-goal S E) (loc P N P0) W :- !,
+  std.length Hs N, std.nth N Ps Part, locate-in Part S E P P0 W.
+locate _ Hs Ps (sel-hyp H S E) (loc P I P0) W :-
   std.length Hs N, std.iota N Is,
   std.mem Is I, std.nth I Hs H, !, std.nth I Ps Part,
-  locate-in Part S E P W.
+  locate-in Part S E P P0 W.
 % (no hypothesis H: hyp-of fails with the error)
 locate Ctx _ _ (sel-hyp H _ _) _ _ :- hyp-of Ctx H _ _, !, fail.
 
-% [locate-in Part S E P W] the range [S, E) of the part Part is the
-% subterm at path P (from the generalized goal), W as in locate
-pred locate-in i:part, i:int, i:int, o:list int, o:string.
-locate-in (part B T Shs) S E P W :-
+% [locate-in Part S E P P0 W] the range [S, E) of the part Part is its
+% subterm at path P0, at path P of the generalized goal, W as in locate
+pred locate-in i:part, i:int, i:int, o:list int, o:list int, o:string.
+locate-in _ S E _ _ _ :- E < S, !,
+  coq.ltac.fail 0 {msg "the range"} S E "ends before it starts".
+locate-in (part B T Shs) S E P P0 W :-
   (E = S, E1 is S + 1 ; E > S, E1 = E), !,
   (smallest Shs S E1 Sh ;
-   coq.ltac.fail 0 "pbp_pattern: the range" S E "is not in the printed term"),
+   coq.ltac.fail 0 {msg "the range"} S E "is not in the printed term"),
   !, Sh = shown P0 _ _ _,
   ((E = S ; exact Sh S E), !, W = "" ; text-at P0 T W),
   std.append B P0 P.
@@ -386,8 +408,8 @@ check Text Ps C :-
   coq.parse.argument S ff "" A D,
   (D = ok, A = trm Pat, !, check-open Pat Ps Ps [] C ;
    D = error M, !,
-   coq.ltac.fail 0 "pbp_pattern: the pattern" Text "does not elaborate:" M ;
-   coq.ltac.fail 0 "pbp_pattern: the pattern" Text "is not a term").
+   coq.ltac.fail 0 {msg "the pattern"} Text "does not elaborate:" M ;
+   coq.ltac.fail 0 {msg "the pattern"} Text "is not a term").
 
 % [check-open Pat Ps Ps1 Xs C] the body of the pattern Pat (whose first
 % variables are Xs) is C with its variables at the paths Ps (Ps1 are the
@@ -402,7 +424,124 @@ check-open Body Ps [] Xs C :-
   pattern Sels [] [] [] C C1,
   coq.unify-eq Body C1 ok, !.
 check-open _ _ _ _ _ :-
-  coq.ltac.fail 0 "pbp_pattern: the pattern does not give back the goal with the selection (a selected subterm that the rest of the goal depends on cannot be abstracted)".
+  coq.ltac.fail 0 {msg "the pattern does not give back the goal with the selection (a selected subterm that the rest of the goal depends on cannot be abstracted)"}.
+
+/* ---------------- The selections, resolved ----------------
+   What the actions of point_actions.v are given (and pbp_pattern uses) */
+
+kind point-in type.
+% [point-in Hs C Parts Ls] selections in a goal: Hs are the hypotheses
+% they are in (generalized, in the order of the context), C the goal with
+% Hs generalized, Parts its parts, Ls the selections (in the order given)
+type point-in list string -> term -> list part -> list loc -> point-in.
+
+% [point-resolve Ctx G Sels In Ws] the selections Sels of the goal G
+% (context Ctx) are In; Ws are the texts of the subterms that selections
+% were widened to
+pred point-resolve i:goal-ctx, i:term, i:list sel, o:point-in,
+                   o:list string.
+point-resolve Ctx G Sels (point-in Hs C Parts Ls) Ws :-
+  sel-hyps Ctx Sels Hs, revert Ctx Hs G C, parts Ctx Hs G Parts,
+  std.map Sels (s\ lw\ sigma L W\ locate Ctx Hs Parts s L W, lw = pr L W)
+    LWs,
+  std.map LWs fst Ls, std.map-filter LWs (lw\ w\ lw = pr _ w, not (w = "")) Ws,
+  std.map Ls loc-path Ps,
+  (nested Ps, !,
+   coq.ltac.fail 0 {msg "the two selections are the same subterm or one is inside the other"} ; true).
+
+% [point-count In N] there are N selections
+pred point-count i:point-in, o:int.
+point-count (point-in _ _ _ Ls) N :- std.length Ls N.
+
+% [avoid-names Hs Parts Avoid] Avoid are the names the variables of a
+% pattern must not take: the hypotheses Hs and the words of the parts
+pred avoid-names i:list string, i:list part, o:list string.
+avoid-names Hs Parts Avoid :-
+  std.map Parts (p\ ws\ sigma B T Shs S\ p = part B T Shs,
+                   coq.term->string T S, identifiers S ws) Idss,
+  std.flatten [Hs|Idss] Avoid.
+
+% [pattern-of Avoid Ps T Vis Pat] Pat is the pattern [X in ...] (or [X Y
+% in ...]) of the term T whose selections are at the paths Ps, Vis being
+% the paths of its printed subterms; it is checked
+pred pattern-of i:list string, i:list (list int), i:term, i:list (list int),
+                o:string.
+pattern-of Avoid Ps T Vis Pat :-
+  std.length Ps K, std.take K ["X", "Y"] Bases, fresh-names Bases Avoid Ns,
+  pattern-text Ns Ps T Vis [] Body,
+  std.string.concat " " Ns NsS,
+  Pat is "[" ^ NsS ^ " in " ^ Body ^ "]",
+  check Pat Ps T.
+
+% [point-pattern In Pat] Pat is the pattern of the selections in the goal
+% with their hypotheses generalized (the one of pbp)
+pred point-pattern i:point-in, o:string.
+point-pattern (point-in Hs C Parts Ls) Pat :-
+  std.map Parts (p\ vs\ sigma B T Shs\ p = part B T Shs,
+                   std.map Shs (sh\ v\ sigma P\ sh = shown P _ _ _,
+                                         std.append B P v) vs) Viss,
+  std.flatten Viss Vis,
+  avoid-names Hs Parts Avoid, std.map Ls loc-path Ps,
+  pattern-of Avoid Ps C Vis Pat.
+
+% [point-revert In M] M is the tactic that generalizes the hypotheses of
+% the selections, "move: H1 H2; ", or "" if there are none
+pred point-revert i:point-in, o:string.
+point-revert (point-in [] _ _ _) "" :- !.
+point-revert (point-in Hs _ _ _) M :-
+  std.string.concat " " Hs HsS, M is "move: " ^ HsS ^ "; ".
+
+% [point-part In I] the selections are all in the part number I
+pred point-part i:point-in, o:int.
+point-part (point-in _ _ _ [loc _ I _ | Ls]) I :-
+  std.forall Ls (l\ l = loc _ I _), !.
+point-part _ _ :-
+  coq.ltac.fail 0 {msg "the selections are not in the same hypothesis or both in the conclusion"}.
+
+% [point-in-hyp In S] S is " in H" if the selections are in the hypothesis
+% H, "" if they are in the conclusion
+pred point-in-hyp i:point-in, o:string.
+point-in-hyp (point-in Hs _ _ _ as In) S :-
+  point-part In I, std.length Hs N,
+  (I = N, !, S = "" ; std.nth I Hs H, S is " in " ^ H).
+
+% [point-local-pattern In Pat] Pat is the pattern of the selections in
+% their own part, the conclusion or the type of their hypothesis (as for
+% rewrite ... in H)
+pred point-local-pattern i:point-in, o:string.
+point-local-pattern (point-in Hs _ Parts Ls as In) Pat :-
+  point-part In I, std.nth I Parts (part _ T Shs),
+  std.map Shs (sh\ v\ sh = shown v _ _ _) Vis,
+  avoid-names Hs Parts Avoid,
+  std.map Ls (l\ p\ l = loc _ _ p) Ps,
+  pattern-of Avoid Ps T Vis Pat.
+
+% [point-text In I S] S is the text of the selection number I (from 0),
+% on one line
+pred point-text i:point-in, i:int, o:string.
+point-text (point-in _ C _ Ls) I S :-
+  std.nth I Ls (loc P _ _), text-at P C S.
+
+% [point-head In I GR] GR is the head of the selection number I (from 0):
+% the selection is GR or an application of GR
+pred point-head i:point-in, i:int, o:gref.
+point-head (point-in _ C _ Ls) I GR :-
+  std.nth I Ls (loc P _ _), head-at P C GR.
+
+% [head-at P T GR] the subterm of T at path P is GR or an application of
+% GR
+pred head-at i:list int, i:term, o:gref.
+head-at [] T GR :- head-gref T GR.
+head-at [I|P] T GR :- kids T Ks, std.nth I Ks K, kid-head P K GR.
+
+pred kid-head i:list int, i:kid, o:gref.
+kid-head P (kt T) GR :- head-at P T GR.
+kid-head P (kb N Ty B) GR :- pi x\ decl x N Ty => head-at P (B x) GR.
+
+pred head-gref i:term, o:gref.
+head-gref (global GR) GR.
+head-gref (pglobal GR _) GR.
+head-gref (app [H|_]) GR :- head-gref H GR.
 
 /* ---------------- The pbp call ---------------- */
 
@@ -434,27 +573,9 @@ pred pbp-line i:goal-ctx, i:term, i:list sel, o:string, o:list string.
 pbp-line Ctx G Sels Line Ws :-
   std.length Sels K,
   ((K = 1 ; K = 2), ! ;
-   coq.ltac.fail 0 "pbp_pattern: one selection (pointing) or two (linking)"),
-  sel-hyps Ctx Sels Hs, revert Ctx Hs G C, parts Ctx Hs G Parts,
-  std.map Sels (s\ pw\ sigma P W\ locate Ctx Hs Parts s P W, pw = pr P W)
-    PWs,
-  std.map PWs fst Ps, std.map-filter PWs (pw\ w\ pw = pr _ w, not (w = "")) Ws,
-  (nested Ps, !,
-   coq.ltac.fail 0 "pbp_pattern: the two selections are the same subterm or one is inside the other" ; true),
-  std.map Parts (p\ vs\ sigma B T Shs\ p = part B T Shs,
-                   std.map Shs (sh\ v\ sigma P\ sh = shown P _ _ _,
-                                         std.append B P v) vs) Viss,
-  std.flatten Viss Vis,
-  std.map Parts (p\ ws\ sigma B T Shs S\ p = part B T Shs,
-                   coq.term->string T S, identifiers S ws) Idss,
-  std.flatten [Hs|Idss] Avoid,
-  std.take K ["X", "Y"] Bases, fresh-names Bases Avoid Ns,
-  pattern-text Ns Ps C Vis [] Body,
-  std.string.concat " " Ns NsS,
-  Pat is "[" ^ NsS ^ " in " ^ Body ^ "]",
-  check Pat Ps C,
-  (Hs = [], Move = "" ;
-   std.string.concat " " Hs HsS, Move is "move: " ^ HsS ^ "; "), !,
+   coq.ltac.fail 0 {msg "one selection (pointing) or two (linking)"}),
+  point-resolve Ctx G Sels In Ws,
+  point-pattern In Pat, point-revert In Move,
   Line is Move ^ "pbp " ^ Pat ^ ".".
 
 }}.

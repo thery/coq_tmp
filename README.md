@@ -205,3 +205,126 @@ parse (an error); a hypothesis that others depend on cannot be
 generalized by `move:`; the printing of the goal by coq-lsp and by
 `coq.term->string` was compared on the goals of the tests only (equal up
 to blanks).
+
+### Pointing actions: the protocol for the interfaces
+
+[point_actions.v](point_actions.v) makes the actions offered on a
+selection a list declared in Rocq (tests:
+[point_actions_test.v](point_actions_test.v)).  An interface does not
+know `pbp`: it asks for the list of the actions, shows them as buttons,
+and runs the one chosen.  Any loaded file can add actions.  `pbp_pattern`
+is kept as it is until the interfaces use this protocol.
+
+The actions it declares:
+
+| action | kind | line | e.g. on `1 + 1 + a = double (1 + a)` |
+|---|---|---|---|
+| `Point` | point | `{revert}pbp {pattern}.` | `pbp [X in X + _ = _].` (`0 3`) |
+| `Link` | link | `{revert}pbp {pattern}.` | `pbp [X Y in X + _ = double Y].` (`0 3 13 16`) |
+| `Simplify here` | point | `rewrite {local}/={in}.` | `rewrite [X in X + _ = _]/=.` (`0 3`: `1 + 1` becomes `2`) |
+| `Unfold here` | point | `rewrite {local}/{head}{in}.` | `rewrite [X in _ = X]/double.` (`6 17`) |
+
+`Point` and `Link` print exactly what `pbp_pattern` prints.  `Simplify
+here` and `Unfold here` change the selected subterm only, in the
+conclusion or, for a selection in a hypothesis `H`, in `H` (`rewrite
+[X in X + _ = _]/= in H.`).
+
+**1. The list.**  Sent as `pbp_pattern` is (a tactic, after the sentence
+where the goals are shown; the goal is unchanged):
+
+```
+elpi point_actions.
+```
+
+It prints one notice, a JSON array, in the order of the declarations:
+
+```
+[{"name":"Point","kind":"point","doc":"pbp: bring ..."},{"name":"Link","kind":"link","doc":"..."},...]
+```
+
+`kind` is `point` (the action takes one selection) or `link` (two).
+`doc` is a sentence for a tooltip (may be `""`).  The list is the same in
+every goal (an action that does not apply to a selection fails with a
+message when it is run); it changes only when a file that declares
+actions is loaded, so it may be asked once per document position.
+
+**2. Running an action.**
+
+```
+elpi point_run "Name" S E.             (* kind point: in the conclusion *)
+elpi point_run "Name" H S E.           (* in the type of hypothesis H *)
+elpi point_run "Name" S E S' E'.       (* kind link: two selections *)
+elpi point_run "Name" H S E S' E'.     (* ... in H and in the conclusion *)
+elpi point_run "Name" H S E H' S' E'.  (* ... in two hypotheses *)
+```
+
+- `"Name"` is the `name` of the list, in double quotes (a `"` in it is
+  written `""`, as in any Rocq string).
+- The selections are those of `pbp_pattern` (above): `S E` counts the
+  characters that are not blanks, `S` included, `E` excluded, an empty
+  range is a click.  The first selection is `X` of the pattern, the
+  second `Y`.
+- The goal: the action runs on the first goal; for the goal `n` (from 1)
+  the command is prefixed by `n: ` and so is the line inserted (`2: elpi
+  point_run "Point" 0 1.`, then `2: pbp [X in X].`).  The two selections
+  of a link are in the same goal.
+- The output: zero or more warnings `point_run: the selection is widened
+  to T` (warning `pbp-widened`), then one notice, the line to insert,
+  e.g. `pbp [X in X + _ = _].`
+- The errors: `Tactic failure: point_run: ...`, e.g. `no action
+  Rewrite (elpi point_actions lists them)`, `the action Point is of kind
+  point and takes 1 selection(s), not 2`, `the range 30 31 is not in the printed term`,
+  `the range 3 1 ends before it starts`, `no hypothesis H`, `the two
+  selections are the same subterm or one is inside the other`, `the
+  selection is not a constant nor an application of a constant` (Unfold
+  here on a variable), `the action Never does not apply to the
+  selection` (an action that fails without saying why).  The interface
+  shows the text after `point_run: `.
+
+**3. Declaring an action.**  With a template:
+
+```
+PointAction "Name it" point "set x := ({text})." "name the selected subterm".
+```
+
+The kind is `point` or `link`; the last string (optional) is the `doc`.
+A name is declared once.  The placeholders of the template:
+
+| placeholder | is |
+|---|---|
+| `{pattern}` | the pattern of pbp, `[X in ...]` (`[X Y in ...]` for a link), in the goal where the hypotheses of the selections are generalized |
+| `{revert}` | the tactic that generalizes them, `move: H; ` (or `move: H H'; `), or nothing |
+| `{local}` | the pattern in the part of the goal the selections are in: the conclusion, or the type of the hypothesis |
+| `{in}` | ` in H` when the selections are in the hypothesis `H`, else nothing |
+| `{head}` | the constant the first selection is, or is an application of |
+| `{text}` | the first selected subterm, as printed |
+
+Or in Elpi, for an action that computes its line: a predicate `pred
+p i:point-in, o:string` from the selections, resolved to subterms of the
+goal, to the line, declared by a clause of `point-action` in the
+database `pbp_select.db`:
+
+```
+Elpi Accumulate pbp_select.db lp:{{
+pred same-text i:point-in, o:string.
+same-text In Line :-
+  point-text In 0 A, point-text In 1 B,
+  (A = B, !, Line = "(* the same text *)" ;
+   Line is "(* " ^ A ^ " and " ^ B ^ " *)").
+point-action "Compare" link "compare the two selections" same-text.
+}}.
+```
+
+The predicates on the selections (pbp_select.v) are the ones of the
+placeholders: `point-pattern`, `point-revert`, `point-local-pattern`,
+`point-in-hyp`, `point-head In I GR`, `point-text In I S` (selection `I`,
+from 0), and `point-count`.  An error is `coq.ltac.fail 0 {msg "..."}`
+(`msg` adds `point_run: `).
+
+Limits: the rewrite actions use ssreflect's `rewrite [X in ...]/=` and
+`/c`, which are conversions, so they work under binders too, but a
+selection that uses a bound variable is the function `X n` of the
+pattern, and simplifying it leaves a `(fun m => ...) n`; the `{head}` is
+printed as Rocq prints the constant in the goal's context
+(`Init.Nat.add` for `+` when PeanoNat is loaded); the list is not
+filtered by the selection.
