@@ -23,7 +23,7 @@
    4. Templates, a short-hand for Elpi actions
    5. How pbp is hooked, and how to hook your own tactic *)
 
-From Stdlib Require Import ssreflect PeanoNat Arith Lia.
+From Stdlib Require Import ssreflect PeanoNat.
 From coq_tmp Require Import point_actions.
 
 (* ================ 1. The pipeline ================
