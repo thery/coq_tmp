@@ -321,6 +321,34 @@ placeholders: `point-pattern`, `point-revert`, `point-local-pattern`,
 from 0), and `point-count`.  An error is `coq.ltac.fail 0 {msg "..."}`
 (`msg` adds `point_run: `).
 
+**4. Seeing the actions.**  For a human reader (not for the interfaces,
+which use `elpi point_actions`), the command
+
+```
+PointActions.
+```
+
+prints, at that point of the file (in a proof or not), the actions in
+the order of their declarations: name, kind, where it was declared (the
+library and the line, for `PointAction`; an action declared by an Elpi
+clause has no recorded place), its template or its Elpi predicate, its
+doc:
+
+```
+6 pointing action(s):
+Point (point), declared in coq_tmp.point_actions, line 312
+  template: {revert}pbp {pattern}.
+  doc: pbp: bring the selected subformula to the surface of the goal
+...
+Name it (point), declared in coq_tmp.point_actions_test, line 183
+  template: set x := ({text}).
+  doc: name the selected subterm
+Compare (link), declared by an Elpi clause
+  Elpi: same-text
+  doc: compare the two selections
+```
+
+
 Limits: the rewrite actions use ssreflect's `rewrite [X in ...]/=` and
 `/c`, which are conversions, so they work under binders too, but a
 selection that uses a bound variable is the function `X n` of the

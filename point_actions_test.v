@@ -1,4 +1,5 @@
-(* Tests of point_actions.v: the list of the actions, the actions declared
+(* Tests of point_actions.v: the list of the actions (JSON, and PointActions
+   for a human reader), the actions declared
    there (Point, Link, Simplify here, Unfold here), actions declared here
    (dynamically: one by a template, one written in Elpi), the errors.
 
@@ -46,6 +47,24 @@ Ltac2 fails_with (m : string) (t : unit -> unit) :=
 Set Default Proof Mode "Classic".
 
 Definition double n := n + n.
+
+(* ---------- The actions, for a human reader ---------- *)
+
+(* a command: outside proofs too *)
+PointActions.
+Elpi point_actions_text_expect "4 pointing action(s):
+Point (point), declared in coq_tmp.point_actions, line 312
+  template: {revert}pbp {pattern}.
+  doc: pbp: bring the selected subformula to the surface of the goal
+Link (link), declared in coq_tmp.point_actions, line 314
+  template: {revert}pbp {pattern}.
+  doc: pbp: link the two selected subformulas
+Simplify here (point), declared in coq_tmp.point_actions, line 316
+  template: rewrite {local}/={in}.
+  doc: simplify the selected subterm (ssreflect's rewrite /=, at the selection)
+Unfold here (point), declared in coq_tmp.point_actions, line 318
+  template: rewrite {local}/{head}{in}.
+  doc: unfold the constant at the head of the selected subterm, in it".
 
 (* ---------- The list of the actions ---------- *)
 
@@ -172,6 +191,28 @@ same-text In Line :-
    Line is "(* " ^ A ^ " and " ^ B ^ " *)").
 point-action "Compare" link "compare the two selections" same-text.
 }}.
+
+(* the two new actions, at the end of the list *)
+PointActions.
+Elpi point_actions_text_expect "6 pointing action(s):
+Point (point), declared in coq_tmp.point_actions, line 312
+  template: {revert}pbp {pattern}.
+  doc: pbp: bring the selected subformula to the surface of the goal
+Link (link), declared in coq_tmp.point_actions, line 314
+  template: {revert}pbp {pattern}.
+  doc: pbp: link the two selected subformulas
+Simplify here (point), declared in coq_tmp.point_actions, line 316
+  template: rewrite {local}/={in}.
+  doc: simplify the selected subterm (ssreflect's rewrite /=, at the selection)
+Unfold here (point), declared in coq_tmp.point_actions, line 318
+  template: rewrite {local}/{head}{in}.
+  doc: unfold the constant at the head of the selected subterm, in it
+Name it (point), declared in coq_tmp.point_actions_test, line 183
+  template: set x := ({text}).
+  doc: name the selected subterm
+Compare (link), declared by an Elpi clause
+  Elpi: same-text
+  doc: compare the two selections".
 
 Goal forall a b : nat, a + b = b + a.
 Proof.

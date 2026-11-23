@@ -55,6 +55,11 @@ point-kind-name link "link" 2.
 pred point-action o:string, o:point-kind, o:string,
                   o:(pred i:point-in, o:string).
 
+% [point-action-origin Name Lib Line] the action Name was declared by
+% PointAction in the library Lib, at the line Line (none for the actions
+% declared by an Elpi clause)
+pred point-action-origin o:string, o:string, o:int.
+
 /* ---------------- Templates ---------------- */
 
 kind tpart type.
@@ -197,12 +202,62 @@ main [str Name, str K, str T, str Doc] :- !,
      std.findall (placeholder N_) L, std.map L (c\ s\ sigma M\ c = placeholder M, s is "{" ^ M ^ "}") Ls,
      std.string.concat " " Ls LS,
      coq.error "PointAction: unknown placeholder" {calc ("{" ^ N ^ "}")} "in the template; the placeholders are" LS) ; true)),
+  coq.env.current-path Path, std.string.concat "." Path Lib,
+  (attributes As, std.mem As (attribute "elpi.loc" (leaf-loc Loc)), !,
+   loc.fields Loc _ _ _ Line _ ; Line = 0),
   coq.elpi.accumulate _ "pbp_select.db"
-    (clause _ _ (point-action Name Kind Doc (point-template T))).
+    (clause _ _ (point-action Name Kind Doc (point-template T))),
+  coq.elpi.accumulate _ "pbp_select.db"
+    (clause _ _ (point-action-origin Name Lib Line)).
 main _ :-
   coq.error "PointAction: the arguments are \"Name\" point|link \"Template\" and, optionally, \"Doc\"".
 }}.
 Elpi Export PointAction.
+
+(* [PointActions] prints the actions declared at this point, in the order
+   of their declarations, for a human reader: for each, its name, its
+   kind, where it was declared, its template (or the Elpi predicate that
+   implements it) and its doc.  A command: it works outside proofs too. *)
+Elpi Accumulate pbp_select.db lp:{{
+% [action-text A S] S describes the action A, on a few lines
+pred action-text i:prop, o:string.
+action-text (point-action N K D I) S :-
+  point-kind-name K KS _,
+  (point-action-origin N Lib Line, !,
+   (Line > 0, !, Where is " in " ^ Lib ^ ", line " ^ int_to_string Line ;
+    Where is " in " ^ Lib) ;
+   Where = " by an Elpi clause"),
+  (I = point-template T, !, Impl is "template: " ^ T ;
+   term_to_string I P, Impl is "Elpi: " ^ P),
+  (D = "", !, Doc = "" ; Doc is "\n  doc: " ^ D),
+  S is N ^ " (" ^ KS ^ "), declared" ^ Where ^ "\n  " ^ Impl ^ Doc.
+
+% [actions-text S] S describes the actions, in the order of their
+% declarations
+pred actions-text o:string.
+actions-text S :-
+  std.findall (point-action N_ K_ D_ I_) As,
+  std.length As Nb,
+  std.map As action-text Ts,
+  std.string.concat "\n" Ts B,
+  S is int_to_string Nb ^ " pointing action(s):\n" ^ B.
+}}.
+Elpi Command PointActions.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+main [] :- !, actions-text S, coq.say S.
+main _ :- coq.error "PointActions: no arguments".
+}}.
+Elpi Export PointActions.
+
+(* [Elpi point_actions_text_expect S], for the tests: fails unless
+   PointActions prints S *)
+Elpi Command point_actions_text_expect.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+main [str Exp] :- actions-text S,
+  (S = Exp, ! ; coq.error "point_actions_text_expect: got" S "expected" Exp).
+}}.
 
 (* [elpi point_actions] prints the actions, one message (a notice): a JSON
    array of objects {"name": ..., "kind": "point" | "link", "doc": ...}.
