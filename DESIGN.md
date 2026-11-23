@@ -17,6 +17,12 @@ today:
   languages), and the format is the library prooftext;
 - `Cyp Lemma` and `Cyp File` always succeed: a step that is not proved is
   reported and left as a named goal ([cyp/vernac/README.md](cyp/vernac/README.md));
+- the tactics by name (point 3 below) are not one table `tactic-name` in
+  the cyp library: the names a text may use are listed once in
+  [prooftext/tactics.elpi](prooftext/tactics.elpi), and each is declared
+  by `CypJustification "N" := cyp_N.` at the end of
+  [cyp/vernac/Cyp.v](cyp/vernac/Cyp.v); xtext runs the same tactics for
+  the names it writes;
 - the driver is the OCaml program `cyp/bin/cyp.ml`, not the script
   `cyprun.py` named below
   (removed in 810526f).

@@ -32,7 +32,9 @@ name of the classical library since Rocq 9:
 
 ```sh
 dune build
-(cd vernac && rocq c -Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText Gaps.v Cyp.v)   # the cyp library
+(cd ../prooftext && rocq c -Q . ProofText Tactics.v)   # the bounded tactics (lia_guard, ...)
+(cd vernac && F="-Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText" &&
+  rocq c $F Gaps.v && rocq c $F Cyp.v)   # the cyp library, one file at a time
 export CYP_LIB=$PWD/vernac
 dune exec cyp -- examples/square_pos.md   # writes square_pos.checked.md and square_pos.cyp.json
 dune exec cyp -- --conditions examples/square_pos.md   # prints the conditions, tries nothing
@@ -60,7 +62,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     - From `0 < a < b`{.fact} we have `0 < b + a /\ 0 < b - a`{.claim}.
 ```
 
-- **The header** (between the two `---`): `require`, the Rocq preamble;
+- **The header** (between the two `---`; the keys are those of
+  [prooftext's table](../prooftext/README.md#the-files)): `require`, the Rocq preamble;
   `scope`, a scope to open; `by`, the tactics tried on a node with no
   declared word (declared words: `lia | nia`); `rules`, files of rules (below), separated by
   spaces, copied in order after the preamble; `flags`, options given to
@@ -126,13 +129,10 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     `congruence`, `firstorder`, `arith`: [../prooftext/tactics.elpi](../prooftext/tactics.elpi),
     the only ones xtext writes) are declared at the end of
     [vernac/Cyp.v](vernac/Cyp.v), each the Ltac `cyp_N` above them, with
-    the same command.  `firstorder` is run bounded, as `bounded_firstorder` of
-    [../prooftext/Tactics.v](../prooftext/Tactics.v), shared with xtext: the
-    tactic itself has no bound (more than 30 s and 7 GB on one step of a
-    text): the goal and its hypotheses taken apart, at most 200 steps, then
-    a proof search of depth 4 or `congruence`;
-    `arith` is `first [ guarded_lia | itauto auto ]` (`cyp_arith`), the word
-    xtext gives to a step whose conclusion is arithmetic;
+    the same command; what each runs and its bound:
+    [Deterministic bounds](#deterministic-bounds) below (`firstorder` is
+    run bounded, `lia` and `nia` behind a guard; `arith` is the word xtext
+    gives to a step whose conclusion is arithmetic);
   - a name of a hypothesis, of a node or of a variable, or of a lemma is
     handed to the method: put first in the context, a lemma added to it
     (Ltac `cyp_first`);
@@ -186,8 +186,10 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
 - **Errors** of the tree, reported at their node and line (in the checked
   Markdown and the JSON), and the node is not proved: a node with tags but
   no conclusion, two conclusions, a name out of scope or given twice in
-  one scope, an unknown class, an unclosed span or div (prooftext's
-  table); a fact that is no visible hypothesis or conclusion; a
+  one scope, an unknown class, an unclosed div, a `]{.p}` with no `[`
+  before it (prooftext's table; a `[` that nothing closes is text, so its
+  formulas belong to the node around it, which may then have two
+  conclusions); a fact that is no visible hypothesis or conclusion; a
   justification that names nothing known; a formula that does not parse
   ([examples/errors_demo.md](examples/errors_demo.md),
   [vernac/errors_file.md](vernac/errors_file.md)).  An error never stops
@@ -198,11 +200,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   variable that does not parse is left out of its node.
 - **The gap tactic.**  A condition that its justifications, the rules and
   the default tactics leave open gets a last, coarse try: `cyp_gap`
-  ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (the goal and
-  the hypotheses taken apart, at most 200 steps, then a proof search of depth 4 or
-  `congruence`; a case analysis on the booleans; an induction on a binder
-  of the goal; a case analysis on a variable; a constructor whose arguments
-  the search finds), with no time limit: a condition it cannot close costs
+  ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (which ones and their bounds:
+  [Deterministic bounds](#deterministic-bounds)), with no time limit: a condition it cannot close costs
   a bounded search (at most 0.06 s measured).  On the conditions cyp left
   open in xtext's texts (closing steps of case analyses and inductions,
   steps that follow from earlier claims by a few applications) it closed
@@ -264,7 +263,7 @@ tactics, the gap tactic and cyp's own search:
 | `tauto` (default) | `itauto auto` | itauto's SAT solver runs on a fuel computed from the size of the formula; its leaf tactic `auto` is of depth 5 |
 | `auto` | `auto` | depth 5 |
 | `easy` | `easy` | a fixed set of steps |
-| `firstorder` | `bounded_firstorder` ([../prooftext/Tactics.v](../prooftext/Tactics.v)) | the goal and its hypotheses taken apart, at most 200 steps (`decompose_steps`; without it, `split` on `Inductive U : nat -> Prop := cu : forall n, U (S n) -> U n` goes on for ever), then `eauto 4` (depth 4) or `congruence` |
+| `firstorder` | `bounded_firstorder` ([../prooftext/Tactics.v](../prooftext/Tactics.v)) | `firstorder` itself has no bound (on a step of xtext's `half_le` it ran over 30 s and took up to 7 GB); `bounded_firstorder`: the goal and its hypotheses taken apart, at most 200 steps (`decompose_steps`; without it, `split` on `Inductive U : nat -> Prop := cu : forall n, U (S n) -> U n` goes on for ever), then `eauto 4` (depth 4) or `congruence` |
 | the gap tactic | `cyp_gap` ([vernac/Gaps.v](vernac/Gaps.v)) | `bounded_firstorder`; a case analysis on each boolean of the context, once; an induction on one binder of the goal, each tried once; a case analysis on one variable, each tried once; one constructor; each case closed by `eauto 4` or `congruence` |
 | `congruence` | `congruence` | ends (a closure over the terms of the goal) |
 | `ring`, `field` | `ring`, `field` | end (normal forms of polynomials) |
@@ -384,7 +383,7 @@ meaning and the place of their declaration:
 
 ```json
 {"word":"monotonicity","meaning":"rules","library":"","file":"/…/cyp/examples/named_demo.v","line":8}
-{"word":"lia","meaning":"tactic cyp_lia","library":"CypV.Cyp","file":"./Cyp.v","line":442}
+{"word":"lia","meaning":"tactic cyp_lia","library":"CypV.Cyp","file":"./Cyp.v","line":440}
 ```
 
 `prooftext/pdf.sh --source-root ROOT=URL` (and `gallery.sh`, which passes

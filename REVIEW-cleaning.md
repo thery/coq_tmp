@@ -1,5 +1,13 @@
 # Cleaning rounds (branches cleaning-round, cleaning-round-2): review and what was done
 
+A record: the excerpts, predicate names and line numbers below are those
+of the code at the time of each commit.  Several of the predicates named
+in the tables (`claims-then`, `level`, `step-kind`, `text-elements`,
+`nearer-match`, `open-claims`, `scope-ctx`) no longer exist: cyp's
+proof.elpi was rewritten for the tree of nodes since.  In "Not done", the
+line numbers were replaced by the file names on 2026-11-23 (the names of
+the predicates are given).
+
 Scope: cyp (cyp/vernac/elpi, cyp/vernac/*.v, cyp/bin), xtext (xtext/elpi,
 xtext/*.v), prooftext/, lexicon/, elpi-tools (reflect, check, debug, dap).
 radcan/ and private material left out.  Earlier rounds already done and not
@@ -153,19 +161,21 @@ commit: identical, except where said.  elpi-tools: `dune build
 
 ### Medium
 
-- **dup-tools: `is-prop`** in cyp (proof.elpi:123, typecheck + unify with
-  Prop) and xtext (kinds.elpi:23, `typ` + whnf).  Two tests of the same
+- **dup-tools: `is-prop`** in cyp (proof.elpi, typecheck + unify with
+  Prop) and xtext (kinds.elpi, `typ` + whnf).  Two tests of the same
   notion; neither tool's file is the place, and prooftext is about texts,
   so this needs a decision on where Rocq helpers shared by the tools live.
 - **dup-tools: the Ltac of the tactics a text may name.**  Cyp.v defines
   `cyp_N` for each name of prooftext/tactics.elpi; ExtractText.v defines
-  `xtext_g_N` (with time limits) for five of them; only
-  `bounded_firstorder` is shared (prooftext/Tactics.v).  The time limits
-  differ on purpose (xtext checks a contraction quickly), so a shared table
-  would need a per-tool limit.
+  `xtext_N` and `xtext_g_N` for the six names it writes.  (Obsolete since
+  6143f9a: no tool has a time limit any more, and the two tools run the
+  same tactic for each of these names: `bounded_firstorder`, `guarded_lia`
+  and `guarded_nia` are shared in prooftext/Tactics.v, the others are
+  one-line Ltac definitions written in both files.  A shared table needs
+  no per-tool limit now.)
 - **unclear names (xtext): short constructors** used everywhere: `it`
-  (a line, text-tree.elpi:10), `prf`/`prfp` (:15), `b`/`bih` (:35), `bk`,
-  `ak`, `star`/`nostar`, `kp` (reparse.elpi:78), `ci` (inductive.elpi:119),
+  (a line, text-tree.elpi), `prf`/`prfp`, `b`/`bih`, `bk`,
+  `ak`, `star`/`nostar`, `kp` (reparse.elpi), `ci` (inductive.elpi),
   `cand`, `wd`/`tx`/`nm`; predicates `tr-p`, `tr.aux`, `tsize`, `eshape`.
   Renaming touches most of xtext; xtext-clean renamed others but not these.
 - **missing comments (xtext): 81 predicates** without a comment across
@@ -183,16 +193,17 @@ commit: identical, except where said.  elpi-tools: `dune build
   `msg` (messages.elpi) takes "en" when no language is set and the "en"
   table when a key is missing.  The second is right (English is the
   complete table); the first could be prooftext's `default-lang`, but
-  CypQed does not load header.elpi.
-- xtext's `dewey` (transducer.elpi:24) is a path of integers, not the
+  CypQed did not load header.elpi.  (Doable now: CypQed loads it,
+  Cyp.v, the accumulate lines of the command CypQed.)
+- xtext's `dewey` (transducer.elpi) is a path of integers, not the
   string of `step-number`: a different form, left.
 
 ### Low
 
-- dup-tools: cyp/bin/cyp.ml `header` (:32) reads the header again, in
+- dup-tools: cyp/bin/cyp.ml `header` reads the header again, in
   OCaml; it has to (the driver runs before Rocq), but it does not check
   the keys against prooftext's `header-key`.
-- cyp command.elpi:23 `undup` (Elpi's std has none: fine as it is).
+- cyp `undup` (text.elpi now, command.elpi then; Elpi's std has none: fine as it is).
 - missing comments in elpi-tools/check/lib (about 15 predicates: run.elpi
   5, analyse.elpi 4, ...).
 - elpi-tools/debug/lib and dap/lib: not reviewed in depth.
@@ -203,4 +214,4 @@ commit: identical, except where said.  elpi-tools: `dune build
   is given to the method; the form is `*h*{.just}` now.)
 
 No file of the scope is over 1000 lines (the longest: staged.elpi 657,
-session.ml 559).  No Python found in the scope.
+session.ml 559; on 2026-11-23: staged.elpi 711, session.ml 582).  No Python found in the scope.

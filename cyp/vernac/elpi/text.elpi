@@ -1,16 +1,12 @@
 % The elements of a node: what cyp takes from its text.
 %
 % cyp uses only what is tagged: the parts of the text of a node, read by
-% prooftext's reader (prooftext/formulas.elpi, text-parts), are words,
-% formulas with their class, and justifications.  A formula's role is its
-% class ({.var}, {.hyp}, {.claim}, {.fact}); a formula with no class is
-% plain text, and so are all the words: no word gives a role.  A
-% conclusion {.goal} is an open goal that the author leaves to prove
-% (proof.elpi: it is not tried, it is left to the Proof block).  A
-% justification is *X*{.just} (or *by X*, the form of the texts written
-% before the tree).  The name in parentheses after a hypothesis, `P` (h),
-% is its name; the name after the conclusion, the name of the node
-% (prooftext/nodes.elpi, node-name).
+% prooftext's reader (prooftext/formulas.elpi, text-parts; the tags and
+% the names: prooftext/README.md, "The format").  A formula's role is its
+% class; a formula with no class is plain text, and so are all the words:
+% no word gives a role.  A conclusion {.goal} is an open goal that the
+% author leaves to prove (proof.elpi: it is not tried, it is left to the
+% Proof block).
 
 % a list without its repetitions
 pred undup i:list string, o:list string.

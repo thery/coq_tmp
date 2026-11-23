@@ -4,7 +4,8 @@ The library [Cyp.v](Cyp.v) (Rocq-Elpi, opam switch `elpi5`) is cyp
 itself: what a proof means, how its nodes are checked, and how the
 Markdown is read and written back.  It gives two commands.
 
-Build: `rocq c -Q . CypV Cyp.v`.
+Build: see [../README.md](../README.md) (it needs prooftext's Tactics.vo
+and Gaps.vo first, and the load paths of lexicon and prooftext).
 
 ## Cyp File: a proof in Markdown
 
@@ -88,7 +89,7 @@ a condition it does not discharge is ❌ and the lemma is not defined.
 whatever their nodes say: what is proved is proved, and the rest is left
 as goals of the Proof block.  An error of a node (a justification that
 names nothing, a fact not in scope, a name out of scope, an unknown
-class, an unclosed span, two conclusions, a formula that does not
+class, an unclosed div, two conclusions, a formula that does not
 parse...) is printed, `❌ 1 sqrt_magic names nothing known...`, marked ❌
 in the checked Markdown and the JSON, and the command goes on:
 
@@ -225,10 +226,15 @@ text may name):
   nested nodes, type-check 35 ms and definition 27 ms); the facts looked
   up among the hypotheses in scope, up to conversion;
 - `markdown.elpi`: the checked Markdown (the lines of the text, with the
-  marks and messages of the nodes inserted) and the JSON for the editor.
+  marks and messages of the nodes inserted) and the JSON for the editor;
+- `messages.elpi`: cyp's messages in the language of the proof, from the
+  tables of `messages_en.elpi`, `messages_fr.elpi` and `messages_it.elpi`
+  (a message missing there is the English one);
+- `timing.elpi`: with the environment variable `CYP_TIME` set, the time
+  spent on each condition and on each phase of a check.
 
 The words of the default tactics (`lia`, `lra`, ...) are declared to mean
-Ltac definitions of [Cyp.v](Cyp.v) (`cyp_lia := lia`): Rocq-Elpi runs an
+Ltac definitions of [Cyp.v](Cyp.v) (`cyp_lra := lra`, `cyp_lia := guarded_lia`): Rocq-Elpi runs an
 Ltac definition by its name, not a builtin tactic nor tactic code given as
 a string.
 
