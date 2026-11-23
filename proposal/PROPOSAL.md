@@ -24,7 +24,10 @@ PDF, 8 the hover, 9 the proposed rule.  The differences:
   added: a justification that is not a name (`*by lia*{.just}`).  Two
   errors of the table, a name that names nothing known and a fact that
   is no visible formula, are found by cyp, not by the reader: they need
-  the meaning of the names.
+  the meaning of the names.  An unclosed span is no error (section 6 lists
+  it): a `[` that no `]{.p}` closes is text, as an interval `[0, 1)` in
+  prose, and its formulas belong to the node around it.  An unclosed div
+  and a `]{.p}` with no `[` before it are errors.
 - **`[*X*]{.just}` is not accepted** (choice 6 (b) was not taken); the
   old `*by X*` is still read as the justification X (6 (c)).
 - **The hover** is a script of about 40 lines (not 30), on the nodes of

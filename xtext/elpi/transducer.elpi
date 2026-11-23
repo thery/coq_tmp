@@ -32,7 +32,9 @@ dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S
 % case (Dewey notation).
 
 % cur-ih Fl: the induction-hypothesis flags of the binders of the branch
-% being translated (set by the elimination rules)
+% being translated (set by the elimination rules, inductive-text.elpi,
+% and by lam-run, abstractions.elpi; reset to [] outside a branch by
+% tr.aux and by abstraction-series, staged.elpi)
 pred cur-ih o:list bool.
 % [induction-flags Fl]: those flags, none outside a branch
 pred induction-flags o:list bool.
@@ -101,8 +103,8 @@ tactic-step T P :- not (off "tactics"),
   formula rclaim Ty F, sentence [wd "by", jst Txt, wd "have", tx F] S, conclusion-only S P.
 
 % [arith-conclusion T]: T is arithmetic, by its shape only: under its
-% foralls and implications, an equality or a disequality (not of an
-% equality) on nat, Z, N or R, or an order (<=, <, >=, >) on them
+% foralls and implications, an equality on nat, Z, N or R, an order (<=,
+% <, >=, >) on them, or the negation (not) of one of these
 pred arith-conclusion i:term.
 arith-conclusion (prod _ _ B) :- !, pi x\ arith-conclusion (B x).
 arith-conclusion (app [global (const C), X]) :- coq.gref->string (const C) "Corelib.Init.Logic.not", !,

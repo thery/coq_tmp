@@ -4,15 +4,14 @@
 # seconds, the nodes proved, not proved, and the remarks (▫️), or "failed"
 # (no checked text written).
 #   usage: sh cyprun.sh name...
-# No time limit: cyp's searches are bounded (cyp's
-# README, "Deterministic bounds"), lia and nia behind lia_guard (a check of
-# the goal's shape); lra, nra and Rocq's reduction end but have no bound.
+# No time limit: what cyp runs and its bounds are in cyp's README,
+# "Deterministic bounds".
 # The copy gets a flags: line, so that the require: line written by xtext
 # (Require Import XText.<file>) finds the compiled example files.
-# Needs: the cyp library compiled in CYP_LIB, loading the lexicon (../lexicon,
-# before elpi/text.elpi; default ../cyp/vernac:
-# rocq c -Q . CypV Cyp.v) and the driver built (in ../cyp: dune build
-# ./bin/cyp.exe).
+# Needs: the cyp library compiled in CYP_LIB (default ../cyp/vernac; the
+# commands: ../cyp/README.md, the build, which compiles
+# ../prooftext/Tactics.v, then Gaps.v and Cyp.v) and the driver built (in
+# ../cyp: dune build ./bin/cyp.exe).
 
 here=$(cd "$(dirname "$0")" && pwd)
 CYP=${CYP:-$here/../cyp/_build/default/bin/cyp.exe}

@@ -5,9 +5,11 @@
 % the writer writes only these names (xtext: the second argument of
 % xtext-tactic, xtext-guard-tactic and xtext-arith-tactic, xtext/ExtractText.v, checked by
 % xtext/vocab_check.v).  A tool may run a tactic its own way (a
-% bound, options; cyp and xtext run the same, ../prooftext/Tactics.v):
-% the name is what the text says.  arith: lia, then tauto (the word xtext
-% gives to a step whose conclusion is arithmetic).
+% bound, options): the name is what the text says.  For every name that
+% xtext writes, cyp and xtext run the same Ltac (cyp_N of Cyp.v, xtext_N of
+% ExtractText.v; the bounded ones in Tactics.v, this directory).  arith:
+% lia, then tauto (the word xtext gives to a step whose conclusion is
+% arithmetic).
 
 namespace prooftext {
 

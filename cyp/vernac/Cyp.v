@@ -24,12 +24,8 @@
        justification), formulas (terms, each followed by its class,
        "{.claim}"), and its subnodes (a list of steps).
 
-   What a proof means is in the Elpi files of elpi/: text.elpi (what cyp
-   takes from the text of a node: its tags), check.elpi (closing a goal: the
-   justifications, the facts, the rules), gaps.elpi (the gap tactic, a
-   last try on a condition left open, cyp_gap of Gaps.v), proof.elpi (the
-   proof of a statement from its tree), markdown.elpi (the checked Markdown
-   and the JSON).  The tree is read by prooftext's reader
+   What a proof means is in the Elpi files of elpi/ (what each one does:
+   README.md, "How it works").  The tree is read by prooftext's reader
    (prooftext/tree.elpi, nodes.elpi).  The rules of a field are added to
    the database cyp.db (justify, justify_first, named).
 
@@ -63,19 +59,16 @@ Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
    proof declares its own words the same way:
      Ltac my_tac := ...
      CypJustification "my" := my_tac. *)
-(* lia and nia behind lia_guard (prooftext/Tactics.v): a check of the
-   goal's shape, with no search, before a search that has no bound *)
+(* what each runs and its bound: ../README.md, "Deterministic bounds"
+   (guarded_lia, guarded_nia and bounded_firstorder: prooftext/Tactics.v) *)
 Ltac cyp_lia := guarded_lia.    Ltac cyp_nia := guarded_nia.
 Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
 Ltac cyp_ring := ring.          Ltac cyp_field := field.
 Ltac cyp_tauto := itauto auto.        Ltac cyp_auto := auto.
 Ltac cyp_easy := easy.          Ltac cyp_reflexivity := reflexivity.
 Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
-(* firstorder, bounded (prooftext/Tactics.v, shared with xtext): firstorder has no bound (on a condition
-   of xtext's half_le it ran over 30 s and took up to 7 GB) *)
 Ltac cyp_firstorder := bounded_firstorder.
-(* arith: the name xtext gives to a step whose conclusion is arithmetic
-   (an equality or an order on nat, Z, N or R), closed by lia or by tauto *)
+(* arith: the name xtext gives to a step whose conclusion is arithmetic *)
 Ltac cyp_arith := first [ guarded_lia | itauto auto ].
 (* used by cyp itself *)
 (* a hypothesis that is the goal, when the goal has no existential variable

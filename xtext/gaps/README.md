@@ -23,9 +23,6 @@ constructor.
 
 ## The scripts
 
-- `make_mode.sh CONTRACTION ANNOTATION OUTDIR`: all the English texts of
-  xtext written with one setting of `XTEXT_CONTRACTION` and
-  `XTEXT_ANNOTATION`, from a copy of `xtext/` (nothing here is touched);
 - `probe.sh OUTDIR text.md...`: each text checked by `Cyp File` with
   a Proof block, one text at a time, under `nice`, with no time limit
   (see "No time limit" below) and at most `CYP_MEMORY_GB` (default 8) GB of memory; it prints the

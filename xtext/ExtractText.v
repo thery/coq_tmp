@@ -66,24 +66,11 @@ From XText Extra Dependency "elpi/subproofs.elpi" as xt_subproofs.
 
 (* The tactics tried on long subproofs (see xtext-tactic below) and those
    that check a guarded contraction (xtext-guard-tactic).  Each is an Ltac
-   definition (rocq-elpi calls Ltac definitions by name).  None has a time
-   limit: a time limit makes the text depend on the speed of the machine.
-   Each runs the tactic that cyp runs for the name the text gives it
-   (cyp/vernac/Cyp.v, cyp_N), so that cyp closes the step the same way;
-   the bounds are those of cyp's README ("Deterministic bounds"):
-   - tauto: itauto auto (coq-itauto), a reflexive SAT solver whose fuel is
-     computed from the size of the formula, classical as tauto with the
-     flag Itauto Classic; its leaf tactic auto is of depth 5;
-   - auto: depth 5;
-   - firstorder: bounded_firstorder (../prooftext/Tactics.v), at most 200
-     steps, then eauto 4 or congruence;
-   - congruence: ends (a closure over the terms of the goal);
-   - lia: no bound in Rocq 9.1 (the options Lia Depth and Lra Depth are not
-     read by the search); it runs behind lia_guard (../prooftext/Tactics.v),
-     a check of the goal's shape (its case splits and hypotheses), with no
-     search, as guarded_lia;
-   - arith: first [ guarded_lia | itauto auto ], cyp's cyp_arith, the name
-     of a step whose conclusion is arithmetic (xtext-arith-tactic). *)
+   definition (rocq-elpi calls Ltac definitions by name), with no time
+   limit, and runs the tactic that cyp runs for the name the text gives it
+   (cyp/vernac/Cyp.v, cyp_N), so that cyp closes the step the same way.
+   What each runs and its bound: doc/contraction-eliminations-partial.md,
+   "No time limit" (the bounds: cyp/README.md, "Deterministic bounds"). *)
 From Cdcl Require Import Itauto.
 #[export] Set Itauto Classic.
 Ltac xtext_tauto := itauto auto.
@@ -146,26 +133,9 @@ Elpi Db xtext.db lp:{{
   :name "xtext-header-require"
   xtext-header-require "From Stdlib Require Import Arith Lia List Bool. Import ListNotations.".
   % [xtext-switch Name Variable Default]: a switch of the writer, the
-  % environment variable that sets it, and its default value.  The values
-  % the writer knows are in elpi/switches.elpi; any other value, an empty
-  % one included, is an error.  The switches are read when ExtractText runs
-  % (make does not see the variables: compile the example files again).
-  %   translation: how a proof becomes text, "staged" (annotation,
-  %     contraction, writing, as in Coscoy's thesis; elpi/staged.elpi) or
-  %     "direct" (in one walk, its contraction checked by tactics: not the
-  %     thesis's);
-  %   contraction: the contraction of application steps (thesis 3.4.2),
-  %     "none", "guarded" or "maximal";
-  %   selection: with the staged translation, the type expressions the
-  %     text keeps, "none" (decided by the contraction) or "thesis" (the
-  %     selection of thesis 4.3.1, which then replaces the contraction);
-  %   naming: after the selection (selection "thesis"), the subproofs of
-  %     thesis 4.3.2-4.3.3 (elpi/subproofs.elpi): "none", "all" (each
-  %     subproof used in an application is named, P1, P2, ..., and proved
-  %     before the step that uses it) or "shared" (the same, a result
-  %     proved once for each type in scope);
-  %   lang: the language of the texts (those of the lexicon, ../lexicon),
-  %     also given by the command, ExtractText foo in "fr".
+  % environment variable that sets it, and its default value.  What each
+  % switch does, its values, and when it is read: README.md, "Switches"
+  % (the values the writer knows: elpi/switches.elpi, switch-values).
   % Change a default with
   % Elpi Accumulate xtext.db lp:{{ :before "xtext-switch" xtext-switch "contraction" "XTEXT_CONTRACTION" "none" :- !. }}.
   pred xtext-switch o:string, o:string, o:string.

@@ -356,8 +356,9 @@ opening to its end), where its own text starts (a `spot Line Column`,
 where a checker writes its status mark), where a message about it goes
 (after that line, at that column), and its contents in the order of the
 text: `run Text Parts`, `sub Node`, `para-end` (the end of a paragraph)
-and `flaw Line Error` (an error of the reader: a span or a div left open
-or closed but not opened, an unknown class of a span or a div).
+and `flaw Line Error` (an error of the reader: a div left open, a span or a
+div closed but not opened, an unknown class of a span or a div; a span
+left open is text, see "spans" above).
 `nodes.elpi` says what a node says: `node-parts`, `claim-parts` (its
 conclusions, `{.claim}` or `{.goal}`, `conclusion-class`), `is-goal-node`
 (its conclusion is an open goal),
@@ -365,8 +366,7 @@ conclusions, `{.claim}` or `{.goal}`, `conclusion-class`), `is-goal-node`
 `is-remark`, its numbers (`numbered-subnodes`, `node-children`, which
 replaces a remark by its subnodes, `all-nodes`; the top node is `0`, its
 subnodes `1`, `2`, ..., the subnodes of `2` are `2.1`, ...), and the
-errors, `tree-errors Top Errors`, each `node-error Number Line Error`
-(`error-message E S`, its English message).
+errors, `tree-errors Top Errors`, each `node-error Number Line Error`.
 
 **For a writer**, the Typst back end writes from the tree itself
 (`write-typst-tree`, below), so that a closing paragraph comes after its
@@ -816,7 +816,7 @@ closing paragraph of an item after its sub-item.
 
 - A formula without a class is plain text: shown without a role (cyp
   does not use it either).
-- The errors of the tree (an unclosed span, a node with no conclusion,
+- The errors of the tree (an unclosed div, a node with no conclusion,
   ...) are shown only in a checked text, as cyp's messages; the PDF of a
   text that is not checked shows the text as it reads it, without them.
 - In a checked free text, nodes that start at the same place show their

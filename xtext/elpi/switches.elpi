@@ -7,12 +7,8 @@
 % value is the variable's, if the variable is set, else the default.  A
 % value the writer does not know, an empty one included, is an error: a
 % misspelt XTEXT_CONTRACTION=gaurded must not give the texts of another
-% strategy without a word.
-%
-% The switches are read when the command ExtractText runs, from the
-% environment of the Rocq process that runs it.  make does not see the
-% environment: after changing a variable, the example files must be
-% compiled again (make_variant.sh does it in a copy of the directory).
+% strategy without a word.  What each switch does, and when it is read:
+% ../README.md, "Switches".
 
 % [switch Name Value]: the value of the switch Name
 pred switch i:string, o:string.
