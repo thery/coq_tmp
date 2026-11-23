@@ -16,16 +16,55 @@ li { padding: .8rem 0; border-top: 1px solid var(--rule); }
 a { color: var(--link); text-decoration: none; font-weight: 600; }
 a:hover { text-decoration: underline; }
 span.what { display: block; color: var(--muted); }
+h2 { font-size: 1.15rem; margin: 1.8rem 0 .2rem; }
+p.note { color: var(--muted); font-size: .92rem; margin: .2rem 0; }
+p.note a, span.what a { font-weight: 400; }
 </style></head><body>
 <h1>coq_tmp</h1>
-<p class="intro">Pages of <a href="https://github.com/thery/coq_tmp">github.com/thery/coq_tmp</a>.</p>
+<p class="intro">Pages of <a href="https://github.com/thery/coq_tmp">github.com/thery/coq_tmp</a>:
+proofs written as text, checked step by step, and the tools around them.</p>
+
+<h2>Try it in the browser</h2>
+<p class="note">Rocq runs in your browser, nothing to install: <a href="https://thery.github.io/rocq-web/">Rocq in the browser</a>, a build of
+<a href="https://github.com/rboudrouss/rocq-web">rocq-web</a> by Rayane Boudrouss
+(<a href="https://rocq.rboud.com/">rocq.rboud.com</a>), with many thanks to him.
+Step through a file with Alt+↓; the first visit reloads the page once.</p>
+<ul>
+  <li><a href="https://thery.github.io/rocq-web/?example=cyp-tutorial">The cyp tutorial</a>
+    <span class="what">One file to step through: what a proof text means, the conditions it generates,
+    how cyp proves them, justifications, errors.</span></li>
+  <li><a href="https://thery.github.io/rocq-web/?example=cyp">cyp: texts as proofs</a>
+    <span class="what">A proof written as text, checked step by step; a wrong step and its message.</span></li>
+  <li><a href="https://thery.github.io/rocq-web/?example=xtext">xtext: proofs as text</a>
+    <span class="what"><code>ExtractText</code> writes the proof of a lemma as text, in English or French.</span></li>
+  <li><a href="https://thery.github.io/rocq-web/?example=pbp">Proof by pointing</a>
+    <span class="what">Select part of a goal and click <i>Point</i>: the tactic that brings it to the surface is written for you.</span></li>
+  <li><a href="https://thery.github.io/rocq-web/?example=Ssreflect">Mathematical Components</a>
+    <span class="what">mathcomp 2.6.0, with Hierarchy Builder, in the same browser.</span></li>
+</ul>
+
+<h2>Read</h2>
 <ul>
   <li><a href="txt/">Proof texts</a>
-    <span class="what">Proofs written as text: by xtext from Rocq proof terms, in ten languages, and checked step by step by cyp.
-    Each text as a web page, with its formulas as mathematics, and as a PDF.</span></li>
-  <li><a href="https://thery.github.io/rocq-web/">Rocq in the browser</a>
-    <span class="what">Rocq 9.2 with rocq-elpi and itauto, running in the browser: a build of
-    <a href="https://github.com/rboudrouss/rocq-web">rocq-web</a> by Rayane Boudrouss
-    (<a href="https://rocq.rboud.com/">rocq.rboud.com</a>), with many thanks to him.</span></li>
+    <span class="what">Proofs written as text by xtext from Rocq proof terms, in ten languages, and checked by cyp:
+    each as a web page (formulas as mathematics, colours you can switch) and as a PDF.</span></li>
+  <li><a href="https://github.com/thery/coq_tmp/blob/main/cyp/TUTORIAL.md">The cyp tutorial</a>
+    <span class="what">The same tutorial as a document, with every example checked.</span></li>
+</ul>
+
+<h2>Use the tools</h2>
+<ul>
+  <li><a href="https://github.com/thery/coq_tmp/blob/main/cyp/README.md">cyp</a>
+    <span class="what">Checks a proof written as text (Markdown with coloured formulas) step by step in Rocq.</span></li>
+  <li><a href="https://github.com/thery/coq_tmp/blob/main/xtext/README.md">xtext</a>
+    <span class="what">Writes a Rocq proof as text, after Y. Coscoy's thesis, in ten languages.</span></li>
+  <li><a href="https://github.com/thery/coq_tmp/blob/main/prooftext/README.md">prooftext</a>
+    <span class="what">The shared format, and its PDF and web pages (Typst).</span></li>
+  <li><a href="https://github.com/thery/coq_tmp/blob/main/README.md#pbp-proof-by-pointing">pbp</a>
+    <span class="what">Proof by pointing: the tactic and the pattern computed from a selection.</span></li>
+  <li><a href="https://github.com/thery/coq_tmp/blob/main/elpi-tools/DESIGN.md">elpi-tools</a>
+    <span class="what">A debugger, a property tester and a VS Code debug adapter for Elpi programs.</span></li>
+  <li><a href="https://github.com/thery/coq_tmp/blob/main/radcan/README.md">radcan</a>
+    <span class="what">A reflective simplifier of radical expressions.</span></li>
 </ul>
 </body></html>
