@@ -33,13 +33,14 @@
 #          difference).  Needs pbp.v, pbp_select.v, point_actions.v,
 #          point_actions_more.v compiled, with the rocq of the current
 #          opam switch.  The compilations are limited to 8 GB of virtual
-#          memory, except with a rocq compiled by OCaml 5, which reserves
-#          more address space than it uses: there, no limit.
+#          memory; with a rocq compiled by OCaml 5, which reserves its
+#          minor heaps in address space at start (it aborts under 8 GB,
+#          it starts under 64 GB), to 64 GB of virtual memory.
 here=$(cd "$(dirname "$0")" && pwd)
 tut=$here/point_actions_tutorial.v
 tmp=$(mktemp -d) || exit 2
 trap 'rm -rf "$tmp"' EXIT
-if rocq --version | grep -q "OCaml 4"; then ulimit -v 8000000; fi
+if rocq --version | grep -q "OCaml 4"; then ulimit -v 8000000; else ulimit -v 64000000; fi
 status=0
 me=point_actions_tutorial_check
 

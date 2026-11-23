@@ -236,9 +236,8 @@ selections, that these lines (and the errors promised) are the ones
 `point_run` gives, that point_actions_more.v's actions of the same names
 give the same lines (but on a selection under a binder, which they
 handle and the tutorial refuses), that the messages the comments
-promise ("prints:")
-are the ones printed, and that the references `FILE.v:N` name the right
-lines.
+promise ("prints:") are the ones printed, and that the references
+`FILE.v:N` name the right lines.
 
 The actions point_actions.v declares (`Point`, `Link`) and those of
 [point_actions_more.v](point_actions_more.v) (the others; the demos and
