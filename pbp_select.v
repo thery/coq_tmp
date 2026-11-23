@@ -14,11 +14,12 @@
    is a Unicode code point.
 
    Method.  A subterm of the goal is found in the printed goal by printing
-   the goal again with that subterm replaced by a marker, [pbp_mark], a
-   constant whose two arguments (its type and the subterm itself) are
-   implicit: it prints as one word and keeps the subterm, so that the
-   binders above it are printed as before.  The text before the marker
-   and the text after it are then the text before and after the subterm
+   the goal again with that subterm s framed by two markers, [A s B], A
+   and B two local variables whose names occur nowhere in the printed
+   goal: an application of local variables prints alike under every
+   printing option (Printing All, Implicit), and s stays, so that the
+   binders above it are printed as before.  The text before A and the
+   text after B are then the text before and after the subterm
    in the printed goal.  This is Rocq's own printer: notations, implicit
    arguments, coercions and parentheses are the ones of the goal, and two
    occurrences that print alike (the two [a] of [a + b = b + a]) are told
@@ -40,8 +41,7 @@ From Stdlib Require Import ssreflect.
 From elpi Require Import elpi.
 From coq_tmp Require Export pbp.
 
-(* The markers: they print as their name only *)
-Definition pbp_mark {A : Type} {a : A} : A := a.
+(* The marker of the holes of a pattern: it prints as its name only *)
 Definition pbp_hole {A : Type} {a : A} : A := a.
 
 Elpi Db pbp_select.db lp:{{
@@ -61,7 +61,13 @@ msg S M :- tool-name T, !, M is T ^ ": " ^ S.
 
 % [flat S F] F is S without its blanks
 pred flat i:string, o:string.
-flat S F :- rex.replace "[ \t\n\r]+" "" S F.
+flat S F :- rex.replace "[ \t\n\r]+" "" S F0, unicode-blanks Bs, std.fold Bs F0 (b\ s\ r\ rex.replace b "" s r) F.
+
+% the blanks of JavaScript's \s that are not ASCII (the panels count with
+% it): no-break spaces, the spaces U+2000-U+200A, line and paragraph
+% separators, U+1680, U+205F, U+3000, the byte order mark; and \v, \f
+pred unicode-blanks o:list string.
+unicode-blanks [" ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "　", "﻿", "", ""].
 
 % [one-line S L] L is S on one line: each run of blanks is one space
 pred one-line i:string, o:string.
@@ -172,53 +178,92 @@ kind shown type.
 % (included) to E (excluded), and its text without blanks is T
 type shown list int -> int -> int -> string -> shown.
 
-% [mark-at P T M] M is T where the subterm at path P is marked
-pred mark-at i:list int, i:term, o:term.
-mark-at P T M :-
-  replace-at P [] (_\ s\ r\ r = {{ @pbp_mark _ lp:s }}) T M.
+% [marker-names O A B] A and B, the names of the two markers, are names
+% that do not occur in O, the printed term (without blanks): so the
+% printer neither renames a binder of the term nor mixes them with its text
+pred marker-names i:string, o:string, o:string.
+marker-names O A B :- marker-fresh O "pbp_mark" 0 A, marker-fresh O "pbp_end" 0 B.
 
-% [around-mark M P Q] the text M (without blanks) is P, the marker, Q
-pred around-mark i:string, o:string, o:string.
-around-mark M P Q :-
-  rex.replace "pbp_mark.*" "" M P, rex.replace ".*pbp_mark" "" M Q,
-  L is size M - size P - size Q, L = 8.
+pred marker-fresh i:string, i:string, i:int, o:string.
+marker-fresh O Base 0 Name :- not (contains O Base), !, Name = Base.
+marker-fresh O Base N Name :- N > 0, std.any->string N NS, C is Base ^ NS,
+  not (contains O C), !, Name = C.
+marker-fresh O Base N Name :- N1 is N + 1, marker-fresh O Base N1 Name.
+
+% [contains S T] the string T occurs in S
+pred contains i:string, i:string.
+contains S T :- rex.match {calc (".*" ^ T ^ ".*")} S.
+
+% [marked-string A B P T S] S is the printing (without blanks) of T where
+% the subterm s at path P is replaced by A s B, A and B two local variables
+% (an application of local variables prints alike under every printing
+% option, Printing All included; s stays, so that the binders above it
+% print as in T)
+pred marked-string i:string, i:string, i:list int, i:term, o:string.
+marked-string A B P T S :-
+  coq.id->name A NA, coq.id->name B NB,
+  (pi a b\ decl a NA {{ Prop }} => decl b NB {{ Prop }} =>
+     sigma M\ (replace-at P [] (_\ s\ r\ r = app [a, s, b]) T M,
+      coq.term->string M MS)),
+  flat MS S.
+
+% [around-mark A B M P Q] the text M (without blanks) is P, then the
+% marker A, the subterm, the marker B, then Q (fails when the markers are
+% not printed: the subterm is not, an implicit argument say)
+pred around-mark i:string, i:string, i:string, o:string, o:string.
+around-mark A B M P Q :-
+  contains M A, contains M B,
+  rex.replace {calc (A ^ ".*")} "" M P, rex.replace {calc (".*" ^ B)} "" M Q.
 
 % [fits O P Q B T] T is the text of O between P and Q, B being the text
-% before it: P, or else P and Q without the parentheses around the marker
+% before it: first P and Q without the parentheses around the markers (the
+% application A s B is printed in parentheses where s may be printed with
+% or without its own: then T is s with its own, as in O), else P and Q
 pred fits i:string, i:string, i:string, o:string, o:string.
-fits O P Q P T :- between O P Q T, !.
 fits O P Q P1 T :-
   ends-with "(" P, starts-with ")" Q,
   P1 is substring P 0 (size P - 1), Q1 is substring Q 1 (size Q - 1),
-  between O P1 Q1 T.
+  between O P1 Q1 T, !.
+fits O P Q P T :- between O P Q T.
 
-% [shown-at T O P Sh] the subterm of T at path P is printed as a whole in
-% O, the printing of T without blanks, as Sh says
-pred shown-at i:term, i:string, i:list int, o:shown.
-shown-at T O P (shown P S E Txt) :-
-  mark-at P T M, coq.term->string M MS, flat MS MF,
-  around-mark MF Pre Post, fits O Pre Post Before Txt,
+% [shown-at T O A B P Sh] the subterm of T at path P is printed as a whole in
+% O, the printing of T without blanks, as Sh says (A, B: the markers)
+pred shown-at i:term, i:string, i:string, i:string, i:list int, o:shown.
+shown-at T O A B P (shown P S E Txt) :-
+  marked-string A B P T MF,
+  around-mark A B MF Pre Post, fits O Pre Post Before Txt,
   cp-length Before S, cp-length Txt L, E is S + L.
 
 % [shown-all T Shs] Shs are the subterms of T printed as a whole, and
 % where they are in the printing of T
 pred shown-all i:term, o:list shown.
 shown-all T Shs :-
-  coq.term->string T S, flat S O,
+  coq.term->string T S, flat S O, marker-names O A B,
   std.findall (path-of T P_) Sols,
-  std.map-filter Sols (s\ sh\ sigma P\ s = path-of T P, 
-                          not (through-return T P), shown-at T O P sh)
+  std.map-filter Sols (s\ sh\ sigma P\ s = path-of T P,
+                          not (not-printed T P), shown-at T O A B P sh)
     Shs.
 
-% [through-return T P] the path P of T goes through the return type of a
-% match (never printed as a subterm; marking it breaks the printing)
-pred through-return i:term, i:list int.
-through-return (match _ _ _) [1|_] :- !.
-through-return T [I|P] :- kids T Ks, std.nth I Ks K, kid-through P K.
+% [not-printed T P] the subterm at path P of T is never printed as a
+% subterm, and marking it breaks the printing of the match it is in: the
+% return type of a match (or a subterm of it), or a branch of a match that
+% binds the arguments of its constructor (its fun ..., and the fun ... of
+% the next arguments: the binders of the pattern S k)
+pred not-printed i:term, i:list int.
+not-printed (match _ _ _) [1|_] :- !.
+not-printed (match _ _ Bs) [I|P] :- I >= 2, J is I - 2, std.nth J Bs Br,
+  branch-binder P Br, !.
+not-printed T [I|P] :- kids T Ks, std.nth I Ks K, kid-not-printed P K.
 
-pred kid-through i:list int, i:kid.
-kid-through P (kt T) :- through-return T P.
-kid-through P (kb _ _ B) :- pi x\ through-return (B x) P.
+pred kid-not-printed i:list int, i:kid.
+kid-not-printed P (kt T) :- not-printed T P.
+kid-not-printed P (kb _ _ B) :- pi x\ not-printed (B x) P.
+
+% [branch-binder P Br] the path P of the branch Br ends at one of its
+% leading fun (its body is the kid 1 of a fun)
+pred branch-binder i:list int, i:term.
+branch-binder [] (fun _ _ _).
+branch-binder [1|P] (fun _ _ F) :- pi x\ branch-binder P (F x).
 
 % [text-at P T S] S is the subterm of T at path P, printed on one line
 pred text-at i:list int, i:term, o:string.
@@ -397,6 +442,20 @@ pattern-kid Sels _ P _ T I K K :-
 pattern-kid Sels Vis P Bs _ I K K1 :-
   std.append P [I] PI, map-kid Bs (bs\ t\ r\ pattern Sels Vis PI bs t r) K K1.
 
+% [default-printing G] G, run with the printing options at their default
+% (Printing All, Implicit, Coercions unset, Notations set), then put back:
+% the pattern is a line of the script, whatever the goal display uses
+pred default-printing i:prop.
+default-printing G :-
+  Off = [["Printing", "All"], ["Printing", "Implicit"], ["Printing", "Coercions"]],
+  On = ["Printing", "Notations"],
+  std.map Off (o\ v\ coq.option.get o v) OldOff, coq.option.get On OldOn,
+  std.forall Off (o\ coq.option.set o (coq.option.bool ff)),
+  coq.option.set On (coq.option.bool tt),
+  (G, !, R = tt ; R = ff),
+  std.forall2 Off OldOff (o\ v\ coq.option.set o v), coq.option.set On OldOn,
+  R = tt.
+
 % [pattern-text Ns Ps C Vis Xs T] T is the text of the pattern of C, the
 % selections at paths Ps being the variables named Ns (Xs: those already
 % bound)
@@ -408,7 +467,7 @@ pattern-text [N|Ns] Ps C Vis Xs T :-
     sigma Xs1\ (std.append Xs [x] Xs1, pattern-text Ns Ps C Vis Xs1 T).
 pattern-text [] Ps C Vis Xs T :-
   std.map2 Ps Xs (p\ x\ s\ s = pr p x) Sels,
-  pattern Sels Vis [] [] C P, coq.term->string P S,
+  pattern Sels Vis [] [] C P, default-printing (coq.term->string P S),
   rex.replace "pbp_hole" "_" S S1, one-line S1 T.
 
 % [check Text Ps C] the pattern Text, parsed and elaborated, is C once its
