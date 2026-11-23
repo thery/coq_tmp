@@ -228,7 +228,7 @@ text may name):
   marks and messages of the nodes inserted) and the JSON for the editor.
 
 The words of the default tactics (`lia`, `lra`, ...) are declared to mean
-Ltac definitions of [Cyp.v](Cyp.v) (`cyp_lia := lia`): Rocq-Elpi runs an
+Ltac definitions of [../../prooftext/Tactics.v](../../prooftext/Tactics.v) (`word_lra := lra`): Rocq-Elpi runs an
 Ltac definition by its name, not a builtin tactic nor tactic code given as
 a string.
 

@@ -42,14 +42,14 @@ text does not depend on the speed of the machine.  Each is the tactic
 that cyp runs for its name ([cyp's README, "Deterministic
 bounds"](../../cyp/README.md#deterministic-bounds)), with the same bound:
 
-| name in the text | what xtext runs (`ExtractText.v`) | bound |
+| name in the text | what xtext runs (`word_N`, `prooftext/Tactics.v`) | bound |
 |---|---|---|
 | `tauto` | `itauto auto` (coq-itauto, with `Itauto Classic`) | itauto's SAT solver runs on a fuel computed from the size of the formula; its leaf tactic `auto` is of depth 5 |
 | `auto` | `auto` | depth 5 |
 | `firstorder` | `bounded_firstorder` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | at most 200 steps taking the goal and its hypotheses apart, then `eauto 4` or `congruence` |
 | `congruence` | `congruence` | ends (a closure over the terms of the goal) |
 | `lia` | `guarded_lia`: `lia_guard`, then `lia` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | `lia` has **no bound** in Rocq 9.1 (the options `Lia Depth` and `Lra Depth` are not read by the search, as cyp's README says); `lia_guard` refuses a goal with more than 50 case splits or 16 hypotheses (a count on the goal's shape, no search), measured on every call of the texts (`../gaps/README.md`, "No time limit"); it bounds what `lia` is given, not its search |
-| `arith` | `first [ guarded_lia \| itauto auto ]` (cyp's `cyp_arith`) | those of `lia` and `tauto` |
+| `arith` | `first [ guarded_lia \| itauto auto ]` (`word_arith`) | those of `lia` and `tauto` |
 
 **The word `arith`.**  A step closed by the guard, or a long subproof
 closed by a tactic of `xtext-tactic`, whose conclusion is arithmetic is
