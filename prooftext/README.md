@@ -274,9 +274,9 @@ that names no formula in scope).
   or in its `by` field, and `unknown-tactics Names Unknown`; `method
   Name`, the two fixed justifications `match` and `induction` (no
   tactics: a `by` field does not name them).  Each tool
-  runs a name its own way: cyp runs the Ltac definition `cyp_Name`
-  (`cyp/vernac/Cyp.v`; the rules of a proof may add tactics,
-  `tactic-name Name Ltac`); xtext writes only these
+  runs a name its own way: in cyp each is a word declared by
+  `CypJustification "Name" := cyp_Name.` (`cyp/vernac/Cyp.v`; a proof
+  declares its own words the same way); xtext writes only these
   names (the text of its tactics, `xtext-tactic Ltac Name` and
   `xtext-guard-tactic Ltac Name` in `xtext/ExtractText.v`, which run them with
   a time limit), and `xtext/vocab_check.v` checks it.  A name added to one
@@ -384,6 +384,7 @@ prooftext/pdf.sh --links '[["index", "../index.html"]]' proof.typ   # links abov
 prooftext/pdf.sh --roles claim,just proof.md # colour only the claims and justifications (all by default)
 sh prooftext/gallery.sh ~/gallery                      # every text of the repository, with an index
 prooftext/pdf.sh --doc-root MyLib=../doc/ --name-links names.txt proof.md   # links to local rocq doc pages, rules, tactics
+prooftext/pdf.sh --source-root CypV=https://github.com/thery/coq_tmp/blob/main/cyp/vernac/ proof.checked.md   # cyp's declared words link to their declarations
 ```
 
 `pdf.sh` writes the Typst source of each text next to it (`proof.md` gives
@@ -554,8 +555,8 @@ form of the texts written before the tree, `*by X*`, is shown as the word
 
 The PDF and the web page have the same links, made with Typst's `link`
 and `label` (`links.elpi`, `typst.elpi`, the template's `linked`).  There
-are four kinds; the writer finds the first two while it reads the text,
-with no table of names (the third needs one, given on the command line).
+are five kinds; the writer finds the first two while it reads the text,
+with no table of names (the third and fourth need one, given on the command line).
 
 1. **A name and its uses.**  A name given to a formula, `` `A`{.hyp}
    (h) `` (a hypothesis, or the conclusion of a node that later nodes
@@ -604,8 +605,22 @@ with no table of names (the third needs one, given on the command line).
    a table gives it: `pdf.sh --name-links FILE` (and `gallery.sh
    --name-links`), one line `NAME URL` each, the clauses
    `prooftext.name-url "NAME" "URL"` (`links.elpi`).  A name in scope
-   (the name of a hypothesis) comes first.
-4. **The pages of a gallery** (`gallery.sh`): see "The gallery".
+   (the name of a hypothesis) comes first.  A word declared in cyp needs
+   no table (4.).
+4. **A declared justification word** (cyp: `CypJustification "word" :=
+   tac.` or `:= rules.`, `cyp/vernac/Cyp.v`) links to its declaration:
+   cyp writes, in the JSON next to the checked text (`proof.cyp.json`),
+   the declared words that the text uses, each with the file, the
+   library and the line of its declaration; `pdf.sh --source-root
+   ROOT=URL` (repeatable, and `gallery.sh --source-root`, which copies the
+   JSON with the text) turns each into a clause `name-url`, the address
+   `URL` + the path under `ROOT` + `#L<line>` (GitHub's line anchors):
+   `ROOT` a directory, for a declaration in a file under it (a rule file
+   of the proof), or a logical prefix, for one in a library under it
+   (`CypV`: `CypV.Cyp` is the file `Cyp.v`, where cyp declares `lia`,
+   `tauto`, ...).  No root, no link (the JSON holds the paths of the
+   machine that ran cyp).
+5. **The pages of a gallery** (`gallery.sh`): see "The gallery".
 
 The addresses without a version, `rocq-prover.org/corelib/...` and
 `rocq-prover.org/stdlib/...`, lead to the latest documentation (checked

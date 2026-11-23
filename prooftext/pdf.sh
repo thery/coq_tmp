@@ -33,6 +33,14 @@
 #   --name-links F  the table F, one line "NAME URL" each, gives the
 #                   address of a justification *NAME*{.just} that Rocq does
 #                   not locate: a rule, a tactic (links.elpi, name-url);
+#   --source-root R=U  a justification word that the text uses and that a
+#                   CypJustification declares (cyp/vernac/Cyp.v; cyp's
+#                   JSON next to the text, proof.cyp.json, lists them with
+#                   the place of their declaration) links to that place:
+#                   Upath#Lline (U ends with /), for a declaration in a file under the
+#                   directory R (/...), or in a library under the logical
+#                   prefix R (CypV: CypV.Cyp is the file Cyp.v);
+#                   repeatable; no link without it;
 #
 # Needs: the opam switch elpi5 (rocq-elpi), typst (0.15).  Typst.vo is
 # compiled when it is older than its sources.
@@ -46,7 +54,39 @@ ulimit -v 8000000
 elpi_string() { printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"; }
 elpi_clause() { printf '\nprooftext.%s %s %s.' "$1" "$(elpi_string "$2")" "$(elpi_string "$3")"; }
 
-style=maths; extra_flags=""; output=pdf; links="[]"; roles=""; clauses=""
+# [declaration_url LIBRARY FILE LINE]: the address of a declaration of a
+# justification word (CypJustification, cyp/vernac/Cyp.v) under the first
+# --source-root that holds it: ROOT a directory (/...), FILE under it; or
+# ROOT a logical prefix (CypV), LIBRARY under it (CypV.Cyp: the file Cyp.v);
+# URL/path#Lline (the line anchors of GitHub; ignored elsewhere).  Empty
+# when no root holds it
+declaration_url() {
+  printf '%s\n' "$source_roots" | while read -r r; do
+    [ -n "$r" ] || continue
+    root=${r%%=*}; url=${r#*=}
+    case $root in
+      /*) case $2 in "${root%/}"/*) echo "$url${2#"${root%/}"/}#L$3"; break ;; esac ;;
+      *) case $1 in "$root".*) echo "$url$(echo "${1#"$root".}" | tr . /).v#L$3"; break ;; esac ;;
+    esac
+  done
+}
+
+# [declaration_clauses MD]: the clauses name-url of the declared words that
+# the text MD uses, from the JSON that cyp wrote next to it (proof.cyp.json
+# for proof.md and proof.checked.md: "justifications", one word per line),
+# their addresses given by --source-root; none without a root
+declaration_clauses() {
+  case $1 in *.checked.md) json=${1%.checked.md}.cyp.json ;; *) json=${1%.md}.cyp.json ;; esac
+  [ -n "$source_roots" ] && [ -f "$json" ] || return 0
+  sed -n 's/^{"word":"\([^"]*\)","meaning":"[^"]*","library":"\([^"]*\)","file":"\([^"]*\)","line":\([0-9]*\)}.*$/\1 :\2 \3 \4/p' "$json" |
+    while read -r w lib file line; do
+      lib=${lib#:}
+      u=$(declaration_url "$lib" "$file" "$line")
+      if [ -n "$u" ]; then elpi_clause name-url "$w" "$u"; fi
+    done
+}
+
+style=maths; extra_flags=""; output=pdf; links="[]"; roles=""; clauses=""; source_roots=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --code) style=code; shift ;;
@@ -65,6 +105,9 @@ while [ $# -gt 0 ]; do
                 clauses="$clauses$(elpi_clause library-documentation "${2%%=*}" "${2#*=}")"; shift 2 ;;
     --name-links) [ -f "$2" ] || { echo "pdf.sh: no file $2" >&2; exit 2; }
                   clauses="$clauses$(while read -r n u; do [ -n "$n" ] && elpi_clause name-url "$n" "$u"; done < "$2")"; shift 2 ;;
+    --source-root) case $2 in *=*) ;; *) echo "pdf.sh: --source-root ROOT=URL" >&2; exit 2 ;; esac
+                   source_roots="$source_roots
+$2"; shift 2 ;;
     *) break ;;
   esac
 done
@@ -93,9 +136,11 @@ typst_source() {
   fi
   printf '%s\nFrom ProofText Require Import Typst.\nTypst "%s" to "%s"%s.\n' \
     "$require" "$1" "$2" "$option" > "$tmp/typst_of.v"
-  # the clauses of --doc-root and --name-links, before the command runs
-  if [ -n "$clauses" ]; then
-    { echo "Elpi Accumulate Typst lp:{{"; printf '%s\n' "$clauses"; echo "}}."; } > "$tmp/clauses"
+  # the clauses of --doc-root and --name-links, and those of the words that
+  # the text uses (--source-root), before the command runs
+  all_clauses="$clauses$(declaration_clauses "$1")"
+  if [ -n "$all_clauses" ]; then
+    { echo "Elpi Accumulate Typst lp:{{"; printf '%s\n' "$all_clauses"; echo "}}."; } > "$tmp/clauses"
     sed -i "/^From ProofText Require Import Typst\.\$/r $tmp/clauses" "$tmp/typst_of.v"
   fi
   # $flags is a list of options: split on purpose

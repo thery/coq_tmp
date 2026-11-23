@@ -23,15 +23,22 @@
 #                           their rocqdoc pages under URL (pdf.sh --doc-root);
 #   --name-links FILE       a table "NAME URL" per line, the addresses of the
 #                           justifications that Rocq does not locate: rules,
-#                           tactics (pdf.sh --name-links).
-# A relative URL in either is relative to OUT: it is written relative to
+#                           tactics (pdf.sh --name-links);
+#   --source-root ROOT=URL  the justification words declared by
+#                           CypJustification link to their declarations
+#                           under URL (pdf.sh --source-root; the JSON that
+#                           cyp wrote next to a checked text is copied with
+#                           it).
+# A relative URL in any of them is relative to OUT: it is written relative to
 # each page (../ for each level of the page under OUT).
-doc_roots=""; name_links=""
+doc_roots=""; name_links=""; source_roots=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --doc-root) doc_roots="$doc_roots
 $2"; shift 2 ;;
     --name-links) name_links=$(cd "$(dirname "$2")" && pwd)/$(basename "$2"); shift 2 ;;
+    --source-root) source_roots="$source_roots
+$2"; shift 2 ;;
     *) break ;;
   esac
 done
@@ -55,13 +62,16 @@ relative_url() {
 }
 
 # [link_options DIR]: the options of pdf.sh for the links of the pages in
-# OUT/DIR/ (DIR ends with /): --doc-root and --name-links, their relative
+# OUT/DIR/ (DIR ends with /): --doc-root, --source-root and --name-links, their relative
 # addresses written from there (the table in OUT/DIR/.name-links).  The
 # addresses have no spaces
 link_options() {
   up=$(echo "$1" | sed 's|[^/]*/|../|g')
   printf '%s\n' "$doc_roots" | while read -r r; do
     [ -n "$r" ] && printf ' --doc-root %s=%s' "${r%%=*}" "$(relative_url "$up" "${r#*=}")"
+  done
+  printf '%s\n' "$source_roots" | while read -r r; do
+    [ -n "$r" ] && printf ' --source-root %s=%s' "${r%%=*}" "$(relative_url "$up" "${r#*=}")"
   done
   if [ -n "$name_links" ]; then
     while read -r n u; do
@@ -95,6 +105,9 @@ for section in "$@"; do
     # the copy without its flags line: the load paths of this machine, which
     # the section's flags give instead
     grep -v '^ *flags:' "$f" > "$out/$name/$sub$base.md"
+    # the JSON of a checked text (cyp), for the links of its declared words
+    case $f in *.checked.md) j=${f%.checked.md}.cyp.json ;; *) j=${f%.md}.cyp.json ;; esac
+    [ -f "$j" ] && cp "$j" "$out/$name/$sub${base%.checked}.cyp.json"
     # the options of the links: split on purpose
     # shellcheck disable=SC2046
     if nice sh "$here/pdf.sh" --source --flags "$flags" $(link_options "$name/$sub") "$out/$name/$sub$base.md" > /dev/null 2>&1; then
