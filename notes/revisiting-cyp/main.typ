@@ -39,13 +39,15 @@
   *xtext* writes such a text from a Rocq proof term, after Coscoy's
   thesis. The format is the tree of the 2003 paper, written either as
   nested lists or as free prose with marked spans; only what is tagged
-  is used, and the justifications are tagged names in the sentences.
-  Both tools are written in Rocq-Elpi and share a library for the
-  format, a lexicon of ten languages and a back end that typesets the
-  texts with Typst, as a PDF or as a web page. We report what was built
-  and what we measured: in the 80 English texts written by xtext, cyp
-  proves 684 of the 686 steps it checks (666 of 683 with the format used
-  before).
+  is used, and the justifications are tagged names in the sentences,
+  whose meaning is declared in the files of the proof. Neither tool has
+  a time limit: every search has a fixed bound, so a verdict does not
+  depend on the machine. Both tools are written in Rocq-Elpi and share
+  a library for the format, a lexicon of ten languages and a back end
+  that typesets the texts with Typst, as a PDF or as a web page. We
+  report what was built and what we measured: in the 80 English texts
+  written by xtext, cyp proves 650 of the 652 steps it tries (666 of 683
+  with the format used before).
 ]
 
 = Introduction
@@ -178,7 +180,11 @@ the top node: the statement with its proof. The rules are these.
 - *Justifications* are names in the sentence, emphasised and tagged like
   a formula: `By definition of and (*conj*{.just}), we have`. A node
   may have several (`Applying *i*{.just} to *k*{.just}`); 2003 had one
-  `j` per proof. The word "by" is an ordinary word. A fact,
+  `j` per proof. The word "by" is an ordinary word. Two justifications
+  are fixed, `*match*{.just}` (a case analysis) and
+  `*induction*{.just}`, possibly with the name of the type
+  (`(*or*{.just}, *match*{.just})`); the meaning of any other word that
+  is not a name is declared (@sec-words). A fact,
   #raw("`F`{.fact}"), must be a hypothesis or a conclusion the node can
   see.
 - *Two syntaxes for the same tree*, which can be mixed at any depth. In
@@ -189,6 +195,9 @@ the top node: the statement with its proof. The rules are these.
   inside a paragraph, and spans nest; a node of several paragraphs is a
   div, `::: p` … `:::`. A list item is read as a span around its
   contents.
+- *Open goals.* A conclusion tagged #raw("`C`{.goal}") is left open by
+  the author (a proof in progress): it is not tried, and the nodes after
+  it use it as any conclusion.
 
 #figure(
   table(columns: 2, align: left, stroke: 0.4pt + luma(180), inset: 5pt,
@@ -200,6 +209,7 @@ the top node: the statement with its proof. The rules are these.
     [`<v>` a variable], [#raw("`x y : T`{.var}")],
     [`<f>` a formula used], [#raw("`F`{.fact}"), a hypothesis or conclusion in scope],
     [`<j>` a justification], [`*X*{.just}`, one name each, any number per node],
+    [(none)], [#raw("`C`{.goal}"), a conclusion left open],
   ),
   caption: [The tags of 2003 and their form in the format now.],
 ) <tab-tags>
@@ -316,13 +326,13 @@ and is defined in 27 ms (figures of cyp's documentation).
 
 A condition is tried, in order, with:
 
-+ the justifications of its node. A name of rules or of a tactic chooses
-  the method; several are tried in turn. The other names (hypotheses,
-  nodes, variables, lemmas) are handed to the method: put first in the
-  context, a lemma added to it. With no rule or tactic name, the names
-  are applied one after the other, as lemmas, and their premises closed
-  by the other names, the rules and the default tactics. The facts of the
-  node are put first too;
++ the justifications of its node. A declared word (@sec-words), or one
+  of the fixed `match` and `induction`, chooses the method; several are
+  tried in turn. The other names (hypotheses, nodes, variables, lemmas)
+  are handed to the method: put first in the context, a lemma added to
+  it. With no declared word, the names are applied one after the other,
+  as lemmas, and their premises closed by the other names, the rules and
+  the default tactics. The facts of the node are put first too;
 + the rules of the proof. A rule is an Elpi clause in a file named in
   the header, for instance
   ```
@@ -330,8 +340,9 @@ A condition is tried, in order, with:
   ```
   which applies a monotonicity lemma to a goal of that shape. This is
   where the knowledge of a field goes: rules are written once per field,
-  not in cyp. A rule may also have a name, and a step justified by
-  `*monotonicity*{.just}` is then closed by that rule and no other;
+  not in cyp. A rule may also have a name, and once that name is
+  declared as a word, a step justified by `*monotonicity*{.just}` is
+  closed by those rules and no other;
 + the default tactics of the header (`by: lia | nia`), then cyp's own,
   and once more on the goal with its head unfolded. For the name `tauto`
   cyp runs itauto @besson2021itauto, because `tauto` can run for minutes
@@ -340,15 +351,57 @@ A condition is tried, in order, with:
   memory on one step of a text. No tactic is run on a goal with an
   existential variable;
 + a last, coarse _gap tactic_: a few bounded searches (taking the goal
-  and hypotheses apart, then a search of depth 4 or `congruence`, case
-  analysis on booleans or on a variable, induction on a binder of the
-  goal, a constructor). A condition it cannot close costs at most
-  0.06 s (measured). On the conditions that the steps before left open
-  in xtext's texts, it closed 99%.
+  and hypotheses apart in at most 200 steps, then a search of depth 4 or
+  `congruence`, case analysis on booleans or on a variable, induction on
+  a binder of the goal, a constructor). A condition it cannot close
+  costs at most 0.06 s (measured). On the conditions that the steps
+  before left open in xtext's texts, it closed 99%. It is not tried on a
+  step justified by named rules.
 
 A conclusion that does not hold is still used by the nodes after it, as
 on paper. A wrong step therefore makes the next steps easier, and the
 red step is the one to look at first.
+
+== Justification words <sec-words>
+
+What a justification word means is written in the files of the proof,
+not hidden in cyp. A Rocq command declares it, either as an Ltac
+tactic or as the named rules of that word:
+```
+Ltac easy_check := lra.
+CypJustification "checked" := easy_check.
+CypJustification "monotonicity" := rules.
+```
+A word is declared once (a second declaration is an error that gives
+the place of the first), and the declaration can be in a rule file of
+the header, in a library of the `require` line, or, for `Cyp Lemma`, in
+the `.v` file itself. The tactics that every text may name (`lia`,
+`tauto`, `firstorder`, `arith`, ...) are declared the same way at the
+end of cyp's library, so that every word has a visible declaration. A
+word `X` is looked up in this order: `match` and `induction`; a name of
+the text in scope (a hypothesis, a node, a variable), as a local name
+hides a global one in Rocq; a declared word; a lemma. A word that is
+none of these is an error of its node, whose message says how to
+declare it. cyp's JSON output gives, for each declared word that a text
+uses, the file and line of its declaration, and with `pdf.sh --source-root`
+the PDF and the web page link the word to it.
+
+== Bounds instead of time limits
+
+cyp has no time limit: a time limit makes the verdict depend on the
+machine and on its load. Every search it runs has a fixed bound instead,
+or is a decision procedure that ends: `tauto` is itauto, whose leaf
+tactic `auto` has depth 5, as `auto` itself; `firstorder` is the bounded
+search above; `congruence`, `ring` and `lra` end. Two have no bound in
+Rocq 9.1: Rocq's reduction, and `lia` and `nia`, whose depth options
+are not read by the search. cyp runs them behind `lia_guard`, a check of
+the goal's shape with no search: it refuses a goal with more than 50
+case splits (disjunctions, `-`, `max`, `div`, ...) or more than 16
+hypotheses. The thresholds are about 1.5 and 2 times the largest call
+that succeeded among the 2873 calls measured (cyp on its examples and on
+xtext's texts, xtext, and the search for the gap tactic); none of these
+calls is refused. The guard bounds what `lia` is given, not its search.
+The word `arith` runs `lia` (guarded), then `tauto`.
 
 == The result, and the conditions left to the user
 
@@ -369,8 +422,8 @@ a fact not in scope, two conclusions, a formula that does not parse) is
 reported at the node, and the check goes on: the node is not tried, and
 the nodes after it use its conclusion all the same. Inside Rocq,
 `Cyp File "proof.md".` followed by `Proof. ... CypQed.` always succeeds. Each
-condition left open, and the conclusion of each node with an error, is
-a goal named after its number (`?c2` for 2, `?c2_1` for 2.1), which the
+condition left open, each open goal of the text, and the conclusion of
+each node with an error, is a goal named after its number (`?c2` for 2, `?c2_1` for 2.1), which the
 script proves by name with Rocq's goal selectors:
 
 ```
@@ -415,7 +468,14 @@ printed with the attribute `#[tags]`, are in the format of
 @sec-format: the form that cyp and the Typst writer read. Both are
 written by the same writer, the markup being a parameter.
 `ExtractText_partial` writes a proof in progress, each open goal as a
-step "Prove G", and ends the proof as `Abort` does.
+step "Prove G" (#raw("`G`{.goal}") in the format, which cyp leaves
+open), and ends the proof as `Abort` does. Like cyp, xtext has no time
+limit: the tactics it tries, to check a contraction or to close a
+subproof built by a tactic, are the bounded ones that cyp runs for the
+same names, so a text does not depend on the speed of the machine. A
+step closed in this way whose conclusion is arithmetic (an equality, an
+order or `<>` on `nat`, `Z`, `N` or `R`) is justified by the word
+`arith`.
 
 == The staged translation
 
@@ -429,7 +489,10 @@ its figure.
 + *Contraction* (thesis 2.3 and 3.4.2). Nested applications and series
   of abstractions are merged. The contraction can be `none`, `maximal`,
   or `guarded`: only the merges that drop a single annotation, so that no
-  conversion step disappears. With another switch this stage is the
+  conversion step disappears. This guard is the thesis's, syntactic. The
+  older direct translation, still available, adds a guard of its own:
+  a merged step must still be closed by one of cyp's tactics, which then
+  justifies it, so that cyp can check the text. With another switch this stage is the
   _selection_ of type annotations of the thesis (4.3.1), followed by the
   naming of intermediate results (4.3.2–4.3.3): each subproof used in an
   application becomes a step of its own, named P1, P2, ..., before the
@@ -443,7 +506,9 @@ its figure.
 The forms that the thesis treats in its chapter 6 (eliminations,
 introductions, rewriting, `fix`) are written directly, and their
 subproofs come back to the stages. Elimination and introduction theorems
-are recognised by their type, not their name. The motive of a dependent
+are recognised by their type, not their name; an elimination is
+justified by the fixed word, `match` or `induction`, and the name of
+the type. The motive of a dependent
 elimination is left out when Rocq's `elim` would find it again (thesis
 6.4.1). A subproof built by a tactic is one step justified by the tactic
 (thesis 5.4). @tab-sizes gives the sizes of the texts with each choice of
@@ -452,14 +517,15 @@ the second stage, on the 73 texts that are not proofs in progress.
 #figure(
   table(columns: 3, align: (left, right, right), stroke: 0.4pt + luma(180), inset: 5pt,
     table.header([*second stage*], [*list items*], [*characters*]),
-    [contraction none], [1778], [221 981],
-    [contraction maximal], [1128], [118 180],
-    [contraction guarded (default)], [1164], [126 128],
+    [contraction none], [1414], [205 233],
+    [contraction maximal], [872], [106 023],
+    [contraction guarded (default)], [905], [113 547],
     [selection (thesis 4.3.1)], [981], [112 964],
   ),
-  caption: [Sizes of 73 texts written by xtext with each second stage,
-  measured with the format used before the tree (not measured again
-  since).],
+  caption: [Sizes of 73 texts written by xtext with each second stage.
+  The contractions were measured again in the tree format, with no time
+  limit (2026-11-23); the selection was measured with the format used
+  before the tree, and not again.],
 ) <tab-sizes>
 
 The cost of the selection is easy to state. The statement of a
@@ -486,8 +552,8 @@ and `ExtractText praeclarum.` prints
 With `#[tags]`, or written to a file, the same text has its header, its
 title and its tags; @fig-xtext shows it typeset. Each formula that cyp
 uses carries its role, and the names that justify a step are tagged
-where the sentence names them: the elimination theorem `and_ind`, the
-hypotheses `h1`, `i`, `k`, the constructor `conj`. The line "Assume `x`
+where the sentence names them: the type `and` with the fixed `match` of
+a case analysis, the hypotheses `h1`, `i`, `k`, the constructor `conj`. The line "Assume `x`
 (k) and `y` (l)" has no conclusion of its own, so its last sub-item
 became its closing paragraph ("So by definition of and ..."). cyp proves
 this text in full.
@@ -545,9 +611,9 @@ English order of the words that give no role).
   the names stay left to right.],
 ) <fig-ar>
 
-All of this is Elpi code loaded by Rocq: 1140 lines for cyp's checker,
-2742 for xtext, 2687 for prooftext (including the reader of the tree,
-the printer of formulas and the Typst writer) and 996 for the lexicon
+All of this is Elpi code loaded by Rocq: 1314 lines for cyp's checker,
+3016 for xtext, 2712 for prooftext (including the reader of the tree,
+the printer of formulas and the Typst writer) and 1013 for the lexicon
 (the `.elpi` files, counted with `wc -l`, comments included).
 
 = Rendering <sec-render>
@@ -626,8 +692,8 @@ deuteranopia and tritanopia @machado2009cvd: the roles stay distinct.
 Since colour alone is not enough, the legend at the end of a text also
 gives each role a mark that needs no colour (a dashed line, a frame, a
 dotted line). A checked text has a mark per node in place of the bullet
-(✔ proved, ✘ not proved, ◆ left to a Proof block, ▫ nothing to check),
-cyp's message in a box under a failing node, and the node numbers in the
+(✔ proved, ✘ not proved, ◆ left to a Proof block or an open goal, whose
+formula is framed, ▫ nothing to check), cyp's message in a box under a failing node, and the node numbers in the
 margin, as cyp numbers its conditions (@fig-drinker).
 
 The roles can be turned off. In the web page each role of the legend is
@@ -640,12 +706,24 @@ starts with only their switches on.
 The PDF and the web page have links. A name given to a hypothesis,
 `(h)`, labels its node, and its later uses link back to it. A lemma
 that Rocq locates in the corelib or the stdlib links to its entry in
-the online documentation.
+the online documentation. With `pdf.sh --source-root`, a declared justification word links to the
+file and line of its declaration (@sec-words).
+
+== Where to find it
 
 A gallery of every text of the repository, with their PDFs and web
 pages, is published at #link("https://thery.github.io/coq_tmp/txt/")
-(387 texts in its last build). That build is older than the change of
-format: its pages still have the role `by` and no hover.
+(388 texts in its last build, of 2026-11-19, in the tree format; it is
+older than the word `arith`). A tutorial, `cyp/TUTORIAL.md` and
+`TUTORIAL-2.md`, goes from a first proof to the Rocq commands in
+thirteen small examples, each a file whose output a script checks
+again, so that the tutorial stays true. The same tutorial is one Rocq
+file, `cyp/tutorial/tutorial.v`, each proof a `Cyp Lemma`, which can be
+stepped through in the browser with rocq-web, a build of Rocq that runs
+in the browser (#link("https://thery.github.io/rocq-web/")). rocq-web
+also has a demo of xtext (`ExtractText`, in English or French, with
+its tags, on a proof in progress) and one of cyp (`Cyp Lemma` and
+`CypFile`, a wrong node left as the goal `?c1`).
 
 = Experience <sec-experience>
 
@@ -655,9 +733,9 @@ The texts written by xtext carry the role of every formula and the
 justifications of every step, so cyp can check them. This is a test of
 both tools: it fails when xtext writes a wrong formula, a wrong role or a
 wrong scope, and when cyp reads one wrongly. Each text is checked alone,
-with at most 8 GB of memory and 300 s. @tab-results gives the results
+with at most 8 GB of memory and no time limit. @tab-results gives the results
 stored in the repository (`xtext/cyp-check/results.tsv` and
-`results_langs.tsv`, runs of 2026-11-19), with those of the format used
+`results_langs.tsv`, runs of 2026-11-23), with those of the format used
 before.
 
 #figure(
@@ -665,10 +743,10 @@ before.
     align: (left, right, right, right, right, right),
     stroke: 0.4pt + luma(180), inset: 5pt,
     table.header([*set*], [*texts*], [*proved*], [*not proved*], [*not checked*], [*time*]),
-    [English, now], [80], [684], [2], [279], [107 s],
+    [English, now], [80], [650], [2], [279], [113 s],
     [English, before], [80], [666], [17], [504], [176 s],
     [English, direct translation, before], [72], [923], [23], [213], [595 s],
-    [9 other languages, now], [108], [711], [0], [90], [141 s],
+    [9 other languages, now], [108], [711], [0], [90], [156 s],
     [each other language, before], [12], [77], [1], [38], [21–26 s],
   ),
   caption: [cyp on the texts of xtext. "Now" is the tree format;
@@ -677,11 +755,17 @@ before.
   (_Let_, _Assume_, the announcement of a case analysis); now, the
   remarks, all of them lines "The element `t` belongs to `T`". The
   direct translation (not the default) was not run again; it had 5
-  timeouts; the runs now have none. Times are the sums over the texts.],
+  timeouts; the runs now have no time limit, and every text ends. Not
+  counted now: the 6 open goals (◆) of the four English proofs in
+  progress, which cyp does not try. Times are the sums over the texts.],
 ) <tab-results>
 
-On the 80 English texts, cyp now proves 684 of the 686 nodes it checks.
-16 of the 17 steps not proved before are proved: the sentences named the
+On the 80 English texts, cyp now proves 650 of the 652 nodes it tries.
+The first runs of the tree gave 684 of 686; no node was lost since. The
+6 open goals of the proofs in progress, easy and proved then, are now
+left open, as their author meant; and with no time limit xtext proves
+`std_andb_assoc`, a case analysis on three booleans in 29 nodes, in one
+step by `tauto`. 16 of the 17 steps not proved before are proved: the sentences named the
 lemma they come from ("Applying not_all_ex_not to A, P and H"), but only
 as plain text, and the default tactics did not find it; the name is now
 a justification, and cyp applies it. The drinker's paradox, @fig-drinker,
@@ -709,7 +793,7 @@ justifications when they apply, and otherwise with its own tactics; a
 green node means that the conclusion follows from its context, not that
 it follows the way the sentence says. Making the text the actual proof
 would need cyp to use the named justification and nothing else, as it
-already does for named rules.
+already does for a word declared as rules.
 
 == What the measurements changed
 
@@ -719,6 +803,8 @@ Several choices came from measurements rather than from design.
   and memory blow-ups on xtext's texts, and `tauto` ran for minutes on
   a goal two hypotheses long. cyp now first checks whether a goal is one
   of its hypotheses, runs itauto for `tauto`, and bounds `firstorder`.
+  With these bounds the time limits could go, in cyp and in xtext;
+  the thresholds of `lia_guard` were set from the calls measured.
 - *The gap tactic.* Its searches were chosen in a greedy order over the
   conditions left open by the English texts, each candidate tried on
   each open condition.
@@ -773,7 +859,7 @@ What remains, in order:
 - make cyp use the named justification of a node and nothing else, so
   that a proved node follows for the reason given;
 - the two nodes of xtext's texts that cyp does not prove;
-- rebuild the published gallery in the new format;
+- rebuild the published gallery, last built before the word `arith`;
 - the parts of the paper and the thesis that xtext does not implement:
   the "further optimisations" of @coscoy1995extracting, the specific
   wordings for connectives and classical reasoning, the scripts of the
