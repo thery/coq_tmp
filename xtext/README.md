@@ -141,7 +141,7 @@ Examples and checks:
   `sh make_variant.sh direct XTEXT_TRANSLATION=direct`);
 - `measure.sh`, `measure_all.sh`: times and sizes of the texts;
 - optional checks with cyp: `cyprun.sh`, `cyp-check/` (cyp's results,
-  see ["Checking the texts with cyp"](doc/checking-with-cyp.md)), `cyp-check/roles_check.sh`.
+  see ["Checking the texts with cyp"](doc/checking-with-cyp.md)).
 
 ## Switches
 
@@ -318,17 +318,6 @@ English order of the words that give no role (`` `B \/ A`{.claim} 모든
 
 - `vocab_check.v` checks that each language has a phrase for every use
   of the English table and that the phrases of roles are in lower case.
-- `cyp-check/roles_check.sh` (optional, with cyp) read every text with
-  cyp's reader twice, with the tags and without them, and listed the
-  formulas whose role came only from the tag.  It no longer runs: cyp
-  reads only the tags now (no word gives a role), so the question is
-  gone.  The last figures, before the tree: over the 82 English texts (1933 lines), 94 lines: the goal
-  announced before a proof by cases (``We prove `G`{.fact} by case
-  analysis on ...``, a mention after a claim phrase, 65 lines) and the
-  object in ``Going back to the definition of and (match) in `A /\ B`{.fact}``
-  (29 lines; `in` is too common a word to be a fact phrase for cyp).
-  Over the 12 texts (136 lines) of each other language: fr 11, it 11,
-  de 12, nl 11, ru 11, zh 12, ar 11, ko 8, la 10 lines.
 
 ## More
 

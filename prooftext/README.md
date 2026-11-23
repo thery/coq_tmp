@@ -365,8 +365,7 @@ conclusions, `{.claim}` or `{.goal}`, `conclusion-class`), `is-goal-node`
 `is-remark`, its numbers (`numbered-subnodes`, `node-children`, which
 replaces a remark by its subnodes, `all-nodes`; the top node is `0`, its
 subnodes `1`, `2`, ..., the subnodes of `2` are `2.1`, ...), and the
-errors, `tree-errors Top Errors`, each `node-error Number Line Error`
-(`error-message E S`, its English message).
+errors, `tree-errors Top Errors`, each `node-error Number Line Error`.
 
 **For a writer**, the Typst back end writes from the tree itself
 (`write-typst-tree`, below), so that a closing paragraph comes after its

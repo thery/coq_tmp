@@ -1,8 +1,7 @@
 (* The words and the tactic names that the writer puts in a text.
    - The vocabulary (the lexicon, ../lexicon/lang_*.elpi, write-role and
      write-word): each language has a phrase for every use, and the
-     phrases of roles are in lower case.  How a reader reads them is
-     checked by cyp-check/roles_check.sh (optional, with cyp).
+     phrases of roles are in lower case.
    - The tactics: every name written after *by* or in the header's by
      field (the texts of xtext-tactic, xtext-guard-tactic and xtext-arith-tactic, ExtractText.v) is
      a tactic a proof text may name (../prooftext/tactics.elpi), so that

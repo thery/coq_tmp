@@ -30,7 +30,6 @@ message "fr" "unknown-class" "une classe inconnue, {.%1}".
 message "fr" "not-a-name" "une justification est un nom, pas *%1*{.just}".
 message "fr" "out-of-scope" "%1 n'est pas visible ici".
 message "fr" "name-twice" "le nom %1 est donné deux fois dans une même portée".
-message "fr" "unclosed-span" "un [ sans ]{.p} après lui : un span non fermé".
 message "fr" "unopened-span" "un ]{.p} sans [ avant lui".
 message "fr" "unclosed-div" "un ::: p sans ::: après lui : un div non fermé".
 message "fr" "unopened-div" "un ::: qui ne ferme aucun div".
