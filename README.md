@@ -235,7 +235,9 @@ and gives the line after an arrow; the file compiles without any click.
 selections, that these lines (and the errors promised) are the ones
 `point_run` gives, and that the excerpts are verbatim in their files.
 
-The actions point_actions.v declares:
+The actions point_actions.v declares (`Point`, `Link`) and those of
+[point_actions_more.v](point_actions_more.v) (the others; the demos and
+the tests load it, the tutorial does not):
 
 | action | kind | line | e.g. on `1 + 1 + a = double (1 + a)` |
 |---|---|---|---|
