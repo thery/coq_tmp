@@ -449,8 +449,8 @@ prints the `point-in` value an action is given for the selections,
 field by field, with the printed subterms of each part (`shown P S E
 T`): what to look at when writing an action in Elpi.
 
-A goal with a `match` cannot be pointed at (an anomaly of the printing
-of the marked goal, already in `pbp_pattern` on main).
+A goal with a `match` (an `if`) can be pointed at: the subterms of the
+match's return type, never printed, are not marked.
 
 Limits: the rewrite actions use ssreflect's `rewrite [X in ...]/=` and
 `/c`, which are conversions, so they work under binders too, but a
