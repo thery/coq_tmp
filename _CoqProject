@@ -11,6 +11,7 @@ pbp.v
 pbp_select.v
 pbp_select_test.v
 point_actions.v
+point_actions_more.v
 point_actions_test.v
 point_actions_tutorial.v
 mode_elpi.v

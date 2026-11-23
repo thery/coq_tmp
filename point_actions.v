@@ -490,18 +490,14 @@ solve (goal _ _ _ _ [str Exp] as G) [seal G] :-
   (J = Exp, ! ; coq.ltac.fail 0 "point_actions_expect: got" J "expected" Exp).
 }}.
 
-(* ---------------- The actions declared here ---------------- *)
+(* ---------------- The actions declared here ----------------
+   Point and Link; more actions (Simplify here, Unfold here, Name
+   occurrence) are in point_actions_more.v *)
 
 PointAction "Point" point "{pre:revert}pbp {path:pbp}{post:revert}."
   "pbp: bring the selected subformula to the surface of the goal".
 PointAction "Link" link "{pre:revert}pbp {path:pbp}{post:revert}."
   "pbp: link the two selected subformulas".
-PointAction "Simplify here" point "{pre:in}rewrite {local:pbp}/={post:in}."
-  "simplify the selected subterm (ssreflect's rewrite /=, at the selection)".
-PointAction "Unfold here" point "{pre:in}rewrite {local:pbp}/{head}{post:in}."
-  "unfold the constant at the head of the selected subterm, in it".
-PointAction "Name occurrence" point "{pre:in}set x := {local:occ}({text}){post:in}."
-  "name x this occurrence of the selected subterm (ssreflect's set x := {n}(t))".
 
 (* ---------------- Seeing a selection ---------------- *)
 

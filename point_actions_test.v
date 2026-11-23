@@ -1,7 +1,8 @@
-(* Tests of point_actions.v: the list of the actions (JSON, and PointActions
-   for a human reader), the actions declared
-   there (Point, Link, Simplify here, Unfold here), actions declared here
-   (dynamically: one by a template, one written in Elpi), the errors.
+(* Tests of point_actions.v and point_actions_more.v: the list of the
+   actions (JSON, and PointActions for a human reader), the actions
+   declared there (Point, Link; Simplify here, Unfold here, Name
+   occurrence), actions declared here (dynamically: one by a template,
+   one written in Elpi), the errors.
 
    [elpi point_run_expect "Name" Line Ws Sel ...] checks that point_run
    gives the line Line for the selections Sel (Ws: the subterms that
@@ -11,7 +12,7 @@
 
 From Stdlib Require Import ssreflect PeanoNat.
 From elpi Require Import elpi.
-From coq_tmp Require Import point_actions.
+From coq_tmp Require Import point_actions_more.
 From Ltac2 Require Import Ltac2.
 
 Ltac2 no_blanks (s : string) :=
@@ -53,19 +54,19 @@ Definition double n := n + n.
 (* a command: outside proofs too *)
 PointActions.
 Elpi point_text_expect actions "5 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 495
+Point (point), declared in coq_tmp.point_actions, line 497
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 497
+Link (link), declared in coq_tmp.point_actions, line 499
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
-Simplify here (point), declared in coq_tmp.point_actions, line 499
+Simplify here (point), declared in coq_tmp.point_actions_more, line 9
   template: {pre:in}rewrite {local:pbp}/={post:in}.
   doc: simplify the selected subterm (ssreflect's rewrite /=, at the selection)
-Unfold here (point), declared in coq_tmp.point_actions, line 501
+Unfold here (point), declared in coq_tmp.point_actions_more, line 11
   template: {pre:in}rewrite {local:pbp}/{head}{post:in}.
   doc: unfold the constant at the head of the selected subterm, in it
-Name occurrence (point), declared in coq_tmp.point_actions, line 503
+Name occurrence (point), declared in coq_tmp.point_actions_more, line 13
   template: {pre:in}set x := {local:occ}({text}){post:in}.
   doc: name x this occurrence of the selected subterm (ssreflect's set x := {n}(t))".
 
@@ -199,22 +200,22 @@ point-action "Compare" link "compare the two selections" same-text.
 (* the two new actions, at the end of the list *)
 PointActions.
 Elpi point_text_expect actions "7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 495
+Point (point), declared in coq_tmp.point_actions, line 497
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 497
+Link (link), declared in coq_tmp.point_actions, line 499
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
-Simplify here (point), declared in coq_tmp.point_actions, line 499
+Simplify here (point), declared in coq_tmp.point_actions_more, line 9
   template: {pre:in}rewrite {local:pbp}/={post:in}.
   doc: simplify the selected subterm (ssreflect's rewrite /=, at the selection)
-Unfold here (point), declared in coq_tmp.point_actions, line 501
+Unfold here (point), declared in coq_tmp.point_actions_more, line 11
   template: {pre:in}rewrite {local:pbp}/{head}{post:in}.
   doc: unfold the constant at the head of the selected subterm, in it
-Name occurrence (point), declared in coq_tmp.point_actions, line 503
+Name occurrence (point), declared in coq_tmp.point_actions_more, line 13
   template: {pre:in}set x := {local:occ}({text}){post:in}.
   doc: name x this occurrence of the selected subterm (ssreflect's set x := {n}(t))
-Name it (point), declared in coq_tmp.point_actions_test, line 187
+Name it (point), declared in coq_tmp.point_actions_test, line 188
   template: set x := ({text}).
   doc: name the selected subterm
 Compare (link), declared by an Elpi clause

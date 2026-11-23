@@ -215,27 +215,33 @@ know `pbp`: it asks for the list of the actions, shows them as buttons,
 and runs the one chosen.  Any loaded file can add actions.  `pbp_pattern`
 is kept as it is until the interfaces use this protocol.
 
-A tutorial to step through, centred on the Elpi code:
-[point_actions_tutorial.v](point_actions_tutorial.v).  It shows the
-pipeline from the mouse to the line (the `point-in` value an action is
-given, printed by `elpi point_show`), the open predicates with their
-code quoted (`point-action`, how `PointAction` turns a template into
-one, `point-path` with the methods `pbp` and `occ`,
-`point-hyp-strategy` with `revert` and `in`), then writes new pieces
-in Elpi and uses them at once: a path method `others` (ssreflect's
-`{-n}`), a strategy `around` (`move: H; ...; move=> H`), and two
-actions that look at the selection (`Induction on this`, only on a
-variable; `Rewrite with this equation`, a link that chooses the
-direction and calls the method `occ` through its registry).  It ends
-with templates as a short-hand for Elpi actions and with how `pbp` (or
-a tactic of one's own) is hooked.  The lines the buttons write are left
-to the reader: a comment says what to select and which button to click,
-and gives the line after an arrow; the file compiles without any click.
+A tutorial to step through:
+[point_actions_tutorial.v](point_actions_tutorial.v).  It loads
+point_actions.v only, so the bar has Point and Link at first.  Part 1
+proves three small lemmas with Point and Link only (a conjunction, a
+case analysis on a disjunction in a hypothesis, implications).  Part 2
+writes two actions in Elpi, step by step, all their code in the file:
+`Simplify here` (registered with a constant line, then reading the
+`point-in` value, then walking the Rocq term along the selection's path
+to build the pattern `[X in ...]`, then a clear error) and `Unfold here`
+(the same pattern, plus the constant at the head of the selection).
+The bar grows as they are registered (`PointActions` after each
+registration shows the list).  Two small tactics of the tutorial,
+`show_selection` and `show_pattern`, print what an action is given and
+the pattern it builds.  The lines the buttons write are left to the
+reader: a comment says what to select and which button to click, and
+gives the line after an arrow; the file compiles without any click.
 `sh point_actions_tutorial_check.sh` checks, from its own table of the
 selections, that these lines (and the errors promised) are the ones
-`point_run` gives, and that the excerpts are verbatim in their files.
+`point_run` gives, that point_actions_more.v's actions of the same names
+give the same lines (but on a selection under a binder, which they
+handle and the tutorial refuses), that the messages the comments
+promise ("prints:") are the ones printed, and that the references
+`FILE.v:N` name the right lines.
 
-The actions point_actions.v declares:
+The actions point_actions.v declares (`Point`, `Link`) and those of
+[point_actions_more.v](point_actions_more.v) (the others; the demos and
+the tests load it, the tutorial does not):
 
 | action | kind | line | e.g. on `1 + 1 + a = double (1 + a)` |
 |---|---|---|---|
