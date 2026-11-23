@@ -8,6 +8,8 @@ Zfloor_tmp.v
 pprime.v
 pprimeZ.v
 pbp.v
+pbp_select.v
+pbp_select_test.v
 mode_elpi.v
 
 
