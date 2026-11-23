@@ -105,7 +105,9 @@ pred subst-list i:list kept, i:int, i:bool, i:list term, o:int, o:list term.
 subst-list _ I _ [] I [].
 subst-list K I B [T|Ts] J [S|Ss] :- subst-kept K I B T I1 S, subst-list K I1 B Ts J Ss.
 
-% the applications numbered in Ks, collected
+% [nodes I T J L]: the applications of T with implicit arguments
+% (imp-mask), numbered from I, each with its number; J, the number after
+% the last application counted
 pred nodes i:int, i:term, o:int, o:list (pair int term).
 nodes I (app [H|As] as T) J [pr I T|L] :- imp-mask H _, !,
   I1 is I + 1, nodes-list I1 As J L.

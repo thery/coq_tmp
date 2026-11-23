@@ -197,14 +197,11 @@ Let `A B : Prop`{.var}. Assume `A \/ B`{.hyp} (h). We prove `B \/ A`{.claim}.
   language has `lang: fr`, `lang: ko`, ...; `by` lists the tactics that
   check a guarded contraction (`xtext-guard-tactic`), which cyp then tries
   on the steps that name none.  xtext runs these tactics, and those of the
-  tactic-built steps, with no time limit, each as cyp runs it (`tauto` as
-  `itauto auto`, `auto` of depth 5, `firstorder` as `bounded_firstorder`;
-  `congruence` ends; `lia` has no bound in Rocq 9.1 and runs behind
-  `lia_guard`, a count of the goal's case splits and hypotheses), so that
-  the text does not depend on the speed of the machine; a step whose
-  conclusion is arithmetic (an equality, `<>` or an order on `nat`, `Z`,
-  `N`, `R`) is named `arith` (`lia`, then `tauto`, as cyp runs the word; see ["No time
-  limit"](doc/contraction-eliminations-partial.md#2-contraction-of-application-steps-thesis-342-fig-311-313)).
+  tactic-built steps, each as cyp runs it, with no time limit; a step
+  whose conclusion is arithmetic (an equality or an order on `nat`, `Z`,
+  `N`, `R`, or the negation of one) is named `arith` (`lia`, then
+  `tauto`).  What each runs and its bound: ["No time
+  limit"](doc/contraction-eliminations-partial.md#2-contraction-of-application-steps-thesis-342-fig-311-313).
   The tactic check of a contraction is xtext's addition, so that cyp can
   check the text; the thesis's guarded contraction (3.4.2, Fig. 3.13) is
   syntactic: it keeps the type expressions of a conversion;

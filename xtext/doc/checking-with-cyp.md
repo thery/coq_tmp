@@ -13,8 +13,13 @@ A list item is a node of the proof (the tree of the 2003 paper): its
 mark is at the start of its text, and its closing paragraph, if any, is
 part of it.  An item with no tag is a remark (▫️, not checked).
 
-The 80 English texts written by default (staged translation), 300 s per
-text (`cyp-check/results.tsv`, all rerun 2026-11-19, in the tree format):
+The 80 English texts written by default (staged translation;
+`examples/` has 82: `reals_exp_div` and `reals_sqrt_sq`, of `reals.v`,
+are not in `cyp-check/results.tsv`), all rerun 2026-11-19, in the tree
+format.  These runs had a time limit per text, a guard of `cyprun.sh`
+that no text reached: 300 s on 2026-11-19 (the limit of the runs of
+2026-11-23 is not recorded); since 9ed08a0 (2026-11-23) `cyprun.sh` has
+no time limit:
 
 | | nodes proved | not proved | remarks (▫️) | time |
 |---|---|---|---|---|
@@ -89,7 +94,7 @@ checked, 5 timeouts.
   follows the way the text says.
 
 The texts in the other languages (12 texts per language, 9 languages:
-`fr it de nl ru zh ar ko la`), all 108 rerun 2026-11-19, 300 s per text
+`fr it de nl ru zh ar ko la`), all 108 rerun 2026-11-19, 300 s per text (no limit since 9ed08a0, as above)
 (`cyp-check/results_langs.tsv`; the checked texts in `cyp-check/<lang>/`):
 
 - all 108 texts are checked, none times out, 141 s in all;
