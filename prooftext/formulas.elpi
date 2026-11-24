@@ -49,6 +49,22 @@ is-justification S :- rex.match "^[*]by .*[*]$" S.
 pred is-name i:string.
 is-name S :- rex.match "^[A-Za-z_][A-Za-z0-9_']*\\([.][A-Za-z_][A-Za-z0-9_']*\\)*$" S.
 
+% [is-word S]: S has the form of a justification word: a name (is-name),
+% or several words separated by single spaces, each of letters, digits,
+% _, ' and - (*mean value inequality*{.just}).  A word of several words
+% is no name of Rocq: it can only be a declared word (CypJustification)
+pred is-word i:string.
+is-word S :- is-name S, !.
+is-word S :- rex.match "^[A-Za-z0-9_'-]+\\( [A-Za-z0-9_'-]+\\)+$" S.
+
+% [normal-word S W]: the justification S as a word: without the blanks
+% (spaces, tabs, newlines) at its ends, each run of blanks inside it one
+% space (a name is unchanged)
+pred normal-word i:string, o:string.
+normal-word S W :-
+  rex.replace "[ \t\n\r]+" " " S S1,
+  rex.replace "^ " "" S1 S2, rex.replace " $" "" S2 W.
+
 % ------------------------------------------------------------------
 % Reading the text of a node: its parts, for every reader (cyp, the
 % Typst writer).  A formula is between backticks (a backtick with no
@@ -122,9 +138,10 @@ plain-parts "" [] :- !.
 plain-parts Text Parts :-
   rex.match "^.*[*][^*]+[*]{[.][A-Za-z]+}" Text, !,
   rex.replace "^\\(.*\\)[*][^*]+[*]{[.][A-Za-z]+}.*" "\\1" Text Before,
-  rex.replace "^.*[*]\\([^*]+\\)[*]{[.][A-Za-z]+}.*" "\\1" Text X,
+  rex.replace "^.*[*]\\([^*]+\\)[*]{[.][A-Za-z]+}.*" "\\1" Text X0,
   rex.replace "^.*[*][^*]+[*]{[.]\\([A-Za-z]+\\)}.*" "\\1" Text Class,
   rex.replace "^.*[*][^*]+[*]{[.][A-Za-z]+}" "" Text After,
+  (if (justification-class Class) (normal-word X0 X) (X = X0)),
   plain-parts Before BeforeParts,
   plain-parts After AfterParts,
   std.append BeforeParts [tagged-name Class X | AfterParts] Parts.
@@ -133,7 +150,7 @@ plain-parts Text Parts :-
   rex.replace "^\\(.*\\)[*]by [^*]+[*].*" "\\1" Text Before,
   rex.replace "^.*[*]by \\([^*]+\\)[*].*" "\\1" Text J0,
   rex.replace "^.*[*]by [^*]+[*]" "" Text After,
-  prooftext.trim J0 J,
+  normal-word J0 J,
   plain-parts Before BeforeParts,
   plain-parts After AfterParts,
   std.append BeforeParts [by-part J | AfterParts] Parts.

@@ -196,6 +196,14 @@ Elpi Accumulate lp:{{
     shape "0" T4 S4, expect-term "mixed, div" S4 ["0: z", "1: z", "1.1: x", "2: y"],
     prooftext.node-children "0" T4 [_, pr _ N4], prooftext.node-parts N4 Ps4,
     prooftext.justification-names Ps4 J4, expect-term "the transition form *by X*" J4 ["k"],
+    % a justification of several words (a declared word: CypJustification),
+    % its blanks collapsed
+    prooftext.text-parts "By *mean  value\tinequality*{.just} and *by  Rolle theorem *, *h*{.just}." Ps7,
+    prooftext.justification-names Ps7 J7,
+    expect-term "words" J7 ["mean value inequality", "Rolle theorem", "h"],
+    (std.forall J7 prooftext.is-word, coq.say "words: ok" ; coq.error "not words"),
+    (if (prooftext.is-word "a+b" ; prooftext.is-word "a  b" ; prooftext.is-word " a")
+       (coq.error "a word") (coq.say "not words: ok")),
     % a remark: an item with no tag, shown, not a node; its sub-items are
     % those of the node around it
     tree-of ["We prove `A`{.claim}.", "",
@@ -211,7 +219,7 @@ Elpi Accumulate lp:{{
       "- Assume `A`{.hyp} (k).",
       "  - We have `A`{.claim} *by k*.",
       "- We have `A`{.claim} and `B`{.claim}, *by k*.",
-      "- Assume `B`{.hyp} (k). By *m*{.just}, *a b*{.just} and *x*{.jsut} we have `A`{.claim}.",
+      "- Assume `B`{.hyp} (k). By *m*{.just}, *a+b*{.just} and *x*{.jsut} we have `A`{.claim}.",
       "  - Assume `C`{.hyp} (k). We have `A`{.claim}."] Eb,
     expect-term "node errors" Eb ["1 3 no-conclusion", "2 5 two-conclusions", "2 5 out-of-scope",
       "3 6 not-a-name", "3 6 unknown-class", "3.1 7 name-twice"],

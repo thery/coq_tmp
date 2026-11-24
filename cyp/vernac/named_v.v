@@ -20,6 +20,12 @@ Proof. CypQed.
 Cyp Lemma checked_v (a b : R) (Ha : a <= b) : a + 1 <= b + 1 :=
   [ "we have" (a + 1 <= b + 1) "{.claim}, as *checked*{.just}" ].
 Proof. CypQed.
+(* a word of several words, as a paper writes it *)
+Ltac words_lra := lra.
+CypJustification "linear arithmetic" := words_lra.
+Cyp Lemma words_v (a b : R) (Ha : a <= b) : a + 2 <= b + 2 :=
+  [ "we have" (a + 2 <= b + 2) "{.claim}, by *linear arithmetic*{.just}" ].
+Proof. CypQed.
 (* the reason given does not prove the step: its condition is left *)
 Cyp Lemma named_bad (a : R) (Ha : 0 <= a) : 0 <= a :=
   [ "we have" (0 <= a) "{.claim} by *monotonicity*{.just}" ].
@@ -30,6 +36,8 @@ Abort.
 Fail CypJustification "checked" := lra.
 Fail CypJustification "nothing" := no_such_tactic.
 Fail CypJustification "none" := rules.
+(* no justification word: a name, or words separated by spaces *)
+Fail CypJustification "a+b" := easy_check.
 (* a word not declared: the node's error says how to declare it *)
 Cyp Lemma undeclared (a : R) (Ha : 0 <= a) : 0 <= a :=
   [ "we have" (0 <= a) "{.claim} by *positivity*{.just}" ].

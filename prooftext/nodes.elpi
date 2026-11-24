@@ -161,7 +161,7 @@ error-template "no-conclusion" "a node with no conclusion: it has tags, but no {
 error-template "two-conclusions" "a node with two conclusions, %1 and %2".
 error-template "statement-no-conclusion" "the statement has no conclusion, no {.claim}".
 error-template "unknown-class" "an unknown class, {.%1}".
-error-template "not-a-name" "a justification is a name, not *%1*{.just}".
+error-template "not-a-name" "a justification is a name, or words separated by spaces, not *%1*{.just}".
 error-template "out-of-scope" "%1 is out of scope here".
 error-template "name-twice" "the name %1 is given twice in one scope".
 error-template "unopened-span" "a ]{.p} with no [ before it".
@@ -223,15 +223,15 @@ node-errors Id N Scope All Es :-
   std.flatten [E1, E2, E3, E4, E5] Es.
 
 % [class-errors Id L Parts Es]: the classes that the format does not have,
-% and the justifications that are not names
+% and the justifications that are not words (prooftext.is-word)
 pred class-errors i:string, i:int, i:list prooftext.text-part, o:list node-error.
 class-errors Id L Ps Es :- std.map-filter Ps (class-error Id L) Es.
 
 % [class-error Id L P E]: the error of the part P, if it has one
 pred class-error i:string, i:int, i:prooftext.text-part, o:node-error.
 class-error Id L (prooftext.tagged-name C X) (node-error Id L (prooftext.text-error "not-a-name" [X])) :-
-  prooftext.justification-class C, !, not (prooftext.is-name X).
-class-error Id L (prooftext.by-part X) (node-error Id L (prooftext.text-error "not-a-name" [X])) :- !, not (prooftext.is-name X).
+  prooftext.justification-class C, !, not (prooftext.is-word X).
+class-error Id L (prooftext.by-part X) (node-error Id L (prooftext.text-error "not-a-name" [X])) :- !, not (prooftext.is-word X).
 class-error Id L P (node-error Id L (prooftext.text-error "unknown-class" [C])) :-
   part-class P C, not (C = ""), not (prooftext.role-tag _ C), not (prooftext.justification-class C).
 

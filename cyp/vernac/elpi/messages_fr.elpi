@@ -27,7 +27,7 @@ message "fr" "no-conclusion" "un nœud sans conclusion : il a des balises, mais 
 message "fr" "two-conclusions" "un nœud à deux conclusions, %1 et %2".
 message "fr" "statement-no-conclusion" "l'énoncé n'a pas de conclusion, pas de {.claim}".
 message "fr" "unknown-class" "une classe inconnue, {.%1}".
-message "fr" "not-a-name" "une justification est un nom, pas *%1*{.just}".
+message "fr" "not-a-name" "une justification est un nom, ou des mots séparés par des espaces, pas *%1*{.just}".
 message "fr" "out-of-scope" "%1 n'est pas visible ici".
 message "fr" "name-twice" "le nom %1 est donné deux fois dans une même portée".
 message "fr" "unopened-span" "un ]{.p} sans [ avant lui".

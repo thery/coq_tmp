@@ -59,9 +59,12 @@ pred name-url o:string, o:string.
 % context (the require line of the text), in a library that has an
 % online documentation.  The page is that of the file (the library, a
 % file that can be Required), the anchor the rest of the full name
-% (Stdlib.Arith.PeanoNat.html#Nat.add_succ_r).  Fails for other names.
+% (Stdlib.Arith.PeanoNat.html#Nat.add_succ_r).  Fails for other names, and
+% for a justification word that is no name (*mean value inequality*{.just}:
+% Rocq locates identifiers only).
 pred documentation-url i:string, o:string.
 documentation-url Name Url :-
+  rex.match "^[A-Za-z_][A-Za-z0-9_']*\\([.][A-Za-z_][A-Za-z0-9_']*\\)*$" Name,
   std.mem {coq.locate-all Name} (loc-gref GR), !,
   coq.gref->path GR Path,
   Path = [Root | _], library-documentation Root Base, !,

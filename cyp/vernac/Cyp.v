@@ -178,7 +178,13 @@ From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
      CypJustification "monotonicity" := rules.
        the word monotonicity means the rules named "monotonicity" of cyp.db
        (named "monotonicity" Pattern Tac, in a rule file loaded before):
-       only they are tried on a node it justifies.
+       only they are tried on a node it justifies;
+     CypJustification "mean value inequality" := mvi_check.
+       a word may be several words, separated by spaces (each of letters,
+       digits, _, ' and -; the blanks at its ends are left out, a run of
+       blanks inside is one space): *mean value inequality*{.just}.  Such a
+       word is no name of Rocq: it is only looked up among the declared
+       words.
 
    A word is declared once (a second declaration is an error); a word that
    is also the name of a lemma hides it (a warning).  The binding is
@@ -188,19 +194,31 @@ From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
    its PDF and HTML page (elpi/markdown.elpi). *)
 Elpi Command CypJustification.
 Elpi Accumulate Db cyp.db.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File pt_header pt_document pt_formulas.
 Elpi Accumulate lp:{{
-  main [str W, str ":=", str "rules"] :- !,
+  main [str W0, str ":=", str "rules"] :- !,
+    word-of W0 W,
     word-not-declared W,
     if (std.findall (named W _ _) [_ | _]) true
        (coq.error {calc ("CypJustification: no rule is named \"" ^ W ^
           "\" (named \"" ^ W ^ "\" Pattern Tac): accumulate the rules in cyp.db before declaring the word")}),
     declare W meaning-rules.
-  main [str W, str ":=", str T] :- !,
+  main [str W0, str ":=", str T] :- !,
+    word-of W0 W,
     word-not-declared W,
     tactic-exists T,
     declare W (meaning-tactic T).
   main _ :-
     coq.error "usage: CypJustification \"word\" := ltac_name.  or  CypJustification \"word\" := rules.".
+
+  % [word-of W0 W]: the word W0 as it is declared, W (prooftext.normal-word:
+  % its blanks collapsed); an error when it is no justification word, a
+  % name or several words (prooftext.is-word)
+  pred word-of i:string, o:string.
+  word-of W0 W :- prooftext.normal-word W0 W, prooftext.is-word W, !.
+  word-of W0 _ :-
+    coq.error {calc ("CypJustification: \"" ^ W0 ^ "\" is no justification word: a name, or words of letters, digits, _, ' and - separated by spaces (\"mean value inequality\")")}.
 
   % [declare W M]: the binding of W to M, at the place of the command
   pred declare i:string, i:justification-meaning.
@@ -216,9 +234,10 @@ Elpi Accumulate lp:{{
   word-not-declared _.
 
   % [lemma-hidden W]: a warning when W is also the name of a lemma (the
-  % declared word wins over it in a justification, elpi/check.elpi)
+  % declared word wins over it in a justification, elpi/check.elpi); a word
+  % of several words names no lemma
   pred lemma-hidden i:string.
-  lemma-hidden W :- coq.locate-all W L, std.mem L (loc-gref _), !,
+  lemma-hidden W :- prooftext.is-name W, coq.locate-all W L, std.mem L (loc-gref _), !,
     coq.warning "cyp" "cyp.justification"
       {calc ("the justification word \"" ^ W ^ "\" hides the lemma " ^ W ^ " in the justifications")}.
   lemma-hidden _.
