@@ -210,6 +210,11 @@ generalized by `move:`; the printing of the goal by coq-lsp and by
 `coq.term->string` was compared on the goals of the tests only (equal up
 to blanks).
 
+A prototype names the selection by its **subterm path** instead (Rocq's
+printer tags each printed subterm; branches `path-tags` of Rocq and
+`point-paths` here): [POINTING-PATHS.md](POINTING-PATHS.md) explains the
+paths, with examples.
+
 ### Pointing actions: the protocol for the interfaces
 
 [point_actions.v](point_actions.v) makes the actions offered on a
