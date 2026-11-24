@@ -48,7 +48,7 @@ bounds"](../../cyp/README.md#deterministic-bounds)), with the same bound:
 | `auto` | `auto` | depth 5 |
 | `firstorder` | `bounded_firstorder` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | at most 200 steps taking the goal and its hypotheses apart, then `eauto 4` or `congruence` |
 | `congruence` | `congruence` | ends (a closure over the terms of the goal) |
-| `lia` | `guarded_lia`: `lia_guard`, then `lia` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | `lia` has **no bound** in Rocq 9.1 (the options `Lia Depth` and `Lra Depth` are not read by the search, as cyp's README says); `lia_guard` refuses a goal with more than 50 case splits or 16 hypotheses (a count on the goal's shape, no search), measured on every call of the texts (`../gaps/README.md`, "No time limit"); it bounds what `lia` is given, not its search |
+| `lia` | `guarded_lia`: `lia_guard`, then `lia` ([../../prooftext/Tactics.v](../../prooftext/Tactics.v)) | `lia` has **no bound** in Rocq 9.1 (the options `Lia Depth` and `Lra Depth` are not read by the search, as cyp's README says); `lia_guard` refuses a goal with more than 2^18 cases (18 case splits) or 16 hypotheses, counted as `lia` makes them (no search), measured on every call of the texts (`../gaps/README.md`, "lia_guard"); it bounds what `lia` is given, not its search |
 | `arith` | `first [ guarded_lia \| itauto auto ]` (`word_arith`) | those of `lia` and `tauto` |
 
 **The word `arith`.**  A step closed by the guard, or a long subproof

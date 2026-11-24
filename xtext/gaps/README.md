@@ -186,29 +186,66 @@ by the time limit of the run (900 s).
 
 `lia` and `nia` have no bound in Rocq 9.1.  `lia_guard`
 (`../../prooftext/Tactics.v`) is a check of the goal's shape before them,
-with no search: it counts the case splits that `lia` may make (each
-disjunction, equivalence, negation, implication inside a hypothesis; in
-the goal, a conjunction or an equality; each `-`, `pred`, `max`, `min`,
-`abs`, `div`, `mod`, ...) and the hypotheses that are propositions, and
-refuses above 50 case splits or 16 hypotheses ("lia_guard: N case
-splits, at most 50").  `lia_stats` prints the two counts.  Measured on
-every call of `lia` and `nia` (with the counts printed, then whether the
-call succeeded):
+with no search: it counts the cases that `lia` would refute and the
+hypotheses it would read, the way `lia` makes them (Stdlib's
+`micromega/Lia.v`: `lia` is `zify` then `xlia`):
+
+- `zify` starts with `intros`: the products in front of the goal
+  (`forall k : Z, A -> B`) become a variable and hypotheses;
+- it adds, for each distinct `Z.abs`, `Z.max`, `Z.min`, `Z.sgn` (and the
+  truncated `-` and `pred` of `nat`, `N`, `positive`, `Z.to_nat`, ...,
+  which it turns into them), a hypothesis of two cases (three for
+  `Z.sgn`); each `div`, `mod` counts two too;
+- `xlia` reads the hypotheses and the goal as formulas whose atoms are
+  the comparisons of integers (`<=`, `<`, `>=`, `>`, `=` on `Z`, `nat`,
+  `N`, `positive`); a comparison on `R`, a `forall`, a predicate are
+  atoms it knows nothing of, and a hypothesis made of them is not read;
+- the formula is put in clausal form (`micromega/Tauto.v`, `xcnf`) and
+  each clause refuted on its own: a disjunction or an implication of
+  hypotheses, a conjunction of the goal, multiplies the cases of its two
+  sides, an equality of the goal (a disequality of a hypothesis) is two
+  cases, and the part of a formula with an unknown atom is dropped.
+
+`lia_guard` computes the number of clauses with the same rules (an upper
+bound: `lia` may drop a clause that is trivially true), and refuses above
+2^18 cases (18 case splits, log2 of the cases rounded up) or 16
+hypotheses ("lia_guard: N case splits (C cases), at most 18").
+`lia_stats` prints the counts; `prooftext/lia_guard_check.v` tests them,
+shape by shape.
+
+The guard of 2026-11-23 counted every hypothesis that is a proposition,
+and each occurrence of a connective or of a function by cases in it
+(`Z.sub` too, which has no case): a premise `forall k : Z, ...` of a
+lemma, closed by `lia` after many facts on reals, was refused for its
+hypotheses, which `lia` does not read, and `lia` proves it
+(`../../cyp/examples/forall_premise.md`: 19 hypotheses for the old
+guard, 1 read by `lia`).
+
+Measured on every call of `lia` and `nia` (2026-11-24; each call printed
+the old and the new counts, then ran `lia` without the guard): calls,
+successes, and the largest success and failure in the new counts (in
+the old ones in brackets):
 
 | calls of | calls | succeeded | largest success: splits, hypotheses | largest failure: splits, hypotheses |
 |---|---|---|---|---|
-| xtext, default texts (`word_lia`) | 38 | 6 | 6, 3 | 7, 3 |
-| xtext, direct translation (`word_lia`, tactic-built steps and guard) | 44 | 20 | 19, 3 | 36, 4 |
-| cyp on the 188 texts (English and languages) | 357 | 8 | 28, 6 | 42, 8 |
-| cyp on its examples (`cyp/gaps_regress.sh`) | 220 | 128 | 7, 8 | 4, 5 |
-| the probe (`t_lia`, `t_nia`, `t_simpl_lia`, `BARE=1`) | 2214 | 677 | 34, 7 | 34, 9 |
+| xtext, default texts (`make all`) | 41 | 8 | 3, 2 (6, 3) | 1, 2 (7, 3) |
+| xtext, direct translation (`XTEXT_TRANSLATION=direct`) | 71 | 44 | 3, 4 (19, 3) | 9, 4 (36, 4) |
+| cyp on the 188 texts (`cyprun.sh`, English and languages) | 359 | 10 | 3, 2 (28, 6) | 9, 3 (42, 8) |
+| cyp on its examples (`cyp/gaps_regress.sh`) | 221 | 129 | 5, 8 (7, 19) | 0, 5 (4, 5) |
+| the probe (`t_lia`, `t_nia`, `t_simpl_lia`, `BARE=1`) | 2214 | 677 | 12, 5 (34, 7) | 9, 6 (34, 9) |
 
-The bounds are the largest successes, 34 splits and 8 hypotheses, times
-about 1.5 and 2.  No call measured is refused: cyp's results on its
-examples and on xtext's texts, xtext's texts and the probe's counts are
-the same with the guard (and `word_lia`, `word_nia`, which cyp and xtext run, are
-`guarded_lia`, `guarded_nia`).  The guard bounds what `lia` is given, not
-its search: a goal under the bounds may still be hard; none of the
-measured calls ran away.  No run has a time limit either: `probe.sh`,
-`cyprun.sh` and `cyp/gaps_regress.sh` run each text to its end (lra,
-nra and Rocq's reduction end, but have no bound).
+(The 19 hypotheses of the examples are those of `forall_premise`, which
+the old guard refused; the others are the 220 calls measured before.)
+The 15 successes with 0 cases (in the probe) have a goal `True` or a
+hypothesis `False` (nothing to refute); no success has a form the guard
+drops: every goal `lia` proves has atoms the guard reads.  The bounds
+are the largest successes, 12 splits and 8 hypotheses, times 1.5 and 2.
+No call measured is refused: cyp's results on its
+examples (but `forall_premise`, now proved) and on xtext's texts,
+xtext's texts and the probe's counts are the same with the guard (and
+`word_lia`, `word_nia`, which cyp and xtext run, are `guarded_lia`,
+`guarded_nia`).  The guard bounds what `lia` is given, not its search:
+a goal under the bounds may still be hard; none of the measured calls
+ran away.  No run has a time limit either: `probe.sh`, `cyprun.sh` and
+`cyp/gaps_regress.sh` run each text to its end (lra, nra and Rocq's
+reduction end, but have no bound).

@@ -44,7 +44,8 @@ the texts and of the legend).  A tool loads only the files it uses.  Every name 
 (`prooftext.write-document`, `prooftext.step`, ...), so that it does not
 meet the names of the tools.
 
-Tests: `rocq c -Q ../lexicon Lexicon -Q . ProofText check.v`; those of the
+Tests: `rocq c -Q ../lexicon Lexicon -Q . ProofText check.v`; those of
+`lia_guard` (its counts, shape by shape), `lia_guard_check.v`; those of the
 printer of formulas, `check_maths.v` (the same command); those of the
 Typst back end, `sh typst/check.sh` (below, "The PDF of a proof text").
 
