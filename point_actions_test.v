@@ -314,7 +314,7 @@ occ (Elpi: path-occ)
 at (Elpi: path-at)
   Rocq's occurrences (unfold, pattern ... at n): 2 (1 3 for two)
 path (Elpi: path-raw)
-  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its type is 0 and its body 1): [1, 2] (two lists for two selections)".
+  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its name is 0, its type 1 and its body 2): [1, 2] (two lists for two selections)".
 
 (* each method, in the goal ({path:M}) and in the part ({local:M}) *)
 PointAction "Paths" point
@@ -331,13 +331,13 @@ elpi point_run_expect "Paths"
   "[X in _ = _ + X] [X in _ = _ + X] {2} {2} 2 2 [3, 2] [3, 2]" "" 6 7.
 (* in H: generalized, the goal is H's type -> the conclusion *)
 elpi point_run_expect "Paths"
-  "[X in X + _ = _ -> _] [X in X + _ = _] {1} {1} 1 1 [0, 2, 1] [2, 1]" "" H 0 1.
+  "[X in X + _ = _ -> _] [X in X + _ = _] {1} {1} 1 1 [1, 2, 1] [2, 1]" "" H 0 1.
 elpi point_run_expect "Paths"
-  "[X in _ = _ + X -> _] [X in _ = _ + X] {2} {2} 2 2 [0, 3, 2] [3, 2]" "" H 6 7.
+  "[X in _ = _ + X -> _] [X in _ = _ + X] {2} {2} 2 2 [1, 3, 2] [3, 2]" "" H 6 7.
 (* two selections of the same term: the first a of H, the last of the
    conclusion; no part holds both *)
 elpi point_run_expect "Paths 2"
-  "[X Y in X + _ = _ -> _ = _ + Y] {1 4} 1 4 [0, 2, 1] [1, 3, 2]" "" H 0 1 6 7.
+  "[X Y in X + _ = _ -> _ = _ + Y] {1 4} 1 4 [1, 2, 1] [2, 3, 2]" "" H 0 1 6 7.
 Abort.
 
 (* the occurrences are the ones of ssreflect and of Rocq: the lines run *)
@@ -386,7 +386,7 @@ occ (Elpi: path-occ)
 at (Elpi: path-at)
   Rocq's occurrences (unfold, pattern ... at n): 2 (1 3 for two)
 path (Elpi: path-raw)
-  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its type is 0 and its body 1): [1, 2] (two lists for two selections)
+  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its name is 0, its type 1 and its body 2): [1, 2] (two lists for two selections)
 depth (Elpi: path-depth)
   the depth of the selections".
 PointAction "Depth" point "idtac ""{path:depth} {local:depth}"".".

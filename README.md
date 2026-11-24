@@ -329,11 +329,18 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
 - A path is `"i.j.k"` (`""` for the whole part), the path of the subterm
   in its part (the conclusion, or the type of `H`), in the immediate
   subterms of `kids` (pbp_select.v): an application `f a1 .. an` has `f`
-  at 0 and `ai` at `i`, `forall`/`fun` the type at 0 and the body at 1,
-  `let` the type, the value, the body at 0, 1, 2, a `match` the
+  at 0 and `ai` at `i`, `forall`/`fun` (arrows, branches and return
+  clauses included) the name at 0, the type at 1 and the body at 2, `let`
+  the name, the type, the value, the body at 0, 1, 2, 3, a `match` the
   scrutinee at 0, the return type at 1 and its branches from 2 (a branch
   is the `fun` of the arguments of its constructor), a cast the type at
-  0 and the term at 1.  It is the tag of the innermost tagged subterm
+  0 and the term at 1.  A name is not a subterm: a path that ends at a
+  name selects its binder, widened with the warning `... (a binder name:
+  the whole forall is selected)` (unless the action is declared with
+  `point-action-names`, which then gets the path of the name); a path
+  through a name is an error (`the path 0.1 goes through a binder
+  name`).  On `forall n : nat, n + 0 = n`, `n` is `"0"`, `nat` `"1"`,
+  `n + 0` `"2.2"`.  It is the tag of the innermost tagged subterm
   containing the selection.  On `1 + 1 + a = double (1 + a)`, `1 + 1` is
   `"2.1"` (eq's type, not printed, is 1), `1 + a` is `"3.1"`.
 - A string that is `""` or starts with a digit is a path, any other a
@@ -411,11 +418,12 @@ hypothesis `H : a + b = b + a` (`H 0 1`), `{path:M}` then `{local:M}`:
   number (an error).
 - `path`: the paths of `kids` (pbp_select.v): in an application the head
   is 0 and the arguments 1, 2, ...;
-  in a product or an abstraction the type is 0 and the body 1; in a let
-  the type 0, the value 1, the body 2; in a match the matched term 0, the
-  return type 1, the branches 2, 3, ...  In the goal with the hypothesis
-  `H` generalized (`{path:path}`), `H`'s type is `[0, ...]` and the
-  conclusion `[1, ...]`.  Two selections give two lists.
+  in a product or an abstraction the name is 0 (not a subterm), the type
+  1 and the body 2; in a let the name 0, the type 1, the value 2, the
+  body 3; in a match the matched term 0, the return type 1, the branches
+  2, 3, ...; in a cast the type 0 and the term 1.  In the goal with the
+  hypothesis `H` generalized (`{path:path}`), `H`'s type is `[1, ...]`
+  and the conclusion `[2, ...]`.  Two selections give two lists.
 
 The hypothesis strategies (`PointStrategies.` lists them), for a
 selection in the hypothesis `H` (for selections in the conclusion they

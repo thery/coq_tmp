@@ -180,7 +180,7 @@ Abort.
 
 (* ---- 2b. Reading the selection ----
 
-   What the action is given, a value of type point-in (pbp_select.v:636),
+   What the action is given, a value of type point-in (pbp_select.v:648),
    has five fields: point-in Names Hs C Parts Ls, where
    - Names are the names of the hypotheses of the goal (the last one
      first);
@@ -189,8 +189,8 @@ Abort.
    - C is the goal with the hypotheses Hs moved into it (what pbp works
      on);
    - Parts are the hypotheses Hs, then the conclusion, each as
-     part B T Shs (pbp_select.v:359), T being the term;
-   - Ls are the selections, each loc P I P0 (pbp_select.v:374): the path
+     part B T Shs (pbp_select.v:370), T being the term;
+   - Ls are the selections, each loc P I P0 (pbp_select.v:385): the path
      P in C, the number I of its part in Parts, the path P0 in that part.
    A path lists the positions of the subterms to go through, from the
    root: in an application, the function is 0 and the arguments 1, 2, ...
@@ -199,7 +199,7 @@ Abort.
    run on a goal, goal Ctx _ Ty _ Args (the hypotheses, the conclusion,
    the arguments of the tactic); [seal G] says that the goal is left as
    it is.  It reads the selection as point_run does (parse-sels,
-   pbp_select.v:318; point-resolve, pbp_select.v:646), then matches the
+   pbp_select.v:329; point-resolve, pbp_select.v:658), then matches the
    point-in value against its five fields.  In a clause, :- reads "if",
    a comma "and"; coq.say prints its arguments; coq.term->string T S
    gives the text S of the term T, and {coq.term->string T} is that text
@@ -234,8 +234,8 @@ elpi show_selection 0 3.
    part: 1 + 1 + a = 2 + a
    Ls: [loc [2, 1] 0 [2, 1]] *)
 (* In the hypothesis H (a selection H S E): H is moved into C, which is
-   now an implication, H's type at [0] (in a product, the type is 0 and
-   the body 1); there are two parts, H's type (number 0) and the
+   now an implication, H's type at [1] (in a product, the name is 0, the
+   type 1, the body 2); there are two parts, H's type (number 0) and the
    conclusion. *)
 elpi show_selection H 0 3.
 (* prints:
@@ -244,7 +244,7 @@ elpi show_selection H 0 3.
    C: 1 + 1 + a = b -> 1 + 1 + a = 2 + a
    part: 1 + 1 + a = b
    part: 1 + 1 + a = 2 + a
-   Ls: [loc [0, 2, 1] 0 [2, 1]] *)
+   Ls: [loc [1, 2, 1] 0 [2, 1]] *)
 Abort.
 
 (* The action can now tell where the selection is: in a hypothesis H
@@ -294,8 +294,8 @@ Abort.
    - the path [] is T itself: Pat is X, R is T;
    - [N|P] in an application: the function stays, my-args makes the Nth
      argument the pattern of its own subterm and the others holes;
-   - in a product, [0|P] goes into the type, the body becomes a hole;
-     [1|P] goes into the body: pi y\ gives a new variable y, the body
+   - in a product, [1|P] goes into the type, the body becomes a hole;
+     [2|P] goes into the body (0 is the name of the binder): pi y\ gives a new variable y, the body
      F y is walked, and G, the body of the pattern, is the function that
      gives the result for y.  The type stays when the body uses the
      variable (forall n : nat, ...), else it is a hole (_ -> ...).
@@ -315,7 +315,7 @@ pred my-pattern i:list int, i:term, i:term, o:term, o:term.
 my-pattern [] T X X T.
 my-pattern [N|P] (app [F|As]) X (app [F|As1]) R :-
   N > 0, M is N - 1, my-args M P As X As1 R.
-my-pattern [0|P] (prod Nm A F) X (prod Nm B G) R :-
+my-pattern [2|P] (prod Nm A F) X (prod Nm B G) R :-
   my-pattern P A X B R, pi y\ my-hole (F y) (G y).
 my-pattern [1|P] (prod Nm A F) X (prod Nm B G) R :-
   my-binder-type A F B, pi y\ my-pattern P (F y) X (G y) R.

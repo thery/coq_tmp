@@ -104,22 +104,27 @@ identifiers S L :- rex.split "[^A-Za-z0-9_']+" S L.
 /* ---------------- Subterms and paths ----------------
    A path is the list of the positions of the immediate subterms to go
    through, from the root: in an application (app [F|Args]) the head is 0
-   and the arguments 1, 2, ...; in a product or an abstraction the type of
-   the binder is 0 and the body 1; in a let the type is 0, the value 1 and
-   the body 2; in a match the matched term is 0, the return type 1 and the
-   branches 2, 3, ... */
+   and the arguments 1, 2, ...; in a product or an abstraction the name of
+   the binder is 0, its type 1 and the body 2; in a let the name is 0, the
+   type 1, the value 2 and the body 3; in a match the matched term is 0,
+   the return type 1 and the branches 2, 3, ...; in a cast (t : T), which
+   Rocq-Elpi sees as a let whose body is its variable, the type is 0 and
+   the term 1.  A name is not a subterm: a path ends at it or not at all
+   (Rocq's Set Printing Subterm Paths tags the names so). */
 
 kind kid type.
 type kt term -> kid.                           % an immediate subterm
 type kb name -> term -> (term -> term) -> kid. % one under a binder: its
                                                % name, its type, the body
+type kn name -> kid.                           % the name of a binder
 
 % [kids T Ks] Ks are the immediate subterms of T
 pred kids i:term, o:list kid.
 kids (app L) Ks :- !, std.map L (t\ k\ k = kt t) Ks.
-kids (prod N T F) [kt T, kb N T F] :- !.
-kids (fun N T F) [kt T, kb N T F] :- !.
-kids (let N T B F) [kt T, kt B, kb N T F] :- !.
+kids (prod N T F) [kn N, kt T, kb N T F] :- !.
+kids (fun N T F) [kn N, kt T, kb N T F] :- !.
+kids (let N T B F) [kt T, kt B, kb N T F] :- cast-body F, !.
+kids (let N T B F) [kn N, kt T, kt B, kb N T F] :- !.
 kids (match T R Bs) [kt T, kt R | Ks] :- !,
   std.map Bs (t\ k\ k = kt t) Ks.
 kids _ [].
@@ -128,9 +133,10 @@ kids _ [].
 pred rebuild i:term, i:list kid, o:term.
 rebuild (app _) Ks T :- !,
   std.map Ks (k\ t\ k = kt t) [H|Args], mk-app H Args T.
-rebuild (prod N _ _) [kt T, kb _ _ F] (prod N T F) :- !.
-rebuild (fun N _ _) [kt T, kb _ _ F] (fun N T F) :- !.
+rebuild (prod N _ _) [kn _, kt T, kb _ _ F] (prod N T F) :- !.
+rebuild (fun N _ _) [kn _, kt T, kb _ _ F] (fun N T F) :- !.
 rebuild (let N _ _ _) [kt T, kt B, kb _ _ F] (let N T B F) :- !.
+rebuild (let N _ _ _) [kn _, kt T, kt B, kb _ _ F] (let N T B F) :- !.
 rebuild (match _ _ _) [kt T, kt R | Ks] (match T R Bs) :- !,
   std.map Ks (k\ t\ k = kt t) Bs.
 rebuild T [] T.
@@ -142,11 +148,16 @@ mk-app H [] H :- !.
 mk-app (app L) Args (app L1) :- !, std.append L Args L1.
 mk-app H Args (app [H|Args]).
 
+% [cast-body F] F is the body of a let that is a cast: its variable
+pred cast-body i:(term -> term).
+cast-body F :- pi x\ F x == x.
+
 % [map-kid Bs F K K1] K1 is the subterm K changed by F, which is given the
 % variables bound above it (Bs, the outermost first)
 pred map-kid i:list term, i:(pred i:list term, i:term, o:term),
              i:kid, o:kid.
 map-kid Bs F (kt T) (kt T1) :- F Bs T T1.
+map-kid _ _ (kn N) (kn N).
 map-kid Bs F (kb N Ty B) (kb N Ty B1) :-
   pi x\ decl x N Ty =>
     sigma Bs1\ (std.append Bs [x] Bs1, F Bs1 (B x) (B1 x)).
@@ -170,7 +181,7 @@ pred replace-at i:list int, i:list term,
                 i:(pred i:list term, i:term, o:term), i:term, o:term.
 replace-at [] Bs F T R :- !, F Bs T R.
 replace-at [I|P] Bs F T T1 :-
-  kids T Ks, std.split-at I Ks Before [K|After],
+  kids T Ks, std.split-at I Ks Before [K|After], not (K = kn _),
   map-kid Bs (bs\ t\ r\ replace-at P bs F t r) K K1,
   std.append Before [K1|After] Ks1, rebuild T Ks1 T1.
 
@@ -267,10 +278,10 @@ kid-not-printed P (kt T) :- not-printed T P.
 kid-not-printed P (kb _ _ B) :- pi x\ not-printed (B x) P.
 
 % [branch-binder P Br] the path P of the branch Br ends at one of its
-% leading fun (its body is the kid 1 of a fun)
+% leading fun (its body is the kid 2 of a fun)
 pred branch-binder i:list int, i:term.
 branch-binder [] (fun _ _ _).
-branch-binder [1|P] (fun _ _ F) :- pi x\ branch-binder P (F x).
+branch-binder [2|P] (fun _ _ F) :- pi x\ branch-binder P (F x).
 
 % [text-at P T S] S is the subterm of T at path P, printed on one line
 pred text-at i:list int, i:term, o:string.
@@ -343,10 +354,10 @@ sel-hyps Ctx Sels Hs :-
   % the context of a goal lists its youngest hypothesis first
   std.rev Hs0 Hs.
 
-% [ones N L] L is the list of N ones
+% [ones N L] L is the path through N products to their body: N times 2
 pred ones i:int, o:list int.
 ones 0 [] :- !.
-ones N [1|L] :- N1 is N - 1, ones N1 L.
+ones N [2|L] :- N1 is N - 1, ones N1 L.
 
 % [revert Ctx Hs G C] C is G with the hypotheses Hs generalized (as
 % move: Hs does): forall H1 .. Hn, G
@@ -365,7 +376,7 @@ type part list int -> term -> list shown -> part.
 % Hs generalized: the hypotheses, then the conclusion
 pred parts i:goal-ctx, i:list string, i:term, o:list part.
 parts Ctx Hs G Ps :-
-  std.map-i Hs (i\ h\ p\ sigma B0 B V T Shs\ ones i B0, std.append B0 [0] B,
+  std.map-i Hs (i\ h\ p\ sigma B0 B V T Shs\ ones i B0, std.append B0 [1] B,
                         hyp-of Ctx h V T, shown-all T Shs, p = part B T Shs)
     PHs,
   std.length Hs N, ones N BG, shown-all G ShG,
@@ -416,10 +427,11 @@ locate-in (part B T Shs) S E P P0 W :-
 % whose body is the bound variable: so it prints back as a cast)
 pred kept i:term, i:int.
 kept (app _) 0.
-kept (prod _ _ F) 0 :- pi x\ occurs x (F x).
-kept (fun _ _ F) 0 :- pi x\ occurs x (F x).
-kept (let _ _ _ _) 0.
-kept (let _ _ _ F) 2 :- pi x\ F x == x.
+kept (prod _ _ F) 1 :- pi x\ occurs x (F x).
+kept (fun _ _ F) 1 :- pi x\ occurs x (F x).
+kept (let _ _ _ F) 0 :- cast-body F, !.
+kept (let _ _ _ F) 2 :- cast-body F, !.
+kept (let _ _ _ _) 1.
 kept (match _ _ _) 1.
 
 % [hole T H] H is the hole that prints as _ in place of T; it keeps T (and
@@ -593,8 +605,8 @@ kid-text-names Ctx M P (kb N Ty B) S :-
 % [kid-mode M T I M1] M1 says where the I-th immediate subterm of T is, M
 % where T is (the type of a generalized hypothesis, the rest after it)
 pred kid-mode i:bmode, i:term, i:int, o:bmode.
-kid-mode (bm-goal K) (prod _ _ _) 0 bm-hyp :- K > 0, !.
-kid-mode (bm-goal K) (prod _ _ _) 1 (bm-goal K1) :- K > 0, !, K1 is K - 1.
+kid-mode (bm-goal K) (prod _ _ _) 1 bm-hyp :- K > 0, !.
+kid-mode (bm-goal K) (prod _ _ _) 2 (bm-goal K1) :- K > 0, !, K1 is K - 1.
 kid-mode M _ _ M.
 
 % [check Text Ps C] the pattern Text, parsed and elaborated, is C once its
@@ -710,7 +722,7 @@ all-shown T Shs :-
 % generalized, as parts does, their subterms given by all-shown
 pred path-parts i:goal-ctx, i:list string, i:term, o:list part.
 path-parts Ctx Hs G Ps :-
-  std.map-i Hs (i\ h\ p\ sigma B0 B V T Shs\ ones i B0, std.append B0 [0] B,
+  std.map-i Hs (i\ h\ p\ sigma B0 B V T Shs\ ones i B0, std.append B0 [1] B,
                         hyp-of Ctx h V T, all-shown T Shs, p = part B T Shs)
     PHs,
   std.length Hs N, ones N BG, all-shown G ShG,
@@ -736,14 +748,54 @@ pred path-locate-in i:goal-ctx, i:bmode, i:part, i:list int, o:list int,
                     o:list int, o:string.
 path-locate-in Ctx M (part B T _) P0 P P1 W :-
   std.map P0 (n\ s\ s is int_to_string n) Ss, std.string.concat "." Ss S,
-  (path-of T P0, ! ; coq.ltac.fail 0 {msg "no subterm at the path"} S),
   std.map-filter Ctx (d\ h\ sigma V N Ty Bo\ (d = decl V N Ty ; d = def V N Ty Bo),
                          coq.name->id N h) Names,
+  (name-at T P0 K, not (paths-keep-names), !,
+   % a binder name: the binder (or above it), always with a warning
+   std.rev P0 [_|R], std.rev R Q,
+   (path-selectable Names T Q, !, P1 = Q ; path-widen Names T Q P1 _),
+   text-at-names Names M P1 T W1,
+   (P1 = Q, !, W is W1 ^ " (a binder name: the whole " ^ K ^ " is selected)" ;
+    W is W1 ^ " (a binder name)")
+   ; name-at T P0 _, !, P1 = P0, W = ""
+   ; path-locate-sub Names M T P0 S P1 W),
+  std.append B P1 P.
+
+% [path-locate-sub Ctx M T P0 S P1 W] as path-locate-in, for a path P0
+% (written S) that does not end at a binder name
+pred path-locate-sub i:list string, i:bmode, i:term, i:list int, i:string,
+                     o:list int, o:string.
+path-locate-sub Names M T P0 S P1 W :-
+  (path-of T P0, ! ;
+   through-name T P0, !, coq.ltac.fail 0 {msg "the path"} S "goes through a binder name" ;
+   coq.ltac.fail 0 {msg "no subterm at the path"} S),
   (path-selectable Names T P0, !, P1 = P0, W = "" ;
    path-widen Names T P0 P1 Txt1, text-at P0 T W0, flat W0 Txt0,
    ((Txt0 = Txt1 ; Txt1 is "(" ^ Txt0 ^ ")"), !, W = "" ;
-    text-at-names Names M P1 T W)),
-  std.append B P1 P.
+    text-at-names Names M P1 T W)).
+
+% [name-at T P K] the path P of T ends at the name of a binder of kind K
+% (forall, fun, let)
+pred name-at i:term, i:list int, o:string.
+name-at T [0] K :- binder-kind T K, !.
+name-at T [I|P] K :- kids T Ks, std.length Ks L, I < L, std.nth I Ks Kd,
+  (Kd = kt U, name-at U P K ; Kd = kb _ _ F, pi x\ name-at (F x) P K).
+
+pred binder-kind i:term, o:string.
+binder-kind (prod _ _ _) "forall".
+binder-kind (fun _ _ _) "fun".
+binder-kind (let _ _ _ F) "let" :- not (cast-body F).
+
+% [through-name T P] the path P of T goes through the name of a binder
+% (a longer path than one that ends at it)
+pred through-name i:term, i:list int.
+through-name T [0, _ | _] :- binder-kind T _, !.
+through-name T [I|P] :- kids T Ks, std.length Ks L, I < L, std.nth I Ks Kd,
+  (Kd = kt U, through-name U P ; Kd = kb _ _ F, pi x\ through-name (F x) P).
+
+% [paths-keep-names] an action handles the selection of a binder name
+% itself (point_actions.v: point-action-names): the path stays at the name
+pred paths-keep-names.
 
 % [path-selectable Ctx T P] the subterm at path P of T can be selected: it
 % is printed (not the return type of a match nor a binder of a branch) and

@@ -51,12 +51,12 @@ elpi point_run_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p
 elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.0".
 (* the binders a and b of the let (its branch), as the range method *)
 elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.2".
-elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.2.1".
+elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.2.2".
 Abort.
 
 Goal forall (n : nat) (b : bool), match n with 0 => true | S k => Nat.eqb k n end = (if b then false else true).
 intros n b.
-elpi point_run_path_expect "Point" "pbp [X in match _ with | 0 => _ | S k => Nat.eqb _ X end = _]." "" "2.3.1.2".
+elpi point_run_path_expect "Point" "pbp [X in match _ with | 0 => _ | S k => Nat.eqb _ X end = _]." "" "2.3.2.2".
 elpi point_run_path_expect "Point" "pbp [X in match _ with | 0 => X | S k => _ end = _]." "" "2.2".
 (* the binder of S k (the printer tags k with it): widened to the match *)
 elpi point_run_path_expect "Point" "pbp [X in X = _]." "match n with | 0 => true | S k => Nat.eqb k n end" "2.3".
@@ -65,8 +65,8 @@ Abort.
 (* the return type of a match: widened to the match *)
 Goal forall (b : bool), match b as x return (if x then nat else bool) with true => 0 | false => true end = match b as x return (if x then nat else bool) with true => 0 | false => true end.
 intros b.
-elpi point_run_path_expect "Point" "pbp [X in X = _]." "if b as x return (if x then nat else bool) then 0 else true" "2.1.1".
-elpi point_run_path_expect "Point" "pbp [X in _ = X]." "if b as x return (if x then nat else bool) then 0 else true" "3.1.1.0".
+elpi point_run_path_expect "Point" "pbp [X in X = _]." "if b as x return (if x then nat else bool) then 0 else true" "2.1.2".
+elpi point_run_path_expect "Point" "pbp [X in _ = X]." "if b as x return (if x then nat else bool) then 0 else true" "3.1.2.0".
 Abort.
 
 (* a binder named as a hypothesis: the pattern names it as the goal
@@ -74,21 +74,21 @@ Abort.
    name Rocq gives it), not as Rocq-Elpi prints it (elpi_ctx_entry_3_) *)
 Goal forall x : nat, (forall x : nat, x = x) -> forall y, (fun x => x + y) x = x.
 intros x H.
-elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x : nat, X x) -> _]." "" "H" "1".
-elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x : nat, X x = _) -> _]." "" "H" "1.2".
-elpi point_run_path_expect "Point" "pbp [X in forall y : nat, [x0 : nat in X x0 + _] _ = _]." "" "1.2.0.1.1".
+elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x : nat, X x) -> _]." "" "H" "2".
+elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x : nat, X x = _) -> _]." "" "H" "2.2".
+elpi point_run_path_expect "Point" "pbp [X in forall y : nat, [x0 : nat in X x0 + _] _ = _]." "" "2.2.0.2.1".
 (* the type of the fun: the pattern keeps the application (no beta
    reduction), the type is X *)
-elpi point_run_path_expect "Point" "pbp [X in forall y : nat, [x0 : X in _] _ = _]." "" "1.2.0.0".
+elpi point_run_path_expect "Point" "pbp [X in forall y : nat, [x0 : X in _] _ = _]." "" "2.2.0.1".
 (* the type of a binder that the rest depends on: widened to the binder *)
-elpi point_run_path_expect "Point" "move: H; pbp [X in X -> _]." "forall x : nat, x = x" "H" "0".
-elpi point_run_path_expect "Point" "pbp [X in X]." "forall y : nat, [x0 : nat in x0 + y] x = x" "0".
+elpi point_run_path_expect "Point" "move: H; pbp [X in X -> _]." "forall x : nat, x = x" "H" "1".
+elpi point_run_path_expect "Point" "pbp [X in X]." "forall y : nat, [x0 : nat in x0 + y] x = x" "1".
 Abort.
 
 Goal forall (a b : nat) (c d : bool), (fun x y : nat => x + y) a b = a + b /\ exists (u v : nat) (w : bool), u = v /\ w = c.
 (* the type of u in exists (u v : nat): widened to the exists, as the
    range method *)
-elpi point_run_path_expect "Point" "pbp [X in forall (a b : nat) (c : bool), _ -> _ /\ X c]." "exists (u v : nat) (w : bool), u = v /\ w = c" "1.1.1.1.2.2.1.2.0".
+elpi point_run_path_expect "Point" "pbp [X in forall (a b : nat) (c : bool), _ -> _ /\ X c]." "exists (u v : nat) (w : bool), u = v /\ w = c" "2.2.2.2.2.2.2.2.1".
 Abort.
 
 (* a cast (Rocq-Elpi sees it as a let): the pattern is a cast *)
@@ -157,4 +157,29 @@ Goal forall n : nat, match n with 0 => true | S _ => false end = true.
 intros n.
 elpi point_run_expect "Point" "pbp [X in match X with | 0 => _ | S _ => _ end = _]." "" 5 6.
 elpi point_run_path_expect "Point" "pbp [X in match X with | 0 => _ | S _ => _ end = _]." "" "2.0".
+Abort.
+
+(* binder names: the path of a name is the index 0 of its binder (forall,
+   fun, let; the branches of a match are funs); a name is not a subterm:
+   the binder is selected, with a warning, and a path through a name is an
+   error *)
+Goal forall n : nat, n + 0 = n.
+elpi point_run_path_expect "Point" "pbp [X in X]." "forall n : nat, n + 0 = n (a binder name: the whole forall is selected)" "0".
+elpi point_run_path_expect "Point" "pbp [X in forall n : nat, X n + _ = _]." "" "2.2.1".
+Fail elpi point_run_path "Point" "0.1".
+Abort.
+
+Goal forall n : nat, (let m := n + 1 in m * m) = n /\ (fun k : nat => k) n = n.
+intros n.
+elpi point_run_path_expect "Point" "pbp [X in X = _ /\ _]." "let m := n + 1 in m * m (a binder name: the whole let is selected)" "1.2.0".
+elpi point_run_path_expect "Point" "pbp [X in (let m := X in _) = _ /\ _]." "" "1.2.2".
+elpi point_run_path_expect "Point" "pbp [X in (let m := _ in X m) = _ /\ _]." "" "1.2.3".
+elpi point_run_path_expect "Point" "pbp [X in _ /\ X _ = _]." "[k : nat in k] (a binder name: the whole fun is selected)" "2.2.0.0".
+Abort.
+
+Goal forall (n : nat), match n with 0 => true | S k => Nat.eqb k n end = true -> (forall z : nat, z = z) -> True.
+intros n H H'.
+(* the name k of the branch S k: its fun cannot be selected, the match is *)
+elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "match n with | 0 => true | S k => Nat.eqb k n end (a binder name)" "H" "2.3.0".
+elpi point_run_path_expect "Point" "move: H'; pbp [X in X -> _]." "forall z : nat, z = z (a binder name: the whole forall is selected)" "H'" "0".
 Abort.

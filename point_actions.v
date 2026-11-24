@@ -149,7 +149,7 @@ path-raw Sc In S :-
 point-path "pbp" "pbp's pattern: [X in X + _ = _] ([X Y in ...] for two selections)" path-pbp.
 point-path "occ" "ssreflect's occurrences of the selected term: {2} ({1 3} for two selections of the same term)" path-occ.
 point-path "at" "Rocq's occurrences (unfold, pattern ... at n): 2 (1 3 for two)" path-at.
-point-path "path" "the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its type is 0 and its body 1): [1, 2] (two lists for two selections)" path-raw.
+point-path "path" "the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its name is 0, its type 1 and its body 2): [1, 2] (two lists for two selections)" path-raw.
 
 /* ---------------- Hypothesis strategies ----------------
    How an action on selections in hypotheses is written: what comes before
@@ -559,6 +559,12 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
 
 Elpi Accumulate pbp_select.db lp:{{
 
+% [point-action-names Name] the action Name handles a selection that is a
+% binder name (a path ending at index 0 of a binder): point_run_path gives
+% it the path of the name; the other actions get the binder, widened with
+% a warning.  No action declared here does.
+pred point-action-names o:string.
+
 % [point-run-paths Ctx G Args Line Ws] Line is the line of the action and
 % the path selections given by Args (point_run_path), in the goal G; Ws
 % are the texts of the subterms that selections were widened to
@@ -573,7 +579,8 @@ point-run-paths Ctx G [str Name | As] Line Ws :- !,
   (N = KN, ! ;
    coq.ltac.fail 0 {msg "the action"} Name "is of kind" KS "and takes" KN
      "selection(s), not" N),
-  point-resolve-paths Ctx G Sels In Ws,
+  (point-action-names Name, !, paths-keep-names => point-resolve-paths Ctx G Sels In Ws ;
+   point-resolve-paths Ctx G Sels In Ws),
   (Impl In Line, ! ;
    coq.ltac.fail 0 {msg "the action"} Name "does not apply to the selection").
 point-run-paths _ _ _ _ _ :-
