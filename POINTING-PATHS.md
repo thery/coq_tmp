@@ -21,21 +21,28 @@ The children of each kind of term, as Rocq-Elpi sees terms:
 | term | children |
 |---|---|
 | application `f x y` | 0 the head `f`, 1 `x`, 2 `y`, ... |
-| `forall x : T, B`, `fun x : T => B` | 0 the type `T`, 1 the body `B` |
-| `let x : T := v in B` | 0 `T`, 1 `v`, 2 `B` |
+| `forall x : T, B`, `fun x : T => B` | 0 the name `x`, 1 the type `T`, 2 the body `B` |
+| `let x : T := v in B` | 0 the name `x`, 1 `T`, 2 `v`, 3 `B` |
 | `match e return R with b1 \| b2 ... end` | 0 `e`, 1 `R`, 2 the first branch, 3 the second, ... |
 | a cast `(t : T)` | 0 `T`, 1 `t` |
 
-An arrow `A -> B` is a `forall` whose variable is not used: 0 is `A`,
-1 is `B`.  A branch of a `match` is a `fun` over the arguments of its
-constructor: in `S k => e`, the branch is `fun k => e`, so `e` is child 1
-of the branch.
+A name is not a subterm: it is a leaf, a path ends at it (the binder
+is then selected, with a warning) or does not go through it.  An arrow
+`A -> B` is a `forall` whose variable is not used (its name, child 0,
+is not printed): 1 is `A`, 2 is `B`.  A branch of a `match` is a `fun`
+over the arguments of its constructor: in `S k => e`, the branch is
+`fun k => e`, so `k` is child 0 of the branch and `e` child 2; a return
+clause `as x return P` is a `fun x => P` too.  A cast keeps 0 for its
+type and 1 for its term.
 
 ## Examples
 
 The tagged outputs below are those of the prototype printer (`Show.`
 after `Set Printing Subterm Paths.`, the tags written `<P>...</P>` in the
-terminal; in a goal panel they are invisible).
+terminal; in a goal panel they are invisible).  (With the numbering where the names are
+children 0: the outputs of the binders were renumbered by hand from
+those of the earlier prototype, which tagged a name with the path of its
+binder; to be replaced by the outputs of the printer that tags names.)
 
 **`a + b = b + a`.**  Under its notations this is
 `@eq nat (Nat.add a b) (Nat.add b a)`, an application of `eq` to three
@@ -63,31 +70,36 @@ Selecting the first `a` sends `"2.1"`; selecting `b + a` sends `"3"`.
 **`forall n : nat, n + 0 = n`.**
 
 ```
-<>forall <>n</> : <0>nat</0>, <1><1.2><1.2.1>n</1.2.1> + <1.2.2>0</1.2.2></1.2> = <1.3>n</1.3></1></>
+<>forall <0>n</0> : <1>nat</1>, <2><2.2><2.2.1>n</2.2.1> + <2.2.2>0</2.2.2></2.2> = <2.3>n</2.3></2></>
 ```
 
-`0` is the type `nat`, `1` the body `n + 0 = n`, `1.2` is `n + 0`,
-`1.2.1` its `n`, `1.2.2` its `0`, and `1.3` the `n` on the right.
+`0` is the name `n`, `1` the type `nat`, `2` the body `n + 0 = n`, `2.2`
+is `n + 0`, `2.2.1` its `n`, `2.2.2` its `0`, and `2.3` the `n` on the
+right.  Selecting the name `n` sends `"0"`: the whole `forall` is
+selected, with the warning `... (a binder name: the whole forall is
+selected)`.
 
 **A hypothesis.**  With `H : A -> B` in the context, the path is taken in
 the type of `H`, and the interface sends the name first: selecting `B`
-sends `"H" "1"`.
+sends `"H" "2"`.
 
 **`let` and `match`.**
 
 ```
-<>forall <>n</> : <0>nat</0>, <1>(<1.2>let <1.2>m</1.2> := <1.2.1>n</1.2.1> in <1.2.2>m</1.2.2></1.2>) = <1.3>match <1.3.0>n</1.3.0> with
-                                      | 0 => <1.3.2>1</1.3.2>
-                                      | S <1.3.3>k</1.3.3> => <1.3.3.1>k</1.3.3.1>
-                                      end</1.3></1></>
+<>forall <0>n</0> : <1>nat</1>, <2>(<2.2>let <2.2.0>m</2.2.0> := <2.2.2>n</2.2.2> in <2.2.3>m</2.2.3></2.2>) = <2.3>match <2.3.0>n</2.3.0> with
+                                      | 0 => <2.3.2>1</2.3.2>
+                                      | S <2.3.3.0>k</2.3.3.0> => <2.3.3.2>k</2.3.3.2>
+                                      end</2.3></2></>
 ```
 
-- `1.2` is the `let`: its value `n` is `1.2.1`, its body `m` is `1.2.2`
-  (its type, child 0, is not printed).
-- `1.3` is the `match`: its scrutinee `n` is `1.3.0`, its first branch
-  `1` is `1.3.2`, its second branch is `1.3.3`.  The second branch is
-  `fun k => k`, so the bound name `k` of the pattern carries the path of
-  the branch itself, and its body `k` is `1.3.3.1`.
+- `2.2` is the `let`: its name `m` is `2.2.0`, its value `n` is `2.2.2`,
+  its body `m` is `2.2.3` (its type, child 1, is not printed).
+- `2.3` is the `match`: its scrutinee `n` is `2.3.0`, its first branch
+  `1` is `2.3.2`, its second branch is `2.3.3`.  The second branch is
+  `fun k => k`: the bound name `k` of the pattern is the name of that
+  `fun`, `2.3.3.0`, and its body `k` is `2.3.3.2`.  Selecting the name
+  `k` selects the branch, which cannot be selected alone: the `match`
+  (with a warning).
 
 ## What cannot be selected
 
