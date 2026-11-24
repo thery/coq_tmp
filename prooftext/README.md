@@ -406,16 +406,13 @@ within the node.  After writing, the command reads its text back and
 warns if the tree is not the same (the same nodes, with the same tags in
 the same order).
 
-**Lines.**  The paragraphs of the top node (the statement) stay as
-written: they are at the column 0 in both styles.  Another text keeps
-its lines when they fit in 75 columns at the place where they are
-written; a paragraph with a longer line (one that can be broken: not a
-formula alone) is filled again, as many words on a line as fit, never
-breaking a formula, nor before a word that would start a list item or a
-div; a short word (a line of at most 20 characters) stays with a long
-formula after it.  In the free style a span starts on a new line; where
-the converter joins two other pieces (the text after a span), it puts a
-space if the line still fits, else a newline.
+**Lines.**  The lines of the author are kept as written, whatever their
+length: the converter never fills a paragraph again.  It makes lines only
+where it joins two pieces (the text after a span, a short first line of a
+text that started in the middle of a line, a punctuation mark or a full
+stop it adds): there it puts a space if the line still fits in 80
+columns, else a newline, so that a formula is never broken.  In the free
+style a span starts on a new line.
 
 **Free to structured.**  Each node is an item, its subnodes its
 sub-items; its own text around them are the paragraphs of the item: the
@@ -463,17 +460,16 @@ give the original (below).
   start with a name, `eq`).
 
 **What a round trip gives back.**  Structured → free → structured gives
-back the text, except: the lines (a paragraph with a line longer than 75
-columns is filled again, xtext's texts have one line per step); the
-empty lines (one between blocks, none between two items); a full stop
-added after an item that had none (free), then kept in it; a span of a
+back the text, except: the empty lines (one between blocks, none between
+two items); a full stop added after an item that had none (free), then
+kept in it; a span of a
 structured text (`- [A]{.p} and B`) becomes a sub-item; a lower case
 letter at the start of a paragraph becomes a capital; a `[` that nothing
 closes in an item (an error) becomes the text of its parent.  Free →
 structured → free gives back the text when it follows the heuristic; a
 span with several sentences of subnodes becomes a div, two steps of the
-top node in one paragraph after a full stop two paragraphs, a punctuation mark after a
-span goes inside it, and a node that starts with a subnode reads
+top node in one paragraph after a full stop two paragraphs, a
+punctuation mark after a span goes inside it, and a node that starts with a subnode reads
 differently (the rule above).
 
 Tests: `bash convert_check.sh` (8 minutes, 4 runs of cyp at a time;
@@ -482,10 +478,9 @@ xtext's examples in all their languages, the proposal's examples, 247
 texts) converted to the other style and back, the trees checked by cyp
 (cyp's `.cyp.json`, line numbers aside), and the twins written by hand
 compared; it prints the counts.  Today: the 247 trees are the same; back
-in their style, 62 texts are the same, 177 the same up to the line
-breaks (lines longer than 75 columns filled again: 158 of them are
-xtext's), 8 differ for the reasons above (the 6 free texts, a span
-in a structured text, an unclosed `[`).
+in their style, 239 texts are the same (all the 190 of xtext), 8
+differ for the reasons above (the 6 free texts, a span in a structured
+text, an unclosed `[`).
 
 ## The PDF of a proof text (Typst)
 

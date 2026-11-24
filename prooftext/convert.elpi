@@ -75,9 +75,10 @@ trim-breaks Ps Qs :- std.rev Ps Rs, (if (Rs = [pbreak | Rs1]) (std.rev Rs1 Qs) (
 % ------------------------------------------------------------------
 % Strings
 
-% the width of the lines written
+% the width of the lines the converter makes (where it joins two pieces);
+% the lines of the author are kept as written, whatever their length
 pred line-width o:int.
-line-width 75.
+line-width 80.
 
 % A text as written holds newlines; the regular expressions read ^ and $
 % at the start and the end of each line, so that a text is tested on its
@@ -394,9 +395,8 @@ block-gap _ (some (sitem _)) (sitem _) [] :- !.
 block-gap tt (some (spara _ _)) (sitem _) [] :- !.
 block-gap _ _ _ [""].
 
-% [block-text C Prev B Lines]: the lines of one block at the column C.  A
-% text keeps its lines when they fit in the width (text-fits), else it is
-% filled again (fill-text)
+% [block-text C Prev B Lines]: the lines of one block at the column C, as
+% written (paragraph-lines)
 pred block-text i:int, i:option sblock, i:sblock, o:list string.
 block-text C _ (spara Mid P) Lines :-
   paragraph-lines C Mid P Ls,
@@ -410,27 +410,19 @@ block-text C _ (sitem [spara Mid P | Bs]) Lines :-
   std.append [Head | More] Next Lines.
 
 % [paragraph-lines C Join P Ls]: the lines of the paragraph P at the
-% column C: its own lines if they fit, its first one joined with the next
-% ones while it fits when Join = tt (a text that started in the middle
-% of a line in the free style, after a span, starts with a short line);
-% else P filled again
+% column C: its own lines, its first one joined with the next ones while
+% the line fits in the width when Join = tt (a text that started in the
+% middle of a line in the free style, after a span, starts with a short
+% line: a line the converter made)
 pred paragraph-lines i:int, i:bool, i:string, o:list string.
-paragraph-lines C Join P Ls :- text-fits C P, !,
+paragraph-lines C Join P Ls :-
   written-lines P Ls0, (if (Join = tt) (join-first C Ls0 Ls) (Ls = Ls0)).
-paragraph-lines C _ P Ls :- fill-text C P Ls.
+
 
 pred join-first i:int, i:list string, o:list string.
 join-first C [A, B | Ls] Out :- line-width W, C + size A + 1 + size B =< W, !,
   join-first C [{calc (A ^ " " ^ B)} | Ls] Out.
 join-first _ Ls Ls.
-
-% [fill-text C P Ls]: the words of P (words-of) in lines that fit in the
-% width at the column C, as many on a line as fit
-pred fill-text i:int, i:string, o:list string.
-fill-text C P Ls :-
-  line-width W, Budget is W - C,
-  lb-words (lb Budget [] "") {words-of P} (lb _ Rev Cur),
-  std.rev [Cur | Rev] Ls.
 
 % ------------------------------------------------------------------
 % The free style
@@ -593,15 +585,13 @@ inline-pieces [pnode O M Q | Ps] Prev LB LB3 :-
   inline-pieces Ps (some (pnode O M Q)) LB2b LB3.
 
 % [lb-text LB Glue S LB1]: the text S written after the lines LB, glued
-% to the line (Glue = tt) or after a space or a newline: with its own
-% lines if they fit in the width, else filled again
+% to the line (Glue = tt) or after a space or a newline, with its own
+% lines
 pred lb-text i:lines-being, i:bool, i:string, o:lines-being.
-lb-text LB Glue S LB2 :- text-fits 0 S, !,
+lb-text LB Glue S LB2 :-
   written-lines S [First | More],
   (if (Glue = tt) (LB1 = LB) (lb-sep LB First LB1)),
   lb-glue LB1 First LBF, lb-lines LBF More LB2.
-lb-text LB tt S LB2 :- words-of S [W | Ws], !, lb-glue LB W LB1, lb-words LB1 Ws LB2.
-lb-text LB ff S LB1 :- lb-words LB {words-of S} LB1.
 
 % [lb-glue LB S LB1]: S at the end of the line being written
 pred lb-glue i:lines-being, i:string, o:lines-being.
@@ -617,59 +607,13 @@ pred lb-lines i:lines-being, i:list string, o:lines-being.
 lb-lines LB [] LB.
 lb-lines (lb W Done Cur) [L | Ls] LB :- lb-lines (lb W [Cur | Done] L) Ls LB.
 
-% [lb-words LB Ws LB1]: the words Ws, each after a space, or a newline
-% when it would not fit
-pred lb-words i:lines-being, i:list string, o:lines-being.
-lb-words LB [] LB.
-lb-words LB [W | Ws] LB2 :- lb-sep LB W LB1, lb-glue LB1 W LB1a, lb-words LB1a Ws LB2.
-
 % [lb-sep LB Next LB1]: the space before a text that starts with Next: a
-% space if Next fits on the line (or if the line holds at most 20
-% characters: a short word stays with a long formula after it), else a
-% new line (none at the start of a line)
+% space if Next fits on the line, else a new line (none at the start of a
+% line)
 pred lb-sep i:lines-being, i:string, o:lines-being.
 lb-sep (lb W Done "") _ (lb W Done "") :- !.
-lb-sep (lb W Done Cur) Next (lb W Done Cur1) :- (size Cur + 1 + size Next =< W ; size Cur =< 20), !, Cur1 is Cur ^ " ".
+lb-sep (lb W Done Cur) Next (lb W Done Cur1) :- size Cur + 1 + size Next =< W, !, Cur1 is Cur ^ " ".
 lb-sep (lb W Done Cur) _ (lb W [Cur | Done] "").
-
-% [text-fits C S]: each line of S, at the column C, is a line of its own
-% when filled (fill-text): it fits in the width, or cannot be broken
-% better (a long formula)
-pred text-fits i:int, i:string.
-text-fits C S :- written-lines S Ls, std.forall Ls (l\ fill-text C l [_]).
-
-% [words-of S Ws]: the words of S, the pieces of its text between the
-% spaces where a line may be broken (break-points)
-pred words-of i:string, o:list string.
-words-of S Ws :- flat S F, break-points F 0 ff [] Rev, std.rev Rev Ps, cut-at F 0 Ps Ws.
-pred cut-at i:string, i:int, i:list int, o:list string.
-cut-at F From [] [W] :- W is substring F From (size F - From).
-cut-at F From [P | Ps] [W | Ws] :- W is substring F From (P - From), cut-at F {calc (P + 1)} Ps Ws.
-
-% ------------------------------------------------------------------
-% Lines too long
-
-% [break-points L I InFormula Acc Ps]: the offsets of the spaces of L
-% from I where it can be broken (the latest first), InFormula tt between
-% two backticks
-pred break-points i:string, i:int, i:bool, i:list int, o:list int.
-break-points L I _ Acc Acc :- I >= size L, !.
-break-points L I In Acc Ps :-
-  C is substring L I 1, I1 is I + 1,
-  (if (C = "`") (negb In In1, Acc1 = Acc)
-     (In1 = In,
-      (if (C = " ", In = ff, I > 0, I1 < size L, not (line-start {calc (substring L I1 (size L - I1))}))
-          (Acc1 = [I | Acc]) (Acc1 = Acc)))),
-  break-points L I1 In1 Acc1 Ps.
-
-pred negb i:bool, o:bool.
-negb tt ff.
-negb ff tt.
-
-% [line-start S]: S, at the start of a line, would open a block of
-% another kind, or is a space
-pred line-start i:string.
-line-start S :- rex.match "^\\([-*+] \\|:::\\|#\\|>\\|[0-9]+[.)] \\| \\)" S.
 
 % ------------------------------------------------------------------
 % The tree read back
