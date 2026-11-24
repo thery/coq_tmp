@@ -357,7 +357,10 @@ A node is `node Origin Place Mark Message Contents`: how it is opened
 opening to its end), where its own text starts (a `spot Line Column`,
 where a checker writes its status mark), where a message about it goes
 (after that line, at that column), and its contents in the order of the
-text: `run Text Parts`, `sub Node`, `para-end` (the end of a paragraph)
+text: `run Text Parts` (a run of its own text: `Text` as written, a newline
+where a line of the file ends, the indentation of the next line left out,
+so that a writer can keep the lines of the text; `Parts`, those of its
+lines joined by a space), `sub Node`, `para-end` (the end of a paragraph)
 and `flaw Line Error` (an error of the reader: a div left open, a span or a
 div closed but not opened, an unknown class of a span or a div; a span
 left open is text, see "spans" above).
