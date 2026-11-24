@@ -1,0 +1,69 @@
+cyp: praeclarum
+  x : Prop
+  y : Prop
+  z : Prop
+  t : Prop
+  H1 : x -> z
+  H2 : y -> t
+  H3 : x /\ y
+  ============================
+  x
+
+  x : Prop
+  y : Prop
+  z : Prop
+  t : Prop
+  H1 : x -> z
+  H2 : y -> t
+  H3 : x /\ y
+  c1_1_1 : x
+  ============================
+  z
+
+  x : Prop
+  y : Prop
+  z : Prop
+  t : Prop
+  H1 : x -> z
+  H2 : y -> t
+  H3 : x /\ y
+  c1_1 : z
+  ============================
+  y
+
+  x : Prop
+  y : Prop
+  z : Prop
+  t : Prop
+  H1 : x -> z
+  H2 : y -> t
+  H3 : x /\ y
+  c1_1 : z
+  c1_2_1 : y
+  ============================
+  t
+
+  x : Prop
+  y : Prop
+  z : Prop
+  t : Prop
+  H1 : x -> z
+  H2 : y -> t
+  H3 : x /\ y
+  c1_1 : z
+  c1_2 : t
+  ============================
+  z /\ t
+
+  x : Prop
+  y : Prop
+  z : Prop
+  t : Prop
+  H1 : x -> z
+  H2 : y -> t
+  c1 : x /\ y -> z /\ t
+  ============================
+  x /\ y -> z /\ t
+
+cyp: praeclarum, 6 steps, 6 conditions
+

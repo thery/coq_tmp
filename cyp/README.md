@@ -32,11 +32,19 @@ name of the classical library since Rocq 9:
 
 ```sh
 dune build
-(cd vernac && rocq c -Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText Gaps.v Cyp.v)   # the cyp library
+(cd ../prooftext && rocq c -Q . ProofText Tactics.v)   # the bounded tactics (lia_guard, ...)
+(cd vernac && F="-Q . CypV -Q ../../lexicon Lexicon -Q ../../prooftext ProofText" &&
+  rocq c $F Gaps.v && rocq c $F Cyp.v)   # the cyp library, one file at a time
 export CYP_LIB=$PWD/vernac
 dune exec cyp -- examples/square_pos.md   # writes square_pos.checked.md and square_pos.cyp.json
 dune exec cyp -- --conditions examples/square_pos.md   # prints the conditions, tries nothing
+dune exec cyp -- --time examples/square_pos.md   # the time of each condition, how it was closed, the ten slowest
 ```
+
+`--time` (`#[time]` on the Rocq commands; the environment variable
+`CYP_TIME` does the same) prints the time of each condition and how it
+was closed, then the ten slowest: [vernac/README.md](vernac/README.md#the-text-as-a-verification-condition-generator),
+"Timing".  It is a measure only: it changes nothing that cyp tries.
 
 ## The format
 
@@ -60,7 +68,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
     - From `0 < a < b`{.fact} we have `0 < b + a /\ 0 < b - a`{.claim}.
 ```
 
-- **The header** (between the two `---`): `require`, the Rocq preamble;
+- **The header** (between the two `---`; the keys are those of
+  [prooftext's table](../prooftext/README.md#the-files)): `require`, the Rocq preamble;
   `scope`, a scope to open; `by`, the tactics tried on a node with no
   declared word (declared words: `lia | nia`); `rules`, files of rules (below), separated by
   spaces, copied in order after the preamble; `flags`, options given to
@@ -123,14 +132,14 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   - a declared word chooses the method; several are tried in turn.  The
     tactics that every proof text may name (`lia`, `lra`, `nia`, `nra`,
     `ring`, `field`, `tauto`, `auto`, `easy`, `reflexivity`, `assumption`,
-    `congruence`, `firstorder`: [../prooftext/tactics.elpi](../prooftext/tactics.elpi),
+    `congruence`, `firstorder`, `arith`: [../prooftext/tactics.elpi](../prooftext/tactics.elpi),
     the only ones xtext writes) are declared at the end of
-    [vernac/Cyp.v](vernac/Cyp.v), each the Ltac `cyp_N` above them, with
-    the same command.  `firstorder` is run bounded, as `bounded_firstorder` of
-    [../prooftext/Tactics.v](../prooftext/Tactics.v), shared with xtext: the
-    tactic itself has no bound (more than 30 s and 7 GB on one step of a
-    text): the goal and its hypotheses taken apart, at most 200 steps, then
-    a proof search of depth 4 or `congruence`;
+    [vernac/Cyp.v](vernac/Cyp.v), each the Ltac `word_N` of
+    [../prooftext/Tactics.v](../prooftext/Tactics.v) (the same for xtext), with
+    the same command; what each runs and its bound:
+    [Deterministic bounds](#deterministic-bounds) below (`firstorder` is
+    run bounded, `lia` and `nia` behind a guard; `arith` is the word xtext
+    gives to a step whose conclusion is arithmetic);
   - a name of a hypothesis, of a node or of a variable, or of a lemma is
     handed to the method: put first in the context, a lemma added to it
     (Ltac `cyp_first`);
@@ -184,8 +193,10 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
 - **Errors** of the tree, reported at their node and line (in the checked
   Markdown and the JSON), and the node is not proved: a node with tags but
   no conclusion, two conclusions, a name out of scope or given twice in
-  one scope, an unknown class, an unclosed span or div (prooftext's
-  table); a fact that is no visible hypothesis or conclusion; a
+  one scope, an unknown class, an unclosed div, a `]{.p}` with no `[`
+  before it (prooftext's table; a `[` that nothing closes is text, so its
+  formulas belong to the node around it, which may then have two
+  conclusions); a fact that is no visible hypothesis or conclusion; a
   justification that names nothing known; a formula that does not parse
   ([examples/errors_demo.md](examples/errors_demo.md),
   [vernac/errors_file.md](vernac/errors_file.md)).  An error never stops
@@ -196,11 +207,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
   variable that does not parse is left out of its node.
 - **The gap tactic.**  A condition that its justifications, the rules and
   the default tactics leave open gets a last, coarse try: `cyp_gap`
-  ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (the goal and
-  the hypotheses taken apart, at most 200 steps, then a proof search of depth 4 or
-  `congruence`; a case analysis on the booleans; an induction on a binder
-  of the goal; a case analysis on a variable; a constructor whose arguments
-  the search finds), with no time limit: a condition it cannot close costs
+  ([vernac/Gaps.v](vernac/Gaps.v)), a few bounded searches (which ones and their bounds:
+  [Deterministic bounds](#deterministic-bounds)), with no time limit: a condition it cannot close costs
   a bounded search (at most 0.06 s measured).  On the conditions cyp left
   open in xtext's texts (closing steps of case analyses and inductions,
   steps that follow from earlier claims by a few applications) it closed
@@ -257,17 +265,18 @@ and Rocq's reduction.
 The tactics that a text may name (`prooftext/tactics.elpi`), the default
 tactics, the gap tactic and cyp's own search:
 
-| tactic | what cyp runs | bound |
+| tactic | what cyp runs (`word_N` of [../prooftext/Tactics.v](../prooftext/Tactics.v) for a word N; xtext runs the same) | bound |
 |---|---|---|
 | `tauto` (default) | `itauto auto` | itauto's SAT solver runs on a fuel computed from the size of the formula; its leaf tactic `auto` is of depth 5 |
 | `auto` | `auto` | depth 5 |
 | `easy` | `easy` | a fixed set of steps |
-| `firstorder` | `bounded_firstorder` ([../prooftext/Tactics.v](../prooftext/Tactics.v)) | the goal and its hypotheses taken apart, at most 200 steps (`decompose_steps`; without it, `split` on `Inductive U : nat -> Prop := cu : forall n, U (S n) -> U n` goes on for ever), then `eauto 4` (depth 4) or `congruence` |
+| `firstorder` | `bounded_firstorder` ([../prooftext/Tactics.v](../prooftext/Tactics.v)) | `firstorder` itself has no bound (on a step of xtext's `half_le` it ran over 30 s and took up to 7 GB); `bounded_firstorder`: the goal and its hypotheses taken apart, at most 200 steps (`decompose_steps`; without it, `split` on `Inductive U : nat -> Prop := cu : forall n, U (S n) -> U n` goes on for ever), then `eauto 4` (depth 4) or `congruence` |
 | the gap tactic | `cyp_gap` ([vernac/Gaps.v](vernac/Gaps.v)) | `bounded_firstorder`; a case analysis on each boolean of the context, once; an induction on one binder of the goal, each tried once; a case analysis on one variable, each tried once; one constructor; each case closed by `eauto 4` or `congruence` |
 | `congruence` | `congruence` | ends (a closure over the terms of the goal) |
 | `ring`, `field` | `ring`, `field` | end (normal forms of polynomials) |
 | `lra` (default), `nra` | Micromega: the simplex on the rationals; `nra` first adds the products of pairs of hypotheses (degree 2) | end; the size of the problem is not bounded |
-| `lia` (default), `nia` (default) | Micromega: the simplex, then cuts and case splits on integer variables; `nia` first adds products (degree 2) | **no bound**: Rocq 9.1 has the options `Lia Depth` and `Lra Depth`, but the search does not read them (`plugins/micromega/certificate.ml`: the depth only sets `max_nb_cstr`, which nothing uses), and there is no other one.  Not seen running away on cyp's texts |
+| `lia` (default), `nia` (default) | `guarded_lia`, `guarded_nia` ([../prooftext/Tactics.v](../prooftext/Tactics.v)): `lia_guard`, then Micromega: the simplex, then cuts and case splits on integer variables; `nia` first adds products (degree 2) | **no bound** for the search: Rocq 9.1 has the options `Lia Depth` and `Lra Depth`, but the search does not read them (`plugins/micromega/certificate.ml`: the depth only sets `max_nb_cstr`, which nothing uses), and there is no other one.  `lia_guard` refuses, with a message, a goal with more than 50 case splits (disjunctions, `<>`, `-`, `max`, `min`, `abs`, `div`, `mod`, ... counted on the goal and the hypotheses, no search) or more than 16 hypotheses: it bounds what lia is given, not its search; the bounds are 1.5 and 2 times the largest call that succeeded in the measurement (`../xtext/gaps/README.md`, "No time limit"), and change no result of cyp's examples or of xtext's texts |
+| `arith` | `first [ guarded_lia \| itauto auto ]` | those of `lia` and `tauto` |
 | `reflexivity`, `assumption`, and every unification | Rocq's conversion | ends (a well-typed term has a normal form), but there is no bound on the number of reduction steps: a step that asks Rocq to compute a large value takes as long as the computation |
 | cyp's search (rules) | `close`, `premises` ([vernac/elpi/check.elpi](vernac/elpi/check.elpi)) | a lemma applied to close a premise of a lemma: at most `premise-depth-max` lemmas deep (4); the goal with its head unfolded: once; a conjunction or a disjunction: split along the formula |
 
@@ -364,7 +373,7 @@ CypJustification "monotonicity" := rules.        (* *monotonicity*{.just}: these
 - The tactics every proof text may name (`lia`, `tauto`, ...: prooftext's
   [tactics.elpi](../prooftext/tactics.elpi)) are declared at the end of
   [vernac/Cyp.v](vernac/Cyp.v) with the same command,
-  `CypJustification "lia" := cyp_lia.`, so that every word has a visible
+  `CypJustification "lia" := word_lia.`, so that every word has a visible
   declaration; `Cyp.v` checks that none of prooftext's is missing.  They
   are also the names a header's `by:` gives (each a declared word).
 - A word that is declared nowhere, and is no name of the text or lemma,
@@ -381,7 +390,7 @@ meaning and the place of their declaration:
 
 ```json
 {"word":"monotonicity","meaning":"rules","library":"","file":"/…/cyp/examples/named_demo.v","line":8}
-{"word":"lia","meaning":"tactic cyp_lia","library":"CypV.Cyp","file":"./Cyp.v","line":442}
+{"word":"lia","meaning":"tactic word_lia","library":"CypV.Cyp","file":"./Cyp.v","line":426}
 ```
 
 `prooftext/pdf.sh --source-root ROOT=URL` (and `gallery.sh`, which passes

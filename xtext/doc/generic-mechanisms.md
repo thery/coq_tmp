@@ -49,9 +49,13 @@ dropped by name.
 A proper subproof whose proof term has at least `xtext-threshold` nodes
 (default 300) is first tried with the tactics of `xtext-tactic`, in
 order, on its statement in its own context.  The defaults are
-`tauto` then `lia`, each with a 2 s time limit.  The first tactic that
-closes it gives one step, `By *lia*{.just} we have P`, instead of the walk
-through the term.  The success of the tactic is the guarantee; no
+`tauto` then `lia`; a subproof whose conclusion is arithmetic is first
+tried with `arith` (`xtext-arith-tactic`, see "The word `arith`" in
+[contraction-eliminations-partial.md](contraction-eliminations-partial.md#2-contraction-of-application-steps-thesis-342-fig-311-313)).
+What each runs, with no time limit, and its bound: the table "No time
+limit" of the same section.  The first tactic that closes it gives one
+step, `By *arith*{.just} we have P` (or `*tauto*`, `*lia*`), instead of
+the walk through the term.  The success of the tactic is the guarantee; no
 constant is recognised by its name.
 
 - Where: on every subproof but the whole proof (the body of the theorem,
@@ -61,8 +65,8 @@ constant is recognised by its name.
 - Parameters, in the Elpi database `xtext.db` (`ExtractText.v`):
   `xtext-tactic Ltac Text` (an Ltac definition, and the name the text
   gives as the justification, `*lia*{.just}`), `xtext-threshold N`.  To
-  add `lra`, write `Ltac my_lra := timeout
-  2 lra.` then `Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra".
+  add `lra`, write `Ltac my_lra := lra.` (with no time limit, see "No
+  time limit" above) then `Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra".
   }}`.  To change the threshold, write `:before "xtext-threshold"
   xtext-threshold 50 :- !.`
 - Limits: a subproof that a tactic closes loses its explanation, even if

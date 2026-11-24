@@ -24,12 +24,8 @@
        justification), formulas (terms, each followed by its class,
        "{.claim}"), and its subnodes (a list of steps).
 
-   What a proof means is in the Elpi files of elpi/: text.elpi (what cyp
-   takes from the text of a node: its tags), check.elpi (closing a goal: the
-   justifications, the facts, the rules), gaps.elpi (the gap tactic, a
-   last try on a condition left open, cyp_gap of Gaps.v), proof.elpi (the
-   proof of a statement from its tree), markdown.elpi (the checked Markdown
-   and the JSON).  The tree is read by prooftext's reader
+   What a proof means is in the Elpi files of elpi/ (what each one does:
+   README.md, "How it works").  The tree is read by prooftext's reader
    (prooftext/tree.elpi, nodes.elpi).  The rules of a field are added to
    the database cyp.db (justify, justify_first, named).
 
@@ -47,31 +43,18 @@ From Stdlib Require Import PrimString List Lia Lra Ring Field.
 From elpi Require Import elpi.
 (* the coarse gap tactic cyp_gap, tried on a condition nothing else closes *)
 From CypV Require Export Gaps.
-(* itauto (coq-itauto): a reflexive SAT solver for propositional logic, run
-   for the name tauto: tauto may run for minutes on goals that itauto closes
-   at once.  With the flag Itauto Classic, itauto reasons classically when
-   the classical axiom is loaded, as tauto does *)
-From Cdcl Require Import Itauto.
-#[export] Set Itauto Classic.
 
 (* a claim C of the text, proved by p, is a hypothesis of the rest k *)
 Definition cyp_have (C G : Prop) (p : C) (k : C -> G) : G := k p.
 
 (* The tactics that the words of prooftext/tactics.elpi (lia, tauto, ...)
-   mean, in a justification *X*{.just} or in a header's by:: the word N is
-   declared to mean cyp_N at the end of this file (CypJustification).  A
-   proof declares its own words the same way:
+   mean, in a justification *X*{.just} or in a header's by:: the word N
+   means word_N of prooftext/Tactics.v, shared with xtext, declared at the
+   end of this file (CypJustification).  A proof declares its own words
+   the same way:
      Ltac my_tac := ...
-     CypJustification "my" := my_tac. *)
-Ltac cyp_lia := lia.            Ltac cyp_nia := nia.
-Ltac cyp_lra := lra.            Ltac cyp_nra := nra.
-Ltac cyp_ring := ring.          Ltac cyp_field := field.
-Ltac cyp_tauto := itauto auto.        Ltac cyp_auto := auto.
-Ltac cyp_easy := easy.          Ltac cyp_reflexivity := reflexivity.
-Ltac cyp_assumption := assumption.   Ltac cyp_congruence := congruence.
-(* firstorder, bounded (prooftext/Tactics.v, shared with xtext): firstorder has no bound (on a condition
-   of xtext's half_le it ran over 30 s and took up to 7 GB) *)
-Ltac cyp_firstorder := bounded_firstorder.
+     CypJustification "my" := my_tac.
+   What each runs and its bound: ../README.md, "Deterministic bounds". *)
 (* used by cyp itself *)
 (* a hypothesis that is the goal, when the goal has no existential variable
    (on a premise of a lemma still to be found, a hypothesis would fix it) *)
@@ -149,10 +132,10 @@ Elpi Db cyp.db lp:{{
 
   % the tactics tried when no rule closes a step, after the proof's own
   pred default-ltac o:string.
-  default-ltac "cyp_tauto".
-  default-ltac "cyp_lia".
-  default-ltac "cyp_nia".
-  default-ltac "cyp_lra".
+  default-ltac "word_tauto".
+  default-ltac "word_lia".
+  default-ltac "word_nia".
+  default-ltac "word_lra".
 }}.
 
 (* the roles of the formulas, shared with xtext: lexicon/ (cyp reads no
@@ -282,8 +265,8 @@ Elpi Command CypFile.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   % #[bare]: the conditions are printed, nothing is tried or defined
@@ -316,8 +299,8 @@ Elpi Export CypFile.
 Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   % A step written in Rocq is a node of the tree, as a list item of a
@@ -425,8 +408,8 @@ Elpi Accumulate lp:{{
 Elpi Command CypQed.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
-Elpi Accumulate File cyp_text cyp_messages cyp_timing cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_check cyp_proof cyp_markdown
+Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   main-interp-qed _ _ Proof _ (qed-data Name Lang Ty) :-
@@ -438,20 +421,22 @@ Elpi Accumulate lp:{{
 
 (* ------------------------------------------------------------------ *)
 (* The words of prooftext/tactics.elpi, the tactics every proof text may
-   name (xtext writes only these): each means the Ltac cyp_N above *)
-CypJustification "lia" := cyp_lia.
-CypJustification "nia" := cyp_nia.
-CypJustification "lra" := cyp_lra.
-CypJustification "nra" := cyp_nra.
-CypJustification "ring" := cyp_ring.
-CypJustification "field" := cyp_field.
-CypJustification "tauto" := cyp_tauto.
-CypJustification "auto" := cyp_auto.
-CypJustification "easy" := cyp_easy.
-CypJustification "reflexivity" := cyp_reflexivity.
-CypJustification "assumption" := cyp_assumption.
-CypJustification "congruence" := cyp_congruence.
-CypJustification "firstorder" := cyp_firstorder.
+   name (xtext writes only these): each means the Ltac word_N of
+   prooftext/Tactics.v *)
+CypJustification "lia" := word_lia.
+CypJustification "nia" := word_nia.
+CypJustification "lra" := word_lra.
+CypJustification "nra" := word_nra.
+CypJustification "ring" := word_ring.
+CypJustification "field" := word_field.
+CypJustification "tauto" := word_tauto.
+CypJustification "auto" := word_auto.
+CypJustification "easy" := word_easy.
+CypJustification "reflexivity" := word_reflexivity.
+CypJustification "assumption" := word_assumption.
+CypJustification "congruence" := word_congruence.
+CypJustification "firstorder" := word_firstorder.
+CypJustification "arith" := word_arith.
 
 (* every word of prooftext/tactics.elpi is declared above *)
 Elpi Command cyp_words_declared.

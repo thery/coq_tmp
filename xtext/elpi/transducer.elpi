@@ -32,7 +32,9 @@ dewey P S :- std.map P (x\ y\ y is int_to_string x) L, std.string.concat "." L S
 % case (Dewey notation).
 
 % cur-ih Fl: the induction-hypothesis flags of the binders of the branch
-% being translated (set by the elimination rules)
+% being translated (set by the elimination rules, inductive-text.elpi,
+% and by lam-run, abstractions.elpi; reset to [] outside a branch by
+% tr.aux and by abstraction-series, staged.elpi)
 pred cur-ih o:list bool.
 % [induction-flags Fl]: those flags, none outside a branch
 pred induction-flags o:list bool.
@@ -97,8 +99,36 @@ pred tactic-step i:term, o:pf.
 tactic-step T P :- not (off "tactics"),
   xtext-threshold N, size-ge T N,
   typ T Ty, binder-kind Ty K, K = bk-assume,
-  xtext-tactic L Txt, try-tactic L Ty, !,
+  subproof-tactic Ty L Txt, try-tactic L Ty, !,
   formula rclaim Ty F, sentence [wd "by", jst Txt, wd "have", tx F] S, conclusion-only S P.
+
+% [arith-conclusion T]: T is arithmetic, by its shape only: under its
+% foralls and implications, an equality on nat, Z, N or R, an order (<=,
+% <, >=, >) on them, or the negation (not) of one of these
+pred arith-conclusion i:term.
+arith-conclusion (prod _ _ B) :- !, pi x\ arith-conclusion (B x).
+arith-conclusion (app [global (const C), X]) :- coq.gref->string (const C) "Corelib.Init.Logic.not", !,
+  arith-conclusion X.
+arith-conclusion (app [global (indt I), Ty, _, _]) :- coq.gref->string (indt I) "Corelib.Init.Logic.eq", !,
+  arith-type Ty.
+arith-conclusion (app [global GR | _]) :- coq.gref->string GR S, arith-order S.
+
+pred arith-type i:term.
+arith-type (global GR) :- coq.gref->string GR S, std.mem! ["Corelib.Init.Datatypes.nat", "Corelib.Numbers.BinNums.Z",
+  "Corelib.Numbers.BinNums.N", "Stdlib.Reals.Rdefinitions.R", "Stdlib.Reals.Rdefinitions.RbaseSymbolsImpl.R"] S.
+
+pred arith-order i:string.
+arith-order S :- std.mem! ["Corelib.Init.Peano.le", "Corelib.Init.Peano.lt", "Corelib.Init.Peano.ge", "Corelib.Init.Peano.gt",
+  "Stdlib.ZArith.BinInt.Z.le", "Stdlib.ZArith.BinInt.Z.lt", "Stdlib.ZArith.BinInt.Z.ge", "Stdlib.ZArith.BinInt.Z.gt",
+  "Stdlib.NArith.BinNat.N.le", "Stdlib.NArith.BinNat.N.lt", "Stdlib.NArith.BinNat.N.ge", "Stdlib.NArith.BinNat.N.gt",
+  "Stdlib.Reals.Rdefinitions.Rle", "Stdlib.Reals.Rdefinitions.RbaseSymbolsImpl.Rlt", "Stdlib.Reals.Rdefinitions.Rge", "Stdlib.Reals.Rdefinitions.Rgt"] S.
+
+% [subproof-tactic Ty L Txt]: the tactics tried on a long subproof of
+% type Ty: arith first when Ty is arithmetic (arith-conclusion), then those
+% of xtext-tactic
+pred subproof-tactic i:term, o:string, o:string.
+subproof-tactic Ty L Txt :- arith-conclusion Ty, xtext-arith-tactic L Txt.
+subproof-tactic _ L Txt :- xtext-tactic L Txt.
 
 % [try-tactic L Ty]: the Ltac tactic L closes a goal of type Ty in the
 % current context

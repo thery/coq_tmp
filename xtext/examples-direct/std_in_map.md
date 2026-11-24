@@ -30,7 +30,7 @@ Let `A B : Type`{.var}. Let `f : A -> B`{.var}. Let `l : list A`{.var}. We prove
                 - Assume `In (f x) (map f l0)`{.hyp} (H01). By *H01*{.just} we have `In (f x) (map f l0)`{.claim}.
 
               By *tauto*{.just} we deduce `In (f x) (map f l0)`{.claim}.
-          - By *firstorder*{.just} we deduce `In (f x) (map f l0)`{.claim}.
+          - By *tauto*{.just} we deduce `In (f x) (map f l0)`{.claim}.
 
           By definition of or (*or_intror*{.just}), we have `f a = f x \/ In (f x) (map f l0)`{.claim}.
 

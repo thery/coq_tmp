@@ -173,11 +173,14 @@ elpi pbp_pattern H S E H' S' E'.    (* two hypotheses *)
 ### How
 
 The printed goal is matched with the term by Rocq's printer itself: for
-each subterm, the goal is printed again with this subterm replaced by a
-marker `pbp_mark` whose two arguments (its type and the subterm) are
-implicit, so it prints as one word and the binders above it print as
-before; what is printed before and after the marker is what is printed
-before and after the subterm (up to the parentheses around it).  So the
+each subterm s, the goal is printed again with s framed by two markers,
+`A s B`, where `A` and `B` are two local variables whose names occur
+nowhere in the printed goal (`pbp_mark`, `pbp_end`, or these names with a
+number: `marker-names`).  An application of local variables prints alike
+under every printing option (Printing All, Implicit), and s stays, so the
+binders above it print as before; what is printed before `A` and after
+`B` is what is printed before and after the subterm (up to the
+parentheses around it).  So the
 notations, implicit arguments, coercions and parentheses are those of the
 goal, and two occurrences that print alike (the two `a` of `a + b = b +
 a`) are told apart by their places.  A subterm that is not printed as a
@@ -190,7 +193,8 @@ outermost).
 
 The pattern is the goal where the selection is the variable `X` (applied
 to the variables bound above it that it uses: `X n m`), where the largest
-printed subterms beside the path to the selection are holes `_`, and
+printed subterms beside the path to the selection are holes `_` (printed
+through the constant `pbp_hole`, whose arguments are implicit), and
 where the rest is kept: heads of applications, what is not printed, the
 types of dependent binders.  `X`, `Y` are renamed (`X0`, ...) if the goal
 uses these names.  The pattern is then checked: its text is parsed and
@@ -387,7 +391,8 @@ hypothesis `H : a + b = b + a` (`H 0 1`), `{path:M}` then `{local:M}`:
   4}` and `1 4`; of different terms, an error; a selection that uses a
   variable bound in the goal (`n` in `forall n, n = a`) has no occurrence
   number (an error).
-- `path`: in an application the head is 0 and the arguments 1, 2, ...;
+- `path`: the paths of `kids` (pbp_select.v): in an application the head
+  is 0 and the arguments 1, 2, ...;
   in a product or an abstraction the type is 0 and the body 1; in a let
   the type 0, the value 1, the body 2; in a match the matched term 0, the
   return type 1, the branches 2, 3, ...  In the goal with the hypothesis
@@ -474,11 +479,11 @@ doc:
 
 ```
 7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 495
+Point (point), declared in coq_tmp.point_actions, line 497
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
 ...
-Name it (point), declared in coq_tmp.point_actions_test, line 187
+Name it (point), declared in coq_tmp.point_actions_test, line 188
   template: set x := ({text}).
   doc: name the selected subterm
 Compare (link), declared by an Elpi clause

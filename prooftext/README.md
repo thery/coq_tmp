@@ -275,11 +275,12 @@ that names no formula in scope).
   Name`, the two fixed justifications `match` and `induction` (no
   tactics: a `by` field does not name them).  Each tool
   runs a name its own way: in cyp each is a word declared by
-  `CypJustification "Name" := cyp_Name.` (`cyp/vernac/Cyp.v`; a proof
+  `CypJustification "Name" := word_Name.` (`cyp/vernac/Cyp.v`; `word_Name`
+  is the Ltac of `prooftext/Tactics.v` that xtext runs too; a proof
   declares its own words the same way); xtext writes only these
   names (the text of its tactics, `xtext-tactic Ltac Name` and
-  `xtext-guard-tactic Ltac Name` in `xtext/ExtractText.v`, which run them with
-  a time limit), and `xtext/vocab_check.v` checks it.  A name added to one
+  `xtext-guard-tactic Ltac Name` in `xtext/ExtractText.v`, which run them as
+  cyp does, with no time limit), and `xtext/vocab_check.v` checks it.  A name added to one
   tool's table goes here first.
 
 ## Writing a proof text
@@ -356,8 +357,9 @@ opening to its end), where its own text starts (a `spot Line Column`,
 where a checker writes its status mark), where a message about it goes
 (after that line, at that column), and its contents in the order of the
 text: `run Text Parts`, `sub Node`, `para-end` (the end of a paragraph)
-and `flaw Line Error` (an error of the reader: a span or a div left open
-or closed but not opened, an unknown class of a span or a div).
+and `flaw Line Error` (an error of the reader: a div left open, a span or a
+div closed but not opened, an unknown class of a span or a div; a span
+left open is text, see "spans" above).
 `nodes.elpi` says what a node says: `node-parts`, `claim-parts` (its
 conclusions, `{.claim}` or `{.goal}`, `conclusion-class`), `is-goal-node`
 (its conclusion is an open goal),
@@ -365,8 +367,7 @@ conclusions, `{.claim}` or `{.goal}`, `conclusion-class`), `is-goal-node`
 `is-remark`, its numbers (`numbered-subnodes`, `node-children`, which
 replaces a remark by its subnodes, `all-nodes`; the top node is `0`, its
 subnodes `1`, `2`, ..., the subnodes of `2` are `2.1`, ...), and the
-errors, `tree-errors Top Errors`, each `node-error Number Line Error`
-(`error-message E S`, its English message).
+errors, `tree-errors Top Errors`, each `node-error Number Line Error`.
 
 **For a writer**, the Typst back end writes from the tree itself
 (`write-typst-tree`, below), so that a closing paragraph comes after its
@@ -816,7 +817,7 @@ closing paragraph of an item after its sub-item.
 
 - A formula without a class is plain text: shown without a role (cyp
   does not use it either).
-- The errors of the tree (an unclosed span, a node with no conclusion,
+- The errors of the tree (an unclosed div, a node with no conclusion,
   ...) are shown only in a checked text, as cyp's messages; the PDF of a
   text that is not checked shows the text as it reads it, without them.
 - In a checked free text, nodes that start at the same place show their

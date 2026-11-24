@@ -2,7 +2,7 @@
 
 # Checking the texts with cyp
 
-`sh cyprun.sh LIMIT name...` copies each text to `cyp-check/`, adds a
+`sh cyprun.sh name...` copies each text to `cyp-check/`, adds a
 `flags:` line to its header (so that `Require Import XText.<file>`
 finds the example files), and runs cyp's driver (`cyp/bin/cyp.ml`, which runs
 `Cyp File` in the switch `elpi5`; `CYP_LIB` the directory where
@@ -13,16 +13,38 @@ A list item is a node of the proof (the tree of the 2003 paper): its
 mark is at the start of its text, and its closing paragraph, if any, is
 part of it.  An item with no tag is a remark (▫️, not checked).
 
-The 80 English texts written by default (staged translation), 300 s per
-text (`cyp-check/results.tsv`, all rerun 2026-11-19, in the tree format):
+The 80 English texts written by default (staged translation;
+`examples/` has 82: `reals_exp_div` and `reals_sqrt_sq`, of `reals.v`,
+are not in `cyp-check/results.tsv`), all rerun 2026-11-19, in the tree
+format.  These runs had a time limit per text, a guard of `cyprun.sh`
+that no text reached: 300 s on 2026-11-19 (the limit of the runs of
+2026-11-23 is not recorded); since 9ed08a0 (2026-11-23) `cyprun.sh` has
+no time limit:
 
 | | nodes proved | not proved | remarks (▫️) | time |
 |---|---|---|---|---|
 | before the tree (`*by X*`, nodes without conclusion) | 666 | 17 | 504 not checked | 176 s |
 | the tree | 684 | 2 | 279 | 107 s |
-| open goals and fixed justifications (now) | 678 (+ 6 open goals ◆) | 2 | 279 | 114 s |
+| open goals and fixed justifications | 678 (+ 6 open goals ◆) | 2 | 279 | 114 s |
+| no time limit in xtext (2026-11-23) | 650 (+ 6 open goals ◆) | 2 | 279 | 102 s |
+| the word `arith`, `lia_guard` (now, 2026-11-23) | 650 (+ 6 open goals ◆) | 2 | 279 | 113 s |
 
 - all 80 texts are checked, none times out;
+- with no time limit in xtext (2026-11-23, `tauto` run as `itauto auto`,
+  as cyp runs it; see ["No time
+  limit"](contraction-eliminations-partial.md#2-contraction-of-application-steps-thesis-342-fig-311-313)):
+  three texts change.  `std_andb_assoc` is one step, `By *tauto*{.just}
+  we have ...` (29 nodes proved before, a case analysis on three
+  booleans; 1 now, proved), which makes the 28 nodes fewer;
+  `std_Nat_add_0_r` and `std_Nat_add_succ_r` say `*tauto*{.just}` where
+  they said `*lia*{.just}`, with the same counts.  Every other text has
+  the counts it had, text by text; the 108 texts in the other languages
+  too (711 proved, 0 not proved, 90 remarks, 146 s);
+- with the word `arith` (the 5 texts `std_Nat_add_0_r`, `std_Nat_add_succ_r`,
+  `std_Nat_add_assoc`, `std_Nat_add_comm`, `std_Nat_mul_comm` say
+  `*arith*{.just}` where they said `*tauto*{.just}` or `*lia*{.just}`) and
+  cyp's `lia`, `nia` behind `lia_guard`: the same counts, text by text, in
+  English and in the other languages (711, 0, 90, 156 s);
 - with the open goals tagged `{.goal}` and the eliminations justified by
   `*match*{.just}` and `*induction*{.just}` (rerun 2026-11-19): every
   node has the status it had, except the 6 open goals of the 4 texts in
@@ -72,7 +94,7 @@ checked, 5 timeouts.
   follows the way the text says.
 
 The texts in the other languages (12 texts per language, 9 languages:
-`fr it de nl ru zh ar ko la`), all 108 rerun 2026-11-19, 300 s per text
+`fr it de nl ru zh ar ko la`), all 108 rerun 2026-11-19, 300 s per text (no limit since 9ed08a0, as above)
 (`cyp-check/results_langs.tsv`; the checked texts in `cyp-check/<lang>/`):
 
 - all 108 texts are checked, none times out, 141 s in all;

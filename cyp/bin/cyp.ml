@@ -1,11 +1,13 @@
-(* cyp [--json | --conditions] proof.md: check a cyp proof with Cyp File.
+(* cyp [--time] [--json | --conditions] proof.md: check a cyp proof with Cyp File.
 
    The driver of cyp.  It keeps no semantics: from the header of the proof
    it writes a small .v file (the header's require: line, its rule files,
    then  CypFile "proof.md".), runs rocq c on it, and prints cyp's
    messages (with --json: the file proof.cyp.json, for the editor; with
    --conditions: every condition of the text with its context, nothing
-   tried, as #[bare] CypFile prints them).  Cyp
+   tried, as #[bare] CypFile prints them; with --time: the time of each
+   condition and how it was closed, then the slowest, as #[time] CypFile
+   prints them).  Cyp
    File writes proof.checked.md and proof.cyp.json next to the proof.
 
    Header fields used here: require: (Rocq text), rules: (files .elpi,
@@ -92,7 +94,7 @@ let prooftext () =
   | Some d -> d
   | None -> Filename.concat (Filename.dirname (lexicon ())) "prooftext"
 
-let main ~json ~conditions md =
+let main ~json ~conditions ~time md =
   let md = absolute (Sys.getcwd ()) md in
   let dir = Filename.dirname md in
   let h = header (read_file md) in
@@ -126,7 +128,11 @@ let main ~json ~conditions md =
         end) [] rules in
   let v =
     head @ rule_lines
-    @ [ Printf.sprintf "%sCypFile %S." (if conditions then "#[bare] " else "") md ] in
+    @ [ Printf.sprintf "%sCypFile %S."
+          (match conditions, time with
+           | true, true -> "#[bare, time] " | true, false -> "#[bare] "
+           | false, true -> "#[time] " | false, false -> "")
+          md ] in
   write_file src (String.concat "\n" v ^ "\n");
   let flags = relative_flags dir (words (expand (field h "flags"))) in
   let out = Filename.concat tmp "cyp_check.out" in
@@ -155,8 +161,10 @@ let main ~json ~conditions md =
   code
 
 let () =
-  match List.tl (Array.to_list Sys.argv) with
-  | [ "--json"; md ] -> exit (main ~json:true ~conditions:false md)
-  | [ "--conditions"; md ] -> exit (main ~json:false ~conditions:true md)
-  | [ md ] -> exit (main ~json:false ~conditions:false md)
-  | _ -> prerr_endline "usage: cyp [--json | --conditions] proof.md"; exit 2
+  let args = List.tl (Array.to_list Sys.argv) in
+  let time = List.mem "--time" args in
+  match List.filter (( <> ) "--time") args with
+  | [ "--json"; md ] -> exit (main ~json:true ~conditions:false ~time md)
+  | [ "--conditions"; md ] -> exit (main ~json:false ~conditions:true ~time md)
+  | [ md ] -> exit (main ~json:false ~conditions:false ~time md)
+  | _ -> prerr_endline "usage: cyp [--time] [--json | --conditions] proof.md"; exit 2

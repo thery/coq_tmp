@@ -33,7 +33,7 @@ Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
   - Assume `n * 0 = 0`{.hyp} (lemma).
     - In particular `Morphisms.ProperProxy eq n`, that is `n = n`{.claim}.
       - Using *Morphisms.eq_proper_proxy*{.just} we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim}.
-    - By *congruence*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 0 + n)) (eq (0 + n))`, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 0 + n = x) (0 + n = y)`{.claim}.
+    - By *tauto*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 0 + n)) (eq (0 + n))`, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 0 + n = x) (0 + n = y)`{.claim}.
       - In particular `Morphisms.ProperProxy eq n`, that is `n = n`{.claim}.
         - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
           - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
@@ -69,7 +69,7 @@ Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
   - Assume `1 = 1`{.hyp} (lemma).
     - In particular `Morphisms.ProperProxy eq n`, that is `n = n`{.claim}.
       - Using *Morphisms.eq_proper_proxy*{.just} we get `forall (A : Type) (x : A), Morphisms.ProperProxy eq x`{.claim}.
-    - By *congruence*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 1)) (eq (n * 1))`, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 1 = x) (n * 1 = y)`{.claim}.
+    - By *tauto*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (eq (n * 1)) (eq (n * 1))`, that is `forall x y : nat, x = y -> Basics.flip Basics.impl (n * 1 = x) (n * 1 = y)`{.claim}.
       - By *lemma*{.just} we have `1 = 1`{.claim}.
       - We deduce `Morphisms.Proper (Morphisms.respectful eq eq) (Nat.mul n)`, that is `forall x y : nat, x = y -> n * x = n * y`{.claim}.
         - In particular `Morphisms.ProperProxy eq n`{.claim}.
@@ -90,4 +90,4 @@ Let `n : nat`{.var}. We prove `n * 1 = n`{.claim}.
         - Using *Morphisms.trans_co_eq_inv_impl_morphism*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim}.
 
     We deduce `Basics.flip Basics.impl (n * 1 = n) (n * 1 = n)`{.claim}.
-- By *congruence*{.just} we deduce `n * 1 = n`{.claim}.
+- By *tauto*{.just} we deduce `n * 1 = n`{.claim}.

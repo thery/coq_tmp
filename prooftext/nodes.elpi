@@ -178,13 +178,6 @@ fill-template I [A | As] T S :-
   P is "%" ^ {std.any->string I}, rex.replace P A1 T T1,
   I1 is I + 1, fill-template I1 As T1 S.
 
-% [error-message E S]: the English message of the error E, with its line
-% (numbered from 1, as editors number them)
-pred error-message i:node-error, o:string.
-error-message (node-error _ L (prooftext.text-error K As)) S :-
-  error-template K T, fill-template 1 As T M,
-  S is "line " ^ {std.any->string {calc (L + 1)}} ^ ": " ^ M.
-
 % [tree-errors Top Errors]: the errors of the tree of the top node Top:
 % the errors of the reader (flaws), then those of each node of the proof
 pred tree-errors i:prooftext.node, o:list node-error.

@@ -7,4 +7,4 @@ by: tauto | congruence | lia | firstorder | auto
 
 Let `n m p : nat`{.var}. We prove `n + (m + p) = n + m + p`{.claim}.
 
-- By *lia*{.just} we have `n + (m + p) = n + m + p`{.claim}.
+- By *arith*{.just} we have `n + (m + p) = n + m + p`{.claim}.

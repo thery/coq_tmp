@@ -4,7 +4,8 @@ The library [Cyp.v](Cyp.v) (Rocq-Elpi, opam switch `elpi5`) is cyp
 itself: what a proof means, how its nodes are checked, and how the
 Markdown is read and written back.  It gives two commands.
 
-Build: `rocq c -Q . CypV Cyp.v`.
+Build: see [../README.md](../README.md) (it needs prooftext's Tactics.vo
+and Gaps.vo first, and the load paths of lexicon and prooftext).
 
 ## Cyp File: a proof in Markdown
 
@@ -88,7 +89,7 @@ a condition it does not discharge is ❌ and the lemma is not defined.
 whatever their nodes say: what is proved is proved, and the rest is left
 as goals of the Proof block.  An error of a node (a justification that
 names nothing, a fact not in scope, a name out of scope, an unknown
-class, an unclosed span, two conclusions, a formula that does not
+class, an unclosed div, two conclusions, a formula that does not
 parse...) is printed, `❌ 1 sqrt_magic names nothing known...`, marked ❌
 in the checked Markdown and the JSON, and the command goes on:
 
@@ -142,8 +143,39 @@ leave open is tried with `cyp_gap` ([Gaps.v](Gaps.v)) before it is left
 to the Proof block; `#[gaps="off"]` (`#[gaps="off"] Cyp Lemma ...`, or
 the header line `gaps: off` of a Markdown proof) turns it off.
 
-**Timing.**  With the environment variable `CYP_TIME` set, cyp prints the
-time spent on each condition (`cyp: time 2.1 1234 ms`).
+**Timing.**  `#[time] Cyp File "p.md"`, `#[time] Cyp Lemma ...` and
+`#[time] CypFile "p.md"` (the program: `cyp --time p.md`) print, for each
+condition, its time and how it was closed, then the ten slowest
+conditions, each with the first line of its node (here on
+[../examples/square_pos.md](../examples/square_pos.md)):
+
+```
+cyp: time 1.1.1 10 ms, split(lia; lia)
+cyp: time 1.1 7 ms, nia
+cyp: time 3 35 ms, failed after trying the hypotheses, the rules, the default tactics, hnf; again after intros; the gap tactic
+...
+cyp: time of the 7 conditions: 66 ms; the slowest:
+cyp:   3  35 ms  failed after trying ...  | So `0 < a - b`{.claim}, a wrong step on purpose.
+cyp:   1.1.1  10 ms  split(lia; lia)  | From `0 < a < b`{.fact} we have `0 < b + a /\ 0 < b - a`{.claim}.
+```
+
+How a goal was closed: `hypothesis` (a hypothesis is the goal), the name
+of a tactic (a declared word such as `lia` or `arith`, a tactic of the
+header's `by:`, a default tactic: `tauto (itauto)`, `lia`, `nia`, `lra`),
+`rule R: ...` (a rule of the proof; `R` its name for a `named` rule),
+`apply L(h1; h2)` (the lemma or hypothesis L, then how each of its
+premises was closed, `_` for one solved by another's solution), `elim
+L(...)`, `split(...)`, `left(...)`, `right(...)`, `match h(...)` and
+`induction l(...)` (then how each case was closed), `hnf, ...` (the goal
+in weak head normal form, the last try), `intros, ...` (after
+introducing the premises of the goal), `no name applies, ...` (the names
+given apply to nothing: the rules and the default tactics), `gap tactic
+(after N ms of failed tries)`; for a condition not proved, what was
+tried.  The phases of a check are timed too (`cyp: time conditions 75
+ms`, `markdown`, `json`, `type-check`, `definition`).  The environment
+variable `CYP_TIME` set does the same as `#[time]`.  Timing is a
+measure only: what cyp tries, and its verdicts, are the same with it or
+without it.
 
 **Justifications.**  A justification `*X*{.just}` is, in this order, a
 fixed method (`match`, `induction`), a name of the text in scope (a
@@ -225,10 +257,15 @@ text may name):
   nested nodes, type-check 35 ms and definition 27 ms); the facts looked
   up among the hypotheses in scope, up to conversion;
 - `markdown.elpi`: the checked Markdown (the lines of the text, with the
-  marks and messages of the nodes inserted) and the JSON for the editor.
+  marks and messages of the nodes inserted) and the JSON for the editor;
+- `messages.elpi`: cyp's messages in the language of the proof, from the
+  tables of `messages_en.elpi`, `messages_fr.elpi` and `messages_it.elpi`
+  (a message missing there is the English one);
+- `timing.elpi`: with the environment variable `CYP_TIME` set, the time
+  spent on each condition and on each phase of a check.
 
 The words of the default tactics (`lia`, `lra`, ...) are declared to mean
-Ltac definitions of [Cyp.v](Cyp.v) (`cyp_lia := lia`): Rocq-Elpi runs an
+Ltac definitions of [../../prooftext/Tactics.v](../../prooftext/Tactics.v) (`word_lra := lra`, `word_lia := guarded_lia`): Rocq-Elpi runs an
 Ltac definition by its name, not a builtin tactic nor tactic code given as
 a string.
 

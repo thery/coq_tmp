@@ -19,6 +19,9 @@ message "en" "md-not-proved" "not proved: %1".
 message "en" "md-not-parsed" "does not parse: %1".
 message "en" "md-todo" "condition %1, to prove in the Proof block: %2".
 message "en" "time" "cyp: time %1 %2 ms".
+message "en" "time-condition" "cyp: time %1 %2 ms, %3".
+message "en" "time-slowest" "cyp: time of the %1 conditions: %2 ms; the slowest:".
+message "en" "time-slow-line" "cyp:   %1  %2 ms  %3  | %4".
 message "en" "header-key-ignored" "cyp: the header line %1: is ignored, %1 is no key of a header".
 message "en" "definition-not-parsed" "the definition %1 does not parse".
 message "en" "variables-not-parsed" "the variables %1 do not parse: %2".

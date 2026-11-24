@@ -15,9 +15,9 @@ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
       - Using *RelationClasses.iff_Reflexive*{.just} we get `RelationClasses.Reflexive iff`{.claim}.
       - Using *RelationClasses.reflexivity*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Reflexive R -> forall x0 : A, R x0 x0`{.claim}.
       - We deduce `forall x0 : Prop, x0 <-> x0`{.claim}.
-      - By *congruence*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + 0 = x)) (iff (y + 0 = y))`, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x + 0 = x <-> x0) (y + 0 = y <-> y0)`{.claim}.
+      - By *tauto*{.just} we deduce `Morphisms.respectful eq (Basics.flip Basics.impl) (iff (x + 0 = x)) (iff (y + 0 = y))`, that is `forall x0 y0 : Prop, x0 = y0 -> Basics.flip Basics.impl (x + 0 = x <-> x0) (y + 0 = y <-> y0)`{.claim}.
         - By *H*{.just} we have `x = y`{.claim}.
-        - By *firstorder*{.just} we deduce `Morphisms.respectful eq iff (eq (x + 0)) (eq (y + 0))`, that is `forall x0 y0 : nat, x0 = y0 -> x + 0 = x0 <-> y + 0 = y0`{.claim}.
+        - By *tauto*{.just} we deduce `Morphisms.respectful eq iff (eq (x + 0)) (eq (y + 0))`, that is `forall x0 y0 : nat, x0 = y0 -> x + 0 = x0 <-> y + 0 = y0`{.claim}.
           - In particular `Morphisms.ProperProxy eq 0`, that is `0 = 0`{.claim}.
             - We deduce `Morphisms.ReflexiveProxy (@eq nat)`{.claim}.
               - We deduce `RelationClasses.Reflexive (@eq nat)`{.claim}.
@@ -38,7 +38,7 @@ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
           - Using *RelationClasses.iff_Transitive*{.just} we get `RelationClasses.Transitive iff`{.claim}.
           - Using *Morphisms.trans_co_eq_inv_impl_morphism*{.just} we get `forall (A : Type) (R : Relation_Definitions.relation A), RelationClasses.Transitive R -> Morphisms.Proper (Morphisms.respectful R (Morphisms.respectful eq (Basics.flip Basics.impl))) R`{.claim}.
 
-      By *lia*{.just} we deduce `x + 0 = x <-> y + 0 = y`{.claim}.
+      By *tauto*{.just} we deduce `x + 0 = x <-> y + 0 = y`{.claim}.
 
     We have proved `x = y -> x + 0 = x <-> y + 0 = y`{.claim}.
 - Using *PeanoNat.Nat.add_0_l*{.just} we get `forall n0 : nat, 0 + n0 = n0`{.claim}.
@@ -100,7 +100,7 @@ Let `n : nat`{.var}. We prove `n + 0 = n`{.claim}.
 
         By *congruence*{.just} we deduce `Basics.flip Basics.impl (n0 + 0 = n0 <-> S n0 + 0 = S n0) (n0 + 0 = n0 <-> S (n0 + 0) = S n0)`{.claim}.
 
-    By *lia*{.just} we deduce `n0 + 0 = n0 <-> S n0 + 0 = S n0`{.claim}.
+    By *tauto*{.just} we deduce `n0 + 0 = n0 <-> S n0 + 0 = S n0`{.claim}.
 - Using *PeanoNat.Nat.bi_induction*{.just} we get `forall A : nat -> Prop, Morphisms.Proper (Morphisms.respectful eq iff) A -> A 0 -> (forall n0 : nat, A n0 <-> A (S n0)) -> forall n0 : nat, A n0`{.claim}.
-- By *lia*{.just} we deduce `forall n0 : nat, n0 + 0 = n0`{.claim}.
+- By *tauto*{.just} we deduce `forall n0 : nat, n0 + 0 = n0`{.claim}.
 - In particular `n + 0 = n`{.claim}.

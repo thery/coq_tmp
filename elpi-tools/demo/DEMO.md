@@ -5,7 +5,8 @@ Two tools for standalone Elpi 4.1.1 or 4.0.0 (the released Elpi, no patch;
 binders as Elpi lambdas and the typing context as hypotheses (`pi`, `=>`).
 Its reduction has one wrong rule.  The second (at the end) is insertion
 sort on lists, as in Prolog.  `elpi-check` finds it from a property;
-`elpi-debug` shows why.  Every output below is real; `sh demo.sh` reruns
+`elpi-debug` shows why.  Every output below is real (the times of a
+profile vary from run to run; `...` marks lines left out); `sh demo.sh` reruns
 all the commands (after `dune build` in `elpi-tools/`; it runs the tools
 from `_build/`, with `-I ../check/lib` for the property declarations).
 
@@ -108,6 +109,7 @@ Exit: #1 step (app (lam c0 \ c) c) (lam c0 \ c)
       X0 := lam c0 \ c
 Solution 2:
   N = lam c0 \ c
+Redo: #1 step (app (lam c0 \ c) c) (lam c0 \ c)
 ```
 
 Line 26 is the wrong rule.
@@ -196,6 +198,7 @@ Unify: #1 with lambda.elpi:20: of (lam c0 \ lam c1 \ c0) (arr X1 X2)
   local program (clauses added by =>, most recent first):
     of x#1 X1    (hypothesis added by #1)
    ? a
+Error: builtins: debug: aborted
 ```
 
 `retry` restarts the current call from its call port, undoing its bindings

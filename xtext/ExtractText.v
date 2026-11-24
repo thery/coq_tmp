@@ -11,8 +11,10 @@
    #[tags], tagged). *)
 From Stdlib Require Import Lia.
 From elpi Require Import elpi.
-(* the bounded searches shared with cyp (bounded_firstorder) *)
-From ProofText Require Import Tactics.
+(* the tactics the justification words mean (word_N) and the bounded
+   searches, shared with cyp; exported, so that the files that run
+   ExtractText see word_N by its name (xtext-tactic, xtext-guard-tactic) *)
+From ProofText Require Export Tactics.
 (* the lexicon (../lexicon): the roles and the phrases of each language,
    shared with the reader cyp *)
 From Lexicon Extra Dependency "lexicon.elpi" as lex_core.
@@ -64,25 +66,25 @@ From XText Extra Dependency "elpi/type-expressions.elpi" as xt_type_expressions.
 From XText Extra Dependency "elpi/staged.elpi" as xt_staged.
 From XText Extra Dependency "elpi/subproofs.elpi" as xt_subproofs.
 
-(* The tactics tried on long subproofs (see xtext-tactic below).  Each is
-   an Ltac definition (rocq-elpi calls Ltac definitions by name), with a
-   time limit. *)
-Ltac xtext_tauto := timeout 2 tauto.
-Ltac xtext_lia := timeout 2 lia.
-(* the tactics that check a contraction (those of cyp's default "by") *)
-Ltac xtext_g_tauto := timeout 1 tauto.
-Ltac xtext_g_congruence := timeout 1 congruence.
-Ltac xtext_g_lia := timeout 1 lia.
-Ltac xtext_g_firstorder := bounded_firstorder.   (* the one cyp runs *)
-Ltac xtext_g_auto := timeout 1 auto.
+(* The tactics tried on long subproofs (see xtext-tactic below) and those
+   that check a guarded contraction (xtext-guard-tactic).  Each is an Ltac
+   definition (rocq-elpi calls Ltac definitions by name): word_N of
+   ../prooftext/Tactics.v, the tactic the justification word N means, for
+   cyp and xtext alike, so that cyp closes the step the same way.  None
+   has a time limit: a time limit makes the text depend on the speed of
+   the machine.  The bound of each: cyp's README ("Deterministic
+   bounds"), and what each runs: doc/contraction-eliminations-partial.md,
+   "No time limit".  The tactics that check a contraction are those of cyp's
+   default "by"; arith (word_arith, xtext-arith-tactic) is the word of a
+   step whose conclusion is arithmetic. *)
 
 Elpi Db xtext.db lp:{{
   % [xtext-tactic Ltac Text]: the Ltac definition Ltac is tried on a long
   % subproof; if it closes it, the step reads "By *Text*{.just} we have P".
   % Add yours with: Elpi Accumulate xtext.db lp:{{ xtext-tactic "my_lra" "lra". }}.
   pred xtext-tactic o:string, o:string.
-  xtext-tactic "xtext_tauto" "tauto".
-  xtext-tactic "xtext_lia" "lia".
+  xtext-tactic "word_tauto" "tauto".
+  xtext-tactic "word_lia" "lia".
   % [xtext-threshold N]: the tactics are tried on a proper subproof whose
   % proof term has at least N nodes.  Change it with
   % Elpi Accumulate xtext.db lp:{{ :before "xtext-threshold" xtext-threshold 50 :- !. }}.
@@ -93,11 +95,20 @@ Elpi Db xtext.db lp:{{
   % contraction (the step must still follow from its premises); the one
   % that succeeds becomes the step's justification, *Text*{.just}.
   pred xtext-guard-tactic o:string, o:string.
-  xtext-guard-tactic "xtext_g_tauto" "tauto".
-  xtext-guard-tactic "xtext_g_congruence" "congruence".
-  xtext-guard-tactic "xtext_g_lia" "lia".
-  xtext-guard-tactic "xtext_g_firstorder" "firstorder".
-  xtext-guard-tactic "xtext_g_auto" "auto".
+  xtext-guard-tactic "word_tauto" "tauto".
+  xtext-guard-tactic "word_congruence" "congruence".
+  xtext-guard-tactic "word_lia" "lia".
+  xtext-guard-tactic "word_firstorder" "firstorder".
+  xtext-guard-tactic "word_auto" "auto".
+  % [xtext-arith-tactic Ltac Text]: a step closed by xtext-tactic or by the
+  % guard whose conclusion is arithmetic (arith-conclusion, transducer.elpi:
+  % under its foralls and implications, an equality, a disequality or an
+  % order on nat, Z, N or R) is first tried with this tactic, and then
+  % reads "By *arith*{.just} ..."; the others keep the tactic that closes
+  % them.  arith runs lia and itauto auto, which both lists have: the same
+  % steps are closed, only their name changes.
+  pred xtext-arith-tactic o:string, o:string.
+  xtext-arith-tactic "word_arith" "arith".
   % [xtext-implicit-choice-limit N]: a formula whose applications with
   % implicit arguments do not all type-check again without them is printed
   % with the arguments of each application decided one by one (doc/generic-mechanisms.md,
@@ -116,26 +127,9 @@ Elpi Db xtext.db lp:{{
   :name "xtext-header-require"
   xtext-header-require "From Stdlib Require Import Arith Lia List Bool. Import ListNotations.".
   % [xtext-switch Name Variable Default]: a switch of the writer, the
-  % environment variable that sets it, and its default value.  The values
-  % the writer knows are in elpi/switches.elpi; any other value, an empty
-  % one included, is an error.  The switches are read when ExtractText runs
-  % (make does not see the variables: compile the example files again).
-  %   translation: how a proof becomes text, "staged" (annotation,
-  %     contraction, writing, as in Coscoy's thesis; elpi/staged.elpi) or
-  %     "direct" (in one walk, its contraction checked by tactics: not the
-  %     thesis's);
-  %   contraction: the contraction of application steps (thesis 3.4.2),
-  %     "none", "guarded" or "maximal";
-  %   selection: with the staged translation, the type expressions the
-  %     text keeps, "none" (decided by the contraction) or "thesis" (the
-  %     selection of thesis 4.3.1, which then replaces the contraction);
-  %   naming: after the selection (selection "thesis"), the subproofs of
-  %     thesis 4.3.2-4.3.3 (elpi/subproofs.elpi): "none", "all" (each
-  %     subproof used in an application is named, P1, P2, ..., and proved
-  %     before the step that uses it) or "shared" (the same, a result
-  %     proved once for each type in scope);
-  %   lang: the language of the texts (those of the lexicon, ../lexicon),
-  %     also given by the command, ExtractText foo in "fr".
+  % environment variable that sets it, and its default value.  What each
+  % switch does, its values, and when it is read: README.md, "Switches"
+  % (the values the writer knows: elpi/switches.elpi, switch-values).
   % Change a default with
   % Elpi Accumulate xtext.db lp:{{ :before "xtext-switch" xtext-switch "contraction" "XTEXT_CONTRACTION" "none" :- !. }}.
   pred xtext-switch o:string, o:string, o:string.
