@@ -47,7 +47,9 @@ meet the names of the tools.
 Tests: `rocq c -Q ../lexicon Lexicon -Q . ProofText check.v`; those of
 `lia_guard` (its counts, shape by shape), `lia_guard_check.v`; those of the
 printer of formulas, `check_maths.v` (the same command); those of the
-Typst back end, `sh typst/check.sh` (below, "The PDF of a proof text").
+Typst back end, `sh typst/check.sh` (below, "The PDF of a proof text");
+those of the converter between the two styles, `bash convert_check.sh`
+(below, "Converting between the two styles").
 
 ## The format
 
@@ -247,6 +249,12 @@ that names no formula in scope).
   its Markdown; formulas in mathematics), `write-typst-in Style D Text`, and
   `write-as File D Text` (Typst for a file `.typ`, Markdown otherwise);
   see "The PDF of a proof text";
+- `convert.elpi`: the converter between the two styles of a text,
+  `write-structured File Text` and `write-free File Text` (it needs
+  `tree.elpi` and `nodes.elpi`), and `same-tree File Text` (the text read
+  back has the tree of the file); the command `Convert` (`Convert.v`),
+  its script `convert.sh` and its test `convert_check.sh`; see
+  "Converting between the two styles";
 - `links.elpi`: the links of the PDF and of the web page: `name-label
   Where Name Label`, the label of the step that introduces a name,
   `documentation-url Name Url`, the documentation of a lemma, from
@@ -376,6 +384,108 @@ errors, `tree-errors Top Errors`, each `node-error Number Line Error`.
 **For a writer**, the Typst back end writes from the tree itself
 (`write-typst-tree`, below), so that a closing paragraph comes after its
 sub-items and a free text keeps its paragraphs.
+
+## Converting between the two styles
+
+A proof text has two styles with the same tree: *structured*, one list
+item `- ` per node, and *free*, prose where a node is a span `[…]{.p}`
+or a div `::: p … :::`.  The converter writes a text in the other style:
+
+```sh
+sh convert.sh in.md out.md free          # or structured
+```
+
+`convert.sh` runs the Rocq command `Convert "in.md" to "out.md" as free.`
+(`Convert.v`; `as structured.` for the other style), which reads the text
+with the reader (`read-tree`) and writes its tree with `convert.elpi`
+(`write-free`, `write-structured`).  The lines up to the title (the
+header, a comment before the title) are copied unchanged.  The words of
+each node are kept as written, with their lines; the converter only
+moves some punctuation marks and, in two cases below, words of a node
+within the node.  After writing, the command reads its text back and
+warns if the tree is not the same (the same nodes, with the same tags in
+the same order).
+
+**Lines.**  The paragraphs of the top node (the statement) stay as
+written: they are at the column 0 in both styles.  Another text keeps
+its lines when they fit in 75 columns at the place where they are
+written; a paragraph with a longer line (one that can be broken: not a
+formula alone) is filled again, as many words on a line as fit, never
+breaking a formula, nor before a word that would start a list item or a
+div; a short word (a line of at most 20 characters) stays with a long
+formula after it.  In the free style a span starts on a new line; where
+the converter joins two other pieces (the text after a span), it puts a
+space if the line still fits, else a newline.
+
+**Free to structured.**  Each node is an item, its subnodes its
+sub-items; its own text around them are the paragraphs of the item: the
+text before its first subnode is the item's first paragraph, the text
+after its last one (its conclusion) its closing paragraph, after an
+empty line.  The punctuation marks right after a span (`]{.p},`,
+`]{.p};`, `]{.p}.`) go to the end of the text of its item.  A text that
+started in the middle of a line (after a span, or a span not at the start
+of its line) has its first line joined with the next ones while they
+fit.  A node whose text starts with a subnode
+(`[[A]{.p}, thus B]{.p}`) needs words of its own before its first
+sub-item; the rule:
+
+- if the first tags of its own text are variables or hypotheses, they
+  are moved to the front, followed by a colon (``- `0 < x`{.hyp}:``); the
+  commas around the place they leave are mended;
+- else its first paragraph after the sub-items (its conclusion) comes
+  first, before them;
+- a node with no text of its own (a remark around its subnodes) gets the
+  empty comment `<!-- -->`.
+
+In both cases the tags of the node keep their order, so that the tree is
+the same; the text reads differently, and converting it back does not
+give the original (below).
+
+**Structured to free** (a heuristic):
+
+- a node is a span, except a node whose subnodes hold several sentences
+  (two or more full stops, `!` or `?` before a space, outside the
+  formulas), or that has two paragraphs one after the other, or that has
+  a subnode of this kind: it is a div;
+- each paragraph stays a paragraph; in a div, the spans of the items one
+  after the other share a paragraph; in the top node, a new paragraph
+  starts after a step that ends a sentence, unless the next one starts
+  with a lower case letter (`- First …,` `- then …,` stay together): one
+  paragraph per step; after a paragraph that does not end a sentence (it
+  ends with a comma or a colon), the spans of the next items go on in it;
+- the text of a span is its item's text, then its sub-items (spans), then
+  its closing paragraph, joined by spaces;
+- punctuation: a full stop is added after a span whose text has no
+  punctuation mark at its end when what follows starts with a capital
+  letter, or ends a paragraph; a paragraph starts with a capital letter
+  (for the languages written with capitals in the Latin alphabet: `en`,
+  `fr`, `it`, `de`, `nl`, `la`; not in the others, where a paragraph may
+  start with a name, `eq`).
+
+**What a round trip gives back.**  Structured → free → structured gives
+back the text, except: the lines (a paragraph with a line longer than 75
+columns is filled again, xtext's texts have one line per step); the
+empty lines (one between blocks, none between two items); a full stop
+added after an item that had none (free), then kept in it; a span of a
+structured text (`- [A]{.p} and B`) becomes a sub-item; a lower case
+letter at the start of a paragraph becomes a capital; a `[` that nothing
+closes in an item (an error) becomes the text of its parent.  Free →
+structured → free gives back the text when it follows the heuristic; a
+span with several sentences of subnodes becomes a div, two steps of the
+top node in one paragraph after a full stop two paragraphs, a punctuation mark after a
+span goes inside it, and a node that starts with a subnode reads
+differently (the rule above).
+
+Tests: `bash convert_check.sh` (8 minutes, 4 runs of cyp at a time;
+`-j N` for N): every public text (cyp's examples, tutorial and demos,
+xtext's examples in all their languages, the proposal's examples, 247
+texts) converted to the other style and back, the trees checked by cyp
+(cyp's `.cyp.json`, line numbers aside), and the twins written by hand
+compared; it prints the counts.  Today: the 247 trees are the same; back
+in their style, 62 texts are the same, 177 the same up to the line
+breaks (lines longer than 75 columns filled again: 158 of them are
+xtext's), 8 differ for the reasons above (the 6 free texts, a span
+in a structured text, an unclosed `[`).
 
 ## The PDF of a proof text (Typst)
 
