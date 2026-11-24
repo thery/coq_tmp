@@ -18,6 +18,15 @@
 #      match) whose text Rocq-Elpi prints in another style (let (x, _) :=
 #      s for let 'exist _ x _ := s, nested lets for a nested pattern,
 #      (t : T) for let k := t in k) is RT-STYLE: listed, not a failure.
+#      The text alone is a quick test; the decider is the text in context:
+#      the whole part printed with the subterm at P framed by two markers
+#      (shown-at of pbp_select.v, the printer itself putting the subterm
+#      in its place, its scope and notations), which must give the tagged
+#      text after as many non-blank characters as the tag (RT-OK-CONTEXT:
+#      [exists x, P x] prints its Quantified (P x) as ", P x" only there).
+#      A text alone equal to the tag but placed elsewhere in context is
+#      RT-OK-TEXT (listed: Rocq-Elpi prints the part before it otherwise,
+#      let '(..) or the names of the binders).
 #   Also, for each part, the binder names (of a used variable, under a
 #   printed binder) that no tag names are listed (RT-UNTAGGED, not a
 #   failure: a printer limit, the names of exists x, .. and of mathcomp's
@@ -40,6 +49,7 @@ done
 # the parser of the tagged goals (Show): one line "case|hyp|path|text" per
 # tag (hyp: - for the conclusion; the innermost tag closes first)
 cat > parse.awk <<'AWK'
+function nb(s,    t) { t = s; gsub(/[ \t\n]+/, "", t); return length(t) }
 function flush_part(s, hyp,    i, c, rest, m, path, stack, pos, depth, plain, t) {
   depth = 0; plain = ""
   while (length(s) > 0) {
@@ -47,11 +57,12 @@ function flush_part(s, hyp,    i, c, rest, m, path, stack, pos, depth, plain, t)
       m = substr(s, 1, RLENGTH); rest = substr(s, RLENGTH + 1)
       if (m == "<>" && depth == 0) { depth = 1; stack[1] = ""; pos[1] = length(plain); s = rest; continue }
       if (m == "</>" && depth == 1 && stack[1] == "") {
-        printf "%s|%s||%s\n", cs, hyp, plain; depth = 0; s = rest; continue }
+        printf "%s|%s||0|%s\n", cs, hyp, plain; depth = 0; s = rest; continue }
       if (m ~ /^<[0-9.]+>$/ && depth > 0) {
         depth++; stack[depth] = substr(m, 2, length(m) - 2); pos[depth] = length(plain); s = rest; continue }
       if (m ~ /^<\/[0-9.]+>$/ && depth > 1 && substr(m, 3, length(m) - 3) == stack[depth]) {
-        t = substr(plain, pos[depth] + 1); printf "%s|%s|%s|%s\n", cs, hyp, stack[depth], t
+        t = substr(plain, pos[depth] + 1)
+        printf "%s|%s|%s|%d|%s\n", cs, hyp, stack[depth], nb(substr(plain, 1, pos[depth])), t
         depth--; s = rest; continue }
     }
     plain = plain substr(s, 1, 1); s = substr(s, 2)
@@ -93,7 +104,7 @@ roundtrip() {
     echo "$me: the copy of $f with Show does not compile:"; cat $b.show.err; status=2; return
   fi
   # 2. the tags
-  awk -f parse.awk $b.show.out > $b.tags
+  LC_ALL=C.UTF-8 awk -f parse.awk $b.show.out > $b.tags
   ntags=$(wc -l < $b.tags)
   # 3. the check of each tag, and of the names of each part
   awk -v tags=$b.tags '
@@ -102,9 +113,10 @@ roundtrip() {
     while ((getline l < tags) > 0) {
       i = index(l, "|"); c = substr(l, 1, i - 1); l = substr(l, i + 1)
       i = index(l, "|"); h = substr(l, 1, i - 1); l = substr(l, i + 1)
-      i = index(l, "|"); p = substr(l, 1, i - 1); t = substr(l, i + 1)
-      if (h == "-") line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\".", c, p, esc(t))
-      else line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\".", c, esc(h), p, esc(t))
+      i = index(l, "|"); p = substr(l, 1, i - 1); l = substr(l, i + 1)
+      i = index(l, "|"); o = substr(l, 1, i - 1); t = substr(l, i + 1)
+      if (h == "-") line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\".", c, p, esc(t), o)
+      else line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\" \"%s\".", c, esc(h), p, esc(t), o)
       chk[c] = chk[c] line "\n"
       k = c SUBSEP h; if (!(k in parts)) { parts[k] = 1; order[c] = order[c] SUBSEP h }
       paths[k] = paths[k] " \"" p "\""
@@ -123,12 +135,15 @@ roundtrip() {
     echo "$me: the copy of $f with the checks does not compile:"; cat $b.check.err; status=2; return
   fi
   ok=$(grep -c '^RT-OK' $b.check.out)
+  okctx=$(grep -c '^RT-OK-CONTEXT' $b.check.out)
+  oktext=$(grep -c '^RT-OK-TEXT' $b.check.out)
   bad=$(grep -c '^RT-MISMATCH' $b.check.out)
   skip=$(grep -c '^RT-SKIP' $b.check.out)
   style=$(grep -c '^RT-STYLE' $b.check.out)
   untagged=$(grep -c '^RT-UNTAGGED' $b.check.out)
   ncases=$(grep -c '^elpi point_paths_check\.$' $f)
-  echo "$me: $ntags tags in the $ncases goals of $f: $ok ok, $bad mismatches, $style lets printed in another style by Rocq-Elpi, $skip skipped (section variables); $untagged binder names not tagged"
+  echo "$me: $ntags tags in the $ncases goals of $f: $ok ok ($okctx of them by the text in context, $oktext by the text alone only), $bad mismatches, $style lets printed in another style by Rocq-Elpi, $skip skipped (section variables); $untagged binder names not tagged"
+  [ "$oktext" -ne 0 ] && { echo "$me: same text alone, but printed elsewhere in context (Rocq-Elpi's printing of the part differs from the display before it):"; grep '^RT-OK-TEXT' $b.check.out; }
   [ "$style" -ne 0 ] && { echo "$me: the lets printed in another style (not failures):"; grep '^RT-STYLE' $b.check.out; }
   [ "$untagged" -ne 0 ] && { echo "$me: the binder names that no tag names (not failures: a printer limit):"; grep '^RT-UNTAGGED' $b.check.out; }
   if [ "$bad" -ne 0 ]; then

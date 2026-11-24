@@ -673,6 +673,23 @@ rt-text Names M T P S :- path-of T P, !, text-at-names Names M P T S.
 % Ctx or Sc is changed, x0; a hypothesis: only when the hypothesis of
 % that name is used below); an unused variable is printed _ (in a
 % pattern)
+% [rt-in-context T P NE Off] the subterm at path P of T, printed inside T
+% (shown-at), is the text NE (normalized: rt-norm) and starts after Off
+% characters that are not blanks
+% [rt-context-elsewhere T P NE Off] the subterm at P is found in the
+% printing of T (shown-at), but not with the text NE after Off characters
+pred rt-context-elsewhere i:term, i:list int, i:string, i:int.
+rt-context-elsewhere T P NE Off :- not (name-at T P _), path-of T P,
+  coq.term->string T S, flat S O, marker-names O A B,
+  shown-at T O A B P _, not (rt-in-context T P NE Off).
+
+pred rt-in-context i:term, i:list int, i:string, i:int.
+rt-in-context T P NE Off :- not (name-at T P _), path-of T P,
+  coq.term->string T S, flat S O, marker-names O A B,
+  shown-at T O A B P (shown _ St _ Txt), rt-norm Txt NE,
+  % (the parentheses around the subterm may be in its tag or not)
+  (St = Off ; St is Off + 1 ; St is Off - 1), !.
+
 pred rt-name-at i:list string, i:list string, i:bmode, i:term, i:list int, o:string.
 rt-name-at Ctx Sc M T [0] S :- rt-binder T N F, !, rt-display Ctx Sc M N F tt S.
 rt-name-at Ctx Sc M T [I|P] S :- kids T Ks, std.nth I Ks K, kid-mode M T I M1,
@@ -703,11 +720,12 @@ Elpi Tactic point_path_text.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
 pred rt-part i:goal-ctx, i:term, i:list argument, o:term, o:bmode, o:string, o:string, o:string.
-rt-part _ Ty [str P, str E] Ty (bm-goal 0) "|-" P E :- is-path-string P, !.
-rt-part Ctx _ [str H, str P, str E] T bm-hyp H P E :-
+rt-part _ Ty [str P, str E, str _] Ty (bm-goal 0) "|-" P E :- is-path-string P, !.
+rt-part Ctx _ [str H, str P, str E, str _] T bm-hyp H P E :-
   std.mem Ctx (decl _ N _), coq.name->id N H, !, hyp-of Ctx H _ T.
 solve (goal Ctx _ Ty _ [str Case | Args] as G) [seal G] :-
-  (Args = [str H, str _, str _], not (is-path-string H),
+  std.last Args (str OffS), Off is string_to_int OffS,
+  (Args = [str H, str _, str _, str _], not (is-path-string H),
    not (std.mem Ctx (decl _ N0_ _), coq.name->id N0_ H), !,
    coq.say "RT-SKIP" Case H "(not a hypothesis of the goal for Rocq-Elpi: a section variable)" ;
   rt-part Ctx Ty Args T M Where P E,
@@ -716,7 +734,13 @@ solve (goal Ctx _ Ty _ [str Case | Args] as G) [seal G] :-
   path-of-string P Q,
   (rt-text Names M T Q S, ! ; S = "(no subterm)"),
   rt-norm S NS, rt-norm E NE,
-  (NS = NE, !, coq.say "RT-OK" Case Where P ;
+  (NS = NE, rt-context-elsewhere T Q NE Off, !, coq.say "RT-OK-TEXT" Case Where P "(the same text, but in context it is printed elsewhere)" ;
+   NS = NE, !, coq.say "RT-OK" Case Where P ;
+   % the decider: the subterm at the path printed in its context (the whole
+   % part printed with it framed by two markers, as pbp_select's shown-at
+   % does) is the tagged text, at the same place (the number of characters
+   % before it, blanks not counted)
+   rt-in-context T Q NE Off, !, coq.say "RT-OK-CONTEXT" Case Where P ;
    % a let or a let '(..) := .. (a match) that Rocq-Elpi prints in another
    % style (let (x, _) := s, nested lets, (t : T) for let k := t in k)
    rex.match "^.*let[ ']" E, !, coq.say "RT-STYLE" Case Where P "tag:" E "path:" S ;
