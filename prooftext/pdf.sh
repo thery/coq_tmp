@@ -30,9 +30,10 @@
 #                   scheme of rocq doc --html; U ends with /, may be
 #                   relative to the page); repeatable (links.elpi,
 #                   library-documentation);
-#   --name-links F  the table F, one line "NAME URL" each, gives the
-#                   address of a justification *NAME*{.just} that Rocq does
-#                   not locate: a rule, a tactic (links.elpi, name-url);
+#   --name-links F  the table F, one line "NAME URL" each (NAME may be
+#                   several words), gives the address of a justification
+#                   *NAME*{.just} that Rocq does not locate: a rule, a
+#                   tactic (links.elpi, name-url);
 #   --source-root R=U  a justification word that the text uses and that a
 #                   CypJustification declares (cyp/vernac/Cyp.v; cyp's
 #                   JSON next to the text, proof.cyp.json, lists them with
@@ -78,12 +79,28 @@ declaration_url() {
 declaration_clauses() {
   case $1 in *.checked.md) json=${1%.checked.md}.cyp.json ;; *) json=${1%.md}.cyp.json ;; esac
   [ -n "$source_roots" ] && [ -f "$json" ] || return 0
-  sed -n 's/^{"word":"\([^"]*\)","meaning":"[^"]*","library":"\([^"]*\)","file":"\([^"]*\)","line":\([0-9]*\)}.*$/\1 :\2 \3 \4/p' "$json" |
-    while read -r w lib file line; do
-      lib=${lib#:}
+  # one line each, its fields separated by tabs (a word may have spaces:
+  # *mean value inequality*{.just}), an empty field kept by its colon
+  tab=$(printf '\t')
+  sed -n 's/^{"word":"\([^"]*\)","meaning":"[^"]*","library":"\([^"]*\)","file":"\([^"]*\)","line":\([0-9]*\)}.*$/\1\t:\2\t:\3\t\4/p' "$json" |
+    while IFS="$tab" read -r w lib file line; do
+      lib=${lib#:}; file=${file#:}
       u=$(declaration_url "$lib" "$file" "$line")
       if [ -n "$u" ]; then elpi_clause name-url "$w" "$u"; fi
     done
+}
+
+# [name_link_clauses F]: the clauses name-url of the table F, one line
+# "NAME URL" each: the URL is the last field, the name the words before it
+# (a name may be several words: mean value inequality URL)
+name_link_clauses() {
+  while read -r l; do
+    case $l in
+      "") ;;
+      *[[:space:]]*) n=${l%[[:space:]]*}; n=${n%"${n##*[![:space:]]}"}; elpi_clause name-url "$n" "${l##*[[:space:]]}" ;;
+      *) elpi_clause name-url "$l" "" ;;
+    esac
+  done < "$1"
 }
 
 style=maths; extra_flags=""; output=pdf; links="[]"; roles=""; clauses=""; source_roots=""
@@ -104,7 +121,7 @@ while [ $# -gt 0 ]; do
     --doc-root) case $2 in *=*) ;; *) echo "pdf.sh: --doc-root PREFIX=URL" >&2; exit 2 ;; esac
                 clauses="$clauses$(elpi_clause library-documentation "${2%%=*}" "${2#*=}")"; shift 2 ;;
     --name-links) [ -f "$2" ] || { echo "pdf.sh: no file $2" >&2; exit 2; }
-                  clauses="$clauses$(while read -r n u; do [ -n "$n" ] && elpi_clause name-url "$n" "$u"; done < "$2")"; shift 2 ;;
+                  clauses="$clauses$(name_link_clauses "$2")"; shift 2 ;;
     --source-root) case $2 in *=*) ;; *) echo "pdf.sh: --source-root ROOT=URL" >&2; exit 2 ;; esac
                    source_roots="$source_roots
 $2"; shift 2 ;;

@@ -123,7 +123,8 @@ Let `a b : Z`{.var}. If `0 < a < b`{.hyp} then `a * a < b * b`{.claim}.
      node 2 when it has none), a variable (the text's own names come
      first, as a local name hides a global one in Rocq);
   3. a word declared by `CypJustification "X" := ...`: an Ltac tactic or
-     the rules named X;
+     the rules named X (a word of several words,
+     `*mean value inequality*{.just}`, is looked up only here);
   4. a lemma (possibly qualified, `Nat.add_comm`);
   5. else the node has an error, "X names nothing known ... (declare it:
      `CypJustification "X" := tactic.` or `:= rules.`)".
@@ -359,6 +360,14 @@ CypJustification "monotonicity" := rules.        (* *monotonicity*{.just}: these
   `named "word" ...` of `cyp.db`, which must be accumulated before (else
   an error); a node justified by it is closed by these rules only (no gap
   tactic either).
+- A word may be several words, as a paper writes it, separated by spaces
+  (each of letters, digits, `_`, `'` and `-`; the blanks at its ends are
+  left out and a run of blanks inside, a line break too, is one space):
+  `CypJustification "mean value inequality" := mvi_check.` for
+  `*mean value inequality*{.just}` ([examples/words_demo.md](examples/words_demo.md)).
+  Such a word is no name of Rocq: it is looked up only among the declared
+  words (and the rules named by it), never as a hypothesis, node, variable
+  or lemma.
 - A word is declared once: a second declaration is an error that gives
   the file and the line of the first.  A word that is also the name of a
   lemma hides it in the justifications (a warning at the declaration).  A
