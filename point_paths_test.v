@@ -183,3 +183,34 @@ intros n H H'.
 elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "match n with | 0 => true | S k => Nat.eqb k n end (a binder name)" "H" "2.3.0".
 elpi point_run_path_expect "Point" "move: H'; pbp [X in X -> _]." "forall z : nat, z = z (a binder name: the whole forall is selected)" "H'" "0".
 Abort.
+
+(* the show actions (point_actions_show.v): their message is printed as a
+   line is; on a subterm of the conclusion, of a hypothesis, under a
+   binder, on a binder name; the errors *)
+From coq_tmp Require Import point_actions_show.
+Lemma two_is : 2 = 1 + 1. Proof. reflexivity. Qed.
+Goal forall a : nat, double (1 + a) = 2 + a + a -> forall n : nat, n + double a = a.
+intros a H.
+elpi point_run_path_expect "Type of" "nat : Set" "" "1".
+elpi point_run_path_expect "Check this" "nat
+     : Set" "" "1".
+elpi point_run_path_expect "Type of" "n : nat" "" "0".
+elpi point_run_path_expect "Where defined" "n: a variable bound by a forall of the goal" "" "0".
+elpi point_run_path_expect "Where defined" "n: a variable bound by a forall of the goal" "" "2.2.1".
+elpi point_run_path_expect "Type of" "double : nat -> nat" "" "2.2.2.0".
+elpi point_run_path_expect "Unfolds to" "double a ⇒ a + a  (coq_tmp.point_paths_test.double unfolded)" "" "2.2.2".
+elpi point_run_path_expect "Where defined" "coq_tmp.point_paths_test.double: a definition, in the library coq_tmp.point_paths_test" "" "H" "2".
+elpi point_run_path_expect "Where defined" "a: a hypothesis of the goal (a local variable)" "" "H" "2.1.2".
+elpi point_run_path_expect "Unfolds to" "double (1 + a) ⇒ 1 + a + (1 + a)  (coq_tmp.point_paths_test.double unfolded)" "" "H" "2".
+Abort.
+Goal forall a : nat, (if true then a else 0) = double 2.
+intros a.
+elpi point_run_path_expect "Head normal form" "if true then a else 0 ⇒ a" "" "2".
+elpi point_run_path_expect "Normal form" "double 2 ⇒ 4" "" "3".
+Fail elpi point_run_path "Where defined" "2".
+Fail elpi point_run_path "Type of" "2.2" "2.3".
+Abort.
+Goal two_is = two_is.
+elpi point_run_path_expect "Where defined" "coq_tmp.point_paths_test.two_is: a lemma or an opaque definition (Qed), in the library coq_tmp.point_paths_test" "" "2".
+Fail elpi point_run_path "Unfolds to" "2".
+Abort.

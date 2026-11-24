@@ -73,15 +73,15 @@ EOF
 
 # FILE.v:N|the start of that line
 cat > "$tmp/refs" <<'EOF'
-point_actions.v:64|pred point-action o:string
+point_actions.v:69|pred point-action o:string
 pbp_select.v:45|Definition pbp_hole
 pbp_select.v:57|pred msg i:string
 pbp_select.v:73|pred one-line i:string
 pbp_select.v:329|pred parse-sels i:list argument
 pbp_select.v:370|kind part type.
 pbp_select.v:385|kind loc type.
-pbp_select.v:648|kind point-in type.
-pbp_select.v:658|pred point-resolve i:goal-ctx
+pbp_select.v:652|kind point-in type.
+pbp_select.v:662|pred point-resolve i:goal-ctx
 EOF
 
 # fails_with M t: the tactic t fails with a message that contains M,

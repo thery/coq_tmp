@@ -534,6 +534,10 @@ display-names Ctx Sc M (let N Ty B F) (let N1 Ty1 B1 F1) R0 R :- !,
   display-names Ctx Sc M B B1 R1 R2,
   display-binder Ctx Sc M N F N1 Sc1 R2 R3,
   pi x\ display-names Ctx Sc1 M (F x) (F1 x) R3 R.
+display-names Ctx Sc M (fix N I Ty F) (fix N1 I Ty1 F1) R0 R :- !,
+  display-names Ctx Sc M Ty Ty1 R0 R1,
+  display-binder Ctx Sc M N F N1 Sc1 R1 R2,
+  pi x\ display-names Ctx Sc1 M (F x) (F1 x) R2 R.
 display-names Ctx Sc M T T1 R0 R :-
   kids T Ks, std.fold-map Ks R0 (k\ r\ k1\ r1\ sigma U U1\ k = kt U,
                      display-names Ctx Sc M U U1 r r1, k1 = kt U1) Ks1 R,
@@ -797,13 +801,18 @@ through-name T [I|P] :- kids T Ks, std.length Ks L, I < L, std.nth I Ks Kd,
 % itself (point_actions.v: point-action-names): the path stays at the name
 pred paths-keep-names.
 
+% [paths-no-check] the action does not write a pattern (a show action): a
+% subterm is selected even if its pattern does not pass the check
+pred paths-no-check.
+pred paths-default.  % (nothing: the default)
+
 % [path-selectable Ctx T P] the subterm at path P of T can be selected: it
 % is printed (not the return type of a match nor a binder of a branch) and
 % its pattern, alone in T, is right (not a binder type that the rest
 % depends on, not a term under a coercion that is not printed); Ctx are
 % the names of the hypotheses
 pred path-selectable i:list string, i:term, i:list int.
-path-selectable Ctx T P :- not (not-printed T P), pattern-ok Ctx T P.
+path-selectable Ctx T P :- not (not-printed T P), (paths-no-check, ! ; pattern-ok Ctx T P).
 
 % [pattern-ok Ctx T P] the pattern of the subterm at path P of T, alone,
 % passes check (a failure, not an error, otherwise)

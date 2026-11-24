@@ -260,6 +260,25 @@ the tests load it, the tutorial does not):
 | `Unfold here` | point | `{pre:in}rewrite {local:pbp}/{head}{post:in}.` | `rewrite [X in _ = X]/double.` (`6 17`) |
 | `Name occurrence` | point | `{pre:in}set x := {local:occ}({text}){post:in}.` | `set x := {2}(a).` (`15 16`, the second `a`) |
 
+The actions of kind `show` of
+[point_actions_show.v](point_actions_show.v) (loaded by the demos and the
+tests): they work in the conclusion, in a hypothesis, under binders (the
+subterm typed and printed under the binders crossed, with the names of
+the goal display) and, by paths, on a binder name (the variable it
+binds: they are declared with `point-action-names`):
+
+| action | shows | e.g. |
+|---|---|---|
+| `Type of` | `t : T` | `n : nat` (the name `n` of `forall n`) |
+| `Check this` | what `Check t` prints: `t`, then `     : T` | `nat` / `     : Set` |
+| `Normal form` | `t ⇒ v`, `v` by call by value to the normal form (`eval compute`: `coq.reduction.cbv.norm`) | `double 2 ⇒ 4` |
+| `Head normal form` | `t ⇒ v`, `v` the weak head normal form (`coq.reduction.lazy.whd`) | `if true then a else 0 ⇒ a` |
+| `Where defined` | the head constant or variable: its full name, its kind (a definition, a lemma or opaque definition, an axiom, an inductive type, a constructor, a hypothesis, a local definition, a variable bound by a forall/fun/let of the goal), its library | `Corelib.Init.Nat.add: a definition, in the library Corelib.Init.Nat` |
+| `Unfolds to` | `t ⇒ v`, one step of delta: the body of the head constant applied to the arguments, beta-reduced; an error if it is opaque or not a constant | `double a ⇒ a + a  (...double unfolded)` |
+
+A template action can be of kind `show` too: `PointAction "Say text"
+show "the selection is {text}" "..."`.
+
 `Point` and `Link` print exactly what `pbp_pattern` prints.  `Simplify
 here`, `Unfold here` and `Name occurrence` change the selected subterm only, in the
 conclusion or, for a selection in a hypothesis `H`, in `H` (`rewrite
@@ -278,7 +297,12 @@ It prints one notice, a JSON array, in the order of the declarations:
 [{"name":"Point","kind":"point","doc":"pbp: bring ..."},{"name":"Link","kind":"link","doc":"..."},...]
 ```
 
-`kind` is `point` (the action takes one selection) or `link` (two).
+`kind` is `point` (the action takes one selection), `link` (two) or
+`show` (one selection; what `point_run` prints is then a message to show,
+not a line to insert: the interface displays it and inserts nothing; it
+is printed exactly as a line is, one notice, possibly on several lines).
+A `show` action given two selections fails as the other kinds do (`the
+action Type of is of kind show and takes 1 selection(s), not 2`).
 `doc` is a sentence for a tooltip (may be `""`).  The list is the same in
 every goal (an action that does not apply to a selection fails with a
 message when it is run); it changes only when a file that declares
@@ -380,6 +404,14 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
 - Tests: [point_paths_test.v](point_paths_test.v) (`elpi
   point_run_path_expect "Name" Line Ws Sel ...`, Ws as for
   `point_run_expect`), the same lines as `point_run` where both apply.
+- The cases: [point_paths_cases.v](point_paths_cases.v), goals with every
+  construct and every position of the numbering, in the conclusion and
+  in hypotheses (`elpi point_paths_check.` there computes the text of
+  every subterm and binder name).  The round trip:
+  `opam exec --switch=vsrocq-pathtags -- bash point_paths_roundtrip.sh`
+  (the Rocq whose printer tags the paths): for every tag `P` of the
+  printed goals, the subterm (or binder name) at `P` must print as the
+  tagged text; it prints the counts and fails on a mismatch.
 
 **3. Declaring an action.**  With a template:
 
@@ -387,7 +419,7 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
 PointAction "Name it" point "set x := ({text})." "name the selected subterm".
 ```
 
-The kind is `point` or `link`; the last string (optional) is the `doc`.
+The kind is `point`, `link` or `show`; the last string (optional) is the `doc`.
 A name is declared once.  The placeholders of the template:
 
 | placeholder | is |
@@ -510,7 +542,7 @@ doc:
 
 ```
 7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 497
+Point (point), declared in coq_tmp.point_actions, line 503
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
 ...

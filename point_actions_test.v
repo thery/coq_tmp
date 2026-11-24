@@ -54,10 +54,10 @@ Definition double n := n + n.
 (* a command: outside proofs too *)
 PointActions.
 Elpi point_text_expect actions "5 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 497
+Point (point), declared in coq_tmp.point_actions, line 503
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 499
+Link (link), declared in coq_tmp.point_actions, line 505
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
 Simplify here (point), declared in coq_tmp.point_actions_more, line 9
@@ -200,10 +200,10 @@ point-action "Compare" link "compare the two selections" same-text.
 (* the two new actions, at the end of the list *)
 PointActions.
 Elpi point_text_expect actions "7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 497
+Point (point), declared in coq_tmp.point_actions, line 503
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 499
+Link (link), declared in coq_tmp.point_actions, line 505
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
 Simplify here (point), declared in coq_tmp.point_actions_more, line 9
@@ -485,4 +485,22 @@ Goal forall n m, n <= (if Nat.leb n m then m else n).
 Proof.
 intros n m.
 elpi point_run_expect "Name occurrence" "set x := {1}(n)." "" 0 1.
+Abort.
+
+(* ---------- Actions of kind show (point_actions_show.v) ----------
+   Their message is printed as a line is; a template action may be of
+   kind show too *)
+From coq_tmp Require Import point_actions_show.
+PointAction "Say text" show "the selection is {text}" "show the selected text".
+Goal forall a b : nat, a + b = b + a -> forall n : nat, n + 0 = n.
+intros a b H.
+(* foralln:nat,n+0=n: the n of n + 0 is 12, under the binder *)
+elpi point_run_expect "Type of" "n : nat" "" 12 13.
+elpi point_run_expect "Where defined" "n: a variable bound by a forall of the goal" "" 12 13.
+elpi point_run_expect "Type of" "a + b : nat" "" H 0 3.
+elpi point_run_expect "Where defined" "Corelib.Init.Nat.add: a definition, in the library Corelib.Init.Nat" "" H 0 3.
+elpi point_run_expect "Unfolds to" "n + 0 ⇒ (fix add (n m : nat) {struct n} : nat := match n with | 0 => m | S p => S (add p m) end) n 0  (Corelib.Init.Nat.add unfolded)" "" 12 15.
+elpi point_run_expect "Say text" "the selection is a + b" "" H 0 3.
+(* two selections: a show action takes one *)
+Fail elpi point_run "Type of" H 0 1 H 2 3.
 Abort.

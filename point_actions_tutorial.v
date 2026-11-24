@@ -29,10 +29,10 @@ From coq_tmp Require Import point_actions.
 PointActions.
 (* prints:
    2 pointing action(s):
-   Point (point), declared in coq_tmp.point_actions, line 497
+   Point (point), declared in coq_tmp.point_actions, line 503
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: bring the selected subformula to the surface of the goal
-   Link (link), declared in coq_tmp.point_actions, line 499
+   Link (link), declared in coq_tmp.point_actions, line 505
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: link the two selected subformulas *)
 
@@ -140,7 +140,7 @@ Abort.
    - a clause of simplify-here, a fact: for any selection (_), the line
      is "rewrite /=."; :name gives the clause a name, so that the next
      steps can put their clauses before it;
-   - a fact of point-action (point_actions.v:64), the register of the
+   - a fact of point-action (point_actions.v:69), the register of the
      actions: the name of the button, its kind (point: one selection,
      link: two), a doc (shown when the mouse is on the button), the
      predicate. *)
@@ -156,10 +156,10 @@ point-action "Simplify here" point "simplify the selected subterm" simplify-here
 PointActions.
 (* prints:
    3 pointing action(s):
-   Point (point), declared in coq_tmp.point_actions, line 497
+   Point (point), declared in coq_tmp.point_actions, line 503
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: bring the selected subformula to the surface of the goal
-   Link (link), declared in coq_tmp.point_actions, line 499
+   Link (link), declared in coq_tmp.point_actions, line 505
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: link the two selected subformulas
    Simplify here (point), declared by an Elpi clause
@@ -180,7 +180,7 @@ Abort.
 
 (* ---- 2b. Reading the selection ----
 
-   What the action is given, a value of type point-in (pbp_select.v:648),
+   What the action is given, a value of type point-in (pbp_select.v:652),
    has five fields: point-in Names Hs C Parts Ls, where
    - Names are the names of the hypotheses of the goal (the last one
      first);
@@ -199,7 +199,7 @@ Abort.
    run on a goal, goal Ctx _ Ty _ Args (the hypotheses, the conclusion,
    the arguments of the tactic); [seal G] says that the goal is left as
    it is.  It reads the selection as point_run does (parse-sels,
-   pbp_select.v:329; point-resolve, pbp_select.v:658), then matches the
+   pbp_select.v:329; point-resolve, pbp_select.v:662), then matches the
    point-in value against its five fields.  In a clause, :- reads "if",
    a comma "and"; coq.say prints its arguments; coq.term->string T S
    gives the text S of the term T, and {coq.term->string T} is that text
@@ -455,10 +455,10 @@ point-action "Unfold here" point "unfold the constant at the head of the selecte
 PointActions.
 (* prints:
    4 pointing action(s):
-   Point (point), declared in coq_tmp.point_actions, line 497
+   Point (point), declared in coq_tmp.point_actions, line 503
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: bring the selected subformula to the surface of the goal
-   Link (link), declared in coq_tmp.point_actions, line 499
+   Link (link), declared in coq_tmp.point_actions, line 505
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: link the two selected subformulas
    Simplify here (point), declared by an Elpi clause
