@@ -130,3 +130,31 @@ Fail elpi point_run_path "Point" "x" "2".
 Fail elpi point_run_path "Point" "2.x".
 Fail elpi point_run_path "Link" "2".
 Abort.
+
+(* the scrutinee of an if: the text (IF X THEN _ ELSE _) does not
+   elaborate (X has no type: if X then .. is a match on X), so X is written
+   with its type, as the range method does; rewrite accepts it (Simplify
+   here) *)
+Module IfMatch.
+Notation "'IF' c 'THEN' a 'ELSE' b" := (if c then a else b) (at level 200).
+Goal forall (b : bool) (n : nat), (IF b THEN n ELSE 0) = n.
+intros b n.
+elpi point_run_expect "Point" "pbp [X in (IF X : bool THEN _ ELSE _) = _]." "" 3 4.
+elpi point_run_path_expect "Point" "pbp [X in (IF X : bool THEN _ ELSE _) = _]." "" "2.0".
+elpi point_run_path_expect "Simplify here" "rewrite [X in (IF X : bool THEN _ ELSE _) = _]/=." "" "2.0".
+Abort.
+End IfMatch.
+
+(* the same without the notation: if b then n else 0 *)
+Goal forall (b : bool) (n : nat), (if b then n else 0) = n.
+intros b n.
+elpi point_run_expect "Point" "pbp [X in (if X : bool then _ else _) = _]." "" 3 4.
+elpi point_run_path_expect "Point" "pbp [X in (if X : bool then _ else _) = _]." "" "2.0".
+Abort.
+
+(* the scrutinee of a match whose patterns give its type: no type added *)
+Goal forall n : nat, match n with 0 => true | S _ => false end = true.
+intros n.
+elpi point_run_expect "Point" "pbp [X in match X with | 0 => _ | S _ => _ end = _]." "" 5 6.
+elpi point_run_path_expect "Point" "pbp [X in match X with | 0 => _ | S _ => _ end = _]." "" "2.0".
+Abort.

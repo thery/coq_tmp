@@ -358,7 +358,11 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
   (`move: H; pbp [X in (forall x : nat, X x) -> _]`) and is renamed in the
   conclusion (`x0`), where Rocq-Elpi prints it `elpi_ctx_entry_3_`.  A
   cast `(n : nat)`, which Rocq-Elpi sees as a `let`, is printed back as a
-  cast (`pbp [X in (X : nat) = _]`).
+  cast (`pbp [X in (X : nat) = _]`).  When the pattern does not elaborate because
+  a selection is the scrutinee of an `if` (`if X then _ else _`: the
+  text alone does not give the type of `X`), `X` is written with its
+  type: `pbp [X in (IF X : bool THEN _ ELSE _) = _]` (both methods; never
+  when the plain pattern works, as under ssreflect's `if` notation).
 - The errors are those of `point_run` (with `point_run_path: `), and `no
   subterm at the path 5`, `not a path: 2.x`.
 - Tests: [point_paths_test.v](point_paths_test.v) (`elpi

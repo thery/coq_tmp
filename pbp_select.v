@@ -435,7 +435,7 @@ hole T {{ @pbp_hole Prop lp:T }}.
 pred pattern i:list (pair (list int) term), i:list (list int), i:list int,
              i:list term, i:term, o:term.
 pattern Sels _ P Bs T R :- std.lookup Sels P X, !,
-  std.filter Bs (v\ occurs v T) Vs, coq.mk-app X Vs R.
+  std.filter Bs (v\ occurs v T) Vs, coq.mk-app X Vs R0, annotated T R0 R.
 pattern Sels Vis P _ T H :-
   std.map Sels fst Ps, not (on-path P Ps), std.mem! Vis P, !, hole T H.
 pattern Sels Vis P Bs T R :-
@@ -759,10 +759,7 @@ pred pattern-ok i:list string, i:term, i:list int.
 pattern-ok Ctx T P :-
   all-shown T Shs, std.map Shs (sh\ v\ sh = shown v _ _ _) Vis,
   coq.term->string T S, identifiers S Ids, std.append Ctx Ids Avoid,
-  fresh-names ["X"] Avoid [X],
-  pattern-text [X] Ctx bm-hyp [P] T Vis [] Body,
-  Pat is "[" ^ X ^ " in " ^ Body ^ "]",
-  check-ok Pat [P] T.
+  fresh-names ["X"] Avoid [X], pattern-checked [X] X Ctx bm-hyp [P] T Vis _.
 
 % [path-widen Ctx T P0 P1 Txt] P1 is the nearest path above P0 that can be
 % selected and is printed as a whole (shown-at: as the range of a
@@ -828,10 +825,48 @@ pred pattern-of i:list string, i:list string, i:bmode, i:list (list int),
                 i:term, i:list (list int), o:string.
 pattern-of Avoid Ctx M Ps T Vis Pat :-
   std.length Ps K, std.take K ["X", "Y"] Bases, fresh-names Bases Avoid Ns,
-  pattern-text Ns Ctx M Ps T Vis [] Body,
   std.string.concat " " Ns NsS,
-  Pat is "[" ^ NsS ^ " in " ^ Body ^ "]",
-  check Pat Ps T.
+  (pattern-checked Ns NsS Ctx M Ps T Vis Pat, ! ;
+   % (neither passes the check: the error of the plain one)
+   pattern-text Ns Ctx M Ps T Vis [] Body,
+   Pat is "[" ^ NsS ^ " in " ^ Body ^ "]", check Pat Ps T).
+
+% [pattern-checked Ns NsS Ctx M Ps T Vis Pat] Pat is the pattern of
+% pattern-of, its variables Ns (NsS: with blanks between them), that passes
+% check: the plain one, else, when the plain one does not elaborate and
+% the selections are the scrutinees of matches whose branches bind no
+% variable (if X then _ else _: the text alone does not give the type of
+% X), the one where the variables are written with their types, (X : T)
+% (annotated).  (Not the scrutinee of a let '(a, b) := X: ssreflect's
+% patterns cannot go through such a match, the selection is widened.)
+pred pattern-checked i:list string, i:string, i:list string, i:bmode,
+                     i:list (list int), i:term, i:list (list int), o:string.
+pattern-checked Ns NsS Ctx M Ps T Vis Pat :-
+  pattern-text Ns Ctx M Ps T Vis [] Body0,
+  Pat0 is "[" ^ NsS ^ " in " ^ Body0 ^ "]",
+  S0 is "(" ^ Pat0 ^ ")", coq.parse.argument S0 ff "" A D,
+  (D = ok, !, A = trm P0, check-open P0 Ps Ps [] T, Pat = Pat0 ;
+   D = error _, std.forall Ps (scrutinee-of-if T),
+   (pbp-annotate => pattern-text Ns Ctx M Ps T Vis [] Body1),
+   Pat1 is "[" ^ NsS ^ " in " ^ Body1 ^ "]",
+   check-ok Pat1 Ps T, Pat = Pat1).
+
+% [scrutinee-of-if T P] the subterm at path P of T is the scrutinee of a
+% match whose branches bind no variable (an if)
+pred scrutinee-of-if i:term, i:list int.
+scrutinee-of-if (match _ _ Bs) [0] :- !,
+  std.forall Bs (b\ not (b = fun _ _ _)).
+scrutinee-of-if T [I|P] :- kids T Ks, std.nth I Ks K,
+  (K = kt U, scrutinee-of-if U P ; K = kb _ _ F, pi x\ scrutinee-of-if (F x) P).
+
+% [annotated T R0 R] R is the variable of a pattern R0 (applied to the
+% variables bound above it) at the place of the subterm T, written with the
+% type of T (a cast, which Rocq-Elpi sees as let _ : Ty := R0 in _) when
+% pbp-annotate holds, R0 otherwise
+pred pbp-annotate.
+pred annotated i:term, i:term, o:term.
+annotated T R0 (let `_` Ty R0 (x\ x)) :- pbp-annotate, coq.typecheck T Ty ok, !.
+annotated _ R R.
 
 % [point-pattern In Pat] Pat is the pattern of the selections in the goal
 % with their hypotheses generalized (the one of pbp)
