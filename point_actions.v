@@ -13,7 +13,10 @@
    A selection is the one of pbp_select.v: [S E], a range of the printed
    conclusion, or [H S E], one of the printed type of the hypothesis H, in
    characters that are not blanks.  An action is of kind [point] (one
-   selection) or [link] (two).
+   selection), [link] (two) or [show] (one: what it gives is a message to
+   show, which point_run prints as it prints a line; the interface inserts
+   nothing).  An action of kind show given two selections fails with the
+   message of the other kinds (it takes 1 selection, not 2).
 
    An action is an Elpi predicate (pred i:point-in, o:string) that is given
    the selections, resolved to subterms of the goal (point-in, see
@@ -53,11 +56,13 @@ Elpi Accumulate pbp_select.db lp:{{
 kind point-kind type.
 type point point-kind.   % one selection
 type link point-kind.    % two selections
+type show point-kind.    % one selection; its "line" is a message to show
 
 % [point-kind-name K S N] the kind K is written S and takes N selections
 pred point-kind-name o:point-kind, o:string, o:int.
 point-kind-name point "point" 1.
 point-kind-name link "link" 2.
+point-kind-name show "show" 1.
 
 % [point-action Name Kind Doc Impl] the action Name, of kind Kind,
 % described by Doc, gives the line Impl In Line for the selections In
@@ -149,7 +154,7 @@ path-raw Sc In S :-
 point-path "pbp" "pbp's pattern: [X in X + _ = _] ([X Y in ...] for two selections)" path-pbp.
 point-path "occ" "ssreflect's occurrences of the selected term: {2} ({1 3} for two selections of the same term)" path-occ.
 point-path "at" "Rocq's occurrences (unfold, pattern ... at n): 2 (1 3 for two)" path-at.
-point-path "path" "the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its type is 0 and its body 1): [1, 2] (two lists for two selections)" path-raw.
+point-path "path" "the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its name is 0, its type 1 and its body 2): [1, 2] (two lists for two selections)" path-raw.
 
 /* ---------------- Hypothesis strategies ----------------
    How an action on selections in hypotheses is written: what comes before
@@ -328,7 +333,8 @@ point-run _ _ _ _ _ :-
 }}.
 
 (* [PointAction "Name" Kind "Template" "Doc"] declares the action Name, of
-   kind point (one selection) or link (two), whose line is the template
+   kind point (one selection), link (two) or show (one selection; the
+   text is a message to show, not a line to insert), whose line is the template
    (the placeholders above), described by Doc (optional).  The actions are
    listed in the order of their declarations; a name is declared once. *)
 Elpi Command PointAction.
@@ -337,7 +343,7 @@ Elpi Accumulate lp:{{
 main [str Name, str K, str T] :- !, main [str Name, str K, str T, str ""].
 main [str Name, str K, str T, str Doc] :- !,
   (point-kind-name Kind K _, ! ;
-   coq.error "PointAction: the kind is point (one selection) or link (two), not" K),
+   coq.error "PointAction: the kind is point (one selection), link (two) or show (one, a message to show), not" K),
   (point-action Name _ _ _, !,
    coq.error "PointAction: the action" Name "is already declared" ; true),
   (tpl-parse T Ps, ! ;
@@ -354,7 +360,7 @@ main [str Name, str K, str T, str Doc] :- !,
   coq.elpi.accumulate _ "pbp_select.db"
     (clause _ _ (point-action-origin Name Lib Line)).
 main _ :-
-  coq.error "PointAction: the arguments are \"Name\" point|link \"Template\" and, optionally, \"Doc\"".
+  coq.error "PointAction: the arguments are \"Name\" point|link|show \"Template\" and, optionally, \"Doc\"".
 }}.
 Elpi Export PointAction.
 
@@ -443,7 +449,7 @@ main [str W, str Exp] :-
 }}.
 
 (* [elpi point_actions] prints the actions, one message (a notice): a JSON
-   array of objects {"name": ..., "kind": "point" | "link", "doc": ...}.
+   array of objects {"name": ..., "kind": "point" | "link" | "show", "doc": ...}.
    The goal is unchanged. *)
 Elpi Tactic point_actions.
 Elpi Accumulate Db pbp_select.db.
@@ -553,4 +559,270 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
      msg "the selection is widened to" M)),
   std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
   show-in In S, coq.say S.
+}}.
+
+(* ---------------- Selections given by paths ---------------- *)
+
+Elpi Accumulate pbp_select.db lp:{{
+
+% [point-action-names Name] the action Name handles a selection that is a
+% binder name (a path ending at index 0 of a binder): point_run_path gives
+% it the path of the name; the other actions get the binder, widened with
+% a warning.  No action declared here does.
+pred point-action-names o:string.
+
+% [point-action-any-subterm Name] the action Name does not write a pattern:
+% point_run_path gives it any subterm, even one whose pattern does not
+% pass the check (as the actions of kind show)
+pred point-action-any-subterm o:string.
+
+% [point-run-paths Ctx G Args Line Ws] Line is the line of the action and
+% the path selections given by Args (point_run_path), in the goal G; Ws
+% are the texts of the subterms that selections were widened to
+pred point-run-paths i:goal-ctx, i:term, i:list argument, o:string,
+                     o:list string.
+point-run-paths _ _ [] _ _ :- !,
+  coq.ltac.fail 0 {msg "the first argument is the name of an action (elpi point_actions lists them)"}.
+point-run-paths Ctx G [str Name | As] Line Ws :- !,
+  (point-action Name K _ Impl, ! ;
+   coq.ltac.fail 0 {msg "no action"} Name "(elpi point_actions lists them)"),
+  parse-psels As Sels, std.length Sels N, point-kind-name K KS KN,
+  (N = KN, ! ;
+   coq.ltac.fail 0 {msg "the action"} Name "is of kind" KS "and takes" KN
+     "selection(s), not" N),
+  ((K = show ; point-action-any-subterm Name), !, NC = paths-no-check ;
+   NC = paths-default),
+  (point-action-names Name, !, (paths-keep-names, NC) => point-resolve-paths Ctx G Sels In Ws ;
+   NC => point-resolve-paths Ctx G Sels In Ws),
+  (Impl In Line, ! ;
+   coq.ltac.fail 0 {msg "the action"} Name "does not apply to the selection").
+point-run-paths _ _ _ _ _ :-
+  coq.ltac.fail 0 {msg "the first argument is the name of an action, a string"}.
+}}.
+
+(* [elpi point_run_path "Name" Sel ...] prints the line of the action Name
+   for selections given by paths instead of ranges: a selection is "P", the
+   subterm at path P of the conclusion, or "H" "P", the one of the type of
+   the hypothesis H.  A path is written "i.j.k" ("" for the whole part), in
+   the immediate subterms of pbp_select.v (kids), the paths that Rocq's
+   Set Printing Subterm Paths puts on the printed subterms (Pp tags
+   "path:i.j.k").  The part is not printed again.  A subterm that cannot
+   be selected (the return type of a match, a binder of a branch, the type
+   of a binder that the rest depends on, a term under a coercion that is
+   not printed: its pattern does not pass the check) is widened to the
+   nearest subterm above it that can and is printed as a whole, with a
+   warning (pbp-widened) as for point_run, unless it prints as the
+   selection (a coercion).  The goal is unchanged. *)
+Elpi Tactic point_run_path.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ Args as G) [seal G] :-
+  (tool-name "point_run_path" => (
+     point-run-paths Ctx Ty Args Line Ws,
+     msg "the selection is widened to" M)),
+  std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
+  coq.say Line.
+}}.
+
+(* [elpi point_run_path_expect "Name" Line Ws Sel ...], for the tests: fails
+   unless point_run_path gives the line Line, with the widened subterms Ws
+   (separated by " / ", "" for none) *)
+Elpi Tactic point_run_path_expect.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ [str Name, str Exp, str ExpW | Args] as G) [seal G] :-
+  (tool-name "point_run_path" => point-run-paths Ctx Ty [str Name | Args] Line Ws),
+  std.string.concat " / " Ws W,
+  ((Line = Exp, W = ExpW), ! ;
+   coq.ltac.fail 0 "point_run_path_expect: got" Line W "expected" Exp ExpW).
+}}.
+
+(* ---------------- The round trip of the paths ----------------
+   For point_paths_roundtrip.sh: the subterm of a goal at a path that the
+   printer tags (Set Printing Subterm Paths) must print as the tagged text. *)
+
+Elpi Accumulate pbp_select.db lp:{{
+
+% [rt-norm S N] N is the text S without blanks, without the parentheses
+% around it and without a scope delimiter at its end (%Z): the two texts
+% compared are printed alone and inside the goal
+pred rt-norm i:string, o:string.
+rt-norm S N :- flat S F0, rex.replace "let'" "let" F0 F, rt-strip F N.
+pred rt-strip i:string, o:string.
+rt-strip S N :- rex.match "^.*%[A-Za-z_][A-Za-z_0-9]*$" S, not (rex.match "^\".*\"$" S),
+  rex.replace "%[A-Za-z_][A-Za-z_0-9]*$" "" S S1, !, rt-strip S1 N.
+rt-strip S N :- starts-with "(" S, ends-with ")" S, L is size S - 2, L > 0,
+  S1 is substring S 1 L, rt-balanced S1, !, rt-strip S1 N.
+rt-strip S N :- starts-with "@" S, L is size S - 1, L > 0,
+  S1 is substring S 1 L, !, rt-strip S1 N.
+rt-strip S S.
+
+% [rt-balanced S] the parentheses of S are balanced
+pred rt-balanced i:string.
+rt-balanced S :- rex.split "" S Cs, std.fold Cs 0 (c\ a\ b\
+    (c = "(", !, b is a + 1 ; c = ")", !, a > 0, b is a - 1 ; b = a)) 0.
+
+% [rt-text Names M T P S] S is the text, at path P of the part T, that a
+% tag of the printer covers: the subterm, or the name of a binder
+pred rt-text i:list string, i:bmode, i:term, i:list int, o:string.
+rt-text Names M T P S :- name-at T P _, !, rt-name-at Names [] M T P S.
+rt-text Names M T P S :- path-of T P, !, text-at-names Names M P T S.
+
+% [rt-name-at Ctx Sc M T P S] S is the name, as the display prints it, of
+% the binder at P of T (P ends at its name); Ctx: the hypotheses, Sc: the
+% names of the binders above, M: where T is (the conclusion: a name in
+% Ctx or Sc is changed, x0; a hypothesis: only when the hypothesis of
+% that name is used below); an unused variable is printed _ (in a
+% pattern)
+% [rt-locate Names M T P Txt St O] the subterm at path P of T printed in
+% its place: the whole part T printed (O, without blanks) with the
+% subterm framed by two markers (as shown-at), its binders named as the
+% display names them (display-names: Names, M); Txt is the text between
+% the markers, St the number of characters before it.  Fails when the
+% markers change the printing around them (shown-at)
+pred rt-locate i:list string, i:bmode, i:term, i:list int, o:string, o:int, o:string.
+rt-locate Names M T P Txt St O :- not (name-at T P _), path-of T P,
+  display-names Names [] M T T1 [] Rs,
+  coq.term->string T1 S0, flat S0 O0, replace-placeholders Rs O0 O,
+  marker-names O A B,
+  marked-string A B P T1 MF0, replace-placeholders Rs MF0 MF,
+  around-mark A B MF Pre Post, fits O Pre Post Before Txt, cp-length Before St.
+
+pred rt-name-at i:list string, i:list string, i:bmode, i:term, i:list int, o:string.
+rt-name-at Ctx Sc M T [0] S :- rt-binder T N F, !, rt-display Ctx Sc M N F tt S.
+rt-name-at Ctx Sc M T [I|P] S :- kids T Ks, std.nth I Ks K, kid-mode M T I M1,
+  (K = kt V, rt-name-at Ctx Sc M1 V P S ;
+   K = kb N _ F, rt-display Ctx Sc M N F ff D,
+   pi x\ rt-name-at Ctx [D|Sc] M1 (F x) P S).
+
+pred rt-binder i:term, o:name, o:(term -> term).
+rt-binder (prod N _ F) N F.
+rt-binder (fun N _ F) N F.
+rt-binder (let N _ _ F) N F.
+
+% [rt-display Ctx Sc M N F U S] S is the name printed for the binder N of
+% body F (U: an unused variable is printed _)
+pred rt-display i:list string, i:list string, i:bmode, i:name, i:(term -> term), i:bool, o:string.
+rt-display _ _ _ _ F tt "_" :- not (pi x\ occurs x (F x)), !.
+rt-display Ctx Sc M N F _ S :- coq.name->id N S0, std.append Ctx Sc Avoid,
+  (M = bm-goal _, std.mem! Avoid S0, !, fresh-ident S0 Avoid S ;
+   std.mem! Ctx S0, (pi x\ var-named-in S0 (F x)), !, fresh-ident S0 Avoid S ;
+   S = S0).
+}}.
+
+(* [elpi point_path_text Case ["H"] "P" "Text" "Off" "Part"]: the tag P of
+   the conclusion (of the type of H) covers Text, after Off characters
+   that are not blanks of the printed part, whose text is Part.  Prints
+   RT-OK when the subterm (or binder name) at P is that text at that
+   place: printed alone it is Text (blanks, outer parentheses, a final
+   %scope, a leading @ ignored), and printed in its place (rt-locate) it
+   is Text after Off characters (one more or less: the parentheses around
+   it); or, when it cannot be printed alone as in its place, only the
+   second (RT-OK-CONTEXT); or, when the markers change the printing, only
+   the first (RT-OK-ALONE).  When Rocq-Elpi prints the part otherwise than
+   the display (Part), the place cannot be compared: RT-OK-TEXT (the text
+   alone), or RT-STYLE (a let).  Else RT-MISMATCH. *)
+Elpi Tactic point_path_text.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+pred rt-part i:goal-ctx, i:term, i:list argument, o:term, o:bmode, o:string, o:string, o:string.
+rt-part _ Ty [str P, str E, str _, str _] Ty (bm-goal 0) "|-" P E :- is-path-string P, !.
+rt-part Ctx _ [str H, str P, str E, str _, str _] T bm-hyp H P E :-
+  std.mem Ctx (decl _ N _), coq.name->id N H, !, hyp-of Ctx H _ T.
+solve (goal Ctx _ Ty _ [str Case | Args] as G) [seal G] :-
+  std.rev Args [str Part, str OffS | _], Off is string_to_int OffS,
+  (Args = [str H, str _, str _, str _, str _], not (is-path-string H),
+   not (std.mem Ctx (decl _ N0_ _), coq.name->id N0_ H), !,
+   coq.say "RT-SKIP" Case H "(not a hypothesis of the goal for Rocq-Elpi: a section variable)" ;
+  rt-part Ctx Ty Args T M Where P E,
+  std.map-filter Ctx (d\ h\ sigma V N Ty1 B\ (d = decl V N Ty1 ; d = def V N Ty1 B),
+                         coq.name->id N h) Names,
+  path-of-string P Q,
+  (rt-text Names M T Q S, ! ; S = "(no subterm)"),
+  rt-norm S NS, rt-norm E NE,
+  flat Part FPart,
+  (name-at T Q _, !, Placed = "yes", O = FPart ;
+   rt-locate Names M T Q Txt St O, !, rt-norm Txt NT,
+   ((NT = NE, (St = Off ; St is Off + 1 ; St is Off - 1)), !, Placed = "yes" ; Placed = "no") ;
+   Placed = "not found", O = FPart),
+  (NS = NE, Placed = "yes", !, coq.say "RT-OK" Case Where P ;
+   NS = NE, Placed = "not found", !, coq.say "RT-OK-ALONE" Case Where P ;
+   Placed = "yes", !, coq.say "RT-OK-CONTEXT" Case Where P ;
+   % Rocq-Elpi prints the part otherwise than the display: the places
+   % cannot be compared
+   not (O = FPart), NS = NE, !,
+   coq.say "RT-OK-TEXT" Case Where P "(the place not compared: Rocq-Elpi prints the part" O "where the display prints" FPart ")" ;
+   not (O = FPart), rex.match "^.*let[ ']" E, !,
+   coq.say "RT-STYLE" Case Where P "tag:" E "path:" S ;
+   coq.say "RT-MISMATCH" Case Where P "tag:" E "at" Off "path:" S "in its place:" Placed)).
+
+
+}}.
+
+(* [elpi point_paths_check] (point_paths_cases.v): every subterm and binder
+   name of the conclusion and of the hypotheses has a text (rt-text); it
+   prints their number.  point_paths_roundtrip.sh replaces it by the round
+   trip of the tags of the printer *)
+Elpi Tactic point_paths_check.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+pred rt-names-paths i:term, o:list (list int).
+rt-names-paths T Ps :- std.findall (rt-name-path T P_) Sols,
+  std.map Sols (s\ p\ s = rt-name-path T p) Ps.
+pred rt-name-path i:term, o:list int.
+rt-name-path T P :- path-of T Q, binder-kind-at T Q, std.append Q [0] P.
+pred binder-kind-at i:term, i:list int.
+binder-kind-at T Q :- name-at T {std.append Q [0]} _.
+pred rt-count i:list string, i:bmode, i:term, o:int.
+rt-count Names M T N :-
+  std.findall (path-of T P_) Sols, std.map Sols (s\ p\ s = path-of T p) Ps0,
+  rt-names-paths T Ps1, std.append Ps0 Ps1 Ps,
+  std.forall Ps (p\ sigma S\ rt-text Names M T p S), std.length Ps N.
+solve (goal Ctx _ Ty _ [] as G) [seal G] :-
+  std.map-filter Ctx (d\ h\ sigma V N Ty1\ d = decl V N Ty1, coq.name->id N h) Hs,
+  std.map-filter Ctx (d\ h\ sigma V N Ty1 B\ (d = decl V N Ty1 ; d = def V N Ty1 B),
+                         coq.name->id N h) Names,
+  rt-count Names (bm-goal 0) Ty N0,
+  std.map Hs (h\ n\ sigma V T\ hyp-of Ctx h V T, rt-count Names bm-hyp T n) Ns,
+  std.fold Ns N0 (a\ b\ c\ c is a + b) N,
+  coq.say "point_paths_check:" N "paths".
+}}.
+
+(* [elpi point_paths_untagged Case Part P1 .. Pn], for
+   point_paths_roundtrip.sh: Part is "|-" (the conclusion) or a hypothesis,
+   P1 .. Pn the paths the printer tagged in it; prints RT-UNTAGGED for each
+   binder name of the part (of a binder whose variable is used) that no
+   tag names: a name the display prints without its tag (exists x, ..) *)
+Elpi Tactic point_paths_untagged.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+pred rt-used-name-path i:term, o:list int.
+rt-used-name-path T P :- path-of T Q, std.append Q [0] P, name-at T P _,
+  rt-binder-used T Q.
+pred rt-binder-used i:term, i:list int.
+rt-binder-used T [] :- !, rt-binder T _ F, (pi x\ occurs x (F x)), not (rt-intermediate F).
+% [rt-intermediate F] the variable of F is only matched at once (the
+% binder of a nested pattern, S (S k), let '(x, (y, w)): not printed)
+pred rt-intermediate i:(term -> term).
+rt-intermediate F :- pi x\ sigma R Bs\ F x = match x R Bs,
+  not (occurs x R), not (std.exists Bs (occurs x)).
+rt-binder-used T [I|Q] :- kids T Ks, std.nth I Ks K,
+  (K = kt U, rt-binder-used U Q ; K = kb _ _ F, pi x\ rt-binder-used (F x) Q).
+solve (goal Ctx _ Ty _ [str Case, str Where | Tags] as G) [seal G] :-
+  (Where = "|-", !, T = Ty, M = bm-goal 0 ;
+   std.mem Ctx (decl _ N _), coq.name->id N Where, !, hyp-of Ctx Where _ T, M = bm-hyp ;
+   T = {{ True }}, M = bm-hyp),
+  std.map-filter Ctx (d\ h\ sigma V N1 Ty1 B\ (d = decl V N1 Ty1 ; d = def V N1 Ty1 B),
+                         coq.name->id N1 h) Names,
+  std.map Tags (t\ p\ sigma S\ t = str S, path-of-string S p) Ps,
+  std.findall (rt-used-name-path T P_) Sols,
+  std.forall Sols (s\ sigma P S PS PS0 R Q R1 Q1 B\ s = rt-used-name-path T P,
+    ((std.mem! Ps P ;
+      % (a binder that is not printed: no tag below it)
+      std.rev P [_|R], std.rev R Q,
+      not (std.exists Ps (t\ sigma Rest\ std.appendR Q [_|Rest] t))), ! ;
+     (rt-name-at Names [] M T P S, ! ; S = "?"),
+     std.map P (n\ x\ x is int_to_string n) PS0, std.string.concat "." PS0 PS,
+     std.rev P [_|R1], std.rev R1 Q1, (text-at-names Names M Q1 T B, ! ; B = "?"),
+     coq.say "RT-UNTAGGED" Case Where PS S "in" B)).
 }}.

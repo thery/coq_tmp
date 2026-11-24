@@ -341,3 +341,28 @@ elpi pbp_pattern_expect "pbp [X in ∀ n : nat, X n + _ = _]." "" 7 8.
 elpi pbp_pattern_expect "pbp [X in ∀ n : nat, _ + X = _]." "" 9 10.
 Abort.
 End Unicode.
+
+(* ---------- The scrutinee of an if or a match ---------- *)
+
+(* with ssreflect imported, if c then a else b is printed by ssreflect's
+   notation, whose text (if X then _ else _) elaborates: the plain pattern
+   is kept, no type is added to X *)
+Module IfMatch.
+Notation "'IF' c 'THEN' a 'ELSE' b" := (if c then a else b) (at level 200).
+(* (ifbthennelse0)=n: b is 3 *)
+Goal forall (b : bool) (n : nat), (IF b THEN n ELSE 0) = n.
+intros b n.
+elpi pbp_pattern_expect "pbp [X in (if X then _ else _) = _]." "" 3 4.
+Abort.
+End IfMatch.
+
+Goal forall (b : bool) (n : nat), (if b then n else 0) = n.
+intros b n.
+elpi pbp_pattern_expect "pbp [X in (if X then _ else _) = _]." "" 3 4.
+Abort.
+
+(* matchnwith|0=>true|S_=>falseend=true: n is 5 *)
+Goal forall n : nat, match n with 0 => true | S _ => false end = true.
+intros n.
+elpi pbp_pattern_expect "pbp [X in match X with | 0 => _ | S _ => _ end = _]." "" 5 6.
+Abort.

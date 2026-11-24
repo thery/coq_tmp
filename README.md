@@ -260,6 +260,47 @@ the tests load it, the tutorial does not):
 | `Unfold here` | point | `{pre:in}rewrite {local:pbp}/{head}{post:in}.` | `rewrite [X in _ = X]/double.` (`6 17`) |
 | `Name occurrence` | point | `{pre:in}set x := {local:occ}({text}){post:in}.` | `set x := {2}(a).` (`15 16`, the second `a`) |
 
+The actions of kind `show` of
+[point_actions_show.v](point_actions_show.v) (loaded by the demos and the
+tests): they work in the conclusion, in a hypothesis, under binders (the
+subterm typed and printed under the binders crossed, with the names of
+the goal display) and, by paths, on a binder name (the variable it
+binds: they are declared with `point-action-names`):
+
+| action | shows | e.g. |
+|---|---|---|
+| `Type of` | `t : T` | `n : nat` (the name `n` of `forall n`) |
+| `Check this` | what `Check t` prints: `t`, then `     : T` | `nat` / `     : Set` |
+| `Normal form` | `t ⇒ v`, `v` by call by value to the normal form (`eval compute`: `coq.reduction.cbv.norm`) | `double 2 ⇒ 4` |
+| `Head normal form` | `t ⇒ v`, `v` the weak head normal form (`coq.reduction.lazy.whd`) | `if true then a else 0 ⇒ a` |
+| `Where defined` | the head constant or variable: its full name, its kind (a definition, a lemma or opaque definition, an axiom, an inductive type, a constructor, a hypothesis, a local definition, a variable bound by a forall/fun/let of the goal), its library | `Corelib.Init.Nat.add: a definition, in the library Corelib.Init.Nat` |
+| `Unfolds to` | `t ⇒ v`, one step of delta: the body of the head constant applied to the arguments, beta-reduced; an error if it is opaque or not a constant | `double a ⇒ a + a  (...double unfolded)` |
+
+A template action can be of kind `show` too: `PointAction "Say text"
+show "the selection is {text}" "..."`.
+
+The notation actions of
+[point_actions_notations.v](point_actions_notations.v) (it loads
+point_actions_show.v):
+
+| action | kind | gives | e.g. on `a + b * 2 = b` |
+|---|---|---|---|
+| `Disable notation` | point | `Disable Notation := (H _ .. _) (all).`, on a subterm printed with a notation: `H` its head (the shortest name that Rocq resolves), one `_` per explicit argument | `Disable Notation := (Nat.mul _ _) (all).` on `b * 2`; then the goal prints `a + Nat.mul b 2 = b` |
+| `Enable notation` | point | `Enable Notation := (H _ .. _) (all).`, on a subterm printed in prefix form | `Enable Notation := (Nat.mul _ _) (all).` on `Nat.mul b 2` |
+| `Without notations` | show | the selection printed with `Printing Notations` off | `eq (Nat.add a (Nat.mul b 2)) b` |
+
+The implicit arguments get no `_` (`(eq _ _)` for `x = y`); `(all)`
+disables or enables all the notations of that interpretation (`x = y`
+and `x = y :> A`; `~ x` and `x <> y` for `not`), Rocq refuses the line
+without it when there are several.  A subterm is printed with a notation
+when its head applied to new variables prints differently with and
+without `Printing Notations`.  Rocq-Elpi cannot list the disabled
+notations: `Enable notation` is offered on any subterm in prefix form
+with a global head, and when no notation of that interpretation was
+disabled the line only warns (`Found no matching notation to enable or
+disable`).  These actions write no pattern: `point_run_path` gives them
+any subterm (`point-action-any-subterm`), as the `show` actions.
+
 `Point` and `Link` print exactly what `pbp_pattern` prints.  `Simplify
 here`, `Unfold here` and `Name occurrence` change the selected subterm only, in the
 conclusion or, for a selection in a hypothesis `H`, in `H` (`rewrite
@@ -278,7 +319,12 @@ It prints one notice, a JSON array, in the order of the declarations:
 [{"name":"Point","kind":"point","doc":"pbp: bring ..."},{"name":"Link","kind":"link","doc":"..."},...]
 ```
 
-`kind` is `point` (the action takes one selection) or `link` (two).
+`kind` is `point` (the action takes one selection), `link` (two) or
+`show` (one selection; what `point_run` prints is then a message to show,
+not a line to insert: the interface displays it and inserts nothing; it
+is printed exactly as a line is, one notice, possibly on several lines).
+A `show` action given two selections fails as the other kinds do (`the
+action Type of is of kind show and takes 1 selection(s), not 2`).
 `doc` is a sentence for a tooltip (may be `""`).  The list is the same in
 every goal (an action that does not apply to a selection fails with a
 message when it is run); it changes only when a file that declares
@@ -317,13 +363,85 @@ elpi point_run "Name" H S E H' S' E'.  (* ... in two hypotheses *)
   selection` (an action that fails without saying why).  The interface
   shows the text after `point_run: `.
 
+**2b. Running an action on paths.**  An interface whose goal display
+tags each printed subterm with its path (Rocq's `Set Printing Subterm
+Paths`, a prototype in the branch `path-tags` of a Rocq clone: each
+subterm's Pp is tagged `path:i.j.k`) sends the path of the selected
+subterm instead of a range:
+
+```
+elpi point_run_path "Name" "P".          (* kind point: in the conclusion *)
+elpi point_run_path "Name" "H" "P".      (* in the type of hypothesis H *)
+elpi point_run_path "Name" "P" "P'".     (* kind link: two selections *)
+elpi point_run_path "Name" "H" "P" "P'". (* ... in H and in the conclusion *)
+elpi point_run_path "Name" "H" "P" "H'" "P'".
+```
+
+- A path is `"i.j.k"` (`""` for the whole part), the path of the subterm
+  in its part (the conclusion, or the type of `H`), in the immediate
+  subterms of `kids` (pbp_select.v): an application `f a1 .. an` has `f`
+  at 0 and `ai` at `i`, `forall`/`fun` (arrows, branches and return
+  clauses included) the name at 0, the type at 1 and the body at 2, `let`
+  the name, the type, the value, the body at 0, 1, 2, 3, a `match` the
+  scrutinee at 0, the return type at 1 and its branches from 2 (a branch
+  is the `fun` of the arguments of its constructor), a cast the type at
+  0 and the term at 1.  A name is not a subterm: a path that ends at a
+  name selects its binder, widened with the warning `... (a binder name:
+  the whole forall is selected)` (unless the action is declared with
+  `point-action-names`, which then gets the path of the name); a path
+  through a name is an error (`the path 0.1 goes through a binder
+  name`).  On `forall n : nat, n + 0 = n`, `n` is `"0"`, `nat` `"1"`,
+  `n + 0` `"2.2"`.  It is the tag of the innermost tagged subterm
+  containing the selection.  On `1 + 1 + a = double (1 + a)`, `1 + 1` is
+  `"2.1"` (eq's type, not printed, is 1), `1 + a` is `"3.1"`.
+- A string that is `""` or starts with a digit is a path, any other a
+  hypothesis name, which a path follows.
+- The part is not printed again and nothing is counted: the display and
+  the selection cannot disagree.  The result is the one of `point_run`
+  (the same `point-in` value; the patterns may put a hole at any
+  subterm, and are checked as before).
+- A subterm that cannot be selected is widened, with the warning of
+  `point_run` (`pbp-widened`, `point_run_path: the selection is widened
+  to ...`), to the nearest subterm above it that can and that is printed
+  as a whole (as `point_run` widens a range): the return type of a match
+  and the binders of a branch (the pattern variable `k` of `S k` is
+  tagged with the path of its `fun`; `let '(a, b) := p` is a match), a
+  subterm whose pattern does not pass the check alone in its part (the
+  type of a binder that the rest depends on, `n` under a coercion that
+  is not printed: `(n + 1)%Z` is `Z.of_nat n + 1`, the scrutinee of a
+  `let '(a, b)`).  There is no warning when the subterm it is widened to
+  prints as the selection (the coercion `Z.of_nat n` prints as `n`).
+- The binders of a pattern are named as the goal display names them: a
+  binder named as a hypothesis keeps its name in the type of a hypothesis
+  (`move: H; pbp [X in (forall x : nat, X x) -> _]`) and is renamed in the
+  conclusion (`x0`), where Rocq-Elpi prints it `elpi_ctx_entry_3_`.  A
+  cast `(n : nat)`, which Rocq-Elpi sees as a `let`, is printed back as a
+  cast (`pbp [X in (X : nat) = _]`).  When the pattern does not elaborate because
+  a selection is the scrutinee of an `if` (`if X then _ else _`: the
+  text alone does not give the type of `X`), `X` is written with its
+  type: `pbp [X in (IF X : bool THEN _ ELSE _) = _]` (both methods; never
+  when the plain pattern works, as under ssreflect's `if` notation).
+- The errors are those of `point_run` (with `point_run_path: `), and `no
+  subterm at the path 5`, `not a path: 2.x`.
+- Tests: [point_paths_test.v](point_paths_test.v) (`elpi
+  point_run_path_expect "Name" Line Ws Sel ...`, Ws as for
+  `point_run_expect`), the same lines as `point_run` where both apply.
+- The cases: [point_paths_cases.v](point_paths_cases.v), goals with every
+  construct and every position of the numbering, in the conclusion and
+  in hypotheses (`elpi point_paths_check.` there computes the text of
+  every subterm and binder name).  The round trip:
+  `opam exec --switch=vsrocq-pathtags -- bash point_paths_roundtrip.sh`
+  (the Rocq whose printer tags the paths): for every tag `P` of the
+  printed goals, the subterm (or binder name) at `P` must print as the
+  tagged text; it prints the counts and fails on a mismatch.
+
 **3. Declaring an action.**  With a template:
 
 ```
 PointAction "Name it" point "set x := ({text})." "name the selected subterm".
 ```
 
-The kind is `point` or `link`; the last string (optional) is the `doc`.
+The kind is `point`, `link` or `show`; the last string (optional) is the `doc`.
 A name is declared once.  The placeholders of the template:
 
 | placeholder | is |
@@ -359,11 +477,12 @@ hypothesis `H : a + b = b + a` (`H 0 1`), `{path:M}` then `{local:M}`:
   number (an error).
 - `path`: the paths of `kids` (pbp_select.v): in an application the head
   is 0 and the arguments 1, 2, ...;
-  in a product or an abstraction the type is 0 and the body 1; in a let
-  the type 0, the value 1, the body 2; in a match the matched term 0, the
-  return type 1, the branches 2, 3, ...  In the goal with the hypothesis
-  `H` generalized (`{path:path}`), `H`'s type is `[0, ...]` and the
-  conclusion `[1, ...]`.  Two selections give two lists.
+  in a product or an abstraction the name is 0 (not a subterm), the type
+  1 and the body 2; in a let the name 0, the type 1, the value 2, the
+  body 3; in a match the matched term 0, the return type 1, the branches
+  2, 3, ...; in a cast the type 0 and the term 1.  In the goal with the
+  hypothesis `H` generalized (`{path:path}`), `H`'s type is `[1, ...]`
+  and the conclusion `[2, ...]`.  Two selections give two lists.
 
 The hypothesis strategies (`PointStrategies.` lists them), for a
 selection in the hypothesis `H` (for selections in the conclusion they
@@ -445,7 +564,7 @@ doc:
 
 ```
 7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 497
+Point (point), declared in coq_tmp.point_actions, line 503
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
 ...

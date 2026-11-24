@@ -54,10 +54,10 @@ Definition double n := n + n.
 (* a command: outside proofs too *)
 PointActions.
 Elpi point_text_expect actions "5 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 497
+Point (point), declared in coq_tmp.point_actions, line 503
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 499
+Link (link), declared in coq_tmp.point_actions, line 505
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
 Simplify here (point), declared in coq_tmp.point_actions_more, line 9
@@ -200,10 +200,10 @@ point-action "Compare" link "compare the two selections" same-text.
 (* the two new actions, at the end of the list *)
 PointActions.
 Elpi point_text_expect actions "7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 497
+Point (point), declared in coq_tmp.point_actions, line 503
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 499
+Link (link), declared in coq_tmp.point_actions, line 505
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
 Simplify here (point), declared in coq_tmp.point_actions_more, line 9
@@ -314,7 +314,7 @@ occ (Elpi: path-occ)
 at (Elpi: path-at)
   Rocq's occurrences (unfold, pattern ... at n): 2 (1 3 for two)
 path (Elpi: path-raw)
-  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its type is 0 and its body 1): [1, 2] (two lists for two selections)".
+  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its name is 0, its type 1 and its body 2): [1, 2] (two lists for two selections)".
 
 (* each method, in the goal ({path:M}) and in the part ({local:M}) *)
 PointAction "Paths" point
@@ -331,13 +331,13 @@ elpi point_run_expect "Paths"
   "[X in _ = _ + X] [X in _ = _ + X] {2} {2} 2 2 [3, 2] [3, 2]" "" 6 7.
 (* in H: generalized, the goal is H's type -> the conclusion *)
 elpi point_run_expect "Paths"
-  "[X in X + _ = _ -> _] [X in X + _ = _] {1} {1} 1 1 [0, 2, 1] [2, 1]" "" H 0 1.
+  "[X in X + _ = _ -> _] [X in X + _ = _] {1} {1} 1 1 [1, 2, 1] [2, 1]" "" H 0 1.
 elpi point_run_expect "Paths"
-  "[X in _ = _ + X -> _] [X in _ = _ + X] {2} {2} 2 2 [0, 3, 2] [3, 2]" "" H 6 7.
+  "[X in _ = _ + X -> _] [X in _ = _ + X] {2} {2} 2 2 [1, 3, 2] [3, 2]" "" H 6 7.
 (* two selections of the same term: the first a of H, the last of the
    conclusion; no part holds both *)
 elpi point_run_expect "Paths 2"
-  "[X Y in X + _ = _ -> _ = _ + Y] {1 4} 1 4 [0, 2, 1] [1, 3, 2]" "" H 0 1 6 7.
+  "[X Y in X + _ = _ -> _ = _ + Y] {1 4} 1 4 [1, 2, 1] [2, 3, 2]" "" H 0 1 6 7.
 Abort.
 
 (* the occurrences are the ones of ssreflect and of Rocq: the lines run *)
@@ -386,7 +386,7 @@ occ (Elpi: path-occ)
 at (Elpi: path-at)
   Rocq's occurrences (unfold, pattern ... at n): 2 (1 3 for two)
 path (Elpi: path-raw)
-  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its type is 0 and its body 1): [1, 2] (two lists for two selections)
+  the positions of the selections in the term, from its root (in an application the head is 0 and the arguments 1, 2, ...; in a binder its name is 0, its type 1 and its body 2): [1, 2] (two lists for two selections)
 depth (Elpi: path-depth)
   the depth of the selections".
 PointAction "Depth" point "idtac ""{path:depth} {local:depth}"".".
@@ -485,4 +485,35 @@ Goal forall n m, n <= (if Nat.leb n m then m else n).
 Proof.
 intros n m.
 elpi point_run_expect "Name occurrence" "set x := {1}(n)." "" 0 1.
+Abort.
+
+(* ---------- Actions of kind show (point_actions_show.v) ----------
+   Their message is printed as a line is; a template action may be of
+   kind show too *)
+From coq_tmp Require Import point_actions_show.
+PointAction "Say text" show "the selection is {text}" "show the selected text".
+Goal forall a b : nat, a + b = b + a -> forall n : nat, n + 0 = n.
+intros a b H.
+(* foralln:nat,n+0=n: the n of n + 0 is 12, under the binder *)
+elpi point_run_expect "Type of" "n : nat" "" 12 13.
+elpi point_run_expect "Where defined" "n: a variable bound by a forall of the goal" "" 12 13.
+elpi point_run_expect "Type of" "a + b : nat" "" H 0 3.
+elpi point_run_expect "Where defined" "Corelib.Init.Nat.add: a definition, in the library Corelib.Init.Nat" "" H 0 3.
+elpi point_run_expect "Unfolds to" "n + 0 ⇒ (fix add (n m : nat) {struct n} : nat := match n with | 0 => m | S p => S (add p m) end) n 0  (Corelib.Init.Nat.add unfolded)" "" 12 15.
+elpi point_run_expect "Say text" "the selection is a + b" "" H 0 3.
+(* two selections: a show action takes one *)
+Fail elpi point_run "Type of" H 0 1 H 2 3.
+Abort.
+
+(* ---------- The notation actions (point_actions_notations.v) ---------- *)
+From coq_tmp Require Import point_actions_notations.
+Goal forall a b : nat, a + b * 2 = b.
+intros a b.
+(* a+b*2=b: b * 2 is 2 to 5 *)
+elpi point_run_expect "Disable notation" "Disable Notation := (Nat.mul _ _) (all)." "" 2 5.
+elpi point_run_expect "Without notations" "Init.Nat.add a (Init.Nat.mul b 2)" "" 0 5.
+Disable Notation := (Nat.mul _ _) (all).
+(* a+Init.Nat.mulb2=b (Init.Nat.mul here): its application is 2 to 16 *)
+elpi point_run_expect "Enable notation" "Enable Notation := (Nat.mul _ _) (all)." "" 2 16.
+Enable Notation := (Nat.mul _ _) (all).
 Abort.
