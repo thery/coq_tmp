@@ -800,7 +800,12 @@ pred rt-used-name-path i:term, o:list int.
 rt-used-name-path T P :- path-of T Q, std.append Q [0] P, name-at T P _,
   rt-binder-used T Q.
 pred rt-binder-used i:term, i:list int.
-rt-binder-used T [] :- !, rt-binder T _ F, pi x\ occurs x (F x).
+rt-binder-used T [] :- !, rt-binder T _ F, (pi x\ occurs x (F x)), not (rt-intermediate F).
+% [rt-intermediate F] the variable of F is only matched at once (the
+% binder of a nested pattern, S (S k), let '(x, (y, w)): not printed)
+pred rt-intermediate i:(term -> term).
+rt-intermediate F :- pi x\ sigma R Bs\ F x = match x R Bs,
+  not (occurs x R), not (std.exists Bs (occurs x)).
 rt-binder-used T [I|Q] :- kids T Ks, std.nth I Ks K,
   (K = kt U, rt-binder-used U Q ; K = kb _ _ F, pi x\ rt-binder-used (F x) Q).
 solve (goal Ctx _ Ty _ [str Case, str Where | Tags] as G) [seal G] :-
