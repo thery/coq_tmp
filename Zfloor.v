@@ -9,7 +9,7 @@
 (******************************************************************************)
 
 From mathcomp Require Import ssreflect.
-Require Import Reals Lra Lia.
+From Stdlib Require Import Reals Lra Lia.
 
 Open Scope R_scope.
 
@@ -216,9 +216,9 @@ Ltac rify :=
 try (intros; repeat split; 
 match goal with 
   |- ~ _ => unfold not; intros
-| |- (_ >= _)%Z => apply/Z.le_ge/Zlt_succ_le/lt_IZR 
+| |- (_ >= _)%Z => apply/Z.le_ge/Z.lt_succ_r/lt_IZR 
 | |- (_ > _)%Z => apply/Z.lt_gt/lt_IZR 
-| |- (_ <= _)%Z => apply/Zlt_succ_le/lt_IZR
+| |- (_ <= _)%Z => apply/Z.lt_succ_r/lt_IZR
 | |- (_ < _)%Z => apply/lt_IZR 
 | |- (_ = _)%Z => apply/eq_IZR 
 end; clean_IZR);
@@ -228,17 +228,10 @@ repeat (match goal with
 | H : (_ >= _)%Z |- _ => generalize (Z.ge_le _ _ H); clear H; intro H
 | H : (_ > _)%Z |- _ => generalize (Z.gt_lt _ _ H); clear H; intro H
 | H : (_ <= _)%Z |- _ => generalize (IZR_le _ _ H); clear H
-| H : (_ < _)%Z |- _ => generalize (Zlt_le_succ _ _ H); clear H; intro H
+| H : (_ < _)%Z |- _ => generalize (proj2 (Z.le_succ_l _ _) H); clear H; intro H
 | H : (_ = _ :> Z) |- _ => generalize (IZR_eq _ _ H); clear H
 | H : (_ <> _ :> Z) |- _ => generalize (IZR_neq _ _ H); clear H
 end); clean_IZR.
-
-Goal forall x y,  x <= y -> (Zfloor y <= Zfloor x)%Z.
-rify.
-lra.
-Qed.
-
-'e
 
 Goal forall x y,  ((x <> y /\ x >= y) -> y <= x)%Z.
 rify.
