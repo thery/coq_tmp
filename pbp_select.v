@@ -761,7 +761,10 @@ path-locate-in Ctx M (part B T _) P0 P P1 W :-
   (name-at T P0 K, not (paths-keep-names), !,
    % a binder name: the binder (or above it), always with a warning
    std.rev P0 [_|R], std.rev R Q,
-   (path-selectable Names T Q, !, P1 = Q ; path-widen Names T Q P1 _),
+   % (its binder, or above it, printed as a whole: the fun of exists x, P x
+   % is not, the exists is)
+   coq.term->string T S0, flat S0 O, marker-names O MA MB,
+   path-widen-from Names T O MA MB Q P1 _,
    text-at-names Names M P1 T W1,
    (P1 = Q, !, W is W1 ^ " (a binder name: the whole " ^ K ^ " is selected)" ;
     W is W1 ^ " (a binder name)")

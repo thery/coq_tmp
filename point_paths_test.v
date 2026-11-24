@@ -238,3 +238,10 @@ elpi point_run_path_expect "Without notations" "Nat.mul n n" "" "2.2.2".
 Fail elpi point_run_path "Disable notation" "1.2.1".
 Fail elpi point_run_path "Disable notation" "2".
 Abort.
+
+(* a name bound by a notation (exists, tagged by the printer at the 0 of
+   the fun that ex is applied to): the fun is not printed as a whole, the
+   exists is selected *)
+Goal (exists m : nat, m = 0) /\ True.
+elpi point_run_path_expect "Point" "pbp [X in X /\ _]." "exists m : nat, m = 0 (a binder name)" "1.2.0".
+Abort.
