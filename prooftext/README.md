@@ -87,7 +87,7 @@ Let `x y z t : Prop`{.var}. If `x -> z`{.hyp} and `y -> t`{.hyp} then `(x /\ y) 
 | variable `<v>` | `` `x y : T`{.var} ``, `` `u := e`{.var} `` | any; they hold in the node and its subnodes |
 | hypothesis `<h>` | `` `A`{.hyp} (h) `` | any, each with at most one name; they hold in the node and its subnodes |
 | fact `<f>` | `` `F`{.fact} `` | any: formulas the node uses, each a hypothesis or a conclusion it can see |
-| justification `<j>` | `*X*{.just}` | any: names of hypotheses, nodes, lemmas, rules or tactics, the two fixed methods `match` and `induction`, the inductive type they eliminate |
+| justification `<j>` | `*X*{.just}` | any: names of hypotheses, nodes, lemmas, rules or tactics, the two fixed methods `match` and `induction`, the inductive type they eliminate; or a word of several words separated by spaces (letters, digits, `_`, `'`, `-`), `*mean value inequality*{.just}`, which only a checker's declared words can mean (cyp: `CypJustification`) |
 
 and its **subnodes**, in the order of the text.  The parts may come in any
 order: the conclusion first ("We prove C: ...") or last ("..., so we get
@@ -179,7 +179,7 @@ subnodes.
 | a name out of scope | `*k*{.just}` outside the node that assumes `k` |
 | a name given twice in one scope | two hypotheses `(h)` both visible |
 | an unknown class | `` `F`{.clam} ``, `*h*{.jsut}`, `]{.q}`, `::: q` |
-| a justification that is not a name | `*by lia*{.just}` |
+| a justification that is neither a name nor words separated by spaces | `*a+b*{.just}` |
 | an unclosed div, a span or div closed but not opened | `::: p` with no `:::`, `]{.p}` with no `[` before it |
 
 Two errors need the meaning of the names, and are the checker's: a
@@ -264,7 +264,7 @@ that names no formula in scope).
   `justification-name J S` (`*J*{.just}`), `untagged-formula F S` (`` `F` ``, plain text),
   `justification J S` (`*by J*`, the form of the texts written before the
   tree, read still),
-  `is-justification S`, `is-name S`, and the reading of the text of a
+  `is-justification S`, `is-name S`, `is-word S` (a name, or several words: a justification), `normal-word S W` (its blanks trimmed and collapsed), and the reading of the text of a
   node, `text-parts Text Parts` (below, the reader's contract);
 - `names.elpi`: `fresh-name Used Wanted Name`, `Wanted` if it is not in
   use, else `Wanted0`, `Wanted1`, ...: the names a text introduces must
@@ -344,7 +344,8 @@ is the one reader of cyp and of the Typst back end.
   right after it may come its **class**, `{.tag}` (letters), then, after
   any number of spaces, the **name** given to it, `(h)` (an identifier);
   an emphasised text followed by a class, `*X*{.tag}`, is a **tagged
-  name**, a justification for the class `just`; `*by X*` is the
+  name**, a justification for the class `just` (its X with its blanks
+  trimmed and each run of them one space, `normal-word`); `*by X*` is the
   justification X of the texts written before the tree.  A part is `plain
   Words`, `formula-part Class Formula Name` (`Name` is `some h` or
   `none`), `tagged-name Class X` or `by-part X` (and `term-part Class Term
