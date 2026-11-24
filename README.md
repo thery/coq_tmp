@@ -341,15 +341,29 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
 - The part is not printed again and nothing is counted: the display and
   the selection cannot disagree.  The result is the one of `point_run`
   (the same `point-in` value; the patterns may put a hole at any
-  subterm, and are checked as before).  No selection is widened.
+  subterm, and are checked as before).
+- A subterm that cannot be selected is widened, with the warning of
+  `point_run` (`pbp-widened`, `point_run_path: the selection is widened
+  to ...`), to the nearest subterm above it that can and that is printed
+  as a whole (as `point_run` widens a range): the return type of a match
+  and the binders of a branch (the pattern variable `k` of `S k` is
+  tagged with the path of its `fun`; `let '(a, b) := p` is a match), a
+  subterm whose pattern does not pass the check alone in its part (the
+  type of a binder that the rest depends on, `n` under a coercion that
+  is not printed: `(n + 1)%Z` is `Z.of_nat n + 1`, the scrutinee of a
+  `let '(a, b)`).  There is no warning when the subterm it is widened to
+  prints as the selection (the coercion `Z.of_nat n` prints as `n`).
+- The binders of a pattern are named as the goal display names them: a
+  binder named as a hypothesis keeps its name in the type of a hypothesis
+  (`move: H; pbp [X in (forall x : nat, X x) -> _]`) and is renamed in the
+  conclusion (`x0`), where Rocq-Elpi prints it `elpi_ctx_entry_3_`.  A
+  cast `(n : nat)`, which Rocq-Elpi sees as a `let`, is printed back as a
+  cast (`pbp [X in (X : nat) = _]`).
 - The errors are those of `point_run` (with `point_run_path: `), and `no
-  subterm at the path 5`, `not a path: 2.x`, `the subterm at the path
-  2.3 cannot be selected: it is the return type of a match or binds the
-  variables of a branch` (the pattern variable `k` of `S k` is tagged
-  with the path of its `fun`).
+  subterm at the path 5`, `not a path: 2.x`.
 - Tests: [point_paths_test.v](point_paths_test.v) (`elpi
-  point_run_path_expect "Name" Line Sel ...`), the same lines as
-  `point_run` where both apply.
+  point_run_path_expect "Name" Line Ws Sel ...`, Ws as for
+  `point_run_expect`), the same lines as `point_run` where both apply.
 
 **3. Declaring an action.**  With a template:
 

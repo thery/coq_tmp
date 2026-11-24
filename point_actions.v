@@ -559,22 +559,24 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
 
 Elpi Accumulate pbp_select.db lp:{{
 
-% [point-run-paths Ctx G Args Line] Line is the line of the action and the
-% path selections given by Args (point_run_path), in the goal G
-pred point-run-paths i:goal-ctx, i:term, i:list argument, o:string.
-point-run-paths _ _ [] _ :- !,
+% [point-run-paths Ctx G Args Line Ws] Line is the line of the action and
+% the path selections given by Args (point_run_path), in the goal G; Ws
+% are the texts of the subterms that selections were widened to
+pred point-run-paths i:goal-ctx, i:term, i:list argument, o:string,
+                     o:list string.
+point-run-paths _ _ [] _ _ :- !,
   coq.ltac.fail 0 {msg "the first argument is the name of an action (elpi point_actions lists them)"}.
-point-run-paths Ctx G [str Name | As] Line :- !,
+point-run-paths Ctx G [str Name | As] Line Ws :- !,
   (point-action Name K _ Impl, ! ;
    coq.ltac.fail 0 {msg "no action"} Name "(elpi point_actions lists them)"),
   parse-psels As Sels, std.length Sels N, point-kind-name K KS KN,
   (N = KN, ! ;
    coq.ltac.fail 0 {msg "the action"} Name "is of kind" KS "and takes" KN
      "selection(s), not" N),
-  point-resolve-paths Ctx G Sels In,
+  point-resolve-paths Ctx G Sels In Ws,
   (Impl In Line, ! ;
    coq.ltac.fail 0 {msg "the action"} Name "does not apply to the selection").
-point-run-paths _ _ _ _ :-
+point-run-paths _ _ _ _ _ :-
   coq.ltac.fail 0 {msg "the first argument is the name of an action, a string"}.
 }}.
 
@@ -584,22 +586,33 @@ point-run-paths _ _ _ _ :-
    the hypothesis H.  A path is written "i.j.k" ("" for the whole part), in
    the immediate subterms of pbp_select.v (kids), the paths that Rocq's
    Set Printing Subterm Paths puts on the printed subterms (Pp tags
-   "path:i.j.k").  The part is not printed again and nothing is widened.
-   The goal is unchanged. *)
+   "path:i.j.k").  The part is not printed again.  A subterm that cannot
+   be selected (the return type of a match, a binder of a branch, the type
+   of a binder that the rest depends on, a term under a coercion that is
+   not printed: its pattern does not pass the check) is widened to the
+   nearest subterm above it that can and is printed as a whole, with a
+   warning (pbp-widened) as for point_run, unless it prints as the
+   selection (a coercion).  The goal is unchanged. *)
 Elpi Tactic point_run_path.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
 solve (goal Ctx _ Ty _ Args as G) [seal G] :-
-  (tool-name "point_run_path" => point-run-paths Ctx Ty Args Line),
+  (tool-name "point_run_path" => (
+     point-run-paths Ctx Ty Args Line Ws,
+     msg "the selection is widened to" M)),
+  std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
   coq.say Line.
 }}.
 
-(* [elpi point_run_path_expect "Name" Line Sel ...], for the tests: fails
-   unless point_run_path gives the line Line *)
+(* [elpi point_run_path_expect "Name" Line Ws Sel ...], for the tests: fails
+   unless point_run_path gives the line Line, with the widened subterms Ws
+   (separated by " / ", "" for none) *)
 Elpi Tactic point_run_path_expect.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
-solve (goal Ctx _ Ty _ [str Name, str Exp | Args] as G) [seal G] :-
-  (tool-name "point_run_path" => point-run-paths Ctx Ty [str Name | Args] Line),
-  (Line = Exp, ! ; coq.ltac.fail 0 "point_run_path_expect: got" Line "expected" Exp).
+solve (goal Ctx _ Ty _ [str Name, str Exp, str ExpW | Args] as G) [seal G] :-
+  (tool-name "point_run_path" => point-run-paths Ctx Ty [str Name | Args] Line Ws),
+  std.string.concat " / " Ws W,
+  ((Line = Exp, W = ExpW), ! ;
+   coq.ltac.fail 0 "point_run_path_expect: got" Line W "expected" Exp ExpW).
 }}.
