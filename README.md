@@ -279,6 +279,28 @@ binds: they are declared with `point-action-names`):
 A template action can be of kind `show` too: `PointAction "Say text"
 show "the selection is {text}" "..."`.
 
+The notation actions of
+[point_actions_notations.v](point_actions_notations.v) (it loads
+point_actions_show.v):
+
+| action | kind | gives | e.g. on `a + b * 2 = b` |
+|---|---|---|---|
+| `Disable notation` | point | `Disable Notation := (H _ .. _) (all).`, on a subterm printed with a notation: `H` its head (the shortest name that Rocq resolves), one `_` per explicit argument | `Disable Notation := (Nat.mul _ _) (all).` on `b * 2`; then the goal prints `a + Nat.mul b 2 = b` |
+| `Enable notation` | point | `Enable Notation := (H _ .. _) (all).`, on a subterm printed in prefix form | `Enable Notation := (Nat.mul _ _) (all).` on `Nat.mul b 2` |
+| `Without notations` | show | the selection printed with `Printing Notations` off | `eq (Nat.add a (Nat.mul b 2)) b` |
+
+The implicit arguments get no `_` (`(eq _ _)` for `x = y`); `(all)`
+disables or enables all the notations of that interpretation (`x = y`
+and `x = y :> A`; `~ x` and `x <> y` for `not`), Rocq refuses the line
+without it when there are several.  A subterm is printed with a notation
+when its head applied to new variables prints differently with and
+without `Printing Notations`.  Rocq-Elpi cannot list the disabled
+notations: `Enable notation` is offered on any subterm in prefix form
+with a global head, and when no notation of that interpretation was
+disabled the line only warns (`Found no matching notation to enable or
+disable`).  These actions write no pattern: `point_run_path` gives them
+any subterm (`point-action-any-subterm`), as the `show` actions.
+
 `Point` and `Link` print exactly what `pbp_pattern` prints.  `Simplify
 here`, `Unfold here` and `Name occurrence` change the selected subterm only, in the
 conclusion or, for a selection in a hypothesis `H`, in `H` (`rewrite
