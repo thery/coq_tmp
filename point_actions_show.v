@@ -20,7 +20,7 @@
    path ending at the index 0 of a binder: point-action-names): the
    variable that the binder binds. *)
 
-From coq_tmp Require Import point_actions.
+From coq_tmp Require Export point_actions.
 
 Elpi Accumulate pbp_select.db lp:{{
 

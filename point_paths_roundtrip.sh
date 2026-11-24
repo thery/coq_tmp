@@ -18,6 +18,11 @@
 #      match) whose text Rocq-Elpi prints in another style (let (x, _) :=
 #      s for let 'exist _ x _ := s, nested lets for a nested pattern,
 #      (t : T) for let k := t in k) is RT-STYLE: listed, not a failure.
+#   Also, for each part, the binder names (of a used variable, under a
+#   printed binder) that no tag names are listed (RT-UNTAGGED, not a
+#   failure: a printer limit, the names of exists x, .. and of mathcomp's
+#   notations).  The cases are point_paths_cases.v and, when mathcomp is
+#   installed, point_paths_cases_mathcomp.v.
 #   usage: bash point_paths_roundtrip.sh   (in the opam switch of the Rocq
 #          that tags the paths, e.g. opam exec --switch=vsrocq-pathtags --;
 #          exit 1 on a mismatch or an error).  The .v files it needs are
@@ -27,22 +32,14 @@ me=point_paths_roundtrip
 tmp=$(mktemp -d) || exit 2
 [ -n "$RT_KEEP" ] && echo "$me: kept in $tmp" || trap 'rm -rf "$tmp"' EXIT
 ulimit -v 8000000
-cp "$here"/pbp.v "$here"/pbp_select.v "$here"/point_actions.v "$here"/point_paths_cases.v "$tmp"/
+cp "$here"/pbp.v "$here"/pbp_select.v "$here"/point_actions.v "$here"/point_paths_cases.v "$here"/point_paths_cases_mathcomp.v "$tmp"/
 cd "$tmp" || exit 2
 for f in pbp pbp_select point_actions; do
   rocq c -R . coq_tmp $f.v > $f.out 2>&1 || { echo "$me: $f.v does not compile:"; cat $f.out; exit 2; }
 done
-# 1. the tagged goals
-awk '
-/^From coq_tmp Require Import point_actions\.$/ { print; print "Set Printing Subterm Paths."; next }
-/^elpi point_paths_check\.$/ { n++; printf "idtac \"@@CASE %d\".\nShow.\n", n; next }
-{ print }' point_paths_cases.v > rt_show.v
-if ! rocq c -R . coq_tmp rt_show.v > show.out 2> show.err; then
-  echo "$me: the copy with Show does not compile:"; cat show.err; exit 2
-fi
-# 2. the tags: one line "case|hyp|path|text" per tag (hyp: - for the
-#    conclusion)
-awk '
+# the parser of the tagged goals (Show): one line "case|hyp|path|text" per
+# tag (hyp: - for the conclusion; the innermost tag closes first)
+cat > parse.awk <<'AWK'
 function flush_part(s, hyp,    i, c, rest, m, path, stack, pos, depth, plain, t) {
   depth = 0; plain = ""
   while (length(s) > 0) {
@@ -82,37 +79,68 @@ inconcl {
 /^  [^ ].* := / { if (hyp != "") flush_part(buf, hyp); hyp = ""; next }
 hyp != "" && /^ / { buf = buf " " $0; next }
 END { if (inconcl) flush_part(buf, "-") }
-' show.out > tags
-ntags=$(wc -l < tags)
-# 3. the check of each tag
-awk -v tags=tags '
-function esc(s) { gsub(/"/, "\"\"", s); return s }
-BEGIN {
-  while ((getline l < tags) > 0) {
-    i = index(l, "|"); c = substr(l, 1, i - 1); l = substr(l, i + 1)
-    i = index(l, "|"); h = substr(l, 1, i - 1); l = substr(l, i + 1)
-    i = index(l, "|"); p = substr(l, 1, i - 1); t = substr(l, i + 1)
-    if (h == "-") line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\".", c, p, esc(t))
-    else line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\".", c, esc(h), p, esc(t))
-    chk[c] = chk[c] line "\n"
+AWK
+status=0
+# [roundtrip F] the round trip of the goals of F
+roundtrip() {
+  f=$1; b=${f%.v}
+  # 1. the tagged goals
+  awk '
+  /^From coq_tmp Require Import point_actions\.$/ { print; print "Set Printing Subterm Paths."; next }
+  /^elpi point_paths_check\.$/ { n++; printf "idtac \"@@CASE %d\".\nShow.\n", n; next }
+  { print }' $f > ${b}_show.v
+  if ! rocq c -R . coq_tmp ${b}_show.v > $b.show.out 2> $b.show.err; then
+    echo "$me: the copy of $f with Show does not compile:"; cat $b.show.err; status=2; return
+  fi
+  # 2. the tags
+  awk -f parse.awk $b.show.out > $b.tags
+  ntags=$(wc -l < $b.tags)
+  # 3. the check of each tag, and of the names of each part
+  awk -v tags=$b.tags '
+  function esc(s) { gsub(/"/, "\"\"", s); return s }
+  BEGIN {
+    while ((getline l < tags) > 0) {
+      i = index(l, "|"); c = substr(l, 1, i - 1); l = substr(l, i + 1)
+      i = index(l, "|"); h = substr(l, 1, i - 1); l = substr(l, i + 1)
+      i = index(l, "|"); p = substr(l, 1, i - 1); t = substr(l, i + 1)
+      if (h == "-") line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\".", c, p, esc(t))
+      else line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\".", c, esc(h), p, esc(t))
+      chk[c] = chk[c] line "\n"
+      k = c SUBSEP h; if (!(k in parts)) { parts[k] = 1; order[c] = order[c] SUBSEP h }
+      paths[k] = paths[k] " \"" p "\""
+    }
   }
+  /^elpi point_paths_check\.$/ {
+    n++; printf "%s", chk[n]
+    m = split(order[n], hs, SUBSEP)
+    for (j = 2; j <= m; j++) {
+      h = hs[j]; w = (h == "-") ? "|-" : h
+      printf "elpi point_paths_untagged \"%s\" \"%s\"%s.\n", n, esc(w), paths[n SUBSEP h]
+    }
+    next }
+  { print }' $f > ${b}_check.v
+  if ! rocq c -R . coq_tmp ${b}_check.v > $b.check.out 2> $b.check.err; then
+    echo "$me: the copy of $f with the checks does not compile:"; cat $b.check.err; status=2; return
+  fi
+  ok=$(grep -c '^RT-OK' $b.check.out)
+  bad=$(grep -c '^RT-MISMATCH' $b.check.out)
+  skip=$(grep -c '^RT-SKIP' $b.check.out)
+  style=$(grep -c '^RT-STYLE' $b.check.out)
+  untagged=$(grep -c '^RT-UNTAGGED' $b.check.out)
+  ncases=$(grep -c '^elpi point_paths_check\.$' $f)
+  echo "$me: $ntags tags in the $ncases goals of $f: $ok ok, $bad mismatches, $style lets printed in another style by Rocq-Elpi, $skip skipped (section variables); $untagged binder names not tagged"
+  [ "$style" -ne 0 ] && { echo "$me: the lets printed in another style (not failures):"; grep '^RT-STYLE' $b.check.out; }
+  [ "$untagged" -ne 0 ] && { echo "$me: the binder names that no tag names (not failures: a printer limit):"; grep '^RT-UNTAGGED' $b.check.out; }
+  if [ "$bad" -ne 0 ]; then
+    echo "$me: the mismatches (case, part, path, the tag's text, the text at the path):"
+    grep '^RT-MISMATCH' $b.check.out; status=1
+  fi
+  [ $((ok + skip + style + bad)) -eq "$ntags" ] || { echo "$me: $ntags tags but $((ok + skip + style + bad)) checks"; status=1; }
 }
-/^elpi point_paths_check\.$/ { n++; printf "%s", chk[n]; next }
-{ print }' point_paths_cases.v > rt_check.v
-if ! rocq c -R . coq_tmp rt_check.v > check.out 2> check.err; then
-  echo "$me: the copy with the checks does not compile:"; cat check.err; exit 2
+roundtrip point_paths_cases.v
+if echo 'From mathcomp Require Import ssreflect.' > mc_probe.v && rocq c mc_probe.v > /dev/null 2>&1; then
+  roundtrip point_paths_cases_mathcomp.v
+else
+  echo "$me: mathcomp is not installed: point_paths_cases_mathcomp.v is not checked"
 fi
-ok=$(grep -c '^RT-OK' check.out)
-bad=$(grep -c '^RT-MISMATCH' check.out)
-skip=$(grep -c '^RT-SKIP' check.out)
-style=$(grep -c '^RT-STYLE' check.out)
-ncases=$(grep -c '^elpi point_paths_check\.$' point_paths_cases.v)
-echo "$me: $ntags tags in the $ncases goals of point_paths_cases.v: $ok ok, $bad mismatches, $style lets printed in another style by Rocq-Elpi, $skip skipped (section variables)"
-[ "$style" -ne 0 ] && { echo "$me: the lets printed in another style (not failures):"; grep '^RT-STYLE' check.out; }
-if [ "$bad" -ne 0 ]; then
-  echo "$me: the mismatches (case, part, path, the tag's text, the text at the path):"
-  grep '^RT-MISMATCH' check.out
-  exit 1
-fi
-[ $((ok + skip + style)) -eq "$ntags" ] || { echo "$me: $ntags tags but $((ok + skip + style)) checks"; exit 1; }
-exit 0
+exit $status

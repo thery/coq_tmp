@@ -214,3 +214,27 @@ Goal two_is = two_is.
 elpi point_run_path_expect "Where defined" "coq_tmp.point_paths_test.two_is: a lemma or an opaque definition (Qed), in the library coq_tmp.point_paths_test" "" "2".
 Fail elpi point_run_path "Unfolds to" "2".
 Abort.
+
+(* the notation actions (point_actions_notations.v): the line written,
+   the line run, the goal printed after it *)
+From coq_tmp Require Import point_actions_notations.
+Goal forall a b : nat, a + b * 2 = b /\ forall n : nat, n * n = 0.
+intros a b.
+elpi point_run_path_expect "Disable notation" "Disable Notation := (Nat.mul _ _) (all)." "" "1.2.2".
+(* under a binder *)
+elpi point_run_path_expect "Disable notation" "Disable Notation := (Nat.mul _ _) (all)." "" "2.2.2".
+Disable Notation := (Nat.mul _ _) (all).
+elpi point_run_path_expect "Type of" "a + Nat.mul b 2 = b : Prop" "" "1".
+Fail elpi point_run_path "Disable notation" "1.2.2".
+elpi point_run_path_expect "Enable notation" "Enable Notation := (Nat.mul _ _) (all)." "" "1.2.2".
+Enable Notation := (Nat.mul _ _) (all).
+elpi point_run_path_expect "Type of" "a + b * 2 = b : Prop" "" "1".
+Fail elpi point_run_path "Enable notation" "1.2.2".
+(* eq's type is implicit: no _ for it; not covers ~ x and x <> y *)
+elpi point_run_path_expect "Disable notation" "Disable Notation := (eq _ _) (all)." "" "1".
+elpi point_run_path_expect "Without notations" "eq (Nat.add a (Nat.mul b 2)) b" "" "1".
+elpi point_run_path_expect "Without notations" "Nat.mul n n" "" "2.2.2".
+(* a variable, a product: no head *)
+Fail elpi point_run_path "Disable notation" "1.2.1".
+Fail elpi point_run_path "Disable notation" "2".
+Abort.

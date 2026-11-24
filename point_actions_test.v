@@ -504,3 +504,16 @@ elpi point_run_expect "Say text" "the selection is a + b" "" H 0 3.
 (* two selections: a show action takes one *)
 Fail elpi point_run "Type of" H 0 1 H 2 3.
 Abort.
+
+(* ---------- The notation actions (point_actions_notations.v) ---------- *)
+From coq_tmp Require Import point_actions_notations.
+Goal forall a b : nat, a + b * 2 = b.
+intros a b.
+(* a+b*2=b: b * 2 is 2 to 5 *)
+elpi point_run_expect "Disable notation" "Disable Notation := (Nat.mul _ _) (all)." "" 2 5.
+elpi point_run_expect "Without notations" "Init.Nat.add a (Init.Nat.mul b 2)" "" 0 5.
+Disable Notation := (Nat.mul _ _) (all).
+(* a+Init.Nat.mulb2=b (Init.Nat.mul here): its application is 2 to 16 *)
+elpi point_run_expect "Enable notation" "Enable Notation := (Nat.mul _ _) (all)." "" 2 16.
+Enable Notation := (Nat.mul _ _) (all).
+Abort.

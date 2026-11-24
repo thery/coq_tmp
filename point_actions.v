@@ -571,6 +571,11 @@ Elpi Accumulate pbp_select.db lp:{{
 % a warning.  No action declared here does.
 pred point-action-names o:string.
 
+% [point-action-any-subterm Name] the action Name does not write a pattern:
+% point_run_path gives it any subterm, even one whose pattern does not
+% pass the check (as the actions of kind show)
+pred point-action-any-subterm o:string.
+
 % [point-run-paths Ctx G Args Line Ws] Line is the line of the action and
 % the path selections given by Args (point_run_path), in the goal G; Ws
 % are the texts of the subterms that selections were widened to
@@ -585,7 +590,8 @@ point-run-paths Ctx G [str Name | As] Line Ws :- !,
   (N = KN, ! ;
    coq.ltac.fail 0 {msg "the action"} Name "is of kind" KS "and takes" KN
      "selection(s), not" N),
-  (K = show, !, NC = paths-no-check ; NC = paths-default),
+  ((K = show ; point-action-any-subterm Name), !, NC = paths-no-check ;
+   NC = paths-default),
   (point-action-names Name, !, (paths-keep-names, NC) => point-resolve-paths Ctx G Sels In Ws ;
    NC => point-resolve-paths Ctx G Sels In Ws),
   (Impl In Line, ! ;
@@ -745,4 +751,38 @@ solve (goal Ctx _ Ty _ [] as G) [seal G] :-
   std.map Hs (h\ n\ sigma V T\ hyp-of Ctx h V T, rt-count Names bm-hyp T n) Ns,
   std.fold Ns N0 (a\ b\ c\ c is a + b) N,
   coq.say "point_paths_check:" N "paths".
+}}.
+
+(* [elpi point_paths_untagged Case Part P1 .. Pn], for
+   point_paths_roundtrip.sh: Part is "|-" (the conclusion) or a hypothesis,
+   P1 .. Pn the paths the printer tagged in it; prints RT-UNTAGGED for each
+   binder name of the part (of a binder whose variable is used) that no
+   tag names: a name the display prints without its tag (exists x, ..) *)
+Elpi Tactic point_paths_untagged.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+pred rt-used-name-path i:term, o:list int.
+rt-used-name-path T P :- path-of T Q, std.append Q [0] P, name-at T P _,
+  rt-binder-used T Q.
+pred rt-binder-used i:term, i:list int.
+rt-binder-used T [] :- !, rt-binder T _ F, pi x\ occurs x (F x).
+rt-binder-used T [I|Q] :- kids T Ks, std.nth I Ks K,
+  (K = kt U, rt-binder-used U Q ; K = kb _ _ F, pi x\ rt-binder-used (F x) Q).
+solve (goal Ctx _ Ty _ [str Case, str Where | Tags] as G) [seal G] :-
+  (Where = "|-", !, T = Ty, M = bm-goal 0 ;
+   std.mem Ctx (decl _ N _), coq.name->id N Where, !, hyp-of Ctx Where _ T, M = bm-hyp ;
+   T = {{ True }}, M = bm-hyp),
+  std.map-filter Ctx (d\ h\ sigma V N1 Ty1 B\ (d = decl V N1 Ty1 ; d = def V N1 Ty1 B),
+                         coq.name->id N1 h) Names,
+  std.map Tags (t\ p\ sigma S\ t = str S, path-of-string S p) Ps,
+  std.findall (rt-used-name-path T P_) Sols,
+  std.forall Sols (s\ sigma P S PS PS0 R Q R1 Q1 B\ s = rt-used-name-path T P,
+    ((std.mem! Ps P ;
+      % (a binder that is not printed: no tag below it)
+      std.rev P [_|R], std.rev R Q,
+      not (std.exists Ps (t\ sigma Rest\ std.appendR Q [_|Rest] t))), ! ;
+     (rt-name-at Names [] M T P S, ! ; S = "?"),
+     std.map P (n\ x\ x is int_to_string n) PS0, std.string.concat "." PS0 PS,
+     std.rev P [_|R1], std.rev R1 Q1, (text-at-names Names M Q1 T B, ! ; B = "?"),
+     coq.say "RT-UNTAGGED" Case Where PS S "in" B)).
 }}.
