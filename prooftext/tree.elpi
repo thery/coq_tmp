@@ -34,8 +34,12 @@ type text-error string -> list string -> text-error.
 % what a node holds, in the order of the text
 kind content type.
 type run string -> list prooftext.text-part -> content.
-                                % a run of its own text: as written, and
-                                % its parts (text-parts, formulas.elpi)
+                                % a run of its own text: as written (a
+                                % newline where a line of the file ends,
+                                % the indentation of the next one left
+                                % out), and its parts (text-parts,
+                                % formulas.elpi, of its lines joined by a
+                                % space)
 type sub node -> content.       % a subnode
 type para-end content.          % the end of one of its paragraphs
 type flaw int -> text-error -> content.
@@ -391,14 +395,32 @@ merge-texts [I | Is] [I | Ms] :- merge-texts Is Ms.
 % paragraph)
 pred inline-contents i:list segment, i:spot, i:list inline, o:list content.
 inline-contents _ _ [] [].
-inline-contents Segs M [text-at _ S | Is] [run S Parts | Cs] :-
-  prooftext.text-parts S Parts, inline-contents Segs M Is Cs.
+inline-contents Segs M [text-at O S | Is] [run Written Parts | Cs] :-
+  prooftext.text-parts S Parts, line-ends Segs O S Written,
+  inline-contents Segs M Is Cs.
 inline-contents Segs M [span-at O C Sub | Is] [sub (node bracketed (prooftext.lines L1 L2) Mark M Cs1) | Cs] :-
   offset-spot Segs O (spot L1 _), offset-spot Segs C (spot L2 _),
   offset-spot Segs {calc (O + 1)} Mark,
   inline-contents Segs M Sub Cs1, inline-contents Segs M Is Cs.
 inline-contents Segs M [error-at O E | Is] [flaw L E | Cs] :-
   offset-spot Segs O (spot L _), inline-contents Segs M Is Cs.
+
+% [line-ends Segments O S Written]: the text S, at the offset O of a
+% paragraph, as written: the space that joins two of its lines (the one
+% before the offset where a line starts) is a newline in Written
+pred line-ends i:list segment, i:int, i:string, o:string.
+line-ends Segs O S Written :-
+  E is O + size S,
+  std.filter Segs (s\ sigma Off N K\ s = segment Off N K, Off > O, Off =< E) Inside,
+  std.map Inside (s\ b\ sigma Off N K\ s = segment Off N K, b is Off - 1 - O) Breaks,
+  breaks-at S 0 Breaks Written.
+
+% [breaks-at S From Breaks Written]: S from the offset From, a newline at
+% each of the offsets Breaks (increasing)
+pred breaks-at i:string, i:int, i:list int, o:string.
+breaks-at S From [] W :- W is substring S From (size S - From).
+breaks-at S From [B | Bs] W :-
+  W is substring S From (B - From) ^ "\n" ^ {breaks-at S {calc (B + 1)} Bs}.
 
 % [offset-spot Segments O Spot]: the line and the column, in the file, of
 % the offset O of a paragraph

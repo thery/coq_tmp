@@ -1,0 +1,640 @@
+% prooftext: the converter between the two syntaxes of a proof text, the
+% structured one (one list item "- " per node, nesting by indentation) and
+% the free one (prose, a node a span [ ... ]{.p} or a div ::: p ... :::).
+% (load after tree.elpi and nodes.elpi)
+%
+% The text is read by the reader (tree.elpi, read-tree: both syntaxes give
+% the same tree), then written from its tree in the other syntax, by
+% write-structured or write-free.  The lines before the body (the header,
+% the title and what comes between them) are copied unchanged.  The rules
+% are in README.md, "Converting between the two styles".
+
+namespace prooftext {
+
+% ------------------------------------------------------------------
+% The text of a node, for a writer
+
+% a piece of the text of a node, in the order of the text
+kind piece type.
+type ptext string -> piece.               % its own text, as written
+type pnode prooftext.origin -> bool -> list piece -> piece.
+                                           % a subnode: how it is opened,
+                                           % tt for a span that starts in
+                                           % the middle of a line
+type pbreak piece.                         % the end of a paragraph or of
+                                           % a block (a list item, a div)
+
+% [node-pieces Lines N Ps]: the pieces of the node N of a text of lines Lines: its runs of text (the
+% spaces between two subnodes left out), its subnodes, the ends of its
+% paragraphs; a list item or a div is a block, with an end before and
+% after it; no two ends follow each other, none at the start or at the
+% end
+pred node-pieces i:list string, i:prooftext.node, o:list piece.
+node-pieces Ls (prooftext.node _ _ _ _ Cs) Ps :- contents-pieces Ls Cs Ps0, tidy-pieces Ps0 Ps.
+
+pred contents-pieces i:list string, i:list prooftext.content, o:list piece.
+contents-pieces _ [] [].
+contents-pieces Ls [prooftext.run S _ | Cs] [ptext S | Ps] :- !, contents-pieces Ls Cs Ps.
+contents-pieces Ls [prooftext.para-end | Cs] [pbreak | Ps] :- !, contents-pieces Ls Cs Ps.
+contents-pieces Ls [prooftext.sub (prooftext.node prooftext.bracketed _ Mark _ _ as N) | Cs] [pnode prooftext.bracketed Mid Sub | Ps] :- !,
+  (if (mid-line Ls Mark) (Mid = tt) (Mid = ff)),
+  node-pieces Ls N Sub, contents-pieces Ls Cs Ps.
+contents-pieces Ls [prooftext.sub (prooftext.node O _ _ _ _ as N) | Cs] [pbreak, pnode O ff Sub, pbreak | Ps] :- !,
+  node-pieces Ls N Sub, contents-pieces Ls Cs Ps.
+contents-pieces Ls [_ | Cs] Ps :- contents-pieces Ls Cs Ps.
+
+% [mid-line Lines Mark]: the span whose text starts at Mark (after its [)
+% does not start its line in the lines Lines of the text
+pred mid-line i:list string, i:prooftext.spot.
+mid-line Ls (prooftext.spot L C) :- std.nth L Ls S, prooftext.text-indent S J, C - 1 > J.
+
+% [tidy-pieces Ps Qs]: the pieces Ps, the texts next to each other joined,
+% the blank ones left out, the ends of paragraphs one at a time and none
+% at the ends
+pred tidy-pieces i:list piece, o:list piece.
+tidy-pieces Ps Qs :- join-texts Ps Ps1, std.filter Ps1 (p\ not (blank-piece p)) Ps2,
+  single-breaks Ps2 Ps3, trim-breaks Ps3 Qs.
+
+pred join-texts i:list piece, o:list piece.
+join-texts [] [].
+join-texts [ptext A, ptext B | Ps] Qs :- !, join-texts [ptext {calc (A ^ B)} | Ps] Qs.
+join-texts [P | Ps] [P | Qs] :- join-texts Ps Qs.
+
+pred blank-piece i:piece.
+blank-piece (ptext S) :- blank S.
+
+pred single-breaks i:list piece, o:list piece.
+single-breaks [] [].
+single-breaks [pbreak, pbreak | Ps] Qs :- !, single-breaks [pbreak | Ps] Qs.
+single-breaks [P | Ps] [P | Qs] :- single-breaks Ps Qs.
+
+pred trim-breaks i:list piece, o:list piece.
+trim-breaks [pbreak | Ps] Qs :- !, trim-breaks Ps Qs.
+trim-breaks Ps Qs :- std.rev Ps Rs, (if (Rs = [pbreak | Rs1]) (std.rev Rs1 Qs) (Qs = Ps)).
+
+% ------------------------------------------------------------------
+% Strings
+
+% the width of the lines the converter makes (where it joins two pieces);
+% the lines of the author are kept as written, whatever their length
+pred line-width o:int.
+line-width 80.
+
+% A text as written holds newlines; the regular expressions read ^ and $
+% at the start and the end of each line, so that a text is tested on its
+% flat copy (newlines as spaces: the same length, the same offsets)
+
+% [flat S F]: S, its newlines as spaces
+pred flat i:string, o:string.
+flat S F :- rex.replace "\n" " " S F.
+
+% [blank S]: S has only spaces and newlines
+pred blank i:string.
+blank S :- rex.match "^ *$" {flat S}.
+
+% [strip-left S T], [strip-right S T], [strip S T]: S without the spaces
+% and newlines at its start, at its end, at both
+pred strip-left i:string, o:string.
+strip-left S T :- rex.replace "^ +" "" {flat S} F, N is size S - size F, T is substring S N (size F).
+pred strip-right i:string, o:string.
+strip-right S T :- rex.replace " +$" "" {flat S} F, T is substring S 0 (size F).
+pred strip i:string, o:string.
+strip S T :- strip-left S S1, strip-right S1 T.
+
+% [written-lines S Ls]: the lines of the text S (a newline ends a line),
+% without their spaces at the end
+pred written-lines i:string, o:list string.
+written-lines S Ls :- rex.split "\n" S Ls0, std.map Ls0 (l\ t\ rex.replace " +$" "" l t) Ls.
+
+% [first-line-of S L]: the first line of S
+pred first-line-of i:string, o:string.
+first-line-of S L :- written-lines S [L | _].
+
+% the punctuation marks, and those that end a sentence (with those of the
+% languages of the lexicon)
+pred mark-regexp o:string.
+mark-regexp "\\([.,;:!?]\\|。\\|，\\|；\\|：\\|？\\|！\\|،\\|؛\\|؟\\)".
+pred stop-regexp o:string.
+stop-regexp "\\([.!?]\\|。\\|？\\|！\\|؟\\)".
+
+% [ends-with-mark S]: S ends with a punctuation mark (spaces aside)
+pred ends-with-mark i:string.
+ends-with-mark S :- mark-regexp M, rex.match {calc ("^.*" ^ M ^ "$")} {sentence-end S}.
+
+% [ends-sentence S]: S ends with the end of a sentence
+pred ends-sentence i:string.
+ends-sentence S :- stop-regexp M, rex.match {calc ("^.*" ^ M ^ "$")} {sentence-end S}.
+
+% [sentence-end S T]: S flat, without its spaces at its ends and the tagged
+% names at its end (a justification after its sentence: `C`{.claim}.
+% *lia*{.just})
+pred sentence-end i:string, o:string.
+sentence-end S T :- rex.replace "\\( *[*][^*]+[*]{[.][A-Za-z]+}\\)+$" "" {flat {strip S}} T0, strip T0 T.
+
+% [starts-lower S]: S starts with a lower case letter (of ASCII)
+pred starts-lower i:string.
+starts-lower S :- rex.match "^[a-z]" {flat {strip S}}.
+
+% [starts-capital S]: S starts with an upper case letter (of ASCII)
+pred starts-capital i:string.
+starts-capital S :- rex.match "^[A-Z]" {flat {strip S}}.
+
+% [sentence-count S N]: the number of ends of sentences in S, its
+% formulas left out (a mark that ends a sentence before a space or the
+% end)
+pred sentence-count i:string, o:int.
+sentence-count S N :-
+  rex.replace "`[^`]*`" "F" {flat S} S1, stop-regexp M,
+  rex.replace {calc (M ^ " ")} "\n#" {calc (S1 ^ " ")} S2,
+  rex.split "\n" {calc ("#" ^ S2 ^ "#")} Pieces, std.length Pieces L, N is L - 1.
+
+% [leading-marks S Marks]: the punctuation marks . , ; : ! ? at the start
+% of S
+pred leading-marks i:string, o:string.
+leading-marks S Marks :- rex.replace "^\\([.,;:!?]*\\).*" "\\1" {flat S} Marks.
+
+% [capitalised S T]: S, its first letter in upper case (ASCII)
+pred capitalised i:string, o:string.
+capitalised S T :- rex.match "^[a-z]" S, !,
+  C is substring S 0 1, upper-letter C U, T is U ^ substring S 1 (size S - 1).
+capitalised S S.
+
+pred upper-letter i:string, o:string.
+upper-letter C U :-
+  Lower = "abcdefghijklmnopqrstuvwxyz", Upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  letter-index Lower C 0 I, U is substring Upper I 1.
+pred letter-index i:string, i:string, i:int, o:int.
+letter-index S C I I :- C1 is substring S I 1, C1 = C, !.
+letter-index S C I J :- I1 is I + 1, I1 < size S, letter-index S C I1 J.
+
+% [index-of S T From I]: the first offset I >= From of T in S
+pred index-of i:string, i:string, i:int, o:int.
+index-of S T From From :- From + size T =< size S, T1 is substring S From (size T), T1 = T, !.
+index-of S T From I :- From + size T < size S, From1 is From + 1, index-of S T From1 I.
+
+% [spaces N S]: N spaces
+pred spaces i:int, o:string.
+spaces N "" :- N =< 0, !.
+spaces N S :- N1 is N - 1, spaces N1 S1, S is " " ^ S1.
+
+% ------------------------------------------------------------------
+% The first and the last words of a node
+
+% [first-text Ps S]: the first text of the pieces Ps (in a subnode if
+% they start with one), "" if there is none
+pred first-text i:list piece, o:string.
+first-text [ptext S | _] S :- !.
+first-text [pnode _ _ Sub | _] S :- !, first-text Sub S.
+first-text [pbreak | Ps] S :- !, first-text Ps S.
+first-text [] "".
+
+% [last-text Ps S]: the last text of the pieces Ps, "" if there is none
+pred last-text i:list piece, o:string.
+last-text Ps S :- std.rev Ps Rs, last-text-rev Rs S.
+pred last-text-rev i:list piece, o:string.
+last-text-rev [ptext S | _] S :- !.
+last-text-rev [pnode _ _ Sub | _] S :- !, last-text Sub S.
+last-text-rev [pbreak | Rs] S :- !, last-text-rev Rs S.
+last-text-rev [] "".
+
+% [added-stop Q Next]: the full stop that the free writer adds after the
+% subnode Q (a span) when its text has no punctuation mark at its end and
+% what follows it, Next, starts with a capital letter
+pred added-stop i:list piece, i:string.
+added-stop Q Next :- last-text Q L, not (L = ""), not (ends-with-mark L), starts-capital Next.
+
+% [added-final-stop Q]: the full stop that the free writer adds after
+% the subnode Q at the end of a paragraph (in a div or the top node)
+pred added-final-stop i:list piece.
+added-final-stop Q :- last-text Q L, not (L = ""), not (ends-with-mark L).
+
+% ------------------------------------------------------------------
+% The structured style
+
+% a block of a list item: a paragraph (its text, as written), or a
+% sub-item (its blocks)
+kind sblock type.
+type spara bool -> string -> sblock.  % tt: it starts in the middle of a
+                                      % line of the text read
+type sitem list sblock -> sblock.
+
+% [write-structured File Text]: the text of the file File in the
+% structured style
+pred write-structured i:string, o:string.
+write-structured File Text :-
+  prooftext.read-lines File Lines, prooftext.lines-tree Lines (prooftext.proof-text _ _ Top),
+  preamble Lines Pre,
+  node-pieces Lines Top Ps, s-blocks ff Ps Blocks,
+  top-lines Blocks Body,
+  std.append Pre ["" | Body] All,
+  std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
+
+% [preamble Lines Pre]: the lines of a text up to its title (the header
+% and the lines between it and the title, the title)
+pred preamble i:list string, o:list string.
+preamble Lines Pre :-
+  prooftext.number-lines 0 Lines Numbered, prooftext.header-of Numbered _ Body, prooftext.title-of Body _ After,
+  std.length Lines N, std.length After M, K is N - M, std.take K Lines Pre0,
+  std.rev Pre0 R, drop-blank-lines R R1, std.rev R1 Pre.
+
+pred drop-blank-lines i:list string, o:list string.
+drop-blank-lines [L | Ls] Rs :- prooftext.trim L "", !, drop-blank-lines Ls Rs.
+drop-blank-lines Ls Ls.
+
+% [s-blocks Mid Ps Blocks]: the blocks of the pieces Ps of a node (Mid,
+% tt when its text starts in the middle of a line).  A subnode is a
+% sub-item; the text around it, paragraphs; the punctuation marks right
+% after a subnode go to the end of its text
+pred s-blocks i:bool, i:list piece, o:list sblock.
+s-blocks Mid Ps Blocks :- s-walk Ps "" Mid ff [] Rev, std.rev Rev Blocks.
+
+% [s-walk Ps Acc Mid Glued Out Rev]: Acc, the text of the paragraph being
+% read, Mid tt when it starts in the middle of a line; Glued, tt right
+% after a subnode in the same paragraph; Out, the blocks so far, the
+% latest first
+pred s-walk i:list piece, i:string, i:bool, i:bool, i:list sblock, o:list sblock.
+s-walk [] Acc Mid _ Out Rev :- flush Acc Mid Out Rev.
+s-walk [pbreak | Ps] Acc Mid _ Out Rev :- !, flush Acc Mid Out Out1, s-walk Ps "" ff ff Out1 Rev.
+s-walk [pnode _ M Q | Ps] Acc Mid _ Out Rev :- !,
+  flush Acc Mid Out Out1, s-item M Q Item, s-walk Ps "" ff tt [Item | Out1] Rev.
+s-walk [ptext S | Ps] "" _ tt [sitem I | Out] Rev :- !,
+  rex.replace "^ +" "" S S1, (if (rex.match "^\n" S1) (Mid = ff) (Mid = tt)),
+  strip-left S S0, leading-marks S0 Marks,
+  R is substring S0 (size Marks) (size S0 - size Marks),
+  (if (Marks = "") (I1 = I) (append-marks I Marks I1)),
+  s-walk Ps {strip-left R} Mid ff [sitem I1 | Out] Rev.
+s-walk [ptext S | Ps] Acc Mid _ Out Rev :- s-walk Ps {calc (Acc ^ S)} Mid ff Out Rev.
+
+% [item-last-text Blocks S]: the last text of the blocks of an item
+pred item-last-text i:list sblock, o:string.
+item-last-text Bs S :- std.last Bs B, (B = spara _ S, ! ; B = sitem Sub, item-last-text Sub S).
+
+% [append-marks Blocks Marks Blocks1]: the blocks of an item, Marks at the
+% end of their last text
+pred append-marks i:list sblock, i:string, o:list sblock.
+append-marks Bs M Bs1 :-
+  std.rev Bs [B | Rs],
+  (B = spara J S, !, B1 = spara J {calc (S ^ M)} ; B = sitem Sub, append-marks Sub M Sub1, B1 = sitem Sub1),
+  std.rev [B1 | Rs] Bs1.
+
+% [flush Acc Mid Out Out1]: the paragraph Acc added to the blocks (if it is
+% not blank)
+pred flush i:string, i:bool, i:list sblock, o:list sblock.
+flush Acc _ Out Out :- blank Acc, !.
+flush Acc Mid Out [spara Mid T | Out] :- strip Acc T.
+
+% [s-item Mid Q Item]: the sub-item of the subnode of pieces Q (Mid, tt
+% for a span that starts in the middle of a line).  Its first
+% block must be a paragraph: a node whose text starts with a subnode gets
+% words of its own before it (lead-blocks)
+pred s-item i:bool, i:list piece, o:sblock.
+s-item Mid Q (sitem Blocks) :- s-blocks Mid Q B0, lead-blocks B0 Blocks.
+
+% [lead-blocks Bs Bs1]: the blocks of an item, its first one a paragraph.
+% When they start with sub-items, its first paragraph after them gives
+% the words before them: its variables and hypotheses, if they are its
+% first tags (moved, followed by a colon; their order among the tags of
+% the node is kept), else the whole paragraph (moved before the
+% sub-items).  A node with no paragraph (a remark around its subnodes)
+% gets an empty comment <!-- --> as its own text
+pred lead-blocks i:list sblock, o:list sblock.
+lead-blocks [spara M P | Bs] [spara M P | Bs] :- !.
+lead-blocks Bs Bs1 :-
+  split-while (b\ sigma I\ b = sitem I) Bs Items Rest, Rest = [spara M P | Rest1], !,
+  (if (leading-assumptions P Fs Q)
+      (std.string.concat ", " Fs Lead0, Lead is Lead0 ^ ":",
+       (if (blank Q) (Tail = Rest1) (Tail = [spara M Q | Rest1])),
+       std.append [spara ff Lead | Items] Tail Bs1)
+      (std.append [spara M P | Items] Rest1 Bs1)).
+lead-blocks Bs [spara ff "<!-- -->" | Bs].
+
+% [split-while P Xs Ys Zs]: Xs is Ys then Zs, Ys the longest start of Xs
+% whose elements satisfy P
+pred split-while i:(pred i:A), i:list A, o:list A, o:list A.
+split-while P [X | Xs] [X | Ys] Zs :- P X, !, split-while P Xs Ys Zs.
+split-while _ Xs [] Xs.
+
+% [leading-assumptions P Fs Q]: the variables and hypotheses that come
+% first among the tags of the paragraph P (at least one), as written (with
+% their names), and P without them
+pred leading-assumptions i:string, o:list string, o:string.
+leading-assumptions P [F | Fs] Q :-
+  prooftext.text-parts {flat P} Parts,
+  std.filter Parts prooftext.is-tag Tags,
+  split-while assumption-part Tags Assumptions _,
+  Assumptions = [_ | _],
+  std.fold Assumptions (pr [] P) remove-assumption (pr Rev Q),
+  std.rev Rev [F | Fs].
+
+% [assumption-part P]: P is a variable or a hypothesis
+pred assumption-part i:prooftext.text-part.
+assumption-part (prooftext.formula-part C _ _) :- (prooftext.role-tag rvar C ; prooftext.role-tag rhyp C), !.
+
+% [remove-assumption Part (pr Fs P) (pr Fs1 Q)]: the formula Part taken
+% out of the paragraph P (its first occurrence, with its name), its
+% written form added to Fs; the commas around it mended
+pred remove-assumption i:prooftext.text-part, i:pair (list string) string, o:pair (list string) string.
+remove-assumption (prooftext.formula-part C F N) (pr Fs P) (pr [W | Fs] Q) :-
+  Formula is "`" ^ F ^ "`{." ^ C ^ "}",
+  index-of {flat P} Formula 0 I,
+  After0 is substring P (I + size Formula) (size P - I - size Formula),
+  (if (N = some Name)
+      (strip-left After0 A0, NameText is "(" ^ Name ^ ")",
+       After is substring A0 (size NameText) (size A0 - size NameText),
+       W is Formula ^ " " ^ NameText)
+      (After = After0, W = Formula)),
+  Before is substring P 0 I,
+  mend Before After Q.
+
+% [mend Before After Q]: the text Before, then After, a formula taken out
+% between them: a comma of one of them left out when the other has one,
+% or when After starts with another mark or is empty
+pred mend i:string, i:string, o:string.
+mend Before After Q :-
+  strip-right Before B1, strip-left After A1,
+  Between is substring Before (size B1) (size Before - size B1) ^ substring After 0 (size After - size A1),
+  (if (flat Between Between) (Sep = " ") (Sep = "\n")),
+  mend-parts B1 A1 Sep Q.
+pred mend-parts i:string, i:string, i:string, o:string.
+mend-parts "" A _ Q :- !, drop-comma A Q.
+mend-parts B A Sep Q :- rex.match "^," A, rex.match "^.*[,;:]$" {flat B}, !,
+  drop-comma A A2, (if (A2 = "") (Q = B) (Q is B ^ Sep ^ A2)).
+mend-parts B A _ Q :- (A = "" ; rex.match "^[.;:!?]" A), rex.match "^.*,$" {flat B}, !,
+  Q is substring B 0 (size B - 1) ^ A.
+mend-parts B A _ Q :- (A = "" ; rex.match "^[.,;:!?]" A), !, Q is B ^ A.
+mend-parts B A Sep Q :- Q is B ^ Sep ^ A.
+
+% [drop-comma A B]: A without the comma at its start and the spaces after it
+pred drop-comma i:string, o:string.
+drop-comma A B :- rex.match "^," A, !, strip-left {calc (substring A 1 (size A - 1))} B.
+drop-comma A A.
+
+% [top-lines Blocks Lines]: the lines of the blocks of the top node:
+% paragraphs at column 0, an empty line between two blocks except two
+% items
+pred top-lines i:list sblock, o:list string.
+top-lines Bs Lines :- block-lines 0 ff Bs none Lines.
+
+% [block-lines C InItem Bs Prev Lines]: the lines of the blocks Bs, at the
+% column C (the text of an item; its sub-items start there), Prev the
+% block before them.  An empty line before a paragraph that follows a
+% block; in the top node also before an item that follows a paragraph.
+% A paragraph of the top node (the statement) stays as written, at the
+% column 0 in both styles
+pred block-lines i:int, i:bool, i:list sblock, i:option sblock, o:list string.
+block-lines _ _ [] _ [].
+block-lines C InItem [B | Bs] Prev Lines :-
+  block-gap InItem Prev B Gap,
+  (if (InItem = ff, B = spara _ P0) (written-lines P0 Own) (block-text C Prev B Own)),
+  block-lines C InItem Bs (some B) Next,
+  std.append Gap Own L1, std.append L1 Next Lines.
+
+pred block-gap i:bool, i:option sblock, i:sblock, o:list string.
+block-gap _ none _ [] :- !.
+block-gap _ (some (sitem _)) (sitem _) [] :- !.
+block-gap tt (some (spara _ _)) (sitem _) [] :- !.
+block-gap _ _ _ [""].
+
+% [block-text C Prev B Lines]: the lines of one block at the column C, as
+% written (paragraph-lines)
+pred block-text i:int, i:option sblock, i:sblock, o:list string.
+block-text C _ (spara Mid P) Lines :-
+  paragraph-lines C Mid P Ls,
+  spaces C Indent, std.map Ls (l\ r\ r is Indent ^ l) Lines.
+block-text C _ (sitem [spara Mid P | Bs]) Lines :-
+  paragraph-lines {calc (C + 2)} Mid P [L | Ls],
+  spaces C Indent, spaces {calc (C + 2)} Indent2,
+  Head is Indent ^ "- " ^ L,
+  std.map Ls (l\ r\ r is Indent2 ^ l) More,
+  block-lines {calc (C + 2)} tt Bs (some (spara Mid P)) Next,
+  std.append [Head | More] Next Lines.
+
+% [paragraph-lines C Join P Ls]: the lines of the paragraph P at the
+% column C: its own lines, its first one joined with the next ones while
+% the line fits in the width when Join = tt (a text that started in the
+% middle of a line in the free style, after a span, starts with a short
+% line: a line the converter made)
+pred paragraph-lines i:int, i:bool, i:string, o:list string.
+paragraph-lines C Join P Ls :-
+  written-lines P Ls0, (if (Join = tt) (join-first C Ls0 Ls) (Ls = Ls0)).
+
+
+pred join-first i:int, i:list string, o:list string.
+join-first C [A, B | Ls] Out :- line-width W, C + size A + 1 + size B =< W, !,
+  join-first C [{calc (A ^ " " ^ B)} | Ls] Out.
+join-first _ Ls Ls.
+
+% ------------------------------------------------------------------
+% The free style
+
+% a block of the free style: a paragraph (its pieces: texts and spans),
+% or a div (the pieces of its node)
+kind fblock type.
+type fpara list piece -> fblock.
+type fdiv list piece -> fblock.
+
+% [write-free File Text]: the text of the file File in the free style
+pred write-free i:string, o:string.
+write-free File Text :-
+  prooftext.read-lines File Lines, prooftext.lines-tree Lines (prooftext.proof-text Fields _ Top),
+  preamble Lines Pre,
+  node-pieces Lines Top Ps,
+  prooftext.header-lang Fields Lang,
+  (if (capitalised-lang Lang) (Cap = tt) (Cap = ff)),
+  ((capitals Cap :- !) => free-lines Ps Body),
+  std.append Pre ["" | Body] All,
+  std.string.concat "\n" All Text0, Text is Text0 ^ "\n".
+
+% [needs-div Q]: the node of pieces Q is written as a div: its subnodes
+% hold several sentences, or it has two paragraphs one after the other
+% (no subnode between them), or one of its subnodes is a div
+pred needs-div i:list piece.
+needs-div Q :- std.exists Q (p\ sigma Sub\ p = pnode _ _ Sub, needs-div Sub), !.
+needs-div Q :- two-paragraphs Q, !.
+needs-div Q :- sub-sentences Q N, N >= 2.
+
+pred two-paragraphs i:list piece.
+two-paragraphs [ptext _, pbreak, ptext _ | _] :- !.
+two-paragraphs [_ | Ps] :- two-paragraphs Ps.
+
+% [sub-sentences Q N]: the number of sentences in the subnodes of Q
+pred sub-sentences i:list piece, o:int.
+sub-sentences Q N :-
+  std.map-filter Q (p\ n\ sigma Sub\ p = pnode _ _ Sub, all-sentences Sub n) Ns,
+  std.fold Ns 0 (x\ a\ b\ b is a + x) N.
+
+% [all-sentences Q N]: the number of sentences in the pieces Q
+pred all-sentences i:list piece, o:int.
+all-sentences Q N :-
+  std.map Q piece-sentences Ns, std.fold Ns 0 (x\ a\ b\ b is a + x) N.
+pred piece-sentences i:piece, o:int.
+piece-sentences (ptext S) N :- !, sentence-count S N.
+piece-sentences (pnode _ _ Sub) N :- !, all-sentences Sub N.
+piece-sentences _ 0.
+
+% [free-lines Ps Lines]: the lines of the blocks of the pieces Ps (of the
+% top node, or of a div), an empty line between two blocks
+pred free-lines i:list piece, o:list string.
+free-lines Ps Lines :- f-blocks tt Ps Blocks, fblocks-lines tt Blocks Lines.
+
+pred fblocks-lines i:bool, i:list fblock, o:list string.
+fblocks-lines _ [] [].
+fblocks-lines Top [B] Lines :- !, fblock-lines Top B Lines.
+fblocks-lines Top [B | Bs] Lines :-
+  fblock-lines Top B L1, fblocks-lines Top Bs L2, std.append L1 ["" | L2] Lines.
+
+% [fblock-lines Top B Lines]: the lines of the block B, of the top node
+% when Top = tt: a paragraph of its own text there (the statement) stays
+% as written, at the column 0 in both styles
+pred fblock-lines i:bool, i:fblock, o:list string.
+fblock-lines tt (fpara [ptext S]) Lines :- !, written-lines {strip S} Lines.
+fblock-lines _ (fdiv Q) Lines :-
+  f-blocks ff Q Blocks, fblocks-lines ff Blocks Inner, std.append ["::: p" | Inner] [":::"] Lines.
+fblock-lines _ (fpara Ps) Lines :-
+  paragraph-pieces Ps Ps1,
+  line-width W,
+  inline-pieces Ps1 none (lb W [] "") (lb _ Rev Cur),
+  std.rev [Cur | Rev] Lines.
+
+% [capitals Cap]: Cap = tt when the free writer puts a capital letter at
+% the start of a paragraph: for the languages of the lexicon written in
+% the Latin alphabet with capitals at the start of a sentence
+% (capitalised-lang); not for the others, where a paragraph may start
+% with a name (eq in Korean)
+pred capitals o:bool.
+pred capitalised-lang i:string.
+capitalised-lang L :- std.mem ["en", "fr", "it", "de", "nl", "la"] L.
+
+% [paragraph-pieces Ps Ps1]: the pieces of a paragraph of the free
+% style: a capital letter at its start (capitals), a full stop at its end after a
+% span with no punctuation mark at its end (added-final-stop)
+pred paragraph-pieces i:list piece, o:list piece.
+paragraph-pieces Ps Ps2 :-
+  capital-start Ps Ps1,
+  std.rev Ps1 Rs,
+  (if (Rs = [pnode _ _ Q | _], added-final-stop Q) (std.rev [ptext "." | Rs] Ps2) (Ps2 = Ps1)).
+
+pred capital-start i:list piece, o:list piece.
+capital-start Ps Ps :- capitals ff, !.
+capital-start [ptext S | Ps] [ptext T | Ps] :- !, capitalised S T.
+capital-start [pnode O M Q | Ps] [pnode O M Q1 | Ps] :- !, capital-start Q Q1.
+capital-start Ps Ps.
+
+% [f-blocks Top Ps Blocks]: the blocks of the pieces of the top node (Top =
+% tt) or of a div.  A subnode that needs a div is one; the others are
+% spans, in the paragraph of the text before them; spans one after the
+% other stay in one paragraph, except in the top node, where a new one
+% starts after a span that ends a sentence when the next one does not
+% start with a lower case letter (one paragraph per step of the proof);
+% after a paragraph that does not end a sentence (`C`{.claim}, or a
+% colon), the spans of the next items go on in it
+pred f-blocks i:bool, i:list piece, o:list fblock.
+f-blocks Top Ps Blocks :- f-walk Top Ps [] ff [] Rev, std.rev Rev Blocks.
+
+% [f-walk Top Ps Cur Break Out Rev]: Cur, the pieces of the paragraph being
+% made (the latest first); Break, tt after the end of a paragraph or block
+pred f-walk i:bool, i:list piece, i:list piece, i:bool, i:list fblock, o:list fblock.
+f-walk _ [] Cur _ Out Rev :- close-para Cur Out Rev.
+f-walk T [pbreak | Ps] Cur _ Out Rev :- !, f-walk T Ps Cur tt Out Rev.
+f-walk T [pnode _ _ Q | Ps] Cur _ Out Rev :- needs-div Q, !,
+  close-para Cur Out Out1, f-walk T Ps [] ff [fdiv Q | Out1] Rev.
+f-walk T [pnode O M Q | Ps] [pnode O0 M0 Q0 | Cur] _ Out Rev :- !,
+  (if (T = tt, last-text Q0 L, ends-sentence L, first-text Q F, not (starts-lower F))
+      (close-para [pnode O0 M0 Q0 | Cur] Out Out1, f-walk T Ps [pnode O M Q] ff Out1 Rev)
+      (f-walk T Ps [pnode O M Q, pnode O0 M0 Q0 | Cur] ff Out Rev)).
+f-walk T [pnode O M Q | Ps] [ptext S | Cur] tt Out Rev :- not (ends-sentence S), !,
+  f-walk T Ps [pnode O M Q, ptext S | Cur] ff Out Rev.
+f-walk T [P | Ps] Cur tt Out Rev :- !,
+  close-para Cur Out Out1, f-walk T Ps [P] ff Out1 Rev.
+f-walk T [P | Ps] Cur ff Out Rev :- f-walk T Ps [P | Cur] ff Out Rev.
+
+pred close-para i:list piece, i:list fblock, o:list fblock.
+close-para [] Out Out :- !.
+close-para Cur Out [fpara Ps | Out] :- std.rev Cur Ps.
+
+% the lines being written: the width they may take, the lines done (the
+% latest first), the line being written
+kind lines-being type.
+type lb int -> list string -> string -> lines-being.
+
+% [inline-pieces Ps Prev LB LB1]: the pieces of a paragraph, or of a
+% span, written after the lines LB.  Prev, the piece before them (none at
+% the start of a paragraph or of a span: its text is glued to what comes
+% before it, the [ of the span).  A span starts on a new line; between
+% two other pieces a space, or a newline when the line would be longer
+% than the width; a full stop after a span
+% with no punctuation mark at its end when the next piece starts with a
+% capital letter (added-stop); a text that starts with a punctuation mark
+% glued to the span before it
+pred inline-pieces i:list piece, i:option piece, i:lines-being, o:lines-being.
+inline-pieces [] _ LB LB.
+inline-pieces [pbreak | Ps] Prev LB LB1 :- !, inline-pieces Ps Prev LB LB1.
+inline-pieces [ptext S | Ps] Prev LB LB2 :- !,
+  strip S T,
+  (if (Prev = some (pnode _ _ Q), added-stop Q T) (lb-glue LB "." LB0) (LB0 = LB)),
+  (if (Prev = none ; rex.match "^[.,;:!?]" T) (Glue = tt) (Glue = ff)),
+  lb-text LB0 Glue T LB1,
+  inline-pieces Ps (some (ptext T)) LB1 LB2.
+inline-pieces [pnode O M Q | Ps] Prev LB LB3 :-
+  first-text Q F,
+  (if (Prev = some (pnode _ _ Q0), added-stop Q0 F) (lb-glue LB "." LB0) (LB0 = LB)),
+  (if (Prev = none) (LB1 = LB0) (lb-newline LB0 LB1)),
+  lb-glue LB1 "[" LB2,
+  inline-pieces Q none LB2 LB2a,
+  lb-glue LB2a "]{.p}" LB2b,
+  inline-pieces Ps (some (pnode O M Q)) LB2b LB3.
+
+% [lb-text LB Glue S LB1]: the text S written after the lines LB, glued
+% to the line (Glue = tt) or after a space or a newline, with its own
+% lines
+pred lb-text i:lines-being, i:bool, i:string, o:lines-being.
+lb-text LB Glue S LB2 :-
+  written-lines S [First | More],
+  (if (Glue = tt) (LB1 = LB) (lb-sep LB First LB1)),
+  lb-glue LB1 First LBF, lb-lines LBF More LB2.
+
+% [lb-glue LB S LB1]: S at the end of the line being written
+pred lb-glue i:lines-being, i:string, o:lines-being.
+lb-glue (lb W Done Cur) S (lb W Done Cur1) :- Cur1 is Cur ^ S.
+
+% [lb-newline LB LB1]: a new line (none at the start of a line)
+pred lb-newline i:lines-being, o:lines-being.
+lb-newline (lb W Done "") (lb W Done "") :- !.
+lb-newline (lb W Done Cur) (lb W [Cur | Done] "").
+
+% [lb-lines LB Ls LB1]: the lines Ls, each on a new line
+pred lb-lines i:lines-being, i:list string, o:lines-being.
+lb-lines LB [] LB.
+lb-lines (lb W Done Cur) [L | Ls] LB :- lb-lines (lb W [Cur | Done] L) Ls LB.
+
+% [lb-sep LB Next LB1]: the space before a text that starts with Next: a
+% space if Next fits on the line, else a new line (none at the start of a
+% line)
+pred lb-sep i:lines-being, i:string, o:lines-being.
+lb-sep (lb W Done "") _ (lb W Done "") :- !.
+lb-sep (lb W Done Cur) Next (lb W Done Cur1) :- size Cur + 1 + size Next =< W, !, Cur1 is Cur ^ " ".
+lb-sep (lb W Done Cur) _ (lb W [Cur | Done] "").
+
+% ------------------------------------------------------------------
+% The tree read back
+
+% the shape of a node: its tags (written as terms) and the shapes of its
+% subnodes
+kind shape type.
+type shape list string -> list shape -> shape.
+
+% [tree-shape N S]: the shape of the node N
+pred tree-shape i:prooftext.node, o:shape.
+tree-shape (prooftext.node _ _ _ _ Cs as N) (shape Tags Subs) :-
+  prooftext.node-parts N Ps, std.filter Ps prooftext.is-tag Ts, std.map Ts std.any->string Tags,
+  std.map-filter Cs (c\ s\ sigma M\ c = prooftext.sub M, tree-shape M s) Subs.
+
+% [same-tree File Text]: the text Text, read back, has the tree of the
+% text of the file File: the same nodes, with the same tags in the same
+% order (the converter changes only the words and the lines around them)
+pred same-tree i:string, i:string.
+same-tree File Text :-
+  prooftext.read-lines File Lines, prooftext.lines-tree Lines (prooftext.proof-text _ _ Top),
+  rex.split "\n" Text Lines1, prooftext.lines-tree Lines1 (prooftext.proof-text _ _ Top1),
+  tree-shape Top S, tree-shape Top1 S.
+}

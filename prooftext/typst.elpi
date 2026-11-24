@@ -327,7 +327,12 @@ pred node-check i:list prooftext.content, o:option prooftext.check, o:list proof
 node-check [prooftext.flaw L E | Cs] Check [prooftext.flaw L E | Cs1] :- !, node-check Cs Check Cs1.
 node-check [prooftext.para-end | Cs] Check [prooftext.para-end | Cs1] :- !, node-check Cs Check Cs1.
 node-check [prooftext.run S _ | Cs] (some Check) Cs1 :- node-mark S Check Rest, !,
-  (if (Rest = "") (Cs1 = Cs) (Cs1 = [prooftext.run Rest {prooftext.text-parts Rest} | Cs])).
+  (if (Rest = "") (Cs1 = Cs) (Cs1 = [prooftext.run Rest {prooftext.text-parts {one-line Rest}} | Cs])).
+
+% [one-line S L]: the text S, its lines joined by a space (a run of text
+% keeps its line ends, tree.elpi)
+pred one-line i:string, o:string.
+one-line S L :- rex.replace "\n" " " S L.
 node-check Cs none Cs.
 
 % [node-mark S Check Rest]: the status mark at the start of S, and the
@@ -358,7 +363,7 @@ message-paragraph Cs M :-
 % written, its spans with their marks (a message may hold [ and ]{.p})
 pred written-inline i:list prooftext.content, o:string.
 written-inline [] "".
-written-inline [prooftext.run S _ | Cs] T :- !, T is S ^ {written-inline Cs}.
+written-inline [prooftext.run S _ | Cs] T :- !, T is {one-line S} ^ {written-inline Cs}.
 written-inline [prooftext.sub (prooftext.node _ _ _ _ Sub) | Cs] T :- !,
   T is "[" ^ {written-inline Sub} ^ "]{.p}" ^ {written-inline Cs}.
 written-inline [_ | Cs] T :- written-inline Cs T.
