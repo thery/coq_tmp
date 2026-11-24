@@ -647,13 +647,14 @@ Elpi Accumulate pbp_select.db lp:{{
 % around it and without a scope delimiter at its end (%Z): the two texts
 % compared are printed alone and inside the goal
 pred rt-norm i:string, o:string.
-rt-norm S N :- flat S F0, rex.replace "let'" "let" F0 F1, rex.replace "^@" "" F1 F,
-  rt-strip F N.
+rt-norm S N :- flat S F0, rex.replace "let'" "let" F0 F, rt-strip F N.
 pred rt-strip i:string, o:string.
 rt-strip S N :- rex.match "^.*%[A-Za-z_][A-Za-z_0-9]*$" S, not (rex.match "^\".*\"$" S),
   rex.replace "%[A-Za-z_][A-Za-z_0-9]*$" "" S S1, !, rt-strip S1 N.
 rt-strip S N :- starts-with "(" S, ends-with ")" S, L is size S - 2, L > 0,
   S1 is substring S 1 L, rt-balanced S1, !, rt-strip S1 N.
+rt-strip S N :- starts-with "@" S, L is size S - 1, L > 0,
+  S1 is substring S 1 L, !, rt-strip S1 N.
 rt-strip S S.
 
 % [rt-balanced S] the parentheses of S are balanced
@@ -673,22 +674,19 @@ rt-text Names M T P S :- path-of T P, !, text-at-names Names M P T S.
 % Ctx or Sc is changed, x0; a hypothesis: only when the hypothesis of
 % that name is used below); an unused variable is printed _ (in a
 % pattern)
-% [rt-in-context T P NE Off] the subterm at path P of T, printed inside T
-% (shown-at), is the text NE (normalized: rt-norm) and starts after Off
-% characters that are not blanks
-% [rt-context-elsewhere T P NE Off] the subterm at P is found in the
-% printing of T (shown-at), but not with the text NE after Off characters
-pred rt-context-elsewhere i:term, i:list int, i:string, i:int.
-rt-context-elsewhere T P NE Off :- not (name-at T P _), path-of T P,
-  coq.term->string T S, flat S O, marker-names O A B,
-  shown-at T O A B P _, not (rt-in-context T P NE Off).
-
-pred rt-in-context i:term, i:list int, i:string, i:int.
-rt-in-context T P NE Off :- not (name-at T P _), path-of T P,
-  coq.term->string T S, flat S O, marker-names O A B,
-  shown-at T O A B P (shown _ St _ Txt), rt-norm Txt NE,
-  % (the parentheses around the subterm may be in its tag or not)
-  (St = Off ; St is Off + 1 ; St is Off - 1), !.
+% [rt-locate Names M T P Txt St O] the subterm at path P of T printed in
+% its place: the whole part T printed (O, without blanks) with the
+% subterm framed by two markers (as shown-at), its binders named as the
+% display names them (display-names: Names, M); Txt is the text between
+% the markers, St the number of characters before it.  Fails when the
+% markers change the printing around them (shown-at)
+pred rt-locate i:list string, i:bmode, i:term, i:list int, o:string, o:int, o:string.
+rt-locate Names M T P Txt St O :- not (name-at T P _), path-of T P,
+  display-names Names [] M T T1 [] Rs,
+  coq.term->string T1 S0, flat S0 O0, replace-placeholders Rs O0 O,
+  marker-names O A B,
+  marked-string A B P T1 MF0, replace-placeholders Rs MF0 MF,
+  around-mark A B MF Pre Post, fits O Pre Post Before Txt, cp-length Before St.
 
 pred rt-name-at i:list string, i:list string, i:bmode, i:term, i:list int, o:string.
 rt-name-at Ctx Sc M T [0] S :- rt-binder T N F, !, rt-display Ctx Sc M N F tt S.
@@ -712,20 +710,28 @@ rt-display Ctx Sc M N F _ S :- coq.name->id N S0, std.append Ctx Sc Avoid,
    S = S0).
 }}.
 
-(* [elpi point_path_text Case "P" "Text"] or [... Case "H" "P" "Text"]:
-   prints RT-OK, or RT-MISMATCH with what is at the path, when the subterm
-   (or binder name) at path P of the conclusion (of the type of H) does not
-   print as Text (blanks, outer parentheses and a final %scope ignored) *)
+(* [elpi point_path_text Case ["H"] "P" "Text" "Off" "Part"]: the tag P of
+   the conclusion (of the type of H) covers Text, after Off characters
+   that are not blanks of the printed part, whose text is Part.  Prints
+   RT-OK when the subterm (or binder name) at P is that text at that
+   place: printed alone it is Text (blanks, outer parentheses, a final
+   %scope, a leading @ ignored), and printed in its place (rt-locate) it
+   is Text after Off characters (one more or less: the parentheses around
+   it); or, when it cannot be printed alone as in its place, only the
+   second (RT-OK-CONTEXT); or, when the markers change the printing, only
+   the first (RT-OK-ALONE).  When Rocq-Elpi prints the part otherwise than
+   the display (Part), the place cannot be compared: RT-OK-TEXT (the text
+   alone), or RT-STYLE (a let).  Else RT-MISMATCH. *)
 Elpi Tactic point_path_text.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
 pred rt-part i:goal-ctx, i:term, i:list argument, o:term, o:bmode, o:string, o:string, o:string.
-rt-part _ Ty [str P, str E, str _] Ty (bm-goal 0) "|-" P E :- is-path-string P, !.
-rt-part Ctx _ [str H, str P, str E, str _] T bm-hyp H P E :-
+rt-part _ Ty [str P, str E, str _, str _] Ty (bm-goal 0) "|-" P E :- is-path-string P, !.
+rt-part Ctx _ [str H, str P, str E, str _, str _] T bm-hyp H P E :-
   std.mem Ctx (decl _ N _), coq.name->id N H, !, hyp-of Ctx H _ T.
 solve (goal Ctx _ Ty _ [str Case | Args] as G) [seal G] :-
-  std.last Args (str OffS), Off is string_to_int OffS,
-  (Args = [str H, str _, str _, str _], not (is-path-string H),
+  std.rev Args [str Part, str OffS | _], Off is string_to_int OffS,
+  (Args = [str H, str _, str _, str _, str _], not (is-path-string H),
    not (std.mem Ctx (decl _ N0_ _), coq.name->id N0_ H), !,
    coq.say "RT-SKIP" Case H "(not a hypothesis of the goal for Rocq-Elpi: a section variable)" ;
   rt-part Ctx Ty Args T M Where P E,
@@ -734,17 +740,22 @@ solve (goal Ctx _ Ty _ [str Case | Args] as G) [seal G] :-
   path-of-string P Q,
   (rt-text Names M T Q S, ! ; S = "(no subterm)"),
   rt-norm S NS, rt-norm E NE,
-  (NS = NE, rt-context-elsewhere T Q NE Off, !, coq.say "RT-OK-TEXT" Case Where P "(the same text, but in context it is printed elsewhere)" ;
-   NS = NE, !, coq.say "RT-OK" Case Where P ;
-   % the decider: the subterm at the path printed in its context (the whole
-   % part printed with it framed by two markers, as pbp_select's shown-at
-   % does) is the tagged text, at the same place (the number of characters
-   % before it, blanks not counted)
-   rt-in-context T Q NE Off, !, coq.say "RT-OK-CONTEXT" Case Where P ;
-   % a let or a let '(..) := .. (a match) that Rocq-Elpi prints in another
-   % style (let (x, _) := s, nested lets, (t : T) for let k := t in k)
-   rex.match "^.*let[ ']" E, !, coq.say "RT-STYLE" Case Where P "tag:" E "path:" S ;
-   coq.say "RT-MISMATCH" Case Where P "tag:" E "path:" S)).
+  flat Part FPart,
+  (name-at T Q _, !, Placed = "yes", O = FPart ;
+   rt-locate Names M T Q Txt St O, !, rt-norm Txt NT,
+   ((NT = NE, (St = Off ; St is Off + 1 ; St is Off - 1)), !, Placed = "yes" ; Placed = "no") ;
+   Placed = "not found", O = FPart),
+  (NS = NE, Placed = "yes", !, coq.say "RT-OK" Case Where P ;
+   NS = NE, Placed = "not found", !, coq.say "RT-OK-ALONE" Case Where P ;
+   Placed = "yes", !, coq.say "RT-OK-CONTEXT" Case Where P ;
+   % Rocq-Elpi prints the part otherwise than the display: the places
+   % cannot be compared
+   not (O = FPart), NS = NE, !,
+   coq.say "RT-OK-TEXT" Case Where P "(the place not compared: Rocq-Elpi prints the part" O "where the display prints" FPart ")" ;
+   not (O = FPart), rex.match "^.*let[ ']" E, !,
+   coq.say "RT-STYLE" Case Where P "tag:" E "path:" S ;
+   coq.say "RT-MISMATCH" Case Where P "tag:" E "at" Off "path:" S "in its place:" Placed)).
+
 
 }}.
 

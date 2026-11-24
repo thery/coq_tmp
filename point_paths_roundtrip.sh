@@ -18,15 +18,18 @@
 #      match) whose text Rocq-Elpi prints in another style (let (x, _) :=
 #      s for let 'exist _ x _ := s, nested lets for a nested pattern,
 #      (t : T) for let k := t in k) is RT-STYLE: listed, not a failure.
-#      The text alone is a quick test; the decider is the text in context:
-#      the whole part printed with the subterm at P framed by two markers
-#      (shown-at of pbp_select.v, the printer itself putting the subterm
-#      in its place, its scope and notations), which must give the tagged
-#      text after as many non-blank characters as the tag (RT-OK-CONTEXT:
-#      [exists x, P x] prints its Quantified (P x) as ", P x" only there).
-#      A text alone equal to the tag but placed elsewhere in context is
-#      RT-OK-TEXT (listed: Rocq-Elpi prints the part before it otherwise,
-#      let '(..) or the names of the binders).
+#      Every tag is checked twice: the text alone (the subterm printed
+#      alone), and the text in its place: the whole part printed with the
+#      subterm at P framed by two markers (shown-at of pbp_select.v; the
+#      binders named as the display names them), which must give the
+#      tagged text after as many non-blank characters as the tag.  RT-OK
+#      needs both; RT-OK-CONTEXT the second only (the subterm prints only
+#      in its place so: [exists x, P x] prints its Quantified (P x) as
+#      ", P x"); RT-OK-ALONE the first only, when the markers change the
+#      printing around the subterm; RT-OK-TEXT the first only, when
+#      Rocq-Elpi prints the whole part otherwise than the display (the
+#      places cannot be compared).  These are listed, not failures; a text
+#      in the wrong place of a part printed as the display is a mismatch.
 #   Also, for each part, the binder names (of a used variable, under a
 #   printed binder) that no tag names are listed (RT-UNTAGGED, not a
 #   failure: a printer limit, the names of exists x, .. and of mathcomp's
@@ -115,11 +118,16 @@ roundtrip() {
       i = index(l, "|"); h = substr(l, 1, i - 1); l = substr(l, i + 1)
       i = index(l, "|"); p = substr(l, 1, i - 1); l = substr(l, i + 1)
       i = index(l, "|"); o = substr(l, 1, i - 1); t = substr(l, i + 1)
-      if (h == "-") line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\".", c, p, esc(t), o)
-      else line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\" \"%s\".", c, esc(h), p, esc(t), o)
-      chk[c] = chk[c] line "\n"
+      nt++; tc[nt] = c; th[nt] = h; tp[nt] = p; to[nt] = o; tt[nt] = t
+      if (p == "") root[c SUBSEP h] = t
       k = c SUBSEP h; if (!(k in parts)) { parts[k] = 1; order[c] = order[c] SUBSEP h }
       paths[k] = paths[k] " \"" p "\""
+    }
+    for (j = 1; j <= nt; j++) {
+      c = tc[j]; h = th[j]; r = root[c SUBSEP h]
+      if (h == "-") line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\" \"%s\".", c, tp[j], esc(tt[j]), to[j], esc(r))
+      else line = sprintf("elpi point_path_text \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\".", c, esc(h), tp[j], esc(tt[j]), to[j], esc(r))
+      chk[c] = chk[c] line "\n"
     }
   }
   /^elpi point_paths_check\.$/ {
@@ -137,13 +145,15 @@ roundtrip() {
   ok=$(grep -c '^RT-OK' $b.check.out)
   okctx=$(grep -c '^RT-OK-CONTEXT' $b.check.out)
   oktext=$(grep -c '^RT-OK-TEXT' $b.check.out)
+  okalone=$(grep -c '^RT-OK-ALONE' $b.check.out)
   bad=$(grep -c '^RT-MISMATCH' $b.check.out)
   skip=$(grep -c '^RT-SKIP' $b.check.out)
   style=$(grep -c '^RT-STYLE' $b.check.out)
   untagged=$(grep -c '^RT-UNTAGGED' $b.check.out)
   ncases=$(grep -c '^elpi point_paths_check\.$' $f)
-  echo "$me: $ntags tags in the $ncases goals of $f: $ok ok ($okctx of them by the text in context, $oktext by the text alone only), $bad mismatches, $style lets printed in another style by Rocq-Elpi, $skip skipped (section variables); $untagged binder names not tagged"
-  [ "$oktext" -ne 0 ] && { echo "$me: same text alone, but printed elsewhere in context (Rocq-Elpi's printing of the part differs from the display before it):"; grep '^RT-OK-TEXT' $b.check.out; }
+  echo "$me: $ntags tags in the $ncases goals of $f: $ok ok ($okctx of them by the text in its place only, $okalone by the text alone only: the markers change the printing, $oktext by the text alone only: Rocq-Elpi prints the part otherwise), $bad mismatches, $style lets printed in another style by Rocq-Elpi, $skip skipped (section variables); $untagged binder names not tagged"
+  [ "$okalone" -ne 0 ] && { echo "$me: the tags checked by their text alone (the markers change the printing; not failures):"; grep '^RT-OK-ALONE' $b.check.out; }
+  [ "$oktext" -ne 0 ] && { echo "$me: the tags whose place is not compared (Rocq-Elpi prints the part otherwise than the display; not failures):"; grep '^RT-OK-TEXT' $b.check.out; }
   [ "$style" -ne 0 ] && { echo "$me: the lets printed in another style (not failures):"; grep '^RT-STYLE' $b.check.out; }
   [ "$untagged" -ne 0 ] && { echo "$me: the binder names that no tag names (not failures: a printer limit):"; grep '^RT-UNTAGGED' $b.check.out; }
   if [ "$bad" -ne 0 ]; then
