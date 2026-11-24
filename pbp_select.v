@@ -123,7 +123,7 @@ pred kids i:term, o:list kid.
 kids (app L) Ks :- !, std.map L (t\ k\ k = kt t) Ks.
 kids (prod N T F) [kn N, kt T, kb N T F] :- !.
 kids (fun N T F) [kn N, kt T, kb N T F] :- !.
-kids (let N T B F) [kt T, kt B, kb N T F] :- cast-body F, !.
+kids (let N T B F) [kt T, kt B, kb N T F] :- cast-let N F, !.
 kids (let N T B F) [kn N, kt T, kt B, kb N T F] :- !.
 kids (match T R Bs) [kt T, kt R | Ks] :- !,
   std.map Bs (t\ k\ k = kt t) Ks.
@@ -148,9 +148,11 @@ mk-app H [] H :- !.
 mk-app (app L) Args (app L1) :- !, std.append L Args L1.
 mk-app H Args (app [H|Args]).
 
-% [cast-body F] F is the body of a let that is a cast: its variable
-pred cast-body i:(term -> term).
-cast-body F :- pi x\ F x == x.
+% [cast-let N F] a let named N of body F is a cast: Rocq-Elpi sees the
+% cast (t : T) as let _ : T := t in x (its name is anonymous, its body its
+% variable; a let k := t in k has a name)
+pred cast-let i:name, i:(term -> term).
+cast-let N F :- coq.name->id N "_", pi x\ F x == x.
 
 % [map-kid Bs F K K1] K1 is the subterm K changed by F, which is given the
 % variables bound above it (Bs, the outermost first)
@@ -429,8 +431,8 @@ pred kept i:term, i:int.
 kept (app _) 0.
 kept (prod _ _ F) 1 :- pi x\ occurs x (F x).
 kept (fun _ _ F) 1 :- pi x\ occurs x (F x).
-kept (let _ _ _ F) 0 :- cast-body F, !.
-kept (let _ _ _ F) 2 :- cast-body F, !.
+kept (let N _ _ F) 0 :- cast-let N F, !.
+kept (let N _ _ F) 2 :- cast-let N F, !.
 kept (let _ _ _ _) 1.
 kept (match _ _ _) 1.
 
@@ -604,7 +606,9 @@ text-at-names Ctx M [I|P] T S :-
 pred kid-text-names i:list string, i:bmode, i:list int, i:kid, o:string.
 kid-text-names Ctx M P (kt T) S :- text-at-names Ctx M P T S.
 kid-text-names Ctx M P (kb N Ty B) S :-
-  coq.name->id N Id, pi x\ decl x N Ty => text-at-names [Id|Ctx] M P (B x) S.
+  % the binder named as the display names it
+  display-binder Ctx [] M N B _ [D|_] [] _, coq.id->name D ND,
+  pi x\ decl x ND Ty => text-at-names [D|Ctx] M P (B x) S.
 
 % [kid-mode M T I M1] M1 says where the I-th immediate subterm of T is, M
 % where T is (the type of a generalized hypothesis, the rest after it)
@@ -788,7 +792,7 @@ name-at T [I|P] K :- kids T Ks, std.length Ks L, I < L, std.nth I Ks Kd,
 pred binder-kind i:term, o:string.
 binder-kind (prod _ _ _) "forall".
 binder-kind (fun _ _ _) "fun".
-binder-kind (let _ _ _ F) "let" :- not (cast-body F).
+binder-kind (let N _ _ F) "let" :- not (cast-let N F).
 
 % [through-name T P] the path P of T goes through the name of a binder
 % (a longer path than one that ends at it)

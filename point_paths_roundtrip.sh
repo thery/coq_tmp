@@ -14,7 +14,10 @@
 #      [elpi point_path_text "n" ["H"] "P" "T".] of its goal is compiled
 #      (without the tags): each prints RT-OK, or RT-MISMATCH with the text
 #      at the path.  The texts are compared without blanks, outer
-#      parentheses and a final %scope.
+#      parentheses and a final %scope.  A tag on a let (or a let '(..)
+#      match) whose text Rocq-Elpi prints in another style (let (x, _) :=
+#      s for let 'exist _ x _ := s, nested lets for a nested pattern,
+#      (t : T) for let k := t in k) is RT-STYLE: listed, not a failure.
 #   usage: bash point_paths_roundtrip.sh   (in the opam switch of the Rocq
 #          that tags the paths, e.g. opam exec --switch=vsrocq-pathtags --;
 #          exit 1 on a mismatch or an error).  The .v files it needs are
@@ -22,7 +25,7 @@
 here=$(cd "$(dirname "$0")" && pwd)
 me=point_paths_roundtrip
 tmp=$(mktemp -d) || exit 2
-trap 'rm -rf "$tmp"' EXIT
+[ -n "$RT_KEEP" ] && echo "$me: kept in $tmp" || trap 'rm -rf "$tmp"' EXIT
 ulimit -v 8000000
 cp "$here"/pbp.v "$here"/pbp_select.v "$here"/point_actions.v "$here"/point_paths_cases.v "$tmp"/
 cd "$tmp" || exit 2
@@ -57,7 +60,7 @@ function flush_part(s, hyp,    i, c, rest, m, path, stack, pos, depth, plain, t)
     plain = plain substr(s, 1, 1); s = substr(s, 2)
   }
 }
-/^@@CASE / { cs = $2; inconcl = 0; hyp = ""; buf = ""; next }
+/^@@CASE / { if (inconcl) flush_part(buf, "-"); cs = $2; inconcl = 0; hyp = ""; buf = ""; next }
 cs == "" { next }
 /^  =+$/ { if (hyp != "") flush_part(buf, hyp); hyp = ""; inconcl = 1; buf = ""; next }
 inconcl {
@@ -70,6 +73,12 @@ inconcl {
   if (names ~ / := /) { hyp = ""; next }       # a local definition
   split(names, ns, ", "); hyp = ns[1]
   buf = substr(line, index(line, " : <>") + 3); next }
+# a hypothesis whose type is printed on the next lines: "  H :"
+/^  [^ ].* :$/ {
+  if (hyp != "") flush_part(buf, hyp)
+  names = $0; sub(/^  /, "", names); sub(/ :$/, "", names)
+  if (names ~ / := /) { hyp = ""; next }
+  split(names, ns, ", "); hyp = ns[1]; buf = ""; next }
 /^  [^ ].* := / { if (hyp != "") flush_part(buf, hyp); hyp = ""; next }
 hyp != "" && /^ / { buf = buf " " $0; next }
 END { if (inconcl) flush_part(buf, "-") }
@@ -96,12 +105,14 @@ fi
 ok=$(grep -c '^RT-OK' check.out)
 bad=$(grep -c '^RT-MISMATCH' check.out)
 skip=$(grep -c '^RT-SKIP' check.out)
+style=$(grep -c '^RT-STYLE' check.out)
 ncases=$(grep -c '^elpi point_paths_check\.$' point_paths_cases.v)
-echo "$me: $ntags tags in the $ncases goals of point_paths_cases.v: $ok ok, $bad mismatches, $skip skipped (section variables)"
+echo "$me: $ntags tags in the $ncases goals of point_paths_cases.v: $ok ok, $bad mismatches, $style lets printed in another style by Rocq-Elpi, $skip skipped (section variables)"
+[ "$style" -ne 0 ] && { echo "$me: the lets printed in another style (not failures):"; grep '^RT-STYLE' check.out; }
 if [ "$bad" -ne 0 ]; then
   echo "$me: the mismatches (case, part, path, the tag's text, the text at the path):"
   grep '^RT-MISMATCH' check.out
   exit 1
 fi
-[ $((ok + skip)) -eq "$ntags" ] || { echo "$me: $ntags tags but $((ok + skip)) checks"; exit 1; }
+[ $((ok + skip + style)) -eq "$ntags" ] || { echo "$me: $ntags tags but $((ok + skip + style)) checks"; exit 1; }
 exit 0

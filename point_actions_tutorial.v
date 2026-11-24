@@ -180,7 +180,7 @@ Abort.
 
 (* ---- 2b. Reading the selection ----
 
-   What the action is given, a value of type point-in (pbp_select.v:652),
+   What the action is given, a value of type point-in (pbp_select.v:656),
    has five fields: point-in Names Hs C Parts Ls, where
    - Names are the names of the hypotheses of the goal (the last one
      first);
@@ -189,8 +189,8 @@ Abort.
    - C is the goal with the hypotheses Hs moved into it (what pbp works
      on);
    - Parts are the hypotheses Hs, then the conclusion, each as
-     part B T Shs (pbp_select.v:370), T being the term;
-   - Ls are the selections, each loc P I P0 (pbp_select.v:385): the path
+     part B T Shs (pbp_select.v:372), T being the term;
+   - Ls are the selections, each loc P I P0 (pbp_select.v:387): the path
      P in C, the number I of its part in Parts, the path P0 in that part.
    A path lists the positions of the subterms to go through, from the
    root: in an application, the function is 0 and the arguments 1, 2, ...
@@ -199,7 +199,7 @@ Abort.
    run on a goal, goal Ctx _ Ty _ Args (the hypotheses, the conclusion,
    the arguments of the tactic); [seal G] says that the goal is left as
    it is.  It reads the selection as point_run does (parse-sels,
-   pbp_select.v:329; point-resolve, pbp_select.v:662), then matches the
+   pbp_select.v:331; point-resolve, pbp_select.v:666), then matches the
    point-in value against its five fields.  In a clause, :- reads "if",
    a comma "and"; coq.say prints its arguments; coq.term->string T S
    gives the text S of the term T, and {coq.term->string T} is that text

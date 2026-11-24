@@ -39,10 +39,8 @@ type and 1 for its term.
 
 The tagged outputs below are those of the prototype printer (`Show.`
 after `Set Printing Subterm Paths.`, the tags written `<P>...</P>` in the
-terminal; in a goal panel they are invisible).  (With the numbering where the names are
-children 0: the outputs of the binders were renumbered by hand from
-those of the earlier prototype, which tagged a name with the path of its
-binder; to be replaced by the outputs of the printer that tags names.)
+terminal; in a goal panel they are invisible).  (The prototype path-tags 159b298f38, which
+tags the binder names as children 0.)
 
 **`a + b = b + a`.**  Under its notations this is
 `@eq nat (Nat.add a b) (Nat.add b a)`, an application of `eq` to three
@@ -78,6 +76,30 @@ is `n + 0`, `2.2.1` its `n`, `2.2.2` its `0`, and `2.3` the `n` on the
 right.  Selecting the name `n` sends `"0"`: the whole `forall` is
 selected, with the warning `... (a binder name: the whole forall is
 selected)`.
+
+**Grouped binders.**  The type shared by several names is printed once
+and carries the path of the first binder (b's own type, `2.1`, is not
+printed):
+
+```
+<>forall <0>a</0> <2.0>b</2.0> : <1>nat</1>, <2.2><2.2.2>a</2.2.2> = <2.2.3>b</2.2.3></2.2></>
+```
+
+**Patterns.**  The names of a pattern are the names of the `fun` of the
+branch, one under the other: `let '(x, y) := z in x + y` (ssreflect's
+`let: (x, y) := z in x + y` prints so) is
+
+```
+<>let '(<2.0>x</2.0>, <2.2.0>y</2.2.0>) := <0>z</0> in <2.2.2><2.2.2.1>x</2.2.2.1> + <2.2.2.2>y</2.2.2.2></2.2.2></>
+```
+
+(the match: `z` its scrutinee 0, its only branch 2 is `fun x => fun y =>
+x + y`); a nested pattern `let '(x, (y, w))` gives `x` at `2.0`, `y`
+at `2.2.2.2.0`, `w` at `2.2.2.2.2.0`; `if o is Some n then n else 0` is
+`if <0>o</0> is Some <2.0>n</2.0> then <2.2>n</2.2> else <3>0</3>`.  An unused
+name is printed `_` and keeps its tag (`let 'exist _ x _ := s`).  The
+names of `exists n : nat, ...` and `{k : nat | ...}` are not tagged (the
+notations print the names of a `fun` that is an argument).
 
 **A hypothesis.**  With `H : A -> B` in the context, the path is taken in
 the type of `H`, and the interface sends the name first: selecting `B`

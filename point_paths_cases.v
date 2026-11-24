@@ -59,6 +59,20 @@ Goal forall (o : option nat) (p : nat * nat),
 intros o p.
 elpi point_paths_check.
 Abort.
+
+(* ssreflect's pattern notations, in the conclusion and in a hypothesis:
+   let: with a pair, a nested pair, exist; if .. is .. then; [\/ ...] *)
+Goal forall (z : nat * nat) (t : nat * (nat * nat)) (s : {k : nat | k > 0})
+  (o : option nat) (b : bool) (A B C : Prop),
+  (let: (x, y) := z in x + y) = (let: (x, (y, w)) := t in x + y + w) ->
+  (let: exist _ x h := s in x) = (if o is Some n then n else 0) ->
+  [\/ A, B | C] -> [/\ A, B & C] ->
+  (let: (x, y) := z in x + y) = (if b is true then 1 else 0) /\
+  (let: exist _ x h := s in x) = (let: (x, (y, w)) := t in x + y + w) /\
+  [\/ A, B | C].
+intros z t s o b A B C H1 H2 H3 H4.
+elpi point_paths_check.
+Abort.
 End S.
 
 (* forall, fun, arrows: the name (0), the type (1), the body (2);

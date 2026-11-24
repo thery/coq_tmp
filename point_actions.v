@@ -641,7 +641,8 @@ Elpi Accumulate pbp_select.db lp:{{
 % around it and without a scope delimiter at its end (%Z): the two texts
 % compared are printed alone and inside the goal
 pred rt-norm i:string, o:string.
-rt-norm S N :- flat S F, rt-strip F N.
+rt-norm S N :- flat S F0, rex.replace "let'" "let" F0 F1, rex.replace "^@" "" F1 F,
+  rt-strip F N.
 pred rt-strip i:string, o:string.
 rt-strip S N :- rex.match "^.*%[A-Za-z_][A-Za-z_0-9]*$" S, not (rex.match "^\".*\"$" S),
   rex.replace "%[A-Za-z_][A-Za-z_0-9]*$" "" S S1, !, rt-strip S1 N.
@@ -657,17 +658,35 @@ rt-balanced S :- rex.split "" S Cs, std.fold Cs 0 (c\ a\ b\
 % [rt-text Names M T P S] S is the text, at path P of the part T, that a
 % tag of the printer covers: the subterm, or the name of a binder
 pred rt-text i:list string, i:bmode, i:term, i:list int, o:string.
-rt-text Names M T P S :- name-at T P _, !,
-  display-names Names [] M T T1 [] Rs, rt-name-at T1 P N0,
-  coq.name->id N0 S0, (std.lookup Rs S0 S, ! ; S = S0).
+rt-text Names M T P S :- name-at T P _, !, rt-name-at Names [] M T P S.
 rt-text Names M T P S :- path-of T P, !, text-at-names Names M P T S.
 
-pred rt-name-at i:term, i:list int, o:name.
-rt-name-at (prod N _ _) [0] N :- !.
-rt-name-at (fun N _ _) [0] N :- !.
-rt-name-at (let N _ _ _) [0] N :- !.
-rt-name-at T [I|P] N :- kids T Ks, std.nth I Ks K,
-  (K = kt U, rt-name-at U P N ; K = kb _ _ F, pi x\ rt-name-at (F x) P N).
+% [rt-name-at Ctx Sc M T P S] S is the name, as the display prints it, of
+% the binder at P of T (P ends at its name); Ctx: the hypotheses, Sc: the
+% names of the binders above, M: where T is (the conclusion: a name in
+% Ctx or Sc is changed, x0; a hypothesis: only when the hypothesis of
+% that name is used below); an unused variable is printed _ (in a
+% pattern)
+pred rt-name-at i:list string, i:list string, i:bmode, i:term, i:list int, o:string.
+rt-name-at Ctx Sc M T [0] S :- rt-binder T N F, !, rt-display Ctx Sc M N F tt S.
+rt-name-at Ctx Sc M T [I|P] S :- kids T Ks, std.nth I Ks K, kid-mode M T I M1,
+  (K = kt V, rt-name-at Ctx Sc M1 V P S ;
+   K = kb N _ F, rt-display Ctx Sc M N F ff D,
+   pi x\ rt-name-at Ctx [D|Sc] M1 (F x) P S).
+
+pred rt-binder i:term, o:name, o:(term -> term).
+rt-binder (prod N _ F) N F.
+rt-binder (fun N _ F) N F.
+rt-binder (let N _ _ F) N F.
+
+% [rt-display Ctx Sc M N F U S] S is the name printed for the binder N of
+% body F (U: an unused variable is printed _)
+pred rt-display i:list string, i:list string, i:bmode, i:name, i:(term -> term), i:bool, o:string.
+rt-display _ _ _ _ F tt "_" :- not (pi x\ occurs x (F x)), !.
+rt-display Ctx Sc M N F _ S :- coq.name->id N S0, std.append Ctx Sc Avoid,
+  (M = bm-goal _, std.mem! Avoid S0, !, fresh-ident S0 Avoid S ;
+   std.mem! Ctx S0, (pi x\ var-named-in S0 (F x)), !, fresh-ident S0 Avoid S ;
+   S = S0).
 }}.
 
 (* [elpi point_path_text Case "P" "Text"] or [... Case "H" "P" "Text"]:
@@ -692,6 +711,9 @@ solve (goal Ctx _ Ty _ [str Case | Args] as G) [seal G] :-
   (rt-text Names M T Q S, ! ; S = "(no subterm)"),
   rt-norm S NS, rt-norm E NE,
   (NS = NE, !, coq.say "RT-OK" Case Where P ;
+   % a let or a let '(..) := .. (a match) that Rocq-Elpi prints in another
+   % style (let (x, _) := s, nested lets, (t : T) for let k := t in k)
+   rex.match "^.*let[ ']" E, !, coq.say "RT-STYLE" Case Where P "tag:" E "path:" S ;
    coq.say "RT-MISMATCH" Case Where P "tag:" E "path:" S)).
 
 }}.
