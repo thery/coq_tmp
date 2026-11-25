@@ -45,6 +45,8 @@ dune exec cyp -- --time examples/square_pos.md   # the time of each condition, h
 `CYP_TIME` does the same) prints the time of each condition and how it
 was closed, then the ten slowest: [vernac/README.md](vernac/README.md#the-text-as-a-verification-condition-generator),
 "Timing".  It is a measure only: it changes nothing that cyp tries.
+`--stats`, `--only` and `--extract` help to find the steps of a text
+that make its proof big or slow: [Debugging a text](#debugging-a-text).
 
 ## The format
 
@@ -255,6 +257,63 @@ starts.  **The JSON** (`cyp --json`) gives, for each node, its number,
 its first and last lines (numbered from 0), its status, its formulas and
 its message; then the declared words that its justifications use, with
 the place of their declaration ("Declaring justification words", below).
+
+## Debugging a text
+
+A text may be proved and still be slow to define: its proof term too big
+for the kernel, or a step that leaves the universe state full of
+variables.  Three options of `cyp` (and the attributes of `CypFile`) show
+which steps do it; like `--time`, they change nothing that cyp tries.
+
+```sh
+cyp --stats proof.md          # #[stats="univ"] CypFile "proof.md".
+cyp --only 2.1 proof.md       # #[only="2.1"] CypFile "proof.md".
+cyp --extract 2.1 proof.md    # #[extract="2.1"] CypFile "proof.md".
+```
+
+- `--stats` prints a line per condition: its number, its time, the size
+  of the proof cyp built for it (`nodes`: every constructor of the term;
+  `matches`, `funs`, `lets`, `fixes`; `consts`: the occurrences of global
+  names; `holes`), the number of hypotheses in its context (`hyps`), how
+  it was closed (as `--time`), then the sort variables and the universe
+  levels of the universe state after it, and what the condition added to
+  them (`sorts=92809 (+17)`).  Then the ten conditions with the most
+  `match`, the ten with the biggest proofs, the same counts for the whole
+  proof at its type-check and at its definition, and the ten conditions
+  that added the most sort variables.  The universe counts come from the
+  driver: Rocq-Elpi has no way to count sort variables, so
+  `#[stats="univ"]` prints the universe state after each condition
+  (`coq.univ.print`, between the lines `cyp-univ-begin` and
+  `cyp-univ-end`) and the driver counts it; `#[stats]` alone gives the
+  rest.  The ten slowest conditions are printed too.
+- `--only N` builds the conditions of the text as `--conditions` does,
+  without trying them (the context of a condition depends only on the
+  text, not on the proofs of the steps before it), and tries condition
+  `N` alone: with `--time` or `--stats`, its line.  Nothing is written or
+  defined.
+- `--extract N` tries condition `N` alone the same way, and writes it as
+  a Rocq file next to the text, `proof_cN.v` (`proof_c2_1.v` for 2.1):
+  the `require:` line of the header, its rule files `.v`, then
+  `Lemma proof_c2_1 (x : T) ... : C.` (the context and the goal printed
+  with all their details, `Printing All`, so that they parse again), and
+  `Proof. script. Defined.`, where the script is the Ltac that does in
+  plain Rocq what cyp's search did (cyp's own tactics, `cyp_eapply`,
+  `cyp_split`, ...: the file imports `CypV.Cyp`; `t; [ a | b ]` for a
+  lemma whose premises were closed by `a` and `b`).  Its last line,
+  `CypTermStats proof_c2_1 k.`, prints the counts of the proof under its
+  `k` binders (the context), to compare with those of the proof cyp built,
+  given in the file's first comment with how cyp closed it.  The file is
+  compiled with the flags of the header (`flags:`).  A condition that
+  cyp does not prove is written with `Admitted.`  One limit, since the
+  other steps are not run: a formula whose implicit argument only the
+  proof of another step fixes (`length [] = 0`, the type of `[]`) is a
+  hole in the context, printed `_`, which Rocq cannot read; the file says
+  so (`holes:` in its first comment) and cyp prints a warning.  Give the
+  argument in the text (`length (@nil A)`) to extract such a step.
+
+`debug_check.sh` runs `--stats` and `--only` on every example and extracts
+every condition they prove: each file must compile, with the same number
+of `match` as cyp's proof.
 
 ## Deterministic bounds
 

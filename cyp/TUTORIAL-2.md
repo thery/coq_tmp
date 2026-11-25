@@ -369,6 +369,10 @@ lia nia lra`, then the gap tactic.
 | `cyp proof.md` | checks, writes `proof.checked.md`; exit 0 / 1 / 2 |
 | `cyp --conditions proof.md` | prints the conditions, tries nothing |
 | `cyp --json proof.md` | also writes `proof.cyp.json` |
+| `cyp --time proof.md` | the time of each condition, how it was closed |
+| `cyp --stats proof.md` | the size of the proof of each condition, the heaviest ([README](README.md#debugging-a-text)) |
+| `cyp --only 2.1 proof.md` | tries condition 2.1 alone (with `--time` or `--stats`) |
+| `cyp --extract 2.1 proof.md` | writes condition 2.1 as a Rocq file `proof_c2_1.v` |
 | `CypFile "proof.md".` | the same in Rocq; fails if a step is not proved |
 | `#[bare] CypFile "proof.md".` | prints the conditions |
 | `Cyp File "proof.md". Proof. [c1]: tac. CypQed.` | the conditions left are goals `?cN` |

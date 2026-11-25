@@ -175,7 +175,9 @@ tried.  The phases of a check are timed too (`cyp: time conditions 75
 ms`, `markdown`, `json`, `type-check`, `definition`).  The environment
 variable `CYP_TIME` set does the same as `#[time]`.  Timing is a
 measure only: what cyp tries, and its verdicts, are the same with it or
-without it.
+without it.  `#[stats]` prints, instead of the time line, the time,
+the size of the condition's proof and the number of hypotheses in its
+context ([../README.md](../README.md#debugging-a-text)).
 
 **Justifications.**  A justification `*X*{.just}` is, in this order, a
 fixed method (`match`, `induction`), a name of the text in scope (a
@@ -263,6 +265,12 @@ text may name):
   (a message missing there is the English one);
 - `timing.elpi`: with the environment variable `CYP_TIME` set, the time
   spent on each condition and on each phase of a check.
+- `stats.elpi`: the tools to debug a text (#[stats], #[only="N"],
+  #[extract="N"], `CypTermStats`: [../README.md](../README.md#debugging-a-text)):
+  the size of the proof of each condition, one condition tried alone, one
+  condition written as a Rocq file; for the last, each predicate of
+  `check.elpi` that closes a goal also gives the Ltac script that does the
+  same in plain Rocq (built only for #[extract]).
 
 The words of the default tactics (`lia`, `lra`, ...) are declared to mean
 Ltac definitions of [../../prooftext/Tactics.v](../../prooftext/Tactics.v) (`word_lra := lra`, `word_lia := guarded_lia`): Rocq-Elpi runs an
