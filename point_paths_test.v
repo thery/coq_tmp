@@ -25,6 +25,10 @@ elpi point_run_path_expect "Unfold here" "rewrite [X in _ = X]/double." "" "3".
 elpi point_run_path_expect "Name occurrence" "set x := {2}(a)." "" "3.1.2".
 (* the whole conclusion *)
 elpi point_run_path_expect "Point" "pbp [X in X]." "" "".
+(* point_to_pattern: the pattern alone *)
+elpi point_to_pattern_expect "[X in X + _ = _]" "2.1".
+elpi link_to_pattern_expect "[X Y in X + _ = double Y]" "2.1" "3.1".
+elpi point_to_pattern_expect "[X in _ = X]" "3".
 Abort.
 
 (* a hypothesis *)
@@ -33,6 +37,8 @@ intros a b ab.
 elpi point_run_expect "Point" "move: ab; pbp [X in X = _ -> _]." "" ab 0 1.
 elpi point_run_path_expect "Point" "move: ab; pbp [X in X = _ -> _]." "" "ab" "2".
 elpi point_run_path_expect "Link" "move: ab; pbp [X Y in X = _ -> _ = Y]." "" "ab" "2" "3".
+(* point_to_pattern in a hypothesis: the pattern of its type *)
+elpi point_to_pattern_expect "[X in X = _]" "ab" "2".
 Abort.
 
 (* the risky goals of point_print_test.v: a string with a non-breaking
@@ -45,10 +51,11 @@ Abort.
 Goal forall (p : nat * nat), (let '(a, b) := p in a + b) = 0 -> True.
 intros p H.
 elpi point_run_path_expect "Point" "move: p; pbp [X in X * _ -> _]." "" "p" "1".
-(* the scrutinee p: its pattern does not elaborate, so both methods widen
-   it to the let *)
+(* the range of := : the let (widened to it); the scrutinee p (path 2.0):
+   its plain pattern does not elaborate (the type of X is not known), the
+   pattern with the types written does, and only the type of X is kept *)
 elpi point_run_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" H 12 13.
-elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.0".
+elpi point_run_path_expect "Point" "move: H; pbp [X in (let (a, b) := X : nat * nat in _) = _ -> _]." "" "H" "2.0".
 (* the binders a and b of the let (its branch), as the range method *)
 elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.2".
 elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.2.2".
@@ -101,7 +108,9 @@ Abort.
 
 (* a term under a coercion that is not printed: n in (n + 1)%Z is
    Z.of_nat n; the selection is the coercion, which prints as n (no
-   warning), as the range method *)
+   warning), as the range method: an invisible coercion that prints as the
+   selection is preferred to a pattern with types ((X : nat)), which would
+   name a type the goal does not show *)
 Module C.
 From Stdlib Require Import ZArith.
 Coercion Z.of_nat : nat >-> Z.

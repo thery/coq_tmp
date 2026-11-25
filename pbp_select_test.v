@@ -298,12 +298,13 @@ move: a ab; pbp [X Y in X -> (Y -> _) -> _].
 by move=> _.
 Qed.
 
-(* The variables of the pattern avoid the names of the goal *)
+(* The variables of the pattern are bound by it: only the names its body
+   uses are avoided (here the hypothesis X is not in the body) *)
 Goal forall X Y : Prop, X /\ Y -> Y /\ X.
 Proof.
 move=> X Y.
-elpi pbp_pattern_expect "pbp [X0 in X0 /\ _ -> _]." "" 0 1.
-elpi pbp_pattern_expect "pbp [X0 Y0 in X0 /\ _ -> _ /\ Y0]." "" 0 1 9 10.
+elpi pbp_pattern_expect "pbp [X in X /\ _ -> _]." "" 0 1.
+elpi pbp_pattern_expect "pbp [X Y in X /\ _ -> _ /\ Y]." "" 0 1 9 10.
 pbp [X0 Y0 in X0 /\ _ -> _ /\ Y0].
 Abort.
 

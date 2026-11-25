@@ -369,20 +369,28 @@ revert Ctx [H|Hs] G (prod N T F) :-
   hyp-of Ctx H V T, coq.id->name H N, revert Ctx Hs G C,
   pi x\ (copy V x :- !) => copy C (F x).
 
+kind printed type.
+% [printed-as Shs] the subterms printed as a whole are Shs (from the ranges
+% of the printing: selections given by ranges)
+type printed-as list shown -> printed.
+% [printed-all] every subterm is printed as a whole, but those not-printed
+% excludes (selections given by paths: the tags of the printing are them)
+type printed-all printed.
+
 kind part type.
-% [part B T Shs] a part of the generalized goal: the hypothesis or the
-% conclusion T at path B, its subterms printed as Shs (paths from T)
-type part list int -> term -> list shown -> part.
+% [part B T Pr] a part of the generalized goal: the hypothesis or the
+% conclusion T at path B, its subterms printed as Pr says (paths from T)
+type part list int -> term -> printed -> part.
 
 % [parts Ctx Hs G Ps] Ps are the parts of the goal G with the hypotheses
 % Hs generalized: the hypotheses, then the conclusion
 pred parts i:goal-ctx, i:list string, i:term, o:list part.
 parts Ctx Hs G Ps :-
   std.map-i Hs (i\ h\ p\ sigma B0 B V T Shs\ ones i B0, std.append B0 [1] B,
-                        hyp-of Ctx h V T, shown-all T Shs, p = part B T Shs)
+                        hyp-of Ctx h V T, shown-all T Shs, p = part B T (printed-as Shs))
     PHs,
   std.length Hs N, ones N BG, shown-all G ShG,
-  std.append PHs [part BG G ShG] Ps.
+  std.append PHs [part BG G (printed-as ShG)] Ps.
 
 kind loc type.
 % [loc P I P0] a selection: the subterm at path P of the generalized goal,
@@ -412,7 +420,7 @@ locate Ctx _ _ (sel-hyp H _ _) _ _ :- hyp-of Ctx H _ _, !, fail.
 pred locate-in i:part, i:int, i:int, o:list int, o:list int, o:string.
 locate-in _ S E _ _ _ :- E < S, !,
   coq.ltac.fail 0 {msg "the range"} S E "ends before it starts".
-locate-in (part B T Shs) S E P P0 W :-
+locate-in (part B T (printed-as Shs)) S E P P0 W :-
   (E = S, E1 is S + 1 ; E > S, E1 = E), !,
   (smallest Shs S E1 Sh ;
    coq.ltac.fail 0 {msg "the range"} S E "is not in the printed term"),
@@ -442,23 +450,40 @@ pred hole i:term, o:term.
 hole T {{ @pbp_hole lp:Ty lp:T }} :- coq.typecheck T Ty ok, !.
 hole T {{ @pbp_hole Prop lp:T }}.
 
+kind vis type.
+% [vis-paths Ps] the holes of a pattern may be at the paths Ps
+type vis-paths list (list int) -> vis.
+% [vis-printed T] the holes of a pattern of T may be at every subterm of T
+% but those not-printed excludes
+type vis-printed term -> vis.
+% [vis-none] no hole: the subterms off the paths of the selections stay
+% as they are
+type vis-none vis.
+
+% [visible Vis P] a hole may be at the path P
+pred visible i:vis, i:list int.
+visible (vis-paths Ps) P :- std.mem! Ps P.
+visible (vis-printed T) P :- not (not-printed T P).
+
 % [pattern Sels Vis P Bs T R] R is the pattern of the subterm T at path
 % P, Bs being the variables bound above it: Sels maps the selected paths
-% to the variables of the pattern, Vis are the paths of the printed
-% subterms (the holes)
-pred pattern i:list (pair (list int) term), i:list (list int), i:list int,
+% to the variables of the pattern, Vis says where the holes may be
+pred pattern i:list (pair (list int) term), i:vis, i:list int,
              i:list term, i:term, o:term.
 pattern Sels _ P Bs T R :- std.lookup Sels P X, !,
-  std.filter Bs (v\ occurs v T) Vs, coq.mk-app X Vs R0, annotated T R0 R.
+  std.filter Bs (v\ occurs v T) Vs, coq.mk-app X Vs R0, typed P T R0 R.
+pattern Sels vis-none P _ T T :-
+  std.map Sels fst Ps, not (on-path P Ps), !.
 pattern Sels Vis P _ T H :-
-  std.map Sels fst Ps, not (on-path P Ps), std.mem! Vis P, !, hole T H.
+  std.map Sels fst Ps, not (on-path P Ps), visible Vis P, !, hole T H0,
+  typed P T H0 H.
 pattern Sels Vis P Bs T R :-
   kids T Ks, std.map-i Ks (pattern-kid Sels Vis P Bs T) Ks1,
   rebuild T Ks1 R.
 
 % [pattern-kid Sels Vis P Bs T I K K1] K1 is the pattern of K, the I-th
 % immediate subterm of T (at path P)
-pred pattern-kid i:list (pair (list int) term), i:list (list int),
+pred pattern-kid i:list (pair (list int) term), i:vis,
                  i:list int, i:list term, i:term, i:int, i:kid, o:kid.
 pattern-kid Sels _ P _ T I K K :-
   std.append P [I] PI, std.map Sels fst Ps, not (on-path PI Ps),
@@ -485,7 +510,7 @@ default-printing G :-
 % already bound); Ctx are the names of the hypotheses of the goal and M
 % says where C is (the names of its binders: display-names)
 pred pattern-text i:list string, i:list string, i:bmode, i:list (list int),
-                  i:term, i:list (list int), i:list term, o:string.
+                  i:term, i:vis, i:list term, o:string.
 pattern-text [N|Ns] Ctx M Ps C Vis Xs T :-
   coq.id->name N Nm,
   pi x\ decl x Nm {{ Prop }} =>
@@ -493,7 +518,10 @@ pattern-text [N|Ns] Ctx M Ps C Vis Xs T :-
 pattern-text [] Ctx M Ps C Vis Xs T :-
   std.map2 Ps Xs (p\ x\ s\ s = pr p x) Sels,
   pattern Sels Vis [] [] C P,
-  display-names Ctx [] M P P1 [] Rs,
+  % (the names of the variables are reserved: a binder of that name is renamed)
+  std.map Xs (x\ s\ sigma N Ty\ decl x N Ty, coq.name->id N s) XNs,
+  std.append XNs Ctx Ctx1,
+  display-names Ctx1 [] M P P1 [] Rs,
   default-printing (coq.term->string P1 S),
   rex.replace "pbp_hole" "_" S S1, replace-placeholders Rs S1 S2,
   one-line S2 T.
@@ -518,6 +546,8 @@ type bm-hyp bmode.         % the type of a hypothesis
 % are the names of the binders above T, M says where T is
 pred display-names i:list string, i:list string, i:bmode, i:term, o:term,
                    i:list (pair string string), o:list (pair string string).
+% (a hole is printed _: nothing in it is printed, its names stay)
+display-names _ _ _ ({{ @pbp_hole lp:_ lp:_ }} as T) T R R :- !.
 display-names Ctx Sc (bm-goal K) (prod N Ty F) (prod N1 Ty1 F1) R0 R :- K > 0, !,
   K1 is K - 1,
   display-names Ctx Sc bm-hyp Ty Ty1 R0 R1,
@@ -647,7 +677,7 @@ check-open (fun N T F) Ps [_|Ps1] Xs C :- !,
     sigma Xs1\ (std.append Xs [x] Xs1, check-open (F x) Ps Ps1 Xs1 C).
 check-open Body Ps [] Xs C :-
   std.map2 Ps Xs (p\ x\ s\ s = pr p x) Sels,
-  pattern Sels [] [] [] C C1,
+  pattern Sels vis-none [] [] C C1,
   coq.unify-eq Body C1 ok, !.
 
 /* ---------------- The selections, resolved ----------------
@@ -716,25 +746,15 @@ pred psel-sel i:psel, o:sel.
 psel-sel (psel-goal _) (sel-goal 0 0).
 psel-sel (psel-hyp H _) (sel-hyp H 0 0).
 
-% [all-shown T Shs] every subterm of T, as if printed as a whole (the
-% paths only: no range, no text), but those not-printed excludes; the
-% patterns may put a hole at any of them, the check of the pattern is what
-% tells that it is right
-pred all-shown i:term, o:list shown.
-all-shown T Shs :-
-  std.findall (path-of T P_) Sols,
-  std.map-filter Sols (s\ sh\ sigma P\ s = path-of T P, not (not-printed T P),
-                          sh = shown P 0 0 "") Shs.
-
 % [path-parts Ctx Hs G Ps] the parts of the goal G with the hypotheses Hs
-% generalized, as parts does, their subterms given by all-shown
+% generalized, as parts does, every subterm printed (printed-all)
 pred path-parts i:goal-ctx, i:list string, i:term, o:list part.
 path-parts Ctx Hs G Ps :-
   std.map-i Hs (i\ h\ p\ sigma B0 B V T Shs\ ones i B0, std.append B0 [1] B,
-                        hyp-of Ctx h V T, all-shown T Shs, p = part B T Shs)
+                        hyp-of Ctx h V T, p = part B T printed-all)
     PHs,
-  std.length Hs N, ones N BG, all-shown G ShG,
-  std.append PHs [part BG G ShG] Ps.
+  std.length Hs N, ones N BG,
+  std.append PHs [part BG G printed-all] Ps.
 
 % [path-locate Ctx Hs Ps Sel L W] the path selection Sel is L; W is the
 % text of the subterm if the selection had to be widened to it, ""
@@ -780,10 +800,36 @@ path-locate-sub Names M T P0 S P1 W :-
   (path-of T P0, ! ;
    through-name T P0, !, coq.ltac.fail 0 {msg "the path"} S "goes through a binder name" ;
    coq.ltac.fail 0 {msg "no subterm at the path"} S),
-  (path-selectable Names T P0, !, P1 = P0, W = "" ;
+  ((pattern-plain => path-selectable Names T P0), !, P1 = P0, W = "" ;
+   text-at P0 T W0, flat W0 Txt0, same-text-up Names T P0 Txt0 P1, !, W = "" ;
+   path-selectable Names T P0, !, P1 = P0, W = "" ;
    path-widen Names T P0 P1 Txt1, text-at P0 T W0, flat W0 Txt0,
    ((Txt0 = Txt1 ; Txt1 is "(" ^ Txt0 ^ ")"), !, W = "" ;
     text-at-names Names M P1 T W)).
+
+% [same-text-up Names T P Txt P1] P1 is the nearest path above P, among
+% those printed as Txt (the text of the subterm at P: invisible coercions
+% above it), whose plain pattern (without types) passes check
+pred same-text-up i:list string, i:term, i:list int, i:string, o:list int.
+same-text-up Names T P Txt P1 :-
+  coq.term->string T S, flat S O, marker-names O A B,
+  std.rev P [_|R], std.rev R Q, same-text-from Names T O A B Q Txt P1.
+
+pred same-text-from i:list string, i:term, i:string, i:string, i:string,
+                    i:list int, i:string, o:list int.
+same-text-from Names T O A B Q Txt P1 :-
+  not (not-printed T Q), shown-at T O A B Q (shown _ _ _ TxtQ), !,
+  (TxtQ = Txt ; TxtQ is "(" ^ Txt ^ ")"),
+  ((pattern-plain => path-selectable Names T Q), !, P1 = Q ;
+   Q = [_|_], std.rev Q [_|R], std.rev R Q1,
+   same-text-from Names T O A B Q1 Txt P1).
+% (not printed as a whole: a coercion inside one, the one above it is tried)
+same-text-from Names T O A B Q Txt P1 :-
+  Q = [_|_], std.rev Q [_|R], std.rev R Q1,
+  same-text-from Names T O A B Q1 Txt P1.
+
+% [pattern-plain] the pattern is tried without types only (pattern-checked)
+pred pattern-plain.
 
 % [name-at T P K] the path P of T ends at the name of a binder of kind K
 % (forall, fun, let)
@@ -825,9 +871,8 @@ path-selectable Ctx T P :- not (not-printed T P), (paths-no-check, ! ; pattern-o
 % passes check (a failure, not an error, otherwise)
 pred pattern-ok i:list string, i:term, i:list int.
 pattern-ok Ctx T P :-
-  all-shown T Shs, std.map Shs (sh\ v\ sh = shown v _ _ _) Vis,
-  coq.term->string T S, identifiers S Ids, std.append Ctx Ids Avoid,
-  fresh-names ["X"] Avoid [X], pattern-checked [X] X Ctx bm-hyp [P] T Vis _.
+  pattern-names [P] T (vis-printed T) [X],
+  pattern-checked [X] X Ctx bm-hyp [P] T (vis-printed T) _.
 
 % [path-widen Ctx T P0 P1 Txt] P1 is the nearest path above P0 that can be
 % selected and is printed as a whole (shown-at: as the range of a
@@ -877,22 +922,35 @@ point-hyps (point-in _ Hs _ _ _) Hs.
 pred point-count i:point-in, o:int.
 point-count (point-in _ _ _ _ Ls) N :- std.length Ls N.
 
-% [avoid-names Hs Parts Avoid] Avoid are the names the variables of a
-% pattern must not take: the hypotheses Hs and the words of the parts
-pred avoid-names i:list string, i:list part, o:list string.
-avoid-names Hs Parts Avoid :-
-  std.map Parts (p\ ws\ sigma B T Shs S\ p = part B T Shs,
-                   coq.term->string T S, identifiers S ws) Idss,
-  std.flatten [Hs|Idss] Avoid.
+% [pattern-names Ps T Vis Ns] Ns are the names of the variables of the
+% pattern of T whose selections are at the paths Ps: X (and Y), reserved
+% (a binder of the pattern of that name is renamed: display-names), or X0,
+% ... if a hypothesis or a constant of that name is printed in the pattern
+pred pattern-names i:list (list int), i:term, i:vis, o:list string.
+pattern-names Ps T Vis Ns :-
+  std.map Ps (p\ s\ s = pr p {{ True }}) Sels,
+  pattern Sels Vis [] [] T P, std.findall (visible-name P N_) Sols,
+  std.map Sols (s\ n\ s = visible-name _ n) Ids,
+  std.length Ps K, std.take K ["X", "Y"] Bases, fresh-names Bases Ids Ns.
 
-% [pattern-of Avoid Ctx M Ps T Vis Pat] Pat is the pattern [X in ...] (or
+% [visible-name P S] S is the name of a hypothesis or a constant printed in
+% the pattern P (not in a hole), one of them on backtracking
+pred visible-name i:term, o:string.
+visible-name {{ @pbp_hole lp:_ lp:_ }} _ :- !, fail.
+visible-name (global GR) S :- !, coq.gref->id GR S.
+visible-name (pglobal GR _) S :- !, coq.gref->id GR S.
+visible-name T S :- name T, !, (decl T N _ ; def T N _ _), coq.name->id N S.
+visible-name T S :- kids T Ks, std.mem Ks K,
+  (K = kt U, visible-name U S ; K = kb _ _ F, pi x\ visible-name (F x) S).
+
+% [pattern-of Ctx M Ps T Vis Pat] Pat is the pattern [X in ...] (or
 % [X Y in ...]) of the term T whose selections are at the paths Ps, Vis
 % being the paths of its printed subterms; it is checked (Ctx, M: as for
 % pattern-text)
-pred pattern-of i:list string, i:list string, i:bmode, i:list (list int),
-                i:term, i:list (list int), o:string.
-pattern-of Avoid Ctx M Ps T Vis Pat :-
-  std.length Ps K, std.take K ["X", "Y"] Bases, fresh-names Bases Avoid Ns,
+pred pattern-of i:list string, i:bmode, i:list (list int),
+                i:term, i:vis, o:string.
+pattern-of Ctx M Ps T Vis Pat :-
+  pattern-names Ps T Vis Ns,
   std.string.concat " " Ns NsS,
   (pattern-checked Ns NsS Ctx M Ps T Vis Pat, ! ;
    % (neither passes the check: the error of the plain one)
@@ -901,51 +959,113 @@ pattern-of Avoid Ctx M Ps T Vis Pat :-
 
 % [pattern-checked Ns NsS Ctx M Ps T Vis Pat] Pat is the pattern of
 % pattern-of, its variables Ns (NsS: with blanks between them), that passes
-% check: the plain one, else, when the plain one does not elaborate and
-% the selections are the scrutinees of matches whose branches bind no
-% variable (if X then _ else _: the text alone does not give the type of
-% X), the one where the variables are written with their types, (X : T)
-% (annotated).  (Not the scrutinee of a let '(a, b) := X: ssreflect's
-% patterns cannot go through such a match, the selection is widened.)
+% check: the plain one; else the one where the variables and the holes are
+% written with their types, (X : T) and (_ : T), if it passes, with as few
+% of these types as passes (typed-reduce).  (Only the plain one when pattern-plain
+% holds.)  (Not the scrutinee of a let
+% '(a, b) := X: ssreflect's patterns cannot go through such a match, the
+% selection is widened.)
 pred pattern-checked i:list string, i:string, i:list string, i:bmode,
-                     i:list (list int), i:term, i:list (list int), o:string.
+                     i:list (list int), i:term, i:vis, o:string.
 pattern-checked Ns NsS Ctx M Ps T Vis Pat :-
-  pattern-text Ns Ctx M Ps T Vis [] Body0,
-  Pat0 is "[" ^ NsS ^ " in " ^ Body0 ^ "]",
-  S0 is "(" ^ Pat0 ^ ")", coq.parse.argument S0 ff "" A D,
-  (D = ok, !, A = trm P0, check-open P0 Ps Ps [] T, Pat = Pat0 ;
-   D = error _, std.forall Ps (scrutinee-of-if T),
-   (pbp-annotate => pattern-text Ns Ctx M Ps T Vis [] Body1),
-   Pat1 is "[" ^ NsS ^ " in " ^ Body1 ^ "]",
-   check-ok Pat1 Ps T, Pat = Pat1).
+  typed-pattern Ns NsS Ctx M Ps T Vis [] Pat, !.
+pattern-checked Ns NsS Ctx M Ps T Vis Pat :-
+  not (pattern-plain),
+  std.map Ps (p\ s\ s = pr p {{ True }}) Sels,
+  typed-paths Sels Vis [] T All,
+  typed-pattern Ns NsS Ctx M Ps T Vis All _, !,
+  typed-reduce Ns NsS Ctx M Ps T Vis All [] Need,
+  typed-pattern Ns NsS Ctx M Ps T Vis Need Pat.
 
-% [scrutinee-of-if T P] the subterm at path P of T is the scrutinee of a
-% match whose branches bind no variable (an if)
-pred scrutinee-of-if i:term, i:list int.
-scrutinee-of-if (match _ _ Bs) [0] :- !,
-  std.forall Bs (b\ not (b = fun _ _ _)).
-scrutinee-of-if T [I|P] :- kids T Ks, std.nth I Ks K,
-  (K = kt U, scrutinee-of-if U P ; K = kb _ _ F, pi x\ scrutinee-of-if (F x) P).
+% [typed-pattern Ns NsS Ctx M Ps T Vis Ts Pat] Pat is the pattern whose
+% variables and holes at the paths Ts are written with their types, and it
+% passes check
+pred typed-pattern i:list string, i:string, i:list string, i:bmode,
+                   i:list (list int), i:term, i:vis, i:list (list int),
+                   o:string.
+typed-pattern Ns NsS Ctx M Ps T Vis Ts Pat :-
+  (typed-set Ts => pattern-text Ns Ctx M Ps T Vis [] Body),
+  Pat is "[" ^ NsS ^ " in " ^ Body ^ "]",
+  check-ok Pat Ps T.
 
-% [annotated T R0 R] R is the variable of a pattern R0 (applied to the
-% variables bound above it) at the place of the subterm T, written with the
-% type of T (a cast, which Rocq-Elpi sees as let _ : Ty := R0 in _) when
-% pbp-annotate holds, R0 otherwise
-pred pbp-annotate.
-pred annotated i:term, i:term, o:term.
-annotated T R0 (let `_` Ty R0 (x\ x)) :- pbp-annotate, coq.typecheck T Ty ok, !.
-annotated _ R R.
+% [typed-reduce Ns NsS Ctx M Ps T Vis Cs Fs Need] Need are the paths of Cs
+% whose types the pattern needs, the types at Fs being written: none if it
+% passes without them, else those of each half of Cs in turn
+pred typed-reduce i:list string, i:string, i:list string, i:bmode,
+                  i:list (list int), i:term, i:vis, i:list (list int),
+                  i:list (list int), o:list (list int).
+typed-reduce _ _ _ _ _ _ _ [] _ [] :- !.
+typed-reduce Ns NsS Ctx M Ps T Vis _ Fs [] :-
+  typed-pattern Ns NsS Ctx M Ps T Vis Fs _, !.
+typed-reduce _ _ _ _ _ _ _ [C] _ [C] :- !.
+typed-reduce Ns NsS Ctx M Ps T Vis Cs Fs Need :-
+  std.length Cs L, H is L div 2, std.split-at H Cs A B,
+  std.append B Fs BFs,
+  typed-reduce Ns NsS Ctx M Ps T Vis A BFs NA,
+  std.append NA Fs NAFs,
+  typed-reduce Ns NsS Ctx M Ps T Vis B NAFs NB,
+  std.append NA NB Need.
+
+% [typed-paths Sels Vis P T Ts] Ts are the paths of the selections (Sels)
+% and of the holes of the pattern of T (at path P): where a type may be
+% written
+pred typed-paths i:list (pair (list int) term), i:vis, i:list int, i:term,
+                 o:list (list int).
+typed-paths Sels _ P _ [P] :- std.lookup Sels P _, !.
+typed-paths Sels Vis P _ [P] :-
+  std.map Sels fst Ps, not (on-path P Ps), visible Vis P, !.
+typed-paths Sels _ P _ [] :- std.map Sels fst Ps, not (on-path P Ps), !.
+typed-paths Sels Vis P T Ts :-
+  kids T Ks, std.map-i Ks (i\ k\ ts\ typed-paths-kid Sels Vis P T i k ts) Tss,
+  std.flatten Tss Ts.
+
+pred typed-paths-kid i:list (pair (list int) term), i:vis, i:list int, i:term,
+                     i:int, i:kid, o:list (list int).
+typed-paths-kid Sels _ P T I _ [] :-
+  std.append P [I] PI, std.map Sels fst Ps, not (on-path PI Ps), kept T I, !.
+typed-paths-kid Sels Vis P _ I (kt U) Ts :- !,
+  std.append P [I] PI, typed-paths Sels Vis PI U Ts.
+typed-paths-kid Sels Vis P _ I (kb _ _ F) Ts :- !,
+  std.append P [I] PI, pi x\ typed-paths Sels Vis PI (F x) Ts.
+typed-paths-kid _ _ _ _ _ _ [].
+
+% [typed-set Ts] the types of the variables and holes at the paths Ts are
+% written (typed)
+pred typed-set o:list (list int).
+
+% [typed P T R0 R] R is R0 (the variable or the hole at path P, in place of
+% the subterm T), written with the type of T (a cast, which Rocq-Elpi sees
+% as let _ : Ty := R0 in _) when typed-set says so
+pred typed i:list int, i:term, i:term, o:term.
+typed P T R0 (let `_` Ty R0 (x\ x)) :-
+  typed-set Ts, std.mem! Ts P, coq.typecheck T Ty ok, !.
+typed _ _ R R.
+
+% [parts-vis Parts C Vis] Vis says where the holes of a pattern of the
+% generalized goal C, whose parts are Parts, may be
+pred parts-vis i:list part, i:term, o:vis.
+parts-vis Parts C (vis-printed C) :-
+  std.forall Parts (p\ p = part _ _ printed-all), !.
+parts-vis Parts _ (vis-paths Vis) :-
+  std.map Parts (p\ vs\ sigma B Shs\ p = part B _ (printed-as Shs),
+                   std.map Shs (sh\ v\ sigma P\ sh = shown P _ _ _,
+                                         std.append B P v) vs) Viss,
+  std.flatten Viss Vis.
+
+% [part-vis Pr T Vis] Vis says where the holes of a pattern of the part T,
+% printed as Pr says, may be
+pred part-vis i:printed, i:term, o:vis.
+part-vis printed-all T (vis-printed T).
+part-vis (printed-as Shs) _ (vis-paths Vis) :-
+  std.map Shs (sh\ v\ sh = shown v _ _ _) Vis.
 
 % [point-pattern In Pat] Pat is the pattern of the selections in the goal
 % with their hypotheses generalized (the one of pbp)
 pred point-pattern i:point-in, o:string.
 point-pattern (point-in Names Hs C Parts Ls) Pat :-
-  std.map Parts (p\ vs\ sigma B T Shs\ p = part B T Shs,
-                   std.map Shs (sh\ v\ sigma P\ sh = shown P _ _ _,
-                                         std.append B P v) vs) Viss,
-  std.flatten Viss Vis,
-  avoid-names Hs Parts Avoid, std.map Ls loc-path Ps, std.length Hs N,
-  pattern-of Avoid Names (bm-goal N) Ps C Vis Pat.
+  parts-vis Parts C Vis,
+  std.map Ls loc-path Ps, std.length Hs N,
+  pattern-of Names (bm-goal N) Ps C Vis Pat.
 
 % [point-revert In M] M is the tactic that generalizes the hypotheses of
 % the selections, "move: H1 H2; ", or "" if there are none
@@ -973,12 +1093,11 @@ point-in-hyp (point-in _ Hs _ _ _ as In) S :-
 % rewrite ... in H)
 pred point-local-pattern i:point-in, o:string.
 point-local-pattern (point-in Names Hs _ Parts Ls as In) Pat :-
-  point-part In I, std.nth I Parts (part _ T Shs), std.length Hs N,
+  point-part In I, std.nth I Parts (part _ T Pr), std.length Hs N,
   (I = N, !, M = bm-goal 0 ; M = bm-hyp),
-  std.map Shs (sh\ v\ sh = shown v _ _ _) Vis,
-  avoid-names Hs Parts Avoid,
+  part-vis Pr T Vis,
   std.map Ls (l\ p\ l = loc _ _ p) Ps,
-  pattern-of Avoid Names M Ps T Vis Pat.
+  pattern-of Names M Ps T Vis Pat.
 
 % [point-text In I S] S is the text of the selection number I (from 0),
 % on one line

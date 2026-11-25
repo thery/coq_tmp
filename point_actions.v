@@ -530,11 +530,12 @@ show-shown (shown P S E T) R :-
 
 % [show-part Hs I P S] S describes the part number I
 pred show-part i:list string, i:int, i:part, o:string.
-show-part Hs I (part B T Shs) S :-
+show-part Hs I (part B T Pr) S :-
   std.length Hs N,
   (I = N, !, What = "the conclusion" ; std.nth I Hs H, What is "the type of " ^ H),
   coq.term->string T TS0, one-line TS0 TS, show-path B BS,
-  std.map Shs show-shown Ls, std.string.concat "\n" Ls L,
+  (Pr = printed-as Shs, !, std.map Shs show-shown Ls, std.string.concat "\n" Ls L ;
+   L = "      every subterm printed (selections given by paths)"),
   S is "    " ^ int_to_string I ^ ": part " ^ BS ^ " (" ^ What ^ "): " ^ TS ^ "\n" ^ L.
 
 % [show-loc C L S] S describes the selection L of the goal C
@@ -635,6 +636,72 @@ solve (goal Ctx _ Ty _ [str Name, str Exp, str ExpW | Args] as G) [seal G] :-
   std.string.concat " / " Ws W,
   ((Line = Exp, W = ExpW), ! ;
    coq.ltac.fail 0 "point_run_path_expect: got" Line W "expected" Exp ExpW).
+}}.
+
+(* [elpi point_to_pattern Sel] prints the pattern of the selection Sel
+   (given by a path as for point_run_path) in its part: the conclusion or
+   the type of its hypothesis, e.g. [X in X + _ = _] for the selection
+   "2.1" of the goal x + 0 = x.  [elpi link_to_pattern Sel1 Sel2] prints
+   the one of two selections in the same part, e.g. [X Y in X + _ = Y]
+   for "2.1" "3".  A selection that cannot
+   be selected is widened as for point_run_path, with the same warning.
+   The goal is unchanged. *)
+Elpi Accumulate pbp_select.db lp:{{
+
+% [point-path-pattern Ctx G K Args Pat Ws] Pat is the pattern of the K path
+% selections Args in their part of the goal G; Ws as for point-run-paths
+pred point-path-pattern i:goal-ctx, i:term, i:int, i:list argument,
+                        o:string, o:list string.
+point-path-pattern Ctx G K Args Pat Ws :-
+  parse-psels Args Sels, std.length Sels N,
+  (N = K, ! ; coq.ltac.fail 0 {msg "it takes"} K "selection(s), not" N),
+  (paths-default => point-resolve-paths Ctx G Sels In Ws),
+  point-local-pattern In Pat.
+}}.
+
+Elpi Tactic point_to_pattern.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ Args as G) [seal G] :-
+  (tool-name "point_to_pattern" => (
+     point-path-pattern Ctx Ty 1 Args Pat Ws,
+     msg "the selection is widened to" M)),
+  std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
+  coq.say Pat.
+}}.
+
+Elpi Tactic link_to_pattern.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ Args as G) [seal G] :-
+  (tool-name "link_to_pattern" => (
+     point-path-pattern Ctx Ty 2 Args Pat Ws,
+     msg "the selection is widened to" M)),
+  std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
+  coq.say Pat.
+}}.
+
+(* [elpi point_to_pattern_expect Pat Sel] and [elpi link_to_pattern_expect
+   Pat Sel1 Sel2], for the tests: fail unless point_to_pattern or
+   link_to_pattern gives the pattern Pat *)
+Elpi Accumulate pbp_select.db lp:{{
+pred to-pattern-expect i:string, i:int, i:goal-ctx, i:term, i:list argument.
+to-pattern-expect Tool K Ctx Ty [str Exp | Args] :-
+  (tool-name Tool => point-path-pattern Ctx Ty K Args Pat _),
+  (Pat = Exp, ! ;
+   coq.ltac.fail 0 {calc (Tool ^ "_expect: got")} Pat "expected" Exp).
+}}.
+Elpi Tactic point_to_pattern_expect.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ Args as G) [seal G] :-
+  to-pattern-expect "point_to_pattern" 1 Ctx Ty Args.
+}}.
+Elpi Tactic link_to_pattern_expect.
+Elpi Accumulate Db pbp_select.db.
+Elpi Accumulate lp:{{
+solve (goal Ctx _ Ty _ Args as G) [seal G] :-
+  to-pattern-expect "link_to_pattern" 2 Ctx Ty Args.
 }}.
 
 (* ---------------- The round trip of the paths ----------------
