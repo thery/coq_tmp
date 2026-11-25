@@ -719,10 +719,14 @@ rt-locate Names M T P Txt St O :- not (name-at T P _), path-of T P,
 % pattern)
 pred rt-name-at i:list string, i:list string, i:bmode, i:term, i:list int, o:string.
 rt-name-at Ctx Sc M T [0] S :- rt-binder T N F, !, rt-display Ctx Sc M N F tt S.
-rt-name-at Ctx Sc M T [I|P] S :- kids T Ks, std.nth I Ks K, kid-mode M T I M1,
-  (K = kt V, rt-name-at Ctx Sc M1 V P S ;
-   K = kb N _ F, rt-display Ctx Sc M N F ff D,
-   pi x\ rt-name-at Ctx [D|Sc] M1 (F x) P S).
+rt-name-at Ctx Sc M T [I|P] S :- kid-mode M T I M1,
+  kid-at T I (rt-kid-name-at Ctx Sc M1 P S).
+
+% [rt-kid-name-at Ctx Sc M P S K] rt-name-at in the immediate subterm K
+pred rt-kid-name-at i:list string, i:list string, i:bmode, i:list int, o:string, i:kid.
+rt-kid-name-at Ctx Sc M P S (kt V) :- rt-name-at Ctx Sc M V P S.
+rt-kid-name-at Ctx Sc M P S (kb N _ F) :- rt-display Ctx Sc M N F ff D,
+  pi x\ rt-name-at Ctx [D|Sc] M (F x) P S.
 
 % [rt-binder T N F] T is a binder of name N and body F
 pred rt-binder i:term, o:name, o:(term -> term).
@@ -846,8 +850,11 @@ rt-binder-used T [] :- !, rt-binder T _ F, (pi x\ occurs x (F x)), not (rt-inter
 pred rt-intermediate i:(term -> term).
 rt-intermediate F :- pi x\ sigma R Bs\ F x = match x R Bs,
   not (occurs x R), not (std.exists Bs (occurs x)).
-rt-binder-used T [I|Q] :- kids T Ks, std.nth I Ks K,
-  (K = kt U, rt-binder-used U Q ; K = kb _ _ F, pi x\ rt-binder-used (F x) Q).
+rt-binder-used T [I|Q] :- kid-at T I (rt-kid-binder-used Q).
+% [rt-kid-binder-used Q K] rt-binder-used in the immediate subterm K
+pred rt-kid-binder-used i:list int, i:kid.
+rt-kid-binder-used Q (kt U) :- rt-binder-used U Q.
+rt-kid-binder-used Q (kb _ _ F) :- pi x\ rt-binder-used (F x) Q.
 solve (goal Ctx _ Ty _ [str Case, str Where | Tags] as G) [seal G] :-
   (Where = "|-", !, T = Ty, M = bm-goal 0 ;
    std.mem Ctx (decl _ N _), coq.name->id N Where, !, hyp-of Ctx Where _ T, M = bm-hyp ;

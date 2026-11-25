@@ -48,11 +48,18 @@ pred show-walk i:list int, i:term, i:list (pair term string),
                o:string.
 show-walk [] T Bs F S :- !, F (sel-term T) Bs S.
 show-walk [0] T Bs F S :- binder-kind T K, !, show-bind T K Bs (x\ bs\ s\ F (sel-name x K) bs s) S.
-show-walk [I|P] T Bs F S :- kids T Ks, std.nth I Ks Kd,
-  (Kd = kt U, !, show-walk P U Bs F S ;
-   (binder-kind T K, ! ; K = "cast"),
+show-walk [I|P] T Bs F S :- kid-at T I is-kt, !, kid-at T I (show-kid P Bs F S).
+show-walk [I|P] T Bs F S :- kid-at T I (_\ true),
+  ((binder-kind T K, ! ; K = "cast"),
    show-bind T K Bs (x\ bs\ s\ sigma B\ (T = prod _ _ B ; T = fun _ _ B ; T = let _ _ _ B),
                        show-walk P (B x) bs F s) S).
+
+% [show-kid P Bs F S K] show-walk in the immediate subterm K (not under a
+% binder)
+pred show-kid i:list int, i:list (pair term string),
+              i:(pred i:show-sel, i:list (pair term string), o:string),
+              o:string, i:kid.
+show-kid P Bs F S (kt U) :- show-walk P U Bs F S.
 
 % [show-bind T K Bs G S] G x Bs1 S under the binder T (of kind K), x its
 % variable (declared: decl, or def for a let)

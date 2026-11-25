@@ -191,6 +191,15 @@ reserved: a binder of the pattern named `X` is renamed; they become
 the pattern.  A binder named as a hypothesis that its body uses is
 renamed as the goal display renames it.
 
+Cost: the walks along a path take each subterm apart in clause heads and
+build the new term from its root, so that Elpi's occurs check meets each
+subterm beside the path once: the cost is the length of the path plus
+the size of the goal, not their product (in `[0; 1; ..; 299] = []`, the
+element 199, 400 levels deep, takes about 1 s natively; it took 40 s).
+A binder on the path still costs the size of its body (Elpi substitutes
+its variable).  The pattern is printed without Printing Depth (the
+printer writes `...` below depth 50, which would not parse).
+
 Limits: pbp itself has rules for the logical connectives only (`pbp [X
 in X + _ = _]` is a valid pattern, for `rewrite [X in X + _ = _]...` too,
 but pbp fails on it); the notation `[X in ...]` (subterm_pattern.v)

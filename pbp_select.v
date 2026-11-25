@@ -246,12 +246,12 @@ point-head (point-in _ _ C _ Ls) I GR :-
 % GR
 pred head-at i:list int, i:term, o:gref.
 head-at [] T GR :- head-gref T GR.
-head-at [I|P] T GR :- kids T Ks, std.nth I Ks K, kid-head P K GR.
+head-at [I|P] T GR :- kid-at T I (kid-head P GR).
 
-% [kid-head P K GR] head-at in the immediate subterm K
-pred kid-head i:list int, i:kid, o:gref.
-kid-head P (kt T) GR :- head-at P T GR.
-kid-head P (kb N Ty B) GR :- pi x\ decl x N Ty => head-at P (B x) GR.
+% [kid-head P GR K] head-at in the immediate subterm K
+pred kid-head i:list int, o:gref, i:kid.
+kid-head P GR (kt T) :- head-at P T GR.
+kid-head P GR (kb N Ty B) :- pi x\ decl x N Ty => head-at P (B x) GR.
 
 % [head-gref T GR] T is GR or an application of GR
 pred head-gref i:term, o:gref.

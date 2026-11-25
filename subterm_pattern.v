@@ -137,6 +137,140 @@ rebuild (match _ _ _) [kt T, kt R | Ks] (match T R Bs) :- !,
   std.map Ks (k\ t\ k = kt t) Bs.
 rebuild T [] T.
 
+/* The walks along a path use kid-at, kids-fold, kids-map and kid-replace
+   below, not kids and std.nth: in Elpi, giving an unknown an existing
+   term for value (an output, X = T) walks the term (the occurs check), so
+   a list of the immediate subterms, built at each level of a path, costs
+   the size of the subterm at that level: quadratic along a deep path
+   ([0; ..; 299], its element 199: 40 s).  These hand each immediate
+   subterm to a predicate (its clause heads take it apart, for free), and
+   build a new term from its root (an unknown of the result gets its value
+   before its subterms get theirs: a walk only meets the subterms beside
+   the path, each once).  A function given to them does not hold a big
+   term either (Elpi walks the body of a function it applies): it is given
+   T. */
+
+% [kid-at T I G] G K, K being the I-th immediate subterm of T (none: it
+% fails)
+pred kid-at i:term, i:int, i:(pred i:kid).
+kid-at (app L) I G :- !, nth-kid I L G.
+kid-at (prod N T F) I G :- !, binder-kid I N T F G.
+kid-at (fun N T F) I G :- !, binder-kid I N T F G.
+kid-at (let N T B F) I G :- cast-let N F, !,
+  (I = 0, !, G (kt T) ; I = 1, !, G (kt B) ; I = 2, G (kb N T F)).
+kid-at (let N T B F) I G :- !,
+  (I = 0, !, G (kn N) ; I = 1, !, G (kt T) ; I = 2, !, G (kt B) ;
+   I = 3, G (kb N T F)).
+kid-at (match T R Bs) I G :- !,
+  (I = 0, !, G (kt T) ; I = 1, !, G (kt R) ; I >= 2, J is I - 2, nth-kid J Bs G).
+
+% [nth-kid I L G] G (kt T), T being the I-th term of L
+pred nth-kid i:int, i:list term, i:(pred i:kid).
+nth-kid 0 [T|_] G :- !, G (kt T).
+nth-kid I [_|L] G :- I > 0, I1 is I - 1, nth-kid I1 L G.
+
+% [binder-kid I N T F G] kid-at of the forall or fun of name N, type T and
+% body F
+pred binder-kid i:int, i:name, i:term, i:(term -> term), i:(pred i:kid).
+binder-kid 0 N _ _ G :- !, G (kn N).
+binder-kid 1 _ T _ G :- !, G (kt T).
+binder-kid 2 N T F G :- G (kb N T F).
+
+% [is-kt K] K is an immediate subterm not under a binder
+pred is-kt i:kid.
+is-kt (kt _).
+
+% [kid-count T N] T has N immediate subterms
+pred kid-count i:term, o:int.
+kid-count (app L) N :- !, std.length L N.
+kid-count (prod _ _ _) 3 :- !.
+kid-count (fun _ _ _) 3 :- !.
+kid-count (let N _ _ F) 3 :- cast-let N F, !.
+kid-count (let _ _ _ _) 4 :- !.
+kid-count (match _ _ Bs) N :- !, std.length Bs K, N is K + 2.
+kid-count _ 0.
+
+% [kids-fold T F A0 A] A is A0 through F T I K for each immediate subterm
+% K of T, at position I
+pred kids-fold i:term, i:(pred i:term, i:int, i:kid, i:A, o:A), i:A, o:A.
+kids-fold (app L as T) F A0 A :- !, kids-fold-list T F 0 L A0 A.
+kids-fold (prod N Ty B as T) F A0 A :- !,
+  F T 0 (kn N) A0 A1, F T 1 (kt Ty) A1 A2, F T 2 (kb N Ty B) A2 A.
+kids-fold (fun N Ty B as T) F A0 A :- !,
+  F T 0 (kn N) A0 A1, F T 1 (kt Ty) A1 A2, F T 2 (kb N Ty B) A2 A.
+kids-fold (let N Ty V B as T) F A0 A :- cast-let N B, !,
+  F T 0 (kt Ty) A0 A1, F T 1 (kt V) A1 A2, F T 2 (kb N Ty B) A2 A.
+kids-fold (let N Ty V B as T) F A0 A :- !,
+  F T 0 (kn N) A0 A1, F T 1 (kt Ty) A1 A2, F T 2 (kt V) A2 A3,
+  F T 3 (kb N Ty B) A3 A.
+kids-fold (match S R Bs as T) F A0 A :- !,
+  F T 0 (kt S) A0 A1, F T 1 (kt R) A1 A2, kids-fold-list T F 2 Bs A2 A.
+kids-fold _ _ A A.
+
+% [kids-fold-list T F I L A0 A] kids-fold for the terms L, from position I
+pred kids-fold-list i:term, i:(pred i:term, i:int, i:kid, i:A, o:A), i:int,
+                    i:list term, i:A, o:A.
+kids-fold-list _ _ _ [] A A.
+kids-fold-list T F I [U|L] A0 A :-
+  F T I (kt U) A0 A1, I1 is I + 1, kids-fold-list T F I1 L A1 A.
+
+% [kids-map T F T1 A0 A] T1 is T with each immediate subterm K (at
+% position I) replaced by K1, F T I K K1 (A: through all of them, as
+% kids-fold); a binder name is given (kn) but stays
+pred kids-map i:term, i:(pred i:term, i:int, i:kid, o:kid, i:A, o:A),
+              o:term, i:A, o:A.
+kids-map (app L as T) F (app L1) A0 A :- !, kids-map-list T F 0 L L1 A0 A.
+kids-map (prod N Ty B as T) F (prod N Ty1 B1) A0 A :- !,
+  F T 0 (kn N) _ A0 A1, F T 1 (kt Ty) (kt Ty1) A1 A2,
+  F T 2 (kb N Ty B) (kb _ _ B1) A2 A.
+kids-map (fun N Ty B as T) F (fun N Ty1 B1) A0 A :- !,
+  F T 0 (kn N) _ A0 A1, F T 1 (kt Ty) (kt Ty1) A1 A2,
+  F T 2 (kb N Ty B) (kb _ _ B1) A2 A.
+kids-map (let N Ty V B as T) F (let N Ty1 V1 B1) A0 A :- cast-let N B, !,
+  F T 0 (kt Ty) (kt Ty1) A0 A1, F T 1 (kt V) (kt V1) A1 A2,
+  F T 2 (kb N Ty B) (kb _ _ B1) A2 A.
+kids-map (let N Ty V B as T) F (let N Ty1 V1 B1) A0 A :- !,
+  F T 0 (kn N) _ A0 A1, F T 1 (kt Ty) (kt Ty1) A1 A2,
+  F T 2 (kt V) (kt V1) A2 A3, F T 3 (kb N Ty B) (kb _ _ B1) A3 A.
+kids-map (match S R Bs as T) F (match S1 R1 Bs1) A0 A :- !,
+  F T 0 (kt S) (kt S1) A0 A1, F T 1 (kt R) (kt R1) A1 A2,
+  kids-map-list T F 2 Bs Bs1 A2 A.
+kids-map T _ T A A.
+
+% [kids-map-list T F I L L1 A0 A] kids-map for the terms L, from position I
+pred kids-map-list i:term, i:(pred i:term, i:int, i:kid, o:kid, i:A, o:A),
+                   i:int, i:list term, o:list term, i:A, o:A.
+kids-map-list _ _ _ [] [] A A.
+kids-map-list T F I [U|L] [U1|L1] A0 A :-
+  F T I (kt U) (kt U1) A0 A1, I1 is I + 1, kids-map-list T F I1 L L1 A1 A.
+
+% [kid-replace T I G T1] T1 is T with its I-th immediate subterm K (not a
+% binder name) replaced by K1, G K K1; the others stay
+pred kid-replace i:term, i:int, i:(pred i:kid, o:kid), o:term.
+kid-replace (app L) I G (app L1) :- !, nth-replace I L G L1.
+kid-replace (prod N T F) 1 G (prod N T1 F) :- !, G (kt T) (kt T1).
+kid-replace (prod N T F) 2 G (prod N T F1) :- !, G (kb N T F) (kb _ _ F1).
+kid-replace (fun N T F) 1 G (fun N T1 F) :- !, G (kt T) (kt T1).
+kid-replace (fun N T F) 2 G (fun N T F1) :- !, G (kb N T F) (kb _ _ F1).
+kid-replace (let N T B F) I G T1 :- cast-let N F, !,
+  (I = 0, !, T1 = let N U B F, G (kt T) (kt U) ;
+   I = 1, !, T1 = let N T U F, G (kt B) (kt U) ;
+   I = 2, T1 = let N T B F1, G (kb N T F) (kb _ _ F1)).
+kid-replace (let N T B F) I G T1 :- !,
+  (I = 1, !, T1 = let N U B F, G (kt T) (kt U) ;
+   I = 2, !, T1 = let N T U F, G (kt B) (kt U) ;
+   I = 3, T1 = let N T B F1, G (kb N T F) (kb _ _ F1)).
+kid-replace (match T R Bs) I G T1 :- !,
+  (I = 0, !, T1 = match U R Bs, G (kt T) (kt U) ;
+   I = 1, !, T1 = match T U Bs, G (kt R) (kt U) ;
+   I >= 2, J is I - 2, T1 = match T R Bs1, nth-replace J Bs G Bs1).
+
+% [nth-replace I L G L1] L1 is L with its I-th term T replaced by T1,
+% G (kt T) (kt T1)
+pred nth-replace i:int, i:list term, i:(pred i:kid, o:kid), o:list term.
+nth-replace 0 [T|L] G [T1|L] :- !, G (kt T) (kt T1).
+nth-replace I [T|L] G [T|L1] :- I > 0, I1 is I - 1, nth-replace I1 L G L1.
+
 % [mk-app H Args T] T is H applied to Args, as one application; unlike
 % coq.mk-app, a head fun or let is not reduced ((fun x => x + y) a stays)
 pred mk-app i:term, i:list term, o:term.
@@ -148,20 +282,19 @@ mk-app H Args (app [H|Args]).
 % cast (t : T) as let _ : T := t in x (its name is anonymous, its body its
 % variable; a let k := t in k has a name)
 pred cast-let i:name, i:(term -> term).
-cast-let N F :- coq.name->id N "_", pi x\ F x == x.
+cast-let N (x\ x) :- coq.name->id N "_".
 
 % [path-of T P] P is the path of a subterm of T (all of them, the root
 % first, on backtracking)
 pred path-of i:term, o:list int.
 path-of _ [].
 path-of T [I|P] :-
-  kids T Ks, std.length Ks N, N > 0, std.iota N Is, std.mem Is I,
-  std.nth I Ks K, kid-path K P.
+  kid-count T N, N > 0, std.iota N Is, std.mem Is I, kid-at T I (kid-path P).
 
-% [kid-path K P] P is the path of a subterm of the subterm K
-pred kid-path i:kid, o:list int.
-kid-path (kt T) P :- path-of T P.
-kid-path (kb _ _ B) P :- pi x\ path-of (B x) P.
+% [kid-path P K] P is the path of a subterm of the subterm K
+pred kid-path o:list int, i:kid.
+kid-path P (kt T) :- path-of T P.
+kid-path P (kb _ _ B) :- pi x\ path-of (B x) P.
 
 % [parent P Q] Q is the path just above the path P (not the root)
 pred parent i:list int, o:list int.
@@ -174,9 +307,7 @@ pred replace-at i:list int, i:list term,
                 i:(pred i:list term, i:term, o:term), i:term, o:term.
 replace-at [] Bs F T R :- !, F Bs T R.
 replace-at [I|P] Bs F T T1 :-
-  kids T Ks, std.split-at I Ks Before [K|After], not (K = kn _),
-  replace-kid P Bs F K K1,
-  std.append Before [K1|After] Ks1, rebuild T Ks1 T1.
+  kid-replace T I (replace-kid P Bs F) T1.
 
 % [replace-kid P Bs F K K1] replace-at in the immediate subterm K
 pred replace-kid i:list int, i:list term,
@@ -190,29 +321,33 @@ replace-kid P Bs F (kb N Ty B) (kb N Ty B1) :-
 % variable bound in T
 pred term-at i:list int, i:term, o:term.
 term-at [] T T.
-term-at [I|P] T R :- kids T Ks, std.nth I Ks K, kid-term P K R.
+term-at [I|P] T R :- kid-at T I (kid-term P R).
 
-% [kid-term P K R] term-at in the immediate subterm K
-pred kid-term i:list int, i:kid, o:term.
-kid-term P (kt T) R :- term-at P T R.
-kid-term P (kb _ _ B) R :- pi x\ term-at P (B x) R.
+% [kid-term P R K] term-at in the immediate subterm K
+pred kid-term i:list int, o:term, i:kid.
+kid-term P R (kt T) :- term-at P T R.
+kid-term P R (kb _ _ B) :- pi x\ term-at P (B x) R.
 
 % [text-at P T S] S is the subterm of T at path P, printed on one line
 pred text-at i:list int, i:term, o:string.
 text-at [] T S :- coq.term->string T S0, one-line S0 S.
-text-at [I|P] T S :- kids T Ks, std.nth I Ks K, kid-text P K S.
+text-at [I|P] T S :- kid-at T I (kid-text P S).
 
-% [kid-text P K S] S is the subterm at path P of the subterm K
-pred kid-text i:list int, i:kid, o:string.
-kid-text P (kt T) S :- text-at P T S.
-kid-text P (kb N Ty B) S :- pi x\ decl x N Ty => text-at P (B x) S.
+% [kid-text P S K] S is the subterm at path P of the subterm K
+pred kid-text i:list int, o:string, i:kid.
+kid-text P S (kt T) :- text-at P T S.
+kid-text P S (kb N Ty B) :- pi x\ decl x N Ty => text-at P (B x) S.
 
 % [name-at T P K] the path P of T ends at the name of a binder of kind K
 % (forall, fun, let)
 pred name-at i:term, i:list int, o:string.
 name-at T [0] K :- binder-kind T K, !.
-name-at T [I|P] K :- kids T Ks, std.length Ks L, I < L, std.nth I Ks Kd,
-  (Kd = kt U, name-at U P K ; Kd = kb _ _ F, pi x\ name-at (F x) P K).
+name-at T [I|P] K :- kid-at T I (kid-name-at P K).
+
+% [kid-name-at P K Kd] name-at in the immediate subterm Kd
+pred kid-name-at i:list int, o:string, i:kid.
+kid-name-at P K (kt U) :- name-at U P K.
+kid-name-at P K (kb _ _ F) :- pi x\ name-at (F x) P K.
 
 % [binder-kind T K] T is a binder of kind K (a cast is not one)
 pred binder-kind i:term, o:string.
@@ -224,8 +359,12 @@ binder-kind (let N _ _ F) "let" :- not (cast-let N F).
 % (a longer path than one that ends at it)
 pred through-name i:term, i:list int.
 through-name T [0, _ | _] :- binder-kind T _, !.
-through-name T [I|P] :- kids T Ks, std.length Ks L, I < L, std.nth I Ks Kd,
-  (Kd = kt U, through-name U P ; Kd = kb _ _ F, pi x\ through-name (F x) P).
+through-name T [I|P] :- kid-at T I (kid-through-name P).
+
+% [kid-through-name P Kd] through-name in the immediate subterm Kd
+pred kid-through-name i:list int, i:kid.
+kid-through-name P (kt U) :- through-name U P.
+kid-through-name P (kb _ _ F) :- pi x\ through-name (F x) P.
 
 % [path-of-string S P] S is the path P written "i.j.k" ("" for the root)
 pred path-of-string i:string, o:list int.
@@ -258,12 +397,21 @@ pred kid-status i:term, i:int, i:status, o:status.
 kid-status _ _ st-hidden st-hidden :- !.
 kid-status (match _ _ _) 1 _ st-hidden :- !.
 kid-status (match _ _ Bs) I _ st-binder :- I >= 2, J is I - 2,
-  std.nth J Bs (fun _ _ _), !.
+  nth-is-fun J Bs, !.
 kid-status (let N _ _ F) 2 _ st-hidden :- cast-let N F, !.
 kid-status (fun _ _ _) 1 st-binder st-hidden :- !.
 kid-status (fun _ _ F) 2 st-binder st-binder :-
-  pi x\ sigma N Ty B\ F x = fun N Ty B, !.
+  pi x\ is-fun (F x), !.
 kid-status _ _ _ st-printed.
+
+% [nth-is-fun J Bs] the J-th term of Bs is a fun
+pred nth-is-fun i:int, i:list term.
+nth-is-fun 0 [fun _ _ _ | _] :- !.
+nth-is-fun J [_ | Bs] :- J > 0, J1 is J - 1, nth-is-fun J1 Bs.
+
+% [is-fun T] T is a fun
+pred is-fun i:term.
+is-fun (fun _ _ _).
 
 % [printed-at T P] the subterm at path P of T is printed
 pred printed-at i:term, i:list int.
@@ -273,9 +421,13 @@ printed-at T P :- status-at T P st-printed st-printed.
 % printed, St0 how T is
 pred status-at i:term, i:list int, i:status, o:status.
 status-at _ [] St St.
-status-at T [I|P] St0 St :- kids T Ks, std.nth I Ks K, kid-status T I St0 St1,
-  (K = kt U, status-at U P St1 St ;
-   K = kb _ _ F, pi x\ status-at (F x) P St1 St).
+status-at T [I|P] St0 St :- kid-status T I St0 St1,
+  kid-at T I (kid-status-at P St1 St).
+
+% [kid-status-at P St0 St K] status-at in the immediate subterm K
+pred kid-status-at i:list int, i:status, o:status, i:kid.
+kid-status-at P St0 St (kt U) :- status-at U P St0 St.
+kid-status-at P St0 St (kb _ _ F) :- pi x\ status-at (F x) P St0 St.
 
 % [marker-names O A B] A and B, the names of the two markers, are names
 % that do not occur in O, the printed term (without blanks): so the
@@ -386,10 +538,14 @@ display-names Ctx Sc M (fix N I Ty F) (fix N1 I Ty1 F1) R0 R :- !,
   display-names Ctx Sc M Ty Ty1 R0 R1,
   display-binder Ctx Sc M N F N1 Sc1 R1 R2,
   pi x\ display-names Ctx Sc1 M (F x) (F1 x) R2 R.
-display-names Ctx Sc M T T1 R0 R :-
-  kids T Ks, std.fold-map Ks R0 (k\ r\ k1\ r1\ sigma U U1\ k = kt U,
-                     display-names Ctx Sc M U U1 r r1, k1 = kt U1) Ks1 R,
-  rebuild T Ks1 T1.
+display-names Ctx Sc M T T1 R0 R :- kids-map T (display-names-kid Ctx Sc M) T1 R0 R.
+
+% [display-names-kid Ctx Sc M T I K K1 R0 R] display-names in the immediate
+% subterm K (at position I of T: an application or a match)
+pred display-names-kid i:list string, i:list string, i:bmode, i:term, i:int,
+                       i:kid, o:kid, i:list (pair string string),
+                       o:list (pair string string).
+display-names-kid Ctx Sc M _ _ (kt U) (kt U1) R0 R :- display-names Ctx Sc M U U1 R0 R.
 
 % [display-binder Ctx Sc M N F N1 Sc1 R0 R] N1 is the name to give the
 % binder N of body F (its placeholder, or N), Sc1 is Sc with the name it
@@ -410,7 +566,12 @@ display-binder _ Sc _ N _ N [S|Sc] R R :- coq.name->id N S.
 % [var-named-in S T] a variable of the context named S occurs in T
 pred var-named-in i:string, i:term.
 var-named-in S T :- name T, !, (decl T N _ ; def T N _ _), coq.name->id N S.
-var-named-in S T :- kids T Ks, std.exists Ks (kid-var-named-in S).
+var-named-in S T :- kid-count T N, kid-exists T 0 N (kid-var-named-in S).
+
+% [kid-exists T I N G] G K for one of the immediate subterms K of T from the
+% I-th (T has N of them)
+pred kid-exists i:term, i:int, i:int, i:(pred i:kid).
+kid-exists T I N G :- I < N, (kid-at T I G, ! ; I1 is I + 1, kid-exists T I1 N G).
 
 % [kid-var-named-in S K] var-named-in in the immediate subterm K
 pred kid-var-named-in i:string, i:kid.
@@ -465,12 +626,12 @@ text-at-names Ctx M [] T S :- !,
   display-names Ctx [] M T T1 [] Rs, coq.term->string T1 S0,
   replace-placeholders Rs S0 S1, one-line S1 S.
 text-at-names Ctx M [I|P] T S :-
-  kids T Ks, std.nth I Ks K, kid-mode M T I M1, kid-text-names Ctx M1 P K S.
+  kid-mode M T I M1, kid-at T I (kid-text-names Ctx M1 P S).
 
-% [kid-text-names Ctx M P K S] text-at-names in the immediate subterm K
-pred kid-text-names i:list string, i:bmode, i:list int, i:kid, o:string.
-kid-text-names Ctx M P (kt T) S :- text-at-names Ctx M P T S.
-kid-text-names Ctx M P (kb N Ty B) S :-
+% [kid-text-names Ctx M P S K] text-at-names in the immediate subterm K
+pred kid-text-names i:list string, i:bmode, i:list int, o:string, i:kid.
+kid-text-names Ctx M P S (kt T) :- text-at-names Ctx M P T S.
+kid-text-names Ctx M P S (kb N Ty B) :-
   % the binder named as the display names it
   display-binder Ctx [] M N B _ [D|_] [] _, coq.id->name D ND,
   pi x\ decl x ND Ty => text-at-names [D|Ctx] M P (B x) S.
@@ -518,13 +679,18 @@ pred walk-bound o:term.
 pred walk i:list (pair (list int) term), i:status, i:list term, i:term,
           o:term, i:pacc, o:pacc.
 walk Sels _ Bs T R A0 A :- selected Sels X, !,
-  std.rev Bs Bs1, std.filter Bs1 (v\ occurs v T) Vs, coq.mk-app X Vs R0,
+  std.rev Bs Bs1, std.filter Bs1 (occurs-in T) Vs, coq.mk-app X Vs R0,
   place T R0 R A0 A.
+
+% [occurs-in T V] the variable V occurs in T (a function std.filter can be
+% given: a function written v\ occurs v T, in a clause, holds T, and Elpi
+% walks T each time it tries the clause)
+pred occurs-in i:term, i:term.
+occurs-in T V :- occurs V T.
 walk [] st-printed _ T R A0 A :- !, place T {{ @pbp_hole Prop lp:T }} R A0 A.
 walk [] st-hidden _ T T A0 A :- !, names-in T A0 A.
-walk Sels St Bs T R A0 A :- kids T Ks,
-  (Ks = [], !, R = T, names-in T A0 A ;
-   walk-kids Sels St Bs T 0 Ks Ks1 A0 A, rebuild T Ks1 R).
+walk _ _ _ T R A0 A :- kid-count T N, N = 0, !, R = T, names-in T A0 A.
+walk Sels St Bs T R A0 A :- kids-map T (walk-kid-at Sels St Bs) R A0 A.
 
 % [selected Sels X] one of the selections Sels is here (its path is
 % empty): its variable is X
@@ -532,16 +698,14 @@ pred selected i:list (pair (list int) term), o:term.
 selected [pr [] X | _] X :- !.
 selected [_ | Sels] X :- selected Sels X.
 
-% [walk-kids Sels St Bs T I Ks Ks1 A0 A] Ks1 are the patterns of Ks, the
-% immediate subterms of T from the I-th
-pred walk-kids i:list (pair (list int) term), i:status, i:list term,
-               i:term, i:int, i:list kid, o:list kid, i:pacc, o:pacc.
-walk-kids _ _ _ _ _ [] [] A A.
-walk-kids Sels St Bs T I [K|Ks] [K1|Ks1] A0 A :-
+% [walk-kid-at Sels St Bs T I K K1 A0 A] K1 is the pattern of K, the
+% immediate subterm of T at position I
+pred walk-kid-at i:list (pair (list int) term), i:status, i:list term,
+                 i:term, i:int, i:kid, o:kid, i:pacc, o:pacc.
+walk-kid-at Sels St Bs T I K K1 A0 A :-
   std.map-filter Sels (s\ r\ sigma P X\ s = pr [I|P] X, r = pr P X) SelsI,
-  (SelsI = [], kept T I, !, K1 = K, kid-names K A0 A1 ;
-   kid-status T I St StI, walk-kid SelsI StI Bs K K1 A0 A1),
-  I1 is I + 1, walk-kids Sels St Bs T I1 Ks Ks1 A1 A.
+  (SelsI = [], kept T I, !, K1 = K, kid-names K A0 A ;
+   kid-status T I St StI, walk-kid SelsI StI Bs K K1 A0 A).
 
 % [walk-kid Sels St Bs K K1 A0 A] walk in the immediate subterm K (a
 % binder: its variable is declared and bound)
@@ -567,7 +731,7 @@ names-in (global GR) (pacc K Ns) (pacc K [S|Ns]) :- !, coq.gref->id GR S.
 names-in (pglobal GR _) (pacc K Ns) (pacc K [S|Ns]) :- !, coq.gref->id GR S.
 names-in T (pacc K Ns) (pacc K [S|Ns]) :- name T, not (walk-bound T),
   (decl T N _ ; def T N _ _), !, coq.name->id N S.
-names-in T A0 A :- kids T Ks, std.fold Ks A0 kid-names A.
+names-in T A0 A :- kids-fold T (_\ _\ kid-names) A0 A.
 
 % [kid-names K A0 A] names-in in the immediate subterm K
 pred kid-names i:kid, i:pacc, o:pacc.
@@ -576,8 +740,10 @@ kid-names (kt T) A0 A :- names-in T A0 A.
 kid-names (kb _ _ F) A0 A :- pi x\ walk-bound x => names-in (F x) A0 A.
 
 % [default-printing G] G, run with the printing options at their default
-% (Printing All, Implicit, Coercions unset, Notations set), then put back:
-% the pattern is a line of the script, whatever the goal display uses
+% (Printing All, Implicit, Coercions unset, Notations set) and no Printing
+% Depth (the printer writes ... below depth 50: a deep pattern would not
+% parse), then put back: the pattern is a line of the script, whatever the
+% goal display uses
 pred default-printing i:prop.
 default-printing G :-
   Off = [["Printing", "All"], ["Printing", "Implicit"], ["Printing", "Coercions"]],
@@ -585,8 +751,11 @@ default-printing G :-
   std.map Off (o\ v\ coq.option.get o v) OldOff, coq.option.get On OldOn,
   std.forall Off (o\ coq.option.set o (coq.option.bool ff)),
   coq.option.set On (coq.option.bool tt),
+  Depth = ["Printing", "Depth"], coq.option.get Depth OldDepth,
+  coq.option.set Depth (coq.option.int (some 1000000)),
   (G, !, R = tt ; R = ff),
   std.forall2 Off OldOff (o\ v\ coq.option.set o v), coq.option.set On OldOn,
+  coq.option.set Depth OldDepth,
   R = tt.
 
 % [pattern-build Ctx M Ps T Ts Ns Pat N] Pat is the text of the pattern
