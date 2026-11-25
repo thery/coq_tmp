@@ -8,12 +8,14 @@ Zfloor_tmp.v
 pprime.v
 pprimeZ.v
 pbp.v
+subterm_pattern.v
 pbp_select.v
 pbp_select_test.v
 point_actions.v
 point_actions_more.v
 point_actions_show.v
 point_actions_notations.v
+subterm_range.v
 point_actions_test.v
 point_paths_test.v
 point_paths_cases.v

@@ -16,9 +16,7 @@ Definition double n := n + n.
    (its type, not printed), 2 and 3 *)
 Goal forall a : nat, 1 + 1 + a = double (1 + a).
 intros a.
-elpi point_run_expect "Point" "pbp [X in X + _ = _]." "" 0 3.
 elpi point_run_path_expect "Point" "pbp [X in X + _ = _]." "" "2.1".
-elpi point_run_expect "Link" "pbp [X Y in X + _ = double Y]." "" 0 3 13 16.
 elpi point_run_path_expect "Link" "pbp [X Y in X + _ = double Y]." "" "2.1" "3.1".
 elpi point_run_path_expect "Simplify here" "rewrite [X in X + _ = _]/=." "" "2.1".
 elpi point_run_path_expect "Unfold here" "rewrite [X in _ = X]/double." "" "3".
@@ -34,7 +32,6 @@ Abort.
 (* a hypothesis *)
 Goal forall a b : nat, a = b -> b = a.
 intros a b ab.
-elpi point_run_expect "Point" "move: ab; pbp [X in X = _ -> _]." "" ab 0 1.
 elpi point_run_path_expect "Point" "move: ab; pbp [X in X = _ -> _]." "" "ab" "2".
 elpi point_run_path_expect "Link" "move: ab; pbp [X Y in X = _ -> _ = Y]." "" "ab" "2" "3".
 (* point_to_pattern in a hypothesis: the pattern of its type *)
@@ -54,7 +51,6 @@ elpi point_run_path_expect "Point" "move: p; pbp [X in X * _ -> _]." "" "p" "1".
 (* the range of := : the let (widened to it); the scrutinee p (path 2.0):
    its plain pattern does not elaborate (the type of X is not known), the
    pattern with the types written does, and only the type of X is kept *)
-elpi point_run_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" H 12 13.
 elpi point_run_path_expect "Point" "move: H; pbp [X in (let (a, b) := X : nat * nat in _) = _ -> _]." "" "H" "2.0".
 (* the binders a and b of the let (its branch), as the range method *)
 elpi point_run_path_expect "Point" "move: H; pbp [X in X = _ -> _]." "let (a, b) := p in a + b" "H" "2.2".
@@ -102,7 +98,6 @@ Abort.
 Goal forall n : nat, (n : nat) = n.
 intros n.
 change ((n : nat) = n).
-elpi point_run_expect "Point" "pbp [X in (X : nat) = _]." "" 1 2.
 elpi point_run_path_expect "Point" "pbp [X in (X : nat) = _]." "" "2.1".
 Abort.
 
@@ -117,7 +112,7 @@ Coercion Z.of_nat : nat >-> Z.
 Record box := Box { unbox :> nat }.
 Goal forall (n : nat) (b : box), (n + 1 = b)%Z /\ b + 0 = n.
 intros n b.
-elpi point_run_expect "Point" "pbp [X in (X + _)%Z = _ /\ _]." "" 1 2.
+elpi point_run_path_expect "Point" "pbp [X in (X + _)%Z = _ /\ _]." "" "1.2.1".
 elpi point_run_path_expect "Point" "pbp [X in (X + _)%Z = _ /\ _]." "" "1.2.1.1".
 elpi point_run_path_expect "Point" "pbp [X in _ = X /\ _]." "" "1.3.1.1".
 elpi point_run_path_expect "Point" "pbp [X in _ /\ X + _ = _]." "" "2.2.1.1".
@@ -148,7 +143,6 @@ Module IfMatch.
 Notation "'IF' c 'THEN' a 'ELSE' b" := (if c then a else b) (at level 200).
 Goal forall (b : bool) (n : nat), (IF b THEN n ELSE 0) = n.
 intros b n.
-elpi point_run_expect "Point" "pbp [X in (IF X : bool THEN _ ELSE _) = _]." "" 3 4.
 elpi point_run_path_expect "Point" "pbp [X in (IF X : bool THEN _ ELSE _) = _]." "" "2.0".
 elpi point_run_path_expect "Simplify here" "rewrite [X in (IF X : bool THEN _ ELSE _) = _]/=." "" "2.0".
 Abort.
@@ -157,14 +151,12 @@ End IfMatch.
 (* the same without the notation: if b then n else 0 *)
 Goal forall (b : bool) (n : nat), (if b then n else 0) = n.
 intros b n.
-elpi point_run_expect "Point" "pbp [X in (if X : bool then _ else _) = _]." "" 3 4.
 elpi point_run_path_expect "Point" "pbp [X in (if X : bool then _ else _) = _]." "" "2.0".
 Abort.
 
 (* the scrutinee of a match whose patterns give its type: no type added *)
 Goal forall n : nat, match n with 0 => true | S _ => false end = true.
 intros n.
-elpi point_run_expect "Point" "pbp [X in match X with | 0 => _ | S _ => _ end = _]." "" 5 6.
 elpi point_run_path_expect "Point" "pbp [X in match X with | 0 => _ | S _ => _ end = _]." "" "2.0".
 Abort.
 

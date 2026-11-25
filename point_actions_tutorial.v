@@ -29,10 +29,10 @@ From coq_tmp Require Import point_actions.
 PointActions.
 (* prints:
    2 pointing action(s):
-   Point (point), declared in coq_tmp.point_actions, line 503
+   Point (point), declared in coq_tmp.point_actions, line 524
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: bring the selected subformula to the surface of the goal
-   Link (link), declared in coq_tmp.point_actions, line 505
+   Link (link), declared in coq_tmp.point_actions, line 526
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: link the two selected subformulas *)
 
@@ -76,8 +76,8 @@ Proof.
 move: h; pbp [X in X \/ _ -> _].
 (* select the A of X, click "Link…", select the A of the conclusion,
    click "Link": A proves the right side of B \/ A
-   → move: X; pbp [X0 Y in X0 -> _ \/ Y]. *)
-move: X; pbp [X0 Y in X0 -> _ \/ Y].
+   → move: X; pbp [X Y in X -> _ \/ Y]. *)
+move: X; pbp [X Y in X -> _ \/ Y].
 (* the second goal: select the B of pbp, click "Link…", select the B of
    the conclusion, click "Link"
    → move: pbp; pbp [X Y in X -> Y \/ _]. *)
@@ -156,23 +156,24 @@ point-action "Simplify here" point "simplify the selected subterm" simplify-here
 PointActions.
 (* prints:
    3 pointing action(s):
-   Point (point), declared in coq_tmp.point_actions, line 503
+   Point (point), declared in coq_tmp.point_actions, line 524
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: bring the selected subformula to the surface of the goal
-   Link (link), declared in coq_tmp.point_actions, line 505
+   Link (link), declared in coq_tmp.point_actions, line 526
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: link the two selected subformulas
    Simplify here (point), declared by an Elpi clause
      Elpi: simplify-here
      doc: simplify the selected subterm *)
 
-(* A click on a button runs elpi point_run with the name and the
-   selection, here 0 3: the characters 0 to 3 of the conclusion, blanks
-   not counted (the 1 + 1).  It prints the line, and does not change the
+(* A click on a button runs elpi point_run_path with the name and the
+   path of the selection, here "2.1": the argument 1 of the left side of
+   the equation (the 1 + 1, the path the display tags it with).  It
+   prints the line, and does not change the
    goal. *)
 Lemma simplify_2a (a : nat) : 1 + 1 + a = 2 + a.
 Proof.
-elpi point_run "Simplify here" 0 3.
+elpi point_run_path "Simplify here" "2.1".
 (* prints: rewrite /=. *)
 (* Try it: select 1 + 1, click "Simplify here".
    → rewrite /=. *)
@@ -180,7 +181,7 @@ Abort.
 
 (* ---- 2b. Reading the selection ----
 
-   What the action is given, a value of type point-in (pbp_select.v:656),
+   What the action is given, a value of type point-in (pbp_select.v:153),
    has five fields: point-in Names Hs C Parts Ls, where
    - Names are the names of the hypotheses of the goal (the last one
      first);
@@ -189,8 +190,8 @@ Abort.
    - C is the goal with the hypotheses Hs moved into it (what pbp works
      on);
    - Parts are the hypotheses Hs, then the conclusion, each as
-     part B T Shs (pbp_select.v:372), T being the term;
-   - Ls are the selections, each loc P I P0 (pbp_select.v:387): the path
+     part B T (pbp_select.v:88), T being the term;
+   - Ls are the selections, each loc P I P0 (pbp_select.v:103): the path
      P in C, the number I of its part in Parts, the path P0 in that part.
    A path lists the positions of the subterms to go through, from the
    root: in an application, the function is 0 and the arguments 1, 2, ...
@@ -198,8 +199,8 @@ Abort.
    A small tactic that prints these fields for a selection.  A tactic is
    run on a goal, goal Ctx _ Ty _ Args (the hypotheses, the conclusion,
    the arguments of the tactic); [seal G] says that the goal is left as
-   it is.  It reads the selection as point_run does (parse-sels,
-   pbp_select.v:331; point-resolve, pbp_select.v:666), then matches the
+   it is.  It reads the selection as point_run_path does (parse-sels,
+   pbp_select.v:42; point-resolve, pbp_select.v:164), then matches the
    point-in value against its five fields.  In a clause, :- reads "if",
    a comma "and"; coq.say prints its arguments; coq.term->string T S
    gives the text S of the term T, and {coq.term->string T} is that text
@@ -216,7 +217,7 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
   coq.say "Names:" Names,
   coq.say "Hs:" Hs,
   coq.say "C:" {coq.term->string C},
-  std.forall Parts (p\ sigma T\ p = part _ T _,
+  std.forall Parts (p\ sigma T\ p = part _ T,
                       coq.say "part:" {coq.term->string T}),
   coq.say "Ls:" Ls.
 }}.
@@ -226,7 +227,7 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
    argument, 1 + 1, at [2, 1]; there is one part, number 0. *)
 Lemma show_2b (a b : nat) (H : 1 + 1 + a = b) : 1 + 1 + a = 2 + a.
 Proof.
-elpi show_selection 0 3.
+elpi show_selection "2.1".
 (* prints:
    Names: [H, b, a]
    Hs: []
@@ -237,7 +238,7 @@ elpi show_selection 0 3.
    now an implication, H's type at [1] (in a product, the name is 0, the
    type 1, the body 2); there are two parts, H's type (number 0) and the
    conclusion. *)
-elpi show_selection H 0 3.
+elpi show_selection "H" "2.1".
 (* prints:
    Names: [H, b, a]
    Hs: [H]
@@ -303,7 +304,7 @@ Abort.
    my-pattern fails.  So does a selection that uses the variable y of a
    product: R, given outside pi y\, cannot be a term that contains y.
 
-   A hole is pbp_hole (pbp_select.v:45) applied to the subterm it
+   A hole is pbp_hole (subterm_pattern.v:51) applied to the subterm it
    replaces: a constant whose arguments are implicit, printed as its name,
    which my-pattern-text then replaces by _ in the text (rex.replace is a
    regular-expression replace).  To print the pattern, X is a new
@@ -346,7 +347,7 @@ my-pattern-text P T S R :-
 
 (* A tactic to see the walk at work: it prints the pattern as a term of
    Elpi, then as the text the action writes (one-line,
-   pbp_select.v:73, puts a text on one line).  In the term, c0 is the
+   subterm_pattern.v:73, puts a text on one line).  In the term, c0 is the
    variable a of the context and c1 the X of the pattern. *)
 Elpi Tactic show_pattern.
 Elpi Accumulate Db pbp_select.db.
@@ -354,7 +355,7 @@ Elpi Accumulate lp:{{
 solve (goal Ctx _ Ty _ Args as G) [seal G] :-
   parse-sels Args Sels,
   point-resolve Ctx Ty Sels (point-in _ _ _ Parts [loc _ I P0]) _,
-  std.nth I Parts (part _ T _),
+  std.nth I Parts (part _ T),
   (pi x\ decl x `X` {{ Prop }} =>
      sigma Pat R\ my-pattern P0 T x Pat R, coq.say "pattern:" Pat),
   my-pattern-text P0 T S _,
@@ -363,7 +364,7 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
 
 Lemma show_2c (a : nat) : 1 + 1 = a.
 Proof.
-elpi show_pattern 0 3.
+elpi show_pattern "2".
 (* prints:
    pattern: app
     [global (indt «eq»),
@@ -378,7 +379,7 @@ Elpi Accumulate pbp_select.db lp:{{
 :name "simplify-2c" :before "simplify-2b"
 simplify-here (point-in _ Hs _ Parts [loc _ I P0]) Line :- !,
   my-where Hs I W,
-  std.nth I Parts (part _ T _),
+  std.nth I Parts (part _ T),
   my-pattern-text P0 T Pat _,
   Line is "rewrite " ^ Pat ^ "/=" ^ W ^ ".".
 }}.
@@ -391,7 +392,7 @@ Proof.
 (* Select the 2 + a of the conclusion, click "Simplify here".
    → rewrite [X in _ = X /\ _]/=. *)
 (* Select the 0 + n of the conclusion, click "Simplify here": it uses
-   the n of forall n, my-pattern fails, and so does the action; point_run
+   the n of forall n, my-pattern fails, and so does the action; point_run_path
    then says so, but not why
    ✗ the action Simplify here does not apply to the selection *)
 Abort.
@@ -399,15 +400,15 @@ Abort.
 (* ---- 2d. A clear error ----
 
    An action that cannot write its line says why: coq.ltac.fail 0 M
-   stops with the message M, which the bar shows.  msg (pbp_select.v:57)
-   puts the name of the tool before it ("point_run: ...").  The
+   stops with the message M, which the bar shows.  msg (subterm_pattern.v:63)
+   puts the name of the tool before it ("point_run_path: ...").  The
    if-then-else of Elpi: (Cond, ! ; Else) runs Cond and, if it holds,
    keeps its result (the cut); else it runs Else. *)
 Elpi Accumulate pbp_select.db lp:{{
 :name "simplify-2d" :before "simplify-2c"
 simplify-here (point-in _ Hs _ Parts [loc _ I P0]) Line :- !,
   my-where Hs I W,
-  std.nth I Parts (part _ T _),
+  std.nth I Parts (part _ T),
   (my-pattern-text P0 T Pat _, ! ;
    coq.ltac.fail 0 {msg "the selection uses a variable bound in the goal: introduce it first"}),
   Line is "rewrite " ^ Pat ^ "/=" ^ W ^ ".".
@@ -440,7 +441,7 @@ my-head (app [F|_]) C :- my-head F C.
 pred unfold-here i:point-in, o:string.
 unfold-here (point-in _ Hs _ Parts [loc _ I P0]) Line :-
   my-where Hs I W,
-  std.nth I Parts (part _ T _),
+  std.nth I Parts (part _ T),
   (my-pattern-text P0 T Pat R, ! ;
    coq.ltac.fail 0 {msg "the selection uses a variable bound in the goal: introduce it first"}),
   (my-head R C, ! ;
@@ -455,10 +456,10 @@ point-action "Unfold here" point "unfold the constant at the head of the selecte
 PointActions.
 (* prints:
    4 pointing action(s):
-   Point (point), declared in coq_tmp.point_actions, line 503
+   Point (point), declared in coq_tmp.point_actions, line 524
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: bring the selected subformula to the surface of the goal
-   Link (link), declared in coq_tmp.point_actions, line 505
+   Link (link), declared in coq_tmp.point_actions, line 526
      template: {pre:revert}pbp {path:pbp}{post:revert}.
      doc: pbp: link the two selected subformulas
    Simplify here (point), declared by an Elpi clause

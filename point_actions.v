@@ -8,13 +8,13 @@
 
      PointAction "Point" point "{pre:revert}pbp {path:pbp}{post:revert}." "...".
      elpi point_actions.              prints the actions (JSON)
-     elpi point_run "Point" 0 1.      prints the line, pbp [X in X + _ = _].
+     elpi point_run_path "Point" "2.1".   prints the line, pbp [X in X + _ = _].
 
-   A selection is the one of pbp_select.v: [S E], a range of the printed
-   conclusion, or [H S E], one of the printed type of the hypothesis H, in
-   characters that are not blanks.  An action is of kind [point] (one
+   A selection is the one of pbp_select.v: ["P"], the subterm at path P
+   of the conclusion, or ["H" "P"], the one of the type of the hypothesis
+   H.  An action is of kind [point] (one
    selection), [link] (two) or [show] (one: what it gives is a message to
-   show, which point_run prints as it prints a line; the interface inserts
+   show, which point_run_path prints as it prints a line; the interface inserts
    nothing).  An action of kind show given two selections fails with the
    message of the other kinds (it takes 1 selection, not 2).
 
@@ -95,18 +95,8 @@ pred point-path o:string, o:string,
 pred scope-term i:point-scope, i:point-in, o:term, o:list (list int).
 scope-term path-goal (point-in _ _ C _ Ls) C Ps :- std.map Ls loc-path Ps.
 scope-term path-part (point-in _ _ _ Parts Ls as In) T Ps :-
-  point-part In I, std.nth I Parts (part _ T _),
+  point-part In I, std.nth I Parts (part _ T),
   std.map Ls (l\ p\ l = loc _ _ p) Ps.
-
-% [term-at P T R] R is the subterm of T at path P; it fails if R uses a
-% variable bound in T
-pred term-at i:list int, i:term, o:term.
-term-at [] T T.
-term-at [I|P] T R :- kids T Ks, std.nth I Ks K, kid-term P K R.
-
-pred kid-term i:list int, i:kid, o:term.
-kid-term P (kt T) R :- term-at P T R.
-kid-term P (kb _ _ B) R :- pi x\ term-at P (B x) R.
 
 % [occurrences Sc In Ns] the selections In are the occurrences number Ns
 % (from 1) of their subterm, in the scope Sc: the subterms equal to it,
@@ -310,6 +300,17 @@ actions-json J :-
 
 /* ---------------- Running ---------------- */
 
+% [point-action-names Name] the action Name handles a selection that is a
+% binder name (a path ending at index 0 of a binder): it is given the path
+% of the name; the other actions get the binder, widened with a warning.
+% No action declared here does.
+pred point-action-names o:string.
+
+% [point-action-any-subterm Name] the action Name does not write a pattern:
+% it is given any printed subterm, even one whose pattern does not pass
+% the check (as the actions of kind show)
+pred point-action-any-subterm o:string.
+
 % [point-run Ctx G Args Line Ws] Line is the line of the action and the
 % selections given by Args, in the goal G (context Ctx); Ws are the texts
 % of the subterms that selections were widened to
@@ -320,15 +321,26 @@ point-run _ _ [] _ _ :- !,
 point-run Ctx G [str Name | As] Line Ws :- !,
   (point-action Name K _ Impl, ! ;
    coq.ltac.fail 0 {msg "no action"} Name "(elpi point_actions lists them)"),
-  parse-sels As Sels, std.length Sels N, point-kind-name K KS KN,
+  parse-sels As Sels, point-run-sels Ctx G Name K Impl Sels Line Ws.
+point-run _ _ _ _ _ :-
+  coq.ltac.fail 0 {msg "the first argument is the name of an action, a string"}.
+
+% [point-run-sels Ctx G Name K Impl Sels Line Ws] as point-run, for the
+% action Name of kind K (Impl) and the selections Sels
+pred point-run-sels i:goal-ctx, i:term, i:string, i:point-kind,
+                    i:(pred i:point-in, o:string), i:list sel, o:string,
+                    o:list string.
+point-run-sels Ctx G Name K Impl Sels Line Ws :-
+  std.length Sels N, point-kind-name K KS KN,
   (N = KN, ! ;
    coq.ltac.fail 0 {msg "the action"} Name "is of kind" KS "and takes" KN
      "selection(s), not" N),
-  point-resolve Ctx G Sels In Ws,
+  ((K = show ; point-action-any-subterm Name), !, Flags = [pattern-unchecked] ;
+   Flags = []),
+  (point-action-names Name, !, Flags1 = [paths-keep-names | Flags] ; Flags1 = Flags),
+  (Flags1 => point-resolve Ctx G Sels In Ws),
   (Impl In Line, ! ;
    coq.ltac.fail 0 {msg "the action"} Name "does not apply to the selection").
-point-run _ _ _ _ _ :-
-  coq.ltac.fail 0 {msg "the first argument is the name of an action, a string"}.
 
 }}.
 
@@ -458,32 +470,41 @@ solve (goal _ _ _ _ [] as G) [seal G] :- !, actions-json J, coq.say J.
 solve _ _ :- coq.ltac.fail 0 "point_actions: no arguments".
 }}.
 
-(* [elpi point_run "Name" Sel ...] prints the line of the action Name for
-   the selections (as for pbp_pattern: [S E] or [H S E]); a selection
-   widened to a subterm gives a warning (pbp-widened) before the line.
-   The goal is unchanged. *)
-Elpi Tactic point_run.
+(* [elpi point_run_path "Name" Sel ...] prints the line of the action Name
+   for the selections: a selection is "P", the subterm at path P of the
+   conclusion, or "H" "P", the one of the type of the hypothesis H.  A
+   path is written "i.j.k" ("" for the whole part), in the immediate
+   subterms of subterm_pattern.v (kids), the paths that Rocq's Set
+   Printing Subterm Paths puts on the printed subterms (Pp tags
+   "path:i.j.k").  A subterm that cannot be selected (the return type of
+   a match, a binder of a branch, the type of a binder that the rest
+   depends on, a term under a coercion that is not printed: its pattern
+   does not pass the check) is widened to the nearest subterm above it
+   that can and is printed as a whole, with a warning (pbp-widened),
+   unless it prints as the selection (a coercion).  The goal is
+   unchanged. *)
+Elpi Tactic point_run_path.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
 solve (goal Ctx _ Ty _ Args as G) [seal G] :-
-  (tool-name "point_run" => (
+  (tool-name "point_run_path" => (
      point-run Ctx Ty Args Line Ws,
      msg "the selection is widened to" M)),
   std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
   coq.say Line.
 }}.
 
-(* [elpi point_run_expect "Name" Line Ws Sel ...], for the tests: fails
-   unless point_run gives the line Line, with the widened subterms Ws
+(* [elpi point_run_path_expect "Name" Line Ws Sel ...], for the tests: fails
+   unless point_run_path gives the line Line, with the widened subterms Ws
    (separated by " / ", "" for none) *)
-Elpi Tactic point_run_expect.
+Elpi Tactic point_run_path_expect.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
 solve (goal Ctx _ Ty _ [str Name, str Exp, str ExpW | Args] as G) [seal G] :-
-  (tool-name "point_run" => point-run Ctx Ty [str Name | Args] Line Ws),
+  (tool-name "point_run_path" => point-run Ctx Ty [str Name | Args] Line Ws),
   std.string.concat " / " Ws W,
   ((Line = Exp, W = ExpW), ! ;
-   coq.ltac.fail 0 "point_run_expect: got" Line W "expected" Exp ExpW).
+   coq.ltac.fail 0 "point_run_path_expect: got" Line W "expected" Exp ExpW).
 }}.
 
 (* [elpi point_actions_expect J], for the tests: fails unless point_actions
@@ -508,35 +529,28 @@ PointAction "Link" link "{pre:revert}pbp {path:pbp}{post:revert}."
 (* ---------------- Seeing a selection ---------------- *)
 
 (* [elpi point_show Sel ...] prints, for a human reader, what an action is
-   given for the selections (as for point_run: [S E] or [H S E]): the
-   point-in value, field by field, with the printed subterms of each part
-   (shown P S E T: the subterm at path P is printed from the character S
-   to E, as T).  The goal is unchanged. *)
+   given for the selections (as for point_run_path: "P" or "H" "P"): the
+   point-in value, field by field.  The goal is unchanged. *)
 Elpi Tactic point_show.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
+% [show-path P S] S is the path P written [i, j, k]
 pred show-path i:list int, o:string.
 show-path P S :-
   std.map P (n\ s\ s is int_to_string n) Ss, std.string.concat ", " Ss B,
   S is "[" ^ B ^ "]".
 
+% [show-strings L S] S is the list of strings L written [a, b]
 pred show-strings i:list string, o:string.
 show-strings L S :- std.string.concat ", " L B, S is "[" ^ B ^ "]".
 
-pred show-shown i:shown, o:string.
-show-shown (shown P S E T) R :-
-  show-path P PS,
-  R is "      shown " ^ PS ^ " " ^ int_to_string S ^ " " ^ int_to_string E ^ " \"" ^ T ^ "\"".
-
 % [show-part Hs I P S] S describes the part number I
 pred show-part i:list string, i:int, i:part, o:string.
-show-part Hs I (part B T Pr) S :-
+show-part Hs I (part B T) S :-
   std.length Hs N,
   (I = N, !, What = "the conclusion" ; std.nth I Hs H, What is "the type of " ^ H),
   coq.term->string T TS0, one-line TS0 TS, show-path B BS,
-  (Pr = printed-as Shs, !, std.map Shs show-shown Ls, std.string.concat "\n" Ls L ;
-   L = "      every subterm printed (selections given by paths)"),
-  S is "    " ^ int_to_string I ^ ": part " ^ BS ^ " (" ^ What ^ "): " ^ TS ^ "\n" ^ L.
+  S is "    " ^ int_to_string I ^ ": part " ^ BS ^ " (" ^ What ^ "): " ^ TS.
 
 % [show-loc C L S] S describes the selection L of the goal C
 pred show-loc i:term, i:loc, o:string.
@@ -545,6 +559,7 @@ show-loc C (loc P I P0) S :-
   (term-at P C T, !, term_to_string T TE ; TE = "(uses a variable bound in the goal)"),
   S is "    loc " ^ PS ^ " " ^ int_to_string I ^ " " ^ P0S ^ "\n      the subterm: " ^ Txt ^ "\n      in Elpi: " ^ TE.
 
+% [show-in In S] S describes the point-in value In
 pred show-in i:point-in, o:string.
 show-in (point-in Names Hs C Parts Ls) S :-
   show-strings Names NS, show-strings Hs HS,
@@ -562,100 +577,23 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
   show-in In S, coq.say S.
 }}.
 
-(* ---------------- Selections given by paths ---------------- *)
-
-Elpi Accumulate pbp_select.db lp:{{
-
-% [point-action-names Name] the action Name handles a selection that is a
-% binder name (a path ending at index 0 of a binder): point_run_path gives
-% it the path of the name; the other actions get the binder, widened with
-% a warning.  No action declared here does.
-pred point-action-names o:string.
-
-% [point-action-any-subterm Name] the action Name does not write a pattern:
-% point_run_path gives it any subterm, even one whose pattern does not
-% pass the check (as the actions of kind show)
-pred point-action-any-subterm o:string.
-
-% [point-run-paths Ctx G Args Line Ws] Line is the line of the action and
-% the path selections given by Args (point_run_path), in the goal G; Ws
-% are the texts of the subterms that selections were widened to
-pred point-run-paths i:goal-ctx, i:term, i:list argument, o:string,
-                     o:list string.
-point-run-paths _ _ [] _ _ :- !,
-  coq.ltac.fail 0 {msg "the first argument is the name of an action (elpi point_actions lists them)"}.
-point-run-paths Ctx G [str Name | As] Line Ws :- !,
-  (point-action Name K _ Impl, ! ;
-   coq.ltac.fail 0 {msg "no action"} Name "(elpi point_actions lists them)"),
-  parse-psels As Sels, std.length Sels N, point-kind-name K KS KN,
-  (N = KN, ! ;
-   coq.ltac.fail 0 {msg "the action"} Name "is of kind" KS "and takes" KN
-     "selection(s), not" N),
-  ((K = show ; point-action-any-subterm Name), !, NC = paths-no-check ;
-   NC = paths-default),
-  (point-action-names Name, !, (paths-keep-names, NC) => point-resolve-paths Ctx G Sels In Ws ;
-   NC => point-resolve-paths Ctx G Sels In Ws),
-  (Impl In Line, ! ;
-   coq.ltac.fail 0 {msg "the action"} Name "does not apply to the selection").
-point-run-paths _ _ _ _ _ :-
-  coq.ltac.fail 0 {msg "the first argument is the name of an action, a string"}.
-}}.
-
-(* [elpi point_run_path "Name" Sel ...] prints the line of the action Name
-   for selections given by paths instead of ranges: a selection is "P", the
-   subterm at path P of the conclusion, or "H" "P", the one of the type of
-   the hypothesis H.  A path is written "i.j.k" ("" for the whole part), in
-   the immediate subterms of pbp_select.v (kids), the paths that Rocq's
-   Set Printing Subterm Paths puts on the printed subterms (Pp tags
-   "path:i.j.k").  The part is not printed again.  A subterm that cannot
-   be selected (the return type of a match, a binder of a branch, the type
-   of a binder that the rest depends on, a term under a coercion that is
-   not printed: its pattern does not pass the check) is widened to the
-   nearest subterm above it that can and is printed as a whole, with a
-   warning (pbp-widened) as for point_run, unless it prints as the
-   selection (a coercion).  The goal is unchanged. *)
-Elpi Tactic point_run_path.
-Elpi Accumulate Db pbp_select.db.
-Elpi Accumulate lp:{{
-solve (goal Ctx _ Ty _ Args as G) [seal G] :-
-  (tool-name "point_run_path" => (
-     point-run-paths Ctx Ty Args Line Ws,
-     msg "the selection is widened to" M)),
-  std.forall Ws (w\ coq.warning "pbp" "pbp-widened" M w),
-  coq.say Line.
-}}.
-
-(* [elpi point_run_path_expect "Name" Line Ws Sel ...], for the tests: fails
-   unless point_run_path gives the line Line, with the widened subterms Ws
-   (separated by " / ", "" for none) *)
-Elpi Tactic point_run_path_expect.
-Elpi Accumulate Db pbp_select.db.
-Elpi Accumulate lp:{{
-solve (goal Ctx _ Ty _ [str Name, str Exp, str ExpW | Args] as G) [seal G] :-
-  (tool-name "point_run_path" => point-run-paths Ctx Ty [str Name | Args] Line Ws),
-  std.string.concat " / " Ws W,
-  ((Line = Exp, W = ExpW), ! ;
-   coq.ltac.fail 0 "point_run_path_expect: got" Line W "expected" Exp ExpW).
-}}.
-
 (* [elpi point_to_pattern Sel] prints the pattern of the selection Sel
    (given by a path as for point_run_path) in its part: the conclusion or
    the type of its hypothesis, e.g. [X in X + _ = _] for the selection
    "2.1" of the goal x + 0 = x.  [elpi link_to_pattern Sel1 Sel2] prints
    the one of two selections in the same part, e.g. [X Y in X + _ = Y]
-   for "2.1" "3".  A selection that cannot
-   be selected is widened as for point_run_path, with the same warning.
-   The goal is unchanged. *)
+   for "2.1" "3".  A selection that cannot be selected is widened as for
+   point_run_path, with the same warning.  The goal is unchanged. *)
 Elpi Accumulate pbp_select.db lp:{{
 
-% [point-path-pattern Ctx G K Args Pat Ws] Pat is the pattern of the K path
-% selections Args in their part of the goal G; Ws as for point-run-paths
+% [point-path-pattern Ctx G K Args Pat Ws] Pat is the pattern of the K
+% selections Args in their part of the goal G; Ws as for point-run
 pred point-path-pattern i:goal-ctx, i:term, i:int, i:list argument,
                         o:string, o:list string.
 point-path-pattern Ctx G K Args Pat Ws :-
-  parse-psels Args Sels, std.length Sels N,
+  parse-sels Args Sels, std.length Sels N,
   (N = K, ! ; coq.ltac.fail 0 {msg "it takes"} K "selection(s), not" N),
-  (paths-default => point-resolve-paths Ctx G Sels In Ws),
+  point-resolve Ctx G Sels In Ws,
   point-local-pattern In Pat.
 }}.
 
@@ -685,6 +623,8 @@ solve (goal Ctx _ Ty _ Args as G) [seal G] :-
    Pat Sel1 Sel2], for the tests: fail unless point_to_pattern or
    link_to_pattern gives the pattern Pat *)
 Elpi Accumulate pbp_select.db lp:{{
+% [to-pattern-expect Tool K Ctx Ty Args] the pattern of the K selections
+% of Args (after the expected pattern) is the expected one
 pred to-pattern-expect i:string, i:int, i:goal-ctx, i:term, i:list argument.
 to-pattern-expect Tool K Ctx Ty [str Exp | Args] :-
   (tool-name Tool => point-path-pattern Ctx Ty K Args Pat _),
@@ -729,6 +669,13 @@ pred rt-balanced i:string.
 rt-balanced S :- rex.split "" S Cs, std.fold Cs 0 (c\ a\ b\
     (c = "(", !, b is a + 1 ; c = ")", !, a > 0, b is a - 1 ; b = a)) 0.
 
+% [cp-length S N] N is the number of Unicode characters of the UTF-8
+% string S (its bytes that do not continue a character)
+pred cp-length i:string, o:int.
+cp-length S N :-
+  Cont is "[" ^ chr 128 ^ "-" ^ chr 191 ^ "]",
+  rex.replace Cont "" S S1, N is size S1.
+
 % [rt-text Names M T P S] S is the text, at path P of the part T, that a
 % tag of the printer covers: the subterm, or the name of a binder
 pred rt-text i:list string, i:bmode, i:term, i:list int, o:string.
@@ -743,10 +690,10 @@ rt-text Names M T P S :- path-of T P, !, text-at-names Names M P T S.
 % pattern)
 % [rt-locate Names M T P Txt St O] the subterm at path P of T printed in
 % its place: the whole part T printed (O, without blanks) with the
-% subterm framed by two markers (as shown-at), its binders named as the
+% subterm framed by two markers (as whole-text), its binders named as the
 % display names them (display-names: Names, M); Txt is the text between
 % the markers, St the number of characters before it.  Fails when the
-% markers change the printing around them (shown-at)
+% markers change the printing around them (whole-text)
 pred rt-locate i:list string, i:bmode, i:term, i:list int, o:string, o:int, o:string.
 rt-locate Names M T P Txt St O :- not (name-at T P _), path-of T P,
   display-names Names [] M T T1 [] Rs,

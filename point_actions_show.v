@@ -37,7 +37,7 @@ pred show-sel i:point-in,
               i:(pred i:show-sel, i:list (pair term string), o:string),
               o:string.
 show-sel (point-in Names _ _ Parts [loc _ I P0 | _]) F S :-
-  std.nth I Parts (part _ T _), show-names Names => show-walk P0 T [] F S.
+  std.nth I Parts (part _ T), show-names Names => show-walk P0 T [] F S.
 
 % [show-names Ns] the names of the hypotheses and of the binders crossed
 % (for display-names: the names the printer avoids)
