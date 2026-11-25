@@ -548,3 +548,12 @@ elpi point_run_expect "Point" "move: ab; pbp [X in (_ -> X) -> _]." "" ab 3 4.
 elpi point_run_expect "Link" "move: ab a; pbp [X Y in (Y -> _) -> X -> _]."
   "" a 0 1 ab 0 1.
 Abort.
+
+(* a path deeper than Printing Depth (50): the pattern is printed whole
+   (the printer would write ... below it), and the walks along the path
+   cost its length (subterm_pattern.v: kid-at, kids-map) *)
+Open Scope list_scope.
+Goal 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: 10 :: 11 :: 12 :: 13 :: 14 :: 15 :: 16 :: 17 :: 18 :: 19 :: 20 :: 21 :: 22 :: 23 :: 24 :: 25 :: 26 :: 27 :: 28 :: 29 :: 30 :: 31 :: 32 :: 33 :: 34 :: 35 :: 36 :: 37 :: 38 :: 39 :: 40 :: 41 :: 42 :: 43 :: 44 :: 45 :: 46 :: 47 :: 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: 58 :: 59 :: nil = @nil nat.
+Proof.
+elpi point_run_path_expect "Point" "pbp [X in _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: X :: _ = _]." "" "2.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.3.2".
+Abort.
