@@ -35,11 +35,13 @@ check-file F Lang Name Ty Proof Rs Stated :-
   by-clauses By Cl0, gaps-clauses Gaps Off, std.append Off Cl0 Cl,
   coq.say "cyp:" Name,
   prooftext.unknown-header-keys Lines Unknown,
-  (current-lang Lang :- !) => (current-scope Sc :- !) => Cl => (
+  (current-lang Lang :- !) => (current-scope Sc :- !) => (extract-source F H :- !) => Cl => (
     std.forall Unknown (k\ say "header-key-ignored" [k]),
     check-tree Top Ty Proof Rs Stated,
-    timed "markdown" (write-md OutMd Lines Top Rs),
-    timed "json" (write-json OutJs Top Rs)).
+    % #[only], #[extract] (stats.elpi): one condition tried, the text left as it is
+    if (target-node _) true
+      (timed "markdown" (write-md OutMd Lines Top Rs),
+       timed "json" (write-json OutJs Top Rs))).
 
 % [check-tree Top Ty Proof Rs Stated]: the statement Ty of the tree of the
 % top node Top and its proof, with the reports of its nodes (the errors of
@@ -49,12 +51,16 @@ pred check-tree i:prooftext.node, o:term, o:term, o:list report, o:bool.
 check-tree Top Ty Proof Rs Stated :-
   prooftext.tree-errors Top Errors,
   proof-node Errors (pr "0" Top) Node,
+  say-univ "start",
   timed "conditions" (node-proof Node Ty Proof Concluded Rs00),
   % the times of the conditions (timing-on, timing.elpi): the slowest printed
   std.map-filter Rs00 (r\ t\ r = time-rep t) Times,
-  std.filter Rs00 (r\ not (sigma T\ r = time-rep T)) Rs0,
+  std.map-filter Rs00 (r\ s\ r = size-rep s) Sizes,
+  std.filter Rs00 (r\ not (r = time-rep _), not (r = size-rep _)) Rs0,
   prooftext.all-nodes "0" Top All,
   say-slowest Times All,
+  % the sizes of the proofs (stats-on, stats.elpi): the heaviest printed
+  say-heaviest Sizes All,
   error-reports Errors Rs1, std.append Rs1 Rs0 Rs2,
   std.map All fst Ids,
   in-text-order Ids Rs2 Rs,
@@ -139,6 +145,20 @@ say-error I M :- coq.say {calc ("  ❌ " ^ I ^ " " ^ M)}.
 pred define i:string, i:term, i:term.
 define Name Ty Proof :-
   % the type-check also fills the holes the rules left (their _)
+  % with #[stats] (stats.elpi), the size of the proof after each of them
   timed "type-check" (std.assert-ok! (coq.typecheck Proof Ty) {msg "no-typecheck" []}),
+  whole-stats "type-check" Proof,
   std.assert! (ground_term Proof) {msg "holes" []},
-  timed "definition" (coq.env.add-const Name Proof Ty @opaque! _).
+  timed "definition" (coq.env.add-const Name Proof Ty @opaque! _),
+  whole-stats "definition" Proof.
+
+% [main-target F]: #[only="N"], #[extract="N"] (stats.elpi): the
+% conditions of the text F built as with #[bare], only N tried (and written
+% as a Rocq file); nothing else is written or defined
+pred main-target i:string.
+main-target F :- target-node N,
+  (proof-mode => bare-mode => check-file F Lang Name _ _ Rs _),
+  (current-lang Lang :- !) => (
+    std.filter Rs (r\ sigma S\ r = rep N S) Mine,
+    if (Mine = []) (coq.error {msg "no-condition" [N, Name]})
+       (std.forall Mine (r\ if (r = rep _ (todo G)) (say-error N {msg "md-not-proved" [G]}) (say-report r)))).
