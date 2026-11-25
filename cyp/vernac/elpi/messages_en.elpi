@@ -40,3 +40,11 @@ message "en" "method-no-object" "*%1*{.just} names nothing to eliminate: name th
 message "en" "type-objects" "no single hypothesis or variable of type %1 in scope to eliminate (%2 found): name it".
 message "en" "not-of-type" "%1 is not of type %2".
 message "en" "type-alone" "%1 is an inductive type: it justifies a step only with *match*{.just} or *induction*{.just}".
+% the debugging tools (elpi/stats.elpi)
+message "en" "stats-condition" "cyp: stats %1 %2 ms, %3 hyps=%4, %5".
+message "en" "stats-heaviest" "cyp: stats of the %1 conditions: %2 matches, %3 nodes; the heaviest by %4:".
+message "en" "stats-heavy-line" "cyp:   %1  %2  %3 ms  %4  | %5".
+message "en" "stats-whole" "cyp: stats %1 %2".
+message "en" "extracted" "cyp: condition %1 written to %2".
+message "en" "no-condition" "cyp: %2 has no condition %1".
+message "en" "extract-holes" "cyp: condition %1: %2 hole(s) in its context, printed _ (a formula whose implicit arguments another step fixes): the file may not compile".

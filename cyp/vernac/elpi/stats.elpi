@@ -1,0 +1,215 @@
+% Debugging a text: the size of the proof of each condition (#[stats],
+% the program's option --stats), one condition checked alone (#[only="N"],
+% --only N) and one condition written as a standalone Rocq file
+% (#[extract="N"], --extract N).  Like timing.elpi, a measure only:
+% nothing that cyp tries or decides depends on it.
+
+% ------------------------------------------------------------------ %
+% The size of a term
+
+% the counts of a term: nodes (every constructor of the term), match,
+% fun, let, fix, constants (global names, each occurrence), holes
+kind term-size type.
+type term-size int -> int -> int -> int -> int -> int -> int -> term-size.
+
+% [term-size T S]: the counts of the term T
+pred term-size i:term, o:term-size.
+term-size T S :- size-of T (term-size 0 0 0 0 0 0 0) S.
+
+% [size-of T A S]: the counts of T added to A
+pred size-of i:term, i:term-size, o:term-size.
+size-of T (term-size N M F L X C H) (term-size N1 M F L X C H1) :- var T, !, N1 is N + 1, H1 is H + 1.
+size-of (global _) (term-size N M F L X C H) (term-size N1 M F L X C1 H) :- !, N1 is N + 1, C1 is C + 1.
+size-of (pglobal _ _) (term-size N M F L X C H) (term-size N1 M F L X C1 H) :- !, N1 is N + 1, C1 is C + 1.
+size-of (app Ts) (term-size N M F L X C H) S :- !, N1 is N + 1,
+  std.fold Ts (term-size N1 M F L X C H) size-of S.
+size-of (fun _ T B) (term-size N M F L X C H) S :- !, N1 is N + 1, F1 is F + 1,
+  size-of T (term-size N1 M F1 L X C H) S1, pi x\ size-of (B x) S1 S.
+size-of (prod _ T B) (term-size N M F L X C H) S :- !, N1 is N + 1,
+  size-of T (term-size N1 M F L X C H) S1, pi x\ size-of (B x) S1 S.
+size-of (let _ T V B) (term-size N M F L X C H) S :- !, N1 is N + 1, L1 is L + 1,
+  size-of T (term-size N1 M F L1 X C H) S1, size-of V S1 S2, pi x\ size-of (B x) S2 S.
+size-of (match T R Bs) (term-size N M F L X C H) S :- !, N1 is N + 1, M1 is M + 1,
+  size-of T (term-size N1 M1 F L X C H) S1, size-of R S1 S2, std.fold Bs S2 size-of S.
+size-of (fix _ _ T B) (term-size N M F L X C H) S :- !, N1 is N + 1, X1 is X + 1,
+  size-of T (term-size N1 M F L X1 C H) S1, pi x\ size-of (B x) S1 S.
+size-of (uvar _ _) (term-size N M F L X C H) (term-size N1 M F L X C H1) :- !, N1 is N + 1, H1 is H + 1.
+size-of _ (term-size N M F L X C H) (term-size N1 M F L X C H) :- N1 is N + 1.
+
+% [size-text S T]: the counts as a line
+pred size-text i:term-size, o:string.
+size-text (term-size N M F L X C H) T :-
+  std.map [N, M, F, L, X, C, H] std.any->string [SN, SM, SF, SL, SX, SC, SH],
+  T is "nodes=" ^ SN ^ " matches=" ^ SM ^ " funs=" ^ SF ^ " lets=" ^ SL ^
+       " fixes=" ^ SX ^ " consts=" ^ SC ^ " holes=" ^ SH.
+
+% ------------------------------------------------------------------ %
+% #[stats]: a line per condition, the heaviest at the end, the sizes of
+% the whole proof at its type-check and its definition.  With
+% #[stats="univ"] (what --stats gives), the universe state is printed
+% after each of them, between two lines "cyp-univ-begin" and
+% "cyp-univ-end", for the program cyp, which counts its sort variables and
+% levels and prints them (Rocq-Elpi gives no way to count them here).
+
+% [stats-on]: the sizes are printed
+pred stats-on.
+stats-on :- attributes A, std.mem A (attribute "stats" _), !.
+
+% [stats-univ]: the universe state too
+pred stats-univ.
+stats-univ :- attributes A, std.mem A (attribute "stats" (leaf-str "univ")), !.
+
+% [say-univ Label]: the universe state, for the program cyp, when stats-univ
+pred say-univ i:string.
+say-univ L :- stats-univ, !, coq.say "cyp-univ-begin" L, coq.univ.print, coq.say "cyp-univ-end" L.
+say-univ _.
+
+% [condition-size Id Ms Size Hyps How]: the condition Id took Ms
+% milliseconds, its proof has the counts Size, its context Hyps entries
+kind condition-size type.
+type condition-size string -> int -> term-size -> int -> string -> condition-size.
+
+% [step-stats I Ms P How R]: the line of the condition I, proved by P in
+% Ms milliseconds, How; R, its record for the summary
+pred step-stats i:string, i:int, i:term, i:string, o:condition-size.
+step-stats I Ms P How (condition-size I Ms S NH How) :-
+  term-size P S, size-text S ST,
+  std.findall (local-in-scope _ _ _) Ls, std.length Ls NH,
+  say "stats-condition" [I, {std.any->string Ms}, ST, {std.any->string NH}, How],
+  say-univ I.
+
+% [say-heaviest Ss All]: the ten conditions of Ss with the most matches,
+% then the ten with the biggest proofs (nodes)
+pred say-heaviest i:list condition-size, i:list (pair string prooftext.node).
+say-heaviest [] _ :- !.
+say-heaviest Ss All :-
+  std.fold Ss 0 (s\ a\ b\ sigma M\ s = condition-size _ _ (term-size _ M _ _ _ _ _) _ _, b is a + M) TM,
+  std.fold Ss 0 (s\ a\ b\ sigma N\ s = condition-size _ _ (term-size N _ _ _ _ _ _) _ _, b is a + N) TN,
+  say "stats-heaviest" [{std.any->string {std.length Ss}}, {std.any->string TM}, {std.any->string TN}, "matches"],
+  heaviest 10 (s\ k\ sigma M\ s = condition-size _ _ (term-size _ M _ _ _ _ _) _ _, k = M) Ss All,
+  say "stats-heaviest" [{std.any->string {std.length Ss}}, {std.any->string TM}, {std.any->string TN}, "nodes"],
+  heaviest 10 (s\ k\ sigma N\ s = condition-size _ _ (term-size N _ _ _ _ _ _) _ _, k = N) Ss All.
+
+% [heaviest K Key Ss All]: the K conditions of Ss of the biggest Key, biggest first
+pred heaviest i:int, i:(condition-size -> int -> prop), i:list condition-size, i:list (pair string prooftext.node).
+heaviest 0 _ _ _ :- !.
+heaviest _ _ [] _ :- !.
+heaviest K Key Ss All :-
+  std.fold Ss (pr -1 none) (s\ a\ b\ sigma V Va\ Key s V, a = pr Va _,
+    if (V > Va) (b = pr V (some s)) (b = a)) (pr _ (some Max)),
+  Max = condition-size Id Ms S _ How,
+  size-text S ST,
+  (std.lookup All Id N, first-line N L, ! ; L = ""),
+  say "stats-heavy-line" [Id, ST, {std.any->string Ms}, How, L],
+  std.filter Ss (s\ not (s = Max)) Rest,
+  K1 is K - 1, heaviest K1 Key Rest All.
+
+% [whole-stats Label P]: the counts of the whole proof P, at Label
+% (type-check, definition)
+pred whole-stats i:string, i:term.
+whole-stats L P :- stats-on, !, term-size P S, say "stats-whole" [L, {size-text S}], say-univ L.
+whole-stats _ _.
+
+% ------------------------------------------------------------------ %
+% #[only="N"], #[extract="N"]: the text is read as with #[bare] (each
+% condition built with its context, nothing tried), and only the
+% condition N is tried; with extract, it is written as a Rocq file
+
+% [target-node N]: the condition tried, N
+pred target-node o:string.
+target-node N :- attributes A, std.mem A (attribute "only" (leaf-str N)), !.
+target-node N :- attributes A, std.mem A (attribute "extract" (leaf-str N)), !.
+
+% [extract-on]: the condition tried is written as a Rocq file
+pred extract-on.
+extract-on :- attributes A, std.mem A (attribute "extract" _), !.
+
+% [scripts-on]: the scripts of the tactics are built (check.elpi)
+pred scripts-on.
+scripts-on :- extract-on.
+
+% [extract-source F H]: the text being checked, the file F with the header H
+% (set by check-file)
+pred extract-source o:string, o:list prooftext.field.
+
+% [script-term T S]: the term T, as an argument of a tactic (all its
+% details printed), when scripts-on; else ""
+pred script-term i:term, o:string.
+script-term T S :- scripts-on, !, (extract-print T S0), S is "(" ^ S0 ^ ")".
+script-term _ "".
+
+% [script-call Head Ss S]: the script Head, then each of its goals closed
+% by the scripts Ss in turn (one solved by the others: idtac)
+pred script-call i:string, i:list string, o:string.
+script-call Head [] Head :- !.
+script-call Head Ss S :-
+  std.map Ss (s\ t\ if (var s) (t = "idtac") (t is "(" ^ s ^ ")")) Ts,
+  std.string.concat " | " Ts J, S is Head ^ "; [ " ^ J ^ " ]".
+
+% [script-then Head S Sc]: Head, then S on the one goal it leaves
+pred script-then i:string, i:string, o:string.
+script-then Head S Sc :- Sc is Head ^ "; " ^ S.
+
+% [extract-write I T P How Sc]: the condition I, of type T, in the current
+% context, written as the file <text>_<c I>.v next to the text: the
+% Require lines of its header, its rule files .v, the lemma with the
+% context as binders, and the script Sc of How (cyp's proof P, when it
+% found one; else Admitted)
+pred extract-write i:string, i:term, i:term, i:string, i:string.
+extract-write I T P How Sc :-
+  extract-source F H,
+  prooftext.auto-name I Id,
+  rex.replace "[.]md$" "" F Base, rex.replace "^.*/" "" Base Name0,
+  rex.replace "[^A-Za-z0-9_]" "_" Name0 Name,
+  Out is Base ^ "_" ^ Id ^ ".v", Lemma is Name ^ "_" ^ Id,
+  rex.replace "/[^/]*$" "" F Dir,
+  prooftext.field-value H "require" Req, prooftext.field-value H "scope" Sc0,
+  prooftext.field-value H "flags" Flags, prooftext.field-value H "rules" Rules,
+  rex.split " +" Rules Rs0, std.filter Rs0 (r\ rex.match ".*[.]v$" r) RVs,
+  std.map RVs (r\ t\ sigma Ls\ prooftext.read-lines {calc (Dir ^ "/" ^ r)} Ls,
+    std.string.concat "\n" Ls t) RTexts,
+  (if (Sc0 = "") (Open = []) (Open = [{calc ("Open Scope " ^ Sc0 ^ ".")}])),
+  (if (var P) (PS = "none") (term-size P S, size-text S PS)),
+  extract-statement T Lemma Stmt NB NH,
+  (if (NH = 0) (HoleLines = [])
+     (say "extract-holes" [I, {std.any->string NH}],
+      HoleLines = [{calc ("   holes: " ^ {std.any->string NH} ^ " in the context (implicit arguments that the proof of another step fixes), printed _: Rocq may not read them")}])),
+  (if (Sc = "") (Body = ["Proof.", "Admitted."])
+                (Body = ["Proof.", {calc ("  " ^ Sc ^ ".")}, "Defined.",
+                         {calc ("CypTermStats " ^ Lemma ^ " " ^ {std.any->string NB} ^ ".")}])),
+  std.flatten [
+    [{calc ("(* The condition " ^ I ^ " of " ^ F ^ ", alone (cyp --extract " ^ I ^ ").")},
+     {calc ("   Flags of its header: " ^ Flags)},
+     {calc ("   cyp closed it by: " ^ How)},
+     {calc ("   the proof cyp built: " ^ PS)}], HoleLines, [" *)",
+     Req, "From CypV Require Import Cyp."], Open, RTexts, [Stmt], Body] Lines,
+  open_out Out O, std.forall Lines (l\ output O {calc (l ^ "\n")}), close_out O,
+  say "extracted" [I, Out].
+
+% [extract-statement T Lemma S NB NH]: Lemma <context> : T, the context of
+% the current goal as binders, all details printed; NB the number of its
+% binders, NH the number of holes in it
+pred extract-statement i:term, i:string, o:string, o:int, o:int.
+extract-statement T Lemma S NB NH :-
+  coq.typecheck X T ok, coq.ltac.collect-goals X [SG] _,
+  coq.ltac.open (extract-goal Lemma S NB NH) SG _.
+pred extract-goal i:string, o:string, o:int, o:int, i:goal, o:list sealed-goal.
+extract-goal Lemma S NB NH (goal Ctx _ Ty _ _) [] :-
+  std.map-filter Ctx (d\ t\ d = decl _ _ t ; d = def _ _ t _) Ts,
+  std.fold [Ty | Ts] 0 (t\ a\ b\ sigma H\ term-size t (term-size _ _ _ _ _ _ H), b is a + H) NH,
+  std.rev Ctx RCtx,
+  std.map-filter RCtx (extract-binder Ctx) Bs, std.length Bs NB,
+  (extract-print Ty TyS),
+  std.string.concat "\n  " Bs BS,
+  S is "Lemma " ^ Lemma ^ "\n  " ^ BS ^ " :\n  " ^ TyS ^ ".".
+% [extract-print T S]: T printed with all its details, its holes (an
+% existential variable left by a formula that a later step would fix) as _
+pred extract-print i:term, o:string.
+extract-print T S :- (@ppall! => coq.term->string T S0),
+  rex.replace "[?][A-Za-z_][A-Za-z0-9_']*\\(@{[^}]*}\\)?" "_" S0 S.
+pred extract-binder i:list prop, i:prop, o:string.
+extract-binder _Ctx (decl _ N T) S :- !, coq.name->id N Id,
+  (extract-print T TS), S is "(" ^ Id ^ " : " ^ TS ^ ")".
+extract-binder _Ctx (def _ N T B) S :- coq.name->id N Id,
+  (extract-print T TS), (extract-print B BS),
+  S is "(" ^ Id ^ " : " ^ TS ^ " := " ^ BS ^ ")".

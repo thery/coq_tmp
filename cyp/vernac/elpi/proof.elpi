@@ -94,6 +94,8 @@ kind report type.
 type rep string -> status -> report.    % the number of the node
 type time-rep condition-time -> report. % the time of a condition (timing.elpi),
                                         % taken out by check-tree
+type size-rep condition-size -> report. % the size of its proof (stats.elpi),
+                                        % taken out by check-tree
 
 % proof mode: the conditions not discharged are left to the Proof block
 pred proof-mode.
@@ -220,25 +222,48 @@ name-after L none L.
 % [step-proof M I T P Rs]: the condition I, of type T, proved by P (the
 % method M, check.elpi) or else left to the Proof block or not proved: its
 % report; when timing-on (timing.elpi), the time spent on it and how it
-% was closed are printed, and given in a report time-rep for the summary
+% was closed are printed, and given in a report time-rep for the summary;
+% when stats-on (stats.elpi), the size of its proof too (size-rep); with
+% #[only="N"] or #[extract="N"], only the condition N is tried and printed
+% (and written as a Rocq file, extract-after)
 pred step-proof i:method, i:string, i:term, o:term, o:list report.
-step-proof M I T P Rs :- timing-on, !,
-  gettimeofday T0, ((condition-start T0 :- !) => condition-proof M I T P R How), gettimeofday T1,
-  (not (How = ""), How1 = How ; tried-all M Tr, How1 is "failed after trying " ^ Tr), !,
+step-proof M I T P Rs :- (timing-on ; stats-on), !,
+  gettimeofday T0, ((condition-start T0 :- !) => condition-proof M I T P R How Sc), gettimeofday T1,
+  how-tried M How How1,
   Ms is floor ((T1 - T0) * 1000.0),
-  say "time-condition" [I, {std.any->string Ms}, How1],
-  Rs = [R, time-rep (condition-time I Ms How1)].
-step-proof M I T P [R] :- condition-proof M I T P R _.
+  (if (target-node N, not (N = I)) (Rs = [R])
+     ((if (timing-on) (Rt = [time-rep (condition-time I Ms How1)]) (Rt = [])),
+      (if (stats-on) (step-stats I Ms P How1 SR, Rs1 = [size-rep SR | Rt])
+         (say "time-condition" [I, {std.any->string Ms}, How1], Rs1 = Rt)),
+      Rs = [R | Rs1])),
+  extract-after M I T P R How Sc.
+step-proof M I T P [R] :- condition-proof M I T P R How Sc, extract-after M I T P R How Sc.
 
-% [condition-proof M I T P R How]: as step-proof, without the timing; How,
-% how the condition was closed ("" when it was not)
-pred condition-proof i:method, i:string, i:term, o:term, o:report, o:string.
-condition-proof _ I T P (rep I (todo S)) "not tried (bare)" :- bare-mode, !,
+% [how-tried M How How1]: How, or what was tried on a condition of method
+% M that nothing closed (How = "")
+pred how-tried i:method, i:string, o:string.
+how-tried _ How How :- not (How = ""), !.
+how-tried M _ How1 :- tried-all M Tr, How1 is "failed after trying " ^ Tr.
+
+% [extract-after M I T P R How Sc]: the condition I written as a Rocq file
+% when it is the one of #[extract="I"] (stats.elpi)
+pred extract-after i:method, i:string, i:term, i:term, i:report, i:string, i:string.
+extract-after M I T P R How Sc :- extract-on, target-node I, !,
+  how-tried M How How1,
+  if (R = rep I ok) (extract-write I T P How1 Sc) (extract-write I T _ How1 "").
+extract-after _ _ _ _ _ _ _.
+
+% [condition-proof M I T P R How Sc]: as step-proof, without the timing; How,
+% how the condition was closed ("" when it was not), Sc its script
+% (check.elpi); in bare mode, a condition is not tried, but for the one of
+% #[only] or #[extract]
+pred condition-proof i:method, i:string, i:term, o:term, o:report, o:string, o:string.
+condition-proof _ I T P (rep I (todo S)) "not tried (bare)" "" :- bare-mode, not (target-node I), !,
   condition-hole I T P, coq.term->string T S.
-condition-proof M I T P (rep I ok) How :- prove M T P How, !.
-condition-proof _ I T P (rep I (todo S)) "" :- proof-mode, !,
+condition-proof M I T P (rep I ok) How Sc :- prove M T P How Sc, !.
+condition-proof _ I T P (rep I (todo S)) "" "" :- proof-mode, !,
   condition-hole I T P, coq.term->string T S.
-condition-proof _ I T _ (rep I (ko S)) "" :- coq.term->string T S.
+condition-proof _ I T _ (rep I (ko S)) "" "" :- coq.term->string T S.
 
 % a hole for the condition I, of type T: a goal of the Proof block, named
 % after the node (condition-ident: the goal of 2.1 is ?c2_1)

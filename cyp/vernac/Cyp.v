@@ -159,7 +159,7 @@ From CypV Extra Dependency "elpi/proof.elpi" as cyp_proof.
 From CypV Extra Dependency "elpi/markdown.elpi" as cyp_markdown.
 From CypV Extra Dependency "elpi/command.elpi" as cyp_command.
 From CypV Extra Dependency "elpi/messages.elpi" as cyp_messages.
-From CypV Extra Dependency "elpi/timing.elpi" as cyp_timing.
+From CypV Extra Dependency "elpi/timing.elpi" as cyp_timing. From CypV Extra Dependency "elpi/stats.elpi" as cyp_stats.
 From CypV Extra Dependency "elpi/messages_en.elpi" as cyp_messages_en.
 From CypV Extra Dependency "elpi/messages_fr.elpi" as cyp_messages_fr.
 From CypV Extra Dependency "elpi/messages_it.elpi" as cyp_messages_it.
@@ -285,10 +285,10 @@ Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_stats cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
-  % #[bare]: the conditions are printed, nothing is tried or defined
+  main [str F] :- target-node _, !, main-target F. % #[only], #[extract] (elpi/stats.elpi); #[bare]: the conditions printed, nothing tried or defined
   main [str F] :- attributes A, std.mem A (attribute "bare" _), !,
     (proof-mode => bare-mode => check-file F Lang Name Ty Proof Rs Stated),
     (current-lang Lang :- !) => (
@@ -319,7 +319,7 @@ Elpi Accumulate Db cyp.db.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_stats cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   % A step written in Rocq is a node of the tree, as a list item of a
@@ -428,7 +428,7 @@ Elpi Command CypQed.
 Elpi Accumulate File lexicon.
 Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
 Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
-  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_check cyp_proof cyp_markdown
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_stats cyp_check cyp_proof cyp_markdown
   cyp_command.
 Elpi Accumulate lp:{{
   main-interp-qed _ _ Proof _ (qed-data Name Lang Ty) :-
@@ -469,3 +469,28 @@ Elpi Accumulate lp:{{
        (coq.error "Cyp.v: words of prooftext/tactics.elpi not declared:" Missing).
 }}.
 Elpi cyp_words_declared.
+
+(* ------------------------------------------------------------------ *)
+(* CypTermStats name n.  prints the counts of the body of the constant name
+   under its n first binders (nodes, match, fun, let, fix, constants, holes), as #[stats] counts the
+   proof of a condition: the end of a file written by #[extract] *)
+Elpi Command CypTermStats.
+Elpi Accumulate File lexicon.
+Elpi Accumulate File pt_header pt_document pt_formulas pt_tree pt_nodes pt_names pt_checked pt_tactics.
+Elpi Accumulate File cyp_text cyp_messages cyp_messages_en
+  cyp_messages_fr cyp_messages_it cyp_gaps cyp_timing cyp_stats cyp_check cyp_proof cyp_markdown
+  cyp_command.
+Elpi Accumulate lp:{{
+  main [str N] :- !, main [str N, int 0].
+  main [str N, int K] :- coq.locate N (const C), coq.env.const-body C (some B), !,
+    under-binders K B (b\ sigma S T\ term-size b S, size-text S T,
+      coq.say {calc ("cyp: term " ^ N ^ " " ^ T)}).
+  main _ :- coq.error "usage: CypTermStats name [n].  (a constant with a body: Defined, not Qed; n, the binders of its context, not counted)".
+  % [under-binders K B P]: P on the body B under its K first fun and let
+  pred under-binders i:int, i:term, i:(term -> prop).
+  under-binders 0 B P :- !, P B.
+  under-binders K (fun N T F) P :- !, K1 is K - 1, @pi-decl N T x\ under-binders K1 (F x) P.
+  under-binders K (let N T V F) P :- !, K1 is K - 1, @pi-def N T V x\ under-binders K1 (F x) P.
+  under-binders _ B P :- P B.
+}}.
+Elpi Export CypTermStats.

@@ -1,4 +1,5 @@
-(* cyp [--time] [--json | --conditions] proof.md: check a cyp proof with Cyp File.
+(* cyp [--time] [--stats] [--json | --conditions | --only N | --extract N] proof.md:
+   check a cyp proof with Cyp File.
 
    The driver of cyp.  It keeps no semantics: from the header of the proof
    it writes a small .v file (the header's require: line, its rule files,
@@ -9,6 +10,17 @@
    condition and how it was closed, then the slowest, as #[time] CypFile
    prints them).  Cyp
    File writes proof.checked.md and proof.cyp.json next to the proof.
+
+   To debug a text (../README.md, "Debugging a text"; vernac/elpi/stats.elpi):
+   --stats (#[stats="univ"]): the size of the proof of each condition, the
+   heaviest, the sizes of the whole proof; cyp prints the universe state
+   after each of them, and the driver turns it into counts of sort
+   variables and universe levels (univ_counts, print_stats, below);
+   --only N (#[only="N"]): the conditions built as with --conditions, only
+   N tried (with --time or --stats: its line); --extract N
+   (#[extract="N"]): the same, and condition N written as a Rocq file
+   proof_cN.v next to the proof (dots of N as _).  With --only and
+   --extract nothing else is written.
 
    Header fields used here: require: (Rocq text), rules: (files .elpi,
    added to cyp.db, or .v, copied in), flags: (options of rocq c; the
@@ -94,7 +106,76 @@ let prooftext () =
   | Some d -> d
   | None -> Filename.concat (Filename.dirname (lexicon ())) "prooftext"
 
-let main ~json ~conditions ~time md =
+(* --stats: the universe state that cyp prints after each condition (between
+   the lines "cyp-univ-begin LABEL" and "cyp-univ-end LABEL", #[stats="univ"],
+   vernac/elpi/stats.elpi), reduced to two counts: its sort variables (the
+   lines "αN := ..." or "αN >= ..." of its SORTS: part) and its universe
+   levels (the names Lib.Name.N before that part, each counted once) *)
+let univ_counts lines =
+  let sort_re = Str.regexp ".*α[0-9]+ \\(>=\\|:=\\)" in
+  let level_re = Str.regexp "[A-Za-z_][A-Za-z0-9_']*\\(\\.[A-Za-z_][A-Za-z0-9_']*\\)*\\.[0-9]+" in
+  let levels = Hashtbl.create 1024 in
+  let sorts = ref 0 and in_sorts = ref false and over = ref false in
+  List.iter (fun l ->
+      if !over then ()
+      else if Str.string_match (Str.regexp " *WEAK CONSTRAINTS:") l 0 then over := true
+      else if Str.string_match (Str.regexp " *SORTS:") l 0 then in_sorts := true
+      else if !in_sorts then (if Str.string_match sort_re l 0 then incr sorts)
+      else begin
+        let rec scan i =
+          match Str.search_forward level_re l i with
+          | j -> Hashtbl.replace levels (Str.matched_string l) (); scan (j + String.length (Str.matched_string l))
+          | exception Not_found -> () in
+        scan 0
+      end) lines;
+  (!sorts, Hashtbl.length levels)
+
+(* --stats: Rocq's output, each line "cyp: stats ..." followed by the counts
+   of the universe state after it, and what each condition added to it;
+   then the ten conditions that added the most sort variables *)
+let print_stats out =
+  let ic = open_in_bin out in
+  let pending = ref None and block = ref [] and in_block = ref false in
+  let prev = ref (0, 0) and added = ref [] in
+  let begin_re = Str.regexp "^cyp-univ-begin \\(.*\\)$" and end_re = Str.regexp "^cyp-univ-end" in
+  (try
+     while true do
+       let l = input_line ic in
+       if Str.string_match begin_re l 0 then (in_block := true; block := [])
+       else if Str.string_match end_re l 0 then begin
+         in_block := false;
+         let (s, v) = univ_counts (List.rev !block) in
+         let (s0, v0) = !prev in
+         prev := (s, v);
+         (match !pending with
+          | Some p ->
+              let id = match String.index_from_opt p 11 ' ' with
+                | Some i -> String.sub p 11 (i - 11) | None -> "" in
+              Printf.printf "%s | sorts=%d (+%d) levels=%d (+%d)\n" p s (s - s0) v (v - v0);
+              added := (id, s - s0, v - v0) :: !added
+          | None -> ());
+         pending := None
+       end
+       else if !in_block then block := l :: !block
+       else if Str.string_match (Str.regexp ".*\\(cyp:\\|Error\\)") l 0 then begin
+         (* a line of a condition, or of the whole proof, waits for its counts *)
+         Option.iter print_endline !pending; pending := None;
+         if Str.string_match (Str.regexp "cyp: stats ") l 0
+            && not (Str.string_match (Str.regexp "cyp: stats of the ") l 0)
+         then pending := Some l else print_endline l end
+     done
+   with End_of_file -> ());
+  Option.iter print_endline !pending;
+  close_in ic;
+  let steps = List.filter (fun (id, _, _) -> id <> "type-check" && id <> "definition") !added in
+  let sorted = List.stable_sort (fun (_, a, _) (_, b, _) -> compare b a) (List.rev steps) in
+  if sorted <> [] then begin
+    print_endline "cyp: stats the conditions that added the most sort variables:";
+    List.iteri (fun k (id, s, v) ->
+        if k < 10 then Printf.printf "cyp:   %s  sorts +%d  levels +%d\n" id s v) sorted
+  end
+
+let main ~json ~conditions ~time ~stats ~target md =
   let md = absolute (Sys.getcwd ()) md in
   let dir = Filename.dirname md in
   let h = header (read_file md) in
@@ -126,12 +207,19 @@ let main ~json ~conditions ~time md =
                     src first last f;
                   text ]
         end) [] rules in
+  (* the attributes of CypFile: #[bare], #[time], #[stats="univ"],
+     #[only="N"], #[extract="N"] *)
+  let attributes =
+    (if conditions then [ "bare" ] else []) @ (if time then [ "time" ] else [])
+    @ (if stats then [ "stats=\"univ\"" ] else [])
+    @ (match target with
+       | `Only n -> [ Printf.sprintf "only=%S" n ]
+       | `Extract n -> [ Printf.sprintf "extract=%S" n ]
+       | `All -> []) in
   let v =
     head @ rule_lines
     @ [ Printf.sprintf "%sCypFile %S."
-          (match conditions, time with
-           | true, true -> "#[bare, time] " | true, false -> "#[bare] "
-           | false, true -> "#[time] " | false, false -> "")
+          (if attributes = [] then "" else "#[" ^ String.concat ", " attributes ^ "] ")
           md ] in
   write_file src (String.concat "\n" v ^ "\n");
   let flags = relative_flags dir (words (expand (field h "flags"))) in
@@ -152,6 +240,7 @@ let main ~json ~conditions ~time md =
         if not (Str.string_match (Str.regexp "^File \\|^Warning\\|^\\[") l 0)
         then print_endline l)
       (String.split_on_char '\n' (read_file out))
+  else if stats then print_stats out
   else
     List.iter (fun l ->
         if Str.string_match (Str.regexp ".*\\(cyp:\\|Error\\)") l 0 then print_endline l)
@@ -160,11 +249,23 @@ let main ~json ~conditions ~time md =
   ignore (Sys.command ("rm -rf " ^ Filename.quote tmp));
   code
 
+let usage () =
+  prerr_endline
+    "usage: cyp [--time] [--stats] [--json | --conditions | --only NODE | --extract NODE] proof.md";
+  exit 2
+
 let () =
-  let args = List.tl (Array.to_list Sys.argv) in
-  let time = List.mem "--time" args in
-  match List.filter (( <> ) "--time") args with
-  | [ "--json"; md ] -> exit (main ~json:true ~conditions:false ~time md)
-  | [ "--conditions"; md ] -> exit (main ~json:false ~conditions:true ~time md)
-  | [ md ] -> exit (main ~json:false ~conditions:false ~time md)
-  | _ -> prerr_endline "usage: cyp [--time] [--json | --conditions] proof.md"; exit 2
+  let rec parse (json, conditions, time, stats, target) = function
+    | "--time" :: r -> parse (json, conditions, true, stats, target) r
+    | "--stats" :: r -> parse (json, conditions, time, true, target) r
+    | "--json" :: r -> parse (true, conditions, time, stats, target) r
+    | "--conditions" :: r -> parse (json, true, time, stats, target) r
+    | "--only" :: n :: r -> parse (json, conditions, time, stats, `Only n) r
+    | "--extract" :: n :: r -> parse (json, conditions, time, stats, `Extract n) r
+    | [ md ] when md <> "" && md.[0] <> '-' ->
+        let modes = List.length (List.filter Fun.id
+          [ json; conditions; target <> `All ]) in
+        if modes > 1 then usage ();
+        exit (main ~json ~conditions ~time ~stats ~target md)
+    | _ -> usage () in
+  parse (false, false, false, false, `All) (List.tl (Array.to_list Sys.argv))

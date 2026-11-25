@@ -7,6 +7,7 @@
 % [timing-on]: the times are printed
 pred timing-on.
 timing-on :- attributes A, std.mem A (attribute "time" _), !.
+timing-on :- attributes A, std.mem A (attribute "stats" _), !.
 timing-on :- getenv "CYP_TIME" (some _).
 
 % [timed Label P]: P, its time printed as that of Label when timing-on
