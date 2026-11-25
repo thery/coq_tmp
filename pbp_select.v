@@ -248,6 +248,7 @@ pred head-at i:list int, i:term, o:gref.
 head-at [] T GR :- head-gref T GR.
 head-at [I|P] T GR :- kids T Ks, std.nth I Ks K, kid-head P K GR.
 
+% [kid-head P K GR] head-at in the immediate subterm K
 pred kid-head i:list int, i:kid, o:gref.
 kid-head P (kt T) GR :- head-at P T GR.
 kid-head P (kb N Ty B) GR :- pi x\ decl x N Ty => head-at P (B x) GR.

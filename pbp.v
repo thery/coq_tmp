@@ -1,5 +1,7 @@
 From Stdlib Require Import ssreflect.
 From elpi Require Import elpi.
+(* the patterns [X in ...] of pbp (their notation) *)
+From coq_tmp Require Export subterm_pattern.
 
 Definition conjR {A B : Prop} (X : A) (Y : B) := conj Y X.
 Lemma and1imp {A B C : Prop} (H : B -> A -> C) : A /\ B -> C.
@@ -318,10 +320,6 @@ Elpi Accumulate lp:{{
   solve (goal _ _ Ty _ [open-trm N F] as G) GL :- 
   pbp_scan N F Ty G GL.
 }}.
-
-Notation "'[' x .. y 'in' p ']' " :=
-  ( (fun x => .. ( (fun y => p)) ..))
-  (x binder, y binder, right associativity).
 
 Tactic Notation "pbp" uconstr(t) :=
   elpi pbp_tac ltac_open_term:(t).

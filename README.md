@@ -122,98 +122,90 @@ links two subformulas (proof by linking).  A free variable of the
 pattern names the assumption introduced at its place (`[X in Y /\ X ->
 _]`), else it is called `pbp`.
 
+[subterm_pattern.v](subterm_pattern.v) turns the path of a subterm of a
+term into an ssreflect pattern `[X in ...]` that designates it (it does
+not depend on pbp; round-trip test:
+[subterm_pattern_test.v](subterm_pattern_test.v)), and
 [pbp_select.v](pbp_select.v) writes the pbp call from a selection in the
-printed goal, for an interface where one selects with the mouse
-(tests: [pbp_select_test.v](pbp_select_test.v)):
+goal, for an interface where one selects with the mouse (tests:
+[pbp_select_test.v](pbp_select_test.v)).  A selection is the path of a
+subterm, the tag that the goal display puts on it (Rocq's `Set Printing
+Subterm Paths`): `"i.j.k"`, the positions of the immediate subterms to go
+through from the root (in an application the head is 0 and the
+arguments 1, 2, ...; see 2b below).
 
 | goal | selection | `elpi pbp_pattern ...` prints |
 |---|---|---|
-| `a + b = b + a` | the first `a` | `pbp [X in X + _ = _].` (`0 1`) |
-| `a + b = b + a` | the last `a` | `pbp [X in _ = _ + X].` (`6 7`) |
-| `A /\ B -> B /\ A` | the last `A` | `pbp [X in _ -> _ /\ X].` (`9 10`) |
-| `A /\ B -> A /\ B` | the two `A` | `pbp [X Y in X /\ _ -> Y /\ _].` (`0 1 6 7`) |
-| `a + b + c = c` | `b + c` (not a subterm) | `pbp [X in X = _].`, warning: widened to `a + b + c` |
-| `forall n : nat, exists m : nat, n + m = m + n` | the first `n + m` | `pbp [X in forall n : nat, exists m : nat, X n m = _].` |
-| `B`, with `ab : A -> B` | `B` in `ab`, then `B` | `move: ab; pbp [X Y in (_ -> X) -> Y].` (`ab 3 4 0 1`) |
+| `a + b = b + a` | the first `a` | `pbp [X in X + _ = _].` (`"2.1"`) |
+| `a + b = b + a` | the last `a` | `pbp [X in _ = _ + X].` (`"3.2"`) |
+| `A /\ B -> B /\ A` | the last `A` | `pbp [X in _ -> _ /\ X].` (`"2.2"`) |
+| `A /\ B -> A /\ B` | the two `A` | `pbp [X Y in X /\ _ -> Y /\ _].` (`"1.1" "2.1"`) |
+| `forall n : nat, exists m : nat, n + m = m + n` | the first `n + m` | `pbp [X in forall n : nat, exists m : nat, X n m = _].` (`"2.2.2.2"`) |
+| `forall n : nat, exists m : nat, n + m = m + n` | the type `nat` of `n` | `pbp [X in X].`, warning: widened to the whole goal (`"1"`) |
+| `B`, with `ab : A -> B` | `B` in `ab`, then `B` | `move: ab; pbp [X Y in (_ -> X) -> Y].` (`"ab" "2" ""`) |
 
 ### The command, for the interface
 
 ```
-elpi pbp_pattern S E.               (* a range of the conclusion *)
-elpi pbp_pattern H S E.             (* a range of the type of hypothesis H *)
-elpi pbp_pattern S E S' E'.         (* two selections: linking *)
-elpi pbp_pattern H S E S' E'.       (* hypothesis H and the conclusion *)
-elpi pbp_pattern H S E H' S' E'.    (* two hypotheses *)
+elpi pbp_pattern "P".               (* a path of the conclusion *)
+elpi pbp_pattern "H" "P".           (* a path of the type of hypothesis H *)
+elpi pbp_pattern "P" "P'".          (* two selections: linking *)
+elpi pbp_pattern "H" "P" "P'".      (* hypothesis H and the conclusion *)
+elpi pbp_pattern "H" "P" "H'" "P'". (* two hypotheses *)
 ```
 
-- `S E` is a range of the goal as it is displayed (the conclusion, or
-  the type of the hypothesis, as coq-lsp's `proof/goals` gives them):
-  `S` included, `E` excluded, counting from 0 **only the characters that
-  are not blanks** (spaces, tabs, line breaks), each Unicode character
-  counting one.  The range then does not depend on the width the goal is
-  printed at, its line breaks or its indentation (coq-lsp and
-  `coq.term->string` break lines at different places).  An empty range
-  (`S = E`) is a click on the character `S`.  In JavaScript:
-  `const nb = (s, i) => [...s.slice(0, i)].filter(c => !/\s/.test(c)).length;`
-  gives the count for the offset `i` of the displayed string `s`.
 - It is a tactic: it is sent after the sentence where the goal is shown
   (as rocq-web's queries are, with `petanque/run_at_point`), prefixed by a
-  goal selector for another goal than the first (`2: elpi pbp_pattern 0
-  1.`, and the line inserted is then `2: pbp ...`).  The goal is unchanged.
+  goal selector for another goal than the first (`2: elpi pbp_pattern
+  "".`, and the line inserted is then `2: pbp ...`).  The goal is unchanged.
 - It prints one message, the line to insert, e.g. `pbp [X in X + _ = _].`
-  (a notice).  A selection that is not a subterm (`+ b`, half a name)
-  stands for the smallest subterm that contains it, with a warning
-  `pbp_pattern: the selection is widened to a + b` (warning
-  `pbp-widened`).  A selection in a hypothesis `H` generalizes it: the
+  (a notice).  A subterm that cannot be selected as it is stands for the
+  nearest one above it that can, with a warning `pbp_pattern: the
+  selection is widened to ...` (warning `pbp-widened`; the fallback
+  chain below).  A selection in a hypothesis `H` generalizes it: the
   line is `move: H; pbp [...]`.  The errors (`Tactic failure:
-  pbp_pattern: ...`): a range outside the printed term, two selections
-  one inside the other, a subterm that cannot be abstracted (the type
-  `nat` of `forall n : nat, n + 0 = n`), a pattern that does not parse.
+  pbp_pattern: ...`): no subterm at the path, two selections one inside
+  the other, a pattern that does not parse.
 
 ### How
 
-The printed goal is matched with the term by Rocq's printer itself: for
-each subterm s, the goal is printed again with s framed by two markers,
-`A s B`, where `A` and `B` are two local variables whose names occur
-nowhere in the printed goal (`pbp_mark`, `pbp_end`, or these names with a
-number: `marker-names`).  An application of local variables prints alike
-under every printing option (Printing All, Implicit), and s stays, so the
-binders above it print as before; what is printed before `A` and after
-`B` is what is printed before and after the subterm (up to the
-parentheses around it).  So the
-notations, implicit arguments, coercions and parentheses are those of the
-goal, and two occurrences that print alike (the two `a` of `a + b = b +
-a`) are told apart by their places.  A subterm that is not printed as a
-whole has no range and cannot be selected: the function behind a
-notation (`Nat.add` behind `+`), an implicit argument, `S O` inside the
-numeral `2`, the head of an application with implicit arguments
-(`length` in `length (rev l)`).  The selection is the smallest subterm
-whose range contains the range (among subterms with the same range, the
-outermost).
-
-The pattern is the goal where the selection is the variable `X` (applied
-to the variables bound above it that it uses: `X n m`), where the largest
-printed subterms beside the path to the selection are holes `_` (printed
-through the constant `pbp_hole`, whose arguments are implicit), and
-where the rest is kept: heads of applications, what is not printed, the
-types of dependent binders.  `X`, `Y` are renamed (`X0`, ...) if the goal
-uses these names.  The pattern is then checked: its text is parsed and
-elaborated again (`coq.parse.argument`), and it must unify with the goal
-where the selections are its variables, at their places.
+The pattern of a path (subterm_pattern.v, one walk down the path) is
+the term where the selection is the variable `X` (applied to the
+variables bound above it that it uses: `X n m`), the nodes on the path
+are kept, and the subterms beside the path are holes `_` when they are
+printed (through the constant `pbp_hole`, whose arguments are implicit)
+or are kept as they are when they are not (the heads of applications,
+the types of dependent binders, the return type of a match, the binders
+of a branch).  It is printed with the default printing options and
+checked: its text is parsed and elaborated again
+(`coq.parse.argument`), and it must unify with the goal where the
+selections are its variables, at their places.  When it does not pass,
+the fallback chain (`path-pattern`) tries, in turn: the nearest subterm
+above it printed with the same text (a coercion that is not printed:
+`Z.of_nat n` printed `n`), without warning; the pattern with the types
+written, `(X : T)` and `(_ : T)`, then with only the types it needs (by
+halves); the nearest subterm above it that can be selected and is
+printed as a whole, with the warning.  The variables are `X` and `Y`,
+reserved: a binder of the pattern named `X` is renamed; they become
+`X0`, ... only when a hypothesis or a constant of that name is printed in
+the pattern.  A binder named as a hypothesis that its body uses is
+renamed as the goal display renames it.
 
 Limits: pbp itself has rules for the logical connectives only (`pbp [X
 in X + _ = _]` is a valid pattern, for `rewrite [X in X + _ = _]...` too,
-but pbp fails on it); pbp's notation `[X in ...]` clashes with
-ListNotations' `[x]`, so with ListNotations imported the pattern does not
-parse (an error); a hypothesis that others depend on cannot be
-generalized by `move:`; the printing of the goal by coq-lsp and by
-`coq.term->string` was compared on the goals of the tests only (equal up
-to blanks).
+but pbp fails on it); the notation `[X in ...]` (subterm_pattern.v)
+clashes with ListNotations' `[x]`, so with ListNotations imported after
+it the pattern does not parse (an error); a hypothesis that others
+depend on cannot be generalized by `move:`.
 
-A prototype names the selection by its **subterm path** instead (Rocq's
-printer tags each printed subterm; branches `path-tags` of Rocq and
-`point-paths` here): [POINTING-PATHS.md](POINTING-PATHS.md) explains the
-paths, with examples.
+[POINTING-PATHS.md](POINTING-PATHS.md) explains the paths, with
+examples.  Selections by character ranges of the printed goal, for an
+interface without the path tags, are a small adapter,
+[subterm_range.v](subterm_range.v): `elpi point_run "Name" S E` (or `H S
+E`) takes the characters `S` to `E` (excluded) that are not blanks,
+turns the range into the path of the smallest printed subterm that
+contains it (with the warning when the range is not exactly that
+subterm), and runs `point_run_path`.
 
 ### Pointing actions: the protocol for the interfaces
 
@@ -242,7 +234,7 @@ reader: a comment says what to select and which button to click, and
 gives the line after an arrow; the file compiles without any click.
 `sh point_actions_tutorial_check.sh` checks, from its own table of the
 selections, that these lines (and the errors promised) are the ones
-`point_run` gives, that point_actions_more.v's actions of the same names
+`point_run_path` gives, that point_actions_more.v's actions of the same names
 give the same lines (but on a selection under a binder, which they
 handle and the tutorial refuses), that the messages the comments
 promise ("prints:") are the ones printed, and that the references
@@ -254,11 +246,11 @@ the tests load it, the tutorial does not):
 
 | action | kind | line | e.g. on `1 + 1 + a = double (1 + a)` |
 |---|---|---|---|
-| `Point` | point | `{pre:revert}pbp {path:pbp}{post:revert}.` | `pbp [X in X + _ = _].` (`0 3`) |
-| `Link` | link | `{pre:revert}pbp {path:pbp}{post:revert}.` | `pbp [X Y in X + _ = double Y].` (`0 3 13 16`) |
-| `Simplify here` | point | `{pre:in}rewrite {local:pbp}/={post:in}.` | `rewrite [X in X + _ = _]/=.` (`0 3`: `1 + 1` becomes `2`) |
-| `Unfold here` | point | `{pre:in}rewrite {local:pbp}/{head}{post:in}.` | `rewrite [X in _ = X]/double.` (`6 17`) |
-| `Name occurrence` | point | `{pre:in}set x := {local:occ}({text}){post:in}.` | `set x := {2}(a).` (`15 16`, the second `a`) |
+| `Point` | point | `{pre:revert}pbp {path:pbp}{post:revert}.` | `pbp [X in X + _ = _].` (`"2.1"`) |
+| `Link` | link | `{pre:revert}pbp {path:pbp}{post:revert}.` | `pbp [X Y in X + _ = double Y].` (`"2.1" "3.1"`) |
+| `Simplify here` | point | `{pre:in}rewrite {local:pbp}/={post:in}.` | `rewrite [X in X + _ = _]/=.` (`"2.1"`: `1 + 1` becomes `2`) |
+| `Unfold here` | point | `{pre:in}rewrite {local:pbp}/{head}{post:in}.` | `rewrite [X in _ = X]/double.` (`"3"`) |
+| `Name occurrence` | point | `{pre:in}set x := {local:occ}({text}){post:in}.` | `set x := {2}(a).` (`"3.1.2"`, the second `a`) |
 
 The actions of kind `show` of
 [point_actions_show.v](point_actions_show.v) (loaded by the demos and the
@@ -320,7 +312,7 @@ It prints one notice, a JSON array, in the order of the declarations:
 ```
 
 `kind` is `point` (the action takes one selection), `link` (two) or
-`show` (one selection; what `point_run` prints is then a message to show,
+`show` (one selection; what `point_run_path` prints is then a message to show,
 not a line to insert: the interface displays it and inserts nothing; it
 is printed exactly as a line is, one notice, possibly on several lines).
 A `show` action given two selections fails as the other kinds do (`the
@@ -330,44 +322,10 @@ every goal (an action that does not apply to a selection fails with a
 message when it is run); it changes only when a file that declares
 actions is loaded, so it may be asked once per document position.
 
-**2. Running an action.**
-
-```
-elpi point_run "Name" S E.             (* kind point: in the conclusion *)
-elpi point_run "Name" H S E.           (* in the type of hypothesis H *)
-elpi point_run "Name" S E S' E'.       (* kind link: two selections *)
-elpi point_run "Name" H S E S' E'.     (* ... in H and in the conclusion *)
-elpi point_run "Name" H S E H' S' E'.  (* ... in two hypotheses *)
-```
-
-- `"Name"` is the `name` of the list, in double quotes (a `"` in it is
-  written `""`, as in any Rocq string).
-- The selections are those of `pbp_pattern` (above): `S E` counts the
-  characters that are not blanks, `S` included, `E` excluded, an empty
-  range is a click.  The first selection is `X` of the pattern, the
-  second `Y`.
-- The goal: the action runs on the first goal; for the goal `n` (from 1)
-  the command is prefixed by `n: ` and so is the line inserted (`2: elpi
-  point_run "Point" 0 1.`, then `2: pbp [X in X].`).  The two selections
-  of a link are in the same goal.
-- The output: zero or more warnings `point_run: the selection is widened
-  to T` (warning `pbp-widened`), then one notice, the line to insert,
-  e.g. `pbp [X in X + _ = _].`
-- The errors: `Tactic failure: point_run: ...`, e.g. `no action
-  Rewrite (elpi point_actions lists them)`, `the action Point is of kind
-  point and takes 1 selection(s), not 2`, `the range 30 31 is not in the printed term`,
-  `the range 3 1 ends before it starts`, `no hypothesis H`, `the two
-  selections are the same subterm or one is inside the other`, `the
-  selection is not a constant nor an application of a constant` (Unfold
-  here on a variable), `the action Never does not apply to the
-  selection` (an action that fails without saying why).  The interface
-  shows the text after `point_run: `.
-
-**2b. Running an action on paths.**  An interface whose goal display
-tags each printed subterm with its path (Rocq's `Set Printing Subterm
-Paths`, a prototype in the branch `path-tags` of a Rocq clone: each
-subterm's Pp is tagged `path:i.j.k`) sends the path of the selected
-subterm instead of a range:
+**2. Running an action.**  The goal display tags each printed subterm
+with its path (Rocq's `Set Printing Subterm Paths`, a prototype in the
+branch `path-tags` of a Rocq clone: each subterm's Pp is tagged
+`path:i.j.k`); the interface sends the path of the selected subterm:
 
 ```
 elpi point_run_path "Name" "P".          (* kind point: in the conclusion *)
@@ -377,10 +335,13 @@ elpi point_run_path "Name" "H" "P" "P'". (* ... in H and in the conclusion *)
 elpi point_run_path "Name" "H" "P" "H'" "P'".
 ```
 
+- `"Name"` is the `name` of the list, in double quotes (a `"` in it is
+  written `""`, as in any Rocq string).  The first selection is `X` of
+  the pattern, the second `Y`.
 - A path is `"i.j.k"` (`""` for the whole part), the path of the subterm
   in its part (the conclusion, or the type of `H`), in the immediate
-  subterms of `kids` (pbp_select.v): an application `f a1 .. an` has `f`
-  at 0 and `ai` at `i`, `forall`/`fun` (arrows, branches and return
+  subterms of `kids` (subterm_pattern.v): an application `f a1 .. an` has
+  `f` at 0 and `ai` at `i`, `forall`/`fun` (arrows, branches and return
   clauses included) the name at 0, the type at 1 and the body at 2, `let`
   the name, the type, the value, the body at 0, 1, 2, 3, a `match` the
   scrutinee at 0, the return type at 1 and its branches from 2 (a branch
@@ -396,21 +357,25 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
   `"2.1"` (eq's type, not printed, is 1), `1 + a` is `"3.1"`.
 - A string that is `""` or starts with a digit is a path, any other a
   hypothesis name, which a path follows.
+- The goal: the action runs on the first goal; for the goal `n` (from 1)
+  the command is prefixed by `n: ` and so is the line inserted (`2: elpi
+  point_run_path "Point" "".`, then `2: pbp [X in X].`).  The two
+  selections of a link are in the same goal.
 - The part is not printed again and nothing is counted: the display and
-  the selection cannot disagree.  The result is the one of `point_run`
-  (the same `point-in` value; the patterns may put a hole at any
-  subterm, and are checked as before).
-- A subterm that cannot be selected is widened, with the warning of
-  `point_run` (`pbp-widened`, `point_run_path: the selection is widened
-  to ...`), to the nearest subterm above it that can and that is printed
-  as a whole (as `point_run` widens a range): the return type of a match
-  and the binders of a branch (the pattern variable `k` of `S k` is
-  tagged with the path of its `fun`; `let '(a, b) := p` is a match), a
-  subterm whose pattern does not pass the check alone in its part (the
-  type of a binder that the rest depends on, `n` under a coercion that
-  is not printed: `(n + 1)%Z` is `Z.of_nat n + 1`, the scrutinee of a
-  `let '(a, b)`).  There is no warning when the subterm it is widened to
-  prints as the selection (the coercion `Z.of_nat n` prints as `n`).
+  the selection cannot disagree.
+- The output: zero or more warnings `point_run_path: the selection is
+  widened to T` (warning `pbp-widened`), then one notice, the line to
+  insert, e.g. `pbp [X in X + _ = _].`
+- A subterm that cannot be selected is widened, with the warning, to the
+  nearest subterm above it that can and that is printed as a whole (the
+  fallback chain of subterm_pattern.v): the return type of a match and
+  the binders of a branch (the pattern variable `k` of `S k` is tagged
+  with the path of its `fun`; `let '(a, b) := p` is a match), a subterm
+  whose pattern does not pass the check alone in its part (the type of a
+  binder that the rest depends on, `n` under a coercion that is not
+  printed: `(n + 1)%Z` is `Z.of_nat n + 1`, the scrutinee of a `let '(a,
+  b)`).  There is no warning when the subterm it is widened to prints as
+  the selection (the coercion `Z.of_nat n` prints as `n`).
 - The binders of a pattern are named as the goal display names them: a
   binder named as a hypothesis keeps its name in the type of a hypothesis
   (`move: H; pbp [X in (forall x : nat, X x) -> _]`) and is renamed in the
@@ -419,21 +384,43 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
   cast (`pbp [X in (X : nat) = _]`).  When the pattern does not elaborate because
   a selection is the scrutinee of an `if` (`if X then _ else _`: the
   text alone does not give the type of `X`), `X` is written with its
-  type: `pbp [X in (IF X : bool THEN _ ELSE _) = _]` (both methods; never
-  when the plain pattern works, as under ssreflect's `if` notation).
-- The errors are those of `point_run` (with `point_run_path: `), and `no
-  subterm at the path 5`, `not a path: 2.x`.
-- Tests: [point_paths_test.v](point_paths_test.v) (`elpi
-  point_run_path_expect "Name" Line Ws Sel ...`, Ws as for
-  `point_run_expect`), the same lines as `point_run` where both apply.
+  type: `pbp [X in (IF X : bool THEN _ ELSE _) = _]` (never when the
+  plain pattern works, as under ssreflect's `if` notation).
+- The errors: `Tactic failure: point_run_path: ...`, e.g. `no action
+  Rewrite (elpi point_actions lists them)`, `the action Point is of kind
+  point and takes 1 selection(s), not 2`, `no subterm at the path 9`,
+  `not a path: 2.x`, `no hypothesis H`, `the two selections are the
+  same subterm or one is inside the other`, `the selection is not a
+  constant nor an application of a constant` (Unfold here on a
+  variable), `the action Never does not apply to the selection` (an
+  action that fails without saying why).  The interface shows the text
+  after `point_run_path: `.
+- Tests: [point_paths_test.v](point_paths_test.v) and
+  [point_actions_test.v](point_actions_test.v) (`elpi
+  point_run_path_expect "Name" Line Ws Sel ...`, Ws: the subterms the
+  selections were widened to, separated by ` / `, `""` for none).
 - The cases: [point_paths_cases.v](point_paths_cases.v), goals with every
   construct and every position of the numbering, in the conclusion and
   in hypotheses (`elpi point_paths_check.` there computes the text of
-  every subterm and binder name).  The round trip:
+  every subterm and binder name).  The round trip of the tags:
   `opam exec --switch=vsrocq-pathtags -- bash point_paths_roundtrip.sh`
   (the Rocq whose printer tags the paths): for every tag `P` of the
   printed goals, the subterm (or binder name) at `P` must print as the
-  tagged text; it prints the counts and fails on a mismatch.
+  tagged text; it prints the counts and fails on a mismatch.  The round
+  trip of the patterns: [subterm_pattern_test.v](subterm_pattern_test.v)
+  (`elpi pattern_roundtrip.`): for every printed subterm, its pattern,
+  read back, designates it (or the subterm it is widened to).
+
+**2b. Running an action on ranges.**  For an interface without the path
+tags, [subterm_range.v](subterm_range.v) (a small adapter) takes
+character ranges of the printed goal: `elpi point_run "Name" S E` (`H S
+E` in the type of `H`; two for a link), `S` included, `E` excluded,
+counting from 0 only the characters that are not blanks (an empty range
+is a click on the character `S`).  The range is the path of the smallest
+printed subterm that contains it (the warning when the range is not
+exactly that subterm), then `point_run_path` runs.  Its own errors: `the
+range 30 31 is not in the printed term`, `the range 3 1 ends before it
+starts`.
 
 **3. Declaring an action.**  With a template:
 
@@ -455,10 +442,10 @@ A name is declared once.  The placeholders of the template:
 | `{pattern}` `{local}` `{revert}` `{in}` | the former names of `{path:pbp}` `{local:pbp}` `{pre:revert}` `{post:in}`, kept |
 
 The path methods (`PointPaths.` lists them), on the first and the last
-`a` of `a + b = b + a` (`0 1`, `6 7`), and on the first `a` of a
-hypothesis `H : a + b = b + a` (`H 0 1`), `{path:M}` then `{local:M}`:
+`a` of `a + b = b + a` (`"2.1"`, `"3.2"`), and on the first `a` of a
+hypothesis `H : a + b = b + a` (`"H" "2.1"`), `{path:M}` then `{local:M}`:
 
-| method | `0 1` | `6 7` | `H 0 1` | is |
+| method | `"2.1"` | `"3.2"` | `"H" "2.1"` | is |
 |---|---|---|---|---|
 | `pbp` | `[X in X + _ = _]` | `[X in _ = _ + X]` | `[X in X + _ = _ -> _]`, `[X in X + _ = _]` | pbp's pattern |
 | `occ` | `{1}` | `{2}` | `{1}` | ssreflect's occurrences of the selected term (`set x := {2}(a)`, `rewrite {2}[a]...`) |
@@ -475,7 +462,7 @@ hypothesis `H : a + b = b + a` (`H 0 1`), `{path:M}` then `{local:M}`:
   4}` and `1 4`; of different terms, an error; a selection that uses a
   variable bound in the goal (`n` in `forall n, n = a`) has no occurrence
   number (an error).
-- `path`: the paths of `kids` (pbp_select.v): in an application the head
+- `path`: the paths of `kids` (subterm_pattern.v): in an application the head
   is 0 and the arguments 1, 2, ...;
   in a product or an abstraction the name is 0 (not a subterm), the type
   1 and the body 2; in a let the name 0, the type 1, the value 2, the
@@ -488,7 +475,7 @@ The hypothesis strategies (`PointStrategies.` lists them), for a
 selection in the hypothesis `H` (for selections in the conclusion they
 write nothing):
 
-| strategy | before | after | e.g. Simplify on `H : 1 + 1 + a = a` (`H 0 3`) |
+| strategy | before | after | e.g. Simplify on `H : 1 + 1 + a = a` (`"H" "2.1"`) |
 |---|---|---|---|
 | `revert` | `move: H; ` (`move: H H'; ` for two) | | `move: H; rewrite [X in X + _ = _ -> _]/=.` (with `{path:pbp}`) |
 | `in` | | ` in H` | `rewrite [X in X + _ = _]/= in H.` |
@@ -522,7 +509,7 @@ from 0), `point-hyps` (the hypotheses of the selections), `point-names`
 (all the hypotheses of the goal), and `point-count`; point_actions.v adds
 `scope-term Scope In T Ps` (the term and the paths of the selections in
 it, for `path-goal` or `path-part`) and `occurrences Scope In Ns`.  An
-error is `coq.ltac.fail 0 {msg "..."}` (`msg` adds `point_run: `).
+error is `coq.ltac.fail 0 {msg "..."}` (`msg` adds `point_run_path: `).
 
 A path method or a strategy is declared in Elpi only (they compute), by a
 clause in `pbp_select.db`, e.g. (point_actions_test.v):
@@ -564,11 +551,11 @@ doc:
 
 ```
 7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 503
+Point (point), declared in coq_tmp.point_actions, line 537
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
 ...
-Name it (point), declared in coq_tmp.point_actions_test, line 188
+Name it (point), declared in coq_tmp.point_actions_test, line 181
   template: set x := ({text}).
   doc: name the selected subterm
 Compare (link), declared by an Elpi clause
@@ -579,10 +566,10 @@ Compare (link), declared by an Elpi clause
 `PointPaths.` and `PointStrategies.` print the path methods and the
 hypothesis strategies the same way (name, Elpi predicate, doc).
 
-`elpi point_show Sel ...` (a tactic, selections as for `point_run`)
-prints the `point-in` value an action is given for the selections,
-field by field, with the printed subterms of each part (`shown P S E
-T`): what to look at when writing an action in Elpi.
+`elpi point_show Sel ...` (a tactic, selections as for
+`point_run_path`) prints the `point-in` value an action is given for the
+selections, field by field: what to look at when writing an action in
+Elpi.
 
 A goal with a `match` (an `if`) can be pointed at: the subterms of the
 match's return type, never printed, are not marked.

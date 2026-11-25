@@ -47,6 +47,12 @@
 From Stdlib Require Import ssreflect.
 From elpi Require Import elpi.
 
+(* A pattern [X in C] (or [X Y in C]) is read as the function
+   fun X => C (fun X Y => C) *)
+Notation "'[' x .. y 'in' p ']' " :=
+  ( (fun x => .. ( (fun y => p)) ..))
+  (x binder, y binder, right associativity).
+
 (* The marker of the holes of a pattern: it prints as its name only *)
 Definition pbp_hole {A : Type} {a : A} : A := a.
 
@@ -186,6 +192,7 @@ pred term-at i:list int, i:term, o:term.
 term-at [] T T.
 term-at [I|P] T R :- kids T Ks, std.nth I Ks K, kid-term P K R.
 
+% [kid-term P K R] term-at in the immediate subterm K
 pred kid-term i:list int, i:kid, o:term.
 kid-term P (kt T) R :- term-at P T R.
 kid-term P (kb _ _ B) R :- pi x\ term-at P (B x) R.
@@ -238,11 +245,12 @@ string-of-path P S :-
 kind status type.
 type st-printed status.  % printed
 type st-hidden status.   % never printed, nor anything in it: the return
-                         % type of a match
+                         % type of a match, the body of a cast (its
+                         % variable, as Rocq-Elpi sees the cast)
 type st-binder status.   % a binder of a branch of a match (the fun of the
-                         % arguments of its constructor): not printed, but
-                         % its type and its body are (a fun body: another
-                         % binder of the branch)
+                         % arguments of its constructor): not printed, nor
+                         % its type (the constructor's), but its body is (a
+                         % fun body: another binder of the branch)
 
 % [kid-status T I St St1] St1 says how the I-th immediate subterm of T is
 % printed, St how T is
@@ -251,7 +259,10 @@ kid-status _ _ st-hidden st-hidden :- !.
 kid-status (match _ _ _) 1 _ st-hidden :- !.
 kid-status (match _ _ Bs) I _ st-binder :- I >= 2, J is I - 2,
   std.nth J Bs (fun _ _ _), !.
-kid-status (fun _ _ F) 2 st-binder st-binder :- pi x\ F x = fun _ _ _, !.
+kid-status (let N _ _ F) 2 _ st-hidden :- cast-let N F, !.
+kid-status (fun _ _ _) 1 st-binder st-hidden :- !.
+kid-status (fun _ _ F) 2 st-binder st-binder :-
+  pi x\ sigma N Ty B\ F x = fun N Ty B, !.
 kid-status _ _ _ st-printed.
 
 % [printed-at T P] the subterm at path P of T is printed
@@ -272,6 +283,8 @@ status-at T [I|P] St0 St :- kids T Ks, std.nth I Ks K, kid-status T I St0 St1,
 pred marker-names i:string, o:string, o:string.
 marker-names O A B :- marker-fresh O "pbp_mark" 0 A, marker-fresh O "pbp_end" 0 B.
 
+% [marker-fresh O Base N Name] Name is Base, or Base with a number from
+% N, that does not occur in O
 pred marker-fresh i:string, i:string, i:int, o:string.
 marker-fresh O Base 0 Name :- not (contains O Base), !, Name = Base.
 marker-fresh O Base N Name :- N > 0, std.any->string N NS, C is Base ^ NS,
@@ -399,6 +412,7 @@ pred var-named-in i:string, i:term.
 var-named-in S T :- name T, !, (decl T N _ ; def T N _ _), coq.name->id N S.
 var-named-in S T :- kids T Ks, std.exists Ks (kid-var-named-in S).
 
+% [kid-var-named-in S K] var-named-in in the immediate subterm K
 pred kid-var-named-in i:string, i:kid.
 kid-var-named-in S (kt T) :- var-named-in S T.
 kid-var-named-in S (kb _ _ B) :- pi x\ var-named-in S (B x).
@@ -415,6 +429,8 @@ fresh-ident S Avoid D :-
    Base = S, I = 0),
   fresh-ident-from Base I Avoid D.
 
+% [fresh-ident-from Base I Avoid D] D is Base with the first number from
+% I that makes it a name not in Avoid
 pred fresh-ident-from i:string, i:int, i:list string, o:string.
 fresh-ident-from Base I Avoid D :-
   D1 is Base ^ int_to_string I, not (std.mem! Avoid D1), !, D = D1.
@@ -451,6 +467,7 @@ text-at-names Ctx M [] T S :- !,
 text-at-names Ctx M [I|P] T S :-
   kids T Ks, std.nth I Ks K, kid-mode M T I M1, kid-text-names Ctx M1 P K S.
 
+% [kid-text-names Ctx M P K S] text-at-names in the immediate subterm K
 pred kid-text-names i:list string, i:bmode, i:list int, i:kid, o:string.
 kid-text-names Ctx M P (kt T) S :- text-at-names Ctx M P T S.
 kid-text-names Ctx M P (kb N Ty B) S :-
@@ -526,6 +543,8 @@ walk-kids Sels St Bs T I [K|Ks] [K1|Ks1] A0 A :-
    kid-status T I St StI, walk-kid SelsI StI Bs K K1 A0 A1),
   I1 is I + 1, walk-kids Sels St Bs T I1 Ks Ks1 A1 A.
 
+% [walk-kid Sels St Bs K K1 A0 A] walk in the immediate subterm K (a
+% binder: its variable is declared and bound)
 pred walk-kid i:list (pair (list int) term), i:status, i:list term,
               i:kid, o:kid, i:pacc, o:pacc.
 walk-kid _ _ _ (kn N) (kn N) A A.
@@ -550,6 +569,7 @@ names-in T (pacc K Ns) (pacc K [S|Ns]) :- name T, not (walk-bound T),
   (decl T N _ ; def T N _ _), !, coq.name->id N S.
 names-in T A0 A :- kids T Ks, std.fold Ks A0 kid-names A.
 
+% [kid-names K A0 A] names-in in the immediate subterm K
 pred kid-names i:kid, i:pacc, o:pacc.
 kid-names (kn _) A A.
 kid-names (kt T) A0 A :- names-in T A0 A.
@@ -584,6 +604,8 @@ pred with-vars i:int, i:list term, i:(pred i:list term).
 with-vars 0 Xs G :- !, G Xs.
 with-vars K Xs G :- K1 is K - 1, pi x\ sigma Xs1\ std.append Xs [x] Xs1, with-vars K1 Xs1 G.
 
+% [build-body Ctx M Ps T Ts Ns Body N Xs] Body is the text of the body of
+% the pattern of pattern-build, Xs being its variables
 pred build-body i:list string, i:bmode, i:list (list int), i:term,
                 i:list int, o:list string, o:string, o:int, i:list term.
 build-body Ctx M Ps T Ts Ns Body N Xs :-
@@ -603,13 +625,15 @@ build-body Ctx M Ps T Ts Ns Body N Xs :-
 pred pattern-unchecked.
 
 % [check-ok Text Ps C] the pattern Text, parsed and elaborated, is C once
-% its variables are the subterms at the paths Ps, at these places
+% its variables are the subterms at the paths Ps, at these places (a
+% test: the unknowns and the constraints of the elaboration are dropped,
+% else they would weigh on the next checks)
 pred check-ok i:string, i:list (list int), i:term.
 check-ok _ _ _ :- pattern-unchecked, !.
 check-ok Text Ps C :-
   S is "(" ^ Text ^ ")",
-  coq.parse.argument S ff "" A D, D = ok, A = trm Pat,
-  check-open Pat Ps [] C.
+  not (not (coq.parse.argument S ff "" A D, D = ok, A = trm Pat,
+            check-open Pat Ps [] C)).
 
 % [check Text Ps C] check-ok, or the error that says why not
 pred check i:string, i:list (list int), i:term.

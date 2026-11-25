@@ -115,6 +115,8 @@ occurrences Sc In Ns :-
   std.map Ps (p\ n\ occurrence-number Occs p 1 n) Ns0,
   (Ns0 = [A, B], A > B, !, Ns = [B, A] ; Ns = Ns0).
 
+% [occurrence-number Occs P N M] P is the occurrence number M of Occs,
+% counting from N
 pred occurrence-number i:list (list int), i:list int, i:int, o:int.
 occurrence-number [P|_] P N N :- !.
 occurrence-number [_|Ps] P N M :- N1 is N + 1, occurrence-number Ps P N1 M.
@@ -124,16 +126,20 @@ pred ints-text i:list int, o:string.
 ints-text Ns S :- std.map Ns (n\ s\ s is int_to_string n) Ss,
   std.string.concat " " Ss S.
 
+% [path-pbp Sc In S] the path method pbp: the pattern of the selections
 pred path-pbp i:point-scope, i:point-in, o:string.
 path-pbp path-goal In S :- point-pattern In S.
 path-pbp path-part In S :- point-local-pattern In S.
 
+% [path-occ Sc In S] the path method occ: ssreflect's occurrences {n}
 pred path-occ i:point-scope, i:point-in, o:string.
 path-occ Sc In S :- occurrences Sc In Ns, ints-text Ns T, S is "{" ^ T ^ "}".
 
+% [path-at Sc In S] the path method at: Rocq's occurrences n
 pred path-at i:point-scope, i:point-in, o:string.
 path-at Sc In S :- occurrences Sc In Ns, ints-text Ns S.
 
+% [path-raw Sc In S] the path method path: the paths [i, j, k]
 pred path-raw i:point-scope, i:point-in, o:string.
 path-raw Sc In S :-
   scope-term Sc In _ Ps,
@@ -165,12 +171,16 @@ one-hyp In H :-
    Hs = [H0], point-part In _, !, H = H0 ;
    coq.ltac.fail 0 {msg "the selections are in two places: they cannot be changed in place"}).
 
+% [hyp-revert In Pre Post] the strategy revert: move: H; before
 pred hyp-revert i:point-in, o:string, o:string.
 hyp-revert In Pre "" :- point-revert In Pre.
 
+% [hyp-in In Pre Post] the strategy in: in H after
 pred hyp-in i:point-in, o:string, o:string.
 hyp-in In "" Post :- one-hyp In H, (H = "", !, Post = "" ; Post is " in " ^ H).
 
+% [hyp-forward In Pre Post] the strategy forward: have H' := H; before,
+% in H' after
 pred hyp-forward i:point-in, o:string, o:string.
 hyp-forward In Pre Post :-
   one-hyp In H,
@@ -268,11 +278,14 @@ pred json-string i:string, o:string.
 json-string S J :-
   json-chars S 0 Cs, std.string.concat "" Cs B, J is "\"" ^ B ^ "\"".
 
+% [json-chars S I Es] Es are the JSON escapes of the characters of S
+% from I
 pred json-chars i:string, i:int, o:list string.
 json-chars S I [] :- I >= size S, !.
 json-chars S I [E|Es] :-
   C is substring S I 1, json-char C E, I1 is I + 1, json-chars S I1 Es.
 
+% [json-char C E] E is the character C escaped for JSON
 pred json-char i:string, o:string.
 json-char "\"" "\\\"" :- !.
 json-char "\\" "\\\\" :- !.
@@ -655,6 +668,8 @@ Elpi Accumulate pbp_select.db lp:{{
 % compared are printed alone and inside the goal
 pred rt-norm i:string, o:string.
 rt-norm S N :- flat S F0, rex.replace "let'" "let" F0 F, rt-strip F N.
+% [rt-strip S N] N is S without its final scope, outer parentheses and
+% leading @ (rt-norm)
 pred rt-strip i:string, o:string.
 rt-strip S N :- rex.match "^.*%[A-Za-z_][A-Za-z_0-9]*$" S, not (rex.match "^\".*\"$" S),
   rex.replace "%[A-Za-z_][A-Za-z_0-9]*$" "" S S1, !, rt-strip S1 N.
@@ -682,12 +697,6 @@ pred rt-text i:list string, i:bmode, i:term, i:list int, o:string.
 rt-text Names M T P S :- name-at T P _, !, rt-name-at Names [] M T P S.
 rt-text Names M T P S :- path-of T P, !, text-at-names Names M P T S.
 
-% [rt-name-at Ctx Sc M T P S] S is the name, as the display prints it, of
-% the binder at P of T (P ends at its name); Ctx: the hypotheses, Sc: the
-% names of the binders above, M: where T is (the conclusion: a name in
-% Ctx or Sc is changed, x0; a hypothesis: only when the hypothesis of
-% that name is used below); an unused variable is printed _ (in a
-% pattern)
 % [rt-locate Names M T P Txt St O] the subterm at path P of T printed in
 % its place: the whole part T printed (O, without blanks) with the
 % subterm framed by two markers (as whole-text), its binders named as the
@@ -702,6 +711,12 @@ rt-locate Names M T P Txt St O :- not (name-at T P _), path-of T P,
   marked-string A B P T1 MF0, replace-placeholders Rs MF0 MF,
   around-mark A B MF Pre Post, fits O Pre Post Before Txt, cp-length Before St.
 
+% [rt-name-at Ctx Sc M T P S] S is the name, as the display prints it, of
+% the binder at P of T (P ends at its name); Ctx: the hypotheses, Sc: the
+% names of the binders above, M: where T is (the conclusion: a name in
+% Ctx or Sc is changed, x0; a hypothesis: only when the hypothesis of
+% that name is used below); an unused variable is printed _ (in a
+% pattern)
 pred rt-name-at i:list string, i:list string, i:bmode, i:term, i:list int, o:string.
 rt-name-at Ctx Sc M T [0] S :- rt-binder T N F, !, rt-display Ctx Sc M N F tt S.
 rt-name-at Ctx Sc M T [I|P] S :- kids T Ks, std.nth I Ks K, kid-mode M T I M1,
@@ -709,6 +724,7 @@ rt-name-at Ctx Sc M T [I|P] S :- kids T Ks, std.nth I Ks K, kid-mode M T I M1,
    K = kb N _ F, rt-display Ctx Sc M N F ff D,
    pi x\ rt-name-at Ctx [D|Sc] M1 (F x) P S).
 
+% [rt-binder T N F] T is a binder of name N and body F
 pred rt-binder i:term, o:name, o:(term -> term).
 rt-binder (prod N _ F) N F.
 rt-binder (fun N _ F) N F.
@@ -739,6 +755,8 @@ rt-display Ctx Sc M N F _ S :- coq.name->id N S0, std.append Ctx Sc Avoid,
 Elpi Tactic point_path_text.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
+% [rt-part Ctx Ty Args T M Where P E] the part T (conclusion or
+% hypothesis Where, M), the path P and the tagged text E of the arguments
 pred rt-part i:goal-ctx, i:term, i:list argument, o:term, o:bmode, o:string, o:string, o:string.
 rt-part _ Ty [str P, str E, str _, str _] Ty (bm-goal 0) "|-" P E :- is-path-string P, !.
 rt-part Ctx _ [str H, str P, str E, str _, str _] T bm-hyp H P E :-
@@ -780,13 +798,18 @@ solve (goal Ctx _ Ty _ [str Case | Args] as G) [seal G] :-
 Elpi Tactic point_paths_check.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
+% [rt-names-paths T Ps] Ps are the paths of the binder names of T
 pred rt-names-paths i:term, o:list (list int).
 rt-names-paths T Ps :- std.findall (rt-name-path T P_) Sols,
   std.map Sols (s\ p\ s = rt-name-path T p) Ps.
+% [rt-name-path T P] P is the path of a binder name of T
 pred rt-name-path i:term, o:list int.
 rt-name-path T P :- path-of T Q, binder-kind-at T Q, std.append Q [0] P.
+% [binder-kind-at T Q] the subterm at path Q of T is a binder
 pred binder-kind-at i:term, i:list int.
 binder-kind-at T Q :- name-at T {std.append Q [0]} _.
+% [rt-count Names M T N] T has N subterms and binder names, each with a
+% text (rt-text)
 pred rt-count i:list string, i:bmode, i:term, o:int.
 rt-count Names M T N :-
   std.findall (path-of T P_) Sols, std.map Sols (s\ p\ s = path-of T p) Ps0,
@@ -810,9 +833,12 @@ solve (goal Ctx _ Ty _ [] as G) [seal G] :-
 Elpi Tactic point_paths_untagged.
 Elpi Accumulate Db pbp_select.db.
 Elpi Accumulate lp:{{
+% [rt-used-name-path T P] P is the path of the name of a binder of T
+% whose variable is used
 pred rt-used-name-path i:term, o:list int.
 rt-used-name-path T P :- path-of T Q, std.append Q [0] P, name-at T P _,
   rt-binder-used T Q.
+% [rt-binder-used T Q] the binder at path Q of T has a used variable
 pred rt-binder-used i:term, i:list int.
 rt-binder-used T [] :- !, rt-binder T _ F, (pi x\ occurs x (F x)), not (rt-intermediate F).
 % [rt-intermediate F] the variable of F is only matched at once (the

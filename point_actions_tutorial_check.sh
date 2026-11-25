@@ -74,9 +74,9 @@ EOF
 # FILE.v:N|the start of that line
 cat > "$tmp/refs" <<'EOF'
 point_actions.v:69|pred point-action o:string
-subterm_pattern.v:51|Definition pbp_hole
-subterm_pattern.v:63|pred msg i:string
-subterm_pattern.v:73|pred one-line i:string
+subterm_pattern.v:57|Definition pbp_hole
+subterm_pattern.v:69|pred msg i:string
+subterm_pattern.v:79|pred one-line i:string
 pbp_select.v:42|pred parse-sels i:list argument
 pbp_select.v:88|kind part type.
 pbp_select.v:103|kind loc type.

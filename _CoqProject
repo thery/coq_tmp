@@ -20,6 +20,7 @@ point_actions_test.v
 point_paths_test.v
 point_paths_cases.v
 point_actions_tutorial.v
+subterm_pattern_test.v
 mode_elpi.v
 
 

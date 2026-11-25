@@ -7,8 +7,9 @@ prototype branch `path-tags` of Rocq), the goal panel reads the path of
 the selected part, and sends it to `elpi point_run_path` (branch
 `point-paths`).  Nothing is printed twice and no characters are counted.
 
-The reference for the numbering is the comment above `kids` in
-[pbp_select.v](pbp_select.v); this page explains it with examples.
+The reference for the numbering is the header of
+[subterm_pattern.v](subterm_pattern.v), which also turns a path into a
+pattern `[X in ...]`; this page explains the paths with examples.
 
 ## Dewey notation
 

@@ -56,10 +56,10 @@ Definition double n := n + n.
 (* a command: outside proofs too *)
 PointActions.
 Elpi point_text_expect actions "5 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 524
+Point (point), declared in coq_tmp.point_actions, line 537
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 526
+Link (link), declared in coq_tmp.point_actions, line 539
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
 Simplify here (point), declared in coq_tmp.point_actions_more, line 9
@@ -193,10 +193,10 @@ point-action "Compare" link "compare the two selections" same-text.
 (* the two new actions, at the end of the list *)
 PointActions.
 Elpi point_text_expect actions "7 pointing action(s):
-Point (point), declared in coq_tmp.point_actions, line 524
+Point (point), declared in coq_tmp.point_actions, line 537
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: bring the selected subformula to the surface of the goal
-Link (link), declared in coq_tmp.point_actions, line 526
+Link (link), declared in coq_tmp.point_actions, line 539
   template: {pre:revert}pbp {path:pbp}{post:revert}.
   doc: pbp: link the two selected subformulas
 Simplify here (point), declared in coq_tmp.point_actions_more, line 9
