@@ -44,9 +44,9 @@ me=point_paths_roundtrip
 tmp=$(mktemp -d) || exit 2
 [ -n "$RT_KEEP" ] && echo "$me: kept in $tmp" || trap 'rm -rf "$tmp"' EXIT
 ulimit -v 8000000
-cp "$here"/pbp.v "$here"/pbp_select.v "$here"/point_actions.v "$here"/point_paths_cases.v "$here"/point_paths_cases_mathcomp.v "$tmp"/
+cp "$here"/subterm_pattern.v "$here"/pbp.v "$here"/pbp_select.v "$here"/point_actions.v "$here"/point_paths_cases.v "$here"/point_paths_cases_mathcomp.v "$tmp"/
 cd "$tmp" || exit 2
-for f in pbp pbp_select point_actions; do
+for f in subterm_pattern pbp pbp_select point_actions; do
   rocq c -R . coq_tmp $f.v > $f.out 2>&1 || { echo "$me: $f.v does not compile:"; cat $f.out; exit 2; }
 done
 # the parser of the tagged goals (Show): one line "case|hyp|path|text" per
