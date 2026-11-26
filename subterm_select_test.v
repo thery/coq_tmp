@@ -245,6 +245,52 @@ solve (goal Ctx _ Ty _ [str Exp] as G) [seal G] :-
 
 Definition double n := n + n.
 
+(* [elpi select_all_causes]: for every path whose best candidate needs an
+   occurrence number or is the path alone, prints a line
+   "CAUSE <class> <cause> <where> <path> : <text>", the cause being the
+   first that applies: root, binder-name, hidden (not printed), head,
+   bound (uses a variable bound in the goal), cast, under-binder (closed,
+   but below a binder of the goal), copy (another subterm is the same
+   term), other. *)
+Elpi Tactic select_all_causes.
+Elpi Accumulate File subterm_pattern.elpi.
+Elpi Accumulate File subterm_select.elpi.
+Elpi Accumulate lp:{{
+pred sc-cause i:term, i:list int, o:string.
+sc-cause _ [] "root" :- !.
+sc-cause T P "binder-name" :- name-at T P _, !.
+sc-cause T P "hidden" :- sel-hidden T P, !.
+sc-cause _ P "head" :- P = [_|_], std.last P L, L = 0, !.
+sc-cause T P "bound" :- not (term-at P T _), !.
+sc-cause T P "cast" :- sel-cast-at P T, !.
+sc-cause T P "under-binder" :- through-binder T P, !.
+sc-cause T P "copy" :- term-at P T Tt, sel-closed [] T [] [] Ps,
+  std.exists Ps (q\ not (q = P), term-at q T C, same_term C Tt), !.
+sc-cause _ _ "other".
+
+% [through-binder T P] the path P goes below a binder of T
+pred through-binder i:term, i:list int.
+through-binder T [I|P] :- kid-at T I (k\ (k = kb _ _ _ ; k = kt U, through-binder U P)).
+
+pred sc-part i:goal, i:string, i:term.
+sc-part G H T :-
+  std.findall (path-of T P_) Sols, std.map Sols (s\ p\ s = path-of _ p) Ps,
+  std.forall Ps (p\ sigma Rs K C Cause PS Txt\
+    sg-select-all G H p Rs, sg-best Rs (sg-res _ K _ _ _),
+    (std.mem! [e1-occurrence-switch, a2-occurrence] K, !, C = "occurrence" ;
+     K = a1-path, !, C = "path" ; C = ""),
+    (C = "", ! ;
+     sc-cause T p Cause, sel-pos-string (sp-at p) PS, sel-pos-text T (sp-at p) Txt,
+     coq.say "CAUSE" C Cause H PS ":" Txt)).
+
+solve (goal Ctx _ Ty _ [] as G) [seal G] :-
+  tool-name "select_all_causes" => (
+  sc-part G "" Ty,
+  std.map-filter Ctx (e\ h\ sigma V N T S\ e = decl V N T,
+     coq.typecheck T S ok, S = sort prop, coq.name->id N h) Hs,
+  std.forall Hs (h\ sigma T\ sel-part G h T, sc-part G h T)).
+}}.
+
 (* [elpi select_all_roundtrip Exp]: for every path p of the conclusion
    and of each hypothesis (a proposition), select_all's best candidate
    (checked by the oracle: it denotes exactly {p}) is counted by kind:

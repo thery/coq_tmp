@@ -1059,7 +1059,7 @@ sg-term-cand T P C :- term-at P T Tt,
 
 % [sg-context-cands T P Cs] the C1 candidates [X in C] of the target at P
 pred sg-context-cands i:term, i:list int, o:list sg-cand.
-sg-context-cands T P Cs :- sg-ancestors P As, sg-take 6 As As1,
+sg-context-cands T P Cs :- sg-ancestors P As, sg-take 1000 As As1,
   std.map-filter As1 (a\ c\ sg-c1 T P a c) Cs.
 pred sg-c1 i:term, i:list int, i:list int, o:sg-cand.
 sg-c1 T P A (sg-cand c1-context S D How) :-
@@ -1093,7 +1093,7 @@ sg-c2 T P Tt Kt M A (sg-cand c2-redex-in-context S D How) :-
 
 % [sg-c3-cands T P Cs] the C3 candidates [t as X in C]
 pred sg-c3-cands i:term, i:list int, o:list sg-cand.
-sg-c3-cands T P Cs :- sg-ancestors P As, sg-take 6 As As1,
+sg-c3-cands T P Cs :- sg-ancestors P As, sg-take 1000 As As1,
   std.map-filter As1 (a\ c\ sg-c3 T P a c) Cs.
 pred sg-c3 i:term, i:list int, i:list int, o:sg-cand.
 sg-c3 T P A (sg-cand c3-redex-as-context S D How) :-
