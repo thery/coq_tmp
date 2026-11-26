@@ -19,6 +19,8 @@ follows Gonthier and Tassi, *A language of patterns for subterm selection*
   runs no tactic.
 - `subterm_select_test.v`: tests. They cover the paper's examples, the
   selector algebra, and round trips over the goals of `../point_paths_test.v`.
+- `subterm_algebra.v`, `subterm_algebra_test.v`: the algebra of selectors
+  (`GRAMMAR.md`): denotation, laws, translation to ssreflect, robustness.
 - `tests/`: the differential tests against ssreflect.
   - `run.sh` compiles each `corpus_*.v`. Its `elpi diff_gen` and
     `elpi diff_cases` lines print the cases with the Elpi result.
