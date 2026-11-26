@@ -117,10 +117,25 @@ Build and test: `cd elpi-tools && dune build && dune build @runtest`.
 
 [pbp.v](pbp.v) is the tactic of *Proof by Pointing Revisited*: `pbp [X in
 X /\ _ -> _]` brings the subformula at `X` to the surface of the goal
-(rules for `/\`, `\/`, `->`, `~`), and `pbp [X Y in X -> (Y -> _) -> _]`
-links two subformulas (proof by linking).  A free variable of the
-pattern names the assumption introduced at its place (`[X in Y /\ X ->
-_]`), else it is called `pbp`.
+(rules for `/\`, `\/`, `->`, `~`, `forall`, `exists`), and `pbp [X Y in
+X -> (Y -> _) -> _]` links two subformulas (proof by linking).  A free
+variable of the pattern names the assumption introduced at its place
+(`[X in Y /\ X -> _]`), else it is called `pbp`.
+
+Under quantifiers the pattern is read by position: its binders stand for
+the binders of the goal at the same place, and `X` is the subterm at its
+place, which may use the variables bound above it (`pbp [X in forall n,
+X = 0]` points at the `n` of `n = 0`).  A `forall` of the goal is
+introduced, an `exists` assumption is destructured, the witness of an
+`exists` of the goal and the instance of a `forall` assumption are new
+evars, left as goals (after the others) unless a link sets them.  The
+names written in the pattern are the names given: `pbp [X in forall a b
+: nat, _ -> X]` introduces `a` and `b`, `forall (H : _), X` names the
+hypothesis of the premise `H` (an unnamed premise is `pbp`), and the
+evars are `?a`, `?b` (`?a0` if `?a` is taken).  A name already used in
+the context is an error that says which name, where it is in the
+pattern and what uses it.  Tests:
+[pbp_binders_test.v](pbp_binders_test.v).
 
 [subterm_pattern.v](subterm_pattern.v) turns the path of a subterm of a
 term into an ssreflect pattern `[X in ...]` that designates it (it does
