@@ -5,3 +5,4 @@ gen/.*.aux
 *.vo*
 *.glob
 .*.aux
+gen/
