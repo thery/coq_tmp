@@ -54,10 +54,14 @@ algebra allows any number of each.
    The left one takes the first instance of `C₁`, then looks for `C₂` inside
    its `X` part, and fails if `C₂` is not there. The right one takes the first
    instance of the whole `C₁[C₂/X]`, which may be a later `C₁`. They are equal
-   when the first instance of `C₁` has an instance of `C₂` in its `X` part.
+   when the `X` part of the first instance of `C₁` **is** itself an instance of
+   `C₂`. It is not enough for it to *contain* one: the nested search goes
+   inside the `X` part, the flattened pattern does not.
    For example, in `f a 1 + f b (g 2) = 0`, `⟨f _ X | X⟩ ; ⟨g Y | Y⟩` fails,
    because the first `f _ _` is `f a 1` and `1` contains no `g`, while
-   `⟨f _ (g Y) | Y⟩` gives `2`.
+   `⟨f _ (g Y) | Y⟩` gives `2`. In `f a (h (g 1)) + f b (g 2) = 0`, the `X`
+   part `h (g 1)` contains an instance of `g Y` without being one: the nested
+   selector gives `1`, the flattened one gives `2`.
 4. **as = hole with the redex put in.** `⟨C | X⟩` restricted to the places
    that match `t` is `⟨C[t/X] | X⟩` (C3), with no side condition, because C3 is
    matched in one step.
