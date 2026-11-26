@@ -1,6 +1,11 @@
 -arg -w -arg -notation-overridden
 
 -I .
+-I plugin
+plugin/META.coq-tmp
+plugin/g_select.mlg
+plugin/select_plugin.mlpack
+
 -R . coq_tmp
 
 Zfloor.v
@@ -22,6 +27,7 @@ point_paths_cases.v
 point_actions_tutorial.v
 subterm_pattern_test.v
 mode_elpi.v
+subterm_select.v
 
 
 

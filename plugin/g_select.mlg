@@ -1,0 +1,43 @@
+(* run_tactic_string S: parses the string S as an Ltac tactic, with the
+   grammar of the current document (so ssreflect's tactics and patterns
+   when ssreflect is loaded), and runs it.  It lets an Elpi tactic run a
+   tactic whose text it has built: coq.ltac.call-ltac1 takes the name of
+   an Ltac tactic and terms or strings as its arguments, not a text to
+   parse.  It is the bridge that subterm_select.v uses to hand its
+   patterns to ssreflect.  A parse error is a failure of the tactic.
+
+   It is an Ltac function of one argument (as ssrmatching's ssrpattern
+   is), so that it takes a string value: an Ltac variable, or the string
+   argument that Elpi passes. *)
+{
+open Ltac_plugin
+open Names
+open Proofview.Notations
+
+let run_string s =
+  Proofview.tclUNIT () >>= fun () ->
+  match Procq.parse_string Pltac.tactic_eoi s with
+  | exception e when CErrors.noncritical e ->
+    let e, info = Exninfo.capture e in Proofview.tclZERO ~info e
+  | t -> Tacinterp.interp t
+
+let () =
+  let mltac _ ist =
+    let v = Id.Map.find (Id.of_string "s") ist.Geninterp.lfun in
+    match Tacinterp.Value.to_constr v with
+    | Some _ -> Tacticals.tclZEROMSG (Pp.str "run_tactic_string: a string is expected")
+    | None ->
+      let s = Tacinterp.Value.cast (Genarg.topwit Stdarg.wit_string) v in
+      run_string s in
+  let name = { Tacexpr.mltac_plugin = "coq-tmp.select";
+               mltac_tactic = "run_tactic_string" } in
+  let () = Tacenv.register_ml_tactic name [|mltac|] in
+  let tac =
+    CAst.make (Tacexpr.TacFun ([Name (Id.of_string "s")],
+      CAst.make (Tacexpr.TacML ({ Tacexpr.mltac_name = name; mltac_index = 0 }, [])))) in
+  let obj () =
+    Tacenv.register_ltac true false (Id.of_string "run_tactic_string") tac in
+  Mltop.declare_cache_obj obj "coq-tmp.select"
+}
+
+DECLARE PLUGIN "coq-tmp.select"
