@@ -77,8 +77,8 @@ Abort.
    name Rocq gives it), not as Rocq-Elpi prints it (elpi_ctx_entry_3_) *)
 Goal forall x : nat, (forall x : nat, x = x) -> forall y, (fun x => x + y) x = x.
 intros x H.
-elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x : nat, X x) -> _]." "" "H" "2".
-elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x : nat, X x = _) -> _]." "" "H" "2.2".
+elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x0 : nat, X) -> _]." "" "H" "2".
+elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x0 : nat, X = _) -> _]." "" "H" "2.2".
 elpi point_run_path_expect "Point" "pbp [X in forall y : nat, [x0 : nat in X x0 + _] _ = _]." "" "2.2.0.2.1".
 (* the type of the fun: the pattern keeps the application (no beta
    reduction), the type is X *)
@@ -91,7 +91,7 @@ Abort.
 Goal forall (a b : nat) (c d : bool), (fun x y : nat => x + y) a b = a + b /\ exists (u v : nat) (w : bool), u = v /\ w = c.
 (* the type of u in exists (u v : nat): widened to the exists, as the
    range method *)
-elpi point_run_path_expect "Point" "pbp [X in forall (a b : nat) (c : bool), _ -> _ /\ X c]." "exists (u v : nat) (w : bool), u = v /\ w = c" "2.2.2.2.2.2.2.2.1".
+elpi point_run_path_expect "Point" "pbp [X in forall (a b : nat) (c : bool) (d : _), _ /\ X]." "exists (u v : nat) (w : bool), u = v /\ w = c" "2.2.2.2.2.2.2.2.1".
 Abort.
 
 (* a cast (Rocq-Elpi sees it as a let): the pattern is a cast *)
@@ -166,7 +166,7 @@ Abort.
    error *)
 Goal forall n : nat, n + 0 = n.
 elpi point_run_path_expect "Point" "pbp [X in X]." "forall n : nat, n + 0 = n (a binder name: the whole forall is selected)" "0".
-elpi point_run_path_expect "Point" "pbp [X in forall n : nat, X n + _ = _]." "" "2.2.1".
+elpi point_run_path_expect "Point" "pbp [X in forall n : nat, X + _ = _]." "" "2.2.1".
 Fail elpi point_run_path "Point" "0.1".
 Abort.
 

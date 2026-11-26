@@ -244,10 +244,10 @@ Qed.
    is the variable of the pattern applied to them *)
 Goal forall n : nat, exists m : nat, n + m = m + n.
 Proof.
-elpi pbp_pattern_expect "pbp [X in forall n : nat, exists m : nat, X n + _ = _]." "" "2.2.2.2.1".
-elpi pbp_pattern_expect "pbp [X in forall n : nat, exists m : nat, _ + X m = _]." "" "2.2.2.2.2".
-elpi pbp_pattern_expect "pbp [X in forall n : nat, exists m : nat, X n m = _]." "" "2.2.2.2".
-elpi pbp_pattern_expect "pbp [X in forall n : nat, X n]." "" "2".
+elpi pbp_pattern_expect "pbp [X in forall n : nat, exists m : nat, X + _ = _]." "" "2.2.2.2.1".
+elpi pbp_pattern_expect "pbp [X in forall n : nat, exists m : nat, _ + X = _]." "" "2.2.2.2.2".
+elpi pbp_pattern_expect "pbp [X in forall n : nat, exists m : nat, X = _]." "" "2.2.2.2".
+elpi pbp_pattern_expect "pbp [X in forall n : nat, X]." "" "2".
 (* the type nat of n cannot be abstracted: n + m needs it; the selection
    is widened to the forall *)
 elpi pbp_pattern_expect "pbp [X in X]." "forall n : nat, exists m : nat, n + m = m + n" "1".
@@ -328,7 +328,7 @@ Import Utf8.
 (* ∀ n : nat, n + 0 = n: a Unicode notation *)
 Goal forall n : nat, n + 0 = n.
 Proof.
-elpi pbp_pattern_expect "pbp [X in ∀ n : nat, X n + _ = _]." "" "2.2.1".
+elpi pbp_pattern_expect "pbp [X in ∀ n : nat, X + _ = _]." "" "2.2.1".
 elpi pbp_pattern_expect "pbp [X in ∀ n : nat, _ + X = _]." "" "2.2.2".
 Abort.
 End Unicode.

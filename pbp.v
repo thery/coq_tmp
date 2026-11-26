@@ -181,14 +181,23 @@ pred pbp-intro-name i:name, i:term, i:name, i:term, i:(term -> term), o:name.
 pbp-intro-name NP _ _ A F NP :- pbp-named NP S, !,
   (pbp-quant A F, !, W = "forall" ; W = "premise"), pbp-name-free S W.
 pbp-intro-name _ AP _ _ _ H :- get_name AP H, !.
-pbp-intro-name _ _ N A F N :- pbp-quant A F, !.
+pbp-intro-name _ _ N A F N1 :- pbp-quant A F, !, pbp-fresh N N1.
 pbp-intro-name _ _ _ _ _ `pbp`.
 
 % [pbp-exists-name NP N Name] the name of the variable of a destructured
 % exists N (exists NP in the pattern)
 pred pbp-exists-name i:name, i:name, o:name.
 pbp-exists-name NP _ NP :- pbp-named NP S, !, pbp-name-free S "exists".
-pbp-exists-name _ N N.
+pbp-exists-name _ N N1 :- pbp-fresh N N1.
+
+% [pbp-fresh N N1] N1 is N, or N with a number (N0, N1, ...), a name not
+% used (pbp-used): the name of a binder of the goal that the pattern does
+% not name
+pred pbp-fresh i:name, o:name.
+pbp-fresh N N1 :- coq.name->id N S, pbp-fresh-id S 0 S S1, coq.id->name S1 N1.
+pred pbp-fresh-id i:string, i:int, i:string, o:string.
+pbp-fresh-id _ _ S S :- not (pbp-used S _ _ _), !.
+pbp-fresh-id B I _ S :- S1 is B ^ int_to_string I, I1 is I + 1, pbp-fresh-id B I1 S1 S.
 
 % [pbp-evar NP N T WN W] W is a new evar of type T, to be named after the
 % binder NP of the pattern (N of the goal if NP is not written): WN is

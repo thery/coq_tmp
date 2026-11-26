@@ -193,11 +193,12 @@ pred point-count i:point-in, o:int.
 point-count (point-in _ _ _ _ Ls) N :- std.length Ls N.
 
 % [point-pattern In Pat] Pat is the pattern of the selections in the goal
-% with their hypotheses generalized (the one of pbp)
+% with their hypotheses generalized (the one of pbp): positional, X alone
+% under the binders of the logical skeleton (subterm_pattern.v)
 pred point-pattern i:point-in, o:string.
 point-pattern (point-in Names Hs C _ Ls) Pat :-
   std.map Ls loc-path Ps, std.length Hs N,
-  pattern-of Names (bm-goal N) Ps C Pat.
+  pattern-positional => pattern-of Names (bm-goal N) Ps C Pat.
 
 % [point-revert In M] M is the tactic that generalizes the hypotheses of
 % the selections, "move: H1 H2; ", or "" if there are none

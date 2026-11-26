@@ -13,7 +13,8 @@
    closes the proof. *)
 
 From Stdlib Require Import ssreflect.
-From coq_tmp Require Import pbp.
+From elpi Require Import elpi.
+From coq_tmp Require Import pbp pbp_select.
 From Ltac2 Require Import Ltac2.
 Set Default Proof Mode "Classic".
 
@@ -218,3 +219,78 @@ pbp [X Y in X -> (forall n, Y -> _) -> _].
 lazymatch goal with pbp : Q 1 |- P 1 -> Q 1 => idtac end.
 by [].
 Qed.
+
+(* ---------- The lines that pbp_pattern writes (pbp_select.v) ----------
+   Under the binders of the logical skeleton (forall, ->, /\, \/, ~,
+   exists) the pattern is positional: X alone, the binders named as the
+   goal display names them, renamed when the context uses the name
+   (pbp would fail), a named premise written with its name.  Each line is
+   checked, then run. *)
+
+Lemma gen_forall : forall n m : nat, n + m = m + n -> True.
+Proof.
+elpi pbp_pattern_expect "pbp [X in forall n m : nat, _ -> X]." "" "2.2.2".
+pbp [X in forall n m : nat, _ -> X].
+lazymatch goal with n : nat, m : nat, pbp : n + m = m + n |- True => idtac end.
+by [].
+Qed.
+
+Lemma gen_exists : exists n : nat, n = 2.
+Proof.
+elpi pbp_pattern_expect "pbp [X in exists n : nat, X]." "" "2.2".
+pbp [X in exists n : nat, X].
+[n]: exact 2.
+by [].
+Qed.
+
+Lemma gen_link_forall_hyp : (forall n : nat, n + 0 = n) -> 3 + 0 = 3.
+Proof.
+elpi pbp_pattern_expect "pbp [X Y in (forall n : nat, X) -> Y]." "" "1.2" "2".
+by pbp [X Y in (forall n : nat, X) -> Y].
+Qed.
+
+(* a name of the context: the binder of the conclusion is renamed *)
+Lemma gen_clash : forall n : nat, True -> forall n : nat, n = n.
+Proof.
+move=> n.
+elpi pbp_pattern_expect "pbp [X in _ -> forall n0 : nat, X]." "" "2.2".
+pbp [X in _ -> forall n0 : nat, X].
+lazymatch goal with n : nat, pbp : True, n0 : nat |- n0 = n0 => idtac end.
+by [].
+Qed.
+
+(* the binder of an exists assumption named as a variable of the context
+   is renamed too: pbp introduces it *)
+Lemma gen_exists_hyp : forall a : nat, (exists a : nat, a = 0) -> True.
+Proof.
+move=> a.
+elpi pbp_pattern_expect "pbp [X in (exists a0 : nat, X) -> _]." "" "1.2.2".
+pbp [X in (exists a0 : nat, X) -> _].
+lazymatch goal with a : nat, a0 : nat, X : a0 = 0 |- True => idtac end.
+by [].
+Qed.
+
+(* named premises are written with their names (H, used by the context,
+   becomes H0), and pbp introduces them so *)
+Lemma gen_named_premises (A B : Prop) (H : True) : forall (HA : A) (H : B), A /\ B.
+Proof.
+elpi pbp_pattern_expect "pbp [X in forall HA H0 : _, X /\ _]." "" "2.2.1".
+pbp [X in forall HA H0 : _, X /\ _].
+- lazymatch goal with HA : A, H0 : B |- A => idtac end. by [].
+- lazymatch goal with HA : A, H0 : B |- B => idtac end. by [].
+Qed.
+
+(* a link: the witness of the goal is the destructured variable *)
+Lemma gen_link_exists : forall (A : Prop) (x : nat), (exists x : nat, x = 0) -> exists y : nat, y = 0.
+Proof.
+move=> A x.
+elpi pbp_pattern_expect "pbp [X Y in (exists x0 : nat, X) -> exists y : nat, Y]." "" "1.2.2" "2.2.2".
+by pbp [X Y in (exists x0 : nat, X) -> exists y : nat, Y].
+Qed.
+
+(* under a fun (not on the skeleton) the selection is still applied to
+   its variable: pbp cannot go there *)
+Lemma gen_fun : forall y : nat, (fun x => x + y) y = y.
+Proof.
+elpi pbp_pattern_expect "pbp [X in forall y : nat, [x : nat in X x + _] _ = _]." "" "2.2.0.2.1".
+Abort.

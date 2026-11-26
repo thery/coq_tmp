@@ -304,7 +304,7 @@ Abort.
    my-pattern fails.  So does a selection that uses the variable y of a
    product: R, given outside pi y\, cannot be a term that contains y.
 
-   A hole is pbp_hole (subterm_pattern.v:57) applied to the subterm it
+   A hole is pbp_hole (subterm_pattern.v:58) applied to the subterm it
    replaces: a constant whose arguments are implicit, printed as its name,
    which my-pattern-text then replaces by _ in the text (rex.replace is a
    regular-expression replace).  To print the pattern, X is a new
@@ -347,7 +347,7 @@ my-pattern-text P T S R :-
 
 (* A tactic to see the walk at work: it prints the pattern as a term of
    Elpi, then as the text the action writes (one-line,
-   subterm_pattern.v:79, puts a text on one line).  In the term, c0 is the
+   subterm_pattern.v:86, puts a text on one line).  In the term, c0 is the
    variable a of the context and c1 the X of the pattern. *)
 Elpi Tactic show_pattern.
 Elpi Accumulate Db pbp_select.db.
@@ -400,7 +400,7 @@ Abort.
 (* ---- 2d. A clear error ----
 
    An action that cannot write its line says why: coq.ltac.fail 0 M
-   stops with the message M, which the bar shows.  msg (subterm_pattern.v:69)
+   stops with the message M, which the bar shows.  msg (subterm_pattern.v:76)
    puts the name of the tool before it ("point_run_path: ...").  The
    if-then-else of Elpi: (Cond, ! ; Else) runs Cond and, if it holds,
    keeps its result (the cut); else it runs Else. *)

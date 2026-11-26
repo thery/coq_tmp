@@ -155,7 +155,7 @@ arguments 1, 2, ...; see 2b below).
 | `a + b = b + a` | the last `a` | `pbp [X in _ = _ + X].` (`"3.2"`) |
 | `A /\ B -> B /\ A` | the last `A` | `pbp [X in _ -> _ /\ X].` (`"2.2"`) |
 | `A /\ B -> A /\ B` | the two `A` | `pbp [X Y in X /\ _ -> Y /\ _].` (`"1.1" "2.1"`) |
-| `forall n : nat, exists m : nat, n + m = m + n` | the first `n + m` | `pbp [X in forall n : nat, exists m : nat, X n m = _].` (`"2.2.2.2"`) |
+| `forall n : nat, exists m : nat, n + m = m + n` | the first `n + m` | `pbp [X in forall n : nat, exists m : nat, X = _].` (`"2.2.2.2"`) |
 | `forall n : nat, exists m : nat, n + m = m + n` | the type `nat` of `n` | `pbp [X in X].`, warning: widened to the whole goal (`"1"`) |
 | `B`, with `ab : A -> B` | `B` in `ab`, then `B` | `move: ab; pbp [X Y in (_ -> X) -> Y].` (`"ab" "2" ""`) |
 
@@ -186,7 +186,8 @@ elpi pbp_pattern "H" "P" "H'" "P'". (* two hypotheses *)
 
 The pattern of a path (subterm_pattern.v, one walk down the path) is
 the term where the selection is the variable `X` (applied to the
-variables bound above it that it uses: `X n m`), the nodes on the path
+variables bound above it that it uses: `X n m`; in pbp's pattern, X alone
+under the binders that pbp goes through, see below), the nodes on the path
 are kept, and the subterms beside the path are holes `_` when they are
 printed (through the constant `pbp_hole`, whose arguments are implicit)
 or are kept as they are when they are not (the heads of applications,
@@ -402,8 +403,18 @@ elpi point_run_path "Name" "H" "P" "H'" "P'".
   the selection (the coercion `Z.of_nat n` prints as `n`).
 - The binders of a pattern are named as the goal display names them: a
   binder named as a hypothesis keeps its name in the type of a hypothesis
-  (`move: H; pbp [X in (forall x : nat, X x) -> _]`) and is renamed in the
-  conclusion (`x0`), where Rocq-Elpi prints it `elpi_ctx_entry_3_`.  A
+  (in the ssreflect patterns, `{local:pbp}`) and is renamed in the
+  conclusion (`x0`), where Rocq-Elpi prints it `elpi_ctx_entry_3_`.  pbp's
+  pattern (`{path:pbp}`, `pbp_pattern`) is positional: under the binders
+  of the logical skeleton (the bodies of `forall`, the premises of `->`,
+  the arguments of `/\`, `\/`, `~`, the predicate of `exists`) the
+  selection is `X` alone, not applied to their variables (`pbp [X in
+  forall n : nat, X + _ = _]`); under the other binders (a `fun`, a `let`,
+  a branch) it is still applied (`X x0`).  Since pbp introduces these
+  binders under the names of the pattern and fails on a name used in the
+  context, they all get a new name there, in the hypotheses too (`move:
+  H; pbp [X in (forall x0 : nat, X) -> _]`), and a premise that has a name
+  is written with it (`forall (HA : _), X`).  A
   cast `(n : nat)`, which Rocq-Elpi sees as a `let`, is printed back as a
   cast (`pbp [X in (X : nat) = _]`).  When the pattern does not elaborate because
   a selection is the scrutinee of an `if` (`if X then _ else _`: the

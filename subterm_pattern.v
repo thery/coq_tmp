@@ -12,7 +12,8 @@
    Patterns.  A pattern [X in C] designates a subterm too: the one at the
    place of X in C.  The pattern of a path is the term where
    - the selected subterm becomes X, applied to the variables bound above
-     it that it uses (X n under forall n);
+     it that it uses (X n under forall n), but for pbp's patterns (positional,
+     below: X alone under forall n);
    - the nodes on the path to it are kept;
    - the subterms beside the path become holes _ when they are printed,
      and are kept as they are when they are not (the implicit arguments
@@ -55,6 +56,12 @@ Notation "'[' x .. y 'in' p ']' " :=
 
 (* The marker of the holes of a pattern: it prints as its name only *)
 Definition pbp_hole {A : Type} {a : A} : A := a.
+
+(* The marker of a positional selection (pbp's patterns): pbp_at X, its
+   implicit argument v being the variables bound above X by the logical
+   skeleton that X uses.  So these binders are printed with their names
+   (forall n : nat, X, not nat -> X), and the marker prints as X alone *)
+Definition pbp_at {A : Type} {T : Type} {v : T} (a : A) : A := a.
 
 Elpi File subterm_pattern.elpi lp:{{
 
@@ -307,15 +314,15 @@ pred replace-at i:list int, i:list term,
                 i:(pred i:list term, i:term, o:term), i:term, o:term.
 replace-at [] Bs F T R :- !, F Bs T R.
 replace-at [I|P] Bs F T T1 :-
-  kid-replace T I (replace-kid P Bs F) T1.
+  skel-step T I (kid-replace T I (replace-kid P Bs F) T1).
 
 % [replace-kid P Bs F K K1] replace-at in the immediate subterm K
 pred replace-kid i:list int, i:list term,
                  i:(pred i:list term, i:term, o:term), i:kid, o:kid.
 replace-kid P Bs F (kt T) (kt T1) :- replace-at P Bs F T T1.
 replace-kid P Bs F (kb N Ty B) (kb N Ty B1) :-
-  pi x\ decl x N Ty =>
-    sigma Bs1\ (std.append Bs [x] Bs1, replace-at P Bs1 F (B x) (B1 x)).
+  pi x\ decl x N Ty => skel-binder x (
+    sigma Bs1\ (std.append Bs [x] Bs1, replace-at P Bs1 F (B x) (B1 x))).
 
 % [term-at P T R] R is the subterm of T at path P; it fails if R uses a
 % variable bound in T
@@ -519,7 +526,7 @@ display-names _ _ _ ({{ @pbp_hole lp:_ lp:_ }} as T) T R R :- !.
 display-names Ctx Sc (bm-goal K) (prod N Ty F) (prod N1 Ty1 F1) R0 R :- K > 0, !,
   K1 is K - 1,
   display-names Ctx Sc bm-hyp Ty Ty1 R0 R1,
-  display-binder Ctx Sc bm-hyp N F N1 Sc1 R1 R2,
+  display-reverted => display-binder Ctx Sc bm-hyp N F N1 Sc1 R1 R2,
   pi x\ display-names Ctx Sc1 (bm-goal K1) (F x) (F1 x) R2 R.
 display-names Ctx Sc M (prod N Ty F) (prod N1 Ty1 F1) R0 R :- !,
   display-names Ctx Sc M Ty Ty1 R0 R1,
@@ -547,6 +554,9 @@ pred display-names-kid i:list string, i:list string, i:bmode, i:term, i:int,
                        o:list (pair string string).
 display-names-kid Ctx Sc M _ _ (kt U) (kt U1) R0 R :- display-names Ctx Sc M U U1 R0 R.
 
+% [display-reverted] the binder is a generalized hypothesis
+pred display-reverted.
+
 % [display-binder Ctx Sc M N F N1 Sc1 R0 R] N1 is the name to give the
 % binder N of body F (its placeholder, or N), Sc1 is Sc with the name it
 % is printed with
@@ -556,7 +566,9 @@ pred display-binder i:list string, i:list string, i:bmode, i:name,
 display-binder Ctx Sc M N F N1 [D|Sc] R0 [pr Ph D|R0] :-
   coq.name->id N S, std.mem! Ctx S, !,
   std.append Ctx Sc Avoid,
-  (M = bm-goal _, !, fresh-ident S Avoid D ;
+  % (in a positional pattern, pbp introduces the binders of the
+  % hypotheses too: they get a new name, but the generalized hypotheses)
+  ((M = bm-goal _ ; pattern-positional, not (display-reverted)), !, fresh-ident S Avoid D ;
    (pi x\ var-named-in S (F x)), !, fresh-ident S Avoid D ;
    D = S),
   std.length R0 K, Ph is "pbpbinder" ^ int_to_string K ^ "x",
@@ -672,6 +684,60 @@ pred typed-set o:list int.
 % the context)
 pred walk-bound o:term.
 
+/* Positional patterns (pbp's).  When pattern-positional holds, a
+   selection is X alone, not applied to the variables bound above it by
+   the binders of the logical skeleton of the term: the bodies of forall,
+   the premises of ->, the arguments of /\, \/, ~, the body of the
+   predicate of exists.  pbp reads its pattern by position and goes
+   through these binders (pbp.v): forall n, X = 0 points at the n of
+   n = 0.  The other binders (a fun in a term, a let, a branch of a match)
+   are still given to X as arguments (X x0). */
+
+% [pattern-positional] the patterns are positional
+pred pattern-positional.
+
+% [walk-off] the walk has left the logical skeleton
+pred walk-off.
+
+% [walk-positional V] the variable V is bound in the logical skeleton: not
+% given to the selection
+pred walk-positional o:term.
+
+% [skel-kid T I] the I-th immediate subterm of T is on the logical
+% skeleton, when T is
+pred skel-kid i:term, i:int.
+skel-kid (prod _ _ F) 1 :- not (pi x\ occurs x (F x)).
+skel-kid (prod _ _ _) 2.
+skel-kid (app [global G | _]) J :- skel-connective G J.
+skel-kid (fun _ _ _) 2.
+
+% [skel-connective G I] the argument I of the connective G is on the
+% skeleton
+pred skel-connective i:gref, i:int.
+skel-connective {{:gref and}} 1.
+skel-connective {{:gref and}} 2.
+skel-connective {{:gref or}} 1.
+skel-connective {{:gref or}} 2.
+skel-connective {{:gref not}} 1.
+skel-connective {{:gref ex}} 2.
+
+% [skel-step T I G] G, in the I-th immediate subterm of T: off the
+% skeleton if it is not on it
+pred skel-step i:term, i:int, i:prop.
+skel-step T I G :- pattern-positional, not (walk-off), not (skel-kid T I), !, walk-off => G.
+skel-step _ _ G :- G.
+
+% [skel-binder X G] G, the variable X bound here: positional if the
+% binder is on the skeleton
+pred skel-binder i:term, i:prop.
+skel-binder X G :- pattern-positional, not (walk-off), !, walk-positional X => G.
+skel-binder _ G :- G.
+
+% [applied-in T V] the variable V occurs in T and is given to the
+% selection T (not positional)
+pred applied-in i:term, i:term.
+applied-in T V :- occurs V T, not (walk-positional V).
+
 % [walk Sels St Bs T R A0 A] R is the pattern of T, printed as St says,
 % Bs being the variables bound above it (the innermost first); Sels are
 % the selections in T, each the pair of its path in T and its variable; A
@@ -679,8 +745,16 @@ pred walk-bound o:term.
 pred walk i:list (pair (list int) term), i:status, i:list term, i:term,
           o:term, i:pacc, o:pacc.
 walk Sels _ Bs T R A0 A :- selected Sels X, !,
-  std.rev Bs Bs1, std.filter Bs1 (occurs-in T) Vs, coq.mk-app X Vs R0,
+  std.rev Bs Bs1, std.filter Bs1 (applied-in T) Vs, coq.mk-app X Vs R1,
+  std.filter Bs1 (v\ positional-in T v ; walk-named v) PVs,
+  (PVs = [], !, R0 = R1 ;
+   PVs = [V], !, R0 = app [{{ @pbp_at }}, {{ Prop }}, {{ Prop }}, V, R1] ;
+   R0 = app [{{ @pbp_at }}, {{ Prop }}, {{ Prop }}, app PVs, R1]),
   place T R0 R A0 A.
+
+% [positional-in T V] the variable V, positional, occurs in T
+pred positional-in i:term, i:term.
+positional-in T V :- walk-positional V, occurs V T.
 
 % [occurs-in T V] the variable V occurs in T (a function std.filter can be
 % given: a function written v\ occurs v T, in a clause, holds T, and Elpi
@@ -705,7 +779,25 @@ pred walk-kid-at i:list (pair (list int) term), i:status, i:list term,
 walk-kid-at Sels St Bs T I K K1 A0 A :-
   std.map-filter Sels (s\ r\ sigma P X\ s = pr [I|P] X, r = pr P X) SelsI,
   (SelsI = [], kept T I, !, K1 = K, kid-names K A0 A ;
-   kid-status T I St StI, walk-kid SelsI StI Bs K K1 A0 A).
+   named-premise T I Sels, !, K = kb N Ty F, K1 = kb N Ty F1,
+   kid-status T I St StI,
+   (pi x\ decl x N Ty => walk-bound x => walk-named x =>
+      skel-binder x (walk SelsI StI [x|Bs] (F x) (F1 x) A0 A)) ;
+   kid-status T I St StI, skel-step T I (walk-kid SelsI StI Bs K K1 A0 A)).
+
+% [named-premise T I Sels] in a positional pattern, the body (I = 2) of
+% T, a premise of the skeleton that holds no selection (Sels) and has a
+% name (forall H : A, B, B not using H): pbp introduces the hypothesis H,
+% so the pattern writes its name, forall H : _, B (walk-named)
+pred named-premise i:term, i:int, i:list (pair (list int) term).
+named-premise (prod N _ F) 2 Sels :- pattern-positional, not (walk-off),
+  coq.name->id N S, not (S = "_"), not (pi x\ occurs x (F x)),
+  not (std.exists Sels (s\ sigma P X\ s = pr [1|P] X)).
+
+% [walk-named V] V is the variable of a named premise: given to the
+% marker pbp_at of the selections below it (so the premise is printed
+% with its name)
+pred walk-named o:term.
 
 % [walk-kid Sels St Bs K K1 A0 A] walk in the immediate subterm K (a
 % binder: its variable is declared and bound)
@@ -714,7 +806,8 @@ pred walk-kid i:list (pair (list int) term), i:status, i:list term,
 walk-kid _ _ _ (kn N) (kn N) A A.
 walk-kid Sels St Bs (kt U) (kt R) A0 A :- walk Sels St Bs U R A0 A.
 walk-kid Sels St Bs (kb N Ty F) (kb N Ty F1) A0 A :-
-  pi x\ decl x N Ty => walk-bound x => walk Sels St [x|Bs] (F x) (F1 x) A0 A.
+  pi x\ decl x N Ty => walk-bound x =>
+    skel-binder x (walk Sels St [x|Bs] (F x) (F1 x) A0 A).
 
 % [place T R0 R A0 A] R is R0, the variable or the hole in place of T,
 % written with the type of T (a cast, which Rocq-Elpi sees as
@@ -786,7 +879,8 @@ build-body Ctx M Ps T Ts Ns Body N Xs :-
   std.append Ns Ctx Ctx1,
   (Ds => (display-names Ctx1 [] M R R1 [] Rs,
          default-printing (coq.term->string R1 S))),
-  rex.replace "pbp_hole" "_" S S1, replace-placeholders Rs S1 S2,
+  rex.replace "pbp_hole" "_" S S0, rex.replace "pbp_at " "" S0 S1,
+  replace-placeholders Rs S1 S2,
   one-line S2 Body.
 
 % [pattern-unchecked] the patterns are not checked (an action that does
@@ -824,7 +918,7 @@ check-open (fun N T F) Ps Xs C :- std.length Xs K, std.length Ps L, K < L, !,
   pi x\ decl x N T => sigma Xs1\ (std.append Xs [x] Xs1, check-open (F x) Ps Xs1 C).
 check-open Body Ps Xs C :-
   std.fold2 Ps Xs C (p\ x\ c\ c1\ replace-at p [] (bs\ t\ r\ sigma Vs\
-      std.filter bs (v\ occurs v t) Vs, coq.mk-app x Vs r) c c1) C1,
+      std.filter bs (applied-in t) Vs, coq.mk-app x Vs r) c c1) C1,
   coq.unify-eq Body C1 ok, !.
 
 % [pattern-checked Ctx M Ps T Pat] Pat is the pattern of T whose
