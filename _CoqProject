@@ -29,6 +29,8 @@ subterm_pattern_test.v
 mode_elpi.v
 subterm_select.v
 subterm_select_test.v
+select/subterm_algebra.v
+select/subterm_algebra_test.v
 
 
 
