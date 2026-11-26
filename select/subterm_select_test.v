@@ -15,7 +15,8 @@
 
 From Stdlib Require Import String.
 From elpi Require Import elpi.
-From coq_tmp Require Import subterm_select point_actions point_actions_more.
+From coq_tmp.select Require Import subterm_select.
+From coq_tmp Require Import point_actions point_actions_more.
 
 (* ---------------- 1. The examples of the paper ---------------- *)
 

@@ -1,0 +1,7 @@
+gen/*.log
+gen/*.vo*
+gen/*.glob
+gen/.*.aux
+*.vo*
+*.glob
+.*.aux

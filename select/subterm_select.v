@@ -429,7 +429,7 @@ sm-erase T T1 :- (pi N Ty B F B1\ copy (let N Ty B F) B1 :- cast-let N F, !, cop
 pred sm-try i:int, i:term, i:term.
 sm-try 1 P C :- coq.unify-eq P C ok, ground_term P,
   sm-erase P P1, sm-erase C C1, same_term P1 C1.
-sm-try 2 P C :- coq.unify-eq P C ok, ground_term P.
+sm-try 2 P C :- sm-unify-args P C, ground_term P.
 
 % [sm-find Ph P K NP T Rev Bs Pos] Pos is the position of the first
 % subterm of T (at the reversed path Rev, Bs the variables bound above it)
@@ -494,7 +494,14 @@ sm-occs-args I K NP [T|Ts] J Rev Bs A A2 :-
 % [sm-conv I C] the instance I and the candidate C are convertible
 pred sm-conv i:term, i:term.
 sm-conv I C :- same_term I C, !.
-sm-conv I C :- coq.unify-eq I C ok.
+sm-conv I C :- sm-unify-args I C.
+
+% [sm-unify-args P C] the arguments of P and C are unified pairwise (their
+% heads are the key: unif_HO_args, unif_EQ_args): 0 + (1 + m) is not an
+% occurrence of 1 + m, although they are convertible (paper, section 3.2)
+pred sm-unify-args i:term, i:term.
+sm-unify-args (app [_|As]) (app [_|Bs]) :- !, std.forall2 As Bs (a\ b\ coq.unify-eq a b ok).
+sm-unify-args P C :- coq.unify-eq P C ok.
 
 % [sm-occurrences P T Qs M] Qs are the occurrences in T of the first
 % instance of the term pattern P (M "" or the error)

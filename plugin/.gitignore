@@ -1,6 +1,0 @@
-g_select.ml
-*.cm*
-*.o
-*.a
-*.d
-.*.d

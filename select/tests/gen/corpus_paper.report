@@ -1,0 +1,2 @@
+corpus_paper paper: 1315 cases, 1314 agree, 0 disagree, 1 outside, 0 missing
+  OUTSIDE paper.ex8 #3 (in f2 _ _)  ssreflect: [not a c-pattern]
