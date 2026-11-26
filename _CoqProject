@@ -28,6 +28,7 @@ point_actions_tutorial.v
 subterm_pattern_test.v
 mode_elpi.v
 subterm_select.v
+subterm_select_test.v
 
 
 

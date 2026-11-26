@@ -43,7 +43,8 @@
      abstracts nothing: "nothing selected";
    - z can replace a prefix of an application (the pattern f a in f a b):
      the position is then the path of the application and the number of
-     its last arguments left out, written P<K;
+     its last arguments left out, written P<K (all of them left out: the
+     head, written P.0);
    - a selected subterm that the goal display does not print (an implicit
      argument, the return type of a match) is flagged "(not printed)": no
      tag of the printer shows its path.
@@ -302,8 +303,14 @@ sel-scratch-sealed (nabla F) Tac H R :- pi x\ sel-scratch-sealed (F x) Tac H R.
 sel-scratch-sealed (seal (goal C RE Ty E _ as G)) Tac H R :-
   coq.ltac.call-ltac1 "run_tactic_string" (goal C RE Ty E [str Tac]) GL D,
   (D = error M, !, one-line M M1, R = sel-error M1, sel-close (seal G) ;
-   GL = [SG], !, sel-open SG H R, sel-close SG ;
+   GL = [SG], !, sel-orig C Ty H O, sel-open SG H O R, sel-close SG ;
    R = sel-error "set gave several goals", std.forall GL sel-close).
+
+% [sel-orig C Ty H O] O is the part, before set, of the goal of context C
+% and conclusion Ty: Ty (H = "") or the type of the hypothesis H
+pred sel-orig i:goal-ctx, i:term, i:string, o:term.
+sel-orig _ Ty "" Ty :- !.
+sel-orig C _ H T :- (std.mem C (decl _ N T) ; std.mem C (def _ N _ T)), coq.name->id N H, !.
 
 % [sel-close SG] closes the scratch goal SG (exact I)
 pred sel-close i:sealed-goal.
@@ -321,35 +328,75 @@ sel-oracle (goal C _ Ty _ _) H Occ P R :- sel-set-text H Occ P Tac,
   (H = "", !, sel-scratch C Ty Tac "" R0, sel-box-map [] R0 R ;
    sel-scratch C {{ True }} Tac H R).
 
-% [sel-open SG H R] R are the positions of z in the goal SG (in the type
-% of its hypothesis H if H is not "")
-pred sel-open i:sealed-goal, i:string, o:sel-res.
-sel-open (nabla F) H R :- pi x\ sel-open (F x) H R.
-sel-open (seal (goal Ctx _ Ty _ _)) H R :- sel-name ZN,
-  std.mem Ctx (def Z NZ _ _), coq.name->id NZ ZN, !,
+% [sel-open SG H O R] R are the positions of z in the goal SG (in the type
+% of its hypothesis H if H is not ""), O the part before set
+pred sel-open i:sealed-goal, i:string, i:term, o:sel-res.
+sel-open (nabla F) H O R :- pi x\ sel-open (F x) H O R.
+sel-open (seal (goal Ctx _ Ty _ _)) H O R :- sel-name ZN,
+  std.mem Ctx (def Z NZ _ ZB), coq.name->id NZ ZN, !, sel-lambdas ZB NL,
   (H = "", !, T = Ty ;
    std.mem Ctx (decl _ NH T), coq.name->id NH H, ! ;
    std.mem Ctx (def _ NH _ T), coq.name->id NH H),
-  !, sel-occs Z T [] [] Ps0, std.rev Ps0 Ps, R = sel-ok Ps.
-sel-open _ _ (sel-error "set did not add its definition").
+  !, sel-occs Z NL [] T O [] [] Ps0, std.rev Ps0 Ps, R = sel-ok Ps.
+sel-open _ _ _ (sel-error "set did not add its definition").
 
-% [sel-occs Z T Rev A0 A] A is A0 with the positions of Z in T (Rev: the
-% path of T, reversed), in pre-order, the last first
-pred sel-occs i:term, i:term, i:list int, i:list sel-pos, o:list sel-pos.
-sel-occs Z Z Rev A [sp-at P|A] :- !, std.rev Rev P.
-sel-occs Z (app [Z|Args]) Rev A A1 :- !, std.rev Rev P, std.length Args K,
-  sel-occs-list Z Args Rev 1 [sp-prefix P K|A] A1.
-sel-occs Z T Rev A A1 :- kids-fold T (sel-occs-kid Z Rev) A A1.
+% [sel-occs Z NL Bs T O Rev A0 A] A is A0 with the positions of Z in T
+% (Rev: the path of T, reversed; Bs the variables bound above T), in
+% pre-order, the last first; O is the subterm of the original goal at the
+% same place: set erases a cast (t : T) around a subterm it abstracts,
+% (z in place of the cast is read as the cast: it may be its term, flagged),
+% so where O is a cast and T is not, T is read as the term of the cast (its
+% index 1).  Z x1 .. xk, the xi bound variables and Z's body a fun of NL
+% >= k arguments, is the subterm there abstracted over the variables it
+% uses (set abstracts a subterm under binders so); Z a1 .. ak otherwise is
+% a prefix of an application
+pred sel-occs i:term, i:int, i:list term, i:term, i:term, i:list int,
+              i:list sel-pos, o:list sel-pos.
+sel-occs Z NL Bs T (let N _ B F) Rev A A1 :- cast-let N F, not (T = let _ _ _ _), not (T = Z), !,
+  sel-occs Z NL Bs T B [1|Rev] A A1.
+sel-occs Z _ _ Z _ Rev A [sp-at P|A] :- !, std.rev Rev P.
+sel-occs Z NL Bs (app [Z|Args]) O Rev A [sp-at P|A] :-
+  not (O = app [_|Args]),  % else Z is the head of the original application
+  std.length Args K, K =< NL, std.forall Args (a\ std.mem! Bs a), !, std.rev Rev P.
+sel-occs Z NL Bs (app [Z|Args]) O Rev A A1 :- !, std.rev Rev P, std.length Args K,
+  % the arguments are the last K ones of the original application
+  (O = app [_|OArgs], std.length OArgs N, N >= K, !, Sh is N - K, std.drop Sh OArgs OL ;
+   Sh = 0, OL = Args),
+  I0 is Sh + 1, sel-occs-args Z NL Bs Args OL Rev I0 [sp-prefix P K|A] A1.
+sel-occs Z NL Bs T O Rev A A1 :- kids-fold T (sel-occs-kid Z NL Bs Rev O) A A1.
 
-pred sel-occs-list i:term, i:list term, i:list int, i:int, i:list sel-pos, o:list sel-pos.
-sel-occs-list _ [] _ _ A A.
-sel-occs-list Z [T|Ts] Rev I A A2 :-
-  sel-occs Z T [I|Rev] A A1, I1 is I + 1, sel-occs-list Z Ts Rev I1 A1 A2.
+% [sel-occs-args Z NL Bs Ts Os Rev I A0 A] sel-occs in the arguments Ts
+% (the original ones Os), the first at index I
+pred sel-occs-args i:term, i:int, i:list term, i:list term, i:list term, i:list int, i:int,
+                   i:list sel-pos, o:list sel-pos.
+sel-occs-args _ _ _ [] _ _ _ A A.
+sel-occs-args Z NL Bs [T|Ts] [O|Os] Rev I A A2 :-
+  sel-occs Z NL Bs T O [I|Rev] A A1, I1 is I + 1, sel-occs-args Z NL Bs Ts Os Rev I1 A1 A2.
 
-pred sel-occs-kid i:term, i:list int, i:term, i:int, i:kid, i:list sel-pos, o:list sel-pos.
-sel-occs-kid Z Rev _ I (kt T) A A1 :- sel-occs Z T [I|Rev] A A1.
-sel-occs-kid Z Rev _ I (kb _ _ F) A A1 :- pi x\ sel-occs Z (F x) [I|Rev] A A1.
-sel-occs-kid _ _ _ _ (kn _) A A.
+% [sel-occs-kid Z NL Bs Rev O T I K A0 A] sel-occs in the immediate subterm
+% K (at I) of T, O being the original term in place of T
+pred sel-occs-kid i:term, i:int, i:list term, i:list int, i:term, i:term, i:int, i:kid,
+                  i:list sel-pos, o:list sel-pos.
+sel-occs-kid Z NL Bs Rev O _ I K A A1 :-
+  (kid-at O I (ko\ sel-occs-pair Z NL Bs [I|Rev] K ko A A1), ! ;
+   sel-occs-pair Z NL Bs [I|Rev] K K A A1).
+
+% [sel-occs-pair Z NL Bs Rev K KO A0 A] sel-occs in the subterm K, KO the
+% original one
+pred sel-occs-pair i:term, i:int, i:list term, i:list int, i:kid, i:kid,
+                   i:list sel-pos, o:list sel-pos.
+sel-occs-pair Z NL Bs Rev (kt T) (kt O) A A1 :- !, sel-occs Z NL Bs T O Rev A A1.
+sel-occs-pair Z NL Bs Rev (kb _ _ F) (kb _ _ FO) A A1 :- !,
+  pi x\ sel-occs Z NL [x|Bs] (F x) (FO x) Rev A A1.
+sel-occs-pair Z NL Bs Rev (kt T) _ A A1 :- !, sel-occs Z NL Bs T T Rev A A1.
+sel-occs-pair Z NL Bs Rev (kb _ _ F) _ A A1 :- !,
+  pi x\ sel-occs Z NL [x|Bs] (F x) (F x) Rev A A1.
+sel-occs-pair _ _ _ _ (kn _) _ A A.
+
+% [sel-lambdas T N] T is a fun of N arguments (N >= 0)
+pred sel-lambdas i:term, o:int.
+sel-lambdas (fun _ _ F) N :- !, pi x\ sel-lambdas (F x) N1, N is N1 + 1.
+sel-lambdas _ 0.
 
 /* ---------------- Positions: texts, printing, order ---------------- */
 
@@ -429,7 +476,8 @@ sel-closed-kid _ _ _ _ (kn _) A A.
 % s are dropped)
 pred sel-box-oracle i:goal, i:term, i:list int, i:string, o:sel-res.
 sel-box-oracle (goal C _ _ _ _) T P Txt R :- term-at P T S,
-  sel-set-text "" "" Txt Tac, sel-scratch C S Tac "" R0, sel-box-map P R0 R.
+  sel-set-text "" "" Txt Tac, sel-scratch C S Tac "" R0, sel-box-map P R0 R1,
+  sel-norm-res T R1 R.
 
 % [sel-box-map P R R1] R1 is R, positions in sel_box s, as paths of the
 % part, s being at path P
@@ -543,7 +591,7 @@ sel-show s-root "ε".
 sel-show (s-step I) S :- S is int_to_string I.
 sel-show (s-match T) S :- S is "⟨" ^ T ^ "⟩".
 sel-show (s-hole C X) S :- S is "⟨" ^ C ^ " | " ^ X ^ "⟩".
-sel-show (s-hole-as T X C) S :- S is "⟨" ^ C ^ "[" ^ T ^ "/" ^ X ^ "] | " ^ X ^ "⟩".
+sel-show (s-hole-as T X C) S :- S is "⟨(" ^ C ^ ")[" ^ T ^ "/" ^ X ^ "] | " ^ X ^ "⟩".
 sel-show (s-then A B) S :- sel-show A SA, sel-show B SB, S is SA ^ " ; " ^ SB.
 sel-show (s-pick A K) S :- sel-show A SA, sel-pick-text K KS,
   (A = s-then _ _, !, S is "(" ^ SA ^ ") # " ^ KS ; A = s-union _ _, !, S is "(" ^ SA ^ ") # " ^ KS ;
@@ -557,9 +605,9 @@ sel-show (s-name N) N.
 % root of the part is the oracle on the goal itself; elsewhere, the oracle
 % on the scratch goal sel_box s of the subterm s at P.
 pred sel-denote i:goal, i:string, i:term, i:list int, i:selector, o:sel-res.
-sel-denote G H T [] S R :- sel-to-ssr S Occ Txt, !, sel-oracle G H Occ Txt R.
+sel-denote G H T [] S R :- sel-to-ssr S Occ Txt, !, sel-oracle G H Occ Txt R0, sel-norm-res T R0 R.
 sel-denote G _ T P S R :- sel-to-ssr S Occ Txt, !,
-  (term-at P T _, !, sel-box-oracle-occ G T P Occ Txt R ;
+  (term-at P T _, !, sel-box-oracle-occ G T P Occ Txt R0, sel-norm-res T R0 R ;
    R = sel-error "the place uses a variable bound in the goal: the oracle cannot be run there").
 sel-denote _ _ _ P s-root (sel-ok [sp-at P]).
 sel-denote _ _ T P (s-step I) R :- std.append P [I] PI,
@@ -573,6 +621,27 @@ sel-denote G H T P (s-union A B) R :- sel-denote G H T P A RA, sel-denote G H T 
    RA = sel-error _, !, R = RA ; R = RB).
 sel-denote G H T P (s-name N) R :- sel-named N S, !, sel-denote G H T P S R.
 sel-denote _ _ _ _ (s-name N) (sel-error M) :- M is "unknown name " ^ N.
+
+
+% [sel-norm-res T R R1] R1 is R where a prefix of an application without
+% all its arguments is its head: the path P.0 (set puts z in place of a
+% head as in place of a prefix: z a b)
+pred sel-norm-res i:term, i:sel-res, o:sel-res.
+sel-norm-res T (sel-ok Qs) (sel-ok Qs1) :- !, std.map Qs (sel-norm-pos T) Qs1.
+sel-norm-res _ R R.
+pred sel-norm-pos i:term, i:sel-pos, o:sel-pos.
+sel-norm-pos T (sp-prefix P K) (sp-at P0) :- sel-arity-at P T N, N = K, !,
+  std.append P [0] P0.
+sel-norm-pos _ Q Q.
+
+% [sel-arity-at P T N] the subterm at path P of T is an application to N
+% arguments
+pred sel-arity-at i:list int, i:term, o:int.
+sel-arity-at [] (app [_|As]) N :- std.length As N.
+sel-arity-at [I|P] T N :- kid-at T I (sel-arity-kid P N).
+pred sel-arity-kid i:list int, o:int, i:kid.
+sel-arity-kid P N (kt T) :- sel-arity-at P T N.
+sel-arity-kid P N (kb _ _ F) :- pi x\ sel-arity-at P (F x) N.
 
 % [sel-then-each G H T Qs B Acc R] B read inside each position of Qs
 pred sel-then-each i:goal, i:string, i:term, i:list sel-pos, i:selector,
@@ -623,11 +692,20 @@ pred sel-select i:goal, i:string, i:string, o:sel-pat, o:sel-res.
 sel-select G H S Pat R :- sel-parse S Pat, sel-of-pat Pat Sel, sel-part G H T,
   sel-denote G H T [] Sel R.
 
+% [sel-cast-at P T] the subterm at path P of T is a cast
+pred sel-cast-at i:list int, i:term.
+sel-cast-at [] (let N _ _ F) :- cast-let N F.
+sel-cast-at [I|P] T :- kid-at T I (sel-cast-kid P).
+pred sel-cast-kid i:list int, i:kid.
+sel-cast-kid P (kt T) :- sel-cast-at P T.
+sel-cast-kid P (kb _ _ F) :- pi x\ sel-cast-at P (F x).
+
 % [sel-pos-line T Q L] L describes the position Q of T
 pred sel-pos-line i:term, i:sel-pos, o:string.
 sel-pos-line T Q L :- sel-pos-string Q PS, sel-pos-text T Q Txt,
   sel-pos-path Q P,
-  (sel-hidden T P, !, Fl = "  (not printed)" ; Fl = ""),
+  (sel-hidden T P, !, Fl0 = "  (not printed)" ; Fl0 = ""),
+  (sel-cast-at P T, !, Fl is Fl0 ^ "  (a cast, that set erases: the selection may be its term, at .1)" ; Fl = Fl0),
   (Q = sp-prefix _ K, !,
    Pr is "  (a prefix of the application, without its last " ^ {std.any->string K} ^ " argument(s))" ;
    Pr = ""),

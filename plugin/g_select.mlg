@@ -4,7 +4,8 @@
    tactic whose text it has built: coq.ltac.call-ltac1 takes the name of
    an Ltac tactic and terms or strings as its arguments, not a text to
    parse.  It is the bridge that subterm_select.v uses to hand its
-   patterns to ssreflect.  A parse error is a failure of the tactic.
+   patterns to ssreflect.  A parse error, or an anomaly of the tactic, is a
+   failure of the tactic.
 
    It is an Ltac function of one argument (as ssrmatching's ssrpattern
    is), so that it takes a string value: an Ltac variable, or the string
@@ -14,12 +15,33 @@ open Ltac_plugin
 open Names
 open Proofview.Notations
 
+(* [protect t] runs t on the goals in a proof view of their own, so that an
+   anomaly raised by t (ssreflect's set raises some on patterns under
+   binders) is a failure with its message, not the end of the document *)
+let protect t =
+  Proofview.tclENV >>= fun env ->
+  Proofview.tclEVARMAP >>= fun sigma ->
+  Proofview.Unsafe.tclGETGOALS >>= fun gls ->
+  let _, pv = Proofview.init sigma [] in
+  let pv = Proofview.unshelve (List.map Proofview_monad.drop_state gls) pv in
+  match Proofview.apply ~name:(Id.of_string "run_tactic_string") ~poly:false env t pv with
+  | exception Logic_monad.TacticFailure e ->
+    let e, info = Exninfo.capture e in Proofview.tclZERO ~info e
+  | exception e when CErrors.is_anomaly e ->
+    Tacticals.tclZEROMSG Pp.(str "anomaly: " ++ CErrors.print e)
+  | exception e when CErrors.noncritical e ->
+    let e, info = Exninfo.capture e in Proofview.tclZERO ~info e
+  | (), pv', _, _, _ ->
+    let gls', sigma' = Proofview.proofview pv' in
+    Proofview.Unsafe.tclEVARS sigma' <*>
+    Proofview.Unsafe.tclSETGOALS (List.map Proofview_monad.with_empty_state gls')
+
 let run_string s =
   Proofview.tclUNIT () >>= fun () ->
   match Procq.parse_string Pltac.tactic_eoi s with
   | exception e when CErrors.noncritical e ->
     let e, info = Exninfo.capture e in Proofview.tclZERO ~info e
-  | t -> Tacinterp.interp t
+  | t -> protect (Tacinterp.interp t)
 
 let () =
   let mltac _ ist =
