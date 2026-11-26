@@ -762,6 +762,411 @@ sel-args K Args H S Rest :- std.map Args (a\ s\ a = str s) Ss, !,
    coq.ltac.fail 0 {msg "wrong number of arguments"}).
 sel-args _ _ _ _ _ :- coq.ltac.fail 0 {msg "the arguments are strings"}.
 
+/* ---------------- select_all: the ways to designate a position ---------------- */
+
+/* Given the path p of a subterm of a part T, the candidates are built,
+   one or more per kind, each one CHECKED by the oracle (sel-select): it is
+   kept when it denotes exactly {p}, or, marked "selects also", when it
+   denotes p and other positions (a kind that can only give the whole set
+   of occurrences of an instance).  Then they are sorted by sg-cost.
+
+   Generalization (anti-unification).  A term pattern for a subterm t of
+   the part must match t and no subterm before t (pre-order) that has the
+   same key (head constant): those are its competitors.  For each
+   competitor c, the disagreement positions of t and c are the highest
+   positions where they differ (a different head, or a different leaf);
+   a pattern that keeps t at one of them (or keeps the node above it, or a
+   subterm below which it lies) does not match c.  The pattern keeps a set
+   K of such positions, the nodes above them (their heads) and the head of
+   t: K is a smallest hitting set of the disagreement sets, the size being
+   the symbols kept; the search is exact when there are at most
+   sg-exact-bound positions in all, greedy beyond (the output says which).
+   Only printed positions are kept (not an implicit argument: it is a hole,
+   which elaboration fills).
+
+   Kinds (sel-kind):
+   - B (term pattern): the generalization of the target t;
+   - C1 [X in C]: for an ancestor A of the target, the generalization of A
+     with X at the target (competitors: the subterms before A with A's
+     key; the disagreements inside the X part do not count);
+   - C2 [t in X in C]: an ancestor m of the target is the X part of a
+     context from an ancestor A of m; t is the generalization of the target
+     against the competitors inside m before it;
+   - C3 [t as X in C]: the generalization of an ancestor A, the target
+     included, cut at the target: C with X there, t the part at X;
+   - E1 {k}: a candidate that selects also, with the rank k of p among its
+     positions; A2 {k}t: the target written in full, with its rank;
+   - A1: the path itself.
+   Not generated (ssreflect refuses them or reads them otherwise, see the
+   round trip of subterm_select_test.v): [X in X]; X at the head of an
+   application; X under a binder of the context (X would be applied to
+   bound variables, which set reads up to eta).  A target that only these
+   could designate has no ssreflect form: then only E1/A2/A1 remain. */
+
+% the kinds of candidates, with their text and its context depth
+kind sg-cand type.
+type sg-cand sel-kind -> string -> int -> string -> sg-cand. % kind, text, depth, note
+
+% [sg-exact-bound N] the hitting set is searched exactly up to N positions
+pred sg-exact-bound o:int.
+sg-exact-bound 10.
+
+% [sg-cost K Txt Depth Ok C] C is the cost of the candidate of kind K, text
+% Txt, context depth Depth (Ok: it denotes exactly the target), compared
+% lexicographically: occurrence number or path (big), not exact (big),
+% kept symbols, context depth, type annotations (none are written), text
+% length.  Provisional: the one place to change it.
+pred sg-cost i:sel-kind, i:string, i:int, i:bool, o:list int.
+sg-cost K Txt D Ok [O, E, S, D, 0, L] :-
+  (K = e1-occurrence-switch, !, O = 1000 ; K = a2-occurrence, !, O = 1000 ;
+   K = a1-path, !, O = 2000 ; O = 0),
+  (Ok = tt, !, E = 0 ; E = 1000),
+  sg-symbols Txt S, L is size Txt.
+
+% [sg-symbols Txt N] N is the number of symbols that the pattern Txt keeps:
+% its tokens other than the holes, X, the keywords in and as, the brackets
+% and the occurrence switch
+pred sg-symbols i:string, o:int.
+sg-symbols Txt N :-
+  sel-parse Txt (sel-pat _ T _),
+  rex.replace "\\([][(){},;]\\)" " \\1 " T T1,
+  rex.split "[ \t\n]+" T1 Ts,
+  std.filter Ts (t\ not (std.mem! ["", "_", "X", "in", "as", "(", ")", "[", "]", "{", "}"] t)) Ks,
+  std.length Ks N.
+
+% [sg-less A B] the cost A is less than B (lexicographic)
+pred sg-less i:list int, i:list int.
+sg-less [X|_] [Y|_] :- X < Y, !.
+sg-less [X|A] [X|B] :- sg-less A B.
+
+% a checked candidate: its cost, kind, text, note, and what it selects
+kind sg-res type.
+type sg-res list int -> sel-kind -> string -> string -> list sel-pos -> sg-res.
+
+pred sg-insert i:sg-res, i:list sg-res, o:list sg-res.
+sg-insert R [] [R].
+sg-insert (sg-res C _ _ _ _ as R) [(sg-res C1 _ _ _ _ as R1)|Rs] [R, R1|Rs] :- sg-less C C1, !.
+sg-insert R [R1|Rs] [R1|Rs1] :- sg-insert R Rs Rs1.
+
+pred sg-sort i:list sg-res, o:list sg-res.
+sg-sort L S :- std.fold L [] sg-insert S.
+
+/* ---- subterms, keys, disagreements ---- */
+
+% [sg-key T K] K is the key of T: its head constant
+pred sg-key i:term, o:term.
+sg-key (app [global G|_]) (global G) :- !.
+sg-key (app [pglobal G _|_]) (global G) :- !.
+sg-key (app [H|_]) H :- name H, (decl H _ _ ; def H _ _ _), !.
+
+% [sg-competitors T P Ks Cs] Cs are the subterms of T before the path P in
+% pre-order (P's ancestors included), closed, with the key Ks
+pred sg-competitors i:term, i:list int, i:term, o:list term.
+sg-competitors T P K Cs :-
+  sel-closed [] T [] [] Ps0, std.rev Ps0 Ps,
+  std.filter Ps (q\ sel-before q P) Before,
+  std.map-filter Before (q\ c\ term-at q T c, sg-key c K) Cs.
+
+% [sg-within T M P Ks Cs] the competitors inside the subterm at path M of
+% T, before the target at P (paths relative to M are not needed)
+pred sg-within i:term, i:list int, i:list int, i:term, o:list term.
+sg-within T M P K Cs :-
+  sel-closed [] T [] [] Ps0, std.rev Ps0 Ps,
+  std.filter Ps (q\ sel-prefix-of M q, sel-before q P) Before,
+  std.map-filter Before (q\ c\ term-at q T c, sg-key c K) Cs.
+
+% [sel-prefix-of P Q] the path P is a prefix of Q
+pred sel-prefix-of i:list int, i:list int.
+sel-prefix-of [] _.
+sel-prefix-of [I|P] [I|Q] :- sel-prefix-of P Q.
+
+% [sg-related P Q] one of the paths P, Q is a prefix of the other
+pred sg-related i:list int, i:list int.
+sg-related P Q :- sel-prefix-of P Q, !.
+sg-related P Q :- sel-prefix-of Q P.
+
+% [sg-diff T C Rev Ds0 Ds] Ds is Ds0 with the disagreement positions of T
+% and C (Rev: the reversed position of T)
+pred sg-diff i:term, i:term, i:list int, i:list (list int), o:list (list int).
+sg-diff T C _ Ds Ds :- same_term T C, !.
+sg-diff (app [H|As]) (app [H1|Bs]) Rev Ds0 Ds :- same_term H H1,
+  std.length As N, std.length Bs N, !, sg-diff-args As Bs Rev 1 Ds0 Ds.
+sg-diff _ _ Rev Ds [P|Ds] :- std.rev Rev P.
+pred sg-diff-args i:list term, i:list term, i:list int, i:int, i:list (list int), o:list (list int).
+sg-diff-args [] [] _ _ Ds Ds.
+sg-diff-args [A|As] [B|Bs] Rev I Ds0 Ds :-
+  sg-diff A B [I|Rev] Ds0 Ds1, I1 is I + 1, sg-diff-args As Bs Rev I1 Ds1 Ds.
+
+/* ---- the generalization ---- */
+
+% A region: none, or the X part at a relative path, wild (C1, C2: the
+% disagreements inside it do not count) or full (C3)
+kind sg-region type.
+type sg-none sg-region.
+type sg-wild list int -> sg-region.
+type sg-full list int -> sg-region.
+
+% [sg-dsets T R Cs Dss] Dss are the disagreement sets that a pattern of T
+% (region R) must hit, one per competitor of Cs that it does not exclude
+% anyway; it fails if a competitor cannot be excluded
+pred sg-dsets i:term, i:sg-region, i:list term, o:list (list (list int)).
+sg-dsets _ _ [] [].
+sg-dsets T R [C|Cs] Dss :- sg-diff T C [] [] Ds0,
+  std.filter Ds0 (d\ not (sel-hidden T d)) Ds1,
+  (R = sg-wild Q, !, std.filter Ds1 (d\ not (sel-prefix-of Q d)) Ds2,
+   (std.exists Ds2 (d\ sel-prefix-of d Q, not (d = Q)), !, Excl = tt ; Excl = ff) ;
+   R = sg-full Q, !, Ds2 = Ds1,
+   (std.exists Ds2 (d\ sel-prefix-of d Q), !, Excl = tt ; Excl = ff) ;
+   Ds2 = Ds1, Excl = ff),
+  (Excl = tt, !, Dss = Dss1 ;
+   Ds0 = [], !, Dss = Dss1 ;  % the same term: an occurrence of the same instance
+   Ds2 = [_|_], Dss = [Ds2|Dss1]),
+  sg-dsets T R Cs Dss1.
+
+% [sg-covers K Ds] the kept positions K hit the disagreement set Ds
+pred sg-covers i:list (list int), i:list (list int).
+sg-covers K Ds :- std.exists Ds (d\ std.exists K (k\ sg-related d k)), !.
+
+% [sg-hitting T R Dss K How] K is a smallest set of positions hitting
+% the disagreement sets Dss (size: sg-kept-size), How says how it was found
+pred sg-hitting i:term, i:sg-region, i:list (list (list int)), o:list (list int), o:string.
+sg-hitting _ _ [] [] "no competitor left" :- !.
+sg-hitting T R Dss K How :- std.flatten Dss U0, sg-undup U0 U, std.length U N,
+  sg-exact-bound B,
+  (N =< B, !, How = "exact search",
+   sg-subsets U Ss,
+   std.filter Ss (k\ std.forall Dss (sg-covers k)) Ok,
+   std.map Ok (k\ p\ sigma S\ sg-kept-size T R k S, p = pr S k) Sized,
+   sg-min Sized (pr _ K) ;
+   How = "greedy", sg-greedy Dss [] K).
+
+% [sg-undup L L1] L1 is L without its repetitions
+pred sg-undup i:list A, o:list A.
+sg-undup [] [].
+sg-undup [X|L] L1 :- std.mem! L X, !, sg-undup L L1.
+sg-undup [X|L] [X|L1] :- sg-undup L L1.
+
+pred sg-subsets i:list A, o:list (list A).
+sg-subsets [] [[]].
+sg-subsets [X|Xs] Ss :- sg-subsets Xs S1, std.map S1 (s\ t\ t = [X|s]) S2, std.append S1 S2 Ss.
+
+pred sg-min i:list (pair int (list (list int))), o:pair int (list (list int)).
+sg-min [P] P :- !.
+sg-min [pr S K|Ps] M :- sg-min Ps (pr S1 K1), (S =< S1, !, M = pr S K ; M = pr S1 K1).
+
+% [sg-greedy Dss K0 K] K: K0 and, while a set is not hit, the position
+% hitting the most sets
+pred sg-greedy i:list (list (list int)), i:list (list int), o:list (list int).
+sg-greedy Dss K K :- std.forall Dss (sg-covers K), !.
+sg-greedy Dss K0 K :-
+  std.filter Dss (ds\ not (sg-covers K0 ds)) Left, std.flatten Left U0, sg-undup U0 U,
+  std.map U (u\ p\ sigma N L\ std.filter Left (ds\ sg-covers [u] ds) L, std.length L N, p = pr N u) Ns,
+  sg-max Ns (pr _ Best), sg-greedy Dss [Best|K0] K.
+pred sg-max i:list (pair int (list int)), o:pair int (list int).
+sg-max [P] P :- !.
+sg-max [pr N U|Ps] M :- sg-max Ps (pr N1 U1), (N >= N1, !, M = pr N U ; M = pr N1 U1).
+
+% [sg-node-kept Pos K R] the node at Pos is kept (its head): the root, or
+% above a kept position or the region
+pred sg-node-kept i:list int, i:list (list int), i:sg-region.
+sg-node-kept [] _ _ :- !.
+sg-node-kept Pos K _ :- std.exists K (k\ sel-prefix-of Pos k, not (Pos = k)), !.
+sg-node-kept Pos _ (sg-wild Q) :- sel-prefix-of Pos Q, not (Pos = Q), !.
+sg-node-kept Pos _ (sg-full Q) :- sel-prefix-of Pos Q, !.
+
+% [sg-build T Rev K R X P] P is the pattern of T (at the reversed relative
+% position Rev) that keeps K, with X at the wild region of R
+pred sg-build i:term, i:list int, i:list (list int), i:sg-region, i:term, o:term.
+sg-build T Rev K R X P :- std.rev Rev Pos,
+  (R = sg-wild Pos, !, P = X ;
+   std.mem! K Pos, !, P = T ;
+   sg-node-kept Pos K R, !, sg-build-node T Rev K R X P ;
+   P = {{ @pbp_hole Prop lp:T }}).
+pred sg-build-node i:term, i:list int, i:list (list int), i:sg-region, i:term, o:term.
+sg-build-node (app [H|As]) Rev K R X (app [H|Ps]) :- !, sg-build-args As Rev 1 K R X Ps.
+sg-build-node T _ _ _ _ T.
+pred sg-build-args i:list term, i:list int, i:int, i:list (list int), i:sg-region, i:term, o:list term.
+sg-build-args [] _ _ _ _ _ [].
+sg-build-args [A|As] Rev I K R X [P|Ps] :-
+  sg-build A [I|Rev] K R X P, I1 is I + 1, sg-build-args As Rev I1 K R X Ps.
+
+% [sg-kept-size T R K S] S is the number of symbols that the pattern of T
+% keeping K keeps (the printed ones)
+pred sg-kept-size i:term, i:sg-region, i:list (list int), o:int.
+sg-kept-size T R K S :- sg-build T [] K R {{ True }} P, sg-size P S.
+pred sg-size i:term, o:int.
+sg-size {{ @pbp_hole _ _ }} 0 :- !.
+sg-size (app [global G|As]) S :- !,
+  (coq.arguments.implicit G [Imps|_] ; Imps = []), !,
+  sg-size-args As Imps 0 S0, S is S0 + 1.
+sg-size (app [H|As]) S :- !, sg-size H S1, sg-size-args As [] 0 S0, S is S0 + S1.
+sg-size _ 1.
+pred sg-size-args i:list term, i:list implicit_kind, i:int, o:int.
+sg-size-args [] _ S S.
+sg-size-args [_|As] [I|Is] S0 S :- not (I = explicit), !, sg-size-args As Is S0 S.
+sg-size-args [A|As] Is S0 S :- sg-size A S1, S2 is S0 + S1,
+  (Is = [_|Is1], ! ; Is1 = []), sg-size-args As Is1 S2 S.
+
+% [sg-print P S] S is the text of the pattern P (holes printed _)
+pred sg-print i:term, o:string.
+sg-print P S :- default-printing (coq.term->string P S0),
+  rex.replace "\\bpbp_hole\\b" "_" S0 S1, one-line S1 S.
+
+% [sg-print-ctx Ty TA K R S] S is the text of the context: the pattern of
+% TA keeping K, with X (of type Ty) at the relative path R
+pred sg-print-ctx i:term, i:term, i:list (list int), i:list int, o:string.
+sg-print-ctx Ty TA K R S :- coq.id->name "X" N,
+  pi x\ sigma Pat\ decl x N Ty => (sg-build TA [] K (sg-wild R) x Pat, sg-print Pat S).
+
+/* ---- the candidates ---- */
+
+% [sg-take N L L1] L1 is the first N elements of L (all of L if shorter)
+pred sg-take i:int, i:list A, o:list A.
+sg-take 0 _ [] :- !.
+sg-take _ [] [] :- !.
+sg-take N [X|L] [X|L1] :- N1 is N - 1, sg-take N1 L L1.
+
+% [sg-ancestors P As] As are the strict ancestors of the path P, the
+% nearest first
+pred sg-ancestors i:list int, o:list (list int).
+sg-ancestors [] [] :- !.
+sg-ancestors P [Q|Qs] :- parent P Q, sg-ancestors Q Qs.
+
+% [sg-plain-chain T A R] from the subterm A of T, the path R goes down
+% through arguments of applications only (no binder, no head)
+pred sg-plain-chain i:term, i:list int.
+sg-plain-chain _ [].
+sg-plain-chain (app L) [I|R] :- I > 0, std.length L N, I < N, std.nth I L T,
+  not (sel-hidden (app L) [I]), sg-plain-chain T R.
+
+% [sg-drop Q P R] the path P is Q then R
+pred sg-drop i:list int, i:list int, o:list int.
+sg-drop [] R R.
+sg-drop [I|Q] [I|P] R :- sg-drop Q P R.
+
+% [sg-term-cand T P C] C is the term pattern (B) of the target at P of T
+pred sg-term-cand i:term, i:list int, o:sg-cand.
+sg-term-cand T P C :- term-at P T Tt,
+  (sg-key Tt K, !, sg-competitors T P K Cs, sg-dsets Tt sg-none Cs Dss,
+   sg-hitting Tt sg-none Dss Kp How, sg-build Tt [] Kp sg-none {{ True }} Pat,
+   sg-print Pat S, sel-form-kind (sf-term S) Kd, C = sg-cand Kd S 0 How ;
+   sg-print Tt S, C = sg-cand b1-closed-term S 0 "no key").
+
+% [sg-context-cands T P Cs] the C1 candidates [X in C] of the target at P
+pred sg-context-cands i:term, i:list int, o:list sg-cand.
+sg-context-cands T P Cs :- sg-ancestors P As, sg-take 6 As As1,
+  std.map-filter As1 (a\ c\ sg-c1 T P a c) Cs.
+pred sg-c1 i:term, i:list int, i:list int, o:sg-cand.
+sg-c1 T P A (sg-cand c1-context S D How) :-
+  term-at A T TA, sg-drop A P R, sg-plain-chain TA R, sg-key TA K, term-at P T Tt,
+  sg-competitors T A K Cs, sg-dsets TA (sg-wild R) Cs Dss,
+  sg-hitting TA (sg-wild R) Dss Kp How,
+  coq.typecheck Tt Ty ok,
+  sg-print-ctx Ty TA Kp R C0,
+  S is "X in " ^ C0, std.length R D.
+
+% [sg-c2-cands T P Cs] the C2 candidates [t in X in C]: X at an ancestor
+% M of the target, C from an ancestor of M
+pred sg-c2-cands i:term, i:list int, o:list sg-cand.
+sg-c2-cands T P Cs :- term-at P T Tt, sg-key Tt Kt, !,
+  sg-ancestors P Ms0, sg-take 3 Ms0 Ms,
+  std.map Ms (m\ cs\ sigma As0 As\ sg-ancestors m As0, sg-take 2 As0 As,
+     std.map-filter As (a\ c\ sg-c2 T P Tt Kt m a c) cs) Css,
+  std.flatten Css Cs.
+sg-c2-cands _ _ [].
+pred sg-c2 i:term, i:list int, i:term, i:term, i:list int, i:list int, o:sg-cand.
+sg-c2 T P Tt Kt M A (sg-cand c2-redex-in-context S D How) :-
+  term-at A T TA, term-at M T TM, sg-drop A M R, sg-plain-chain TA R, sg-key TA K,
+  sg-competitors T A K Cs, sg-dsets TA (sg-wild R) Cs Dss,
+  sg-hitting TA (sg-wild R) Dss Kp How1,
+  coq.typecheck TM Ty ok,
+  sg-print-ctx Ty TA Kp R C0,
+  sg-within T M P Kt Ct, sg-dsets Tt sg-none Ct Dt, sg-hitting Tt sg-none Dt Kt1 How2,
+  sg-build Tt [] Kt1 sg-none {{ True }} PatT, sg-print PatT St,
+  S is St ^ " in X in " ^ C0, std.length R D,
+  How is How1 ^ ", " ^ How2.
+
+% [sg-c3-cands T P Cs] the C3 candidates [t as X in C]
+pred sg-c3-cands i:term, i:list int, o:list sg-cand.
+sg-c3-cands T P Cs :- sg-ancestors P As, sg-take 6 As As1,
+  std.map-filter As1 (a\ c\ sg-c3 T P a c) Cs.
+pred sg-c3 i:term, i:list int, i:list int, o:sg-cand.
+sg-c3 T P A (sg-cand c3-redex-as-context S D How) :-
+  term-at A T TA, sg-drop A P R, sg-plain-chain TA R, sg-key TA K, term-at P T Tt,
+  sg-key Tt _,
+  sg-competitors T A K Cs, sg-dsets TA (sg-full R) Cs Dss,
+  sg-hitting TA (sg-full R) Dss Kp How,
+  std.filter Kp (k\ not (sel-prefix-of R k)) Kc,
+  std.map-filter Kp (k\ r\ sg-drop R k r) Kt,
+  coq.typecheck Tt Ty ok,
+  sg-print-ctx Ty TA Kc R C0,
+  sg-build Tt [] Kt sg-none {{ True }} PatT, sg-print PatT St,
+  S is St ^ " as X in " ^ C0, std.length R D.
+
+% [sg-candidates T P Cs] all the candidates for the target at P of T
+% (before the occurrence switches)
+pred sg-candidates i:term, i:list int, o:list sg-cand.
+sg-candidates T P Cs :-
+  (term-at P T _, sg-term-cand T P B, !, Bs = [B] ; Bs = []),
+  sg-context-cands T P C1s, sg-c2-cands T P C2s, sg-c3-cands T P C3s,
+  std.flatten [Bs, C1s, C2s, C3s] Cs.
+
+/* ---- checking ---- */
+
+% [sg-check G H P C Rs0 Rs] Rs is Rs0 with the candidate C checked: it
+% denotes exactly {P}, or P and others (then also its {k} form); dropped
+% otherwise
+pred sg-check i:goal, i:string, i:list int, i:sg-cand, i:list sg-res, o:list sg-res.
+sg-check G H P (sg-cand K S D N) Rs0 Rs :- sel-select G H S _ R,
+  (R = sel-ok [sp-at P], !, sg-cost K S D tt C, Rs = [sg-res C K S N [sp-at P]|Rs0] ;
+   R = sel-ok Qs, sg-rank Qs (sp-at P) 1 Rk, !,
+   sg-cost K S D ff C, R1 = sg-res C K S N Qs,
+   Occ is "{" ^ int_to_string Rk ^ "}", SO is Occ ^ "[" ^ S ^ "]",
+   (sel-select G H SO _ (sel-ok [sp-at P]), !,
+    sg-cost e1-occurrence-switch SO D tt CO,
+    Rs = [sg-res CO e1-occurrence-switch SO N [sp-at P], R1|Rs0] ;
+    Rs = [R1|Rs0]) ;
+   Rs = Rs0).
+
+% [sg-rank Qs Q I K] Q is the K-th of Qs (the first being the I-th)
+pred sg-rank i:list sel-pos, i:sel-pos, i:int, o:int.
+sg-rank [Q|_] Q I I :- !.
+sg-rank [_|Qs] Q I K :- I1 is I + 1, sg-rank Qs Q I1 K.
+
+% [sg-select-all G H P Rs] Rs are the checked ways to designate the
+% position P of the part H of G, best first
+pred sg-select-all i:goal, i:string, i:list int, o:list sg-res.
+sg-select-all G H P Rs :- sel-part G H T,
+  (path-of T P, ! ; coq.ltac.fail 0 {msg "not a path of the part:"} {string-of-path P}),
+  sg-candidates T P Cs,
+  std.fold Cs [] (sg-check G H P) Rs0,
+  (term-at P T Tt, sg-print Tt St, sg-occurrence-cand G H T P St Ra, !, Rs1 = [Ra|Rs0] ; Rs1 = Rs0),
+  string-of-path P PS, sg-cost a1-path PS 0 tt CP,
+  sg-sort [sg-res CP a1-path PS "" [sp-at P]|Rs1] Rs.
+
+% [sg-occurrence-cand G H T P St R] A2: the target written in full, St,
+% with its rank among the occurrences
+pred sg-occurrence-cand i:goal, i:string, i:term, i:list int, i:string, o:sg-res.
+sg-occurrence-cand G H _ P St R :- sel-select G H St _ (sel-ok Qs), sg-rank Qs (sp-at P) 1 Rk,
+  Occ is "{" ^ int_to_string Rk ^ "}", SO is Occ ^ "(" ^ St ^ ")",
+  sel-select G H SO _ (sel-ok [sp-at P]), sg-cost a2-occurrence SO 0 tt C,
+  R = sg-res C a2-occurrence SO "" [sp-at P].
+
+% [sg-res-line R L] L describes the checked candidate R
+pred sg-res-line i:sg-res, o:string.
+sg-res-line (sg-res C K S N Qs) L :- sel-kind-label K KL,
+  std.map C (i\ s\ s is int_to_string i) CSs, std.string.concat "," CSs CS,
+  (Qs = [_], !, W = "" ; sel-positions-string Qs QS, W is "  selects also: " ^ QS),
+  (N = "", !, NS = "" ; NS is "  (" ^ N ^ ")"),
+  (K = a1-path, !, Txt is "\"" ^ S ^ "\"" ;
+   rex.match "^{" S, !, Txt = S ; Txt is "[" ^ S ^ "]"),
+  L is "  " ^ Txt ^ "   " ^ KL ^ "   cost [" ^ CS ^ "]" ^ NS ^ W.
+
+% [sg-best Rs B] B is the best candidate that denotes exactly the target
+pred sg-best i:list sg-res, o:sg-res.
+sg-best [(sg-res _ _ _ _ [_] as B)|_] B :- !.
+sg-best [_|Rs] B :- sg-best Rs B.
+
 }}.
 
 Elpi Tactic pattern_select.
@@ -809,4 +1214,58 @@ solve (goal _ _ _ _ Args as G) [seal G] :-
   tool-name "pattern_select_fails" => (
   sel-args 0 Args H S [], sel-select G H S _ R,
   (R = sel-error _, ! ; coq.ltac.fail 0 {msg "ssreflect accepts"} S)).
+}}.
+
+(* [elpi select_all "P"] and [elpi select_all "H" "P"]: the ways to
+   designate the subterm at path P (of the conclusion, or of the type of
+   H), each one checked by the oracle, best first, with its cost (sg-cost)
+   and how its generalization was found; "selects also" marks a candidate
+   that denotes P and other positions.  [elpi select_all_expect ["H"] "P"
+   "<best>"] fails unless the best one is <best>; [elpi select_all_vs ["H"]
+   "P" "<pattern>"] prints the best one and the given pattern (the paper's)
+   with their costs, and fails unless the pattern denotes exactly P and the
+   best one keeps no more symbols (the context depth of the given pattern
+   is not computed: it is shown as 0). *)
+
+Elpi Tactic select_all.
+Elpi Accumulate File subterm_pattern.elpi.
+Elpi Accumulate File subterm_select.elpi.
+Elpi Accumulate lp:{{
+solve (goal _ _ _ _ Args as G) [seal G] :-
+  tool-name "select_all" => (
+  sel-args 0 Args H PS [], path-of-string PS P, sel-part G H T,
+  sg-select-all G H P Rs, std.map Rs sg-res-line Ls,
+  sel-pos-string (sp-at P) PS1, sel-pos-text T (sp-at P) Txt,
+  Head is "select_all " ^ PS1 ^ " (" ^ Txt ^ "), best first:",
+  std.string.concat "\n" [Head|Ls] Out, coq.say Out).
+}}.
+
+Elpi Tactic select_all_expect.
+Elpi Accumulate File subterm_pattern.elpi.
+Elpi Accumulate File subterm_select.elpi.
+Elpi Accumulate lp:{{
+solve (goal _ _ _ _ Args as G) [seal G] :-
+  tool-name "select_all_expect" => (
+  sel-args 1 Args H PS [Exp], path-of-string PS P,
+  sg-select-all G H P Rs, sg-best Rs (sg-res _ _ Best _ _),
+  (Best = Exp, ! ; coq.ltac.fail 0 {msg "best"} Best "expected" Exp)).
+}}.
+
+Elpi Tactic select_all_vs.
+Elpi Accumulate File subterm_pattern.elpi.
+Elpi Accumulate File subterm_select.elpi.
+Elpi Accumulate lp:{{
+solve (goal _ _ _ _ Args as G) [seal G] :-
+  tool-name "select_all_vs" => (
+  sel-args 1 Args H PS [Pat], path-of-string PS P,
+  sg-select-all G H P Rs, sg-best Rs (sg-res CB KB Best _ _),
+  sel-select G H Pat (sel-pat Occ Txt F) R,
+  (R = sel-ok [sp-at P], ! ; coq.ltac.fail 0 {msg "the pattern does not denote exactly the path:"} Pat),
+  (Occ = "", !, sel-form-kind F K ; K = e1-occurrence-switch),
+  sg-cost K Pat 0 tt CP,
+  sg-res-line (sg-res CB KB Best "" [sp-at P]) LB, sg-res-line (sg-res CP K Txt "" [sp-at P]) LP,
+  coq.say "ours: " LB "\npaper's:" LP,
+  sg-take 3 CP CP3, sg-take 3 CB CB3,
+  (not (sg-less CP3 CB3), ! ; coq.ltac.fail 0 {msg "the given pattern costs less:"} Pat),
+  true).
 }}.
