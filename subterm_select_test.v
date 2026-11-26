@@ -4,12 +4,14 @@
       (fragility), 5, 6, 7, 8, 9, in a small ring-like setting where, as in
       the paper, a - b is a + - b; the selected positions are checked
       (pattern_select_expect), and the later instances
-      (pattern_select_later_expect).
+      (pattern_select_later_expect); select_all on the same positions, its
+      best candidate against the paper's pattern (select_all_vs).
    2. The algebra: law 3 of GRAMMAR.md on f a 1 + f b (g 2) = 0.
    3. The round trip of the paths on the goals of point_paths_test.v: for
       every path p of the conclusion and of the hypotheses, point_to_pattern
       gives a pattern [X in C] (for the path p, or the one it is widened
-      to); pattern_select on that pattern must give exactly that path. *)
+      to); pattern_select on that pattern must give exactly that path; and
+      the kind of select_all's best candidate for every path. *)
 
 From Stdlib Require Import String.
 From elpi Require Import elpi.
@@ -35,6 +37,9 @@ Goal forall a b c : R, a + (b * c - a) + a = b * c + a.
 intros a b c.
 elpi pattern_select "[_ - a]".
 elpi pattern_select_expect "[_ - a]" "2.1.2".
+elpi select_all "2.1.2".
+elpi select_all_vs "2.1.2" "[_ - a]".
+elpi select_all_expect "2.1.2" "_ - a".
 (* Ex. 2 (fragility): the instantiation by name, b * c + _, selects
    b * c - a too here (it is b * c + - a), but it has a later instance,
    b * c + a: what it selects when the goal changes (below) *)
@@ -58,6 +63,11 @@ intros a b c d.
 elpi pattern_select "[_ - b]".
 elpi pattern_select_expect "[_ - b]" "2.1 3.1".
 elpi pattern_select_later_expect "[_ - b]" "3.2".
+(* select_all: a - b occurs twice, so a single one needs an occurrence
+   switch or a context; d - b alone is univocal *)
+elpi select_all "2.1".
+elpi select_all "3.2".
+elpi select_all_expect "3.2" "d + _".
 (* an occurrence switch: the second occurrence of the first instance *)
 elpi pattern_select_expect "{2}[_ - b]" "3.1".
 Abort.
@@ -68,6 +78,8 @@ Goal forall a b c : R, 0 = snd (0 * c, 0 * (a + b)).
 intros a b c.
 elpi pattern_select "[X in snd (_, X)]".
 elpi pattern_select_expect "[X in snd (_, X)]" "3.3.4".
+elpi select_all "3.3.4".
+elpi select_all_vs "3.3.4" "[X in snd (_, X)]".
 (* without a context: 0 * c first *)
 elpi pattern_select_expect "[0 * _]" "3.3.3".
 Abort.
@@ -78,6 +90,8 @@ Goal forall a b c : R, a + b = f (a * a + b) - c.
 intros a b c.
 elpi pattern_select "(_ + b in X in _ = X)".
 elpi pattern_select_expect "(_ + b in X in _ = X)" "3.1.1".
+elpi select_all "3.1.1".
+elpi select_all_vs "3.1.1" "(_ + b in X in _ = X)".
 elpi pattern_select_expect "(_ + b)" "2".
 (* the named context RHS of ssrmatching *)
 elpi pattern_select_expect "(_ + b in RHS)" "3.1.1".
@@ -89,6 +103,8 @@ Goal forall a b c d : R, f2 (a + b) (2 * (a + c)) + (c + d) + f2 a (c + d) = 0.
 intros a b c d.
 elpi pattern_select "[_ + d as X in f2 _ X]".
 elpi pattern_select_expect "[_ + d as X in f2 _ X]" "2.2.2".
+elpi select_all "2.2.2".
+elpi select_all_vs "2.2.2" "[_ + d as X in f2 _ X]".
 elpi pattern_select_expect "[X in f2 _ X]" "2.1.1.2".
 (* the rewrite-only patterns are not c-patterns: set refuses them *)
 elpi pattern_select_fails "[in f2 _ _]".
@@ -100,6 +116,8 @@ Goal forall a b d : R, a + b + (a * ((a + b) * d)) = 0.
 intros a b d.
 elpi pattern_select "((_ + _) in X in (_ * X))".
 elpi pattern_select_expect "((_ + _) in X in (_ * X))" "2.2.2.1".
+elpi select_all "2.2.2.1".
+elpi select_all_vs "2.2.2.1" "((_ + _) in X in (_ * X))".
 elpi pattern_select_expect "(_ + _)" "2".
 Abort.
 End Ring.
@@ -227,6 +245,45 @@ solve (goal Ctx _ Ty _ [str Exp] as G) [seal G] :-
 
 Definition double n := n + n.
 
+(* [elpi select_all_roundtrip Exp]: for every path p of the conclusion
+   and of each hypothesis (a proposition), select_all's best candidate
+   (checked by the oracle: it denotes exactly {p}) is counted by kind:
+   "paths B C occurrence path", B a term pattern, C a context (C1, C2,
+   C3), occurrence an occurrence number (E1, A2), path: no ssreflect form,
+   the path only.  It prints the counts and fails unless they are Exp
+   ("?": print only). *)
+Elpi Tactic select_all_roundtrip.
+Elpi Accumulate File subterm_pattern.elpi.
+Elpi Accumulate File subterm_select.elpi.
+Elpi Accumulate lp:{{
+pred sa-class i:sel-kind, o:int.
+sa-class K 0 :- std.mem! [b1-closed-term, b2-term-with-holes, b3-flexible-head, b4-type-driven] K, !.
+sa-class K 1 :- std.mem! [c1-context, c2-redex-in-context, c3-redex-as-context] K, !.
+sa-class K 2 :- std.mem! [e1-occurrence-switch, a2-occurrence] K, !.
+sa-class _ 3.
+
+pred sa-part i:goal, i:string, i:term, o:list int.
+sa-part G H T Cls :-
+  std.findall (path-of T P_) Sols, std.map Sols (s\ p\ s = path-of _ p) Ps,
+  std.map Ps (p\ c\ sigma Rs K\ sg-select-all G H p Rs, sg-best Rs (sg-res _ K _ _ _), sa-class K c) Cls.
+
+solve (goal Ctx _ Ty _ [str Exp] as G) [seal G] :-
+  tool-name "select_all_roundtrip" => (
+  sa-part G "" Ty C0,
+  std.map-filter Ctx (e\ h\ sigma V N T S\ e = decl V N T,
+     coq.typecheck T S ok, S = sort prop, coq.name->id N h) Hs,
+  std.map Hs (h\ c\ sigma T\ sel-part G h T, sa-part G h T c) CHs,
+  std.flatten [C0|CHs] Cs, std.length Cs N,
+  std.map [0, 1, 2, 3] (k\ n\ sigma L\ std.filter Cs (c\ c = k) L, std.length L n) Ns,
+  std.map [N|Ns] (n\ s\ s is int_to_string n) NSs, std.string.concat " " NSs Got,
+  coq.say "select_all round trip: paths B C occurrence path =" Got,
+  (Exp = "?", ! ; Got = Exp, ! ; coq.ltac.fail 0 "select_all_roundtrip: got" Got "expected" Exp)).
+}}.
+
+(* The select_all round trip on the same goals: of the 531 paths, the best
+   candidate (each one checked by the oracle to denote exactly the path)
+   is a term pattern for 142, a context for 135, needs an occurrence
+   number for 142, and is the path alone (no ssreflect form) for 112. *)
 (* The goals of point_paths_test.v, in its order.  In all: 531 paths, 387
    univocal, 0 multiple, 15 mismatches, 129 refused, 0 without pattern.
    What the cases that are not univocal say about the translation path ->
@@ -254,45 +311,54 @@ Definition double n := n + n.
 Goal forall a : nat, 1 + 1 + a = double (1 + a).
 intros a.
 elpi select_roundtrip "22 19 0 0 3 0".
+elpi select_all_roundtrip "22 6 10 6 0".
 Abort.
 
 Goal forall a b : nat, a = b -> b = a.
 intros a b ab.
 elpi select_roundtrip "10 4 0 0 6 0".
+elpi select_all_roundtrip "10 10 0 0 0".
 Abort.
 
 Goal ("a b" = "a b")%string.
 elpi select_roundtrip "77 74 0 1 2 0".
+elpi select_all_roundtrip "77 3 62 12 0".
 Abort.
 
 Goal forall (p : nat * nat), (let '(a, b) := p in a + b) = 0 -> True.
 intros p H.
 elpi select_roundtrip "21 15 0 1 5 0".
+elpi select_all_roundtrip "21 6 1 2 12".
 Abort.
 
 Goal forall (n : nat) (b : bool), match n with 0 => true | S k => Nat.eqb k n end = (if b then false else true).
 intros n b.
 elpi select_roundtrip "22 18 0 0 4 0".
+elpi select_all_roundtrip "22 5 2 7 8".
 Abort.
 
 Goal forall (b : bool), match b as x return (if x then nat else bool) with true => 0 | false => true end = match b as x return (if x then nat else bool) with true => 0 | false => true end.
 intros b.
 elpi select_roundtrip "35 26 0 0 9 0".
+elpi select_all_roundtrip "35 3 2 16 14".
 Abort.
 
 Goal forall x : nat, (forall x : nat, x = x) -> forall y, (fun x => x + y) x = x.
 intros x H.
 elpi select_roundtrip "21 8 0 0 13 0".
+elpi select_all_roundtrip "21 5 0 7 9".
 Abort.
 
 Goal forall (a b : nat) (c d : bool), (fun x y : nat => x + y) a b = a + b /\ exists (u v : nat) (w : bool), u = v /\ w = c.
 elpi select_roundtrip "55 31 0 9 15 0".
+elpi select_all_roundtrip "55 1 0 25 29".
 Abort.
 
 Goal forall n : nat, (n : nat) = n.
 intros n.
 change ((n : nat) = n).
 elpi select_roundtrip "8 4 0 1 3 0".
+elpi select_all_roundtrip "8 3 2 0 3".
 Abort.
 
 Module C.
@@ -302,6 +368,7 @@ Record box := Box { unbox :> nat }.
 Goal forall (n : nat) (b : box), (n + 1 = b)%Z /\ b + 0 = n.
 intros n b.
 elpi select_roundtrip "28 25 0 0 3 0".
+elpi select_all_roundtrip "28 13 7 8 0".
 Abort.
 End C.
 
@@ -309,12 +376,14 @@ Set Printing All.
 Goal forall a b : nat, a + b = b + a /\ (a <= b \/ True).
 intros a b.
 elpi select_roundtrip "20 18 0 0 2 0".
+elpi select_all_roundtrip "20 11 7 2 0".
 Abort.
 Unset Printing All.
 
 Goal forall n : nat, n = n.
 intros n.
 elpi select_roundtrip "5 2 0 0 3 0".
+elpi select_all_roundtrip "5 3 2 0 0".
 Abort.
 
 Module IfMatch.
@@ -322,53 +391,64 @@ Notation "'IF' c 'THEN' a 'ELSE' b" := (if c then a else b) (at level 200).
 Goal forall (b : bool) (n : nat), (IF b THEN n ELSE 0) = n.
 intros b n.
 elpi select_roundtrip "11 8 0 0 3 0".
+elpi select_all_roundtrip "11 4 2 3 2".
 Abort.
 End IfMatch.
 
 Goal forall (b : bool) (n : nat), (if b then n else 0) = n.
 intros b n.
 elpi select_roundtrip "11 8 0 0 3 0".
+elpi select_all_roundtrip "11 4 2 3 2".
 Abort.
 
 Goal forall n : nat, match n with 0 => true | S _ => false end = true.
 intros n.
 elpi select_roundtrip "13 10 0 0 3 0".
+elpi select_all_roundtrip "13 4 2 3 4".
 Abort.
 
 Goal forall n : nat, n + 0 = n.
 elpi select_roundtrip "10 7 0 0 3 0".
+elpi select_all_roundtrip "10 4 0 2 4".
 Abort.
 
 Goal forall n : nat, (let m := n + 1 in m * m) = n /\ (fun k : nat => k) n = n.
 intros n.
 elpi select_roundtrip "27 19 0 1 7 0".
+elpi select_all_roundtrip "27 9 7 6 5".
 Abort.
 
 Goal forall (n : nat), match n with 0 => true | S k => Nat.eqb k n end = true -> (forall z : nat, z = z) -> True.
 intros n H H'.
 elpi select_roundtrip "24 16 0 0 8 0".
+elpi select_all_roundtrip "24 6 2 7 9".
 Abort.
 
 Lemma two_is : 2 = 1 + 1. Proof. reflexivity. Qed.
 Goal forall a : nat, double (1 + a) = 2 + a + a -> forall n : nat, n + double a = a.
 intros a H.
 elpi select_roundtrip "34 28 0 0 6 0".
+elpi select_all_roundtrip "34 13 9 9 3".
 Abort.
 
 Goal forall a : nat, (if true then a else 0) = double 2.
 intros a.
 elpi select_roundtrip "17 13 0 0 4 0".
+elpi select_all_roundtrip "17 8 2 5 2".
 Abort.
 
 Goal two_is = two_is.
 elpi select_roundtrip "20 2 0 0 18 0".
+elpi select_all_roundtrip "20 6 8 6 0".
 Abort.
 
 Goal forall a b : nat, a + b * 2 = b /\ forall n : nat, n * n = 0.
 intros a b.
 elpi select_roundtrip "27 24 0 0 3 0".
+elpi select_all_roundtrip "27 9 4 10 4".
 Abort.
 
 Goal (exists m : nat, m = 0) /\ True.
 elpi select_roundtrip "13 8 0 2 3 0".
+elpi select_all_roundtrip "13 6 2 3 2".
 Abort.

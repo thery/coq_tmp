@@ -77,7 +77,12 @@
    fail unless the selected positions (in pre-order, separated by blanks,
    "" for none, "root" for the whole part) are the given ones; unless the
    positions selected in the later instances (one group per instance,
-   separated by |) are; unless ssreflect refuses the pattern. *)
+   separated by |) are; unless ssreflect refuses the pattern.
+
+   The reverse: [elpi select_all "P"] (or "H" "P") lists the ways to
+   designate the subterm at path P, one or more per kind, each one checked
+   by the oracle, best first (section select_all below: the generation by
+   anti-unification, the cost sg-cost). *)
 
 Declare ML Module "coq-tmp.select".
 From Stdlib Require Export ssreflect ssrmatching.
