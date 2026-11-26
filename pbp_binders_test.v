@@ -14,7 +14,7 @@
 
 From Stdlib Require Import ssreflect.
 From elpi Require Import elpi.
-From coq_tmp Require Import pbp pbp_select.
+From coq_tmp Require Import pbp pbp_select point_actions.
 From Ltac2 Require Import Ltac2.
 Set Default Proof Mode "Classic".
 
@@ -293,4 +293,26 @@ Qed.
 Lemma gen_fun : forall y : nat, (fun x => x + y) y = y.
 Proof.
 elpi pbp_pattern_expect "pbp [X in forall y : nat, [x : nat in X x + _] _ = _]." "" "2.2.0.2.1".
+Abort.
+
+(* The goal of the demo "clashing names".  Under the fun, which pbp does
+   not enter, the selection is applied to every variable it uses, as in
+   the other patterns (X y x0); the fun itself, under forall y only, is
+   positional: X _ = _ (X the head of the application; X y _ would be read
+   as an application of X to y).  pbp has no rule for =, so these two
+   lines do not run (they did not before either); the line in H does. *)
+Lemma gen_clashing_names : forall x : nat, (forall x : nat, x = x) ->
+  forall y, (fun x => x + y) x = x.
+Proof.
+move=> x H.
+elpi point_run_path_expect "Point" "pbp [X in forall y : nat, [x0 : nat in X y x0] _ = _]." "" "2.2.0.2".
+elpi point_run_path_expect "Point" "pbp [X in forall y : nat, [x0 : nat in X x0 + _] _ = _]." "" "2.2.0.2.1".
+elpi point_run_path_expect "Point" "pbp [X in forall y : nat, X _ = _]." "" "2.2.0".
+Fail pbp [X in forall y : nat, [x0 : nat in X y x0] _ = _].
+Fail pbp [X in forall y : nat, X _ = _].
+elpi point_run_path_expect "Point" "move: H; pbp [X in (forall x0 : nat, X) -> _]." "" "H" "2".
+move: H; pbp [X in (forall x0 : nat, X) -> _].
+lazymatch goal with x : nat, X : ?w = ?w |- forall y : nat, _ = x => is_evar w end.
+[x0]: exact x.
+(* (the goal itself, x + y = x, is not provable) *)
 Abort.

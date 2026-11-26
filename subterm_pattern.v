@@ -314,15 +314,15 @@ pred replace-at i:list int, i:list term,
                 i:(pred i:list term, i:term, o:term), i:term, o:term.
 replace-at [] Bs F T R :- !, F Bs T R.
 replace-at [I|P] Bs F T T1 :-
-  skel-step T I (kid-replace T I (replace-kid P Bs F) T1).
+  skel-step T I Hs, Hs => kid-replace T I (replace-kid P Bs F) T1.
 
 % [replace-kid P Bs F K K1] replace-at in the immediate subterm K
 pred replace-kid i:list int, i:list term,
                  i:(pred i:list term, i:term, o:term), i:kid, o:kid.
 replace-kid P Bs F (kt T) (kt T1) :- replace-at P Bs F T T1.
 replace-kid P Bs F (kb N Ty B) (kb N Ty B1) :-
-  pi x\ decl x N Ty => skel-binder x (
-    sigma Bs1\ (std.append Bs [x] Bs1, replace-at P Bs1 F (B x) (B1 x))).
+  pi x\ decl x N Ty => sigma Hs\ skel-binder x Hs, Hs =>
+    sigma Bs1\ (std.append Bs [x] Bs1, replace-at P Bs1 F (B x) (B1 x)).
 
 % [term-at P T R] R is the subterm of T at path P; it fails if R uses a
 % variable bound in T
@@ -721,22 +721,30 @@ skel-connective {{:gref or}} 2.
 skel-connective {{:gref not}} 1.
 skel-connective {{:gref ex}} 2.
 
-% [skel-step T I G] G, in the I-th immediate subterm of T: off the
-% skeleton if it is not on it
-pred skel-step i:term, i:int, i:prop.
-skel-step T I G :- pattern-positional, not (walk-off), not (skel-kid T I), !, walk-off => G.
-skel-step _ _ G :- G.
+% [skel-step T I Hs] Hs are the clauses to assume in the I-th immediate
+% subterm of T: walk-off if it leaves the skeleton (the callers assume
+% them: Hs => G)
+pred skel-step i:term, i:int, o:list prop.
+skel-step T I [walk-off] :- pattern-positional, not (walk-off), not (skel-kid T I), !.
+skel-step _ _ [].
 
-% [skel-binder X G] G, the variable X bound here: positional if the
-% binder is on the skeleton
-pred skel-binder i:term, i:prop.
-skel-binder X G :- pattern-positional, not (walk-off), !, walk-positional X => G.
-skel-binder _ G :- G.
+% [skel-binder X Hs] Hs are the clauses to assume under the binder of the
+% variable X: positional if the binder is on the skeleton, walk-under (a
+% fun, a let, a branch: below it the selection is as in the other
+% patterns) if it is off it
+pred skel-binder i:term, o:list prop.
+skel-binder X [walk-positional X] :- pattern-positional, not (walk-off), !.
+skel-binder _ [walk-under] :- pattern-positional, !.
+skel-binder _ [].
+
+% [walk-under] the walk is under a binder off the skeleton: no variable
+% is positional there (X is applied to all the variables it uses)
+pred walk-under.
 
 % [applied-in T V] the variable V occurs in T and is given to the
 % selection T (not positional)
 pred applied-in i:term, i:term.
-applied-in T V :- occurs V T, not (walk-positional V).
+applied-in T V :- occurs V T, (walk-under, ! ; not (walk-positional V)).
 
 % [walk Sels St Bs T R A0 A] R is the pattern of T, printed as St says,
 % Bs being the variables bound above it (the innermost first); Sels are
@@ -744,17 +752,32 @@ applied-in T V :- occurs V T, not (walk-positional V).
 % is A0 with what the walk meets
 pred walk i:list (pair (list int) term), i:status, i:list term, i:term,
           o:term, i:pacc, o:pacc.
-walk Sels _ Bs T R A0 A :- selected Sels X, !,
+walk Sels _ Bs T R A0 A :- selected Sels X, !, walk-selected X Bs T R A0 A.
+
+% [walk-selected X Bs T R A0 A] R is the pattern of the selected T, its
+% variable being X: X applied to the variables of Bs that T uses (but the
+% positional ones), under the marker pbp_at of the positional ones and of
+% the named premises.  (Out of walk's clause: a function written in a
+% clause holds T, and Elpi walks T each time it tries the clause, at each
+% level of the path)
+pred walk-selected i:term, i:list term, i:term, o:term, i:pacc, o:pacc.
+walk-selected X Bs T R A0 A :-
   std.rev Bs Bs1, std.filter Bs1 (applied-in T) Vs, coq.mk-app X Vs R1,
-  std.filter Bs1 (v\ positional-in T v ; walk-named v) PVs,
+  std.filter Bs1 (marked-in T) PVs,
   (PVs = [], !, R0 = R1 ;
    PVs = [V], !, R0 = app [{{ @pbp_at }}, {{ Prop }}, {{ Prop }}, V, R1] ;
    R0 = app [{{ @pbp_at }}, {{ Prop }}, {{ Prop }}, app PVs, R1]),
   place T R0 R A0 A.
 
+% [marked-in T V] the variable V is given to the marker of T: positional
+% and used in T, or a named premise
+pred marked-in i:term, i:term.
+marked-in T V :- positional-in T V, !.
+marked-in _ V :- not (walk-under), walk-named V.
+
 % [positional-in T V] the variable V, positional, occurs in T
 pred positional-in i:term, i:term.
-positional-in T V :- walk-positional V, occurs V T.
+positional-in T V :- not (walk-under), walk-positional V, occurs V T.
 
 % [occurs-in T V] the variable V occurs in T (a function std.filter can be
 % given: a function written v\ occurs v T, in a clause, holds T, and Elpi
@@ -782,8 +805,8 @@ walk-kid-at Sels St Bs T I K K1 A0 A :-
    named-premise T I Sels, !, K = kb N Ty F, K1 = kb N Ty F1,
    kid-status T I St StI,
    (pi x\ decl x N Ty => walk-bound x => walk-named x =>
-      skel-binder x (walk SelsI StI [x|Bs] (F x) (F1 x) A0 A)) ;
-   kid-status T I St StI, skel-step T I (walk-kid SelsI StI Bs K K1 A0 A)).
+      sigma Hs\ skel-binder x Hs, Hs => walk SelsI StI [x|Bs] (F x) (F1 x) A0 A) ;
+   kid-status T I St StI, skel-step T I Hs, Hs => walk-kid SelsI StI Bs K K1 A0 A).
 
 % [named-premise T I Sels] in a positional pattern, the body (I = 2) of
 % T, a premise of the skeleton that holds no selection (Sels) and has a
@@ -807,7 +830,7 @@ walk-kid _ _ _ (kn N) (kn N) A A.
 walk-kid Sels St Bs (kt U) (kt R) A0 A :- walk Sels St Bs U R A0 A.
 walk-kid Sels St Bs (kb N Ty F) (kb N Ty F1) A0 A :-
   pi x\ decl x N Ty => walk-bound x =>
-    skel-binder x (walk Sels St [x|Bs] (F x) (F1 x) A0 A).
+    sigma Hs\ skel-binder x Hs, Hs => walk Sels St [x|Bs] (F x) (F1 x) A0 A.
 
 % [place T R0 R A0 A] R is R0, the variable or the hole in place of T,
 % written with the type of T (a cast, which Rocq-Elpi sees as
