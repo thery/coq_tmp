@@ -23,28 +23,20 @@
    ~/claudeExp/subterm-select/PATTERNS.md, section 7 (sel-kind below, the
    one place where they are written).
 
-   The oracle.  The semantics is ssreflect's own, not a reimplementation:
-   the pattern is given to ssreflect's set,
-     set z := {occ}(pattern)          (in H for a hypothesis)
-   on the goal itself, and the positions are the paths of the new local
-   definition z in the goal that set gives: set puts z in place of each
-   selected subterm, a leaf in place of a subterm, so the paths of the
-   occurrences of z are the paths of the selected subterms in the
-   ORIGINAL goal.  set is run on a scratch copy: a new goal sel_box Ty in
-   the same context (Ty the conclusion, at path 2 of sel_box Ty; for a
-   hypothesis, sel_box True, the hypothesis being in the context), closed
-   by exact I afterwards, so the goal of the user is unchanged.  The text
-   of the tactic is parsed and run by run_tactic_string
-   (plugin/g_select.mlg): Rocq-Elpi calls an Ltac tactic by its name only,
-   with terms or strings as arguments, never a tactic text to parse.
+   The semantics.  The library runs no tactic: it reimplements in Elpi
+   ssreflect's matching for the fragment it produces (section "The
+   semantics of the patterns" below: the paper's sections 2.1 and 3, the
+   functions of ssrmatching.ml it follows, what is outside the fragment).
+   It is checked against ssreflect itself by the differential tests of
+   select/tests (generated .v files where set z := (pattern) is written
+   literally and the positions of z are compared with the Elpi result).
    Special cases:
-   - no match: ssreflect's error is reported (not a crash);
-   - a closed term that does not occur: set adds the definition and
-     abstracts nothing: "nothing selected";
-   - z can replace a prefix of an application (the pattern f a in f a b):
-     the position is then the path of the application and the number of
-     its last arguments left out, written P<K (all of them left out: the
-     head, written P.0);
+   - no match: an error, except for a term without holes, which then
+     selects nothing (as set: it adds its definition and abstracts nothing);
+   - a pattern can select a prefix of an application (the pattern f a in
+     f a b): the position is then the path of the application and the
+     number of its last arguments left out, written P<K (all of them left
+     out: the head, written P.0);
    - a selected subterm that the goal display does not print (an implicit
      argument, the return type of a match) is flagged "(not printed)": no
      tag of the printer shows its path.
@@ -55,11 +47,11 @@
    outer term (t for B; C, with X a hole, for C1 and C2; C[t/X] for C3);
    the LATER instances of that term, after the first one in pre-order, are
    what the pattern would select if the goal changed before them.  They
-   are computed by the same oracle: for each subterm s of the goal after
+   are computed by the same semantics: for each subterm s of the goal after
    the first selected position (pre-order) that does not use a variable
-   bound in the goal, the outer term is given to set on the scratch goal
-   sel_box s; s is a later instance when set selects s itself, and the
-   pattern, run on the same scratch goal, says what it would select there.
+   bound in the goal, the outer term is matched in s alone; s is a later
+   instance when its first instance is s itself, and the pattern, matched
+   in s alone, says what it would select there.
    The occurrences of the first instance are not later instances (the
    subterms inside them are tried).  The outer term is found by splitting
    the text of the pattern at its keywords in and as outside parentheses
@@ -77,21 +69,17 @@
    fail unless the selected positions (in pre-order, separated by blanks,
    "" for none, "root" for the whole part) are the given ones; unless the
    positions selected in the later instances (one group per instance,
-   separated by |) are; unless ssreflect refuses the pattern.
+   separated by |) are; unless the pattern is refused (an error).
 
    The reverse: [elpi select_all "P"] (or "H" "P") lists the ways to
    designate the subterm at path P, one or more per kind, each one checked
-   by the oracle, best first (section select_all below: the generation by
+   by the semantics, best first (section select_all below: the generation by
    anti-unification, the cost sg-cost). *)
 
-Declare ML Module "coq-tmp.select".
 From Stdlib Require Export ssreflect ssrmatching.
 From elpi Require Import elpi.
 From coq_tmp Require Export subterm_pattern.
 
-(* the scratch goal of the later instances: s alone, so that the pattern
-   is matched against s and its subterms only *)
-Definition sel_box {A : Type} (a : A) : Prop := True.
 
 Elpi File subterm_select.elpi lp:{{
 
@@ -263,7 +251,7 @@ sel-outer (sf-in X C) T :- sel-replace-var X "_" C T.
 sel-outer (sf-in-in _ X C) T :- sel-replace-var X "_" C T.
 sel-outer (sf-as-in E X C) T :- sel-replace-var X {calc ("(" ^ E ^ ")")} C T.
 
-/* ---------------- The oracle ---------------- */
+/* ---------------- Positions selected ---------------- */
 
 % A selected position: the path of a subterm, or a prefix of an
 % application (its path, the number of its last arguments left out)
@@ -271,137 +259,335 @@ kind sel-pos type.
 type sp-at list int -> sel-pos.
 type sp-prefix list int -> int -> sel-pos.
 
-% The result of a run of the oracle
+% What a pattern selects: positions, or an error
 kind sel-res type.
 type sel-ok list sel-pos -> sel-res.
 type sel-error string -> sel-res.
 
-% [sel-name N] N is the name of the local definition that set adds
-pred sel-name o:string.
-sel-name "pattern_select_z".
+/* ---------------- The semantics of the patterns ---------------- */
 
-% [sel-set-text H Occ P S] S is the tactic that sets z to the pattern of
-% text P with the occurrence switch Occ, in hypothesis H ("" for the
-% conclusion)
-pred sel-set-text i:string, i:string, i:string, o:string.
-sel-set-text H Occ P S :- sel-name Z,
-  (H = "", !, In = "" ; In is " in " ^ H),
-  S is "set " ^ Z ^ " := " ^ Occ ^ "(" ^ P ^ ")" ^ In.
+/* ssreflect's matching, for the fragment that the library produces and
+   reads (the patterns are built from pieces of the goal): after the paper
+   (section 2.1 for the five forms, section 3 for the matching) and
+   ssrmatching.ml (Rocq sources, plugins/ssrmatching):
 
-% [sel-scratch C S Tac H R] runs the tactic Tac on a new goal sel_box S in
-% the context C, and R are the positions of z in the goal it gives: in
-% its conclusion (H = "", paths of sel_box S: S is at 2) or in the type of
-% its hypothesis H.  The new goal is then closed (exact I: sel_box S is
-% True), so it leaves nothing behind; the goal of the user is not touched.
-% (Backtracking the proof state would be the other way: std.findall over
-% an Ltac call is an anomaly of Rocq-Elpi 3.x.)
-pred sel-scratch i:goal-ctx, i:term, i:string, i:string, o:sel-res.
-sel-scratch _C S Tac H R :-
-  (coq.typecheck S Ty ok,
-        coq.typecheck E {{ @sel_box lp:Ty lp:S }} ok,
-        coq.ltac.collect-goals E [SG] _),
-  sel-scratch-sealed SG Tac H R, !.
-sel-scratch _ _ _ _ (sel-error "the scratch goal could not be made").
+   - the pattern text is elaborated (coq.parse.argument): its holes _
+     become unknowns; X in C is elaborated as let X := _ in C (as
+     interp_pattern does, mkXLetIn), so C is a function of X;
+   - the key of a term pattern is its head (mk_tpattern): a constant, a
+     constructor, an inductive, a variable of the context, with its number
+     NP of arguments; a product, a sort, a match, a fixpoint: the key of
+     every such term (KpatRigid); a fun: the key of the funs (KpatLam).
+     Another head (an unknown: the flexible pattern _ x, or X at the head;
+     a let; an application of a fun) or a projection of a record
+     with parameters (canonical structures: KpatProj) is outside the
+     supported fragment;
+   - the first instance (match_upats_FO, then match_upats_HO): the subterms
+     are visited in the order of iter_constr_LR (a node before its
+     subterms; an application: its head, then its arguments from the left;
+     a product or fun: type then body; a let: value, type, body; a match:
+     scrutinee, return type, branches; a cast: its term only, casts are
+     erased); a subterm is a candidate when it does not use a variable bound
+     in the goal and is an application of the key to at least NP
+     arguments (its prefix with NP arguments is compared), or the key
+     itself when NP = 0; phase 1 compares without reduction (Elpi
+     first-order unification, casts erased), over the whole term; phase 2,
+     only if phase 1 found nothing, compares up to conversion
+     (coq.unify-eq, Rocq's unification); the instance must be ground (every
+     hole assigned, the "not ground" check);
+   - the occurrences of the instance (find_tpattern, subst_loop): the
+     subterms, in the same order, that are an application of the key to at
+     least NP arguments whose first NP are convertible to the instance's
+     (coq.unify-eq); an occurrence is not searched again, but its remaining
+     arguments are; the subterms that use a bound variable are not
+     compared (an approximation: ssreflect compares them, they are
+     convertible to a closed instance only through a reduction that drops
+     the variable);
+   - the forms (eval_pattern): t, the occurrences of the instance of t;
+     X in C, the instance of C[_/X], its occurrences, in each one the
+     places of X in C; t in X in C, the X parts as before, then the first
+     instance of t in the FIRST X part (find_E is a do_once matcher: when t
+     does not match there, ssreflect fails), then its occurrences in all
+     the X parts; t as X in C, the places of X in the occurrences of the
+     instance of C[t/X];
+   - the occurrence switch {k1 k2}, {-k} (occ_state): the ranks of the
+     places selected (the occurrences for t, the places of X for X in C and
+     t as X in C, the places of t for t in X in C), counted in that order;
+     a rank beyond the number of places is an error;
+   - no instance: an error, except for a term without holes, which then
+     selects nothing (set does not fail then: fill_occ_term).
+   Named contexts: t in RHS and t in LHS are t in X in _ = X and t in X in
+   X = _ (ssrmatching.v).  The rewrite-only patterns (in C, in X in C) are
+   not c-patterns: outside the supported fragment. */
 
-pred sel-scratch-sealed i:sealed-goal, i:string, i:string, o:sel-res.
-sel-scratch-sealed (nabla F) Tac H R :- pi x\ sel-scratch-sealed (F x) Tac H R.
-sel-scratch-sealed (seal (goal C RE Ty E _ as G)) Tac H R :-
-  coq.ltac.call-ltac1 "run_tactic_string" (goal C RE Ty E [str Tac]) GL D,
-  (D = error M, !, one-line M M1, R = sel-error M1, sel-close (seal G) ;
-   GL = [SG], !, sel-orig C Ty H O, sel-open SG H O R, sel-close SG ;
-   R = sel-error "set gave several goals", std.forall GL sel-close).
+% An elaborated pattern
+kind sm-pat type.
+type sm-t term -> sm-pat.                          % t
+type sm-x term -> (term -> term) -> sm-pat.        % X in C: the value of X
+                                                   % (a hole, or t for as),
+                                                   % C as a function of X
+type sm-ex term -> term -> (term -> term) -> sm-pat. % t in X in C
 
-% [sel-orig C Ty H O] O is the part, before set, of the goal of context C
-% and conclusion Ty: Ty (H = "") or the type of the hypothesis H
-pred sel-orig i:goal-ctx, i:term, i:string, o:term.
-sel-orig _ Ty "" Ty :- !.
-sel-orig C _ H T :- (std.mem C (decl _ N T) ; std.mem C (def _ N _ T)), coq.name->id N H, !.
+% [sm-outside S M] M is the message of a pattern outside the fragment
+pred sm-outside i:string, o:string.
+sm-outside S M :- M is "outside the supported fragment: " ^ S.
 
-% [sel-close SG] closes the scratch goal SG (exact I)
-pred sel-close i:sealed-goal.
-sel-close (nabla F) :- pi x\ sel-close (F x).
-sel-close (seal (goal C RE Ty E _)) :-
-  coq.ltac.call-ltac1 "run_tactic_string" (goal C RE Ty E [str "exact I"]) _ ok, !.
-sel-close _.
+% [sm-parse T Tm] Tm is the pattern text T elaborated
+pred sm-parse i:string, o:term.
+sm-parse T Tm :- coq.parse.argument {calc ("(" ^ T ^ ")")} ff "" (trm Tm) ok.
 
-% [sel-oracle G H Occ P R] R is what the pattern of text P (occurrence
-% switch Occ) selects in the goal G (its hypothesis H, "" for the
-% conclusion): the scratch goal is sel_box Ty for the conclusion Ty (the
-% positions in Ty are those at 2 in it), sel_box True for a hypothesis
-pred sel-oracle i:goal, i:string, i:string, i:string, o:sel-res.
-sel-oracle (goal C _ Ty _ _) H Occ P R :- sel-set-text H Occ P Tac,
-  (H = "", !, sel-scratch C Ty Tac "" R0, sel-box-map [] R0 R ;
-   sel-scratch C {{ True }} Tac H R).
+% [sm-parse-ctx X C V F] the context C of variable X, elaborated as
+% let X := V in F X, V a hole
+pred sm-parse-ctx i:string, i:string, o:term, o:(term -> term).
+sm-parse-ctx X C V F :-
+  coq.parse.argument {calc ("(let " ^ X ^ " := _ in " ^ C ^ ")")} ff "" (trm L) ok,
+  L = let _ _ V F.
 
-% [sel-open SG H O R] R are the positions of z in the goal SG (in the type
-% of its hypothesis H if H is not ""), O the part before set
-pred sel-open i:sealed-goal, i:string, i:term, o:sel-res.
-sel-open (nabla F) H O R :- pi x\ sel-open (F x) H O R.
-sel-open (seal (goal Ctx _ Ty _ _)) H O R :- sel-name ZN,
-  std.mem Ctx (def Z NZ _ ZB), coq.name->id NZ ZN, !, sel-lambdas ZB NL,
-  (H = "", !, T = Ty ;
-   std.mem Ctx (decl _ NH T), coq.name->id NH H, ! ;
-   std.mem Ctx (def _ NH _ T), coq.name->id NH H),
-  !, sel-occs Z NL [] T O [] [] Ps0, std.rev Ps0 Ps, R = sel-ok Ps.
-sel-open _ _ _ (sel-error "set did not add its definition").
+% [sm-elab F P M] P is the pattern of form F elaborated, M "" or why not
+pred sm-elab i:sel-form, o:sm-pat, o:string.
+sm-elab (sf-in T C) P M :- std.mem! ["RHS", "LHS"] C, !,
+  (C = "RHS", !, C1 = "_ = X" ; C1 = "X = _"), sm-elab (sf-in-in T "X" C1) P M.
+sm-elab (sf-term "RHS") P M :- !, sm-elab (sf-in "X" "_ = X") P M.
+sm-elab (sf-term "LHS") P M :- !, sm-elab (sf-in "X" "X = _") P M.
+sm-elab (sf-term T) _ M :- rex.match "^in[ \t].*" T, !, sm-outside "a rewrite-only pattern (in ...)" M.
+sm-elab (sf-term T) (sm-t Tm) "" :- sm-parse T Tm, !.
+sm-elab (sf-in X C) (sm-x V F) "" :- sm-parse-ctx X C V F, !.
+sm-elab (sf-in-in T X C) (sm-ex Tm V F) "" :- sm-parse-ctx X C V F, sm-parse T Tm, !.
+sm-elab (sf-as-in T X C) (sm-x Tm F) "" :- sm-parse-ctx X C _ F, sm-parse T Tm, !.
+sm-elab _ _ "the pattern does not elaborate".
 
-% [sel-occs Z NL Bs T O Rev A0 A] A is A0 with the positions of Z in T
-% (Rev: the path of T, reversed; Bs the variables bound above T), in
-% pre-order, the last first; O is the subterm of the original goal at the
-% same place: set erases a cast (t : T) around a subterm it abstracts,
-% (z in place of the cast is read as the cast: it may be its term, flagged),
-% so where O is a cast and T is not, T is read as the term of the cast (its
-% index 1).  Z x1 .. xk, the xi bound variables and Z's body a fun of NL
-% >= k arguments, is the subterm there abstracted over the variables it
-% uses (set abstracts a subterm under binders so); Z a1 .. ak otherwise is
-% a prefix of an application
-pred sel-occs i:term, i:int, i:list term, i:term, i:term, i:list int,
-              i:list sel-pos, o:list sel-pos.
-sel-occs Z NL Bs T (let N _ B F) Rev A A1 :- cast-let N F, not (T = let _ _ _ _), not (T = Z), !,
-  sel-occs Z NL Bs T B [1|Rev] A A1.
-sel-occs Z _ _ Z _ Rev A [sp-at P|A] :- !, std.rev Rev P.
-sel-occs Z NL Bs (app [Z|Args]) O Rev A [sp-at P|A] :-
-  not (O = app [_|Args]),  % else Z is the head of the original application
-  std.length Args K, K =< NL, std.forall Args (a\ std.mem! Bs a), !, std.rev Rev P.
-sel-occs Z NL Bs (app [Z|Args]) O Rev A A1 :- !, std.rev Rev P, std.length Args K,
-  % the arguments are the last K ones of the original application
-  (O = app [_|OArgs], std.length OArgs N, N >= K, !, Sh is N - K, std.drop Sh OArgs OL ;
-   Sh = 0, OL = Args),
-  I0 is Sh + 1, sel-occs-args Z NL Bs Args OL Rev I0 [sp-prefix P K|A] A1.
-sel-occs Z NL Bs T O Rev A A1 :- kids-fold T (sel-occs-kid Z NL Bs Rev O) A A1.
+% [sm-key P K NP M] the key of the term pattern P is K with NP arguments;
+% M is "" or why P is outside the fragment
+pred sm-key i:term, o:term, o:int, o:string.
+sm-key (app [H|As]) K NP M :- !, sm-head H K M, std.length As NP.
+sm-key H K 0 M :- sm-head H K M.
+pred sm-head i:term, o:term, o:string.
+sm-head (global (const C) as H) H M :- coq.env.projection? C N, N > 0, !,
+  sm-outside "a projection of a record with parameters (canonical keys)" M.
+sm-head (global _ as H) H "" :- !.
+sm-head (pglobal _ _ as H) H "" :- !.
+sm-head H H "" :- name H, not (var H), !.
+sm-head (prod _ _ _) sm-rigid "" :- !.
+sm-head (sort _) sm-rigid "" :- !.
+sm-head (match _ _ _) sm-rigid "" :- !.
+sm-head (fix _ _ _ _) sm-rigid "" :- !.
+sm-head (fun _ _ _) sm-lam "" :- !.
+sm-head H _ M :- var H, !, sm-outside "a flexible head (_ x), or X at the head" M.
+sm-head _ _ M :- sm-outside "a head that is not a constant or a variable" M.
 
-% [sel-occs-args Z NL Bs Ts Os Rev I A0 A] sel-occs in the arguments Ts
-% (the original ones Os), the first at index I
-pred sel-occs-args i:term, i:int, i:list term, i:list term, i:list term, i:list int, i:int,
-                   i:list sel-pos, o:list sel-pos.
-sel-occs-args _ _ _ [] _ _ _ A A.
-sel-occs-args Z NL Bs [T|Ts] [O|Os] Rev I A A2 :-
-  sel-occs Z NL Bs T O [I|Rev] A A1, I1 is I + 1, sel-occs-args Z NL Bs Ts Os Rev I1 A1 A2.
+% [sm-closed Bs T] T uses none of the bound variables Bs
+pred sm-closed i:list term, i:term.
+sm-closed Bs T :- not (std.exists Bs (occurs-in T)).
 
-% [sel-occs-kid Z NL Bs Rev O T I K A0 A] sel-occs in the immediate subterm
-% K (at I) of T, O being the original term in place of T
-pred sel-occs-kid i:term, i:int, i:list term, i:list int, i:term, i:term, i:int, i:kid,
+% [sm-same-head K H] the head H is the key K
+pred sm-same-head i:term, i:term.
+sm-same-head K H :- same_term K H, !.
+sm-same-head (pglobal G _) (pglobal G _) :- !.
+sm-same-head sm-rigid T :- sm-is-rigid T.
+sm-same-head sm-lam (fun _ _ _).
+
+% the keys of the patterns whose head is a product, a sort, a match, a
+% fixpoint (KpatRigid: they match any of these) or a fun (KpatLam)
+type sm-rigid term.
+type sm-lam term.
+pred sm-is-rigid i:term.
+sm-is-rigid (prod _ _ _).
+sm-is-rigid (sort _).
+sm-is-rigid (match _ _ _).
+sm-is-rigid (fix _ _ _ _).
+
+% [sm-cand K NP T Bs C Rest Pos] the subterm T is a candidate for the key
+% K with NP arguments: C is the compared term, Rest its arguments after
+% the NP first, Pos says where C is (sm-whole, sm-head-of, sm-prefix N)
+kind sm-where type.
+type sm-whole sm-where.
+type sm-head-of sm-where.
+type sm-prefix int -> sm-where.
+pred sm-cand i:term, i:int, i:term, i:list term, o:term, o:list term, o:sm-where.
+sm-cand K NP (app [H|As] as T) Bs C Rest W :- sm-same-head K H, std.length As N, N >= NP,
+  sm-closed Bs T, !, std.split-at NP As As1 Rest,
+  (NP = 0, !, C = H, W = sm-head-of ; As1 = As, !, C = T, W = sm-whole ;
+   C = app [H|As1], L is N - NP, W = sm-prefix L).
+sm-cand K 0 T Bs T [] sm-whole :- sm-same-head K T, sm-closed Bs T.
+
+% [sm-where-pos Rev W Q] Q is the position of a candidate at the reversed
+% path Rev
+pred sm-where-pos i:list int, i:sm-where, o:sel-pos.
+sm-where-pos Rev sm-whole (sp-at P) :- std.rev Rev P.
+sm-where-pos Rev sm-head-of (sp-at P) :- std.rev [0|Rev] P.
+sm-where-pos Rev (sm-prefix N) (sp-prefix P N) :- std.rev Rev P.
+
+% [sm-erase T T1] T1 is T without its casts
+pred sm-erase i:term, o:term.
+sm-erase T T1 :- (pi N Ty B F B1\ copy (let N Ty B F) B1 :- cast-let N F, !, copy B B1) => copy T T1.
+
+% [sm-try Ph P C] the pattern P matches C in phase Ph (1: without
+% reduction: Rocq unification, then the instance must be C itself, casts
+% erased; Elpi unification of the holes is not used: their contexts are
+% not always in the pattern fragment; 2: up to conversion)
+% all its holes assigned
+pred sm-try i:int, i:term, i:term.
+sm-try 1 P C :- coq.unify-eq P C ok, ground_term P,
+  sm-erase P P1, sm-erase C C1, same_term P1 C1.
+sm-try 2 P C :- coq.unify-eq P C ok, ground_term P.
+
+% [sm-find Ph P K NP T Rev Bs Pos] Pos is the position of the first
+% subterm of T (at the reversed path Rev, Bs the variables bound above it)
+% that P (key K, NP arguments) matches in phase Ph, P being instantiated
+pred sm-find i:int, i:term, i:term, i:int, i:term, i:list int, i:list term, o:sel-pos.
+sm-find Ph P K NP T Rev Bs Pos :- sm-cand K NP T Bs C _ W, sm-try Ph P C, !, sm-where-pos Rev W Pos.
+sm-find Ph P K NP T Rev Bs Pos :- sm-find-kids Ph P K NP T Rev Bs Pos.
+
+pred sm-find-kids i:int, i:term, i:term, i:int, i:term, i:list int, i:list term, o:sel-pos.
+sm-find-kids Ph P K NP (app [H|As]) Rev Bs Pos :- !,
+  (sm-find Ph P K NP H [0|Rev] Bs Pos ; sm-find-args Ph P K NP As 1 Rev Bs Pos).
+sm-find-kids Ph P K NP (prod _ Ty F) Rev Bs Pos :- !,
+  (sm-find Ph P K NP Ty [1|Rev] Bs Pos ; pi x\ sm-find Ph P K NP (F x) [2|Rev] [x|Bs] Pos).
+sm-find-kids Ph P K NP (fun _ Ty F) Rev Bs Pos :- !,
+  (sm-find Ph P K NP Ty [1|Rev] Bs Pos ; pi x\ sm-find Ph P K NP (F x) [2|Rev] [x|Bs] Pos).
+sm-find-kids Ph P K NP (let N _ B F) Rev Bs Pos :- cast-let N F, !,
+  sm-find Ph P K NP B [1|Rev] Bs Pos.
+sm-find-kids Ph P K NP (let _ Ty B F) Rev Bs Pos :- !,
+  (sm-find Ph P K NP B [2|Rev] Bs Pos ; sm-find Ph P K NP Ty [1|Rev] Bs Pos ;
+   pi x\ sm-find Ph P K NP (F x) [3|Rev] [x|Bs] Pos).
+sm-find-kids Ph P K NP (match S R Br) Rev Bs Pos :- !,
+  (sm-find Ph P K NP S [0|Rev] Bs Pos ; sm-find Ph P K NP R [1|Rev] Bs Pos ;
+   sm-find-args Ph P K NP Br 2 Rev Bs Pos).
+pred sm-find-args i:int, i:term, i:term, i:int, i:list term, i:int, i:list int, i:list term, o:sel-pos.
+sm-find-args Ph P K NP [T|Ts] I Rev Bs Pos :-
+  (sm-find Ph P K NP T [I|Rev] Bs Pos ; I1 is I + 1, sm-find-args Ph P K NP Ts I1 Rev Bs Pos).
+
+% [sm-first P T Pos] Pos is the first instance of the term pattern P in T
+% (phase 1 over T, then phase 2), P being instantiated; M "" or why not
+pred sm-first i:term, i:term, o:sel-pos, o:string.
+sm-first P _ _ M :- sm-key P _ _ M, not (M = ""), !.
+sm-first P T Pos "" :- sm-key P K NP "", sm-find 1 P K NP T [] [] Pos, !.
+sm-first P T Pos "" :- sm-key P K NP "", sm-find 2 P K NP T [] [] Pos, !.
+sm-first _ _ _ "no instance".
+
+% [sm-occs I K NP T Rev Bs A0 A] A is A0 with the occurrences in T of the
+% instance I (key K, NP arguments), in order, the last first
+pred sm-occs i:term, i:term, i:int, i:term, i:list int, i:list term, i:list sel-pos, o:list sel-pos.
+sm-occs I K NP T Rev Bs A A1 :- sm-cand K NP T Bs C Rest W, sm-conv I C, !,
+  sm-where-pos Rev W Pos, I0 is NP + 1, sm-occs-args I K NP Rest I0 Rev Bs [Pos|A] A1.
+sm-occs I K NP (app [H|As]) Rev Bs A A2 :- !,
+  sm-occs I K NP H [0|Rev] Bs A A1, sm-occs-args I K NP As 1 Rev Bs A1 A2.
+sm-occs I K NP (prod _ Ty F) Rev Bs A A2 :- !,
+  sm-occs I K NP Ty [1|Rev] Bs A A1, pi x\ sm-occs I K NP (F x) [2|Rev] [x|Bs] A1 A2.
+sm-occs I K NP (fun _ Ty F) Rev Bs A A2 :- !,
+  sm-occs I K NP Ty [1|Rev] Bs A A1, pi x\ sm-occs I K NP (F x) [2|Rev] [x|Bs] A1 A2.
+sm-occs I K NP (let N _ B F) Rev Bs A A1 :- cast-let N F, !,
+  sm-occs I K NP B [1|Rev] Bs A A1.
+sm-occs I K NP (let _ Ty B F) Rev Bs A A3 :- !,
+  sm-occs I K NP B [2|Rev] Bs A A1, sm-occs I K NP Ty [1|Rev] Bs A1 A2,
+  pi x\ sm-occs I K NP (F x) [3|Rev] [x|Bs] A2 A3.
+sm-occs I K NP (match S R Br) Rev Bs A A3 :- !,
+  sm-occs I K NP S [0|Rev] Bs A A1, sm-occs I K NP R [1|Rev] Bs A1 A2,
+  sm-occs-args I K NP Br 2 Rev Bs A2 A3.
+sm-occs _ _ _ _ _ _ A A.
+pred sm-occs-args i:term, i:term, i:int, i:list term, i:int, i:list int, i:list term,
                   i:list sel-pos, o:list sel-pos.
-sel-occs-kid Z NL Bs Rev O _ I K A A1 :-
-  (kid-at O I (ko\ sel-occs-pair Z NL Bs [I|Rev] K ko A A1), ! ;
-   sel-occs-pair Z NL Bs [I|Rev] K K A A1).
+sm-occs-args _ _ _ [] _ _ _ A A.
+sm-occs-args I K NP [T|Ts] J Rev Bs A A2 :-
+  sm-occs I K NP T [J|Rev] Bs A A1, J1 is J + 1, sm-occs-args I K NP Ts J1 Rev Bs A1 A2.
 
-% [sel-occs-pair Z NL Bs Rev K KO A0 A] sel-occs in the subterm K, KO the
-% original one
-pred sel-occs-pair i:term, i:int, i:list term, i:list int, i:kid, i:kid,
-                   i:list sel-pos, o:list sel-pos.
-sel-occs-pair Z NL Bs Rev (kt T) (kt O) A A1 :- !, sel-occs Z NL Bs T O Rev A A1.
-sel-occs-pair Z NL Bs Rev (kb _ _ F) (kb _ _ FO) A A1 :- !,
-  pi x\ sel-occs Z NL [x|Bs] (F x) (FO x) Rev A A1.
-sel-occs-pair Z NL Bs Rev (kt T) _ A A1 :- !, sel-occs Z NL Bs T T Rev A A1.
-sel-occs-pair Z NL Bs Rev (kb _ _ F) _ A A1 :- !,
-  pi x\ sel-occs Z NL [x|Bs] (F x) (F x) Rev A A1.
-sel-occs-pair _ _ _ _ (kn _) _ A A.
+% [sm-conv I C] the instance I and the candidate C are convertible
+pred sm-conv i:term, i:term.
+sm-conv I C :- same_term I C, !.
+sm-conv I C :- coq.unify-eq I C ok.
 
-% [sel-lambdas T N] T is a fun of N arguments (N >= 0)
-pred sel-lambdas i:term, o:int.
-sel-lambdas (fun _ _ F) N :- !, pi x\ sel-lambdas (F x) N1, N is N1 + 1.
-sel-lambdas _ 0.
+% [sm-occurrences P T Qs M] Qs are the occurrences in T of the first
+% instance of the term pattern P (M "" or the error)
+pred sm-occurrences i:term, i:term, o:list sel-pos, o:string.
+sm-occurrences P T Qs M :- sm-first P T _ M0,
+  (M0 = "", !, sm-key P K NP _, sm-occs P K NP T [] [] [] Qs0, std.rev Qs0 Qs, M = "" ;
+   M = M0, Qs = []).
+
+% [sm-x-places F Rs] Rs are the paths of X in F X
+pred sm-x-places i:(term -> term), o:list (list int).
+sm-x-places F Rs :- pi x\ sm-var-paths x (F x) [] [] Rs0, std.rev Rs0 Rs.
+pred sm-var-paths i:term, i:term, i:list int, i:list (list int), o:list (list int).
+sm-var-paths X X Rev A [P|A] :- !, std.rev Rev P.
+sm-var-paths X T Rev A A1 :- kids-fold T (sm-var-kid X Rev) A A1.
+pred sm-var-kid i:term, i:list int, i:term, i:int, i:kid, i:list (list int), o:list (list int).
+sm-var-kid X Rev _ I (kt T) A A1 :- sm-var-paths X T [I|Rev] A A1.
+sm-var-kid X Rev _ I (kb _ _ F) A A1 :- pi y\ sm-var-paths X (F y) [I|Rev] A A1.
+sm-var-kid _ _ _ _ (kn _) A A.
+
+% [sm-x-positions Rs Qs Xs] Xs are the places Rs of X in the occurrences Qs
+% of an instance of C (Rs: computed on C before the matching, which can
+% assign to a hole of C a term that mentions X)
+pred sm-x-positions i:list (list int), i:list sel-pos, o:list (list int).
+sm-x-positions Rs Qs Xs :-
+  std.map Qs (q\ xs\ sigma Q\ sel-pos-path q Q, std.map Rs (r\ p\ std.append Q r p) xs) Xss,
+  std.flatten Xss Xs.
+
+% [sm-pick Occ Qs R] R is the result of the occurrence switch Occ on the
+% places Qs
+pred sm-pick i:string, i:list sel-pos, o:sel-res.
+sm-pick "" Qs (sel-ok Qs) :- !.
+sm-pick Occ Qs R :- sel-pick-of-text Occ K, std.length Qs N,
+  (K = pick-in Is ; K = pick-out Is), !,
+  (std.exists Is (i\ i > N), !, sm-max Is 0 Mx,
+   R = sel-error {calc ("only " ^ int_to_string N ^ " < " ^ int_to_string Mx ^ " occurrence(s)")} ;
+   sel-pick-ranks Qs K 1 Qs1, R = sel-ok Qs1).
+
+% [sm-select T Occ Txt R] R is what the pattern Txt (occurrence switch
+% Occ) selects in T
+pred sm-select i:term, i:string, i:string, o:sel-res.
+sm-select T Occ Txt R :- sel-parse Txt (sel-pat _ _ F), sm-elab F P M,
+  (M = "", !, sm-run P T Occ R ; R = sel-error M).
+
+pred sm-run i:sm-pat, i:term, i:string, o:sel-res.
+sm-run (sm-t P) T Occ R :- sm-occurrences P T Qs M,
+  (M = "", !, sm-pick Occ Qs R ;
+   M = "no instance", ground_term P, !, sm-pick Occ [] R ;
+   R = sel-error M).
+sm-run (sm-x V F) T Occ R :- sm-x-places F Rs, sm-occurrences (F V) T Qs M,
+  (M = "", !, sm-x-positions Rs Qs Xs, std.map Xs (x\ q\ q = sp-at x) Ps,
+   (Xs = [], !, R = sel-error "X does not occur in the context" ; sm-pick Occ Ps R) ;
+   M = "no instance", !, R = sel-error "the context has no instance" ;
+   R = sel-error M).
+sm-run (sm-ex E V F) T Occ R :- sm-x-places F Rs, sm-occurrences (F V) T Qs M,
+  (M = "", !, sm-x-positions Rs Qs Xs,
+   (Xs = [X1|_], !, term-at X1 T S1,
+    (sm-first E S1 _ ME, ME = "", !,
+     sm-key E K NP _,
+     sm-ex-occs E K NP T Xs [] Qs0,
+     std.rev Qs0 Qs1, sm-pick Occ Qs1 R ;
+     R = sel-error "the redex has no instance in the first X part") ;
+    R = sel-error "X does not occur in the context") ;
+   M = "no instance", !, R = sel-error "the context has no instance" ;
+   R = sel-error M).
+
+% [sm-ex-occs E K NP T Xs A0 A] the occurrences of the instance E in the
+% X parts at the paths Xs of T
+pred sm-ex-occs i:term, i:term, i:int, i:term, i:list (list int), i:list sel-pos, o:list sel-pos.
+sm-ex-occs _ _ _ _ [] A A.
+sm-ex-occs E K NP T [X|Xs] A A2 :-
+  (term-at X T S, !, std.rev X RX, sm-occs E K NP S RX [] A A1 ; A1 = A),
+  sm-ex-occs E K NP T Xs A1 A2.
+
+% [sm-select-at T P Occ Txt R] sm-select in the subterm at path P of T,
+% the positions written as paths of T
+pred sm-select-at i:term, i:list int, i:string, i:string, o:sel-res.
+sm-select-at T [] Occ Txt R :- !, sm-select T Occ Txt R.
+sm-select-at T P Occ Txt R :- term-at P T S, !, sm-select S Occ Txt R0,
+  (R0 = sel-ok Qs, !, std.map Qs (sm-shift P) Qs1, R = sel-ok Qs1 ; R = R0).
+sm-select-at _ _ _ _ (sel-error "the place uses a variable bound in the goal").
+pred sm-shift i:list int, i:sel-pos, o:sel-pos.
+sm-shift P (sp-at Q) (sp-at PQ) :- std.append P Q PQ.
+sm-shift P (sp-prefix Q K) (sp-prefix PQ K) :- std.append P Q PQ.
+
+pred sm-max i:list int, i:int, o:int.
+sm-max [] M M.
+sm-max [I|Is] M0 M :- (I > M0, !, M1 = I ; M1 = M0), sm-max Is M1 M.
+
+% [sel-sem G H Occ P R] R is what the pattern of text P (occurrence switch
+% Occ) selects in the part H of the goal G ("" for the conclusion)
+pred sel-sem i:goal, i:string, i:string, i:string, o:sel-res.
+sel-sem G H Occ P R :- sel-part G H T, sm-select T Occ P R.
+
 
 /* ---------------- Positions: texts, printing, order ---------------- */
 
@@ -475,23 +661,11 @@ sel-closed-kid Bs Rev _ I (kt T) A A1 :- sel-closed Bs T [I|Rev] A A1.
 sel-closed-kid Bs Rev _ I (kb _ _ F) A A1 :- pi x\ sel-closed [x|Bs] (F x) [I|Rev] A A1.
 sel-closed-kid _ _ _ _ (kn _) A A.
 
-% [sel-box-oracle G T P Txt R] R is what the pattern of text Txt selects
-% in the scratch goal sel_box s, s being the subterm at path P of T (a
-% part of the goal G), the positions written as paths of T (those outside
-% s are dropped)
-pred sel-box-oracle i:goal, i:term, i:list int, i:string, o:sel-res.
-sel-box-oracle (goal C _ _ _ _) T P Txt R :- term-at P T S,
-  sel-set-text "" "" Txt Tac, sel-scratch C S Tac "" R0, sel-box-map P R0 R1,
-  sel-norm-res T R1 R.
-
-% [sel-box-map P R R1] R1 is R, positions in sel_box s, as paths of the
-% part, s being at path P
-pred sel-box-map i:list int, i:sel-res, o:sel-res.
-sel-box-map P (sel-ok Qs) (sel-ok Qs1) :- !, std.map-filter Qs (sel-box-pos P) Qs1.
-sel-box-map _ R R.
-pred sel-box-pos i:list int, i:sel-pos, o:sel-pos.
-sel-box-pos P (sp-at [2|Q]) (sp-at PQ) :- std.append P Q PQ.
-sel-box-pos P (sp-prefix [2|Q] K) (sp-prefix PQ K) :- std.append P Q PQ.
+% [sel-at G T P Txt R] R is what the pattern of text Txt selects
+% in the subterm s at path P of T (a part of the goal G), alone, the
+% positions written as paths of T
+pred sel-at i:goal, i:term, i:list int, i:string, o:sel-res.
+sel-at _ T P Txt R :- sm-select-at T P "" Txt R.
 
 % [sel-later-instances G T F First Ls] Ls are the later instances, in T
 % (a part of G), of the outer term of the pattern of form F whose first
@@ -509,9 +683,9 @@ sel-later-instances G T F First Ls :-
 pred sel-later-scan i:goal, i:term, i:string, i:string, i:list (list int), o:list sel-later.
 sel-later-scan _ _ _ _ [] [].
 sel-later-scan G T Outer Full [P|Ps] Ls :-
-  sel-box-oracle G T P Outer RO,
+  sel-at G T P Outer RO,
   (RO = sel-ok Qs, std.mem Qs (sp-at P), !,
-   sel-box-oracle G T P Full RF, Ls = [sel-later P RF|Ls1] ;
+   sel-at G T P Full RF, Ls = [sel-later P RF|Ls1] ;
    Ls = Ls1),
   sel-later-scan G T Outer Full Ps Ls1.
 
@@ -522,11 +696,10 @@ sel-later-scan G T Outer Full [P|Ps] Ls :-
    and operators (then, pick, union, name).  The ssreflect patterns are
    some of the combinations: [t] is a match, [X in C] a hole, [t in X in
    C] a hole then a match, [t as X in C] a hole whose X part must match t
-   (law 4), {k}[..] a pick.  These are denoted by the oracle (ssreflect's
-   set); the other combinations by composition over the oracle's leaves
-   (then reads its right selector inside each place of its left one, on
-   the scratch goal sel_box s of that place). */
-
+   (law 4), {k}[..] a pick.  These are denoted by the semantics (the
+   matcher); the other combinations by composition over its leaves
+   (then reads its right selector inside each place of its left one, the
+   subterm of that place alone). */
 kind selector type.
 type s-root selector.                                 % ε
 type s-step int -> selector.                          % i
@@ -607,13 +780,12 @@ sel-show (s-name N) N.
 % [sel-denote G H T P S R] R is what the selector S denotes in the
 % subterm at path P of T, the part H of the goal G (H = "" for the
 % conclusion); the positions are paths of T.  An ssreflect pattern at the
-% root of the part is the oracle on the goal itself; elsewhere, the oracle
-% on the scratch goal sel_box s of the subterm s at P.
+% root of the part is matched in the part; elsewhere, in the subterm at P
 pred sel-denote i:goal, i:string, i:term, i:list int, i:selector, o:sel-res.
-sel-denote G H T [] S R :- sel-to-ssr S Occ Txt, !, sel-oracle G H Occ Txt R0, sel-norm-res T R0 R.
+sel-denote G H T [] S R :- sel-to-ssr S Occ Txt, !, sel-sem G H Occ Txt R0, sel-norm-res T R0 R.
 sel-denote G _ T P S R :- sel-to-ssr S Occ Txt, !,
-  (term-at P T _, !, sel-box-oracle-occ G T P Occ Txt R0, sel-norm-res T R0 R ;
-   R = sel-error "the place uses a variable bound in the goal: the oracle cannot be run there").
+  (term-at P T _, !, sel-at-occ G T P Occ Txt R0, sel-norm-res T R0 R ;
+   R = sel-error "the place uses a variable bound in the goal").
 sel-denote _ _ _ P s-root (sel-ok [sp-at P]).
 sel-denote _ _ T P (s-step I) R :- std.append P [I] PI,
   (path-of T PI, !, R = sel-ok [sp-at PI] ; R = sel-ok []).
@@ -675,11 +847,10 @@ sel-merge [X|A] [Y|B] [X|C] :- sel-pos-path X PX, sel-pos-path Y PY,
   (sel-before PX PY ; PX = PY), !, sel-merge A [Y|B] C.
 sel-merge A [Y|B] [Y|C] :- sel-merge A B C.
 
-% [sel-box-oracle-occ G T P Occ Txt R] sel-box-oracle with an occurrence
+% [sel-at-occ G T P Occ Txt R] sel-at with an occurrence
 % switch
-pred sel-box-oracle-occ i:goal, i:term, i:list int, i:string, i:string, o:sel-res.
-sel-box-oracle-occ (goal C _ _ _ _) T P Occ Txt R :- term-at P T S,
-  sel-set-text "" Occ Txt Tac, sel-scratch C S Tac "" R0, sel-box-map P R0 R.
+pred sel-at-occ i:goal, i:term, i:list int, i:string, i:string, o:sel-res.
+sel-at-occ _ T P Occ Txt R :- sm-select-at T P Occ Txt R.
 
 /* ---------------- The report ---------------- */
 
@@ -770,7 +941,7 @@ sel-args _ _ _ _ _ :- coq.ltac.fail 0 {msg "the arguments are strings"}.
 /* ---------------- select_all: the ways to designate a position ---------------- */
 
 /* Given the path p of a subterm of a part T, the candidates are built,
-   one or more per kind, each one CHECKED by the oracle (sel-select): it is
+   one or more per kind, each one CHECKED by the semantics (sel-select): it is
    kept when it denotes exactly {p}, or, marked "selects also", when it
    denotes p and other positions (a kind that can only give the whole set
    of occurrences of an instance).  Then they are sorted by sg-cost.
@@ -1223,7 +1394,7 @@ solve (goal _ _ _ _ Args as G) [seal G] :-
 
 (* [elpi select_all "P"] and [elpi select_all "H" "P"]: the ways to
    designate the subterm at path P (of the conclusion, or of the type of
-   H), each one checked by the oracle, best first, with its cost (sg-cost)
+   H), each one checked by the semantics, best first, with its cost (sg-cost)
    and how its generalization was found; "selects also" marks a candidate
    that denotes P and other positions.  [elpi select_all_expect ["H"] "P"
    "<best>"] fails unless the best one is <best>; [elpi select_all_vs ["H"]

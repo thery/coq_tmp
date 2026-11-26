@@ -367,44 +367,44 @@ elpi select_all_roundtrip "10 10 0 0 0".
 Abort.
 
 Goal ("a b" = "a b")%string.
-elpi select_roundtrip "77 74 0 1 2 0".
+elpi select_roundtrip "77 74 0 0 3 0".
 elpi select_all_roundtrip "77 3 62 12 0".
 Abort.
 
 Goal forall (p : nat * nat), (let '(a, b) := p in a + b) = 0 -> True.
 intros p H.
-elpi select_roundtrip "21 15 0 1 5 0".
-elpi select_all_roundtrip "21 6 1 2 12".
+elpi select_roundtrip "21 13 0 4 4 0".
+elpi select_all_roundtrip "21 8 3 4 6".
 Abort.
 
 Goal forall (n : nat) (b : bool), match n with 0 => true | S k => Nat.eqb k n end = (if b then false else true).
 intros n b.
-elpi select_roundtrip "22 18 0 0 4 0".
-elpi select_all_roundtrip "22 5 2 7 8".
+elpi select_roundtrip "22 17 0 2 3 0".
+elpi select_all_roundtrip "22 5 2 10 5".
 Abort.
 
 Goal forall (b : bool), match b as x return (if x then nat else bool) with true => 0 | false => true end = match b as x return (if x then nat else bool) with true => 0 | false => true end.
 intros b.
 elpi select_roundtrip "35 26 0 0 9 0".
-elpi select_all_roundtrip "35 3 2 16 14".
+elpi select_all_roundtrip "35 3 2 21 9".
 Abort.
 
 Goal forall x : nat, (forall x : nat, x = x) -> forall y, (fun x => x + y) x = x.
 intros x H.
-elpi select_roundtrip "21 8 0 0 13 0".
+elpi select_roundtrip "21 2 0 6 13 0".
 elpi select_all_roundtrip "21 5 0 7 9".
 Abort.
 
 Goal forall (a b : nat) (c d : bool), (fun x y : nat => x + y) a b = a + b /\ exists (u v : nat) (w : bool), u = v /\ w = c.
-elpi select_roundtrip "55 31 0 9 15 0".
+elpi select_roundtrip "55 5 0 35 15 0".
 elpi select_all_roundtrip "55 1 0 25 29".
 Abort.
 
 Goal forall n : nat, (n : nat) = n.
 intros n.
 change ((n : nat) = n).
-elpi select_roundtrip "8 4 0 1 3 0".
-elpi select_all_roundtrip "8 3 2 0 3".
+elpi select_roundtrip "8 5 0 0 3 0".
+elpi select_all_roundtrip "8 3 2 1 2".
 Abort.
 
 Module C.
@@ -413,7 +413,7 @@ Coercion Z.of_nat : nat >-> Z.
 Record box := Box { unbox :> nat }.
 Goal forall (n : nat) (b : box), (n + 1 = b)%Z /\ b + 0 = n.
 intros n b.
-elpi select_roundtrip "28 25 0 0 3 0".
+elpi select_roundtrip "28 22 0 2 4 0".
 elpi select_all_roundtrip "28 13 7 8 0".
 Abort.
 End C.
@@ -421,7 +421,7 @@ End C.
 Set Printing All.
 Goal forall a b : nat, a + b = b + a /\ (a <= b \/ True).
 intros a b.
-elpi select_roundtrip "20 18 0 0 2 0".
+elpi select_roundtrip "20 15 0 0 5 0".
 elpi select_all_roundtrip "20 11 7 2 0".
 Abort.
 Unset Printing All.
@@ -437,50 +437,50 @@ Notation "'IF' c 'THEN' a 'ELSE' b" := (if c then a else b) (at level 200).
 Goal forall (b : bool) (n : nat), (IF b THEN n ELSE 0) = n.
 intros b n.
 elpi select_roundtrip "11 8 0 0 3 0".
-elpi select_all_roundtrip "11 4 2 3 2".
+elpi select_all_roundtrip "11 5 2 3 1".
 Abort.
 End IfMatch.
 
 Goal forall (b : bool) (n : nat), (if b then n else 0) = n.
 intros b n.
 elpi select_roundtrip "11 8 0 0 3 0".
-elpi select_all_roundtrip "11 4 2 3 2".
+elpi select_all_roundtrip "11 5 2 3 1".
 Abort.
 
 Goal forall n : nat, match n with 0 => true | S _ => false end = true.
 intros n.
 elpi select_roundtrip "13 10 0 0 3 0".
-elpi select_all_roundtrip "13 4 2 3 4".
+elpi select_all_roundtrip "13 4 2 5 2".
 Abort.
 
 Goal forall n : nat, n + 0 = n.
-elpi select_roundtrip "10 7 0 0 3 0".
+elpi select_roundtrip "10 2 0 5 3 0".
 elpi select_all_roundtrip "10 4 0 2 4".
 Abort.
 
 Goal forall n : nat, (let m := n + 1 in m * m) = n /\ (fun k : nat => k) n = n.
 intros n.
-elpi select_roundtrip "27 19 0 1 7 0".
+elpi select_roundtrip "27 18 0 2 7 0".
 elpi select_all_roundtrip "27 9 7 6 5".
 Abort.
 
 Goal forall (n : nat), match n with 0 => true | S k => Nat.eqb k n end = true -> (forall z : nat, z = z) -> True.
 intros n H H'.
-elpi select_roundtrip "24 16 0 0 8 0".
-elpi select_all_roundtrip "24 6 2 7 9".
+elpi select_roundtrip "24 11 0 6 7 0".
+elpi select_all_roundtrip "24 6 2 9 7".
 Abort.
 
 Lemma two_is : 2 = 1 + 1. Proof. reflexivity. Qed.
 Goal forall a : nat, double (1 + a) = 2 + a + a -> forall n : nat, n + double a = a.
 intros a H.
-elpi select_roundtrip "34 28 0 0 6 0".
+elpi select_roundtrip "34 24 0 4 6 0".
 elpi select_all_roundtrip "34 13 9 9 3".
 Abort.
 
 Goal forall a : nat, (if true then a else 0) = double 2.
 intros a.
 elpi select_roundtrip "17 13 0 0 4 0".
-elpi select_all_roundtrip "17 8 2 5 2".
+elpi select_all_roundtrip "17 9 2 5 1".
 Abort.
 
 Goal two_is = two_is.
@@ -490,11 +490,11 @@ Abort.
 
 Goal forall a b : nat, a + b * 2 = b /\ forall n : nat, n * n = 0.
 intros a b.
-elpi select_roundtrip "27 24 0 0 3 0".
+elpi select_roundtrip "27 18 0 5 4 0".
 elpi select_all_roundtrip "27 9 4 10 4".
 Abort.
 
 Goal (exists m : nat, m = 0) /\ True.
-elpi select_roundtrip "13 8 0 2 3 0".
-elpi select_all_roundtrip "13 6 2 3 2".
+elpi select_roundtrip "13 5 0 4 4 0".
+elpi select_all_roundtrip "13 6 1 3 3".
 Abort.
