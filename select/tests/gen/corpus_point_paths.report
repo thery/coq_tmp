@@ -1,0 +1,4 @@
+corpus_point_paths pp: 1724 cases, 1721 agree, 3 disagree, 0 outside, 0 missing
+  DIFF pp.4 #14 in H (nat)  elpi: [1 2.1.2]  ssreflect: [1 2.1.1.1 2.1.1.2 2.1.2 2.2.1 2.2.2.1]
+  DIFF pp.4 #15 in H {2}(nat)  elpi: [2.1.2]  ssreflect: [2.1.1.1 2.2.1]
+  DIFF pp.4 #16 in H {2}(nat)  elpi: [2.1.2]  ssreflect: [2.1.1.1 2.2.1]

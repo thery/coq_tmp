@@ -441,94 +441,96 @@ paper.ex6g	16		{2}(R)	3.1
 paper.ex6g	17		{2}(R)	3.1
 paper.ex6g	18		{3}(R)	3.2
 paper.ex6g	19		{3}(R)	3.2
-paper.ex6g	20		(X in snd X)	3.3
-paper.ex6g	21		((_, _) as X in snd X)	3.3
-paper.ex6g	22		((_, _) in X in _ = X)	3.3
-paper.ex6g	23		(X in _ = snd X)	3.3
-paper.ex6g	24		((_, _) as X in _ = snd X)	3.3
-paper.ex6g	25		(@pair)	3.3.0
-paper.ex6g	26		{1}(@pair)	3.3.0
-paper.ex6g	27		{4}(R)	3.3.1
-paper.ex6g	28		{4}(R)	3.3.1
-paper.ex6g	29		(R)	1 3.1 3.2 3.3.1 3.3.2
-paper.ex6g	30		{5}(R)	3.3.2
-paper.ex6g	31		{5}(R)	3.3.2
-paper.ex6g	32		(_ * _)	3.3.3
-paper.ex6g	33		(X in (X, _))	3.3.3
-paper.ex6g	34		(_ * _ in X in _ = X)	3.3.3
-paper.ex6g	35		(_ * _ in X in snd X)	3.3.3
-paper.ex6g	36		(_ * _ as X in (X, _))	3.3.3
-paper.ex6g	37		(X in snd (X, _))	3.3.3
-paper.ex6g	38		(_ * _ in X in _ = snd X)	3.3.3
-paper.ex6g	39		(_ * _ as X in snd (X, _))	3.3.3
-paper.ex6g	40		(X in _ = snd (X, _))	3.3.3
-paper.ex6g	41		(_ * _ as X in _ = snd (X, _))	3.3.3
-paper.ex6g	42		{1}(0 * c)	3.3.3
-paper.ex6g	43		{1}(mul)	3.3.3.0
-paper.ex6g	44		{1}(mul)	3.3.3.0
-paper.ex6g	45		(X in X * _)	3.3.3.1
-paper.ex6g	46		(X in (X * _, _))	3.3.3.1
-paper.ex6g	47		(X in snd (X * _, _))	3.3.3.1
-paper.ex6g	48		(X in _ = snd (X * _, _))	3.3.3.1
-paper.ex6g	49		{2}(0)	3.3.3.1
-paper.ex6g	50		{2}(0)	3.3.3.1
-paper.ex6g	51		(c)	3.3.3.2
-paper.ex6g	52		(X in _ * X)	3.3.3.2
-paper.ex6g	53		(X in (_ * X, _))	3.3.3.2
-paper.ex6g	54		(X in snd (_ * X, _))	3.3.3.2
-paper.ex6g	55		(X in _ = snd (_ * X, _))	3.3.3.2
-paper.ex6g	56		{1}(c)	3.3.3.2
-paper.ex6g	57		(X in (_, X))	3.3.4
-paper.ex6g	58		(_ * _ as X in (_, X))	3.3.4
-paper.ex6g	59		(X in snd (_, X))	3.3.4
-paper.ex6g	60		(_ * _ as X in snd (_, X))	3.3.4
-paper.ex6g	61		(X in _ = snd (_, X))	3.3.4
-paper.ex6g	62		(_ * (a + b))	3.3.4
-paper.ex6g	63		(_ * _ as X in _ = snd (_, X))	3.3.4
-paper.ex6g	64		(_ * (a + b) in X in _ = X)	3.3.4
-paper.ex6g	65		(_ * (a + b) in X in snd X)	3.3.4
-paper.ex6g	66		(_ * (a + b) in X in _ = snd X)	3.3.4
-paper.ex6g	67		{1}(0 * (a + b))	3.3.4
-paper.ex6g	68		(mul)	3.3.3.0 3.3.4.0
-paper.ex6g	69		{2}(mul)	3.3.4.0
-paper.ex6g	70		{2}(mul)	3.3.4.0
-paper.ex6g	71		(X in (_, X * _))	3.3.4.1
-paper.ex6g	72		(X in snd (_, X * _))	3.3.4.1
-paper.ex6g	73		(X in X * (a + b))	3.3.4.1
-paper.ex6g	74		(X in _ = snd (_, X * _))	3.3.4.1
-paper.ex6g	75		(0)	2 3.3.3.1 3.3.4.1
-paper.ex6g	76		{3}(0)	3.3.4.1
-paper.ex6g	77		{3}(0)	3.3.4.1
-paper.ex6g	78		(_ + _)	3.3.4.2
-paper.ex6g	79		(_ + _ as X in _ * X)	3.3.4.2
-paper.ex6g	80		(_ + _ in X in _ = X)	3.3.4.2
-paper.ex6g	81		(_ + _ in X in snd X)	3.3.4.2
-paper.ex6g	82		(_ + _ in X in (_, X))	3.3.4.2
-paper.ex6g	83		(X in (_, _ * X))	3.3.4.2
-paper.ex6g	84		(_ + _ in X in _ = snd X)	3.3.4.2
-paper.ex6g	85		(_ + _ as X in (_, _ * X))	3.3.4.2
-paper.ex6g	86		(_ + _ in X in snd (_, X))	3.3.4.2
-paper.ex6g	87		(X in snd (_, _ * X))	3.3.4.2
-paper.ex6g	88		(_ + _ as X in snd (_, _ * X))	3.3.4.2
-paper.ex6g	89		(X in _ = snd (_, _ * X))	3.3.4.2
-paper.ex6g	90		(_ + _ as X in _ = snd (_, _ * X))	3.3.4.2
-paper.ex6g	91		{1}(a + b)	3.3.4.2
-paper.ex6g	92		(add)	3.3.4.2.0
-paper.ex6g	93		{1}(add)	3.3.4.2.0
-paper.ex6g	94		(a)	3.3.4.2.1
-paper.ex6g	95		(X in X + _)	3.3.4.2.1
-paper.ex6g	96		(X in _ * (X + _))	3.3.4.2.1
-paper.ex6g	97		(X in (_, _ * (X + _)))	3.3.4.2.1
-paper.ex6g	98		(X in snd (_, _ * (X + _)))	3.3.4.2.1
-paper.ex6g	99		(X in _ = snd (_, _ * (X + _)))	3.3.4.2.1
-paper.ex6g	100		{1}(a)	3.3.4.2.1
-paper.ex6g	101		(b)	3.3.4.2.2
-paper.ex6g	102		(X in _ + X)	3.3.4.2.2
-paper.ex6g	103		(X in _ * (_ + X))	3.3.4.2.2
-paper.ex6g	104		(X in (_, _ * (_ + X)))	3.3.4.2.2
-paper.ex6g	105		(X in snd (_, _ * (_ + X)))	3.3.4.2.2
-paper.ex6g	106		(X in _ = snd (_, _ * (_ + X)))	3.3.4.2.2
-paper.ex6g	107		{1}(b)	3.3.4.2.2
+paper.ex6g	20		(_, _)	3.3
+paper.ex6g	21		(X in snd X)	3.3
+paper.ex6g	22		((_, _) as X in snd X)	3.3
+paper.ex6g	23		((_, _) in X in _ = X)	3.3
+paper.ex6g	24		(X in _ = snd X)	3.3
+paper.ex6g	25		((_, _) as X in _ = snd X)	3.3
+paper.ex6g	26		{1}(0 * c, 0 * (a + b))	3.3
+paper.ex6g	27		(@pair)	3.3.0
+paper.ex6g	28		{1}(@pair)	3.3.0
+paper.ex6g	29		{4}(R)	3.3.1
+paper.ex6g	30		{4}(R)	3.3.1
+paper.ex6g	31		(R)	1 3.1 3.2 3.3.1 3.3.2
+paper.ex6g	32		{5}(R)	3.3.2
+paper.ex6g	33		{5}(R)	3.3.2
+paper.ex6g	34		(_ * _)	3.3.3
+paper.ex6g	35		(X in (X, _))	3.3.3
+paper.ex6g	36		(_ * _ in X in _ = X)	3.3.3
+paper.ex6g	37		(_ * _ in X in snd X)	3.3.3
+paper.ex6g	38		(_ * _ as X in (X, _))	3.3.3
+paper.ex6g	39		(X in snd (X, _))	3.3.3
+paper.ex6g	40		(_ * _ in X in _ = snd X)	3.3.3
+paper.ex6g	41		(_ * _ as X in snd (X, _))	3.3.3
+paper.ex6g	42		(X in _ = snd (X, _))	3.3.3
+paper.ex6g	43		(_ * _ as X in _ = snd (X, _))	3.3.3
+paper.ex6g	44		{1}(0 * c)	3.3.3
+paper.ex6g	45		{1}(mul)	3.3.3.0
+paper.ex6g	46		{1}(mul)	3.3.3.0
+paper.ex6g	47		(X in X * _)	3.3.3.1
+paper.ex6g	48		(X in (X * _, _))	3.3.3.1
+paper.ex6g	49		(X in snd (X * _, _))	3.3.3.1
+paper.ex6g	50		(X in _ = snd (X * _, _))	3.3.3.1
+paper.ex6g	51		{2}(0)	3.3.3.1
+paper.ex6g	52		{2}(0)	3.3.3.1
+paper.ex6g	53		(c)	3.3.3.2
+paper.ex6g	54		(X in _ * X)	3.3.3.2
+paper.ex6g	55		(X in (_ * X, _))	3.3.3.2
+paper.ex6g	56		(X in snd (_ * X, _))	3.3.3.2
+paper.ex6g	57		(X in _ = snd (_ * X, _))	3.3.3.2
+paper.ex6g	58		{1}(c)	3.3.3.2
+paper.ex6g	59		(X in (_, X))	3.3.4
+paper.ex6g	60		(_ * _ as X in (_, X))	3.3.4
+paper.ex6g	61		(X in snd (_, X))	3.3.4
+paper.ex6g	62		(_ * _ as X in snd (_, X))	3.3.4
+paper.ex6g	63		(X in _ = snd (_, X))	3.3.4
+paper.ex6g	64		(_ * (a + b))	3.3.4
+paper.ex6g	65		(_ * _ as X in _ = snd (_, X))	3.3.4
+paper.ex6g	66		(_ * (a + b) in X in _ = X)	3.3.4
+paper.ex6g	67		(_ * (a + b) in X in snd X)	3.3.4
+paper.ex6g	68		(_ * (a + b) in X in _ = snd X)	3.3.4
+paper.ex6g	69		{1}(0 * (a + b))	3.3.4
+paper.ex6g	70		(mul)	3.3.3.0 3.3.4.0
+paper.ex6g	71		{2}(mul)	3.3.4.0
+paper.ex6g	72		{2}(mul)	3.3.4.0
+paper.ex6g	73		(X in (_, X * _))	3.3.4.1
+paper.ex6g	74		(X in snd (_, X * _))	3.3.4.1
+paper.ex6g	75		(X in X * (a + b))	3.3.4.1
+paper.ex6g	76		(X in _ = snd (_, X * _))	3.3.4.1
+paper.ex6g	77		(0)	2 3.3.3.1 3.3.4.1
+paper.ex6g	78		{3}(0)	3.3.4.1
+paper.ex6g	79		{3}(0)	3.3.4.1
+paper.ex6g	80		(_ + _)	3.3.4.2
+paper.ex6g	81		(_ + _ as X in _ * X)	3.3.4.2
+paper.ex6g	82		(_ + _ in X in _ = X)	3.3.4.2
+paper.ex6g	83		(_ + _ in X in snd X)	3.3.4.2
+paper.ex6g	84		(_ + _ in X in (_, X))	3.3.4.2
+paper.ex6g	85		(X in (_, _ * X))	3.3.4.2
+paper.ex6g	86		(_ + _ in X in _ = snd X)	3.3.4.2
+paper.ex6g	87		(_ + _ as X in (_, _ * X))	3.3.4.2
+paper.ex6g	88		(_ + _ in X in snd (_, X))	3.3.4.2
+paper.ex6g	89		(X in snd (_, _ * X))	3.3.4.2
+paper.ex6g	90		(_ + _ as X in snd (_, _ * X))	3.3.4.2
+paper.ex6g	91		(X in _ = snd (_, _ * X))	3.3.4.2
+paper.ex6g	92		(_ + _ as X in _ = snd (_, _ * X))	3.3.4.2
+paper.ex6g	93		{1}(a + b)	3.3.4.2
+paper.ex6g	94		(add)	3.3.4.2.0
+paper.ex6g	95		{1}(add)	3.3.4.2.0
+paper.ex6g	96		(a)	3.3.4.2.1
+paper.ex6g	97		(X in X + _)	3.3.4.2.1
+paper.ex6g	98		(X in _ * (X + _))	3.3.4.2.1
+paper.ex6g	99		(X in (_, _ * (X + _)))	3.3.4.2.1
+paper.ex6g	100		(X in snd (_, _ * (X + _)))	3.3.4.2.1
+paper.ex6g	101		(X in _ = snd (_, _ * (X + _)))	3.3.4.2.1
+paper.ex6g	102		{1}(a)	3.3.4.2.1
+paper.ex6g	103		(b)	3.3.4.2.2
+paper.ex6g	104		(X in _ + X)	3.3.4.2.2
+paper.ex6g	105		(X in _ * (_ + X))	3.3.4.2.2
+paper.ex6g	106		(X in (_, _ * (_ + X)))	3.3.4.2.2
+paper.ex6g	107		(X in snd (_, _ * (_ + X)))	3.3.4.2.2
+paper.ex6g	108		(X in _ = snd (_, _ * (_ + X)))	3.3.4.2.2
+paper.ex6g	109		{1}(b)	3.3.4.2.2
 paper.ex7	1		(_ + b in X in _ = X)	3.1.1
 paper.ex7	2		(_ + b)	2
 paper.ex7	3		(_ + b in RHS)	3.1.1

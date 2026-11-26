@@ -55,8 +55,8 @@
    The occurrences of the first instance are not later instances (the
    subterms inside them are tried).  The outer term is found by splitting
    the text of the pattern at its keywords in and as outside parentheses
-   (a let ... in written inside the pattern would mislead the split: such a
-   pattern is read as a term).
+   (the in of a let ... in is not taken for a keyword: each let outside
+   brackets takes the next in).
 
    Tactics (the goal is unchanged):
      elpi pattern_select "<pattern>".        in the conclusion
@@ -174,14 +174,25 @@ sel-split-occ S Occ P :- starts-with "{" S, sel-chars S Cs, sel-first-close Cs 0
 sel-split-occ S "" S.
 
 % [sel-keywords S Ks] Ks are the positions and words of the keywords in
-% and as of S outside brackets, from the left
+% and as of S outside brackets, from the left; the in of a let ... in is
+% not one (each let at depth 0 takes the next in)
 pred sel-keywords i:string, o:list (pair int string).
-sel-keywords S Ks :- sel-chars S Cs, sel-kw Cs S 0 0 Ks.
-pred sel-kw i:list string, i:string, i:int, i:int, o:list (pair int string).
-sel-kw [] _ _ _ [].
-sel-kw [C|Cs] S I D Ks :- sel-depth C D D1, I1 is I + 1,
-  (D = 0, sel-blank C, sel-kw-at S I W, !, Ks = [pr I W | Ks1] ; Ks = Ks1),
-  sel-kw Cs S I1 D1 Ks1.
+sel-keywords S Ks :- sel-chars S Cs, sel-kw Cs S 0 0 0 Ks.
+pred sel-kw i:list string, i:string, i:int, i:int, i:int, o:list (pair int string).
+sel-kw [] _ _ _ _ [].
+sel-kw [C|Cs] S I D L Ks :- sel-depth C D D1, I1 is I + 1,
+  (D = 0, sel-let-at S I, !, L1 is L + 1, Ks = Ks1 ;
+   D = 0, sel-blank C, sel-kw-at S I W, !,
+   (W = "in", L > 0, !, L1 is L - 1, Ks = Ks1 ; L1 = L, Ks = [pr I W | Ks1]) ;
+   L1 = L, Ks = Ks1),
+  sel-kw Cs S I1 D1 L1 Ks1.
+
+% [sel-let-at S I] the word let starts at I in S (at its start or after a
+% blank or a bracket, then a blank)
+pred sel-let-at i:string, i:int.
+sel-let-at S I :- N is size S, I + 3 < N, W is substring S I 3, W = "let",
+  J is I + 3, B is substring S J 1, sel-blank B,
+  (I = 0, ! ; K is I - 1, P is substring S K 1, (sel-blank P ; P = "(" ; P = "[")).
 
 pred sel-blank i:string.
 sel-blank " ".
@@ -228,7 +239,7 @@ sel-form-text (sf-as-in T X C) S :- S is T ^ " as " ^ X ^ " in " ^ C.
 % alone)
 pred sel-form-kind i:sel-form, o:sel-kind.
 sel-form-kind (sf-term T) K :-
-  coq.parse.argument {calc ("(" ^ T ^ ")")} ff "" (trm Tm) ok, !,
+  coq.parse.argument {calc ("((" ^ T ^ "))")} ff "" (trm Tm) ok, !,
   (ground_term Tm, !, K = b1-closed-term ;
    Tm = app [H|_], var H, !, K = b3-flexible-head ;
    K = b2-term-with-holes).
@@ -306,10 +317,12 @@ type sel-error string -> sel-res.
    - the forms (eval_pattern): t, the occurrences of the instance of t;
      X in C, the instance of C[_/X], its occurrences, in each one the
      places of X in C; t in X in C, the X parts as before, then the first
-     instance of t in the FIRST X part (find_E is a do_once matcher: when t
-     does not match there, ssreflect fails), then its occurrences in all
-     the X parts; t as X in C, the places of X in the occurrences of the
-     instance of C[t/X];
+     instance of t in the X part of the instance of C and its occurrences
+     there, at the same places in every occurrence of C: set puts the
+     instance of C in place of each of its occurrences (the occurrences
+     are only convertible to it: they take its shape), so the X part is
+     the same everywhere; t as X in C, the places of X in the occurrences
+     of the instance of C[t/X];
    - the occurrence switch {k1 k2}, {-k} (occ_state): the ranks of the
      places selected (the occurrences for t, the places of X for X in C and
      t as X in C, the places of t for t in X in C), counted in that order;
@@ -334,13 +347,13 @@ sm-outside S M :- M is "outside the supported fragment: " ^ S.
 
 % [sm-parse T Tm] Tm is the pattern text T elaborated
 pred sm-parse i:string, o:term.
-sm-parse T Tm :- coq.parse.argument {calc ("(" ^ T ^ ")")} ff "" (trm Tm) ok.
+sm-parse T Tm :- coq.parse.argument {calc ("((" ^ T ^ "))")} ff "" (trm Tm) ok.
 
 % [sm-parse-ctx X C V F] the context C of variable X, elaborated as
 % let X := V in F X, V a hole
 pred sm-parse-ctx i:string, i:string, o:term, o:(term -> term).
 sm-parse-ctx X C V F :-
-  coq.parse.argument {calc ("(let " ^ X ^ " := _ in " ^ C ^ ")")} ff "" (trm L) ok,
+  coq.parse.argument {calc ("((let " ^ X ^ " := _ in " ^ C ^ "))")} ff "" (trm L) ok,
   L = let _ _ V F.
 
 % [sm-elab F P M] P is the pattern of form F elaborated, M "" or why not
@@ -428,7 +441,17 @@ sm-erase T T1 :- (pi N Ty B F B1\ copy (let N Ty B F) B1 :- cast-let N F, !, cop
 % all its holes assigned
 pred sm-try i:int, i:term, i:term.
 sm-try 1 P C :- coq.unify-eq P C ok, ground_term P,
-  sm-erase P P1, sm-erase C C1, same_term P1 C1.
+  sm-erase P P0, sm-erase C C0, sm-betaiota P0 P1, sm-betaiota C0 C1, same_term P1 C1.
+
+% [sm-betaiota T N] N is T in beta-iota normal form (the first phase
+% compares modulo beta-iota: unif_FO, flags_FO)
+pred sm-betaiota i:term, o:term.
+sm-betaiota T N :- (@redflags! coq.redflags.betaiota => coq.reduction.lazy.norm T N).
+
+% [sm-whd T N] N is T in beta-iota weak head normal form: the pattern
+% whose key is taken (mk_tpattern, whd_betaiota_stack)
+pred sm-whd i:term, o:term.
+sm-whd T N :- (@redflags! coq.redflags.betaiota => coq.reduction.lazy.whd T N).
 sm-try 2 P C :- sm-unify-args P C, ground_term P.
 
 % [sm-find Ph P K NP T Rev Bs Pos] Pos is the position of the first
@@ -450,9 +473,9 @@ sm-find-kids Ph P K NP (let N _ B F) Rev Bs Pos :- cast-let N F, !,
 sm-find-kids Ph P K NP (let _ Ty B F) Rev Bs Pos :- !,
   (sm-find Ph P K NP B [2|Rev] Bs Pos ; sm-find Ph P K NP Ty [1|Rev] Bs Pos ;
    pi x\ sm-find Ph P K NP (F x) [3|Rev] [x|Bs] Pos).
-sm-find-kids Ph P K NP (match S R Br) Rev Bs Pos :- !,
-  (sm-find Ph P K NP S [0|Rev] Bs Pos ; sm-find Ph P K NP R [1|Rev] Bs Pos ;
-   sm-find-args Ph P K NP Br 2 Rev Bs Pos).
+sm-find-kids Ph P K NP (match S R Br) Rev Bs Pos :- !, sm-match-binders R Br NR NBs,
+  (sm-find Ph P K NP S [0|Rev] Bs Pos ; sm-find-under Ph P K NP NR R [1|Rev] Bs Pos ;
+   sm-find-branches Ph P K NP Br NBs 2 Rev Bs Pos).
 pred sm-find-args i:int, i:term, i:term, i:int, i:list term, i:int, i:list int, i:list term, o:sel-pos.
 sm-find-args Ph P K NP [T|Ts] I Rev Bs Pos :-
   (sm-find Ph P K NP T [I|Rev] Bs Pos ; I1 is I + 1, sm-find-args Ph P K NP Ts I1 Rev Bs Pos).
@@ -481,15 +504,61 @@ sm-occs I K NP (let N _ B F) Rev Bs A A1 :- cast-let N F, !,
 sm-occs I K NP (let _ Ty B F) Rev Bs A A3 :- !,
   sm-occs I K NP B [2|Rev] Bs A A1, sm-occs I K NP Ty [1|Rev] Bs A1 A2,
   pi x\ sm-occs I K NP (F x) [3|Rev] [x|Bs] A2 A3.
-sm-occs I K NP (match S R Br) Rev Bs A A3 :- !,
-  sm-occs I K NP S [0|Rev] Bs A A1, sm-occs I K NP R [1|Rev] Bs A1 A2,
-  sm-occs-args I K NP Br 2 Rev Bs A2 A3.
+sm-occs I K NP (match S R Br) Rev Bs A A3 :- !, sm-match-binders R Br NR NBs,
+  sm-occs I K NP S [0|Rev] Bs A A1, sm-occs-under I K NP NR R [1|Rev] Bs A1 A2,
+  sm-occs-branches I K NP Br NBs 2 Rev Bs A2 A3.
 sm-occs _ _ _ _ _ _ A A.
 pred sm-occs-args i:term, i:term, i:int, i:list term, i:int, i:list int, i:list term,
                   i:list sel-pos, o:list sel-pos.
 sm-occs-args _ _ _ [] _ _ _ A A.
 sm-occs-args I K NP [T|Ts] J Rev Bs A A2 :-
   sm-occs I K NP T [J|Rev] Bs A A1, J1 is J + 1, sm-occs-args I K NP Ts J1 Rev Bs A1 A2.
+
+
+% The return type and the branches of a match are funs in Rocq-Elpi; in
+% Rocq their binders are a context, not terms: ssreflect visits neither
+% these binders nor their types, only the bodies (iter_constr_LR).
+% [sm-match-binders R Br NR NBs] the return type R binds NR variables, the
+% branches Br bind NBs (the arguments of the constructors)
+pred sm-match-binders i:term, i:list term, o:int, o:list int.
+sm-match-binders R Br NR NBs :- sm-ret-binders R NR I, !,
+  coq.env.indt I _ NPar _ _ Ks _,
+  std.map Ks (k\ n\ sigma Ty N\ coq.env.typeof (indc k) Ty, sm-prods Ty N, n is N - NPar) NBs0,
+  std.length Br NB, std.length NBs0 NB, !, NBs = NBs0.
+sm-match-binders _ Br 0 NBs :- std.map Br (_\ n\ n = 0) NBs.
+% [sm-ret-binders R N I] R is a fun of N binders, the last one of type the
+% inductive I (applied)
+pred sm-ret-binders i:term, o:int, o:inductive.
+sm-ret-binders (fun _ Ty F) N I :- (Ty = app [global (indt I)|_] ; Ty = global (indt I)),
+  (pi x\ not (F x = fun _ _ _)), !, N = 1.
+sm-ret-binders (fun _ _ F) N I :- pi x\ sm-ret-binders (F x) N1 I, N is N1 + 1.
+pred sm-prods i:term, o:int.
+sm-prods (prod _ _ F) N :- !, pi x\ sm-prods (F x) N1, N is N1 + 1.
+sm-prods (let _ _ _ F) N :- !, pi x\ sm-prods (F x) N.
+sm-prods _ 0.
+
+% [sm-find-under Ph P K NP N T Rev Bs Pos] sm-find in T below its N first
+% binders (not visited, nor their types)
+pred sm-find-under i:int, i:term, i:term, i:int, i:int, i:term, i:list int, i:list term, o:sel-pos.
+sm-find-under Ph P K NP N (fun _ _ F) Rev Bs Pos :- N > 0, !, N1 is N - 1,
+  pi x\ sm-find-under Ph P K NP N1 (F x) [2|Rev] [x|Bs] Pos.
+sm-find-under Ph P K NP _ T Rev Bs Pos :- sm-find Ph P K NP T Rev Bs Pos.
+pred sm-find-branches i:int, i:term, i:term, i:int, i:list term, i:list int, i:int, i:list int, i:list term, o:sel-pos.
+sm-find-branches Ph P K NP [T|Ts] [N|Ns] I Rev Bs Pos :-
+  (sm-find-under Ph P K NP N T [I|Rev] Bs Pos ;
+   I1 is I + 1, sm-find-branches Ph P K NP Ts Ns I1 Rev Bs Pos).
+
+pred sm-occs-under i:term, i:term, i:int, i:int, i:term, i:list int, i:list term,
+                   i:list sel-pos, o:list sel-pos.
+sm-occs-under I K NP N (fun _ _ F) Rev Bs A A1 :- N > 0, !, N1 is N - 1,
+  pi x\ sm-occs-under I K NP N1 (F x) [2|Rev] [x|Bs] A A1.
+sm-occs-under I K NP _ T Rev Bs A A1 :- sm-occs I K NP T Rev Bs A A1.
+pred sm-occs-branches i:term, i:term, i:int, i:list term, i:list int, i:int, i:list int,
+                      i:list term, i:list sel-pos, o:list sel-pos.
+sm-occs-branches _ _ _ [] _ _ _ _ A A.
+sm-occs-branches I K NP [T|Ts] [N|Ns] J Rev Bs A A2 :-
+  sm-occs-under I K NP N T [J|Rev] Bs A A1, J1 is J + 1,
+  sm-occs-branches I K NP Ts Ns J1 Rev Bs A1 A2.
 
 % [sm-conv I C] the instance I and the candidate C are convertible
 pred sm-conv i:term, i:term.
@@ -529,11 +598,20 @@ sm-x-positions Rs Qs Xs :-
   std.map Qs (q\ xs\ sigma Q\ sel-pos-path q Q, std.map Rs (r\ p\ std.append Q r p) xs) Xss,
   std.flatten Xss Xs.
 
+% [sm-uncast T P P1] P1 is the path P of T, or, when the subterm there is
+% a cast, the path of its term (casts are erased: set puts its definition
+% in place of the term, the cast disappears)
+pred sm-uncast i:term, i:list int, o:list int.
+sm-uncast T P P1 :- sel-cast-at P T, !, std.append P [1] P0, sm-uncast T P0 P1.
+sm-uncast _ P P.
+
 % [sm-pick Occ Qs R] R is the result of the occurrence switch Occ on the
 % places Qs
 pred sm-pick i:string, i:list sel-pos, o:sel-res.
 sm-pick "" Qs (sel-ok Qs) :- !.
 sm-pick Occ Qs R :- sel-pick-of-text Occ K, std.length Qs N,
+  % (a term without holes that does not occur: set selects nothing, whatever
+  % the occurrence switch)
   (K = pick-in Is ; K = pick-out Is), !,
   (std.exists Is (i\ i > N), !, sm-max Is 0 Mx,
    R = sel-error {calc ("only " ^ int_to_string N ^ " < " ^ int_to_string Mx ^ " occurrence(s)")} ;
@@ -546,34 +624,32 @@ sm-select T Occ Txt R :- sel-parse Txt (sel-pat _ _ F), sm-elab F P M,
   (M = "", !, sm-run P T Occ R ; R = sel-error M).
 
 pred sm-run i:sm-pat, i:term, i:string, o:sel-res.
-sm-run (sm-t P) T Occ R :- sm-occurrences P T Qs M,
+sm-run (sm-t P0) T Occ R :- sm-whd P0 P, sm-occurrences P T Qs M,
   (M = "", !, sm-pick Occ Qs R ;
-   M = "no instance", ground_term P, !, sm-pick Occ [] R ;
+   M = "no instance", ground_term P, !, R = sel-ok [] ;
    R = sel-error M).
-sm-run (sm-x V F) T Occ R :- sm-x-places F Rs, sm-occurrences (F V) T Qs M,
-  (M = "", !, sm-x-positions Rs Qs Xs, std.map Xs (x\ q\ q = sp-at x) Ps,
+sm-run (sm-x V F) T Occ R :- sm-x-places F Rs, sm-whd (F V) PC, sm-occurrences PC T Qs M,
+  (M = "", !, sm-x-positions Rs Qs Xs0, std.map Xs0 (sm-uncast T) Xs, std.map Xs (x\ q\ q = sp-at x) Ps,
    (Xs = [], !, R = sel-error "X does not occur in the context" ; sm-pick Occ Ps R) ;
    M = "no instance", !, R = sel-error "the context has no instance" ;
    R = sel-error M).
-sm-run (sm-ex E V F) T Occ R :- sm-x-places F Rs, sm-occurrences (F V) T Qs M,
+sm-run (sm-ex E0 V F) T Occ R :- sm-x-places F Rs, sm-whd (F V) PC, sm-whd E0 E,
+  sm-occurrences PC T Qs M,
   (M = "", !, sm-x-positions Rs Qs Xs,
-   (Xs = [X1|_], !, term-at X1 T S1,
-    (sm-first E S1 _ ME, ME = "", !,
-     sm-key E K NP _,
-     sm-ex-occs E K NP T Xs [] Qs0,
-     std.rev Qs0 Qs1, sm-pick Occ Qs1 R ;
-     R = sel-error "the redex has no instance in the first X part") ;
+   % set puts the instance of C in place of each of its occurrences
+   % (eval_pattern, E_In_X_In_T): t is looked for in the X part of the
+   % instance (VX, at the first place of X), and found at the same places in
+   % every occurrence
+   (Xs = [_|_], Rs = [R1|_], term-at R1 PC VX, !,
+    (sm-first E VX _ ME, ME = "", !,
+     sm-key E K NP _, sm-occs E K NP VX [] [] [] Rel0, std.rev Rel0 Rel,
+     std.map Xs (x\ ps\ std.map Rel (sm-shift x) ps) Pss, std.flatten Pss Qs1,
+     sm-pick Occ Qs1 R ;
+     ground_term E, !, R = sel-ok [] ;  % a term without holes: nothing
+     R = sel-error "the redex has no instance in the X part") ;
     R = sel-error "X does not occur in the context") ;
    M = "no instance", !, R = sel-error "the context has no instance" ;
    R = sel-error M).
-
-% [sm-ex-occs E K NP T Xs A0 A] the occurrences of the instance E in the
-% X parts at the paths Xs of T
-pred sm-ex-occs i:term, i:term, i:int, i:term, i:list (list int), i:list sel-pos, o:list sel-pos.
-sm-ex-occs _ _ _ _ [] A A.
-sm-ex-occs E K NP T [X|Xs] A A2 :-
-  (term-at X T S, !, std.rev X RX, sm-occs E K NP S RX [] A A1 ; A1 = A),
-  sm-ex-occs E K NP T Xs A1 A2.
 
 % [sm-select-at T P Occ Txt R] sm-select in the subterm at path P of T,
 % the positions written as paths of T
@@ -593,7 +669,34 @@ sm-max [I|Is] M0 M :- (I > M0, !, M1 = I ; M1 = M0), sm-max Is M1 M.
 % [sel-sem G H Occ P R] R is what the pattern of text P (occurrence switch
 % Occ) selects in the part H of the goal G ("" for the conclusion)
 pred sel-sem i:goal, i:string, i:string, i:string, o:sel-res.
-sel-sem G H Occ P R :- sel-part G H T, sm-select T Occ P R.
+sel-sem G "" Occ P R :- !, sel-part G "" T, sm-select T Occ P R.
+% set ... in H generalizes H over the conclusion: the matching runs on
+% TH -> C (the first instance can be in C), and only the places in TH are
+% selected, the occurrence switch counting those; a pattern whose key is a
+% product can match the implication itself first (then set abstracts H
+% away); places, but none in TH: an error
+sel-sem (goal _ _ C _ _ as G) H Occ P R :- sel-part G H TH,
+  sm-select (prod `_` TH (_\ C)) "" P R0,
+  (R0 = sel-ok Qs, std.mem Qs (sp-at []), !,
+   sm-outside "the pattern matches the hypothesis generalized over the conclusion (set in H)" M,
+   R = sel-error M ;
+   R0 = sel-ok [], !, R = R0 ;
+   R0 = sel-ok Qs, !, std.map-filter Qs sm-in-hyp Qs1,
+   (Qs1 = [], !, R = sel-error "no place in the hypothesis" ; sm-pick Occ Qs1 R) ;
+   R = R0).
+pred sm-in-hyp i:sel-pos, o:sel-pos.
+sm-in-hyp (sp-at [1|Q]) (sp-at Q).
+sm-in-hyp (sp-prefix [1|Q] K) (sp-prefix Q K).
+
+% The former names (the oracle was ssreflect's set; the semantics is now
+% Elpi's): sel-oracle, sel-box-oracle, sel-box-oracle-occ.  They accept
+% any well-typed term T (a part of the goal or a term built from it).
+pred sel-oracle i:goal, i:string, i:string, i:string, o:sel-res.
+sel-oracle G H Occ P R :- sel-sem G H Occ P R.
+pred sel-box-oracle i:goal, i:term, i:list int, i:string, o:sel-res.
+sel-box-oracle G T P Txt R :- sel-at G T P Txt R.
+pred sel-box-oracle-occ i:goal, i:term, i:list int, i:string, i:string, o:sel-res.
+sel-box-oracle-occ G T P Occ Txt R :- sel-at-occ G T P Occ Txt R.
 
 
 /* ---------------- Positions: texts, printing, order ---------------- */

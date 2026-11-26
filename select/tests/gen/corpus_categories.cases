@@ -1,0 +1,1707 @@
+forms.1	1		(_ + b)	2.1 3.1.1 3.2
+forms.1	2		(X in f X _)	2.1
+forms.1	3		(X in f _ X)	2.2
+forms.1	4		(_ + _ in X in f _ X)	2.2
+forms.1	5		(_ + b as X in f _ X)	3.1.2
+forms.1	6		{1}(_ + b)	2.1
+forms.1	7		{2}(_ + b)	3.1.1
+forms.1	8		{1 3}(_ + b)	2.1 3.2
+forms.1	9		{-1}(_ + b)	3.1.1 3.2
+forms.1	10		{-2 3}(_ + b)	2.1
+forms.1	11		{4}(_ + b)	error
+forms.1	12		{2}(X in f X _)	error
+forms.1	13		{1}(_ + _ in X in f _ X)	2.2
+forms.1	14		(a + b)	2.1 3.1.1 3.2
+forms.1	15		{3}(a + b)	3.2
+forms.1	16		(X in _ = _ + X)	3.2
+forms.1	17		(b + _ in X in _ = X)	error
+forms.1	18		(X in f _ X + _)	3.1.2
+forms.1g	1		(_ = _)	root
+forms.1g	2		{1}(f (a + b) (b + c) = f (a + b) (c + b) + (a + b))	root
+forms.1g	3		(@eq)	0
+forms.1g	4		{1}(@eq)	0
+forms.1g	5		(nat)	1
+forms.1g	6		{1}(nat)	1
+forms.1g	7		(f _ _)	2
+forms.1g	8		(X in X = _)	2
+forms.1g	9		(f _ _ as X in X = _)	2
+forms.1g	10		{1}(f (a + b) (b + c))	2
+forms.1g	11		{1}(f)	2.0
+forms.1g	12		{1}(f)	2.0
+forms.1g	13		(X in f X _)	2.1
+forms.1g	14		(_ + _ as X in f X _)	2.1
+forms.1g	15		(_ + _ in X in X = _)	2.1
+forms.1g	16		(X in f X _ = _)	2.1
+forms.1g	17		(_ + _ as X in f X _ = _)	2.1
+forms.1g	18		(_ + _)	2.1 3.1.1 3.2
+forms.1g	19		{1}(_ + _)	2.1
+forms.1g	20		{1}(a + b)	2.1
+forms.1g	21		{1}(Nat.add)	2.1.0
+forms.1g	22		{1}(Nat.add)	2.1.0
+forms.1g	23		(X in f (X + _) _)	2.1.1
+forms.1g	24		(X in f (X + _) _ = _)	2.1.1
+forms.1g	25		(X in X + _)	2.1.1 3.1.1.1 3.2.1
+forms.1g	26		{1}(a)	2.1.1
+forms.1g	27		{1}(a)	2.1.1
+forms.1g	28		{1}(X in X + _)	2.1.1
+forms.1g	29		(X in f (_ + X) _)	2.1.2
+forms.1g	30		(X in f (_ + X) _ = _)	2.1.2
+forms.1g	31		(X in _ + X)	2.1.2 3.1.1.2 3.2.2
+forms.1g	32		{1}(b)	2.1.2
+forms.1g	33		{1}(b)	2.1.2
+forms.1g	34		{1}(X in _ + X)	2.1.2
+forms.1g	35		(X in f _ X)	2.2
+forms.1g	36		(b + _)	2.2
+forms.1g	37		(_ + _ as X in f _ X)	2.2
+forms.1g	38		(X in f _ X = _)	2.2
+forms.1g	39		(b + _ in X in X = _)	2.2
+forms.1g	40		(_ + _ as X in f _ X = _)	2.2
+forms.1g	41		{1}(b + c)	2.2
+forms.1g	42		{2}(Nat.add)	2.2.0
+forms.1g	43		{2}(Nat.add)	2.2.0
+forms.1g	44		(X in X + c)	2.2.1
+forms.1g	45		(X in f _ (X + _))	2.2.1
+forms.1g	46		(X in f _ (X + _) = _)	2.2.1
+forms.1g	47		{2}(b)	2.2.1
+forms.1g	48		{2}(b)	2.2.1
+forms.1g	49		(X in b + X)	2.2.2
+forms.1g	50		(X in f _ (_ + X))	2.2.2
+forms.1g	51		(X in f _ (_ + X) = _)	2.2.2
+forms.1g	52		{1}(c)	2.2.2
+forms.1g	53		{1}(c)	2.2.2
+forms.1g	54		(X in _ = X)	3
+forms.1g	55		(_ + _ as X in _ = X)	3
+forms.1g	56		(_ + (a + b))	3
+forms.1g	57		{1}(f (a + b) (c + b) + (a + b))	3
+forms.1g	58		{3}(Nat.add)	3.0
+forms.1g	59		{3}(Nat.add)	3.0
+forms.1g	60		(f _ _ as X in X + _)	3.1
+forms.1g	61		(f _ _ in X in _ = X)	3.1
+forms.1g	62		(X in _ = X + _)	3.1
+forms.1g	63		(f _ (c + _))	3.1
+forms.1g	64		(f _ _ as X in _ = X + _)	3.1
+forms.1g	65		(X in X + (a + b))	3.1
+forms.1g	66		{1}(f (a + b) (c + b))	3.1
+forms.1g	67		(f)	2.0 3.1.0
+forms.1g	68		{2}(f)	3.1.0
+forms.1g	69		{2}(f)	3.1.0
+forms.1g	70		(X in f X _ + _)	3.1.1
+forms.1g	71		(X in f X (c + _))	3.1.1
+forms.1g	72		(_ + _ as X in f X _ + _)	3.1.1
+forms.1g	73		(_ + _ in X in _ = X + _)	3.1.1
+forms.1g	74		(X in _ = f X _ + _)	3.1.1
+forms.1g	75		(_ + _ as X in f X (c + _))	3.1.1
+forms.1g	76		(_ + _ as X in _ = f X _ + _)	3.1.1
+forms.1g	77		(_ + _ in X in X + (a + b))	3.1.1
+forms.1g	78		{2}(a + _)	3.1.1
+forms.1g	79		{2}(a + b)	3.1.1
+forms.1g	80		{1}(a + _ in X in _ = X)	3.1.1
+forms.1g	81		{4}(Nat.add)	3.1.1.0
+forms.1g	82		{4}(Nat.add)	3.1.1.0
+forms.1g	83		(X in f (X + _) _ + _)	3.1.1.1
+forms.1g	84		(X in f (X + _) (c + _))	3.1.1.1
+forms.1g	85		(X in _ = f (X + _) _ + _)	3.1.1.1
+forms.1g	86		(X in X + b)	2.1.1 3.1.1.1 3.2.1
+forms.1g	87		{2}(a)	3.1.1.1
+forms.1g	88		{2}(a)	3.1.1.1
+forms.1g	89		{2}(X in X + b)	3.1.1.1
+forms.1g	90		(X in f (_ + X) _ + _)	3.1.1.2
+forms.1g	91		(X in f (_ + X) (c + _))	3.1.1.2
+forms.1g	92		(X in _ = f (_ + X) _ + _)	3.1.1.2
+forms.1g	93		{3}(b)	3.1.1.2
+forms.1g	94		{3}(b)	3.1.1.2
+forms.1g	95		{2}(X in a + X)	3.1.1.2
+forms.1g	96		(c + _)	3.1.2
+forms.1g	97		(X in f _ X + _)	3.1.2
+forms.1g	98		(c + _ as X in f _ X)	3.1.2
+forms.1g	99		(c + _ in X in _ = X)	3.1.2
+forms.1g	100		(_ + _ as X in f _ X + _)	3.1.2
+forms.1g	101		(X in _ = f _ X + _)	3.1.2
+forms.1g	102		(c + _ in X in _ = X + _)	3.1.2
+forms.1g	103		(_ + _ as X in _ = f _ X + _)	3.1.2
+forms.1g	104		(c + _ in X in X + (a + b))	3.1.2
+forms.1g	105		{1}(c + b)	3.1.2
+forms.1g	106		{5}(Nat.add)	3.1.2.0
+forms.1g	107		{5}(Nat.add)	3.1.2.0
+forms.1g	108		(X in f _ (X + b))	3.1.2.1
+forms.1g	109		(X in f _ (X + _) + _)	3.1.2.1
+forms.1g	110		(X in _ = f _ (X + _) + _)	3.1.2.1
+forms.1g	111		(c)	2.2.2 3.1.2.1
+forms.1g	112		{2}(c)	3.1.2.1
+forms.1g	113		{2}(c)	3.1.2.1
+forms.1g	114		(X in c + X)	3.1.2.2
+forms.1g	115		(X in f _ (c + X))	3.1.2.2
+forms.1g	116		(X in f _ (_ + X) + _)	3.1.2.2
+forms.1g	117		(X in _ = f _ (_ + X) + _)	3.1.2.2
+forms.1g	118		{4}(b)	3.1.2.2
+forms.1g	119		{4}(b)	3.1.2.2
+forms.1g	120		(_ + _ as X in _ + X)	3.2
+forms.1g	121		(X in _ = _ + X)	3.2
+forms.1g	122		(_ + _ as X in _ = _ + X)	3.2
+forms.1g	123		(X in f (a + b) (c + b) + X)	3.2
+forms.1g	124		(a + _)	2.1 3.1.1 3.2
+forms.1g	125		(a + _ in X in _ = X)	3.1.1 3.2
+forms.1g	126		{3}(a + _)	3.2
+forms.1g	127		{3}(a + b)	3.2
+forms.1g	128		{2}(a + _ in X in _ = X)	3.2
+forms.1g	129		(Nat.add)	2.1.0 2.2.0 3.0 3.1.1.0 3.1.2.0 3.2.0
+forms.1g	130		{6}(Nat.add)	3.2.0
+forms.1g	131		{6}(Nat.add)	3.2.0
+forms.1g	132		(X in _ + (X + _))	3.2.1
+forms.1g	133		(X in _ = _ + (X + _))	3.2.1
+forms.1g	134		(a)	2.1.1 3.1.1.1 3.2.1
+forms.1g	135		{3}(a)	3.2.1
+forms.1g	136		{3}(a)	3.2.1
+forms.1g	137		(X in _ + (_ + X))	3.2.2
+forms.1g	138		(X in _ = _ + (_ + X))	3.2.2
+forms.1g	139		(b)	2.1.2 2.2.1 3.1.1.2 3.1.2.2 3.2.2
+forms.1g	140		(X in a + X)	2.1.2 3.1.1.2 3.2.2
+forms.1g	141		{5}(b)	3.2.2
+forms.1g	142		{5}(b)	3.2.2
+forms.1g	143		{3}(X in a + X)	3.2.2
+order.1	1		(_ + _)	1.2
+order.1	2		(_ + c)	1.2
+order.1	3		(a + _)	1.2.1
+order.1	4		(_ + (_ + _))	1.3
+order.1	5		((_ + _) + _)	1.2
+order.1	6		(_ * _)	2.2
+order.1	7		(a * _)	2.2.1 2.2.2
+order.1	8		(X in X * _)	2.2.1
+order.1	9		(X in _ * X)	2.2.2
+order.1	10		{2}(_ * _)	error
+order.1	11		(_ = _)	1
+order.1	12		{2}(_ = _)	error
+order.1	13		(X in _ = X /\ _)	1.3
+order.1	14		(X in _ /\ X)	2
+order.1	15		(_ /\ _)	root
+order.1g	1		(_ /\ _)	root
+order.1g	2		{1}(a + b + c = a + (b + c) /\ a * b * (a * b) = 0)	root
+order.1g	3		(and)	0
+order.1g	4		{1}(and)	0
+order.1g	5		(_ = _)	1
+order.1g	6		(X in X /\ _)	1
+order.1g	7		(_ = _ as X in X /\ _)	1
+order.1g	8		{1}(a + b + c = a + (b + c))	1
+order.1g	9		{1}(@eq)	1.0
+order.1g	10		{1}(@eq)	1.0
+order.1g	11		{1}(nat)	1.1
+order.1g	12		{1}(nat)	1.1
+order.1g	13		(_ + _)	1.2
+order.1g	14		(X in X = _)	1.2
+order.1g	15		(_ + _ as X in X = _)	1.2
+order.1g	16		(_ + _ in X in X /\ _)	1.2
+order.1g	17		(X in X = _ /\ _)	1.2
+order.1g	18		(_ + _ as X in X = _ /\ _)	1.2
+order.1g	19		{1}(a + b + c)	1.2
+order.1g	20		{1}(Nat.add)	1.2.0
+order.1g	21		{1}(Nat.add)	1.2.0
+order.1g	22		(X in X + _)	1.2.1
+order.1g	23		(a + _)	1.2.1
+order.1g	24		(_ + _ as X in X + _)	1.2.1
+order.1g	25		(X in X + _ = _)	1.2.1
+order.1g	26		(a + _ in X in X = _)	1.2.1
+order.1g	27		(a + _ in X in X /\ _)	1.2.1
+order.1g	28		(_ + _ as X in X + _ = _)	1.2.1
+order.1g	29		(X in X + _ = _ /\ _)	1.2.1
+order.1g	30		(a + _ in X in X = _ /\ _)	1.2.1
+order.1g	31		(_ + _ as X in X + _ = _ /\ _)	1.2.1
+order.1g	32		{1}(a + b)	1.2.1
+order.1g	33		{2}(Nat.add)	1.2.1.0
+order.1g	34		{2}(Nat.add)	1.2.1.0
+order.1g	35		(X in X + b)	1.2.1.1
+order.1g	36		(X in X + _ + _)	1.2.1.1
+order.1g	37		(X in X + _ + _ = _)	1.2.1.1
+order.1g	38		(X in X + _ + _ = _ /\ _)	1.2.1.1
+order.1g	39		{1}(a)	1.2.1.1
+order.1g	40		{1}(a)	1.2.1.1
+order.1g	41		(X in a + X)	1.2.1.2
+order.1g	42		(X in _ + X + _)	1.2.1.2
+order.1g	43		(X in _ + X + _ = _)	1.2.1.2
+order.1g	44		(X in _ + X + _ = _ /\ _)	1.2.1.2
+order.1g	45		{1}(b)	1.2.1.2
+order.1g	46		{1}(b)	1.2.1.2
+order.1g	47		(X in _ + X)	1.2.2
+order.1g	48		(X in _ + X = _)	1.2.2
+order.1g	49		(X in _ + X = _ /\ _)	1.2.2
+order.1g	50		{1}(c)	1.2.2
+order.1g	51		{1}(c)	1.2.2
+order.1g	52		(X in _ = X)	1.3
+order.1g	53		(_ + _ as X in _ = X)	1.3
+order.1g	54		(X in _ = X /\ _)	1.3
+order.1g	55		(_ + _ as X in _ = X /\ _)	1.3
+order.1g	56		(_ + (b + c))	1.3
+order.1g	57		(_ + (b + c) in X in X /\ _)	1.3
+order.1g	58		{1}(a + (b + c))	1.3
+order.1g	59		{3}(Nat.add)	1.3.0
+order.1g	60		{3}(Nat.add)	1.3.0
+order.1g	61		(X in _ = X + _)	1.3.1
+order.1g	62		(X in _ = X + _ /\ _)	1.3.1
+order.1g	63		(X in X + (b + c))	1.3.1
+order.1g	64		{2}(a)	1.3.1
+order.1g	65		{2}(a)	1.3.1
+order.1g	66		(b + _)	1.3.2
+order.1g	67		(_ + _ as X in _ + X)	1.3.2
+order.1g	68		(X in _ = _ + X)	1.3.2
+order.1g	69		(b + _ in X in _ = X)	1.3.2
+order.1g	70		(b + _ in X in X /\ _)	1.3.2
+order.1g	71		(_ + _ as X in _ = _ + X)	1.3.2
+order.1g	72		(X in _ = _ + X /\ _)	1.3.2
+order.1g	73		(b + _ in X in _ = X /\ _)	1.3.2
+order.1g	74		(_ + _ as X in _ = _ + X /\ _)	1.3.2
+order.1g	75		{1}(b + c)	1.3.2
+order.1g	76		(Nat.add)	1.2.0 1.2.1.0 1.3.0 1.3.2.0
+order.1g	77		{4}(Nat.add)	1.3.2.0
+order.1g	78		{4}(Nat.add)	1.3.2.0
+order.1g	79		(X in _ + (X + _))	1.3.2.1
+order.1g	80		(X in _ = _ + (X + _))	1.3.2.1
+order.1g	81		(X in _ = _ + (X + _) /\ _)	1.3.2.1
+order.1g	82		{2}(b)	1.3.2.1
+order.1g	83		{2}(b)	1.3.2.1
+order.1g	84		(X in b + X)	1.3.2.2
+order.1g	85		(X in _ + (_ + X))	1.3.2.2
+order.1g	86		(X in _ = _ + (_ + X))	1.3.2.2
+order.1g	87		(X in _ = _ + (_ + X) /\ _)	1.3.2.2
+order.1g	88		(c)	1.2.2 1.3.2.2
+order.1g	89		{2}(c)	1.3.2.2
+order.1g	90		{2}(c)	1.3.2.2
+order.1g	91		(X in _ /\ X)	2
+order.1g	92		(_ = 0)	2
+order.1g	93		(_ = _ as X in _ /\ X)	2
+order.1g	94		{1}(a * b * (a * b) = 0)	2
+order.1g	95		(@eq)	1.0 2.0
+order.1g	96		{2}(@eq)	2.0
+order.1g	97		{2}(@eq)	2.0
+order.1g	98		(nat)	1.1 2.1
+order.1g	99		{2}(nat)	2.1
+order.1g	100		{2}(nat)	2.1
+order.1g	101		(_ * _)	2.2
+order.1g	102		(X in X = 0)	2.2
+order.1g	103		(_ * _ as X in X = _)	2.2
+order.1g	104		(_ * _ in X in _ /\ X)	2.2
+order.1g	105		(X in _ /\ X = _)	2.2
+order.1g	106		(_ * _ as X in _ /\ X = _)	2.2
+order.1g	107		{1}(a * b * (a * b))	2.2
+order.1g	108		{1}(Nat.mul)	2.2.0
+order.1g	109		{1}(Nat.mul)	2.2.0
+order.1g	110		(X in X * _)	2.2.1
+order.1g	111		(_ * _ as X in X * _)	2.2.1
+order.1g	112		(X in X * _ = _)	2.2.1
+order.1g	113		(_ * _ as X in X * _ = _)	2.2.1
+order.1g	114		(X in _ /\ X * _ = _)	2.2.1
+order.1g	115		(_ * _ as X in _ /\ X * _ = _)	2.2.1
+order.1g	116		{1}(a * _)	2.2.1
+order.1g	117		{1}(a * b)	2.2.1
+order.1g	118		{1}(a * _ in X in _ /\ X)	2.2.1
+order.1g	119		{1}(a * _ in X in X = 0)	2.2.1
+order.1g	120		{1}(a * _ in X in _ /\ X = _)	2.2.1
+order.1g	121		{2}(Nat.mul)	2.2.1.0
+order.1g	122		{2}(Nat.mul)	2.2.1.0
+order.1g	123		(X in X * _ * _)	2.2.1.1
+order.1g	124		(X in X * _ * _ = _)	2.2.1.1
+order.1g	125		(X in _ /\ X * _ * _ = _)	2.2.1.1
+order.1g	126		{3}(a)	2.2.1.1
+order.1g	127		{3}(a)	2.2.1.1
+order.1g	128		{1}(X in X * b)	2.2.1.1
+order.1g	129		(X in _ * X * _)	2.2.1.2
+order.1g	130		(X in _ * X * _ = _)	2.2.1.2
+order.1g	131		(X in _ /\ _ * X * _ = _)	2.2.1.2
+order.1g	132		{3}(b)	2.2.1.2
+order.1g	133		{3}(b)	2.2.1.2
+order.1g	134		{1}(X in a * X)	2.2.1.2
+order.1g	135		(X in _ * X)	2.2.2
+order.1g	136		(_ * _ as X in _ * X)	2.2.2
+order.1g	137		(X in _ * X = _)	2.2.2
+order.1g	138		(_ * _ as X in _ * X = _)	2.2.2
+order.1g	139		(X in _ /\ _ * X = _)	2.2.2
+order.1g	140		(_ * _ as X in _ /\ _ * X = _)	2.2.2
+order.1g	141		(a * _)	2.2.1 2.2.2
+order.1g	142		(a * _ in X in _ /\ X)	2.2.1 2.2.2
+order.1g	143		(a * _ in X in X = 0)	2.2.1 2.2.2
+order.1g	144		(a * _ in X in _ /\ X = _)	2.2.1 2.2.2
+order.1g	145		{2}(a * _)	2.2.2
+order.1g	146		{2}(a * b)	2.2.2
+order.1g	147		{2}(a * _ in X in _ /\ X)	2.2.2
+order.1g	148		{2}(a * _ in X in X = 0)	2.2.2
+order.1g	149		{2}(a * _ in X in _ /\ X = _)	2.2.2
+order.1g	150		(Nat.mul)	2.2.0 2.2.1.0 2.2.2.0
+order.1g	151		{3}(Nat.mul)	2.2.2.0
+order.1g	152		{3}(Nat.mul)	2.2.2.0
+order.1g	153		(X in _ * (X * _))	2.2.2.1
+order.1g	154		(X in _ * (X * _) = _)	2.2.2.1
+order.1g	155		(X in _ /\ _ * (X * _) = _)	2.2.2.1
+order.1g	156		(a)	1.2.1.1 1.3.1 2.2.1.1 2.2.2.1
+order.1g	157		(X in X * b)	2.2.1.1 2.2.2.1
+order.1g	158		{4}(a)	2.2.2.1
+order.1g	159		{4}(a)	2.2.2.1
+order.1g	160		{2}(X in X * b)	2.2.2.1
+order.1g	161		(X in _ * (_ * X))	2.2.2.2
+order.1g	162		(X in _ * (_ * X) = _)	2.2.2.2
+order.1g	163		(X in _ /\ _ * (_ * X) = _)	2.2.2.2
+order.1g	164		(b)	1.2.1.2 1.3.2.1 2.2.1.2 2.2.2.2
+order.1g	165		(X in a * X)	2.2.1.2 2.2.2.2
+order.1g	166		{4}(b)	2.2.2.2
+order.1g	167		{4}(b)	2.2.2.2
+order.1g	168		{2}(X in a * X)	2.2.2.2
+order.1g	169		(0)	2.3
+order.1g	170		(X in _ /\ _ = X)	2.3
+order.1g	171		(X in a * b * (a * b) = X)	2.3
+order.1g	172		{1}(0)	2.3
+order.2	1		(f _)	2
+order.2	2		(f (f _))	2
+order.2	3		(f 1)	3.1
+order.2	4		(X in f (f X))	2.1.1
+order.2	5		{2}(f _)	error
+order.2	6		(f _ in X in _ = X)	3
+order.2	7		(f 0 as X in f (f X))	2.1.1
+order.2g	1		(_ = _)	root
+order.2g	2		{1}(f (f (f 0)) = f (f 1))	root
+order.2g	3		(@eq)	0
+order.2g	4		{1}(@eq)	0
+order.2g	5		(nat)	1
+order.2g	6		{1}(nat)	1
+order.2g	7		(f _)	2
+order.2g	8		(X in X = _)	2
+order.2g	9		(f _ as X in X = _)	2
+order.2g	10		{1}(f (f (f 0)))	2
+order.2g	11		{1}(f)	2.0
+order.2g	12		{1}(f)	2.0
+order.2g	13		(X in f X)	2.1
+order.2g	14		(f _ as X in f X)	2.1
+order.2g	15		(X in f X = _)	2.1
+order.2g	16		(f (f 0))	2.1
+order.2g	17		(f _ as X in f X = _)	2.1
+order.2g	18		(f (f 0) in X in X = _)	2.1
+order.2g	19		{1}(f (f 0))	2.1
+order.2g	20		{2}(f)	2.1.0
+order.2g	21		{2}(f)	2.1.0
+order.2g	22		(f 0)	2.1.1
+order.2g	23		(X in f (f X))	2.1.1
+order.2g	24		(f 0 as X in f X)	2.1.1
+order.2g	25		(f 0 in X in f X)	2.1.1
+order.2g	26		(f 0 in X in X = _)	2.1.1
+order.2g	27		(f _ as X in f (f X))	2.1.1
+order.2g	28		(X in f (f X) = _)	2.1.1
+order.2g	29		(f 0 in X in f X = _)	2.1.1
+order.2g	30		(f _ as X in f (f X) = _)	2.1.1
+order.2g	31		{1}(f 0)	2.1.1
+order.2g	32		{3}(f)	2.1.1.0
+order.2g	33		{3}(f)	2.1.1.0
+order.2g	34		(X in f (f (f X)))	2.1.1.1
+order.2g	35		(X in f (f (f X)) = _)	2.1.1.1
+order.2g	36		{1}(0)	2.1.1.1
+order.2g	37		{1}(0)	2.1.1.1
+order.2g	38		(X in _ = X)	3
+order.2g	39		(f _ as X in _ = X)	3
+order.2g	40		(f (f 1))	3
+order.2g	41		{1}(f (f 1))	3
+order.2g	42		{4}(f)	3.0
+order.2g	43		{4}(f)	3.0
+order.2g	44		(f 1)	3.1
+order.2g	45		(X in _ = f X)	3.1
+order.2g	46		(f 1 as X in f X)	3.1
+order.2g	47		(f 1 in X in _ = X)	3.1
+order.2g	48		(f _ as X in _ = f X)	3.1
+order.2g	49		{1}(f 1)	3.1
+order.2g	50		(f)	2.0 2.1.0 2.1.1.0 3.0 3.1.0
+order.2g	51		{5}(f)	3.1.0
+order.2g	52		{5}(f)	3.1.0
+order.2g	53		(S _)	3.1.1
+order.2g	54		(S _ as X in f X)	3.1.1
+order.2g	55		(S _ in X in _ = X)	3.1.1
+order.2g	56		(S _ as X in f (f X))	3.1.1
+order.2g	57		(S _ in X in _ = f X)	3.1.1
+order.2g	58		(X in _ = f (f X))	3.1.1
+order.2g	59		(S _ as X in _ = f (f X))	3.1.1
+order.2g	60		{1}(1)	3.1.1
+order.2g	61		(S)	3.1.1.0
+order.2g	62		{1}(S)	3.1.1.0
+order.2g	63		(X in S X)	3.1.1.1
+order.2g	64		(X in f (S X))	3.1.1.1
+order.2g	65		(X in f (f (S X)))	3.1.1.1
+order.2g	66		(X in _ = f (f (S X)))	3.1.1.1
+order.2g	67		(0)	2.1.1.1 3.1.1.1
+order.2g	68		{2}(0)	3.1.1.1
+order.2g	69		{2}(0)	3.1.1.1
+occ.1	1		(2 + m)	1.2 1.3 2.1.3
+occ.1	2		(_ + m)	1.2 1.3 2.1.3
+occ.1	3		(1 + 1)	1.3.1 2.2.3
+occ.1	4		(2)	1.2.1 2.1.3.1 2.2.2
+occ.1	5		(S _)	1.2.1 2.1.3.1 2.2.2
+occ.1	6		(2 + _)	1.2 1.3 2.1.3
+occ.1	7		{2}(2 + m)	1.3
+occ.1	8		(X in X + m)	1.2.1 1.3.1 2.1.3.1
+occ.1	9		(_ + _ in X in _ /\ X)	2.1.3
+occ.1g	1		(_ /\ _)	root
+occ.1g	2		{1}(2 + m = 1 + 1 + m /\ S (S m) = 2 + m /\ 2 = 1 + 1)	root
+occ.1g	3		{1}(and)	0
+occ.1g	4		{1}(and)	0
+occ.1g	5		(X in X /\ _)	1
+occ.1g	6		(_ = _ as X in X /\ _)	1
+occ.1g	7		(_ = _)	1 2.1
+occ.1g	8		{1}(_ = _)	1
+occ.1g	9		{1}(2 + m = 1 + 1 + m)	1
+occ.1g	10		{1}(@eq)	1.0
+occ.1g	11		{1}(@eq)	1.0
+occ.1g	12		{1}(nat)	1.1
+occ.1g	13		{1}(nat)	1.1
+occ.1g	14		(X in X = _ /\ _)	1.2
+occ.1g	15		(_ + _ as X in X = _ /\ _)	1.2
+occ.1g	16		(_ + _)	1.2 1.3 2.1.3
+occ.1g	17		(X in X = _)	1.2 2.1.2
+occ.1g	18		(_ + _ as X in X = _)	1.2 2.1.2
+occ.1g	19		(_ + _ in X in X /\ _)	1.2 1.3
+occ.1g	20		{1}(_ + _)	1.2
+occ.1g	21		{1}(X in X = _)	1.2
+occ.1g	22		{1}(_ + _ as X in X = _)	1.2
+occ.1g	23		{1}(_ + _ in X in X /\ _)	1.2
+occ.1g	24		{1}(2 + m)	1.2
+occ.1g	25		{1}(Nat.add)	1.2.0
+occ.1g	26		{1}(Nat.add)	1.2.0
+occ.1g	27		(S _ in X in X /\ _)	1.2.1
+occ.1g	28		(S _ in X in X = _ /\ _)	1.2.1
+occ.1g	29		(X in X + _ = _ /\ _)	1.2.1
+occ.1g	30		(S _ as X in X + _ = _ /\ _)	1.2.1
+occ.1g	31		(S _)	1.2.1 2.1.3.1 2.2.2
+occ.1g	32		(X in X + _)	1.2.1 1.3.1 2.1.3.1
+occ.1g	33		(S _ as X in X + _)	1.2.1 1.3.1 2.1.3.1
+occ.1g	34		(S _ in X in X = _)	1.2.1 2.1.2.1
+occ.1g	35		(X in X + _ = _)	1.2.1 2.1.2.1
+occ.1g	36		(S _ as X in X + _ = _)	1.2.1 2.1.2.1
+occ.1g	37		{1}(2)	1.2.1
+occ.1g	38		{1}(S _)	1.2.1
+occ.1g	39		{1}(X in X + _)	1.2.1
+occ.1g	40		{1}(S _ as X in X + _)	1.2.1
+occ.1g	41		{1}(S _ in X in X = _)	1.2.1
+occ.1g	42		{1}(X in X + _ = _)	1.2.1
+occ.1g	43		{1}(S _ as X in X + _ = _)	1.2.1
+occ.1g	44		{1}(S)	1.2.1.0
+occ.1g	45		{1}(S)	1.2.1.0
+occ.1g	46		(1 in X in X = _ /\ _)	1.2.1.1
+occ.1g	47		(X in S X + _ = _ /\ _)	1.2.1.1
+occ.1g	48		(S _ as X in S X + _ = _ /\ _)	1.2.1.1
+occ.1g	49		(X in S X)	1.2.1.1 2.1.3.1.1 2.2.2.1
+occ.1g	50		(S _ as X in S X)	1.2.1.1 2.1.3.1.1 2.2.2.1
+occ.1g	51		(1 in X in X = _)	1.2.1.1 2.1.2.1.1
+occ.1g	52		(1 in X in X + _)	1.2.1.1 1.3.1.1 2.1.3.1.1
+occ.1g	53		(X in S X + _)	1.2.1.1 1.3.1.1 2.1.3.1.1
+occ.1g	54		(1 in X in X + _ = _)	1.2.1.1 2.1.2.1.1
+occ.1g	55		(X in S X + _ = _)	1.2.1.1 2.1.2.1.1
+occ.1g	56		(S _ as X in S X + _ = _)	1.2.1.1 2.1.2.1.1
+occ.1g	57		{1}(1)	1.2.1.1
+occ.1g	58		{1}(1)	1.2.1.1
+occ.1g	59		{1}(X in S X)	1.2.1.1
+occ.1g	60		{1}(S _ as X in S X)	1.2.1.1
+occ.1g	61		{1}(1 in X in X = _)	1.2.1.1
+occ.1g	62		{1}(1 in X in X + _)	1.2.1.1
+occ.1g	63		{1}(1 in X in X /\ _)	1.2.1.1
+occ.1g	64		{1}(X in S X + _)	1.2.1.1
+occ.1g	65		{1}(S _ as X in S X + _)	1.2.1.1
+occ.1g	66		{1}(1 in X in X + _ = _)	1.2.1.1
+occ.1g	67		{1}(X in S X + _ = _)	1.2.1.1
+occ.1g	68		{1}(S _ as X in S X + _ = _)	1.2.1.1
+occ.1g	69		{2}(S)	1.2.1.1.0
+occ.1g	70		{2}(S)	1.2.1.1.0
+occ.1g	71		(X in S (S X) + _ = _ /\ _)	1.2.1.1.1
+occ.1g	72		(X in S (S X))	1.2.1.1.1 2.1.3.1.1.1 2.2.2.1.1
+occ.1g	73		(X in S (S X) + _ = _)	1.2.1.1.1 2.1.2.1.1.1
+occ.1g	74		{1}(0)	1.2.1.1.1
+occ.1g	75		{1}(0)	1.2.1.1.1
+occ.1g	76		{1}(X in S (S X))	1.2.1.1.1
+occ.1g	77		{1}(X in S (S X) + _)	1.2.1.1.1
+occ.1g	78		{1}(X in S (S X) + _ = _)	1.2.1.1.1
+occ.1g	79		(X in _ + X = _ /\ _)	1.2.2
+occ.1g	80		(X in _ + X)	1.2.2 1.3.2 2.1.3.2
+occ.1g	81		(X in _ + X = _)	1.2.2 2.1.2.2
+occ.1g	82		{1}(m)	1.2.2
+occ.1g	83		{1}(m)	1.2.2
+occ.1g	84		{1}(X in _ + X)	1.2.2
+occ.1g	85		{1}(X in _ + X = _)	1.2.2
+occ.1g	86		(X in _ = X /\ _)	1.3
+occ.1g	87		(_ + _ as X in _ = X /\ _)	1.3
+occ.1g	88		(X in _ = X)	1.3 2.1.3
+occ.1g	89		(_ + _ as X in _ = X)	1.3 2.1.3
+occ.1g	90		(1 + 1 + _)	1.2 1.3 2.1.3
+occ.1g	91		(1 + 1 + _ in X in X /\ _)	1.2 1.3
+occ.1g	92		{1}(X in _ = X)	1.3
+occ.1g	93		{1}(_ + _ as X in _ = X)	1.3
+occ.1g	94		{2}(1 + 1 + _)	1.3
+occ.1g	95		{2}(1 + 1 + m)	1.3
+occ.1g	96		{2}(1 + 1 + _ in X in X /\ _)	1.3
+occ.1g	97		{2}(Nat.add)	1.3.0
+occ.1g	98		{2}(Nat.add)	1.3.0
+occ.1g	99		(1 + _ in X in X /\ _)	1.3.1
+occ.1g	100		(X in _ = X + _ /\ _)	1.3.1
+occ.1g	101		(1 + _ in X in _ = X /\ _)	1.3.1
+occ.1g	102		(_ + _ as X in _ = X + _ /\ _)	1.3.1
+occ.1g	103		(_ + _ as X in X + _)	1.2.1 1.3.1 2.1.3.1
+occ.1g	104		(X in _ = X + _)	1.3.1 2.1.3.1
+occ.1g	105		(1 + _ in X in _ = X)	1.3.1 2.1.3.1
+occ.1g	106		(_ + _ as X in _ = X + _)	1.3.1 2.1.3.1
+occ.1g	107		{1}(1 + _)	1.3.1
+occ.1g	108		{2}(_ + _ as X in X + _)	1.3.1
+occ.1g	109		{1}(X in _ = X + _)	1.3.1
+occ.1g	110		{1}(1 + 1)	1.3.1
+occ.1g	111		{1}(1 + _ in X in _ = X)	1.3.1
+occ.1g	112		{1}(_ + _ as X in _ = X + _)	1.3.1
+occ.1g	113		{3}(Nat.add)	1.3.1.0
+occ.1g	114		{3}(Nat.add)	1.3.1.0
+occ.1g	115		(X in _ = X + _ + _ /\ _)	1.3.1.1
+occ.1g	116		(S _ as X in _ = X + _ + _ /\ _)	1.3.1.1
+occ.1g	117		(X in X + _ + _)	1.2.1.1 1.3.1.1 2.1.3.1.1
+occ.1g	118		(S _ as X in X + _ + _)	1.2.1.1 1.3.1.1 2.1.3.1.1
+occ.1g	119		(X in _ = X + _ + _)	1.3.1.1 2.1.3.1.1
+occ.1g	120		(S _ as X in _ = X + _ + _)	1.3.1.1 2.1.3.1.1
+occ.1g	121		{2}(1)	1.3.1.1
+occ.1g	122		{2}(1)	1.3.1.1
+occ.1g	123		{1}(X in X + 1)	1.3.1.1
+occ.1g	124		{1}(1 as X in X + _)	1.3.1.1
+occ.1g	125		{2}(1 in X in X /\ _)	1.3.1.1
+occ.1g	126		{1}(S _ in X in _ = X)	1.3.1.1
+occ.1g	127		{2}(X in X + _ + _)	1.3.1.1
+occ.1g	128		{2}(S _ as X in X + _ + _)	1.3.1.1
+occ.1g	129		{1}(S _ in X in _ = X + _)	1.3.1.1
+occ.1g	130		{1}(S _ in X in _ = X /\ _)	1.3.1.1
+occ.1g	131		{1}(X in _ = X + _ + _)	1.3.1.1
+occ.1g	132		{1}(S _ as X in _ = X + _ + _)	1.3.1.1
+occ.1g	133		{3}(S)	1.3.1.1.0
+occ.1g	134		{3}(S)	1.3.1.1.0
+occ.1g	135		(X in _ = S X + _ + _ /\ _)	1.3.1.1.1
+occ.1g	136		(X in S X + _ + _)	1.2.1.1.1 1.3.1.1.1 2.1.3.1.1.1
+occ.1g	137		(X in _ = S X + _ + _)	1.3.1.1.1 2.1.3.1.1.1
+occ.1g	138		{2}(0)	1.3.1.1.1
+occ.1g	139		{2}(0)	1.3.1.1.1
+occ.1g	140		{1}(X in S X + 1)	1.3.1.1.1
+occ.1g	141		{2}(X in S X + _ + _)	1.3.1.1.1
+occ.1g	142		{1}(X in _ = S X + _ + _)	1.3.1.1.1
+occ.1g	143		(X in _ = _ + X + _ /\ _)	1.3.1.2
+occ.1g	144		(S _ as X in _ = _ + X + _ /\ _)	1.3.1.2
+occ.1g	145		(1 in X in X /\ _)	1.2.1.1 1.3.1.1 1.3.1.2
+occ.1g	146		(S _ in X in _ = X)	1.3.1.1 1.3.1.2 2.1.3.1.1 2.1.3.1.2
+occ.1g	147		(X in _ + X + _)	1.2.1.2 1.3.1.2 2.1.3.1.2
+occ.1g	148		(S _ as X in _ + X + _)	1.2.1.2 1.3.1.2 2.1.3.1.2
+occ.1g	149		(S _ in X in _ = X + _)	1.3.1.1 1.3.1.2 2.1.3.1.1 2.1.3.1.2
+occ.1g	150		(S _ in X in _ = X /\ _)	1.3.1.1 1.3.1.2
+occ.1g	151		(X in _ = _ + X + _)	1.3.1.2 2.1.3.1.2
+occ.1g	152		(S _ as X in _ = _ + X + _)	1.3.1.2 2.1.3.1.2
+occ.1g	153		{3}(1)	1.3.1.2
+occ.1g	154		{3}(1)	1.3.1.2
+occ.1g	155		{1}(X in 1 + X)	1.3.1.2
+occ.1g	156		{3}(1 in X in X /\ _)	1.3.1.2
+occ.1g	157		{1}(S _ as X in _ + X)	1.3.1.2
+occ.1g	158		{2}(S _ in X in _ = X)	1.3.1.2
+occ.1g	159		{2}(X in _ + X + _)	1.3.1.2
+occ.1g	160		{2}(S _ as X in _ + X + _)	1.3.1.2
+occ.1g	161		{2}(S _ in X in _ = X + _)	1.3.1.2
+occ.1g	162		{2}(S _ in X in _ = X /\ _)	1.3.1.2
+occ.1g	163		{1}(X in _ = _ + X + _)	1.3.1.2
+occ.1g	164		{1}(S _ as X in _ = _ + X + _)	1.3.1.2
+occ.1g	165		{4}(S)	1.3.1.2.0
+occ.1g	166		{4}(S)	1.3.1.2.0
+occ.1g	167		(X in _ = _ + S X + _ /\ _)	1.3.1.2.1
+occ.1g	168		(X in _ + S X + _)	1.2.1.2.1 1.3.1.2.1 2.1.3.1.2.1
+occ.1g	169		(X in _ = _ + S X + _)	1.3.1.2.1 2.1.3.1.2.1
+occ.1g	170		{3}(0)	1.3.1.2.1
+occ.1g	171		{3}(0)	1.3.1.2.1
+occ.1g	172		{1}(X in _ + S X)	1.3.1.2.1
+occ.1g	173		{2}(X in _ + S X + _)	1.3.1.2.1
+occ.1g	174		{1}(X in _ = _ + S X + _)	1.3.1.2.1
+occ.1g	175		(X in _ = _ + X /\ _)	1.3.2
+occ.1g	176		(X in _ = _ + X)	1.3.2 2.1.3.2
+occ.1g	177		(X in 1 + 1 + X)	1.2.2 1.3.2 2.1.3.2
+occ.1g	178		{2}(m)	1.3.2
+occ.1g	179		{2}(m)	1.3.2
+occ.1g	180		{1}(X in _ = _ + X)	1.3.2
+occ.1g	181		{2}(X in 1 + 1 + X)	1.3.2
+occ.1g	182		(X in _ /\ X)	2
+occ.1g	183		(_ /\ _ as X in _ /\ X)	2
+occ.1g	184		(S (S m) = _ /\ _)	2
+occ.1g	185		{1}(S (S m) = 2 + m /\ 2 = 1 + 1)	2
+occ.1g	186		(and)	0 2.0
+occ.1g	187		{2}(and)	2.0
+occ.1g	188		{2}(and)	2.0
+occ.1g	189		(_ = _ in X in _ /\ X)	2.1
+occ.1g	190		(X in _ /\ X /\ _)	2.1
+occ.1g	191		(_ = _ as X in _ /\ X /\ _)	2.1
+occ.1g	192		(S (S m) = _ as X in X /\ _)	2.1
+occ.1g	193		(X in X /\ 2 = 1 + 1)	2.1
+occ.1g	194		(S (S m) = _)	1 2.1
+occ.1g	195		{2}(S (S m) = _)	2.1
+occ.1g	196		{2}(S (S m) = 2 + m)	2.1
+occ.1g	197		{2}(@eq)	2.1.0
+occ.1g	198		{2}(@eq)	2.1.0
+occ.1g	199		{2}(nat)	2.1.1
+occ.1g	200		{2}(nat)	2.1.1
+occ.1g	201		(S _ in X in _ /\ X)	2.1.2
+occ.1g	202		(S (S m))	2.1.2
+occ.1g	203		(S _ as X in X = _ /\ _)	2.1.2
+occ.1g	204		(S _ in X in _ /\ X /\ _)	2.1.2
+occ.1g	205		(X in _ /\ X = _ /\ _)	2.1.2
+occ.1g	206		(X in X = 2 + _ /\ _)	2.1.2
+occ.1g	207		(S _ as X in _ /\ X = _ /\ _)	2.1.2
+occ.1g	208		(S _ in X in X /\ 2 = 1 + 1)	2.1.2
+occ.1g	209		(S _ as X in X = _)	1.2 2.1.2
+occ.1g	210		(X in X = 2 + _)	1.2 2.1.2
+occ.1g	211		{2}(S _ as X in X = _)	2.1.2
+occ.1g	212		{1}(S (S m))	2.1.2
+occ.1g	213		{2}(X in X = 2 + _)	2.1.2
+occ.1g	214		{5}(S)	2.1.2.0
+occ.1g	215		{5}(S)	2.1.2.0
+occ.1g	216		(S m)	2.1.2.1
+occ.1g	217		(S m as X in S X)	2.1.2.1
+occ.1g	218		(S m in X in _ /\ X)	2.1.2.1
+occ.1g	219		(X in S X = _ /\ _)	2.1.2.1
+occ.1g	220		(S m in X in _ /\ X /\ _)	2.1.2.1
+occ.1g	221		(S _ as X in S X = _ /\ _)	2.1.2.1
+occ.1g	222		(X in _ /\ S X = _ /\ _)	2.1.2.1
+occ.1g	223		(S _ as X in _ /\ S X = _ /\ _)	2.1.2.1
+occ.1g	224		(S m in X in X = 2 + _ /\ _)	2.1.2.1
+occ.1g	225		(S m in X in X /\ 2 = 1 + 1)	2.1.2.1
+occ.1g	226		(X in S X = _)	1.2.1 2.1.2.1
+occ.1g	227		(S _ as X in S X = _)	1.2.1 2.1.2.1
+occ.1g	228		(S m in X in X = 2 + _)	1.2.1 2.1.2.1
+occ.1g	229		{1}(S m)	2.1.2.1
+occ.1g	230		{2}(X in S X = _)	2.1.2.1
+occ.1g	231		{2}(S _ as X in S X = _)	2.1.2.1
+occ.1g	232		{2}(S m in X in X = 2 + _)	2.1.2.1
+occ.1g	233		{6}(S)	2.1.2.1.0
+occ.1g	234		{6}(S)	2.1.2.1.0
+occ.1g	235		(X in S (S X) = _ /\ _)	2.1.2.1.1
+occ.1g	236		(X in _ /\ S (S X) = _ /\ _)	2.1.2.1.1
+occ.1g	237		(X in S (S X) = _)	1.2.1.1 2.1.2.1.1
+occ.1g	238		{3}(m)	2.1.2.1.1
+occ.1g	239		{3}(m)	2.1.2.1.1
+occ.1g	240		{2}(X in S (S X) = _)	2.1.2.1.1
+occ.1g	241		(_ + _ in X in _ /\ X)	2.1.3
+occ.1g	242		(_ + _ in X in _ /\ X /\ _)	2.1.3
+occ.1g	243		(X in _ /\ _ = X /\ _)	2.1.3
+occ.1g	244		(_ + _ as X in _ /\ _ = X /\ _)	2.1.3
+occ.1g	245		(X in S (S m) = X /\ _)	2.1.3
+occ.1g	246		(_ + _ as X in S (S m) = X /\ _)	2.1.3
+occ.1g	247		(_ + _ in X in X /\ 2 = 1 + 1)	2.1.3
+occ.1g	248		(2 + _)	1.2 1.3 2.1.3
+occ.1g	249		(X in S (S m) = X)	1.3 2.1.3
+occ.1g	250		(_ + _ as X in S (S m) = X)	1.3 2.1.3
+occ.1g	251		{3}(2 + _)	2.1.3
+occ.1g	252		{3}(2 + m)	2.1.3
+occ.1g	253		{2}(X in S (S m) = X)	2.1.3
+occ.1g	254		{2}(_ + _ as X in S (S m) = X)	2.1.3
+occ.1g	255		{4}(Nat.add)	2.1.3.0
+occ.1g	256		{4}(Nat.add)	2.1.3.0
+occ.1g	257		(2 in X in _ /\ X /\ _)	2.1.3.1
+occ.1g	258		(S _ as X in _ = X + _ /\ _)	2.1.3.1
+occ.1g	259		(X in _ /\ _ = X + _ /\ _)	2.1.3.1
+occ.1g	260		(S _ as X in _ /\ _ = X + _ /\ _)	2.1.3.1
+occ.1g	261		(S _ in X in S (S m) = X /\ _)	2.1.3.1
+occ.1g	262		(X in S (S m) = X + _ /\ _)	2.1.3.1
+occ.1g	263		(2 in X in X /\ 2 = 1 + 1)	2.1.3.1
+occ.1g	264		(S _ as X in X + m)	1.2.1 1.3.1 2.1.3.1
+occ.1g	265		(S _ as X in _ = X + _)	1.3.1 2.1.3.1
+occ.1g	266		(S _ in X in S (S m) = X)	1.3.1 2.1.3.1
+occ.1g	267		(X in S (S m) = X + _)	1.3.1 2.1.3.1
+occ.1g	268		{2}(2)	2.1.3.1
+occ.1g	269		{2}(2)	2.1.3.1
+occ.1g	270		{1}(2 in X in _ /\ X)	2.1.3.1
+occ.1g	271		{3}(S _ as X in X + m)	2.1.3.1
+occ.1g	272		{2}(S _ as X in _ = X + _)	2.1.3.1
+occ.1g	273		{2}(S _ in X in S (S m) = X)	2.1.3.1
+occ.1g	274		{2}(X in S (S m) = X + _)	2.1.3.1
+occ.1g	275		{7}(S)	2.1.3.1.0
+occ.1g	276		{7}(S)	2.1.3.1.0
+occ.1g	277		(1 in X in _ /\ X /\ _)	2.1.3.1.1
+occ.1g	278		(X in _ = S X + _ /\ _)	2.1.3.1.1
+occ.1g	279		(S _ as X in _ = S X + _ /\ _)	2.1.3.1.1
+occ.1g	280		(X in _ /\ _ = S X + _ /\ _)	2.1.3.1.1
+occ.1g	281		(1 in X in S (S m) = X /\ _)	2.1.3.1.1
+occ.1g	282		(S _ as X in _ /\ _ = S X + _ /\ _)	2.1.3.1.1
+occ.1g	283		(1 in X in X /\ 2 = 1 + 1)	2.1.3.1.1
+occ.1g	284		(X in S X + m)	1.2.1.1 1.3.1.1 2.1.3.1.1
+occ.1g	285		(S _ as X in S X + _)	1.2.1.1 1.3.1.1 2.1.3.1.1
+occ.1g	286		(X in _ = S X + _)	1.3.1.1 2.1.3.1.1
+occ.1g	287		(S _ as X in _ = S X + _)	1.3.1.1 2.1.3.1.1
+occ.1g	288		(1 in X in S (S m) = X)	1.3.1.1 2.1.3.1.1
+occ.1g	289		(1 in X in S (S m) = X + _)	1.3.1.1 2.1.3.1.1
+occ.1g	290		{4}(1)	2.1.3.1.1
+occ.1g	291		{4}(1)	2.1.3.1.1
+occ.1g	292		{2}(1 as X in S X)	2.1.3.1.1
+occ.1g	293		{3}(X in S X + m)	2.1.3.1.1
+occ.1g	294		{3}(S _ as X in S X + _)	2.1.3.1.1
+occ.1g	295		{2}(X in _ = S X + _)	2.1.3.1.1
+occ.1g	296		{2}(S _ as X in _ = S X + _)	2.1.3.1.1
+occ.1g	297		{2}(1 in X in S (S m) = X)	2.1.3.1.1
+occ.1g	298		{2}(1 in X in S (S m) = X + _)	2.1.3.1.1
+occ.1g	299		{8}(S)	2.1.3.1.1.0
+occ.1g	300		{8}(S)	2.1.3.1.1.0
+occ.1g	301		(X in _ = S (S X) + _ /\ _)	2.1.3.1.1.1
+occ.1g	302		(X in _ /\ _ = S (S X) + _ /\ _)	2.1.3.1.1.1
+occ.1g	303		(X in S (S X) + _)	1.2.1.1.1 1.3.1.1.1 2.1.3.1.1.1
+occ.1g	304		(X in _ = S (S X) + _)	1.3.1.1.1 2.1.3.1.1.1
+occ.1g	305		{4}(0)	2.1.3.1.1.1
+occ.1g	306		{4}(0)	2.1.3.1.1.1
+occ.1g	307		{3}(X in S (S X) + _)	2.1.3.1.1.1
+occ.1g	308		{2}(X in _ = S (S X) + _)	2.1.3.1.1.1
+occ.1g	309		(X in _ /\ _ = _ + X /\ _)	2.1.3.2
+occ.1g	310		(X in S (S m) = _ + X /\ _)	2.1.3.2
+occ.1g	311		(m)	1.2.2 1.3.2 2.1.2.1.1 2.1.3.2
+occ.1g	312		(X in 2 + X)	1.2.2 1.3.2 2.1.3.2
+occ.1g	313		(X in S (S m) = _ + X)	1.3.2 2.1.3.2
+occ.1g	314		{4}(m)	2.1.3.2
+occ.1g	315		{4}(m)	2.1.3.2
+occ.1g	316		{3}(X in 2 + X)	2.1.3.2
+occ.1g	317		{2}(X in S (S m) = _ + X)	2.1.3.2
+occ.1g	318		(2 = _)	2.2
+occ.1g	319		(_ = _ as X in _ /\ X)	2.2
+occ.1g	320		(X in _ /\ _ /\ X)	2.2
+occ.1g	321		(2 = _ in X in _ /\ X)	2.2
+occ.1g	322		(_ = _ as X in _ /\ _ /\ X)	2.2
+occ.1g	323		(X in S (S m) = _ /\ X)	2.2
+occ.1g	324		{1}(2 = 1 + 1)	2.2
+occ.1g	325		(@eq)	1.0 2.1.0 2.2.0
+occ.1g	326		{3}(@eq)	2.2.0
+occ.1g	327		{3}(@eq)	2.2.0
+occ.1g	328		(nat)	1.1 2.1.1 2.2.1
+occ.1g	329		{3}(nat)	2.2.1
+occ.1g	330		{3}(nat)	2.2.1
+occ.1g	331		(2 as X in X = _)	2.2.2
+occ.1g	332		(X in _ /\ X = _)	2.2.2
+occ.1g	333		(X in X = 1 + _)	2.2.2
+occ.1g	334		(S _ as X in _ /\ X = _)	2.2.2
+occ.1g	335		(S _ in X in _ /\ _ /\ X)	2.2.2
+occ.1g	336		(X in _ /\ _ /\ X = _)	2.2.2
+occ.1g	337		(S _ as X in _ /\ _ /\ X = _)	2.2.2
+occ.1g	338		(S _ in X in S (S m) = _ /\ X)	2.2.2
+occ.1g	339		(2)	1.2.1 2.1.3.1 2.2.2
+occ.1g	340		(2 in X in _ /\ X)	2.1.3.1 2.2.2
+occ.1g	341		{3}(2)	2.2.2
+occ.1g	342		{3}(2)	2.2.2
+occ.1g	343		{2}(2 in X in _ /\ X)	2.2.2
+occ.1g	344		{9}(S)	2.2.2.0
+occ.1g	345		{9}(S)	2.2.2.0
+occ.1g	346		(1 as X in S X = _)	2.2.2.1
+occ.1g	347		(1 in X in _ /\ X = _)	2.2.2.1
+occ.1g	348		(X in _ /\ S X = _)	2.2.2.1
+occ.1g	349		(1 in X in X = 1 + _)	2.2.2.1
+occ.1g	350		(X in S X = 1 + _)	2.2.2.1
+occ.1g	351		(S _ as X in _ /\ S X = _)	2.2.2.1
+occ.1g	352		(X in _ /\ _ /\ S X = _)	2.2.2.1
+occ.1g	353		(S _ as X in _ /\ _ /\ S X = _)	2.2.2.1
+occ.1g	354		(1 as X in S X)	1.2.1.1 2.1.3.1.1 2.2.2.1
+occ.1g	355		{5}(1)	2.2.2.1
+occ.1g	356		{5}(1)	2.2.2.1
+occ.1g	357		{3}(1 as X in S X)	2.2.2.1
+occ.1g	358		{2}(1 in X in _ /\ X)	2.2.2.1
+occ.1g	359		{1}(1 in X in _ /\ _ /\ X)	2.2.2.1
+occ.1g	360		{1}(1 in X in S (S m) = _ /\ X)	2.2.2.1
+occ.1g	361		{10}(S)	2.2.2.1.0
+occ.1g	362		{10}(S)	2.2.2.1.0
+occ.1g	363		(X in _ /\ S (S X) = _)	2.2.2.1.1
+occ.1g	364		(X in S (S X) = 1 + _)	2.2.2.1.1
+occ.1g	365		(X in _ /\ _ /\ S (S X) = _)	2.2.2.1.1
+occ.1g	366		{5}(0)	2.2.2.1.1
+occ.1g	367		{5}(0)	2.2.2.1.1
+occ.1g	368		(X in 2 = X)	2.2.3
+occ.1g	369		(X in _ /\ _ = X)	2.2.3
+occ.1g	370		(1 + _ as X in _ = X)	2.2.3
+occ.1g	371		(1 + _ in X in _ /\ X)	2.2.3
+occ.1g	372		(_ + _ as X in _ /\ _ = X)	2.2.3
+occ.1g	373		(_ + _ in X in _ /\ _ /\ X)	2.2.3
+occ.1g	374		(X in _ /\ _ /\ _ = X)	2.2.3
+occ.1g	375		(_ + _ as X in _ /\ _ /\ _ = X)	2.2.3
+occ.1g	376		(_ + _ in X in S (S m) = _ /\ X)	2.2.3
+occ.1g	377		(1 + _)	1.3.1 2.2.3
+occ.1g	378		{2}(1 + _)	2.2.3
+occ.1g	379		{2}(1 + 1)	2.2.3
+occ.1g	380		(Nat.add)	1.2.0 1.3.0 1.3.1.0 2.1.3.0 2.2.3.0
+occ.1g	381		{5}(Nat.add)	2.2.3.0
+occ.1g	382		{5}(Nat.add)	2.2.3.0
+occ.1g	383		(X in _ = X + 1)	2.2.3.1
+occ.1g	384		(1 as X in _ = X + _)	2.2.3.1
+occ.1g	385		(X in _ /\ _ = X + _)	2.2.3.1
+occ.1g	386		(S _ as X in _ /\ _ = X + _)	2.2.3.1
+occ.1g	387		(X in _ /\ _ /\ _ = X + _)	2.2.3.1
+occ.1g	388		(S _ as X in _ /\ _ /\ _ = X + _)	2.2.3.1
+occ.1g	389		(X in X + 1)	1.3.1.1 2.2.3.1
+occ.1g	390		(1 as X in X + _)	1.3.1.1 2.2.3.1
+occ.1g	391		{6}(1)	2.2.3.1
+occ.1g	392		{6}(1)	2.2.3.1
+occ.1g	393		{2}(X in X + 1)	2.2.3.1
+occ.1g	394		{2}(1 as X in X + _)	2.2.3.1
+occ.1g	395		{3}(1 in X in _ /\ X)	2.2.3.1
+occ.1g	396		{1}(S _ in X in 2 = X)	2.2.3.1
+occ.1g	397		{2}(1 in X in _ /\ _ /\ X)	2.2.3.1
+occ.1g	398		{1}(S _ in X in _ /\ _ = X)	2.2.3.1
+occ.1g	399		{2}(1 in X in S (S m) = _ /\ X)	2.2.3.1
+occ.1g	400		{11}(S)	2.2.3.1.0
+occ.1g	401		{11}(S)	2.2.3.1.0
+occ.1g	402		(X in _ = S X + 1)	2.2.3.1.1
+occ.1g	403		(X in _ /\ _ = S X + _)	2.2.3.1.1
+occ.1g	404		(X in _ /\ _ /\ _ = S X + _)	2.2.3.1.1
+occ.1g	405		(X in S X + 1)	1.3.1.1.1 2.2.3.1.1
+occ.1g	406		{6}(0)	2.2.3.1.1
+occ.1g	407		{6}(0)	2.2.3.1.1
+occ.1g	408		{2}(X in S X + 1)	2.2.3.1.1
+occ.1g	409		(X in _ = 1 + X)	2.2.3.2
+occ.1g	410		(S _ as X in _ = _ + X)	2.2.3.2
+occ.1g	411		(X in _ /\ _ = _ + X)	2.2.3.2
+occ.1g	412		(S _ as X in _ /\ _ = _ + X)	2.2.3.2
+occ.1g	413		(X in _ /\ _ /\ _ = _ + X)	2.2.3.2
+occ.1g	414		(S _ as X in _ /\ _ /\ _ = _ + X)	2.2.3.2
+occ.1g	415		(1)	1.2.1.1 1.3.1.1 1.3.1.2 2.1.3.1.1 2.2.2.1 2.2.3.1 2.2.3.2
+occ.1g	416		(X in 1 + X)	1.3.1.2 2.2.3.2
+occ.1g	417		(1 in X in _ /\ X)	2.1.3.1.1 2.2.2.1 2.2.3.1 2.2.3.2
+occ.1g	418		(S _ as X in _ + X)	1.3.1.2 2.2.3.2
+occ.1g	419		(S _ in X in 2 = X)	2.2.3.1 2.2.3.2
+occ.1g	420		(1 in X in _ /\ _ /\ X)	2.2.2.1 2.2.3.1 2.2.3.2
+occ.1g	421		(S _ in X in _ /\ _ = X)	2.2.3.1 2.2.3.2
+occ.1g	422		(1 in X in S (S m) = _ /\ X)	2.2.2.1 2.2.3.1 2.2.3.2
+occ.1g	423		{7}(1)	2.2.3.2
+occ.1g	424		{7}(1)	2.2.3.2
+occ.1g	425		{2}(X in 1 + X)	2.2.3.2
+occ.1g	426		{4}(1 in X in _ /\ X)	2.2.3.2
+occ.1g	427		{2}(S _ as X in _ + X)	2.2.3.2
+occ.1g	428		{2}(S _ in X in 2 = X)	2.2.3.2
+occ.1g	429		{3}(1 in X in _ /\ _ /\ X)	2.2.3.2
+occ.1g	430		{2}(S _ in X in _ /\ _ = X)	2.2.3.2
+occ.1g	431		{3}(1 in X in S (S m) = _ /\ X)	2.2.3.2
+occ.1g	432		(S)	1.2.1.0 1.2.1.1.0 1.3.1.1.0 1.3.1.2.0 2.1.2.0 2.1.2.1.0 2.1.3.1.0 2.1.3.1.1.0 2.2.2.0 2.2.2.1.0 2.2.3.1.0 2.2.3.2.0
+occ.1g	433		{12}(S)	2.2.3.2.0
+occ.1g	434		{12}(S)	2.2.3.2.0
+occ.1g	435		(X in _ = _ + S X)	2.2.3.2.1
+occ.1g	436		(X in _ /\ _ = _ + S X)	2.2.3.2.1
+occ.1g	437		(X in _ /\ _ /\ _ = _ + S X)	2.2.3.2.1
+occ.1g	438		(0)	1.2.1.1.1 1.3.1.1.1 1.3.1.2.1 2.1.3.1.1.1 2.2.2.1.1 2.2.3.1.1 2.2.3.2.1
+occ.1g	439		(X in _ + S X)	1.3.1.2.1 2.2.3.2.1
+occ.1g	440		{7}(0)	2.2.3.2.1
+occ.1g	441		{7}(0)	2.2.3.2.1
+occ.1g	442		{2}(X in _ + S X)	2.2.3.2.1
+occ.2	1		(twice _)	1.2 2.3.1 2.3.2
+occ.2	2		(_ + _)	1.3 2.2.1
+occ.2	3		(n + n)	1.3 2.2.1
+occ.2	4		(twice n)	1.2 2.3.1 2.3.2
+occ.2	5		{2}(twice _)	2.3.1
+occ.2	6		(twice (_ + _))	2.2
+occ.2	7		(_ + n)	1.3 2.2.1
+occ.2g	1		(_ /\ _)	root
+occ.2g	2		{1}(twice n = n + n /\ twice (n + n) = twice n + twice n)	root
+occ.2g	3		(and)	0
+occ.2g	4		{1}(and)	0
+occ.2g	5		(_ = _)	1
+occ.2g	6		(X in X /\ _)	1
+occ.2g	7		(_ = _ as X in X /\ _)	1
+occ.2g	8		{1}(twice n = n + n)	1
+occ.2g	9		{1}(@eq)	1.0
+occ.2g	10		{1}(@eq)	1.0
+occ.2g	11		{1}(nat)	1.1
+occ.2g	12		{1}(nat)	1.1
+occ.2g	13		(X in X = _)	1.2
+occ.2g	14		(twice _ as X in X = _)	1.2
+occ.2g	15		(twice _ in X in X /\ _)	1.2
+occ.2g	16		(X in X = _ /\ _)	1.2
+occ.2g	17		(twice _ as X in X = _ /\ _)	1.2
+occ.2g	18		(twice _)	1.2 2.3.1 2.3.2
+occ.2g	19		{1}(twice _)	1.2
+occ.2g	20		{1}(twice n)	1.2
+occ.2g	21		{1}(twice)	1.2.0
+occ.2g	22		{1}(twice)	1.2.0
+occ.2g	23		(X in twice X = _)	1.2.1
+occ.2g	24		(X in twice X = _ /\ _)	1.2.1
+occ.2g	25		(X in twice X)	1.2.1 2.3.1.1 2.3.2.1
+occ.2g	26		{1}(n)	1.2.1
+occ.2g	27		{1}(n)	1.2.1
+occ.2g	28		{1}(X in twice X)	1.2.1
+occ.2g	29		(X in _ = X)	1.3
+occ.2g	30		(_ + _ as X in _ = X)	1.3
+occ.2g	31		(_ + _ in X in X /\ _)	1.3
+occ.2g	32		(X in _ = X /\ _)	1.3
+occ.2g	33		(_ + _ as X in _ = X /\ _)	1.3
+occ.2g	34		{1}(_ + _)	1.3
+occ.2g	35		{1}(n + n)	1.3
+occ.2g	36		{1}(Nat.add)	1.3.0
+occ.2g	37		{1}(Nat.add)	1.3.0
+occ.2g	38		(X in _ = X + _)	1.3.1
+occ.2g	39		(X in _ = X + _ /\ _)	1.3.1
+occ.2g	40		{2}(n)	1.3.1
+occ.2g	41		{2}(n)	1.3.1
+occ.2g	42		{1}(X in X + _)	1.3.1
+occ.2g	43		(X in _ = _ + X)	1.3.2
+occ.2g	44		(X in _ = _ + X /\ _)	1.3.2
+occ.2g	45		{3}(n)	1.3.2
+occ.2g	46		{3}(n)	1.3.2
+occ.2g	47		{1}(X in _ + X)	1.3.2
+occ.2g	48		(X in _ /\ X)	2
+occ.2g	49		(_ = _ as X in _ /\ X)	2
+occ.2g	50		(_ = twice n + _)	2
+occ.2g	51		{1}(twice (n + n) = twice n + twice n)	2
+occ.2g	52		(@eq)	1.0 2.0
+occ.2g	53		{2}(@eq)	2.0
+occ.2g	54		{2}(@eq)	2.0
+occ.2g	55		(nat)	1.1 2.1
+occ.2g	56		{2}(nat)	2.1
+occ.2g	57		{2}(nat)	2.1
+occ.2g	58		(twice _ in X in _ /\ X)	2.2
+occ.2g	59		(X in _ /\ X = _)	2.2
+occ.2g	60		(twice _ as X in _ /\ X = _)	2.2
+occ.2g	61		(twice (n + n))	2.2
+occ.2g	62		(X in X = twice n + _)	2.2
+occ.2g	63		(twice (n + n) as X in X = _)	2.2
+occ.2g	64		{1}(twice (n + n))	2.2
+occ.2g	65		{2}(twice)	2.2.0
+occ.2g	66		{2}(twice)	2.2.0
+occ.2g	67		(_ + _ in X in _ /\ X)	2.2.1
+occ.2g	68		(_ + _ as X in twice X)	2.2.1
+occ.2g	69		(_ + _ in X in _ /\ X = _)	2.2.1
+occ.2g	70		(_ + _ as X in twice X = _)	2.2.1
+occ.2g	71		(X in _ /\ twice X = _)	2.2.1
+occ.2g	72		(_ + _ as X in _ /\ twice X = _)	2.2.1
+occ.2g	73		(_ + _ in X in X = twice n + _)	2.2.1
+occ.2g	74		(X in twice X = twice n + _)	2.2.1
+occ.2g	75		(_ + _)	1.3 2.2.1
+occ.2g	76		{2}(_ + _)	2.2.1
+occ.2g	77		{2}(n + n)	2.2.1
+occ.2g	78		{2}(Nat.add)	2.2.1.0
+occ.2g	79		{2}(Nat.add)	2.2.1.0
+occ.2g	80		(X in twice (X + _))	2.2.1.1
+occ.2g	81		(X in twice (X + _) = _)	2.2.1.1
+occ.2g	82		(X in _ /\ twice (X + _) = _)	2.2.1.1
+occ.2g	83		(X in X + _)	1.3.1 2.2.1.1
+occ.2g	84		{4}(n)	2.2.1.1
+occ.2g	85		{4}(n)	2.2.1.1
+occ.2g	86		{2}(X in X + _)	2.2.1.1
+occ.2g	87		(X in twice (_ + X))	2.2.1.2
+occ.2g	88		(X in twice (_ + X) = _)	2.2.1.2
+occ.2g	89		(X in _ /\ twice (_ + X) = _)	2.2.1.2
+occ.2g	90		(X in _ + X)	1.3.2 2.2.1.2
+occ.2g	91		{5}(n)	2.2.1.2
+occ.2g	92		{5}(n)	2.2.1.2
+occ.2g	93		{2}(X in _ + X)	2.2.1.2
+occ.2g	94		(X in _ /\ _ = X)	2.3
+occ.2g	95		(twice n + _)	2.3
+occ.2g	96		(_ + _ as X in _ /\ _ = X)	2.3
+occ.2g	97		(twice n + _ as X in _ = X)	2.3
+occ.2g	98		(twice n + _ in X in _ /\ X)	2.3
+occ.2g	99		(X in twice (n + n) = X)	2.3
+occ.2g	100		{1}(twice n + twice n)	2.3
+occ.2g	101		(Nat.add)	1.3.0 2.2.1.0 2.3.0
+occ.2g	102		{3}(Nat.add)	2.3.0
+occ.2g	103		{3}(Nat.add)	2.3.0
+occ.2g	104		(twice _ as X in X + _)	2.3.1
+occ.2g	105		(X in X + twice n)	2.3.1
+occ.2g	106		(twice _ as X in _ = X + _)	2.3.1
+occ.2g	107		(X in _ /\ _ = X + _)	2.3.1
+occ.2g	108		(X in _ = X + twice n)	2.3.1
+occ.2g	109		(twice _ as X in _ /\ _ = X + _)	2.3.1
+occ.2g	110		{2}(twice n)	2.3.1
+occ.2g	111		{2}(twice n)	2.3.1
+occ.2g	112		{1}(twice n in X in _ /\ X)	2.3.1
+occ.2g	113		{1}(twice _ in X in _ /\ _ = X)	2.3.1
+occ.2g	114		{1}(twice _ in X in twice (n + n) = X)	2.3.1
+occ.2g	115		{3}(twice)	2.3.1.0
+occ.2g	116		{3}(twice)	2.3.1.0
+occ.2g	117		(X in twice X + _)	2.3.1.1
+occ.2g	118		(X in _ = twice X + _)	2.3.1.1
+occ.2g	119		(X in _ /\ _ = twice X + _)	2.3.1.1
+occ.2g	120		{6}(n)	2.3.1.1
+occ.2g	121		{6}(n)	2.3.1.1
+occ.2g	122		(twice _ as X in _ + X)	2.3.2
+occ.2g	123		(X in twice n + X)	2.3.2
+occ.2g	124		(twice _ as X in _ = _ + X)	2.3.2
+occ.2g	125		(X in _ /\ _ = _ + X)	2.3.2
+occ.2g	126		(X in _ = twice n + X)	2.3.2
+occ.2g	127		(twice _ as X in _ /\ _ = _ + X)	2.3.2
+occ.2g	128		(twice n)	1.2 2.3.1 2.3.2
+occ.2g	129		(twice n in X in _ /\ X)	2.3.1 2.3.2
+occ.2g	130		(twice _ in X in _ /\ _ = X)	2.3.1 2.3.2
+occ.2g	131		(twice _ in X in twice (n + n) = X)	2.3.1 2.3.2
+occ.2g	132		{3}(twice n)	2.3.2
+occ.2g	133		{3}(twice n)	2.3.2
+occ.2g	134		{2}(twice n in X in _ /\ X)	2.3.2
+occ.2g	135		{2}(twice _ in X in _ /\ _ = X)	2.3.2
+occ.2g	136		{2}(twice _ in X in twice (n + n) = X)	2.3.2
+occ.2g	137		(twice)	1.2.0 2.2.0 2.3.1.0 2.3.2.0
+occ.2g	138		{4}(twice)	2.3.2.0
+occ.2g	139		{4}(twice)	2.3.2.0
+occ.2g	140		(X in _ + twice X)	2.3.2.1
+occ.2g	141		(X in _ = _ + twice X)	2.3.2.1
+occ.2g	142		(X in _ /\ _ = _ + twice X)	2.3.2.1
+occ.2g	143		(n)	1.2.1 1.3.1 1.3.2 2.2.1.1 2.2.1.2 2.3.1.1 2.3.2.1
+occ.2g	144		{7}(n)	2.3.2.1
+occ.2g	145		{7}(n)	2.3.2.1
+conv.1	1		(_ + (_ + _))	1.3
+conv.1	2		(_ + (m + 0))	error
+conv.1	3		(n + _)	1.2
+conv.1	4		(_ * m)	1.2.2
+conv.1	5		(2 * _)	1.2.2
+conv.1	6		(0 + _)	2.2
+conv.1	7		(_ + n)	1.3.2
+conv.1	8		(n + (m + _))	1.2
+conv.1	9		(X in n + X)	1.2.2
+conv.1g	1		(_ /\ _)	root
+conv.1g	2		{1}(n + 2 * m = m + (m + n) /\ 0 + n = n)	root
+conv.1g	3		(and)	0
+conv.1g	4		{1}(and)	0
+conv.1g	5		(_ = _)	1
+conv.1g	6		(X in X /\ _)	1
+conv.1g	7		(_ = _ as X in X /\ _)	1
+conv.1g	8		{1}(n + 2 * m = m + (m + n))	1
+conv.1g	9		{1}(@eq)	1.0
+conv.1g	10		{1}(@eq)	1.0
+conv.1g	11		{1}(nat)	1.1
+conv.1g	12		{1}(nat)	1.1
+conv.1g	13		(_ + _)	1.2
+conv.1g	14		(X in X = _)	1.2
+conv.1g	15		(_ + _ as X in X = _)	1.2
+conv.1g	16		(_ + _ in X in X /\ _)	1.2
+conv.1g	17		(X in X = _ /\ _)	1.2
+conv.1g	18		(_ + _ as X in X = _ /\ _)	1.2
+conv.1g	19		{1}(n + 2 * m)	1.2
+conv.1g	20		{1}(Nat.add)	1.2.0
+conv.1g	21		{1}(Nat.add)	1.2.0
+conv.1g	22		(X in X + _)	1.2.1
+conv.1g	23		(X in X + _ = _)	1.2.1
+conv.1g	24		(X in X + _ = _ /\ _)	1.2.1
+conv.1g	25		{1}(n)	1.2.1
+conv.1g	26		{1}(n)	1.2.1
+conv.1g	27		(_ * _)	1.2.2
+conv.1g	28		(X in _ + X)	1.2.2
+conv.1g	29		(_ * _ as X in _ + X)	1.2.2
+conv.1g	30		(_ * _ in X in X = _)	1.2.2
+conv.1g	31		(_ * _ in X in X /\ _)	1.2.2
+conv.1g	32		(X in _ + X = _)	1.2.2
+conv.1g	33		(_ * _ as X in _ + X = _)	1.2.2
+conv.1g	34		(_ * _ in X in X = _ /\ _)	1.2.2
+conv.1g	35		(X in _ + X = _ /\ _)	1.2.2
+conv.1g	36		(_ * _ as X in _ + X = _ /\ _)	1.2.2
+conv.1g	37		{1}(2 * m)	1.2.2
+conv.1g	38		(Nat.mul)	1.2.2.0
+conv.1g	39		{1}(Nat.mul)	1.2.2.0
+conv.1g	40		(S _)	1.2.2.1
+conv.1g	41		(X in X * _)	1.2.2.1
+conv.1g	42		(S _ as X in X * _)	1.2.2.1
+conv.1g	43		(S _ in X in X = _)	1.2.2.1
+conv.1g	44		(S _ in X in _ + X)	1.2.2.1
+conv.1g	45		(S _ in X in X /\ _)	1.2.2.1
+conv.1g	46		(X in _ + X * _)	1.2.2.1
+conv.1g	47		(S _ as X in _ + X * _)	1.2.2.1
+conv.1g	48		(S _ in X in _ + X = _)	1.2.2.1
+conv.1g	49		(S _ in X in X = _ /\ _)	1.2.2.1
+conv.1g	50		(X in _ + X * _ = _)	1.2.2.1
+conv.1g	51		(S _ as X in _ + X * _ = _)	1.2.2.1
+conv.1g	52		(X in _ + X * _ = _ /\ _)	1.2.2.1
+conv.1g	53		(S _ as X in _ + X * _ = _ /\ _)	1.2.2.1
+conv.1g	54		{1}(2)	1.2.2.1
+conv.1g	55		{1}(S)	1.2.2.1.0
+conv.1g	56		{1}(S)	1.2.2.1.0
+conv.1g	57		(1)	1.2.2.1.1
+conv.1g	58		(X in S X)	1.2.2.1.1
+conv.1g	59		(S _ as X in S X)	1.2.2.1.1
+conv.1g	60		(1 in X in X = _)	1.2.2.1.1
+conv.1g	61		(1 in X in _ + X)	1.2.2.1.1
+conv.1g	62		(1 in X in X * _)	1.2.2.1.1
+conv.1g	63		(X in S X * _)	1.2.2.1.1
+conv.1g	64		(S _ as X in S X * _)	1.2.2.1.1
+conv.1g	65		(1 in X in _ + X = _)	1.2.2.1.1
+conv.1g	66		(1 in X in _ + X * _)	1.2.2.1.1
+conv.1g	67		(1 in X in X = _ /\ _)	1.2.2.1.1
+conv.1g	68		(X in _ + S X * _)	1.2.2.1.1
+conv.1g	69		(S _ as X in _ + S X * _)	1.2.2.1.1
+conv.1g	70		(X in _ + S X * _ = _)	1.2.2.1.1
+conv.1g	71		(S _ as X in _ + S X * _ = _)	1.2.2.1.1
+conv.1g	72		(X in _ + S X * _ = _ /\ _)	1.2.2.1.1
+conv.1g	73		(S _ as X in _ + S X * _ = _ /\ _)	1.2.2.1.1
+conv.1g	74		{1}(1)	1.2.2.1.1
+conv.1g	75		(S)	1.2.2.1.0 1.2.2.1.1.0
+conv.1g	76		{2}(S)	1.2.2.1.1.0
+conv.1g	77		{2}(S)	1.2.2.1.1.0
+conv.1g	78		(X in S (S X))	1.2.2.1.1.1
+conv.1g	79		(X in S (S X) * _)	1.2.2.1.1.1
+conv.1g	80		(X in _ + S (S X) * _)	1.2.2.1.1.1
+conv.1g	81		(X in _ + S (S X) * _ = _)	1.2.2.1.1.1
+conv.1g	82		(X in _ + S (S X) * _ = _ /\ _)	1.2.2.1.1.1
+conv.1g	83		{1}(0)	1.2.2.1.1.1
+conv.1g	84		{1}(0)	1.2.2.1.1.1
+conv.1g	85		(X in _ * X)	1.2.2.2
+conv.1g	86		(X in _ + _ * X)	1.2.2.2
+conv.1g	87		(X in _ + _ * X = _)	1.2.2.2
+conv.1g	88		(X in _ + _ * X = _ /\ _)	1.2.2.2
+conv.1g	89		{1}(m)	1.2.2.2
+conv.1g	90		{1}(m)	1.2.2.2
+conv.1g	91		(X in _ = X)	1.3
+conv.1g	92		(m + _)	1.3
+conv.1g	93		(_ + _ as X in _ = X)	1.3
+conv.1g	94		(X in _ = X /\ _)	1.3
+conv.1g	95		(m + _ in X in X /\ _)	1.3
+conv.1g	96		(_ + _ as X in _ = X /\ _)	1.3
+conv.1g	97		{1}(m + (m + n))	1.3
+conv.1g	98		{2}(Nat.add)	1.3.0
+conv.1g	99		{2}(Nat.add)	1.3.0
+conv.1g	100		(X in _ = X + _)	1.3.1
+conv.1g	101		(X in _ = X + _ /\ _)	1.3.1
+conv.1g	102		(X in X + (m + n))	1.3.1
+conv.1g	103		{2}(m)	1.3.1
+conv.1g	104		{2}(m)	1.3.1
+conv.1g	105		(_ + n)	1.3.2
+conv.1g	106		(X in m + X)	1.3.2
+conv.1g	107		(_ + _ as X in _ + X)	1.3.2
+conv.1g	108		(X in _ = _ + X)	1.3.2
+conv.1g	109		(_ + n in X in _ = X)	1.3.2
+conv.1g	110		(_ + n in X in X /\ _)	1.3.2
+conv.1g	111		(_ + _ as X in _ = _ + X)	1.3.2
+conv.1g	112		(X in _ = _ + X /\ _)	1.3.2
+conv.1g	113		(_ + n in X in _ = X /\ _)	1.3.2
+conv.1g	114		(_ + _ as X in _ = _ + X /\ _)	1.3.2
+conv.1g	115		{1}(m + n)	1.3.2
+conv.1g	116		{3}(Nat.add)	1.3.2.0
+conv.1g	117		{3}(Nat.add)	1.3.2.0
+conv.1g	118		(X in X + n)	1.3.2.1
+conv.1g	119		(X in _ + (X + _))	1.3.2.1
+conv.1g	120		(X in _ = _ + (X + _))	1.3.2.1
+conv.1g	121		(X in _ = _ + (X + _) /\ _)	1.3.2.1
+conv.1g	122		(m)	1.2.2.2 1.3.1 1.3.2.1
+conv.1g	123		{3}(m)	1.3.2.1
+conv.1g	124		{3}(m)	1.3.2.1
+conv.1g	125		(X in _ + (_ + X))	1.3.2.2
+conv.1g	126		(X in _ = _ + (_ + X))	1.3.2.2
+conv.1g	127		(X in _ = _ + (_ + X) /\ _)	1.3.2.2
+conv.1g	128		{2}(n)	1.3.2.2
+conv.1g	129		{2}(n)	1.3.2.2
+conv.1g	130		(X in _ /\ X)	2
+conv.1g	131		(_ = n)	2
+conv.1g	132		(_ = _ as X in _ /\ X)	2
+conv.1g	133		{1}(0 + n = n)	2
+conv.1g	134		(@eq)	1.0 2.0
+conv.1g	135		{2}(@eq)	2.0
+conv.1g	136		{2}(@eq)	2.0
+conv.1g	137		(nat)	1.1 2.1
+conv.1g	138		{2}(nat)	2.1
+conv.1g	139		{2}(nat)	2.1
+conv.1g	140		(0 + _)	2.2
+conv.1g	141		(X in X = n)	2.2
+conv.1g	142		(_ + _ in X in _ /\ X)	2.2
+conv.1g	143		(X in _ /\ X = _)	2.2
+conv.1g	144		(0 + _ as X in X = _)	2.2
+conv.1g	145		(_ + _ as X in _ /\ X = _)	2.2
+conv.1g	146		{1}(0 + n)	2.2
+conv.1g	147		(Nat.add)	1.2.0 1.3.0 1.3.2.0 2.2.0
+conv.1g	148		{4}(Nat.add)	2.2.0
+conv.1g	149		{4}(Nat.add)	2.2.0
+conv.1g	150		(X in X + n = _)	2.2.1
+conv.1g	151		(X in _ /\ X + _ = _)	2.2.1
+conv.1g	152		(0)	1.2.2.1.1.1 2.2.1
+conv.1g	153		{2}(0)	2.2.1
+conv.1g	154		{2}(0)	2.2.1
+conv.1g	155		(X in 0 + X)	2.2.2
+conv.1g	156		(X in 0 + X = _)	2.2.2
+conv.1g	157		(X in _ /\ _ + X = _)	2.2.2
+conv.1g	158		{3}(n)	2.2.2
+conv.1g	159		{3}(n)	2.2.2
+conv.1g	160		(X in _ /\ _ = X)	2.3
+conv.1g	161		(X in 0 + _ = X)	2.3
+conv.1g	162		(n)	1.2.1 1.3.2.2 2.2.2 2.3
+conv.1g	163		{4}(n)	2.3
+conv.1g	164		{4}(n)	2.3
+hidden.1	1		(length _)	1.2
+hidden.1	2		(_ :: _)	1.2.2
+hidden.1	3		(length l)	1.3.1
+hidden.1	4		(nat)	1.1 1.2.1 1.2.2.1 1.3.1.1 2.1
+hidden.1	5		(list nat)	
+hidden.1	6		(@length nat _)	1.2
+hidden.1	7		(X in length X)	1.2.2
+hidden.1	8		(a)	1.2.2.2 2.2.1 2.3
+hidden.1	9		(X in X = _)	1.2
+hidden.1	10		(X in _ /\ X = _)	2.2.1
+hidden.1	11		{2}(a)	2.2.1
+hidden.1	12		(S _)	1.3
+hidden.1g	1		(_ /\ _)	root
+hidden.1g	2		{1}(length (a :: l) = S (length l) /\ (a : nat) = a)	root
+hidden.1g	3		(and)	0
+hidden.1g	4		{1}(and)	0
+hidden.1g	5		(_ = _)	1
+hidden.1g	6		(X in X /\ _)	1
+hidden.1g	7		(_ = _ as X in X /\ _)	1
+hidden.1g	8		{1}(length (a :: l) = S (length l))	1
+hidden.1g	9		{1}(@eq)	1.0
+hidden.1g	10		{1}(@eq)	1.0
+hidden.1g	11		{1}(nat)	1.1
+hidden.1g	12		{1}(nat)	1.1
+hidden.1g	13		(length _)	1.2
+hidden.1g	14		(X in X = _)	1.2
+hidden.1g	15		(length _ as X in X = _)	1.2
+hidden.1g	16		(length _ in X in X /\ _)	1.2
+hidden.1g	17		(X in X = _ /\ _)	1.2
+hidden.1g	18		(length _ as X in X = _ /\ _)	1.2
+hidden.1g	19		{1}(length (a :: l))	1.2
+hidden.1g	20		{1}(length)	1.2.0
+hidden.1g	21		{1}(length)	1.2.0
+hidden.1g	22		{2}(nat)	1.2.1
+hidden.1g	23		{2}(nat)	1.2.1
+hidden.1g	24		(_ :: _)	1.2.2
+hidden.1g	25		(X in length X)	1.2.2
+hidden.1g	26		(_ :: _ in X in X = _)	1.2.2
+hidden.1g	27		(_ :: _ in X in X /\ _)	1.2.2
+hidden.1g	28		(_ :: _ as X in length X)	1.2.2
+hidden.1g	29		(X in length X = _)	1.2.2
+hidden.1g	30		(_ :: _ in X in X = _ /\ _)	1.2.2
+hidden.1g	31		(_ :: _ as X in length X = _)	1.2.2
+hidden.1g	32		(X in length X = _ /\ _)	1.2.2
+hidden.1g	33		(_ :: _ as X in length X = _ /\ _)	1.2.2
+hidden.1g	34		{1}(a :: l)	1.2.2
+hidden.1g	35		(@cons)	1.2.2.0
+hidden.1g	36		{1}(@cons)	1.2.2.0
+hidden.1g	37		{3}(nat)	1.2.2.1
+hidden.1g	38		{3}(nat)	1.2.2.1
+hidden.1g	39		(X in X :: _)	1.2.2.2
+hidden.1g	40		(X in length (X :: _))	1.2.2.2
+hidden.1g	41		(X in length (X :: _) = _)	1.2.2.2
+hidden.1g	42		(X in length (X :: _) = _ /\ _)	1.2.2.2
+hidden.1g	43		{1}(a)	1.2.2.2
+hidden.1g	44		{1}(a)	1.2.2.2
+hidden.1g	45		(X in _ :: X)	1.2.2.3
+hidden.1g	46		(X in length (_ :: X))	1.2.2.3
+hidden.1g	47		(X in length (_ :: X) = _)	1.2.2.3
+hidden.1g	48		(X in length (_ :: X) = _ /\ _)	1.2.2.3
+hidden.1g	49		{1}(l)	1.2.2.3
+hidden.1g	50		{1}(l)	1.2.2.3
+hidden.1g	51		(S _)	1.3
+hidden.1g	52		(X in _ = X)	1.3
+hidden.1g	53		(S _ as X in _ = X)	1.3
+hidden.1g	54		(S _ in X in X /\ _)	1.3
+hidden.1g	55		(X in _ = X /\ _)	1.3
+hidden.1g	56		(S _ as X in _ = X /\ _)	1.3
+hidden.1g	57		{1}(S (length l))	1.3
+hidden.1g	58		(S)	1.3.0
+hidden.1g	59		{1}(S)	1.3.0
+hidden.1g	60		(X in S X)	1.3.1
+hidden.1g	61		(length l)	1.3.1
+hidden.1g	62		(length _ as X in S X)	1.3.1
+hidden.1g	63		(length _ in X in _ = X)	1.3.1
+hidden.1g	64		(X in _ = S X)	1.3.1
+hidden.1g	65		(length l in X in X /\ _)	1.3.1
+hidden.1g	66		(length _ as X in _ = S X)	1.3.1
+hidden.1g	67		(length _ in X in _ = X /\ _)	1.3.1
+hidden.1g	68		(X in _ = S X /\ _)	1.3.1
+hidden.1g	69		(length _ as X in _ = S X /\ _)	1.3.1
+hidden.1g	70		{1}(length l)	1.3.1
+hidden.1g	71		(length)	1.2.0 1.3.1.0
+hidden.1g	72		{2}(length)	1.3.1.0
+hidden.1g	73		{2}(length)	1.3.1.0
+hidden.1g	74		{4}(nat)	1.3.1.1
+hidden.1g	75		{4}(nat)	1.3.1.1
+hidden.1g	76		(X in S (length X))	1.3.1.2
+hidden.1g	77		(X in _ = S (length X))	1.3.1.2
+hidden.1g	78		(X in _ = S (length X) /\ _)	1.3.1.2
+hidden.1g	79		(l)	1.2.2.3 1.3.1.2
+hidden.1g	80		{2}(l)	1.3.1.2
+hidden.1g	81		{2}(l)	1.3.1.2
+hidden.1g	82		(X in _ /\ X)	2
+hidden.1g	83		(_ = _ as X in _ /\ X)	2
+hidden.1g	84		((a : nat) = _)	2
+hidden.1g	85		{1}((a : nat) = a)	2
+hidden.1g	86		(@eq)	1.0 2.0
+hidden.1g	87		{2}(@eq)	2.0
+hidden.1g	88		{2}(@eq)	2.0
+hidden.1g	89		(nat)	1.1 1.2.1 1.2.2.1 1.3.1.1 2.1
+hidden.1g	90		{5}(nat)	2.1
+hidden.1g	91		{5}(nat)	2.1
+hidden.1g	92		{2}(a)	2.2.1
+hidden.1g	93		{2}(a)	2.2.1
+hidden.1g	94		(X in _ /\ _ = X)	2.3
+hidden.1g	95		(X in (a : nat) = X)	2.3
+hidden.1g	96		(a)	1.2.2.2 2.2.1 2.3
+hidden.1g	97		{3}(a)	2.3
+hidden.1g	98		{3}(a)	2.3
+binders.1	1		(_ + a)	error
+binders.1	2		(a + _)	error
+binders.1	3		(_ + 0)	error
+binders.1	4		(X in _ + X)	error
+binders.1	5		(forall n, _)	1
+binders.1	6		(fun k : nat => _)	2.2.0
+binders.1	7		(X in (fun k : nat => _) X = _)	error
+binders.1	8		(_ = _)	2
+binders.1	9		{3}(_ = _)	error
+binders.1	10		(_ + _)	error
+binders.1g	1		(_ /\ _)	root
+binders.1g	2		(and)	0
+binders.1g	3		{1}(and)	0
+binders.1g	4		(X in X /\ _)	1
+binders.1g	5		(forall n : nat, n + a = a + n)	1
+binders.1g	6		{1}(forall n : nat, n + a = a + n)	1
+binders.1g	7		{1}(nat)	1.1
+binders.1g	8		{1}(nat)	1.1
+binders.1g	9		{1}(@eq)	1.2.0
+binders.1g	10		{1}(@eq)	1.2.0
+binders.1g	11		{2}(nat)	1.2.1
+binders.1g	12		{2}(nat)	1.2.1
+binders.1g	13		{1}(Nat.add)	1.2.2.0
+binders.1g	14		{1}(Nat.add)	1.2.2.0
+binders.1g	15		{1}(a)	1.2.2.2
+binders.1g	16		{1}(a)	1.2.2.2
+binders.1g	17		{2}(Nat.add)	1.2.3.0
+binders.1g	18		{2}(Nat.add)	1.2.3.0
+binders.1g	19		{2}(a)	1.2.3.1
+binders.1g	20		{2}(a)	1.2.3.1
+binders.1g	21		(_ = _)	2
+binders.1g	22		(X in _ /\ X)	2
+binders.1g	23		(_ = _ as X in _ /\ X)	2
+binders.1g	24		(@eq)	1.2.0 2.0
+binders.1g	25		{2}(@eq)	2.0
+binders.1g	26		{2}(@eq)	2.0
+binders.1g	27		{3}(nat)	2.1
+binders.1g	28		{3}(nat)	2.1
+binders.1g	29		(X in X = _)	2.2
+binders.1g	30		(X in _ /\ X = _)	2.2
+binders.1g	31		(nat)	1.1 1.2.1 2.1 2.2.0.1
+binders.1g	32		{4}(nat)	2.2.0.1
+binders.1g	33		{4}(nat)	2.2.0.1
+binders.1g	34		(Nat.add)	1.2.2.0 1.2.3.0 2.2.0.2.0
+binders.1g	35		{3}(Nat.add)	2.2.0.2.0
+binders.1g	36		{3}(Nat.add)	2.2.0.2.0
+binders.1g	37		(0)	2.2.0.2.2
+binders.1g	38		{1}(0)	2.2.0.2.2
+binders.1g	39		{3}(a)	2.2.1
+binders.1g	40		{3}(a)	2.2.1
+binders.1g	41		(X in _ = X)	2.3
+binders.1g	42		(X in _ /\ _ = X)	2.3
+binders.1g	43		(a)	1.2.2.2 1.2.3.1 2.2.1 2.3
+binders.1g	44		{4}(a)	2.3
+binders.1g	45		{4}(a)	2.3
+binders.2	1		(_ + 0)	2
+binders.2	2		(a + _)	2
+binders.2	3		(X in X = _)	2
+hyp.1	1	H	(_ + 0)	error
+hyp.1	2	H	(_ = _)	error
+hyp.1	3	H	(X in _ = X)	error
+hyp.1	4	H	(nat)	1 2.1
+hyp.1	5	H	(forall n, _)	outside
+binders.2g	1		(_ = _)	root
+binders.2g	2		{1}(a + 0 = a)	root
+binders.2g	3		(@eq)	0
+binders.2g	4		{1}(@eq)	0
+binders.2g	5		(nat)	1
+binders.2g	6		{1}(nat)	1
+binders.2g	7		(_ + _)	2
+binders.2g	8		(X in X = _)	2
+binders.2g	9		(_ + _ as X in X = _)	2
+binders.2g	10		{1}(a + 0)	2
+binders.2g	11		(Nat.add)	2.0
+binders.2g	12		{1}(Nat.add)	2.0
+binders.2g	13		(X in X + _)	2.1
+binders.2g	14		(X in X + _ = _)	2.1
+binders.2g	15		{1}(a)	2.1
+binders.2g	16		{1}(a)	2.1
+binders.2g	17		(0)	2.2
+binders.2g	18		(X in _ + X)	2.2
+binders.2g	19		(X in _ + X = _)	2.2
+binders.2g	20		{1}(0)	2.2
+binders.2g	21		(X in _ = X)	3
+binders.2g	22		(a)	2.1 3
+binders.2g	23		{2}(a)	3
+binders.2g	24		{2}(a)	3
+binders.2g	25	H	(forall n : nat, n + 0 = n)	root
+binders.2g	26	H	{1}(forall n : nat, n + 0 = n)	root
+binders.2g	27	H	{1}(nat)	1
+binders.2g	28	H	{1}(nat)	1
+binders.2g	29	H	(@eq)	2.0
+binders.2g	30	H	{1}(@eq)	2.0
+binders.2g	31	H	(nat)	1 2.1
+binders.2g	32	H	{2}(nat)	2.1
+binders.2g	33	H	{2}(nat)	2.1
+binders.2g	34	H	(Nat.add)	2.2.0
+binders.2g	35	H	{1}(Nat.add)	2.2.0
+binders.2g	36	H	(0)	2.2.2
+binders.2g	37	H	{1}(0)	2.2.2
+hyp.2	1	H1	(f _)	2.1
+hyp.2	2	H1	(X in _ = f X)	3.1
+hyp.2	3	H1	(f _ in X in _ = X)	3
+hyp.2	4	H1	{2}(f _)	error
+hyp.2	5	H1	(f a + _)	2
+hyp.2	6	H1	(_ + _ as X in f X)	3.1
+hyp.2	7	H1	(a + _)	3.1
+hyp.3	1	H2	(f _)	2
+hyp.3	2	H2	(X in X = _)	2
+hyp.3	3	H2	(_ + _)	2.1
+hyp.3	4	H2	{3}(f _)	error
+hyp.2g	1		(True)	root
+hyp.2g	2		{1}(True)	root
+hyp.2g	3	H2	(_ = _)	root
+hyp.2g	4	H2	{1}(f (a + b) = f a + f b)	root
+hyp.2g	5	H2	(@eq)	0
+hyp.2g	6	H2	{1}(@eq)	0
+hyp.2g	7	H2	(nat)	1
+hyp.2g	8	H2	{1}(nat)	1
+hyp.2g	9	H2	(f _)	2
+hyp.2g	10	H2	(X in X = _)	2
+hyp.2g	11	H2	(f _ as X in X = _)	2
+hyp.2g	12	H2	{1}(f (a + b))	2
+hyp.2g	13	H2	{1}(f)	2.0
+hyp.2g	14	H2	{1}(f)	2.0
+hyp.2g	15	H2	(_ + _)	2.1
+hyp.2g	16	H2	(X in f X)	2.1
+hyp.2g	17	H2	(_ + _ as X in f X)	2.1
+hyp.2g	18	H2	(_ + _ in X in X = _)	2.1
+hyp.2g	19	H2	(X in f X = _)	2.1
+hyp.2g	20	H2	(_ + _ as X in f X = _)	2.1
+hyp.2g	21	H2	{1}(a + b)	2.1
+hyp.2g	22	H2	{1}(Nat.add)	2.1.0
+hyp.2g	23	H2	{1}(Nat.add)	2.1.0
+hyp.2g	24	H2	(X in X + _)	2.1.1
+hyp.2g	25	H2	(X in f (X + _))	2.1.1
+hyp.2g	26	H2	(X in f (X + _) = _)	2.1.1
+hyp.2g	27	H2	{1}(a)	2.1.1
+hyp.2g	28	H2	{1}(a)	2.1.1
+hyp.2g	29	H2	(X in _ + X)	2.1.2
+hyp.2g	30	H2	(X in f (_ + X))	2.1.2
+hyp.2g	31	H2	(X in f (_ + X) = _)	2.1.2
+hyp.2g	32	H2	{1}(b)	2.1.2
+hyp.2g	33	H2	{1}(b)	2.1.2
+hyp.2g	34	H2	(X in _ = X)	3
+hyp.2g	35	H2	(_ + _ as X in _ = X)	3
+hyp.2g	36	H2	(f a + _)	3
+hyp.2g	37	H2	{1}(f a + f b)	3
+hyp.2g	38	H2	(Nat.add)	2.1.0 3.0
+hyp.2g	39	H2	{2}(Nat.add)	3.0
+hyp.2g	40	H2	{2}(Nat.add)	3.0
+hyp.2g	41	H2	(f a)	3.1
+hyp.2g	42	H2	(f _ as X in X + _)	3.1
+hyp.2g	43	H2	(f _ in X in _ = X)	3.1
+hyp.2g	44	H2	(X in _ = X + _)	3.1
+hyp.2g	45	H2	(X in X + f b)	3.1
+hyp.2g	46	H2	(f _ as X in _ = X + _)	3.1
+hyp.2g	47	H2	{1}(f a)	3.1
+hyp.2g	48	H2	{2}(f)	3.1.0
+hyp.2g	49	H2	{2}(f)	3.1.0
+hyp.2g	50	H2	(X in f X + _)	3.1.1
+hyp.2g	51	H2	(X in _ = f X + _)	3.1.1
+hyp.2g	52	H2	(a)	2.1.1 3.1.1
+hyp.2g	53	H2	{2}(a)	3.1.1
+hyp.2g	54	H2	{2}(a)	3.1.1
+hyp.2g	55	H2	(f b)	3.2
+hyp.2g	56	H2	(f _ as X in _ + X)	3.2
+hyp.2g	57	H2	(X in _ = _ + X)	3.2
+hyp.2g	58	H2	(X in f a + X)	3.2
+hyp.2g	59	H2	(f b in X in _ = X)	3.2
+hyp.2g	60	H2	(f _ as X in _ = _ + X)	3.2
+hyp.2g	61	H2	{1}(f b)	3.2
+hyp.2g	62	H2	(f)	2.0 3.1.0 3.2.0
+hyp.2g	63	H2	{3}(f)	3.2.0
+hyp.2g	64	H2	{3}(f)	3.2.0
+hyp.2g	65	H2	(X in _ + f X)	3.2.1
+hyp.2g	66	H2	(X in _ = _ + f X)	3.2.1
+hyp.2g	67	H2	(b)	2.1.2 3.2.1
+hyp.2g	68	H2	{2}(b)	3.2.1
+hyp.2g	69	H2	{2}(b)	3.2.1
+hyp.2g	70	H1	(_ = _)	root
+hyp.2g	71	H1	{1}(f a + f b = f (a + b))	root
+hyp.2g	72	H1	(@eq)	0
+hyp.2g	73	H1	{1}(@eq)	0
+hyp.2g	74	H1	(nat)	1
+hyp.2g	75	H1	{1}(nat)	1
+hyp.2g	76	H1	(_ + _)	2
+hyp.2g	77	H1	(X in X = _)	2
+hyp.2g	78	H1	(_ + _ as X in X = _)	2
+hyp.2g	79	H1	{1}(f a + f b)	2
+hyp.2g	80	H1	{1}(Nat.add)	2.0
+hyp.2g	81	H1	{1}(Nat.add)	2.0
+hyp.2g	82	H1	(f _)	2.1
+hyp.2g	83	H1	(X in X + _)	2.1
+hyp.2g	84	H1	(f _ as X in X + _)	2.1
+hyp.2g	85	H1	(f _ in X in X = _)	2.1
+hyp.2g	86	H1	(X in X + _ = _)	2.1
+hyp.2g	87	H1	(f _ as X in X + _ = _)	2.1
+hyp.2g	88	H1	{1}(f a)	2.1
+hyp.2g	89	H1	{1}(f)	2.1.0
+hyp.2g	90	H1	{1}(f)	2.1.0
+hyp.2g	91	H1	(X in f X)	2.1.1
+hyp.2g	92	H1	(X in f X + _)	2.1.1
+hyp.2g	93	H1	(X in f X + _ = _)	2.1.1
+hyp.2g	94	H1	{1}(a)	2.1.1
+hyp.2g	95	H1	{1}(a)	2.1.1
+hyp.2g	96	H1	(X in _ + X)	2.2
+hyp.2g	97	H1	(f b)	2.2
+hyp.2g	98	H1	(f _ as X in _ + X)	2.2
+hyp.2g	99	H1	(X in _ + X = _)	2.2
+hyp.2g	100	H1	(f b in X in X = _)	2.2
+hyp.2g	101	H1	(f _ as X in _ + X = _)	2.2
+hyp.2g	102	H1	{1}(f b)	2.2
+hyp.2g	103	H1	{2}(f)	2.2.0
+hyp.2g	104	H1	{2}(f)	2.2.0
+hyp.2g	105	H1	(X in _ + f X)	2.2.1
+hyp.2g	106	H1	(X in _ + f X = _)	2.2.1
+hyp.2g	107	H1	{1}(b)	2.2.1
+hyp.2g	108	H1	{1}(b)	2.2.1
+hyp.2g	109	H1	(X in _ = X)	3
+hyp.2g	110	H1	(f _ as X in _ = X)	3
+hyp.2g	111	H1	(f (a + b))	3
+hyp.2g	112	H1	{1}(f (a + b))	3
+hyp.2g	113	H1	(f)	2.1.0 2.2.0 3.0
+hyp.2g	114	H1	{3}(f)	3.0
+hyp.2g	115	H1	{3}(f)	3.0
+hyp.2g	116	H1	(a + _)	3.1
+hyp.2g	117	H1	(_ + _ as X in f X)	3.1
+hyp.2g	118	H1	(_ + _ in X in _ = X)	3.1
+hyp.2g	119	H1	(X in _ = f X)	3.1
+hyp.2g	120	H1	(_ + _ as X in _ = f X)	3.1
+hyp.2g	121	H1	{1}(a + b)	3.1
+hyp.2g	122	H1	(Nat.add)	2.0 3.1.0
+hyp.2g	123	H1	{2}(Nat.add)	3.1.0
+hyp.2g	124	H1	{2}(Nat.add)	3.1.0
+hyp.2g	125	H1	(X in X + b)	3.1.1
+hyp.2g	126	H1	(X in f (X + _))	3.1.1
+hyp.2g	127	H1	(X in _ = f (X + _))	3.1.1
+hyp.2g	128	H1	(a)	2.1.1 3.1.1
+hyp.2g	129	H1	{2}(a)	3.1.1
+hyp.2g	130	H1	{2}(a)	3.1.1
+hyp.2g	131	H1	(X in a + X)	3.1.2
+hyp.2g	132	H1	(X in f (_ + X))	3.1.2
+hyp.2g	133	H1	(X in _ = f (_ + X))	3.1.2
+hyp.2g	134	H1	(b)	2.2.1 3.1.2
+hyp.2g	135	H1	{2}(b)	3.1.2
+hyp.2g	136	H1	{2}(b)	3.1.2
+proj.1	1		(mop _ _ _)	2
+proj.1	2		(mop _ a _)	2
+proj.1	3		(_ + _)	3
+proj.1	4		(plus _ _)	3
+proj.1	5		(X in mop _ X _)	2.2
+proj.1g	1		(_ = _)	root
+proj.1g	2		{1}(mop nat_monoid a b = a + b)	root
+proj.1g	3		(@eq)	0
+proj.1g	4		{1}(@eq)	0
+proj.1g	5		(mT _)	1
+proj.1g	6		{1}(mT nat_monoid)	1
+proj.1g	7		(mT)	1.0
+proj.1g	8		{1}(mT)	1.0
+proj.1g	9		(X in mT X)	1.1
+proj.1g	10		{1}(nat_monoid)	1.1
+proj.1g	11		{1}(nat_monoid)	1.1
+proj.1g	12		(mop _ _ _)	2
+proj.1g	13		(X in X = _)	2
+proj.1g	14		(mop _ _ _ as X in X = _)	2
+proj.1g	15		{1}(mop nat_monoid a b)	2
+proj.1g	16		(mop)	2.0
+proj.1g	17		{1}(mop)	2.0
+proj.1g	18		(X in mop X _ _)	2.1
+proj.1g	19		(nat_monoid)	1.1 2.1
+proj.1g	20		(X in mop X _ _ = _)	1.1 2.1
+proj.1g	21		{2}(nat_monoid)	2.1
+proj.1g	22		{2}(nat_monoid)	2.1
+proj.1g	23		{2}(X in mop X _ _ = _)	2.1
+proj.1g	24		(X in mop _ X _)	2.2
+proj.1g	25		(X in mop _ X _ = _)	2.2
+proj.1g	26		{1}(a)	2.2
+proj.1g	27		{1}(a)	2.2
+proj.1g	28		(X in mop _ _ X)	2.3
+proj.1g	29		(X in mop _ _ X = _)	2.3
+proj.1g	30		{1}(b)	2.3
+proj.1g	31		{1}(b)	2.3
+proj.1g	32		(_ + _)	3
+proj.1g	33		(X in _ = X)	3
+proj.1g	34		(_ + _ as X in _ = X)	3
+proj.1g	35		{1}(a + b)	3
+proj.1g	36		(Nat.add)	3.0
+proj.1g	37		{1}(Nat.add)	3.0
+proj.1g	38		(X in X + _)	3.1
+proj.1g	39		(X in _ = X + _)	3.1
+proj.1g	40		(a)	2.2 3.1
+proj.1g	41		{2}(a)	3.1
+proj.1g	42		{2}(a)	3.1
+proj.1g	43		(X in _ + X)	3.2
+proj.1g	44		(X in _ = _ + X)	3.2
+proj.1g	45		(b)	2.3 3.2
+proj.1g	46		{2}(b)	3.2
+proj.1g	47		{2}(b)	3.2
+outside.1	1		(_ a)	outside
+outside.1	2		(X in X a = _)	2.0
+outside.1	3		(X in X)	outside
+outside.1	4		(let x := a in x)	2.1 3.1
+fail.1	1		(_ * _)	error
+fail.1	2		(a * b)	
+fail.1	3		(X in _ * X)	error
+fail.1	4		(_ * _ in X in _ = X)	error
+fail.1	5		(a + a)	
+fail.1	6		{2}(a + a)	
+fail.1	7		(X in a + _)	error
+fail.1	8		(_ + a in X in X = _)	error
+fail.1	9		{3}(_ + _)	error
+match.1	1		(if _ then _ else _)	1.2
+match.1	2		(n)	1.2.2 1.3.0 2.2.2 2.3
+match.1	3		(_ + _)	error
+match.1	4		(X in (if _ then X else _) = _)	1.2.2
+match.1	5		(S _)	1.3.2
+match.1	6		(0)	1.2.3 1.3.2.1
+match.1	7		(nat)	1.1 1.2.1.2 1.3.1.2 2.1 2.2.1
+match.1	8		{2}(n)	1.3.0
+match.1	9		(X in (let x := X in _) = _)	2.2.2
+match.1g	1		(_ /\ _)	root
+match.1g	2		{1}((if b then n else 0) = match n with | 0 => 1 | S k => k end /\ (let x := n in x + x) = n)	root
+match.1g	3		(and)	0
+match.1g	4		{1}(and)	0
+match.1g	5		(_ = _)	1
+match.1g	6		(X in X /\ _)	1
+match.1g	7		(_ = _ as X in X /\ _)	1
+match.1g	8		{1}((if b then n else 0) = match n with | 0 => 1 | S k => k end)	1
+match.1g	9		{1}(@eq)	1.0
+match.1g	10		{1}(@eq)	1.0
+match.1g	11		{1}(nat)	1.1
+match.1g	12		{1}(nat)	1.1
+match.1g	13		(X in X = _)	1.2
+match.1g	14		(X in X = _ /\ _)	1.2
+match.1g	15		(if b then n else 0)	1.2
+match.1g	16		{1}(if b then n else 0)	1.2
+match.1g	17		(b)	1.2.0
+match.1g	18		{1}(b)	1.2.0
+match.1g	19		{2}(nat)	1.2.1.2
+match.1g	20		{2}(nat)	1.2.1.2
+match.1g	21		{1}(n)	1.2.2
+match.1g	22		{1}(n)	1.2.2
+match.1g	23		{1}(0)	1.2.3
+match.1g	24		{1}(0)	1.2.3
+match.1g	25		(X in _ = X)	1.3
+match.1g	26		(X in _ = X /\ _)	1.3
+match.1g	27		(match n with | 0 => 1 | S k => k end)	1.3
+match.1g	28		{1}(match n with | 0 => 1 | S k => k end)	1.3
+match.1g	29		{2}(n)	1.3.0
+match.1g	30		{2}(n)	1.3.0
+match.1g	31		{3}(nat)	1.3.1.2
+match.1g	32		{3}(nat)	1.3.1.2
+match.1g	33		(S _)	1.3.2
+match.1g	34		(S _ in X in _ = X)	1.3.2
+match.1g	35		(S _ in X in X /\ _)	1.3.2
+match.1g	36		(S _ in X in _ = X /\ _)	1.3.2
+match.1g	37		{1}(1)	1.3.2
+match.1g	38		(S)	1.3.2.0
+match.1g	39		{1}(S)	1.3.2.0
+match.1g	40		(X in S X)	1.3.2.1
+match.1g	41		(0)	1.2.3 1.3.2.1
+match.1g	42		{2}(0)	1.3.2.1
+match.1g	43		{2}(0)	1.3.2.1
+match.1g	44		(X in _ /\ X)	2
+match.1g	45		(_ = _ as X in _ /\ X)	2
+match.1g	46		((let x := n in x + x) = _)	2
+match.1g	47		{1}((let x := n in x + x) = n)	2
+match.1g	48		(@eq)	1.0 2.0
+match.1g	49		{2}(@eq)	2.0
+match.1g	50		{2}(@eq)	2.0
+match.1g	51		{4}(nat)	2.1
+match.1g	52		{4}(nat)	2.1
+match.1g	53		(X in X = n)	2.2
+match.1g	54		(X in _ /\ X = _)	2.2
+match.1g	55		(nat)	1.1 1.2.1.2 1.3.1.2 2.1 2.2.1
+match.1g	56		{5}(nat)	2.2.1
+match.1g	57		{5}(nat)	2.2.1
+match.1g	58		{3}(n)	2.2.2
+match.1g	59		{3}(n)	2.2.2
+match.1g	60		(Nat.add)	2.2.3.0
+match.1g	61		{1}(Nat.add)	2.2.3.0
+match.1g	62		(X in _ /\ _ = X)	2.3
+match.1g	63		(X in (let x := n in x + x) = X)	2.3
+match.1g	64		(n)	1.2.2 1.3.0 2.2.2 2.3
+match.1g	65		{4}(n)	2.3
+match.1g	66		{4}(n)	2.3
+hyp.4	1	H	(a + 0)	2
+hyp.4	2	H	{1}(a + 0)	2
+hyp.4	3	H	{2}(a + 0)	error
+hyp.4	4	H	(_ = _)	root
+hyp.4	5	H	{2}(_ = _)	error
+hyp.4	6	H	(X in X = _)	2
+hyp.5	1	H'	(forall n, _)	outside
+hyp.5	2	H'	(_ = _)	error
+hyp.5	3	H'	(nat)	1 2.1
+hyp.5	4	H'	{2}(_ = _)	error

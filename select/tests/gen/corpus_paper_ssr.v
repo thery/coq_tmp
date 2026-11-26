@@ -476,94 +476,96 @@ let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_
 let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(R); elpi z_report "paper.ex6g" "17" ltac_term:(G)) | idtac "SSR	paper.ex6g	17	error" ].
 let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {3}(R); elpi z_report "paper.ex6g" "18" ltac_term:(G)) | idtac "SSR	paper.ex6g	18	error" ].
 let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {3}(R); elpi z_report "paper.ex6g" "19" ltac_term:(G)) | idtac "SSR	paper.ex6g	19	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd X); elpi z_report "paper.ex6g" "20" ltac_term:(G)) | idtac "SSR	paper.ex6g	20	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := ((_, _) as X in snd X); elpi z_report "paper.ex6g" "21" ltac_term:(G)) | idtac "SSR	paper.ex6g	21	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := ((_, _) in X in _ = X); elpi z_report "paper.ex6g" "22" ltac_term:(G)) | idtac "SSR	paper.ex6g	22	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd X); elpi z_report "paper.ex6g" "23" ltac_term:(G)) | idtac "SSR	paper.ex6g	23	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := ((_, _) as X in _ = snd X); elpi z_report "paper.ex6g" "24" ltac_term:(G)) | idtac "SSR	paper.ex6g	24	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (@pair); elpi z_report "paper.ex6g" "25" ltac_term:(G)) | idtac "SSR	paper.ex6g	25	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(@pair); elpi z_report "paper.ex6g" "26" ltac_term:(G)) | idtac "SSR	paper.ex6g	26	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {4}(R); elpi z_report "paper.ex6g" "27" ltac_term:(G)) | idtac "SSR	paper.ex6g	27	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {4}(R); elpi z_report "paper.ex6g" "28" ltac_term:(G)) | idtac "SSR	paper.ex6g	28	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (R); elpi z_report "paper.ex6g" "29" ltac_term:(G)) | idtac "SSR	paper.ex6g	29	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {5}(R); elpi z_report "paper.ex6g" "30" ltac_term:(G)) | idtac "SSR	paper.ex6g	30	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {5}(R); elpi z_report "paper.ex6g" "31" ltac_term:(G)) | idtac "SSR	paper.ex6g	31	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _); elpi z_report "paper.ex6g" "32" ltac_term:(G)) | idtac "SSR	paper.ex6g	32	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (X, _)); elpi z_report "paper.ex6g" "33" ltac_term:(G)) | idtac "SSR	paper.ex6g	33	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ in X in _ = X); elpi z_report "paper.ex6g" "34" ltac_term:(G)) | idtac "SSR	paper.ex6g	34	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ in X in snd X); elpi z_report "paper.ex6g" "35" ltac_term:(G)) | idtac "SSR	paper.ex6g	35	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in (X, _)); elpi z_report "paper.ex6g" "36" ltac_term:(G)) | idtac "SSR	paper.ex6g	36	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (X, _)); elpi z_report "paper.ex6g" "37" ltac_term:(G)) | idtac "SSR	paper.ex6g	37	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ in X in _ = snd X); elpi z_report "paper.ex6g" "38" ltac_term:(G)) | idtac "SSR	paper.ex6g	38	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in snd (X, _)); elpi z_report "paper.ex6g" "39" ltac_term:(G)) | idtac "SSR	paper.ex6g	39	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (X, _)); elpi z_report "paper.ex6g" "40" ltac_term:(G)) | idtac "SSR	paper.ex6g	40	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in _ = snd (X, _)); elpi z_report "paper.ex6g" "41" ltac_term:(G)) | idtac "SSR	paper.ex6g	41	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(0 * c); elpi z_report "paper.ex6g" "42" ltac_term:(G)) | idtac "SSR	paper.ex6g	42	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(mul); elpi z_report "paper.ex6g" "43" ltac_term:(G)) | idtac "SSR	paper.ex6g	43	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(mul); elpi z_report "paper.ex6g" "44" ltac_term:(G)) | idtac "SSR	paper.ex6g	44	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in X * _); elpi z_report "paper.ex6g" "45" ltac_term:(G)) | idtac "SSR	paper.ex6g	45	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (X * _, _)); elpi z_report "paper.ex6g" "46" ltac_term:(G)) | idtac "SSR	paper.ex6g	46	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (X * _, _)); elpi z_report "paper.ex6g" "47" ltac_term:(G)) | idtac "SSR	paper.ex6g	47	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (X * _, _)); elpi z_report "paper.ex6g" "48" ltac_term:(G)) | idtac "SSR	paper.ex6g	48	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(0); elpi z_report "paper.ex6g" "49" ltac_term:(G)) | idtac "SSR	paper.ex6g	49	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(0); elpi z_report "paper.ex6g" "50" ltac_term:(G)) | idtac "SSR	paper.ex6g	50	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (c); elpi z_report "paper.ex6g" "51" ltac_term:(G)) | idtac "SSR	paper.ex6g	51	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ * X); elpi z_report "paper.ex6g" "52" ltac_term:(G)) | idtac "SSR	paper.ex6g	52	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_ * X, _)); elpi z_report "paper.ex6g" "53" ltac_term:(G)) | idtac "SSR	paper.ex6g	53	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_ * X, _)); elpi z_report "paper.ex6g" "54" ltac_term:(G)) | idtac "SSR	paper.ex6g	54	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_ * X, _)); elpi z_report "paper.ex6g" "55" ltac_term:(G)) | idtac "SSR	paper.ex6g	55	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(c); elpi z_report "paper.ex6g" "56" ltac_term:(G)) | idtac "SSR	paper.ex6g	56	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, X)); elpi z_report "paper.ex6g" "57" ltac_term:(G)) | idtac "SSR	paper.ex6g	57	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in (_, X)); elpi z_report "paper.ex6g" "58" ltac_term:(G)) | idtac "SSR	paper.ex6g	58	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, X)); elpi z_report "paper.ex6g" "59" ltac_term:(G)) | idtac "SSR	paper.ex6g	59	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in snd (_, X)); elpi z_report "paper.ex6g" "60" ltac_term:(G)) | idtac "SSR	paper.ex6g	60	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, X)); elpi z_report "paper.ex6g" "61" ltac_term:(G)) | idtac "SSR	paper.ex6g	61	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b)); elpi z_report "paper.ex6g" "62" ltac_term:(G)) | idtac "SSR	paper.ex6g	62	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in _ = snd (_, X)); elpi z_report "paper.ex6g" "63" ltac_term:(G)) | idtac "SSR	paper.ex6g	63	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b) in X in _ = X); elpi z_report "paper.ex6g" "64" ltac_term:(G)) | idtac "SSR	paper.ex6g	64	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b) in X in snd X); elpi z_report "paper.ex6g" "65" ltac_term:(G)) | idtac "SSR	paper.ex6g	65	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b) in X in _ = snd X); elpi z_report "paper.ex6g" "66" ltac_term:(G)) | idtac "SSR	paper.ex6g	66	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(0 * (a + b)); elpi z_report "paper.ex6g" "67" ltac_term:(G)) | idtac "SSR	paper.ex6g	67	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (mul); elpi z_report "paper.ex6g" "68" ltac_term:(G)) | idtac "SSR	paper.ex6g	68	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(mul); elpi z_report "paper.ex6g" "69" ltac_term:(G)) | idtac "SSR	paper.ex6g	69	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(mul); elpi z_report "paper.ex6g" "70" ltac_term:(G)) | idtac "SSR	paper.ex6g	70	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, X * _)); elpi z_report "paper.ex6g" "71" ltac_term:(G)) | idtac "SSR	paper.ex6g	71	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, X * _)); elpi z_report "paper.ex6g" "72" ltac_term:(G)) | idtac "SSR	paper.ex6g	72	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in X * (a + b)); elpi z_report "paper.ex6g" "73" ltac_term:(G)) | idtac "SSR	paper.ex6g	73	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, X * _)); elpi z_report "paper.ex6g" "74" ltac_term:(G)) | idtac "SSR	paper.ex6g	74	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (0); elpi z_report "paper.ex6g" "75" ltac_term:(G)) | idtac "SSR	paper.ex6g	75	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {3}(0); elpi z_report "paper.ex6g" "76" ltac_term:(G)) | idtac "SSR	paper.ex6g	76	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {3}(0); elpi z_report "paper.ex6g" "77" ltac_term:(G)) | idtac "SSR	paper.ex6g	77	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _); elpi z_report "paper.ex6g" "78" ltac_term:(G)) | idtac "SSR	paper.ex6g	78	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in _ * X); elpi z_report "paper.ex6g" "79" ltac_term:(G)) | idtac "SSR	paper.ex6g	79	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in _ = X); elpi z_report "paper.ex6g" "80" ltac_term:(G)) | idtac "SSR	paper.ex6g	80	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in snd X); elpi z_report "paper.ex6g" "81" ltac_term:(G)) | idtac "SSR	paper.ex6g	81	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in (_, X)); elpi z_report "paper.ex6g" "82" ltac_term:(G)) | idtac "SSR	paper.ex6g	82	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, _ * X)); elpi z_report "paper.ex6g" "83" ltac_term:(G)) | idtac "SSR	paper.ex6g	83	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in _ = snd X); elpi z_report "paper.ex6g" "84" ltac_term:(G)) | idtac "SSR	paper.ex6g	84	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in (_, _ * X)); elpi z_report "paper.ex6g" "85" ltac_term:(G)) | idtac "SSR	paper.ex6g	85	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in snd (_, X)); elpi z_report "paper.ex6g" "86" ltac_term:(G)) | idtac "SSR	paper.ex6g	86	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, _ * X)); elpi z_report "paper.ex6g" "87" ltac_term:(G)) | idtac "SSR	paper.ex6g	87	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in snd (_, _ * X)); elpi z_report "paper.ex6g" "88" ltac_term:(G)) | idtac "SSR	paper.ex6g	88	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, _ * X)); elpi z_report "paper.ex6g" "89" ltac_term:(G)) | idtac "SSR	paper.ex6g	89	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in _ = snd (_, _ * X)); elpi z_report "paper.ex6g" "90" ltac_term:(G)) | idtac "SSR	paper.ex6g	90	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(a + b); elpi z_report "paper.ex6g" "91" ltac_term:(G)) | idtac "SSR	paper.ex6g	91	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (add); elpi z_report "paper.ex6g" "92" ltac_term:(G)) | idtac "SSR	paper.ex6g	92	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(add); elpi z_report "paper.ex6g" "93" ltac_term:(G)) | idtac "SSR	paper.ex6g	93	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (a); elpi z_report "paper.ex6g" "94" ltac_term:(G)) | idtac "SSR	paper.ex6g	94	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in X + _); elpi z_report "paper.ex6g" "95" ltac_term:(G)) | idtac "SSR	paper.ex6g	95	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ * (X + _)); elpi z_report "paper.ex6g" "96" ltac_term:(G)) | idtac "SSR	paper.ex6g	96	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, _ * (X + _))); elpi z_report "paper.ex6g" "97" ltac_term:(G)) | idtac "SSR	paper.ex6g	97	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, _ * (X + _))); elpi z_report "paper.ex6g" "98" ltac_term:(G)) | idtac "SSR	paper.ex6g	98	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, _ * (X + _))); elpi z_report "paper.ex6g" "99" ltac_term:(G)) | idtac "SSR	paper.ex6g	99	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(a); elpi z_report "paper.ex6g" "100" ltac_term:(G)) | idtac "SSR	paper.ex6g	100	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (b); elpi z_report "paper.ex6g" "101" ltac_term:(G)) | idtac "SSR	paper.ex6g	101	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ + X); elpi z_report "paper.ex6g" "102" ltac_term:(G)) | idtac "SSR	paper.ex6g	102	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ * (_ + X)); elpi z_report "paper.ex6g" "103" ltac_term:(G)) | idtac "SSR	paper.ex6g	103	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, _ * (_ + X))); elpi z_report "paper.ex6g" "104" ltac_term:(G)) | idtac "SSR	paper.ex6g	104	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, _ * (_ + X))); elpi z_report "paper.ex6g" "105" ltac_term:(G)) | idtac "SSR	paper.ex6g	105	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, _ * (_ + X))); elpi z_report "paper.ex6g" "106" ltac_term:(G)) | idtac "SSR	paper.ex6g	106	error" ].
-let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(b); elpi z_report "paper.ex6g" "107" ltac_term:(G)) | idtac "SSR	paper.ex6g	107	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_, _); elpi z_report "paper.ex6g" "20" ltac_term:(G)) | idtac "SSR	paper.ex6g	20	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd X); elpi z_report "paper.ex6g" "21" ltac_term:(G)) | idtac "SSR	paper.ex6g	21	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := ((_, _) as X in snd X); elpi z_report "paper.ex6g" "22" ltac_term:(G)) | idtac "SSR	paper.ex6g	22	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := ((_, _) in X in _ = X); elpi z_report "paper.ex6g" "23" ltac_term:(G)) | idtac "SSR	paper.ex6g	23	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd X); elpi z_report "paper.ex6g" "24" ltac_term:(G)) | idtac "SSR	paper.ex6g	24	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := ((_, _) as X in _ = snd X); elpi z_report "paper.ex6g" "25" ltac_term:(G)) | idtac "SSR	paper.ex6g	25	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(0 * c, 0 * (a + b)); elpi z_report "paper.ex6g" "26" ltac_term:(G)) | idtac "SSR	paper.ex6g	26	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (@pair); elpi z_report "paper.ex6g" "27" ltac_term:(G)) | idtac "SSR	paper.ex6g	27	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(@pair); elpi z_report "paper.ex6g" "28" ltac_term:(G)) | idtac "SSR	paper.ex6g	28	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {4}(R); elpi z_report "paper.ex6g" "29" ltac_term:(G)) | idtac "SSR	paper.ex6g	29	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {4}(R); elpi z_report "paper.ex6g" "30" ltac_term:(G)) | idtac "SSR	paper.ex6g	30	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (R); elpi z_report "paper.ex6g" "31" ltac_term:(G)) | idtac "SSR	paper.ex6g	31	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {5}(R); elpi z_report "paper.ex6g" "32" ltac_term:(G)) | idtac "SSR	paper.ex6g	32	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {5}(R); elpi z_report "paper.ex6g" "33" ltac_term:(G)) | idtac "SSR	paper.ex6g	33	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _); elpi z_report "paper.ex6g" "34" ltac_term:(G)) | idtac "SSR	paper.ex6g	34	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (X, _)); elpi z_report "paper.ex6g" "35" ltac_term:(G)) | idtac "SSR	paper.ex6g	35	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ in X in _ = X); elpi z_report "paper.ex6g" "36" ltac_term:(G)) | idtac "SSR	paper.ex6g	36	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ in X in snd X); elpi z_report "paper.ex6g" "37" ltac_term:(G)) | idtac "SSR	paper.ex6g	37	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in (X, _)); elpi z_report "paper.ex6g" "38" ltac_term:(G)) | idtac "SSR	paper.ex6g	38	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (X, _)); elpi z_report "paper.ex6g" "39" ltac_term:(G)) | idtac "SSR	paper.ex6g	39	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ in X in _ = snd X); elpi z_report "paper.ex6g" "40" ltac_term:(G)) | idtac "SSR	paper.ex6g	40	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in snd (X, _)); elpi z_report "paper.ex6g" "41" ltac_term:(G)) | idtac "SSR	paper.ex6g	41	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (X, _)); elpi z_report "paper.ex6g" "42" ltac_term:(G)) | idtac "SSR	paper.ex6g	42	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in _ = snd (X, _)); elpi z_report "paper.ex6g" "43" ltac_term:(G)) | idtac "SSR	paper.ex6g	43	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(0 * c); elpi z_report "paper.ex6g" "44" ltac_term:(G)) | idtac "SSR	paper.ex6g	44	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(mul); elpi z_report "paper.ex6g" "45" ltac_term:(G)) | idtac "SSR	paper.ex6g	45	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(mul); elpi z_report "paper.ex6g" "46" ltac_term:(G)) | idtac "SSR	paper.ex6g	46	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in X * _); elpi z_report "paper.ex6g" "47" ltac_term:(G)) | idtac "SSR	paper.ex6g	47	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (X * _, _)); elpi z_report "paper.ex6g" "48" ltac_term:(G)) | idtac "SSR	paper.ex6g	48	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (X * _, _)); elpi z_report "paper.ex6g" "49" ltac_term:(G)) | idtac "SSR	paper.ex6g	49	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (X * _, _)); elpi z_report "paper.ex6g" "50" ltac_term:(G)) | idtac "SSR	paper.ex6g	50	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(0); elpi z_report "paper.ex6g" "51" ltac_term:(G)) | idtac "SSR	paper.ex6g	51	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(0); elpi z_report "paper.ex6g" "52" ltac_term:(G)) | idtac "SSR	paper.ex6g	52	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (c); elpi z_report "paper.ex6g" "53" ltac_term:(G)) | idtac "SSR	paper.ex6g	53	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ * X); elpi z_report "paper.ex6g" "54" ltac_term:(G)) | idtac "SSR	paper.ex6g	54	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_ * X, _)); elpi z_report "paper.ex6g" "55" ltac_term:(G)) | idtac "SSR	paper.ex6g	55	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_ * X, _)); elpi z_report "paper.ex6g" "56" ltac_term:(G)) | idtac "SSR	paper.ex6g	56	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_ * X, _)); elpi z_report "paper.ex6g" "57" ltac_term:(G)) | idtac "SSR	paper.ex6g	57	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(c); elpi z_report "paper.ex6g" "58" ltac_term:(G)) | idtac "SSR	paper.ex6g	58	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, X)); elpi z_report "paper.ex6g" "59" ltac_term:(G)) | idtac "SSR	paper.ex6g	59	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in (_, X)); elpi z_report "paper.ex6g" "60" ltac_term:(G)) | idtac "SSR	paper.ex6g	60	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, X)); elpi z_report "paper.ex6g" "61" ltac_term:(G)) | idtac "SSR	paper.ex6g	61	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in snd (_, X)); elpi z_report "paper.ex6g" "62" ltac_term:(G)) | idtac "SSR	paper.ex6g	62	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, X)); elpi z_report "paper.ex6g" "63" ltac_term:(G)) | idtac "SSR	paper.ex6g	63	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b)); elpi z_report "paper.ex6g" "64" ltac_term:(G)) | idtac "SSR	paper.ex6g	64	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * _ as X in _ = snd (_, X)); elpi z_report "paper.ex6g" "65" ltac_term:(G)) | idtac "SSR	paper.ex6g	65	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b) in X in _ = X); elpi z_report "paper.ex6g" "66" ltac_term:(G)) | idtac "SSR	paper.ex6g	66	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b) in X in snd X); elpi z_report "paper.ex6g" "67" ltac_term:(G)) | idtac "SSR	paper.ex6g	67	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ * (a + b) in X in _ = snd X); elpi z_report "paper.ex6g" "68" ltac_term:(G)) | idtac "SSR	paper.ex6g	68	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(0 * (a + b)); elpi z_report "paper.ex6g" "69" ltac_term:(G)) | idtac "SSR	paper.ex6g	69	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (mul); elpi z_report "paper.ex6g" "70" ltac_term:(G)) | idtac "SSR	paper.ex6g	70	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(mul); elpi z_report "paper.ex6g" "71" ltac_term:(G)) | idtac "SSR	paper.ex6g	71	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {2}(mul); elpi z_report "paper.ex6g" "72" ltac_term:(G)) | idtac "SSR	paper.ex6g	72	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, X * _)); elpi z_report "paper.ex6g" "73" ltac_term:(G)) | idtac "SSR	paper.ex6g	73	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, X * _)); elpi z_report "paper.ex6g" "74" ltac_term:(G)) | idtac "SSR	paper.ex6g	74	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in X * (a + b)); elpi z_report "paper.ex6g" "75" ltac_term:(G)) | idtac "SSR	paper.ex6g	75	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, X * _)); elpi z_report "paper.ex6g" "76" ltac_term:(G)) | idtac "SSR	paper.ex6g	76	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (0); elpi z_report "paper.ex6g" "77" ltac_term:(G)) | idtac "SSR	paper.ex6g	77	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {3}(0); elpi z_report "paper.ex6g" "78" ltac_term:(G)) | idtac "SSR	paper.ex6g	78	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {3}(0); elpi z_report "paper.ex6g" "79" ltac_term:(G)) | idtac "SSR	paper.ex6g	79	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _); elpi z_report "paper.ex6g" "80" ltac_term:(G)) | idtac "SSR	paper.ex6g	80	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in _ * X); elpi z_report "paper.ex6g" "81" ltac_term:(G)) | idtac "SSR	paper.ex6g	81	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in _ = X); elpi z_report "paper.ex6g" "82" ltac_term:(G)) | idtac "SSR	paper.ex6g	82	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in snd X); elpi z_report "paper.ex6g" "83" ltac_term:(G)) | idtac "SSR	paper.ex6g	83	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in (_, X)); elpi z_report "paper.ex6g" "84" ltac_term:(G)) | idtac "SSR	paper.ex6g	84	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, _ * X)); elpi z_report "paper.ex6g" "85" ltac_term:(G)) | idtac "SSR	paper.ex6g	85	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in _ = snd X); elpi z_report "paper.ex6g" "86" ltac_term:(G)) | idtac "SSR	paper.ex6g	86	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in (_, _ * X)); elpi z_report "paper.ex6g" "87" ltac_term:(G)) | idtac "SSR	paper.ex6g	87	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ in X in snd (_, X)); elpi z_report "paper.ex6g" "88" ltac_term:(G)) | idtac "SSR	paper.ex6g	88	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, _ * X)); elpi z_report "paper.ex6g" "89" ltac_term:(G)) | idtac "SSR	paper.ex6g	89	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in snd (_, _ * X)); elpi z_report "paper.ex6g" "90" ltac_term:(G)) | idtac "SSR	paper.ex6g	90	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, _ * X)); elpi z_report "paper.ex6g" "91" ltac_term:(G)) | idtac "SSR	paper.ex6g	91	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (_ + _ as X in _ = snd (_, _ * X)); elpi z_report "paper.ex6g" "92" ltac_term:(G)) | idtac "SSR	paper.ex6g	92	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(a + b); elpi z_report "paper.ex6g" "93" ltac_term:(G)) | idtac "SSR	paper.ex6g	93	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (add); elpi z_report "paper.ex6g" "94" ltac_term:(G)) | idtac "SSR	paper.ex6g	94	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(add); elpi z_report "paper.ex6g" "95" ltac_term:(G)) | idtac "SSR	paper.ex6g	95	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (a); elpi z_report "paper.ex6g" "96" ltac_term:(G)) | idtac "SSR	paper.ex6g	96	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in X + _); elpi z_report "paper.ex6g" "97" ltac_term:(G)) | idtac "SSR	paper.ex6g	97	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ * (X + _)); elpi z_report "paper.ex6g" "98" ltac_term:(G)) | idtac "SSR	paper.ex6g	98	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, _ * (X + _))); elpi z_report "paper.ex6g" "99" ltac_term:(G)) | idtac "SSR	paper.ex6g	99	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, _ * (X + _))); elpi z_report "paper.ex6g" "100" ltac_term:(G)) | idtac "SSR	paper.ex6g	100	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, _ * (X + _))); elpi z_report "paper.ex6g" "101" ltac_term:(G)) | idtac "SSR	paper.ex6g	101	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(a); elpi z_report "paper.ex6g" "102" ltac_term:(G)) | idtac "SSR	paper.ex6g	102	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (b); elpi z_report "paper.ex6g" "103" ltac_term:(G)) | idtac "SSR	paper.ex6g	103	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ + X); elpi z_report "paper.ex6g" "104" ltac_term:(G)) | idtac "SSR	paper.ex6g	104	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ * (_ + X)); elpi z_report "paper.ex6g" "105" ltac_term:(G)) | idtac "SSR	paper.ex6g	105	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in (_, _ * (_ + X))); elpi z_report "paper.ex6g" "106" ltac_term:(G)) | idtac "SSR	paper.ex6g	106	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in snd (_, _ * (_ + X))); elpi z_report "paper.ex6g" "107" ltac_term:(G)) | idtac "SSR	paper.ex6g	107	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := (X in _ = snd (_, _ * (_ + X))); elpi z_report "paper.ex6g" "108" ltac_term:(G)) | idtac "SSR	paper.ex6g	108	error" ].
+let G := match goal with |- ?G => G end in first [ assert_succeeds (set pattern_select_z := {1}(b); elpi z_report "paper.ex6g" "109" ltac_term:(G)) | idtac "SSR	paper.ex6g	109	error" ].
 Abort.
 
 Goal forall a b c : R, a + b = f (a * a + b) - c.

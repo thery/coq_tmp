@@ -8,7 +8,8 @@
 # elpi diff_cases "Id" ... print the cases (CASE lines: Id, hypothesis,
 # the pattern as set writes it, the Elpi result).  Stage 2 is gen/<name>_ssr.v,
 # the corpus where each such line is replaced by one line per case that
-# runs set z := <pattern> and prints the positions of z (SSR lines).
+# runs set z := <pattern> and prints the positions of z (SSR lines); an
+# elpi diff_gen or diff_cases line must be on one line.
 # The two are joined on (Id, case number); the counts per category (the
 # Id up to its first dot) and every disagreement are printed, and kept in
 # gen/<name>.report.
@@ -25,9 +26,9 @@ for f in "${files[@]}"; do
   name=$(basename "$f" .v)
   rel=select/tests/$(basename "$f")
   # the support file
-  if [ ! -f select/tests/diff_support.vo ] || [ select/tests/diff_support.v -nt select/tests/diff_support.vo ]; then
-    rocq c -R . coq_tmp select/tests/diff_support.v || exit 1
-  fi
+  for s in diff_support random_gen; do if [ ! -f select/tests/$s.vo ] || [ select/tests/$s.v -nt select/tests/$s.vo ] || [ select/subterm_select.vo -nt select/tests/$s.vo ]; then
+    rocq c -R . coq_tmp select/tests/$s.v || exit 1
+  fi; done
   # stage 1
   if ! rocq c -R . coq_tmp "$rel" > "$gen/$name.stage1.log" 2>&1; then
     echo "$name: stage 1 failed (see gen/$name.stage1.log)"; continue
@@ -38,8 +39,8 @@ for f in "${files[@]}"; do
   awk -F'\t' -v cases="$gen/$name.cases" '
     BEGIN { while ((getline l < cases) > 0) { split(l, a, "\t"); id = a[1];
               k[id]++; c[id, k[id]] = l } }
-    /^elpi diff_(gen|cases) "/ {
-      id = $0; sub(/^elpi diff_(gen|cases) "/, "", id); sub(/".*$/, "", id);
+    /^elpi diff_(gen|cases|random) "/ {
+      id = $0; sub(/^elpi diff_(gen|cases|random) "/, "", id); sub(/".*$/, "", id);
       for (i = 1; i <= k[id]; i++) {
         split(c[id, i], a, "\t"); n = a[2]; h = a[3]; pat = a[4];
         if (pat ~ /^\(in[ \t]/) { print "idtac \"SSR\t" id "\t" n "\tnot a c-pattern\"."; continue }

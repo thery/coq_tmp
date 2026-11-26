@@ -26,7 +26,9 @@ follows Gonthier and Tassi, *A language of patterns for subterm selection*
     `set z := (<pattern>)` literally, and compiles it.
   - It prints, per category, the cases that agree or disagree. The report
     is also written to `gen/<corpus>.report`.
-  - `diff_support.v` holds the Elpi side of these tests.
+  - `diff_support.v` holds the Elpi side of these tests; `random_gen.v` and
+    `gen_random.sh` write `corpus_random.v`, random goals with random
+    patterns.
 - `DESIGN.md`, `PATTERNS.md`, `GRAMMAR.md`, `tutorial.typ`: the design notes,
   the kinds of selectors, the algebra of selectors and a tutorial.
 
@@ -37,3 +39,23 @@ From the root of coq_tmp:
     make select/subterm_select.vo select/subterm_select_test.vo
     select/tests/run.sh                       # every corpus
     select/tests/run.sh select/tests/corpus_paper.v
+
+## Differential tests: results
+
+The corpora are the paper's examples, the goals of `../point_paths_test.v`,
+the categories, and 200 random goals (`gen_random.sh 200 42`). The
+patterns are the given ones, every pattern of `select_all` and of
+`point_to_pattern`, and 12 random ones per random goal. Every case agrees
+with `set`, except these known differences:
+
+- **The parameters of a match.** Rocq-Elpi does not show the parameters
+  of a match on a parametrised inductive, such as `nat * nat` in
+  `let '(a, b) := p in …`. ssreflect visits them, and `set` puts `z` in
+  the types of the binders that come from them. The Elpi semantics does
+  not see them (3 cases in `corpus_point_paths`).
+- **A `let` with holes inside a context.** ssreflect does not match
+  `(X in (let x := X in _) = _)`; the Elpi semantics does (1 case in
+  `corpus_categories`).
+
+The rewrite-only patterns (`in C`, `in X in C`) and the patterns outside
+the supported fragment are reported as such and are not given to `set`.

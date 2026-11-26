@@ -1,0 +1,1724 @@
+pp.1	1		(_ = _)	root
+pp.1	2		{1}(1 + 1 + a = double (1 + a))	root
+pp.1	3		(@eq)	0
+pp.1	4		{1}(@eq)	0
+pp.1	5		(nat)	1
+pp.1	6		{1}(nat)	1
+pp.1	7		(_ + _)	2
+pp.1	8		(X in X = _)	2
+pp.1	9		(_ + _ as X in X = _)	2
+pp.1	10		{1}(1 + 1 + a)	2
+pp.1	11		{1}(Nat.add)	2.0
+pp.1	12		{1}(Nat.add)	2.0
+pp.1	13		(X in X + _)	2.1
+pp.1	14		(1 + _)	2.1
+pp.1	15		(_ + _ as X in X + _)	2.1
+pp.1	16		(X in X + _ = _)	2.1
+pp.1	17		(1 + _ in X in X = _)	2.1
+pp.1	18		(_ + _ as X in X + _ = _)	2.1
+pp.1	19		{1}(1 + 1)	2.1
+pp.1	20		{2}(Nat.add)	2.1.0
+pp.1	21		{2}(Nat.add)	2.1.0
+pp.1	22		(X in X + 1)	2.1.1
+pp.1	23		(S _ as X in X + _)	2.1.1
+pp.1	24		(X in X + _ + _)	2.1.1
+pp.1	25		(S _ as X in X + _ + _)	2.1.1
+pp.1	26		(X in X + _ + _ = _)	2.1.1
+pp.1	27		(S _ as X in X + _ + _ = _)	2.1.1
+pp.1	28		{1}(1)	2.1.1
+pp.1	29		{1}(S _)	2.1.1
+pp.1	30		{1}(S _ in X in X = _)	2.1.1
+pp.1	31		{1}(S _ in X in X + _)	2.1.1
+pp.1	32		{1}(S _ in X in X + _ = _)	2.1.1
+pp.1	33		{1}(S)	2.1.1.0
+pp.1	34		{1}(S)	2.1.1.0
+pp.1	35		(X in S X + _)	2.1.1.1
+pp.1	36		(X in S X + _ + _)	2.1.1.1
+pp.1	37		(X in S X + _ + _ = _)	2.1.1.1
+pp.1	38		{1}(0)	2.1.1.1
+pp.1	39		{1}(0)	2.1.1.1
+pp.1	40		{1}(X in S X)	2.1.1.1
+pp.1	41		(X in 1 + X)	2.1.2
+pp.1	42		(S _ as X in _ + X)	2.1.2
+pp.1	43		(X in _ + X + _)	2.1.2
+pp.1	44		(S _ as X in _ + X + _)	2.1.2
+pp.1	45		(X in _ + X + _ = _)	2.1.2
+pp.1	46		(S _ as X in _ + X + _ = _)	2.1.2
+pp.1	47		(S _ in X in X = _)	2.1.1 2.1.2
+pp.1	48		(S _ in X in X + _)	2.1.1 2.1.2
+pp.1	49		(S _ in X in X + _ = _)	2.1.1 2.1.2
+pp.1	50		{2}(1)	2.1.2
+pp.1	51		{2}(S _)	2.1.2
+pp.1	52		{2}(S _ in X in X = _)	2.1.2
+pp.1	53		{2}(S _ in X in X + _)	2.1.2
+pp.1	54		{2}(S _ in X in X + _ = _)	2.1.2
+pp.1	55		{2}(S)	2.1.2.0
+pp.1	56		{2}(S)	2.1.2.0
+pp.1	57		(X in _ + S X)	2.1.2.1
+pp.1	58		(X in _ + S X + _)	2.1.2.1
+pp.1	59		(X in _ + S X + _ = _)	2.1.2.1
+pp.1	60		{2}(0)	2.1.2.1
+pp.1	61		{2}(0)	2.1.2.1
+pp.1	62		{2}(X in S X)	2.1.2.1
+pp.1	63		(X in _ + X)	2.2
+pp.1	64		(X in _ + X = _)	2.2
+pp.1	65		{1}(a)	2.2
+pp.1	66		{1}(a)	2.2
+pp.1	67		(double _)	3
+pp.1	68		(X in _ = X)	3
+pp.1	69		(double _ as X in _ = X)	3
+pp.1	70		{1}(double (1 + a))	3
+pp.1	71		(double)	3.0
+pp.1	72		{1}(double)	3.0
+pp.1	73		(X in double X)	3.1
+pp.1	74		(_ + _ in X in _ = X)	3.1
+pp.1	75		(_ + _ as X in double X)	3.1
+pp.1	76		(X in _ = double X)	3.1
+pp.1	77		(1 + a)	3.1
+pp.1	78		(_ + _ as X in _ = double X)	3.1
+pp.1	79		{1}(1 + a)	3.1
+pp.1	80		(Nat.add)	2.0 2.1.0 3.1.0
+pp.1	81		{3}(Nat.add)	3.1.0
+pp.1	82		{3}(Nat.add)	3.1.0
+pp.1	83		(S _ in X in _ = X)	3.1.1
+pp.1	84		(S _ in X in double X)	3.1.1
+pp.1	85		(X in double (X + _))	3.1.1
+pp.1	86		(S _ as X in X + a)	3.1.1
+pp.1	87		(S _ in X in _ = double X)	3.1.1
+pp.1	88		(S _ as X in double (X + _))	3.1.1
+pp.1	89		(X in _ = double (X + _))	3.1.1
+pp.1	90		(S _ as X in _ = double (X + _))	3.1.1
+pp.1	91		(S _)	2.1.1 2.1.2 3.1.1
+pp.1	92		{3}(1)	3.1.1
+pp.1	93		{3}(S _)	3.1.1
+pp.1	94		(S)	2.1.1.0 2.1.2.0 3.1.1.0
+pp.1	95		{3}(S)	3.1.1.0
+pp.1	96		{3}(S)	3.1.1.0
+pp.1	97		(X in S X + a)	3.1.1.1
+pp.1	98		(X in double (S X + _))	3.1.1.1
+pp.1	99		(X in _ = double (S X + _))	3.1.1.1
+pp.1	100		(0)	2.1.1.1 2.1.2.1 3.1.1.1
+pp.1	101		(X in S X)	2.1.1.1 2.1.2.1 3.1.1.1
+pp.1	102		{3}(0)	3.1.1.1
+pp.1	103		{3}(0)	3.1.1.1
+pp.1	104		{3}(X in S X)	3.1.1.1
+pp.1	105		(X in double (_ + X))	3.1.2
+pp.1	106		(X in _ = double (_ + X))	3.1.2
+pp.1	107		(a)	2.2 3.1.2
+pp.1	108		{2}(a)	3.1.2
+pp.1	109		{2}(a)	3.1.2
+pp.2	1		(_ = _)	root
+pp.2	2		{1}(b = a)	root
+pp.2	3		(@eq)	0
+pp.2	4		{1}(@eq)	0
+pp.2	5		(nat)	1
+pp.2	6		{1}(nat)	1
+pp.2	7		(b)	2
+pp.2	8		(X in X = _)	2
+pp.2	9		{1}(b)	2
+pp.2	10		(a)	3
+pp.2	11		(X in _ = X)	3
+pp.2	12		{1}(a)	3
+pp.2	13	ab	(_ = _)	root
+pp.2	14	ab	{1}(a = b)	root
+pp.2	15	ab	(@eq)	0
+pp.2	16	ab	{1}(@eq)	0
+pp.2	17	ab	(nat)	1
+pp.2	18	ab	{1}(nat)	1
+pp.2	19	ab	(a)	2
+pp.2	20	ab	(X in X = _)	2
+pp.2	21	ab	{1}(a)	2
+pp.2	22	ab	(b)	3
+pp.2	23	ab	(X in _ = X)	3
+pp.2	24	ab	{1}(b)	3
+pp.3	1		(_ = _)	root
+pp.3	2		{1}("a b"%string = "a b"%string)	root
+pp.3	3		(@eq)	0
+pp.3	4		{1}(@eq)	0
+pp.3	5		(string)	1
+pp.3	6		{1}(string)	1
+pp.3	7		(X in X = _)	2
+pp.3	8		(String _ _ as X in X = _)	2
+pp.3	9		(String _ _)	2 3
+pp.3	10		{1}(String _ _)	2
+pp.3	11		{1}("a b"%string)	2
+pp.3	12		{1}(String)	2.0
+pp.3	13		{1}(String)	2.0
+pp.3	14		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in X = _)	2.1
+pp.3	15		(X in String X _ = _)	2.1
+pp.3	16		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String X _ = _)	2.1
+pp.3	17		(Ascii.Ascii _ _ _ _ _ _ _ _)	2.1 3.1
+pp.3	18		(X in String X _)	2.1 3.1
+pp.3	19		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String X _)	2.1 3.1
+pp.3	20		{1}(Ascii.Ascii _ _ _ _ _ _ _ _)	2.1
+pp.3	21		{1}(X in String X _)	2.1
+pp.3	22		{1}(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String X _)	2.1
+pp.3	23		{1}(Ascii.Ascii true false false false false true true false)	2.1
+pp.3	24		{1}(Ascii.Ascii)	2.1.0
+pp.3	25		{1}(Ascii.Ascii)	2.1.0
+pp.3	26		(X in String (Ascii.Ascii X _ _ _ _ _ _ _) _ = _)	2.1.1
+pp.3	27		(X in Ascii.Ascii X _ _ _ _ _ _ _)	2.1.1 3.1.1
+pp.3	28		(X in String (Ascii.Ascii X _ _ _ _ _ _ _) _)	2.1.1 3.1.1
+pp.3	29		{1}(true)	2.1.1
+pp.3	30		{1}(true)	2.1.1
+pp.3	31		{1}(X in Ascii.Ascii X _ _ _ _ _ _ _)	2.1.1
+pp.3	32		{1}(X in String (Ascii.Ascii X _ _ _ _ _ _ _) _)	2.1.1
+pp.3	33		(X in String (Ascii.Ascii _ X _ _ _ _ _ _) _ = _)	2.1.2
+pp.3	34		(X in Ascii.Ascii _ X _ _ _ _ _ _)	2.1.2 3.1.2
+pp.3	35		(X in String (Ascii.Ascii _ X _ _ _ _ _ _) _)	2.1.2 3.1.2
+pp.3	36		{1}(false)	2.1.2
+pp.3	37		{1}(false)	2.1.2
+pp.3	38		{1}(X in Ascii.Ascii _ X _ _ _ _ _ _)	2.1.2
+pp.3	39		{1}(X in String (Ascii.Ascii _ X _ _ _ _ _ _) _)	2.1.2
+pp.3	40		(X in String (Ascii.Ascii _ _ X _ _ _ _ _) _ = _)	2.1.3
+pp.3	41		(X in Ascii.Ascii _ _ X _ _ _ _ _)	2.1.3 3.1.3
+pp.3	42		(X in String (Ascii.Ascii _ _ X _ _ _ _ _) _)	2.1.3 3.1.3
+pp.3	43		{2}(false)	2.1.3
+pp.3	44		{2}(false)	2.1.3
+pp.3	45		{1}(X in Ascii.Ascii _ _ X _ _ _ _ _)	2.1.3
+pp.3	46		{1}(X in String (Ascii.Ascii _ _ X _ _ _ _ _) _)	2.1.3
+pp.3	47		(X in String (Ascii.Ascii _ _ _ X _ _ _ _) _ = _)	2.1.4
+pp.3	48		(X in Ascii.Ascii _ _ _ X _ _ _ _)	2.1.4 3.1.4
+pp.3	49		(X in String (Ascii.Ascii _ _ _ X _ _ _ _) _)	2.1.4 3.1.4
+pp.3	50		{3}(false)	2.1.4
+pp.3	51		{3}(false)	2.1.4
+pp.3	52		{1}(X in Ascii.Ascii _ _ _ X _ _ _ _)	2.1.4
+pp.3	53		{1}(X in String (Ascii.Ascii _ _ _ X _ _ _ _) _)	2.1.4
+pp.3	54		(X in String (Ascii.Ascii _ _ _ _ X _ _ _) _ = _)	2.1.5
+pp.3	55		(X in Ascii.Ascii _ _ _ _ X _ _ _)	2.1.5 3.1.5
+pp.3	56		(X in String (Ascii.Ascii _ _ _ _ X _ _ _) _)	2.1.5 3.1.5
+pp.3	57		{4}(false)	2.1.5
+pp.3	58		{4}(false)	2.1.5
+pp.3	59		{1}(X in Ascii.Ascii _ _ _ _ X _ _ _)	2.1.5
+pp.3	60		{1}(X in String (Ascii.Ascii _ _ _ _ X _ _ _) _)	2.1.5
+pp.3	61		(X in String (Ascii.Ascii _ _ _ _ _ X _ _) _ = _)	2.1.6
+pp.3	62		(X in Ascii.Ascii _ _ _ _ _ X _ _)	2.1.6 3.1.6
+pp.3	63		(X in String (Ascii.Ascii _ _ _ _ _ X _ _) _)	2.1.6 3.1.6
+pp.3	64		{2}(true)	2.1.6
+pp.3	65		{2}(true)	2.1.6
+pp.3	66		{1}(X in Ascii.Ascii _ _ _ _ _ X _ _)	2.1.6
+pp.3	67		{1}(X in String (Ascii.Ascii _ _ _ _ _ X _ _) _)	2.1.6
+pp.3	68		(X in String (Ascii.Ascii _ _ _ _ _ _ X _) _ = _)	2.1.7
+pp.3	69		(X in Ascii.Ascii _ _ _ _ _ _ X _)	2.1.7 3.1.7
+pp.3	70		(X in String (Ascii.Ascii _ _ _ _ _ _ X _) _)	2.1.7 3.1.7
+pp.3	71		{3}(true)	2.1.7
+pp.3	72		{3}(true)	2.1.7
+pp.3	73		{1}(X in Ascii.Ascii _ _ _ _ _ _ X _)	2.1.7
+pp.3	74		{1}(X in String (Ascii.Ascii _ _ _ _ _ _ X _) _)	2.1.7
+pp.3	75		(X in String (Ascii.Ascii _ _ _ _ _ _ _ X) _ = _)	2.1.8
+pp.3	76		(X in Ascii.Ascii _ _ _ _ _ _ _ X)	2.1.8 3.1.8
+pp.3	77		(X in String (Ascii.Ascii _ _ _ _ _ _ _ X) _)	2.1.8 3.1.8
+pp.3	78		{5}(false)	2.1.8
+pp.3	79		{5}(false)	2.1.8
+pp.3	80		{1}(X in Ascii.Ascii _ _ _ _ _ _ _ X)	2.1.8
+pp.3	81		{1}(X in String (Ascii.Ascii _ _ _ _ _ _ _ X) _)	2.1.8
+pp.3	82		(X in String _ X = _)	2.2
+pp.3	83		(String _ _ as X in String _ X = _)	2.2
+pp.3	84		(String (Ascii.Ascii false _ _ _ _ _ _ _) _ in X in X = _)	2.2
+pp.3	85		(X in String _ X)	2.2 3.2
+pp.3	86		(String _ _ as X in String _ X)	2.2 3.2
+pp.3	87		(String (Ascii.Ascii false _ _ _ _ _ _ _) _)	2.2 3.2
+pp.3	88		{1}(X in String _ X)	2.2
+pp.3	89		{1}(" b"%string)	2.2
+pp.3	90		{1}(String _ _ as X in String _ X)	2.2
+pp.3	91		{1}(String (Ascii.Ascii false _ _ _ _ _ _ _) _)	2.2
+pp.3	92		{2}(String)	2.2.0
+pp.3	93		{2}(String)	2.2.0
+pp.3	94		(Ascii.Ascii false _ _ _ _ _ _ _ in X in X = _)	2.2.1
+pp.3	95		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String _ X = _)	2.2.1
+pp.3	96		(X in String _ (String X _) = _)	2.2.1
+pp.3	97		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String _ (String X _) = _)	2.2.1
+pp.3	98		(Ascii.Ascii false _ _ _ _ _ _ _)	2.2.1 3.2.1
+pp.3	99		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String _ X)	2.2.1 3.2.1
+pp.3	100		(X in String _ (String X _))	2.2.1 3.2.1
+pp.3	101		(Ascii.Ascii false _ _ _ _ _ _ _ as X in String X _)	2.2.1 3.2.1
+pp.3	102		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String _ (String X _))	2.2.1 3.2.1
+pp.3	103		{1}(Ascii.Ascii false _ _ _ _ _ _ _)	2.2.1
+pp.3	104		{1}(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String _ X)	2.2.1
+pp.3	105		{1}(X in String _ (String X _))	2.2.1
+pp.3	106		{1}(X in String X (String _ ""))	2.2.1
+pp.3	107		{1}(Ascii.Ascii false _ _ _ _ _ _ _ as X in String X _)	2.2.1
+pp.3	108		{1}(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String _ (String X _))	2.2.1
+pp.3	109		{1}(Ascii.Ascii false false false false false true false false)	2.2.1
+pp.3	110		{2}(Ascii.Ascii)	2.2.1.0
+pp.3	111		{2}(Ascii.Ascii)	2.2.1.0
+pp.3	112		(X in String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _) = _)	2.2.1.1
+pp.3	113		(X in String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _))	2.2.1.1 3.2.1.1
+pp.3	114		{6}(false)	2.2.1.1
+pp.3	115		{6}(false)	2.2.1.1
+pp.3	116		{1}(X in Ascii.Ascii X _ _ _ _ _ false _)	2.2.1.1
+pp.3	117		{1}(X in String (Ascii.Ascii X _ _ _ _ _ false _) _)	2.2.1.1
+pp.3	118		{1}(X in String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _))	2.2.1.1
+pp.3	119		(X in String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _) = _)	2.2.1.2
+pp.3	120		(X in Ascii.Ascii false X _ _ _ _ _ _)	2.2.1.2 3.2.1.2
+pp.3	121		(X in String (Ascii.Ascii false X _ _ _ _ _ _) _)	2.2.1.2 3.2.1.2
+pp.3	122		(X in String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _))	2.2.1.2 3.2.1.2
+pp.3	123		{7}(false)	2.2.1.2
+pp.3	124		{7}(false)	2.2.1.2
+pp.3	125		{1}(X in Ascii.Ascii false X _ _ _ _ _ _)	2.2.1.2
+pp.3	126		{1}(X in String (Ascii.Ascii false X _ _ _ _ _ _) _)	2.2.1.2
+pp.3	127		{1}(X in String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _))	2.2.1.2
+pp.3	128		(X in String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _) = _)	2.2.1.3
+pp.3	129		(X in Ascii.Ascii false _ X _ _ _ _ _)	2.2.1.3 3.2.1.3
+pp.3	130		(X in String (Ascii.Ascii false _ X _ _ _ _ _) _)	2.2.1.3 3.2.1.3
+pp.3	131		(X in String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _))	2.2.1.3 3.2.1.3
+pp.3	132		{8}(false)	2.2.1.3
+pp.3	133		{8}(false)	2.2.1.3
+pp.3	134		{1}(X in Ascii.Ascii false _ X _ _ _ _ _)	2.2.1.3
+pp.3	135		{1}(X in String (Ascii.Ascii false _ X _ _ _ _ _) _)	2.2.1.3
+pp.3	136		{1}(X in String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _))	2.2.1.3
+pp.3	137		(X in String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _) = _)	2.2.1.4
+pp.3	138		(X in Ascii.Ascii false _ _ X _ _ _ _)	2.2.1.4 3.2.1.4
+pp.3	139		(X in String (Ascii.Ascii false _ _ X _ _ _ _) _)	2.2.1.4 3.2.1.4
+pp.3	140		(X in String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _))	2.2.1.4 3.2.1.4
+pp.3	141		{9}(false)	2.2.1.4
+pp.3	142		{9}(false)	2.2.1.4
+pp.3	143		{1}(X in Ascii.Ascii false _ _ X _ _ _ _)	2.2.1.4
+pp.3	144		{1}(X in String (Ascii.Ascii false _ _ X _ _ _ _) _)	2.2.1.4
+pp.3	145		{1}(X in String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _))	2.2.1.4
+pp.3	146		(X in String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _) = _)	2.2.1.5
+pp.3	147		(X in Ascii.Ascii false _ _ _ X _ _ _)	2.2.1.5 3.2.1.5
+pp.3	148		(X in String (Ascii.Ascii false _ _ _ X _ _ _) _)	2.2.1.5 3.2.1.5
+pp.3	149		(X in String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _))	2.2.1.5 3.2.1.5
+pp.3	150		{10}(false)	2.2.1.5
+pp.3	151		{10}(false)	2.2.1.5
+pp.3	152		{1}(X in Ascii.Ascii false _ _ _ X _ _ _)	2.2.1.5
+pp.3	153		{1}(X in String (Ascii.Ascii false _ _ _ X _ _ _) _)	2.2.1.5
+pp.3	154		{1}(X in String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _))	2.2.1.5
+pp.3	155		(X in String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _) = _)	2.2.1.6
+pp.3	156		(X in Ascii.Ascii false _ _ _ _ X _ _)	2.2.1.6 3.2.1.6
+pp.3	157		(X in String (Ascii.Ascii false _ _ _ _ X _ _) _)	2.2.1.6 3.2.1.6
+pp.3	158		(X in String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _))	2.2.1.6 3.2.1.6
+pp.3	159		{4}(true)	2.2.1.6
+pp.3	160		{4}(true)	2.2.1.6
+pp.3	161		{1}(X in Ascii.Ascii false _ _ _ _ X _ _)	2.2.1.6
+pp.3	162		{1}(X in String (Ascii.Ascii false _ _ _ _ X _ _) _)	2.2.1.6
+pp.3	163		{1}(X in String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _))	2.2.1.6
+pp.3	164		(X in String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _) = _)	2.2.1.7
+pp.3	165		(X in Ascii.Ascii false _ _ _ _ _ X _)	2.2.1.7 3.2.1.7
+pp.3	166		(X in String (Ascii.Ascii false _ _ _ _ _ X _) _)	2.2.1.7 3.2.1.7
+pp.3	167		(X in String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _))	2.2.1.7 3.2.1.7
+pp.3	168		{11}(false)	2.2.1.7
+pp.3	169		{11}(false)	2.2.1.7
+pp.3	170		{1}(X in Ascii.Ascii false _ _ _ _ _ X _)	2.2.1.7
+pp.3	171		{1}(X in String (Ascii.Ascii false _ _ _ _ _ X _) _)	2.2.1.7
+pp.3	172		{1}(X in String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _))	2.2.1.7
+pp.3	173		(X in String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _) = _)	2.2.1.8
+pp.3	174		(X in Ascii.Ascii false _ _ _ _ _ _ X)	2.2.1.8 3.2.1.8
+pp.3	175		(X in String (Ascii.Ascii false _ _ _ _ _ _ X) _)	2.2.1.8 3.2.1.8
+pp.3	176		(X in String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _))	2.2.1.8 3.2.1.8
+pp.3	177		{12}(false)	2.2.1.8
+pp.3	178		{12}(false)	2.2.1.8
+pp.3	179		{1}(X in Ascii.Ascii false _ _ _ _ _ _ X)	2.2.1.8
+pp.3	180		{1}(X in String (Ascii.Ascii false _ _ _ _ _ _ X) _)	2.2.1.8
+pp.3	181		{1}(X in String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _))	2.2.1.8
+pp.3	182		(String _ "" in X in X = _)	2.2.2
+pp.3	183		(X in String _ (String _ X) = _)	2.2.2
+pp.3	184		(String _ "" in X in String _ X = _)	2.2.2
+pp.3	185		(String _ _ as X in String _ (String _ X) = _)	2.2.2
+pp.3	186		(X in String _ (String _ X))	2.2.2 3.2.2
+pp.3	187		(String _ "" in X in String _ X)	2.2.2 3.2.2
+pp.3	188		(X in String (Ascii.Ascii false _ _ _ _ _ _ _) X)	2.2.2 3.2.2
+pp.3	189		{1}("b"%string)	2.2.2
+pp.3	190		{1}(String _ "")	2.2.2
+pp.3	191		{1}(X in String _ (String _ X))	2.2.2
+pp.3	192		{1}(String _ "" as X in String _ X)	2.2.2
+pp.3	193		{1}(String _ "" in X in String _ X)	2.2.2
+pp.3	194		{1}(X in String (Ascii.Ascii false _ _ _ _ _ _ _) X)	2.2.2
+pp.3	195		{1}(String _ _ as X in String _ (String _ X))	2.2.2
+pp.3	196		{3}(String)	2.2.2.0
+pp.3	197		{3}(String)	2.2.2.0
+pp.3	198		(Ascii.Ascii _ true _ _ _ _ _ _ in X in X = _)	2.2.2.1
+pp.3	199		(Ascii.Ascii _ true _ _ _ _ _ _ in X in String _ X = _)	2.2.2.1
+pp.3	200		(X in String _ (String _ (String X _)) = _)	2.2.2.1
+pp.3	201		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String _ (String _ (String X _)) = _)	2.2.2.1
+pp.3	202		(Ascii.Ascii _ true _ _ _ _ _ _ in X in String _ X)	2.2.2.1 3.2.2.1
+pp.3	203		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String _ (String _ X))	2.2.2.1 3.2.2.1
+pp.3	204		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii false _ _ _ _ _ _ _) X)	2.2.2.1 3.2.2.1
+pp.3	205		{1}(Ascii.Ascii _ true _ _ _ _ _ _)	2.2.2.1
+pp.3	206		{1}(X in String X "")	2.2.2.1
+pp.3	207		{1}(Ascii.Ascii _ true _ _ _ _ _ _ as X in String X _)	2.2.2.1
+pp.3	208		{1}(Ascii.Ascii _ true _ _ _ _ _ _ in X in String _ X)	2.2.2.1
+pp.3	209		{1}(X in String _ (String X ""))	2.2.2.1
+pp.3	210		{1}(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String _ (String _ X))	2.2.2.1
+pp.3	211		{1}(X in String _ (String _ (String X _)))	2.2.2.1
+pp.3	212		{1}(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii false _ _ _ _ _ _ _) X)	2.2.2.1
+pp.3	213		{1}(Ascii.Ascii _ true _ _ _ _ _ _ as X in String _ (String X _))	2.2.2.1
+pp.3	214		{1}(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String _ (String _ (String X _)))	2.2.2.1
+pp.3	215		{1}(Ascii.Ascii false true false false false true true false)	2.2.2.1
+pp.3	216		{3}(Ascii.Ascii)	2.2.2.1.0
+pp.3	217		{3}(Ascii.Ascii)	2.2.2.1.0
+pp.3	218		(X in String _ (String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _)) = _)	2.2.2.1.1
+pp.3	219		{13}(false)	2.2.2.1.1
+pp.3	220		{13}(false)	2.2.2.1.1
+pp.3	221		{1}(X in Ascii.Ascii X true _ _ _ _ _ _)	2.2.2.1.1
+pp.3	222		{1}(X in String (Ascii.Ascii X true _ _ _ _ _ _) _)	2.2.2.1.1
+pp.3	223		{1}(X in String _ (String (Ascii.Ascii X true _ _ _ _ _ _) _))	2.2.2.1.1
+pp.3	224		{1}(X in String _ (String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _)))	2.2.2.1.1
+pp.3	225		(X in String _ (String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _)) = _)	2.2.2.1.2
+pp.3	226		{5}(true)	2.2.2.1.2
+pp.3	227		{5}(true)	2.2.2.1.2
+pp.3	228		{1}(X in Ascii.Ascii false X _ _ _ _ true _)	2.2.2.1.2
+pp.3	229		{1}(X in String (Ascii.Ascii _ X _ _ _ _ _ _) "")	2.2.2.1.2
+pp.3	230		{1}(X in String _ (String (Ascii.Ascii _ X _ _ _ _ true _) _))	2.2.2.1.2
+pp.3	231		{1}(X in String _ (String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _)))	2.2.2.1.2
+pp.3	232		(X in String _ (String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _)) = _)	2.2.2.1.3
+pp.3	233		{14}(false)	2.2.2.1.3
+pp.3	234		{14}(false)	2.2.2.1.3
+pp.3	235		{1}(X in Ascii.Ascii _ true X _ _ _ _ _)	2.2.2.1.3
+pp.3	236		{1}(X in String (Ascii.Ascii _ true X _ _ _ _ _) _)	2.2.2.1.3
+pp.3	237		{1}(X in String _ (String (Ascii.Ascii _ true X _ _ _ _ _) _))	2.2.2.1.3
+pp.3	238		{1}(X in String _ (String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _)))	2.2.2.1.3
+pp.3	239		(X in String _ (String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _)) = _)	2.2.2.1.4
+pp.3	240		{15}(false)	2.2.2.1.4
+pp.3	241		{15}(false)	2.2.2.1.4
+pp.3	242		{1}(X in Ascii.Ascii _ true _ X _ _ _ _)	2.2.2.1.4
+pp.3	243		{1}(X in String (Ascii.Ascii _ true _ X _ _ _ _) _)	2.2.2.1.4
+pp.3	244		{1}(X in String _ (String (Ascii.Ascii _ true _ X _ _ _ _) _))	2.2.2.1.4
+pp.3	245		{1}(X in String _ (String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _)))	2.2.2.1.4
+pp.3	246		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _)) = _)	2.2.2.1.5
+pp.3	247		{16}(false)	2.2.2.1.5
+pp.3	248		{16}(false)	2.2.2.1.5
+pp.3	249		{1}(X in Ascii.Ascii _ true _ _ X _ _ _)	2.2.2.1.5
+pp.3	250		{1}(X in String (Ascii.Ascii _ true _ _ X _ _ _) _)	2.2.2.1.5
+pp.3	251		{1}(X in String _ (String (Ascii.Ascii _ true _ _ X _ _ _) _))	2.2.2.1.5
+pp.3	252		{1}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _)))	2.2.2.1.5
+pp.3	253		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _)) = _)	2.2.2.1.6
+pp.3	254		{6}(true)	2.2.2.1.6
+pp.3	255		{6}(true)	2.2.2.1.6
+pp.3	256		{1}(X in Ascii.Ascii _ true _ _ _ X _ _)	2.2.2.1.6
+pp.3	257		{1}(X in String (Ascii.Ascii _ true _ _ _ X _ _) _)	2.2.2.1.6
+pp.3	258		{1}(X in String _ (String (Ascii.Ascii _ true _ _ _ X _ _) _))	2.2.2.1.6
+pp.3	259		{1}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _)))	2.2.2.1.6
+pp.3	260		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _)) = _)	2.2.2.1.7
+pp.3	261		{7}(true)	2.2.2.1.7
+pp.3	262		{7}(true)	2.2.2.1.7
+pp.3	263		{1}(X in Ascii.Ascii _ true _ _ _ _ X _)	2.2.2.1.7
+pp.3	264		{1}(X in String (Ascii.Ascii _ true _ _ _ _ X _) _)	2.2.2.1.7
+pp.3	265		{1}(X in String _ (String (Ascii.Ascii _ true _ _ _ _ X _) _))	2.2.2.1.7
+pp.3	266		{1}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _)))	2.2.2.1.7
+pp.3	267		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _)) = _)	2.2.2.1.8
+pp.3	268		{17}(false)	2.2.2.1.8
+pp.3	269		{17}(false)	2.2.2.1.8
+pp.3	270		{1}(X in Ascii.Ascii _ true _ _ _ _ _ X)	2.2.2.1.8
+pp.3	271		{1}(X in String (Ascii.Ascii _ true _ _ _ _ _ X) _)	2.2.2.1.8
+pp.3	272		{1}(X in String _ (String (Ascii.Ascii _ true _ _ _ _ _ X) _))	2.2.2.1.8
+pp.3	273		{1}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _)))	2.2.2.1.8
+pp.3	274		(X in String _ (String _ (String _ X)) = _)	2.2.2.2
+pp.3	275		{1}(""%string)	2.2.2.2
+pp.3	276		{1}(""%string)	2.2.2.2
+pp.3	277		{1}(X in String (Ascii.Ascii _ true _ _ _ _ _ _) X)	2.2.2.2
+pp.3	278		{1}(X in String _ (String _ (String _ X)))	2.2.2.2
+pp.3	279		{1}(X in String (Ascii.Ascii false _ _ _ _ _ _ _) (String _ X))	2.2.2.2
+pp.3	280		(X in _ = X)	3
+pp.3	281		(String _ _ as X in _ = X)	3
+pp.3	282		(String (Ascii.Ascii true _ _ _ _ _ _ _) _)	2 3
+pp.3	283		{2}("a b"%string)	3
+pp.3	284		{2}(String (Ascii.Ascii true _ _ _ _ _ _ _) _)	3
+pp.3	285		{4}(String)	3.0
+pp.3	286		{4}(String)	3.0
+pp.3	287		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in _ = X)	3.1
+pp.3	288		(X in _ = String X _)	3.1
+pp.3	289		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in _ = String X _)	3.1
+pp.3	290		(Ascii.Ascii true _ _ _ _ _ _ _)	2.1 3.1
+pp.3	291		(Ascii.Ascii true _ _ _ _ _ _ _ as X in String X _)	2.1 3.1
+pp.3	292		(X in String X (String (Ascii.Ascii _ false _ _ _ _ _ _) _))	2.1 3.1
+pp.3	293		{2}(Ascii.Ascii true _ _ _ _ _ _ _)	3.1
+pp.3	294		{2}(Ascii.Ascii true _ _ _ _ _ _ _ as X in String X _)	3.1
+pp.3	295		{2}(X in String X (String (Ascii.Ascii _ false _ _ _ _ _ _) _))	3.1
+pp.3	296		{2}(Ascii.Ascii true false false false false true true false)	3.1
+pp.3	297		{4}(Ascii.Ascii)	3.1.0
+pp.3	298		{4}(Ascii.Ascii)	3.1.0
+pp.3	299		(X in _ = String (Ascii.Ascii X _ _ _ _ _ _ _) _)	3.1.1
+pp.3	300		(X in Ascii.Ascii X false _ _ _ _ true _)	2.1.1 3.1.1
+pp.3	301		(X in String (Ascii.Ascii X false _ _ _ _ true _) _)	2.1.1 3.1.1
+pp.3	302		{8}(true)	3.1.1
+pp.3	303		{8}(true)	3.1.1
+pp.3	304		{2}(X in Ascii.Ascii X false _ _ _ _ true _)	3.1.1
+pp.3	305		{2}(X in String (Ascii.Ascii X false _ _ _ _ true _) _)	3.1.1
+pp.3	306		(X in _ = String (Ascii.Ascii _ X _ _ _ _ _ _) _)	3.1.2
+pp.3	307		(X in Ascii.Ascii true X _ _ _ _ _ _)	2.1.2 3.1.2
+pp.3	308		(X in String (Ascii.Ascii true X _ _ _ _ _ _) _)	2.1.2 3.1.2
+pp.3	309		{18}(false)	3.1.2
+pp.3	310		{18}(false)	3.1.2
+pp.3	311		{2}(X in Ascii.Ascii true X _ _ _ _ _ _)	3.1.2
+pp.3	312		{2}(X in String (Ascii.Ascii true X _ _ _ _ _ _) _)	3.1.2
+pp.3	313		(X in _ = String (Ascii.Ascii _ _ X _ _ _ _ _) _)	3.1.3
+pp.3	314		(X in Ascii.Ascii true _ X _ _ _ _ _)	2.1.3 3.1.3
+pp.3	315		(X in String (Ascii.Ascii true _ X _ _ _ _ _) _)	2.1.3 3.1.3
+pp.3	316		{19}(false)	3.1.3
+pp.3	317		{19}(false)	3.1.3
+pp.3	318		{2}(X in Ascii.Ascii true _ X _ _ _ _ _)	3.1.3
+pp.3	319		{2}(X in String (Ascii.Ascii true _ X _ _ _ _ _) _)	3.1.3
+pp.3	320		(X in _ = String (Ascii.Ascii _ _ _ X _ _ _ _) _)	3.1.4
+pp.3	321		(X in Ascii.Ascii true _ _ X _ _ _ _)	2.1.4 3.1.4
+pp.3	322		(X in String (Ascii.Ascii true _ _ X _ _ _ _) _)	2.1.4 3.1.4
+pp.3	323		{20}(false)	3.1.4
+pp.3	324		{20}(false)	3.1.4
+pp.3	325		{2}(X in Ascii.Ascii true _ _ X _ _ _ _)	3.1.4
+pp.3	326		{2}(X in String (Ascii.Ascii true _ _ X _ _ _ _) _)	3.1.4
+pp.3	327		(X in _ = String (Ascii.Ascii _ _ _ _ X _ _ _) _)	3.1.5
+pp.3	328		(X in Ascii.Ascii true _ _ _ X _ _ _)	2.1.5 3.1.5
+pp.3	329		(X in String (Ascii.Ascii true _ _ _ X _ _ _) _)	2.1.5 3.1.5
+pp.3	330		{21}(false)	3.1.5
+pp.3	331		{21}(false)	3.1.5
+pp.3	332		{2}(X in Ascii.Ascii true _ _ _ X _ _ _)	3.1.5
+pp.3	333		{2}(X in String (Ascii.Ascii true _ _ _ X _ _ _) _)	3.1.5
+pp.3	334		(X in _ = String (Ascii.Ascii _ _ _ _ _ X _ _) _)	3.1.6
+pp.3	335		(X in Ascii.Ascii true _ _ _ _ X _ _)	2.1.6 3.1.6
+pp.3	336		(X in String (Ascii.Ascii true _ _ _ _ X _ _) _)	2.1.6 3.1.6
+pp.3	337		{9}(true)	3.1.6
+pp.3	338		{9}(true)	3.1.6
+pp.3	339		{2}(X in Ascii.Ascii true _ _ _ _ X _ _)	3.1.6
+pp.3	340		{2}(X in String (Ascii.Ascii true _ _ _ _ X _ _) _)	3.1.6
+pp.3	341		(X in _ = String (Ascii.Ascii _ _ _ _ _ _ X _) _)	3.1.7
+pp.3	342		(X in Ascii.Ascii true _ _ _ _ _ X _)	2.1.7 3.1.7
+pp.3	343		(X in String (Ascii.Ascii true _ _ _ _ _ X _) _)	2.1.7 3.1.7
+pp.3	344		{10}(true)	3.1.7
+pp.3	345		{10}(true)	3.1.7
+pp.3	346		{2}(X in Ascii.Ascii true _ _ _ _ _ X _)	3.1.7
+pp.3	347		{2}(X in String (Ascii.Ascii true _ _ _ _ _ X _) _)	3.1.7
+pp.3	348		(X in _ = String (Ascii.Ascii _ _ _ _ _ _ _ X) _)	3.1.8
+pp.3	349		(X in Ascii.Ascii true _ _ _ _ _ _ X)	2.1.8 3.1.8
+pp.3	350		(X in String (Ascii.Ascii true _ _ _ _ _ _ X) _)	2.1.8 3.1.8
+pp.3	351		{22}(false)	3.1.8
+pp.3	352		{22}(false)	3.1.8
+pp.3	353		{2}(X in Ascii.Ascii true _ _ _ _ _ _ X)	3.1.8
+pp.3	354		{2}(X in String (Ascii.Ascii true _ _ _ _ _ _ X) _)	3.1.8
+pp.3	355		(X in _ = String _ X)	3.2
+pp.3	356		(String _ _ as X in _ = String _ X)	3.2
+pp.3	357		(String (Ascii.Ascii false _ _ _ _ _ _ _) _ in X in _ = X)	3.2
+pp.3	358		(String (Ascii.Ascii _ _ _ _ _ _ false _) _)	2.2 3.2
+pp.3	359		(X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	2.2 3.2
+pp.3	360		(String _ _ as X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	2.2 3.2
+pp.3	361		{2}(" b"%string)	3.2
+pp.3	362		{2}(String (Ascii.Ascii _ _ _ _ _ _ false _) _)	3.2
+pp.3	363		{2}(X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	3.2
+pp.3	364		{2}(String _ _ as X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	3.2
+pp.3	365		{5}(String)	3.2.0
+pp.3	366		{5}(String)	3.2.0
+pp.3	367		(Ascii.Ascii false _ _ _ _ _ _ _ in X in _ = X)	3.2.1
+pp.3	368		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in _ = String _ X)	3.2.1
+pp.3	369		(X in _ = String _ (String X _))	3.2.1
+pp.3	370		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in _ = String _ (String X _))	3.2.1
+pp.3	371		(Ascii.Ascii _ _ _ _ _ _ false _)	2.2.1 3.2.1
+pp.3	372		(X in String X (String _ ""))	2.2.1 3.2.1
+pp.3	373		(Ascii.Ascii _ _ _ _ _ _ false _ as X in String X _)	2.2.1 3.2.1
+pp.3	374		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	2.2.1 3.2.1
+pp.3	375		(X in String (Ascii.Ascii true _ _ _ _ _ _ _) (String X _))	2.2.1 3.2.1
+pp.3	376		(Ascii.Ascii _ false _ _ _ _ _ _ as X in String _ (String X _))	2.2.1 3.2.1
+pp.3	377		{2}(Ascii.Ascii _ _ _ _ _ _ false _)	3.2.1
+pp.3	378		{2}(X in String X (String _ ""))	3.2.1
+pp.3	379		{2}(Ascii.Ascii _ _ _ _ _ _ false _ as X in String X _)	3.2.1
+pp.3	380		{2}(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	3.2.1
+pp.3	381		{2}(X in String (Ascii.Ascii true _ _ _ _ _ _ _) (String X _))	3.2.1
+pp.3	382		{2}(Ascii.Ascii _ false _ _ _ _ _ _ as X in String _ (String X _))	3.2.1
+pp.3	383		{2}(Ascii.Ascii false false false false false true false false)	3.2.1
+pp.3	384		{5}(Ascii.Ascii)	3.2.1.0
+pp.3	385		{5}(Ascii.Ascii)	3.2.1.0
+pp.3	386		(X in _ = String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _))	3.2.1.1
+pp.3	387		(X in Ascii.Ascii X _ _ _ _ _ false _)	2.2.1.1 3.2.1.1
+pp.3	388		(X in String (Ascii.Ascii X _ _ _ _ _ false _) _)	2.2.1.1 3.2.1.1
+pp.3	389		(X in String _ (String (Ascii.Ascii X false _ _ _ _ _ _) _))	2.2.1.1 3.2.1.1
+pp.3	390		{23}(false)	3.2.1.1
+pp.3	391		{23}(false)	3.2.1.1
+pp.3	392		{2}(X in Ascii.Ascii X _ _ _ _ _ false _)	3.2.1.1
+pp.3	393		{2}(X in String (Ascii.Ascii X _ _ _ _ _ false _) _)	3.2.1.1
+pp.3	394		{2}(X in String _ (String (Ascii.Ascii X false _ _ _ _ _ _) _))	3.2.1.1
+pp.3	395		(X in _ = String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _))	3.2.1.2
+pp.3	396		(X in Ascii.Ascii _ X _ _ _ _ false _)	2.2.1.2 3.2.1.2
+pp.3	397		(X in String (Ascii.Ascii _ X _ _ _ _ false _) _)	2.2.1.2 3.2.1.2
+pp.3	398		(X in String _ (String (Ascii.Ascii _ X _ _ _ _ false _) _))	2.2.1.2 3.2.1.2
+pp.3	399		{24}(false)	3.2.1.2
+pp.3	400		{24}(false)	3.2.1.2
+pp.3	401		{2}(X in Ascii.Ascii _ X _ _ _ _ false _)	3.2.1.2
+pp.3	402		{2}(X in String (Ascii.Ascii _ X _ _ _ _ false _) _)	3.2.1.2
+pp.3	403		{2}(X in String _ (String (Ascii.Ascii _ X _ _ _ _ false _) _))	3.2.1.2
+pp.3	404		(X in _ = String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _))	3.2.1.3
+pp.3	405		(X in Ascii.Ascii _ _ X _ _ _ false _)	2.2.1.3 3.2.1.3
+pp.3	406		(X in String (Ascii.Ascii _ _ X _ _ _ false _) _)	2.2.1.3 3.2.1.3
+pp.3	407		(X in String _ (String (Ascii.Ascii _ false X _ _ _ _ _) _))	2.2.1.3 3.2.1.3
+pp.3	408		{25}(false)	3.2.1.3
+pp.3	409		{25}(false)	3.2.1.3
+pp.3	410		{2}(X in Ascii.Ascii _ _ X _ _ _ false _)	3.2.1.3
+pp.3	411		{2}(X in String (Ascii.Ascii _ _ X _ _ _ false _) _)	3.2.1.3
+pp.3	412		{2}(X in String _ (String (Ascii.Ascii _ false X _ _ _ _ _) _))	3.2.1.3
+pp.3	413		(X in _ = String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _))	3.2.1.4
+pp.3	414		(X in Ascii.Ascii _ _ _ X _ _ false _)	2.2.1.4 3.2.1.4
+pp.3	415		(X in String (Ascii.Ascii _ _ _ X _ _ false _) _)	2.2.1.4 3.2.1.4
+pp.3	416		(X in String _ (String (Ascii.Ascii _ false _ X _ _ _ _) _))	2.2.1.4 3.2.1.4
+pp.3	417		{26}(false)	3.2.1.4
+pp.3	418		{26}(false)	3.2.1.4
+pp.3	419		{2}(X in Ascii.Ascii _ _ _ X _ _ false _)	3.2.1.4
+pp.3	420		{2}(X in String (Ascii.Ascii _ _ _ X _ _ false _) _)	3.2.1.4
+pp.3	421		{2}(X in String _ (String (Ascii.Ascii _ false _ X _ _ _ _) _))	3.2.1.4
+pp.3	422		(X in _ = String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _))	3.2.1.5
+pp.3	423		(X in Ascii.Ascii _ _ _ _ X _ false _)	2.2.1.5 3.2.1.5
+pp.3	424		(X in String (Ascii.Ascii _ _ _ _ X _ false _) _)	2.2.1.5 3.2.1.5
+pp.3	425		(X in String _ (String (Ascii.Ascii _ false _ _ X _ _ _) _))	2.2.1.5 3.2.1.5
+pp.3	426		{27}(false)	3.2.1.5
+pp.3	427		{27}(false)	3.2.1.5
+pp.3	428		{2}(X in Ascii.Ascii _ _ _ _ X _ false _)	3.2.1.5
+pp.3	429		{2}(X in String (Ascii.Ascii _ _ _ _ X _ false _) _)	3.2.1.5
+pp.3	430		{2}(X in String _ (String (Ascii.Ascii _ false _ _ X _ _ _) _))	3.2.1.5
+pp.3	431		(X in _ = String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _))	3.2.1.6
+pp.3	432		(X in Ascii.Ascii _ _ _ _ _ X false _)	2.2.1.6 3.2.1.6
+pp.3	433		(X in String (Ascii.Ascii _ _ _ _ _ X false _) _)	2.2.1.6 3.2.1.6
+pp.3	434		(X in String _ (String (Ascii.Ascii _ false _ _ _ X _ _) _))	2.2.1.6 3.2.1.6
+pp.3	435		{11}(true)	3.2.1.6
+pp.3	436		{11}(true)	3.2.1.6
+pp.3	437		{2}(X in Ascii.Ascii _ _ _ _ _ X false _)	3.2.1.6
+pp.3	438		{2}(X in String (Ascii.Ascii _ _ _ _ _ X false _) _)	3.2.1.6
+pp.3	439		{2}(X in String _ (String (Ascii.Ascii _ false _ _ _ X _ _) _))	3.2.1.6
+pp.3	440		(X in _ = String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _))	3.2.1.7
+pp.3	441		(X in Ascii.Ascii false false _ _ _ _ X _)	2.2.1.7 3.2.1.7
+pp.3	442		(X in String (Ascii.Ascii _ _ _ _ _ _ X _) (String _ ""))	2.2.1.7 3.2.1.7
+pp.3	443		(X in String _ (String (Ascii.Ascii _ false _ _ _ _ X _) _))	2.2.1.7 3.2.1.7
+pp.3	444		{28}(false)	3.2.1.7
+pp.3	445		{28}(false)	3.2.1.7
+pp.3	446		{2}(X in Ascii.Ascii false false _ _ _ _ X _)	3.2.1.7
+pp.3	447		{2}(X in String (Ascii.Ascii _ _ _ _ _ _ X _) (String _ ""))	3.2.1.7
+pp.3	448		{2}(X in String _ (String (Ascii.Ascii _ false _ _ _ _ X _) _))	3.2.1.7
+pp.3	449		(X in _ = String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _))	3.2.1.8
+pp.3	450		(X in Ascii.Ascii _ _ _ _ _ _ false X)	2.2.1.8 3.2.1.8
+pp.3	451		(X in String (Ascii.Ascii _ _ _ _ _ _ false X) _)	2.2.1.8 3.2.1.8
+pp.3	452		(X in String _ (String (Ascii.Ascii _ false _ _ _ _ _ X) _))	2.2.1.8 3.2.1.8
+pp.3	453		{29}(false)	3.2.1.8
+pp.3	454		{29}(false)	3.2.1.8
+pp.3	455		{2}(X in Ascii.Ascii _ _ _ _ _ _ false X)	3.2.1.8
+pp.3	456		{2}(X in String (Ascii.Ascii _ _ _ _ _ _ false X) _)	3.2.1.8
+pp.3	457		{2}(X in String _ (String (Ascii.Ascii _ false _ _ _ _ _ X) _))	3.2.1.8
+pp.3	458		(String _ "" in X in _ = X)	3.2.2
+pp.3	459		(X in _ = String _ (String _ X))	3.2.2
+pp.3	460		(String _ "" in X in _ = String _ X)	3.2.2
+pp.3	461		(String _ _ as X in _ = String _ (String _ X))	3.2.2
+pp.3	462		(String _ "")	2.2.2 3.2.2
+pp.3	463		(String _ "" as X in String _ X)	2.2.2 3.2.2
+pp.3	464		(X in String (Ascii.Ascii _ _ _ _ _ _ false _) X)	2.2.2 3.2.2
+pp.3	465		(String _ _ as X in String _ (String _ X))	2.2.2 3.2.2
+pp.3	466		(X in String (Ascii.Ascii true _ _ _ _ _ _ _) (String _ X))	2.2.2 3.2.2
+pp.3	467		(String _ "" in X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	2.2.2 3.2.2
+pp.3	468		{2}("b"%string)	3.2.2
+pp.3	469		{2}(String _ "")	3.2.2
+pp.3	470		{2}(String _ "" as X in String _ X)	3.2.2
+pp.3	471		{2}(X in String (Ascii.Ascii _ _ _ _ _ _ false _) X)	3.2.2
+pp.3	472		{2}(String _ _ as X in String _ (String _ X))	3.2.2
+pp.3	473		{2}(X in String (Ascii.Ascii true _ _ _ _ _ _ _) (String _ X))	3.2.2
+pp.3	474		{2}(String _ "" in X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	3.2.2
+pp.3	475		(String)	2.0 2.2.0 2.2.2.0 3.0 3.2.0 3.2.2.0
+pp.3	476		{6}(String)	3.2.2.0
+pp.3	477		{6}(String)	3.2.2.0
+pp.3	478		(Ascii.Ascii _ true _ _ _ _ _ _ in X in _ = X)	3.2.2.1
+pp.3	479		(Ascii.Ascii _ true _ _ _ _ _ _ in X in _ = String _ X)	3.2.2.1
+pp.3	480		(X in _ = String _ (String _ (String X _)))	3.2.2.1
+pp.3	481		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in _ = String _ (String _ (String X _)))	3.2.2.1
+pp.3	482		(Ascii.Ascii _ true _ _ _ _ _ _)	2.2.2.1 3.2.2.1
+pp.3	483		(X in String X "")	2.2.2.1 3.2.2.1
+pp.3	484		(Ascii.Ascii _ true _ _ _ _ _ _ as X in String X _)	2.2.2.1 3.2.2.1
+pp.3	485		(X in String _ (String X ""))	2.2.2.1 3.2.2.1
+pp.3	486		(X in String _ (String _ (String X _)))	2.2.2.1 3.2.2.1
+pp.3	487		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii _ _ _ _ _ _ false _) X)	2.2.2.1 3.2.2.1
+pp.3	488		(Ascii.Ascii _ true _ _ _ _ _ _ as X in String _ (String X _))	2.2.2.1 3.2.2.1
+pp.3	489		(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String _ (String _ (String X _)))	2.2.2.1 3.2.2.1
+pp.3	490		(Ascii.Ascii _ true _ _ _ _ _ _ in X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	2.2.2.1 3.2.2.1
+pp.3	491		(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii true _ _ _ _ _ _ _) (String _ X))	2.2.2.1 3.2.2.1
+pp.3	492		{2}(Ascii.Ascii _ true _ _ _ _ _ _)	3.2.2.1
+pp.3	493		{2}(X in String X "")	3.2.2.1
+pp.3	494		{2}(Ascii.Ascii _ true _ _ _ _ _ _ as X in String X _)	3.2.2.1
+pp.3	495		{2}(X in String _ (String X ""))	3.2.2.1
+pp.3	496		{2}(X in String _ (String _ (String X _)))	3.2.2.1
+pp.3	497		{2}(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii _ _ _ _ _ _ false _) X)	3.2.2.1
+pp.3	498		{2}(Ascii.Ascii _ true _ _ _ _ _ _ as X in String _ (String X _))	3.2.2.1
+pp.3	499		{2}(Ascii.Ascii _ _ _ _ _ _ _ _ as X in String _ (String _ (String X _)))	3.2.2.1
+pp.3	500		{2}(Ascii.Ascii _ true _ _ _ _ _ _ in X in String (Ascii.Ascii true _ _ _ _ _ _ _) X)	3.2.2.1
+pp.3	501		{2}(Ascii.Ascii _ _ _ _ _ _ _ _ in X in String (Ascii.Ascii true _ _ _ _ _ _ _) (String _ X))	3.2.2.1
+pp.3	502		{2}(Ascii.Ascii false true false false false true true false)	3.2.2.1
+pp.3	503		(Ascii.Ascii)	2.1.0 2.2.1.0 2.2.2.1.0 3.1.0 3.2.1.0 3.2.2.1.0
+pp.3	504		{6}(Ascii.Ascii)	3.2.2.1.0
+pp.3	505		{6}(Ascii.Ascii)	3.2.2.1.0
+pp.3	506		(X in _ = String _ (String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _)))	3.2.2.1.1
+pp.3	507		(X in Ascii.Ascii X true _ _ _ _ _ _)	2.2.2.1.1 3.2.2.1.1
+pp.3	508		(X in String (Ascii.Ascii X true _ _ _ _ _ _) _)	2.2.2.1.1 3.2.2.1.1
+pp.3	509		(X in String _ (String (Ascii.Ascii X true _ _ _ _ _ _) _))	2.2.2.1.1 3.2.2.1.1
+pp.3	510		(X in String _ (String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _)))	2.2.2.1.1 3.2.2.1.1
+pp.3	511		{30}(false)	3.2.2.1.1
+pp.3	512		{30}(false)	3.2.2.1.1
+pp.3	513		{2}(X in Ascii.Ascii X true _ _ _ _ _ _)	3.2.2.1.1
+pp.3	514		{2}(X in String (Ascii.Ascii X true _ _ _ _ _ _) _)	3.2.2.1.1
+pp.3	515		{2}(X in String _ (String (Ascii.Ascii X true _ _ _ _ _ _) _))	3.2.2.1.1
+pp.3	516		{2}(X in String _ (String _ (String (Ascii.Ascii X _ _ _ _ _ _ _) _)))	3.2.2.1.1
+pp.3	517		(X in _ = String _ (String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _)))	3.2.2.1.2
+pp.3	518		(X in Ascii.Ascii false X _ _ _ _ true _)	2.2.2.1.2 3.2.2.1.2
+pp.3	519		(X in String (Ascii.Ascii _ X _ _ _ _ _ _) "")	2.2.2.1.2 3.2.2.1.2
+pp.3	520		(X in String _ (String (Ascii.Ascii _ X _ _ _ _ true _) _))	2.2.2.1.2 3.2.2.1.2
+pp.3	521		(X in String _ (String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _)))	2.2.2.1.2 3.2.2.1.2
+pp.3	522		{12}(true)	3.2.2.1.2
+pp.3	523		{12}(true)	3.2.2.1.2
+pp.3	524		{2}(X in Ascii.Ascii false X _ _ _ _ true _)	3.2.2.1.2
+pp.3	525		{2}(X in String (Ascii.Ascii _ X _ _ _ _ _ _) "")	3.2.2.1.2
+pp.3	526		{2}(X in String _ (String (Ascii.Ascii _ X _ _ _ _ true _) _))	3.2.2.1.2
+pp.3	527		{2}(X in String _ (String _ (String (Ascii.Ascii _ X _ _ _ _ _ _) _)))	3.2.2.1.2
+pp.3	528		(X in _ = String _ (String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _)))	3.2.2.1.3
+pp.3	529		(X in Ascii.Ascii _ true X _ _ _ _ _)	2.2.2.1.3 3.2.2.1.3
+pp.3	530		(X in String (Ascii.Ascii _ true X _ _ _ _ _) _)	2.2.2.1.3 3.2.2.1.3
+pp.3	531		(X in String _ (String (Ascii.Ascii _ true X _ _ _ _ _) _))	2.2.2.1.3 3.2.2.1.3
+pp.3	532		(X in String _ (String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _)))	2.2.2.1.3 3.2.2.1.3
+pp.3	533		{31}(false)	3.2.2.1.3
+pp.3	534		{31}(false)	3.2.2.1.3
+pp.3	535		{2}(X in Ascii.Ascii _ true X _ _ _ _ _)	3.2.2.1.3
+pp.3	536		{2}(X in String (Ascii.Ascii _ true X _ _ _ _ _) _)	3.2.2.1.3
+pp.3	537		{2}(X in String _ (String (Ascii.Ascii _ true X _ _ _ _ _) _))	3.2.2.1.3
+pp.3	538		{2}(X in String _ (String _ (String (Ascii.Ascii _ _ X _ _ _ _ _) _)))	3.2.2.1.3
+pp.3	539		(X in _ = String _ (String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _)))	3.2.2.1.4
+pp.3	540		(X in Ascii.Ascii _ true _ X _ _ _ _)	2.2.2.1.4 3.2.2.1.4
+pp.3	541		(X in String (Ascii.Ascii _ true _ X _ _ _ _) _)	2.2.2.1.4 3.2.2.1.4
+pp.3	542		(X in String _ (String (Ascii.Ascii _ true _ X _ _ _ _) _))	2.2.2.1.4 3.2.2.1.4
+pp.3	543		(X in String _ (String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _)))	2.2.2.1.4 3.2.2.1.4
+pp.3	544		{32}(false)	3.2.2.1.4
+pp.3	545		{32}(false)	3.2.2.1.4
+pp.3	546		{2}(X in Ascii.Ascii _ true _ X _ _ _ _)	3.2.2.1.4
+pp.3	547		{2}(X in String (Ascii.Ascii _ true _ X _ _ _ _) _)	3.2.2.1.4
+pp.3	548		{2}(X in String _ (String (Ascii.Ascii _ true _ X _ _ _ _) _))	3.2.2.1.4
+pp.3	549		{2}(X in String _ (String _ (String (Ascii.Ascii _ _ _ X _ _ _ _) _)))	3.2.2.1.4
+pp.3	550		(X in _ = String _ (String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _)))	3.2.2.1.5
+pp.3	551		(X in Ascii.Ascii _ true _ _ X _ _ _)	2.2.2.1.5 3.2.2.1.5
+pp.3	552		(X in String (Ascii.Ascii _ true _ _ X _ _ _) _)	2.2.2.1.5 3.2.2.1.5
+pp.3	553		(X in String _ (String (Ascii.Ascii _ true _ _ X _ _ _) _))	2.2.2.1.5 3.2.2.1.5
+pp.3	554		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _)))	2.2.2.1.5 3.2.2.1.5
+pp.3	555		{33}(false)	3.2.2.1.5
+pp.3	556		{33}(false)	3.2.2.1.5
+pp.3	557		{2}(X in Ascii.Ascii _ true _ _ X _ _ _)	3.2.2.1.5
+pp.3	558		{2}(X in String (Ascii.Ascii _ true _ _ X _ _ _) _)	3.2.2.1.5
+pp.3	559		{2}(X in String _ (String (Ascii.Ascii _ true _ _ X _ _ _) _))	3.2.2.1.5
+pp.3	560		{2}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ X _ _ _) _)))	3.2.2.1.5
+pp.3	561		(X in _ = String _ (String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _)))	3.2.2.1.6
+pp.3	562		(X in Ascii.Ascii _ true _ _ _ X _ _)	2.2.2.1.6 3.2.2.1.6
+pp.3	563		(X in String (Ascii.Ascii _ true _ _ _ X _ _) _)	2.2.2.1.6 3.2.2.1.6
+pp.3	564		(X in String _ (String (Ascii.Ascii _ true _ _ _ X _ _) _))	2.2.2.1.6 3.2.2.1.6
+pp.3	565		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _)))	2.2.2.1.6 3.2.2.1.6
+pp.3	566		{13}(true)	3.2.2.1.6
+pp.3	567		{13}(true)	3.2.2.1.6
+pp.3	568		{2}(X in Ascii.Ascii _ true _ _ _ X _ _)	3.2.2.1.6
+pp.3	569		{2}(X in String (Ascii.Ascii _ true _ _ _ X _ _) _)	3.2.2.1.6
+pp.3	570		{2}(X in String _ (String (Ascii.Ascii _ true _ _ _ X _ _) _))	3.2.2.1.6
+pp.3	571		{2}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ X _ _) _)))	3.2.2.1.6
+pp.3	572		(X in _ = String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _)))	3.2.2.1.7
+pp.3	573		(true)	2.1.1 2.1.6 2.1.7 2.2.1.6 2.2.2.1.2 2.2.2.1.6 2.2.2.1.7 3.1.1 3.1.6 3.1.7 3.2.1.6 3.2.2.1.2 3.2.2.1.6 3.2.2.1.7
+pp.3	574		(X in Ascii.Ascii _ true _ _ _ _ X _)	2.2.2.1.7 3.2.2.1.7
+pp.3	575		(X in String (Ascii.Ascii _ true _ _ _ _ X _) _)	2.2.2.1.7 3.2.2.1.7
+pp.3	576		(X in String _ (String (Ascii.Ascii _ true _ _ _ _ X _) _))	2.2.2.1.7 3.2.2.1.7
+pp.3	577		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _)))	2.2.2.1.7 3.2.2.1.7
+pp.3	578		{14}(true)	3.2.2.1.7
+pp.3	579		{14}(true)	3.2.2.1.7
+pp.3	580		{2}(X in Ascii.Ascii _ true _ _ _ _ X _)	3.2.2.1.7
+pp.3	581		{2}(X in String (Ascii.Ascii _ true _ _ _ _ X _) _)	3.2.2.1.7
+pp.3	582		{2}(X in String _ (String (Ascii.Ascii _ true _ _ _ _ X _) _))	3.2.2.1.7
+pp.3	583		{2}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ X _) _)))	3.2.2.1.7
+pp.3	584		(X in _ = String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _)))	3.2.2.1.8
+pp.3	585		(false)	2.1.2 2.1.3 2.1.4 2.1.5 2.1.8 2.2.1.1 2.2.1.2 2.2.1.3 2.2.1.4 2.2.1.5 2.2.1.7 2.2.1.8 2.2.2.1.1 2.2.2.1.3 2.2.2.1.4 2.2.2.1.5 2.2.2.1.8 3.1.2 3.1.3 3.1.4 3.1.5 3.1.8 3.2.1.1 3.2.1.2 3.2.1.3 3.2.1.4 3.2.1.5 3.2.1.7 3.2.1.8 3.2.2.1.1 3.2.2.1.3 3.2.2.1.4 3.2.2.1.5 3.2.2.1.8
+pp.3	586		(X in Ascii.Ascii _ true _ _ _ _ _ X)	2.2.2.1.8 3.2.2.1.8
+pp.3	587		(X in String (Ascii.Ascii _ true _ _ _ _ _ X) _)	2.2.2.1.8 3.2.2.1.8
+pp.3	588		(X in String _ (String (Ascii.Ascii _ true _ _ _ _ _ X) _))	2.2.2.1.8 3.2.2.1.8
+pp.3	589		(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _)))	2.2.2.1.8 3.2.2.1.8
+pp.3	590		{34}(false)	3.2.2.1.8
+pp.3	591		{34}(false)	3.2.2.1.8
+pp.3	592		{2}(X in Ascii.Ascii _ true _ _ _ _ _ X)	3.2.2.1.8
+pp.3	593		{2}(X in String (Ascii.Ascii _ true _ _ _ _ _ X) _)	3.2.2.1.8
+pp.3	594		{2}(X in String _ (String (Ascii.Ascii _ true _ _ _ _ _ X) _))	3.2.2.1.8
+pp.3	595		{2}(X in String _ (String _ (String (Ascii.Ascii _ _ _ _ _ _ _ X) _)))	3.2.2.1.8
+pp.3	596		(X in _ = String _ (String _ (String _ X)))	3.2.2.2
+pp.3	597		(""%string)	2.2.2.2 3.2.2.2
+pp.3	598		(X in String (Ascii.Ascii _ true _ _ _ _ _ _) X)	2.2.2.2 3.2.2.2
+pp.3	599		(X in String _ (String _ (String _ X)))	2.2.2.2 3.2.2.2
+pp.3	600		(X in String (Ascii.Ascii false _ _ _ _ _ _ _) (String _ X))	2.2.2.2 3.2.2.2
+pp.3	601		{2}(""%string)	3.2.2.2
+pp.3	602		{2}(""%string)	3.2.2.2
+pp.3	603		{2}(X in String (Ascii.Ascii _ true _ _ _ _ _ _) X)	3.2.2.2
+pp.3	604		{2}(X in String _ (String _ (String _ X)))	3.2.2.2
+pp.3	605		{2}(X in String (Ascii.Ascii false _ _ _ _ _ _ _) (String _ X))	3.2.2.2
+pp.4	1		(True)	root
+pp.4	2		{1}(True)	root
+pp.4	3	H	(_ = _)	root
+pp.4	4	H	{1}((let (a, b) := p in a + b) = 0)	root
+pp.4	5	H	(@eq)	0
+pp.4	6	H	{1}(@eq)	0
+pp.4	7	H	{1}(nat)	1
+pp.4	8	H	{1}(nat)	1
+pp.4	9	H	(X in X = _)	2
+pp.4	10	H	(let (a, b) := p in a + b)	2
+pp.4	11	H	{1}(let (a, b) := p in a + b)	2
+pp.4	12	H	(p)	2.0
+pp.4	13	H	{1}(p)	2.0
+pp.4	14	H	(nat)	1 2.1.2
+pp.4	15	H	{2}(nat)	2.1.2
+pp.4	16	H	{2}(nat)	2.1.2
+pp.4	17	H	(Nat.add)	2.2.2.2.0
+pp.4	18	H	{1}(Nat.add)	2.2.2.2.0
+pp.4	19	H	(0)	3
+pp.4	20	H	(X in _ = X)	3
+pp.4	21	H	{1}(0)	3
+pp.5	1		(_ = _)	root
+pp.5	2		{1}(match n with | 0 => true | S k => Nat.eqb k n end = (if b then false else true))	root
+pp.5	3		(@eq)	0
+pp.5	4		{1}(@eq)	0
+pp.5	5		{1}(bool)	1
+pp.5	6		{1}(bool)	1
+pp.5	7		(X in X = _)	2
+pp.5	8		(match n with | 0 => true | S k => Nat.eqb k n end)	2
+pp.5	9		{1}(match n with | 0 => true | S k => Nat.eqb k n end)	2
+pp.5	10		{1}(n)	2.0
+pp.5	11		{1}(n)	2.0
+pp.5	12		{2}(bool)	2.1.2
+pp.5	13		{2}(bool)	2.1.2
+pp.5	14		{1}(true)	2.2
+pp.5	15		{1}(true)	2.2
+pp.5	16		(Nat.eqb)	2.3.2.0
+pp.5	17		{1}(Nat.eqb)	2.3.2.0
+pp.5	18		(n)	2.0 2.3.2.2
+pp.5	19		{2}(n)	2.3.2.2
+pp.5	20		{2}(n)	2.3.2.2
+pp.5	21		(X in _ = X)	3
+pp.5	22		(if b then false else true)	3
+pp.5	23		{1}(if b then false else true)	3
+pp.5	24		(b)	3.0
+pp.5	25		{1}(b)	3.0
+pp.5	26		(bool)	1 2.1.2 3.1.2
+pp.5	27		{3}(bool)	3.1.2
+pp.5	28		{3}(bool)	3.1.2
+pp.5	29		(false)	3.2
+pp.5	30		{1}(false)	3.2
+pp.5	31		(true)	2.2 3.3
+pp.5	32		{2}(true)	3.3
+pp.5	33		{2}(true)	3.3
+pp.6	1		(_ = _)	root
+pp.6	2		{1}((if b as x return (if x then nat else bool) then 0 else true) = (if b as x return (if x then nat else bool) then 0 else true))	root
+pp.6	3		(@eq)	0
+pp.6	4		{1}(@eq)	0
+pp.6	5		(if b then nat else bool)	1
+pp.6	6		{1}(if b then nat else bool)	1
+pp.6	7		{1}(b)	1.0
+pp.6	8		{1}(b)	1.0
+pp.6	9		{1}(Set)	1.1.2
+pp.6	10		{1}(Set)	1.1.2
+pp.6	11		{1}(nat)	1.2
+pp.6	12		{1}(nat)	1.2
+pp.6	13		{1}(bool)	1.3
+pp.6	14		{1}(bool)	1.3
+pp.6	15		(X in X = _)	2
+pp.6	16		{1}(if b as x return (if x then nat else bool) then 0 else true)	2
+pp.6	17		{1}(if b as x return (if x then nat else bool) then 0 else true)	2
+pp.6	18		{2}(b)	2.0
+pp.6	19		{2}(b)	2.0
+pp.6	20		{2}(Set)	2.1.2.1.2
+pp.6	21		{2}(Set)	2.1.2.1.2
+pp.6	22		{2}(nat)	2.1.2.2
+pp.6	23		{2}(nat)	2.1.2.2
+pp.6	24		{2}(bool)	2.1.2.3
+pp.6	25		{2}(bool)	2.1.2.3
+pp.6	26		{1}(0)	2.2
+pp.6	27		{1}(0)	2.2
+pp.6	28		{1}(true)	2.3
+pp.6	29		{1}(true)	2.3
+pp.6	30		(X in _ = X)	3
+pp.6	31		(if b as x return (if x then nat else bool) then 0 else true)	2 3
+pp.6	32		{2}(if b as x return (if x then nat else bool) then 0 else true)	3
+pp.6	33		{2}(if b as x return (if x then nat else bool) then 0 else true)	3
+pp.6	34		(b)	1.0 2.0 3.0
+pp.6	35		{3}(b)	3.0
+pp.6	36		{3}(b)	3.0
+pp.6	37		(Set)	1.1.2 2.1.2.1.2 3.1.2.1.2
+pp.6	38		{3}(Set)	3.1.2.1.2
+pp.6	39		{3}(Set)	3.1.2.1.2
+pp.6	40		(nat)	1.2 2.1.2.2 3.1.2.2
+pp.6	41		{3}(nat)	3.1.2.2
+pp.6	42		{3}(nat)	3.1.2.2
+pp.6	43		(bool)	1.3 2.1.2.3 3.1.2.3
+pp.6	44		{3}(bool)	3.1.2.3
+pp.6	45		{3}(bool)	3.1.2.3
+pp.6	46		(0)	2.2 3.2
+pp.6	47		{2}(0)	3.2
+pp.6	48		{2}(0)	3.2
+pp.6	49		(true)	2.3 3.3
+pp.6	50		{2}(true)	3.3
+pp.6	51		{2}(true)	3.3
+pp.7	1		(forall y : nat, [elpi_ctx_entry_3_ : nat in elpi_ctx_entry_3_ + y] x = x)	root
+pp.7	2		{1}(forall y : nat, [elpi_ctx_entry_3_ : nat in elpi_ctx_entry_3_ + y] x = x)	root
+pp.7	3		{1}(nat)	1
+pp.7	4		{1}(nat)	1
+pp.7	5		(@eq)	2.0
+pp.7	6		{1}(@eq)	2.0
+pp.7	7		{2}(nat)	2.1
+pp.7	8		{2}(nat)	2.1
+pp.7	9		(nat)	1 2.1 2.2.0.1
+pp.7	10		{3}(nat)	2.2.0.1
+pp.7	11		{3}(nat)	2.2.0.1
+pp.7	12		(Nat.add)	2.2.0.2.0
+pp.7	13		{1}(Nat.add)	2.2.0.2.0
+pp.7	14		{1}(x)	2.2.1
+pp.7	15		{1}(x)	2.2.1
+pp.7	16		(x)	2.2.1 2.3
+pp.7	17		{2}(x)	2.3
+pp.7	18		{2}(x)	2.3
+pp.7	19	H	(forall elpi_ctx_entry_2_ : nat, elpi_ctx_entry_2_ = elpi_ctx_entry_2_)	root
+pp.7	20	H	{1}(forall elpi_ctx_entry_2_ : nat, elpi_ctx_entry_2_ = elpi_ctx_entry_2_)	root
+pp.7	21	H	{1}(nat)	1
+pp.7	22	H	{1}(nat)	1
+pp.7	23	H	(@eq)	2.0
+pp.7	24	H	{1}(@eq)	2.0
+pp.7	25	H	(nat)	1 2.1
+pp.7	26	H	{2}(nat)	2.1
+pp.7	27	H	{2}(nat)	2.1
+pp.8	1		(forall (a b : nat) (c : bool), bool -> [x y : nat in x + y] a b = a + b /\ (exists (u v : nat) (w : bool), u = v /\ w = c))	root
+pp.8	2		{1}(forall (a b : nat) (c : bool), bool -> [x y : nat in x + y] a b = a + b /\ (exists (u v : nat) (w : bool), u = v /\ w = c))	root
+pp.8	3		{1}(nat)	1
+pp.8	4		{1}(nat)	1
+pp.8	5		{2}(nat)	2.1
+pp.8	6		{2}(nat)	2.1
+pp.8	7		{1}(bool)	2.2.1
+pp.8	8		{1}(bool)	2.2.1
+pp.8	9		{2}(bool)	2.2.2.1
+pp.8	10		{2}(bool)	2.2.2.1
+pp.8	11		{1}(and)	2.2.2.2.0
+pp.8	12		{1}(and)	2.2.2.2.0
+pp.8	13		{1}(@eq)	2.2.2.2.1.0
+pp.8	14		{1}(@eq)	2.2.2.2.1.0
+pp.8	15		{3}(nat)	2.2.2.2.1.1
+pp.8	16		{3}(nat)	2.2.2.2.1.1
+pp.8	17		{4}(nat)	2.2.2.2.1.2.0.1
+pp.8	18		{4}(nat)	2.2.2.2.1.2.0.1
+pp.8	19		{5}(nat)	2.2.2.2.1.2.0.2.1
+pp.8	20		{5}(nat)	2.2.2.2.1.2.0.2.1
+pp.8	21		{1}(Nat.add)	2.2.2.2.1.2.0.2.2.0
+pp.8	22		{1}(Nat.add)	2.2.2.2.1.2.0.2.2.0
+pp.8	23		(Nat.add)	2.2.2.2.1.2.0.2.2.0 2.2.2.2.1.3.0
+pp.8	24		{2}(Nat.add)	2.2.2.2.1.3.0
+pp.8	25		{2}(Nat.add)	2.2.2.2.1.3.0
+pp.8	26		{1}(ex)	2.2.2.2.2.0
+pp.8	27		{1}(ex)	2.2.2.2.2.0
+pp.8	28		{6}(nat)	2.2.2.2.2.1
+pp.8	29		{6}(nat)	2.2.2.2.2.1
+pp.8	30		{7}(nat)	2.2.2.2.2.2.1
+pp.8	31		{7}(nat)	2.2.2.2.2.2.1
+pp.8	32		{2}(ex)	2.2.2.2.2.2.2.0
+pp.8	33		{2}(ex)	2.2.2.2.2.2.2.0
+pp.8	34		{8}(nat)	2.2.2.2.2.2.2.1
+pp.8	35		{8}(nat)	2.2.2.2.2.2.2.1
+pp.8	36		{9}(nat)	2.2.2.2.2.2.2.2.1
+pp.8	37		{9}(nat)	2.2.2.2.2.2.2.2.1
+pp.8	38		(ex)	2.2.2.2.2.0 2.2.2.2.2.2.2.0 2.2.2.2.2.2.2.2.2.0
+pp.8	39		{3}(ex)	2.2.2.2.2.2.2.2.2.0
+pp.8	40		{3}(ex)	2.2.2.2.2.2.2.2.2.0
+pp.8	41		{3}(bool)	2.2.2.2.2.2.2.2.2.1
+pp.8	42		{3}(bool)	2.2.2.2.2.2.2.2.2.1
+pp.8	43		{4}(bool)	2.2.2.2.2.2.2.2.2.2.1
+pp.8	44		{4}(bool)	2.2.2.2.2.2.2.2.2.2.1
+pp.8	45		(and)	2.2.2.2.0 2.2.2.2.2.2.2.2.2.2.2.0
+pp.8	46		{2}(and)	2.2.2.2.2.2.2.2.2.2.2.0
+pp.8	47		{2}(and)	2.2.2.2.2.2.2.2.2.2.2.0
+pp.8	48		{2}(@eq)	2.2.2.2.2.2.2.2.2.2.2.1.0
+pp.8	49		{2}(@eq)	2.2.2.2.2.2.2.2.2.2.2.1.0
+pp.8	50		(nat)	1 2.1 2.2.2.2.1.1 2.2.2.2.1.2.0.1 2.2.2.2.1.2.0.2.1 2.2.2.2.2.1 2.2.2.2.2.2.1 2.2.2.2.2.2.2.1 2.2.2.2.2.2.2.2.1 2.2.2.2.2.2.2.2.2.2.2.1.1
+pp.8	51		{10}(nat)	2.2.2.2.2.2.2.2.2.2.2.1.1
+pp.8	52		{10}(nat)	2.2.2.2.2.2.2.2.2.2.2.1.1
+pp.8	53		(@eq)	2.2.2.2.1.0 2.2.2.2.2.2.2.2.2.2.2.1.0 2.2.2.2.2.2.2.2.2.2.2.2.0
+pp.8	54		{3}(@eq)	2.2.2.2.2.2.2.2.2.2.2.2.0
+pp.8	55		{3}(@eq)	2.2.2.2.2.2.2.2.2.2.2.2.0
+pp.8	56		(bool)	2.2.1 2.2.2.1 2.2.2.2.2.2.2.2.2.1 2.2.2.2.2.2.2.2.2.2.1 2.2.2.2.2.2.2.2.2.2.2.2.1
+pp.8	57		{5}(bool)	2.2.2.2.2.2.2.2.2.2.2.2.1
+pp.8	58		{5}(bool)	2.2.2.2.2.2.2.2.2.2.2.2.1
+pp.9	1		(_ = _)	root
+pp.9	2		{1}((n : nat) = n)	root
+pp.9	3		(@eq)	0
+pp.9	4		{1}(@eq)	0
+pp.9	5		(nat)	1
+pp.9	6		{1}(nat)	1
+pp.9	7		{1}(n)	2.1
+pp.9	8		{1}(n)	2.1
+pp.9	9		(X in _ = X)	3
+pp.9	10		(n)	2.1 3
+pp.9	11		{2}(n)	3
+pp.9	12		{2}(n)	3
+pp.10	1		(_ /\ _)	root
+pp.10	2		{1}((n + 1)%Z = b /\ b + 0 = n)	root
+pp.10	3		(and)	0
+pp.10	4		{1}(and)	0
+pp.10	5		(_ = _)	1
+pp.10	6		(X in X /\ _)	1
+pp.10	7		(_ = _ as X in X /\ _)	1
+pp.10	8		{1}((n + 1)%Z = b)	1
+pp.10	9		{1}(@eq)	1.0
+pp.10	10		{1}(@eq)	1.0
+pp.10	11		(Z)	1.1
+pp.10	12		{1}(Z)	1.1
+pp.10	13		(X in X = _)	1.2
+pp.10	14		((_ + _)%Z)	1.2
+pp.10	15		(X in X = _ /\ _)	1.2
+pp.10	16		((_ + _)%Z as X in X = _)	1.2
+pp.10	17		((_ + _)%Z in X in X /\ _)	1.2
+pp.10	18		((_ + _)%Z as X in X = _ /\ _)	1.2
+pp.10	19		{1}((n + 1)%Z)	1.2
+pp.10	20		(Z.add)	1.2.0
+pp.10	21		{1}(Z.add)	1.2.0
+pp.10	22		(Z.of_nat _)	1.2.1
+pp.10	23		(X in (X + _)%Z)	1.2.1
+pp.10	24		(Z.of_nat _ in X in X = _)	1.2.1
+pp.10	25		(Z.of_nat _ in X in X /\ _)	1.2.1
+pp.10	26		(Z.of_nat _ as X in (X + _)%Z)	1.2.1
+pp.10	27		(X in (X + _)%Z = _)	1.2.1
+pp.10	28		(Z.of_nat _ in X in X = _ /\ _)	1.2.1
+pp.10	29		(Z.of_nat _ as X in (X + _)%Z = _)	1.2.1
+pp.10	30		(X in (X + _)%Z = _ /\ _)	1.2.1
+pp.10	31		(Z.of_nat _ as X in (X + _)%Z = _ /\ _)	1.2.1
+pp.10	32		{1}(Z.of_nat n)	1.2.1
+pp.10	33		{1}(Z.of_nat)	1.2.1.0
+pp.10	34		{1}(Z.of_nat)	1.2.1.0
+pp.10	35		(X in Z.of_nat X)	1.2.1.1
+pp.10	36		{1}(n)	1.2.1.1
+pp.10	37		{1}(n)	1.2.1.1
+pp.10	38		(Z.pos _)	1.2.2
+pp.10	39		(X in (_ + X)%Z)	1.2.2
+pp.10	40		(Z.pos _ in X in X = _)	1.2.2
+pp.10	41		(Z.pos _ in X in X /\ _)	1.2.2
+pp.10	42		(Z.pos _ as X in (_ + X)%Z)	1.2.2
+pp.10	43		(X in (_ + X)%Z = _)	1.2.2
+pp.10	44		(Z.pos _ in X in X = _ /\ _)	1.2.2
+pp.10	45		(Z.pos _ as X in (_ + X)%Z = _)	1.2.2
+pp.10	46		(X in (_ + X)%Z = _ /\ _)	1.2.2
+pp.10	47		(Z.pos _ as X in (_ + X)%Z = _ /\ _)	1.2.2
+pp.10	48		{1}(1%Z)	1.2.2
+pp.10	49		(Z.pos)	1.2.2.0
+pp.10	50		{1}(Z.pos)	1.2.2.0
+pp.10	51		(1%positive)	1.2.2.1
+pp.10	52		(X in Z.pos X)	1.2.2.1
+pp.10	53		(X in (_ + Z.pos X)%Z)	1.2.2.1
+pp.10	54		(X in (_ + Z.pos X)%Z = _)	1.2.2.1
+pp.10	55		(X in (_ + Z.pos X)%Z = _ /\ _)	1.2.2.1
+pp.10	56		{1}(1%positive)	1.2.2.1
+pp.10	57		(X in _ = X)	1.3
+pp.10	58		(Z.of_nat b)	1.3
+pp.10	59		(Z.of_nat _ as X in _ = X)	1.3
+pp.10	60		(X in _ = X /\ _)	1.3
+pp.10	61		(Z.of_nat b in X in X /\ _)	1.3
+pp.10	62		(Z.of_nat _ as X in _ = X /\ _)	1.3
+pp.10	63		{1}(Z.of_nat b)	1.3
+pp.10	64		(Z.of_nat)	1.2.1.0 1.3.0
+pp.10	65		{2}(Z.of_nat)	1.3.0
+pp.10	66		{2}(Z.of_nat)	1.3.0
+pp.10	67		(unbox _ in X in _ = X)	1.3.1
+pp.10	68		(unbox _ in X in X /\ _)	1.3.1
+pp.10	69		(unbox _ as X in Z.of_nat X)	1.3.1
+pp.10	70		(unbox _ in X in _ = X /\ _)	1.3.1
+pp.10	71		{1}(unbox _)	1.3.1
+pp.10	72		{1}(unbox b)	1.3.1
+pp.10	73		{1}(unbox)	1.3.1.0
+pp.10	74		{1}(unbox)	1.3.1.0
+pp.10	75		{1}(b)	1.3.1.1
+pp.10	76		{1}(b)	1.3.1.1
+pp.10	77		{1}(X in unbox X)	1.3.1.1
+pp.10	78		(X in _ /\ X)	2
+pp.10	79		(_ = n)	2
+pp.10	80		(_ = _ as X in _ /\ X)	2
+pp.10	81		{1}(b + 0 = n)	2
+pp.10	82		(@eq)	1.0 2.0
+pp.10	83		{2}(@eq)	2.0
+pp.10	84		{2}(@eq)	2.0
+pp.10	85		(nat)	2.1
+pp.10	86		{1}(nat)	2.1
+pp.10	87		(_ + _)	2.2
+pp.10	88		(X in X = n)	2.2
+pp.10	89		(_ + _ as X in X = _)	2.2
+pp.10	90		(_ + _ in X in _ /\ X)	2.2
+pp.10	91		(X in _ /\ X = _)	2.2
+pp.10	92		(_ + _ as X in _ /\ X = _)	2.2
+pp.10	93		{1}(b + 0)	2.2
+pp.10	94		(Init.Nat.add)	2.2.0
+pp.10	95		{1}(Init.Nat.add)	2.2.0
+pp.10	96		(X in X + _)	2.2.1
+pp.10	97		(unbox _ as X in X + _)	2.2.1
+pp.10	98		(unbox _ in X in _ /\ X)	2.2.1
+pp.10	99		(X in X + _ = _)	2.2.1
+pp.10	100		(unbox _ in X in X = n)	2.2.1
+pp.10	101		(unbox _ as X in X + _ = _)	2.2.1
+pp.10	102		(unbox _ in X in _ /\ X = _)	2.2.1
+pp.10	103		(X in _ /\ X + _ = _)	2.2.1
+pp.10	104		(unbox _ as X in _ /\ X + _ = _)	2.2.1
+pp.10	105		(unbox _)	1.3.1 2.2.1
+pp.10	106		{2}(unbox _)	2.2.1
+pp.10	107		{2}(unbox b)	2.2.1
+pp.10	108		(unbox)	1.3.1.0 2.2.1.0
+pp.10	109		{2}(unbox)	2.2.1.0
+pp.10	110		{2}(unbox)	2.2.1.0
+pp.10	111		(b)	1.3.1.1 2.2.1.1
+pp.10	112		(X in unbox X)	1.3.1.1 2.2.1.1
+pp.10	113		{2}(b)	2.2.1.1
+pp.10	114		{2}(b)	2.2.1.1
+pp.10	115		{2}(X in unbox X)	2.2.1.1
+pp.10	116		(0)	2.2.2
+pp.10	117		(X in _ + X)	2.2.2
+pp.10	118		(X in _ + X = _)	2.2.2
+pp.10	119		(X in _ /\ _ + X = _)	2.2.2
+pp.10	120		{1}(0)	2.2.2
+pp.10	121		(X in _ /\ _ = X)	2.3
+pp.10	122		(X in b + 0 = X)	2.3
+pp.10	123		(n)	1.2.1.1 2.3
+pp.10	124		{2}(n)	2.3
+pp.10	125		{2}(n)	2.3
+pp.11	1		(_ /\ _)	root
+pp.11	2		{1}(a + b = b + a /\ (a <= b \/ True))	root
+pp.11	3		(and)	0
+pp.11	4		{1}(and)	0
+pp.11	5		(_ = _)	1
+pp.11	6		(X in X /\ _)	1
+pp.11	7		(_ = _ as X in X /\ _)	1
+pp.11	8		{1}(a + b = b + a)	1
+pp.11	9		(@eq)	1.0
+pp.11	10		{1}(@eq)	1.0
+pp.11	11		(nat)	1.1
+pp.11	12		{1}(nat)	1.1
+pp.11	13		(_ + _)	1.2
+pp.11	14		(X in X = _)	1.2
+pp.11	15		(_ + _ as X in X = _)	1.2
+pp.11	16		(_ + _ in X in X /\ _)	1.2
+pp.11	17		(X in X = _ /\ _)	1.2
+pp.11	18		(_ + _ as X in X = _ /\ _)	1.2
+pp.11	19		{1}(a + b)	1.2
+pp.11	20		{1}(Nat.add)	1.2.0
+pp.11	21		{1}(Nat.add)	1.2.0
+pp.11	22		(X in X + _)	1.2.1
+pp.11	23		(X in X + _ = _)	1.2.1
+pp.11	24		(X in X + _ = _ /\ _)	1.2.1
+pp.11	25		{1}(a)	1.2.1
+pp.11	26		{1}(a)	1.2.1
+pp.11	27		(X in _ + X)	1.2.2
+pp.11	28		(X in _ + X = _)	1.2.2
+pp.11	29		(X in _ + X = _ /\ _)	1.2.2
+pp.11	30		{1}(b)	1.2.2
+pp.11	31		{1}(b)	1.2.2
+pp.11	32		(X in _ = X)	1.3
+pp.11	33		(b + _)	1.3
+pp.11	34		(_ + _ as X in _ = X)	1.3
+pp.11	35		(X in _ = X /\ _)	1.3
+pp.11	36		(b + _ in X in X /\ _)	1.3
+pp.11	37		(_ + _ as X in _ = X /\ _)	1.3
+pp.11	38		{1}(b + a)	1.3
+pp.11	39		(Nat.add)	1.2.0 1.3.0
+pp.11	40		{2}(Nat.add)	1.3.0
+pp.11	41		{2}(Nat.add)	1.3.0
+pp.11	42		(X in X + a)	1.3.1
+pp.11	43		(X in _ = X + _)	1.3.1
+pp.11	44		(X in _ = X + _ /\ _)	1.3.1
+pp.11	45		{2}(b)	1.3.1
+pp.11	46		{2}(b)	1.3.1
+pp.11	47		(X in b + X)	1.3.2
+pp.11	48		(X in _ = _ + X)	1.3.2
+pp.11	49		(X in _ = _ + X /\ _)	1.3.2
+pp.11	50		{2}(a)	1.3.2
+pp.11	51		{2}(a)	1.3.2
+pp.11	52		(_ \/ _)	2
+pp.11	53		(X in _ /\ X)	2
+pp.11	54		(_ \/ _ as X in _ /\ X)	2
+pp.11	55		{1}(a <= b \/ True)	2
+pp.11	56		(or)	2.0
+pp.11	57		{1}(or)	2.0
+pp.11	58		(_ <= _)	2.1
+pp.11	59		(X in X \/ _)	2.1
+pp.11	60		(_ <= _ as X in X \/ _)	2.1
+pp.11	61		(_ <= _ in X in _ /\ X)	2.1
+pp.11	62		(X in _ /\ (X \/ _))	2.1
+pp.11	63		(_ <= _ as X in _ /\ (X \/ _))	2.1
+pp.11	64		{1}(a <= b)	2.1
+pp.11	65		(le)	2.1.0
+pp.11	66		{1}(le)	2.1.0
+pp.11	67		(X in X <= _)	2.1.1
+pp.11	68		(X in X <= _ \/ _)	2.1.1
+pp.11	69		(X in _ /\ (X <= _ \/ _))	2.1.1
+pp.11	70		(a)	1.2.1 1.3.2 2.1.1
+pp.11	71		{3}(a)	2.1.1
+pp.11	72		{3}(a)	2.1.1
+pp.11	73		(X in _ <= X)	2.1.2
+pp.11	74		(X in _ <= X \/ _)	2.1.2
+pp.11	75		(X in _ /\ (_ <= X \/ _))	2.1.2
+pp.11	76		(b)	1.2.2 1.3.1 2.1.2
+pp.11	77		{3}(b)	2.1.2
+pp.11	78		{3}(b)	2.1.2
+pp.11	79		(True)	2.2
+pp.11	80		(X in _ \/ X)	2.2
+pp.11	81		(X in _ /\ (_ \/ X))	2.2
+pp.11	82		{1}(True)	2.2
+pp.12	1		(_ = _)	root
+pp.12	2		{1}(n = n)	root
+pp.12	3		(@eq)	0
+pp.12	4		{1}(@eq)	0
+pp.12	5		(nat)	1
+pp.12	6		{1}(nat)	1
+pp.12	7		(X in X = _)	2
+pp.12	8		{1}(n)	2
+pp.12	9		{1}(n)	2
+pp.12	10		(X in _ = X)	3
+pp.12	11		(n)	2 3
+pp.12	12		{2}(n)	3
+pp.12	13		{2}(n)	3
+pp.13	1		(_ = _)	root
+pp.13	2		{1}((if b then n else 0) = n)	root
+pp.13	3		(@eq)	0
+pp.13	4		{1}(@eq)	0
+pp.13	5		{1}(nat)	1
+pp.13	6		{1}(nat)	1
+pp.13	7		(X in X = _)	2
+pp.13	8		(if b then n else 0)	2
+pp.13	9		{1}(if b then n else 0)	2
+pp.13	10		(b)	2.0
+pp.13	11		{1}(b)	2.0
+pp.13	12		(nat)	1 2.1.2
+pp.13	13		{2}(nat)	2.1.2
+pp.13	14		{2}(nat)	2.1.2
+pp.13	15		{1}(n)	2.2
+pp.13	16		{1}(n)	2.2
+pp.13	17		(0)	2.3
+pp.13	18		{1}(0)	2.3
+pp.13	19		(X in _ = X)	3
+pp.13	20		(n)	2.2 3
+pp.13	21		{2}(n)	3
+pp.13	22		{2}(n)	3
+pp.14	1		(_ = _)	root
+pp.14	2		{1}((if b then n else 0) = n)	root
+pp.14	3		(@eq)	0
+pp.14	4		{1}(@eq)	0
+pp.14	5		{1}(nat)	1
+pp.14	6		{1}(nat)	1
+pp.14	7		(X in X = _)	2
+pp.14	8		(if b then n else 0)	2
+pp.14	9		{1}(if b then n else 0)	2
+pp.14	10		(b)	2.0
+pp.14	11		{1}(b)	2.0
+pp.14	12		(nat)	1 2.1.2
+pp.14	13		{2}(nat)	2.1.2
+pp.14	14		{2}(nat)	2.1.2
+pp.14	15		{1}(n)	2.2
+pp.14	16		{1}(n)	2.2
+pp.14	17		(0)	2.3
+pp.14	18		{1}(0)	2.3
+pp.14	19		(X in _ = X)	3
+pp.14	20		(n)	2.2 3
+pp.14	21		{2}(n)	3
+pp.14	22		{2}(n)	3
+pp.15	1		(_ = _)	root
+pp.15	2		{1}(match n with | 0 => true | S _ => false end = true)	root
+pp.15	3		(@eq)	0
+pp.15	4		{1}(@eq)	0
+pp.15	5		{1}(bool)	1
+pp.15	6		{1}(bool)	1
+pp.15	7		(X in X = _)	2
+pp.15	8		(match n with | 0 => true | S _ => false end)	2
+pp.15	9		{1}(match n with | 0 => true | S _ => false end)	2
+pp.15	10		(n)	2.0
+pp.15	11		{1}(n)	2.0
+pp.15	12		(bool)	1 2.1.2
+pp.15	13		{2}(bool)	2.1.2
+pp.15	14		{2}(bool)	2.1.2
+pp.15	15		{1}(true)	2.2
+pp.15	16		{1}(true)	2.2
+pp.15	17		(false)	2.3.2
+pp.15	18		{1}(false)	2.3.2
+pp.15	19		(X in _ = X)	3
+pp.15	20		(true)	2.2 3
+pp.15	21		{2}(true)	3
+pp.15	22		{2}(true)	3
+pp.16	1		(forall n : nat, n + 0 = n)	root
+pp.16	2		{1}(forall n : nat, n + 0 = n)	root
+pp.16	3		{1}(nat)	1
+pp.16	4		{1}(nat)	1
+pp.16	5		(@eq)	2.0
+pp.16	6		{1}(@eq)	2.0
+pp.16	7		(nat)	1 2.1
+pp.16	8		{2}(nat)	2.1
+pp.16	9		{2}(nat)	2.1
+pp.16	10		(Nat.add)	2.2.0
+pp.16	11		{1}(Nat.add)	2.2.0
+pp.16	12		(0)	2.2.2
+pp.16	13		{1}(0)	2.2.2
+pp.17	1		(_ /\ _)	root
+pp.17	2		{1}((let m := n + 1 in m * m) = n /\ [k : nat in k] n = n)	root
+pp.17	3		(and)	0
+pp.17	4		{1}(and)	0
+pp.17	5		(_ = _)	1
+pp.17	6		(X in X /\ _)	1
+pp.17	7		(_ = _ as X in X /\ _)	1
+pp.17	8		{1}((let m := n + 1 in m * m) = n)	1
+pp.17	9		{1}(@eq)	1.0
+pp.17	10		{1}(@eq)	1.0
+pp.17	11		{1}(nat)	1.1
+pp.17	12		{1}(nat)	1.1
+pp.17	13		(X in X = _)	1.2
+pp.17	14		(X in X = _ /\ _)	1.2
+pp.17	15		{2}(nat)	1.2.1
+pp.17	16		{2}(nat)	1.2.1
+pp.17	17		(_ + _)	1.2.2
+pp.17	18		(_ + _ in X in X = _)	1.2.2
+pp.17	19		(_ + _ in X in X /\ _)	1.2.2
+pp.17	20		(_ + _ in X in X = _ /\ _)	1.2.2
+pp.17	21		{1}(n + 1)	1.2.2
+pp.17	22		(Nat.add)	1.2.2.0
+pp.17	23		{1}(Nat.add)	1.2.2.0
+pp.17	24		(X in X + _)	1.2.2.1
+pp.17	25		{1}(n)	1.2.2.1
+pp.17	26		{1}(n)	1.2.2.1
+pp.17	27		(S _)	1.2.2.2
+pp.17	28		(X in _ + X)	1.2.2.2
+pp.17	29		(S _ as X in _ + X)	1.2.2.2
+pp.17	30		(S _ in X in X = _)	1.2.2.2
+pp.17	31		(S _ in X in X /\ _)	1.2.2.2
+pp.17	32		(S _ in X in X = _ /\ _)	1.2.2.2
+pp.17	33		{1}(1)	1.2.2.2
+pp.17	34		(S)	1.2.2.2.0
+pp.17	35		{1}(S)	1.2.2.2.0
+pp.17	36		(0)	1.2.2.2.1
+pp.17	37		(X in S X)	1.2.2.2.1
+pp.17	38		(X in _ + S X)	1.2.2.2.1
+pp.17	39		{1}(0)	1.2.2.2.1
+pp.17	40		(Nat.mul)	1.2.3.0
+pp.17	41		{1}(Nat.mul)	1.2.3.0
+pp.17	42		(X in _ = X /\ _)	1.3
+pp.17	43		{2}(n)	1.3
+pp.17	44		{2}(n)	1.3
+pp.17	45		(X in _ /\ X)	2
+pp.17	46		(_ = _ as X in _ /\ X)	2
+pp.17	47		([k : nat in k] n = _)	2
+pp.17	48		{1}([k : nat in k] n = n)	2
+pp.17	49		(@eq)	1.0 2.0
+pp.17	50		{2}(@eq)	2.0
+pp.17	51		{2}(@eq)	2.0
+pp.17	52		{3}(nat)	2.1
+pp.17	53		{3}(nat)	2.1
+pp.17	54		(X in _ /\ X = _)	2.2
+pp.17	55		(nat)	1.1 1.2.1 2.1 2.2.0.1
+pp.17	56		{4}(nat)	2.2.0.1
+pp.17	57		{4}(nat)	2.2.0.1
+pp.17	58		(X in _ /\ [k : nat in k] X = _)	2.2.1
+pp.17	59		{3}(n)	2.2.1
+pp.17	60		{3}(n)	2.2.1
+pp.17	61		(X in _ /\ _ = X)	2.3
+pp.17	62		(X in [k : nat in k] n = X)	2.3
+pp.17	63		(n)	1.2.2.1 1.3 2.2.1 2.3
+pp.17	64		{4}(n)	2.3
+pp.17	65		{4}(n)	2.3
+pp.18	1		(True)	root
+pp.18	2		{1}(True)	root
+pp.18	3	H'	(forall z : nat, z = z)	root
+pp.18	4	H'	{1}(forall z : nat, z = z)	root
+pp.18	5	H'	{1}(nat)	1
+pp.18	6	H'	{1}(nat)	1
+pp.18	7	H'	(@eq)	2.0
+pp.18	8	H'	{1}(@eq)	2.0
+pp.18	9	H'	(nat)	1 2.1
+pp.18	10	H'	{2}(nat)	2.1
+pp.18	11	H'	{2}(nat)	2.1
+pp.18	12	H	(_ = _)	root
+pp.18	13	H	{1}(match n with | 0 => true | S k => Nat.eqb k n end = true)	root
+pp.18	14	H	(@eq)	0
+pp.18	15	H	{1}(@eq)	0
+pp.18	16	H	{1}(bool)	1
+pp.18	17	H	{1}(bool)	1
+pp.18	18	H	(X in X = _)	2
+pp.18	19	H	(match n with | 0 => true | S k => Nat.eqb k n end)	2
+pp.18	20	H	{1}(match n with | 0 => true | S k => Nat.eqb k n end)	2
+pp.18	21	H	{1}(n)	2.0
+pp.18	22	H	{1}(n)	2.0
+pp.18	23	H	(bool)	1 2.1.2
+pp.18	24	H	{2}(bool)	2.1.2
+pp.18	25	H	{2}(bool)	2.1.2
+pp.18	26	H	{1}(true)	2.2
+pp.18	27	H	{1}(true)	2.2
+pp.18	28	H	(Nat.eqb)	2.3.2.0
+pp.18	29	H	{1}(Nat.eqb)	2.3.2.0
+pp.18	30	H	(n)	2.0 2.3.2.2
+pp.18	31	H	{2}(n)	2.3.2.2
+pp.18	32	H	{2}(n)	2.3.2.2
+pp.18	33	H	(X in _ = X)	3
+pp.18	34	H	(true)	2.2 3
+pp.18	35	H	{2}(true)	3
+pp.18	36	H	{2}(true)	3
+pp.19	1		(forall n : nat, n + double a = a)	root
+pp.19	2		{1}(forall n : nat, n + double a = a)	root
+pp.19	3		{1}(nat)	1
+pp.19	4		{1}(nat)	1
+pp.19	5		(@eq)	2.0
+pp.19	6		{1}(@eq)	2.0
+pp.19	7		(nat)	1 2.1
+pp.19	8		{2}(nat)	2.1
+pp.19	9		{2}(nat)	2.1
+pp.19	10		(Nat.add)	2.2.0
+pp.19	11		{1}(Nat.add)	2.2.0
+pp.19	12		(double _)	2.2.2
+pp.19	13		{1}(double a)	2.2.2
+pp.19	14		(double)	2.2.2.0
+pp.19	15		{1}(double)	2.2.2.0
+pp.19	16		(X in double X)	2.2.2.1
+pp.19	17		{1}(a)	2.2.2.1
+pp.19	18		{1}(a)	2.2.2.1
+pp.19	19		(a)	2.2.2.1 2.3
+pp.19	20		{2}(a)	2.3
+pp.19	21		{2}(a)	2.3
+pp.19	22	H	(_ = _)	root
+pp.19	23	H	{1}(double (1 + a) = 2 + a + a)	root
+pp.19	24	H	(@eq)	0
+pp.19	25	H	{1}(@eq)	0
+pp.19	26	H	(nat)	1
+pp.19	27	H	{1}(nat)	1
+pp.19	28	H	(double _)	2
+pp.19	29	H	(X in X = _)	2
+pp.19	30	H	(double _ as X in X = _)	2
+pp.19	31	H	{1}(double (1 + a))	2
+pp.19	32	H	(double)	2.0
+pp.19	33	H	{1}(double)	2.0
+pp.19	34	H	(_ + _)	2.1
+pp.19	35	H	(X in double X)	2.1
+pp.19	36	H	(_ + _ in X in X = _)	2.1
+pp.19	37	H	(_ + _ as X in double X)	2.1
+pp.19	38	H	(X in double X = _)	2.1
+pp.19	39	H	(_ + _ as X in double X = _)	2.1
+pp.19	40	H	{1}(1 + a)	2.1
+pp.19	41	H	{1}(Nat.add)	2.1.0
+pp.19	42	H	{1}(Nat.add)	2.1.0
+pp.19	43	H	(X in X + _)	2.1.1
+pp.19	44	H	(S _ as X in X + _)	2.1.1
+pp.19	45	H	(S _ in X in X = _)	2.1.1
+pp.19	46	H	(S _ in X in double X)	2.1.1
+pp.19	47	H	(X in double (X + _))	2.1.1
+pp.19	48	H	(S _ in X in double X = _)	2.1.1
+pp.19	49	H	(S _ as X in double (X + _))	2.1.1
+pp.19	50	H	(X in double (X + _) = _)	2.1.1
+pp.19	51	H	(S _ as X in double (X + _) = _)	2.1.1
+pp.19	52	H	(S _)	2.1.1 3.1.1.1
+pp.19	53	H	{1}(1)	2.1.1
+pp.19	54	H	{1}(S _)	2.1.1
+pp.19	55	H	{1}(S)	2.1.1.0
+pp.19	56	H	{1}(S)	2.1.1.0
+pp.19	57	H	(X in S X + _)	2.1.1.1
+pp.19	58	H	(X in double (S X + _))	2.1.1.1
+pp.19	59	H	(X in double (S X + _) = _)	2.1.1.1
+pp.19	60	H	(X in S X)	2.1.1.1 3.1.1.1.1
+pp.19	61	H	{1}(0)	2.1.1.1
+pp.19	62	H	{1}(0)	2.1.1.1
+pp.19	63	H	{1}(X in S X)	2.1.1.1
+pp.19	64	H	(X in _ + X)	2.1.2
+pp.19	65	H	(X in double (_ + X))	2.1.2
+pp.19	66	H	(X in double (_ + X) = _)	2.1.2
+pp.19	67	H	{1}(a)	2.1.2
+pp.19	68	H	{1}(a)	2.1.2
+pp.19	69	H	(X in _ = X)	3
+pp.19	70	H	(_ + _ as X in _ = X)	3
+pp.19	71	H	(2 + a + _)	3
+pp.19	72	H	{1}(2 + a + a)	3
+pp.19	73	H	{2}(Nat.add)	3.0
+pp.19	74	H	{2}(Nat.add)	3.0
+pp.19	75	H	(2 + _)	3.1
+pp.19	76	H	(_ + _ as X in X + _)	3.1
+pp.19	77	H	(X in _ = X + _)	3.1
+pp.19	78	H	(2 + _ in X in _ = X)	3.1
+pp.19	79	H	(_ + _ as X in _ = X + _)	3.1
+pp.19	80	H	{1}(2 + a)	3.1
+pp.19	81	H	(Nat.add)	2.1.0 3.0 3.1.0
+pp.19	82	H	{3}(Nat.add)	3.1.0
+pp.19	83	H	{3}(Nat.add)	3.1.0
+pp.19	84	H	(2)	3.1.1
+pp.19	85	H	(2 as X in X + _)	3.1.1
+pp.19	86	H	(S _ in X in _ = X)	3.1.1
+pp.19	87	H	(X in X + _ + _)	3.1.1
+pp.19	88	H	(S _ as X in X + _ + _)	3.1.1
+pp.19	89	H	(S _ in X in _ = X + _)	3.1.1
+pp.19	90	H	(X in _ = X + _ + _)	3.1.1
+pp.19	91	H	(S _ as X in _ = X + _ + _)	3.1.1
+pp.19	92	H	{1}(2)	3.1.1
+pp.19	93	H	{2}(S)	3.1.1.0
+pp.19	94	H	{2}(S)	3.1.1.0
+pp.19	95	H	(S _ as X in S X)	3.1.1.1
+pp.19	96	H	(1 in X in _ = X)	3.1.1.1
+pp.19	97	H	(S _ as X in S X + _)	3.1.1.1
+pp.19	98	H	(1 in X in _ = X + _)	3.1.1.1
+pp.19	99	H	(1 in X in X + _ + _)	3.1.1.1
+pp.19	100	H	(X in S X + _ + _)	3.1.1.1
+pp.19	101	H	(S _ as X in S X + _ + _)	3.1.1.1
+pp.19	102	H	(X in _ = S X + _ + _)	3.1.1.1
+pp.19	103	H	(S _ as X in _ = S X + _ + _)	3.1.1.1
+pp.19	104	H	(1)	2.1.1 3.1.1.1
+pp.19	105	H	{2}(1)	3.1.1.1
+pp.19	106	H	{2}(1)	3.1.1.1
+pp.19	107	H	(S)	2.1.1.0 3.1.1.0 3.1.1.1.0
+pp.19	108	H	{3}(S)	3.1.1.1.0
+pp.19	109	H	{3}(S)	3.1.1.1.0
+pp.19	110	H	(X in S (S X))	3.1.1.1.1
+pp.19	111	H	(X in S (S X) + _)	3.1.1.1.1
+pp.19	112	H	(X in S (S X) + _ + _)	3.1.1.1.1
+pp.19	113	H	(X in _ = S (S X) + _ + _)	3.1.1.1.1
+pp.19	114	H	(0)	2.1.1.1 3.1.1.1.1
+pp.19	115	H	{2}(0)	3.1.1.1.1
+pp.19	116	H	{2}(0)	3.1.1.1.1
+pp.19	117	H	(X in 2 + X)	3.1.2
+pp.19	118	H	(X in _ + X + _)	3.1.2
+pp.19	119	H	(X in _ = _ + X + _)	3.1.2
+pp.19	120	H	{2}(a)	3.1.2
+pp.19	121	H	{2}(a)	3.1.2
+pp.19	122	H	(X in _ = _ + X)	3.2
+pp.19	123	H	(X in 2 + a + X)	3.2
+pp.19	124	H	(a)	2.1.2 3.1.2 3.2
+pp.19	125	H	{3}(a)	3.2
+pp.19	126	H	{3}(a)	3.2
+pp.20	1		(_ = _)	root
+pp.20	2		{1}((if true then a else 0) = double 2)	root
+pp.20	3		(@eq)	0
+pp.20	4		{1}(@eq)	0
+pp.20	5		{1}(nat)	1
+pp.20	6		{1}(nat)	1
+pp.20	7		(X in X = _)	2
+pp.20	8		(true)	2.0
+pp.20	9		{1}(true)	2.0
+pp.20	10		(nat)	1 2.1.2
+pp.20	11		{2}(nat)	2.1.2
+pp.20	12		{2}(nat)	2.1.2
+pp.20	13		(a)	2.2
+pp.20	14		{1}(a)	2.2
+pp.20	15		{1}(0)	2.3
+pp.20	16		{1}(0)	2.3
+pp.20	17		(double _)	3
+pp.20	18		(X in _ = X)	3
+pp.20	19		(double _ as X in _ = X)	3
+pp.20	20		{1}(double 2)	3
+pp.20	21		(double)	3.0
+pp.20	22		{1}(double)	3.0
+pp.20	23		(S _)	3.1
+pp.20	24		(X in double X)	3.1
+pp.20	25		(S _ in X in _ = X)	3.1
+pp.20	26		(S _ as X in double X)	3.1
+pp.20	27		(X in _ = double X)	3.1
+pp.20	28		(S _ as X in _ = double X)	3.1
+pp.20	29		{1}(2)	3.1
+pp.20	30		{1}(S)	3.1.0
+pp.20	31		{1}(S)	3.1.0
+pp.20	32		(1)	3.1.1
+pp.20	33		(X in S X)	3.1.1
+pp.20	34		(S _ as X in S X)	3.1.1
+pp.20	35		(1 in X in _ = X)	3.1.1
+pp.20	36		(1 in X in double X)	3.1.1
+pp.20	37		(X in double (S X))	3.1.1
+pp.20	38		(1 in X in _ = double X)	3.1.1
+pp.20	39		(S _ as X in double (S X))	3.1.1
+pp.20	40		(X in _ = double (S X))	3.1.1
+pp.20	41		(S _ as X in _ = double (S X))	3.1.1
+pp.20	42		{1}(1)	3.1.1
+pp.20	43		(S)	3.1.0 3.1.1.0
+pp.20	44		{2}(S)	3.1.1.0
+pp.20	45		{2}(S)	3.1.1.0
+pp.20	46		(X in S (S X))	3.1.1.1
+pp.20	47		(X in double (S (S X)))	3.1.1.1
+pp.20	48		(X in _ = double (S (S X)))	3.1.1.1
+pp.20	49		(0)	2.3 3.1.1.1
+pp.20	50		{2}(0)	3.1.1.1
+pp.20	51		{2}(0)	3.1.1.1
+pp.21	1		(_ = _)	root
+pp.21	2		{1}(two_is = two_is)	root
+pp.21	3		{1}(@eq)	0
+pp.21	4		{1}(@eq)	0
+pp.21	5		(2 = _)	1
+pp.21	6		{1}(2 = 1 + 1)	1
+pp.21	7		(@eq)	0 1.0
+pp.21	8		{2}(@eq)	1.0
+pp.21	9		{2}(@eq)	1.0
+pp.21	10		(nat)	1.1
+pp.21	11		{1}(nat)	1.1
+pp.21	12		(S _)	1.2
+pp.21	13		(S _ as X in X = _)	1.2
+pp.21	14		(X in X = 1 + 1)	1.2
+pp.21	15		{1}(2)	1.2
+pp.21	16		{1}(S)	1.2.0
+pp.21	17		{1}(S)	1.2.0
+pp.21	18		(X in S X)	1.2.1
+pp.21	19		(S _ as X in S X)	1.2.1
+pp.21	20		(X in S X = _)	1.2.1
+pp.21	21		(S _ as X in S X = _)	1.2.1
+pp.21	22		(1 in X in X = 1 + 1)	1.2.1
+pp.21	23		{1}(1)	1.2.1
+pp.21	24		{1}(1)	1.2.1
+pp.21	25		{2}(S)	1.2.1.0
+pp.21	26		{2}(S)	1.2.1.0
+pp.21	27		(X in S (S X))	1.2.1.1
+pp.21	28		(X in S (S X) = _)	1.2.1.1
+pp.21	29		{1}(0)	1.2.1.1
+pp.21	30		{1}(0)	1.2.1.1
+pp.21	31		(_ + _)	1.3
+pp.21	32		(X in 2 = X)	1.3
+pp.21	33		(_ + _ as X in _ = X)	1.3
+pp.21	34		{1}(1 + 1)	1.3
+pp.21	35		(Nat.add)	1.3.0
+pp.21	36		{1}(Nat.add)	1.3.0
+pp.21	37		(X in X + _)	1.3.1
+pp.21	38		(S _ as X in X + _)	1.3.1
+pp.21	39		(X in _ = X + _)	1.3.1
+pp.21	40		(S _ as X in _ = X + _)	1.3.1
+pp.21	41		{2}(1)	1.3.1
+pp.21	42		{2}(1)	1.3.1
+pp.21	43		{1}(S _ in X in 2 = X)	1.3.1
+pp.21	44		{3}(S)	1.3.1.0
+pp.21	45		{3}(S)	1.3.1.0
+pp.21	46		(X in S X + _)	1.3.1.1
+pp.21	47		(X in _ = S X + _)	1.3.1.1
+pp.21	48		{2}(0)	1.3.1.1
+pp.21	49		{2}(0)	1.3.1.1
+pp.21	50		(X in _ + X)	1.3.2
+pp.21	51		(S _ as X in _ + X)	1.3.2
+pp.21	52		(X in _ = _ + X)	1.3.2
+pp.21	53		(S _ as X in _ = _ + X)	1.3.2
+pp.21	54		(1)	1.2.1 1.3.1 1.3.2
+pp.21	55		(S _ in X in 2 = X)	1.3.1 1.3.2
+pp.21	56		{3}(1)	1.3.2
+pp.21	57		{3}(1)	1.3.2
+pp.21	58		{2}(S _ in X in 2 = X)	1.3.2
+pp.21	59		(S)	1.2.0 1.2.1.0 1.3.1.0 1.3.2.0
+pp.21	60		{4}(S)	1.3.2.0
+pp.21	61		{4}(S)	1.3.2.0
+pp.21	62		(X in _ + S X)	1.3.2.1
+pp.21	63		(X in _ = _ + S X)	1.3.2.1
+pp.21	64		(0)	1.2.1.1 1.3.1.1 1.3.2.1
+pp.21	65		{3}(0)	1.3.2.1
+pp.21	66		{3}(0)	1.3.2.1
+pp.21	67		(X in X = _)	2
+pp.21	68		{1}(two_is)	2
+pp.21	69		{1}(two_is)	2
+pp.21	70		(X in _ = X)	3
+pp.21	71		(two_is)	2 3
+pp.21	72		{2}(two_is)	3
+pp.21	73		{2}(two_is)	3
+pp.22	1		(_ /\ _)	root
+pp.22	2		{1}(a + b * 2 = b /\ (forall n : nat, n * n = 0))	root
+pp.22	3		(and)	0
+pp.22	4		{1}(and)	0
+pp.22	5		(_ = _)	1
+pp.22	6		(X in X /\ _)	1
+pp.22	7		(_ = _ as X in X /\ _)	1
+pp.22	8		{1}(a + b * 2 = b)	1
+pp.22	9		{1}(@eq)	1.0
+pp.22	10		{1}(@eq)	1.0
+pp.22	11		{1}(nat)	1.1
+pp.22	12		{1}(nat)	1.1
+pp.22	13		(_ + _)	1.2
+pp.22	14		(X in X = _)	1.2
+pp.22	15		(_ + _ as X in X = _)	1.2
+pp.22	16		(_ + _ in X in X /\ _)	1.2
+pp.22	17		(X in X = _ /\ _)	1.2
+pp.22	18		(_ + _ as X in X = _ /\ _)	1.2
+pp.22	19		{1}(a + b * 2)	1.2
+pp.22	20		(Nat.add)	1.2.0
+pp.22	21		{1}(Nat.add)	1.2.0
+pp.22	22		(a)	1.2.1
+pp.22	23		(X in X + _)	1.2.1
+pp.22	24		(X in X + _ = _)	1.2.1
+pp.22	25		(X in X + _ = _ /\ _)	1.2.1
+pp.22	26		{1}(a)	1.2.1
+pp.22	27		(_ * _)	1.2.2
+pp.22	28		(X in _ + X)	1.2.2
+pp.22	29		(_ * _ as X in _ + X)	1.2.2
+pp.22	30		(_ * _ in X in X = _)	1.2.2
+pp.22	31		(_ * _ in X in X /\ _)	1.2.2
+pp.22	32		(X in _ + X = _)	1.2.2
+pp.22	33		(_ * _ as X in _ + X = _)	1.2.2
+pp.22	34		(_ * _ in X in X = _ /\ _)	1.2.2
+pp.22	35		(X in _ + X = _ /\ _)	1.2.2
+pp.22	36		(_ * _ as X in _ + X = _ /\ _)	1.2.2
+pp.22	37		{1}(b * 2)	1.2.2
+pp.22	38		{1}(Nat.mul)	1.2.2.0
+pp.22	39		{1}(Nat.mul)	1.2.2.0
+pp.22	40		(X in X * _)	1.2.2.1
+pp.22	41		(X in _ + X * _)	1.2.2.1
+pp.22	42		(X in _ + X * _ = _)	1.2.2.1
+pp.22	43		(X in _ + X * _ = _ /\ _)	1.2.2.1
+pp.22	44		{1}(b)	1.2.2.1
+pp.22	45		{1}(b)	1.2.2.1
+pp.22	46		(S _)	1.2.2.2
+pp.22	47		(X in _ * X)	1.2.2.2
+pp.22	48		(S _ as X in _ * X)	1.2.2.2
+pp.22	49		(S _ in X in X = _)	1.2.2.2
+pp.22	50		(S _ in X in _ + X)	1.2.2.2
+pp.22	51		(S _ in X in X /\ _)	1.2.2.2
+pp.22	52		(X in _ + _ * X)	1.2.2.2
+pp.22	53		(S _ as X in _ + _ * X)	1.2.2.2
+pp.22	54		(S _ in X in _ + X = _)	1.2.2.2
+pp.22	55		(S _ in X in X = _ /\ _)	1.2.2.2
+pp.22	56		(X in _ + _ * X = _)	1.2.2.2
+pp.22	57		(S _ as X in _ + _ * X = _)	1.2.2.2
+pp.22	58		(X in _ + _ * X = _ /\ _)	1.2.2.2
+pp.22	59		(S _ as X in _ + _ * X = _ /\ _)	1.2.2.2
+pp.22	60		{1}(2)	1.2.2.2
+pp.22	61		{1}(S)	1.2.2.2.0
+pp.22	62		{1}(S)	1.2.2.2.0
+pp.22	63		(1)	1.2.2.2.1
+pp.22	64		(X in S X)	1.2.2.2.1
+pp.22	65		(S _ as X in S X)	1.2.2.2.1
+pp.22	66		(1 in X in X = _)	1.2.2.2.1
+pp.22	67		(1 in X in _ + X)	1.2.2.2.1
+pp.22	68		(1 in X in _ * X)	1.2.2.2.1
+pp.22	69		(X in _ * S X)	1.2.2.2.1
+pp.22	70		(S _ as X in _ * S X)	1.2.2.2.1
+pp.22	71		(1 in X in _ + X = _)	1.2.2.2.1
+pp.22	72		(1 in X in _ + _ * X)	1.2.2.2.1
+pp.22	73		(1 in X in X = _ /\ _)	1.2.2.2.1
+pp.22	74		(X in _ + _ * S X)	1.2.2.2.1
+pp.22	75		(S _ as X in _ + _ * S X)	1.2.2.2.1
+pp.22	76		(X in _ + _ * S X = _)	1.2.2.2.1
+pp.22	77		(S _ as X in _ + _ * S X = _)	1.2.2.2.1
+pp.22	78		(X in _ + _ * S X = _ /\ _)	1.2.2.2.1
+pp.22	79		(S _ as X in _ + _ * S X = _ /\ _)	1.2.2.2.1
+pp.22	80		{1}(1)	1.2.2.2.1
+pp.22	81		(S)	1.2.2.2.0 1.2.2.2.1.0
+pp.22	82		{2}(S)	1.2.2.2.1.0
+pp.22	83		{2}(S)	1.2.2.2.1.0
+pp.22	84		(X in S (S X))	1.2.2.2.1.1
+pp.22	85		(X in _ * S (S X))	1.2.2.2.1.1
+pp.22	86		(X in _ + _ * S (S X))	1.2.2.2.1.1
+pp.22	87		(X in _ + _ * S (S X) = _)	1.2.2.2.1.1
+pp.22	88		(X in _ + _ * S (S X) = _ /\ _)	1.2.2.2.1.1
+pp.22	89		{1}(0)	1.2.2.2.1.1
+pp.22	90		{1}(0)	1.2.2.2.1.1
+pp.22	91		(X in _ = X)	1.3
+pp.22	92		(X in _ = X /\ _)	1.3
+pp.22	93		(b)	1.2.2.1 1.3
+pp.22	94		{2}(b)	1.3
+pp.22	95		{2}(b)	1.3
+pp.22	96		(X in _ /\ X)	2
+pp.22	97		(forall n : nat, n * n = 0)	2
+pp.22	98		{1}(forall n : nat, n * n = 0)	2
+pp.22	99		{2}(nat)	2.1
+pp.22	100		{2}(nat)	2.1
+pp.22	101		(@eq)	1.0 2.2.0
+pp.22	102		{2}(@eq)	2.2.0
+pp.22	103		{2}(@eq)	2.2.0
+pp.22	104		(nat)	1.1 2.1 2.2.1
+pp.22	105		{3}(nat)	2.2.1
+pp.22	106		{3}(nat)	2.2.1
+pp.22	107		(Nat.mul)	1.2.2.0 2.2.2.0
+pp.22	108		{2}(Nat.mul)	2.2.2.0
+pp.22	109		{2}(Nat.mul)	2.2.2.0
+pp.22	110		(0)	1.2.2.2.1.1 2.2.3
+pp.22	111		{2}(0)	2.2.3
+pp.22	112		{2}(0)	2.2.3
+pp.23	1		(_ /\ _)	root
+pp.23	2		{1}((exists m : nat, m = 0) /\ True)	root
+pp.23	3		(and)	0
+pp.23	4		{1}(and)	0
+pp.23	5		(X in X /\ _)	1
+pp.23	6		{1}(exists m : nat, m = 0)	1
+pp.23	7		(ex)	1.0
+pp.23	8		{1}(ex)	1.0
+pp.23	9		{1}(nat)	1.1
+pp.23	10		{1}(nat)	1.1
+pp.23	11		{2}(nat)	1.2.1
+pp.23	12		{2}(nat)	1.2.1
+pp.23	13		(@eq)	1.2.2.0
+pp.23	14		{1}(@eq)	1.2.2.0
+pp.23	15		(nat)	1.1 1.2.1 1.2.2.1
+pp.23	16		{3}(nat)	1.2.2.1
+pp.23	17		{3}(nat)	1.2.2.1
+pp.23	18		(0)	1.2.2.3
+pp.23	19		{1}(0)	1.2.2.3
+pp.23	20		(True)	2
+pp.23	21		(X in _ /\ X)	2
+pp.23	22		{1}(True)	2

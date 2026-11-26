@@ -47,7 +47,8 @@ sel-open _ _ _ (sel-error "set did not add its definition").
 % (Rev: the path of T, reversed; Bs the variables bound above T), in
 % pre-order, the last first; O is the subterm of the original goal at the
 % same place: set erases a cast (t : T) around a subterm it abstracts,
-% (z in place of the cast is read as the cast: it may be its term, flagged),
+% (z in place of a cast is read as its term: set erases the casts, and the
+% Elpi semantics reads the term of a cast in place of the cast),
 % so where O is a cast and T is not, T is read as the term of the cast (its
 % index 1).  Z x1 .. xk, the xi bound variables and Z's body a fun of NL
 % >= k arguments, is the subterm there abstracted over the variables it
@@ -57,6 +58,7 @@ pred sel-occs i:term, i:int, i:list term, i:term, i:term, i:list int,
               i:list sel-pos, o:list sel-pos.
 sel-occs Z NL Bs T (let N _ B F) Rev A A1 :- cast-let N F, not (T = let _ _ _ _), not (T = Z), !,
   sel-occs Z NL Bs T B [1|Rev] A A1.
+sel-occs Z _ _ Z (let N _ _ F) Rev A [sp-at P|A] :- cast-let N F, !, std.rev [1|Rev] P.
 sel-occs Z _ _ Z _ Rev A [sp-at P|A] :- !, std.rev Rev P.
 sel-occs Z NL Bs (app [Z|Args]) O Rev A [sp-at P|A] :-
   not (O = app [_|Args]),  % else Z is the head of the original application
@@ -173,6 +175,7 @@ Elpi Accumulate File diff_support.elpi.
 Elpi Accumulate lp:{{
 solve (goal Ctx RE Ty E [str Id, str N, trm O | HA] as G) [seal G] :-
   (HA = [str H], ! ; H = ""),
-  sel-open (seal (goal Ctx RE Ty E [])) H O R0, sel-norm-res O R0 R, diff-res R S,
+  (sel-open (seal (goal Ctx RE Ty E [])) H O R0, sel-norm-res O R0 R, diff-res R S, ! ;
+   S = "unreadable"),
   L is "SSR\t" ^ Id ^ "\t" ^ N ^ "\t" ^ S, coq.say L.
 }}.

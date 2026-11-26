@@ -174,7 +174,7 @@ intros f g a b.
 elpi selector_expect 1 "error".
 elpi selector_expect 2 "2.2.2.1".
 elpi selector_expect 3 "2.2.2".
-(* the pick is the oracle's {2}: f a 1 has one occurrence, and set refuses
+(* the pick is ssreflect's {2}: f a 1 has one occurrence, and set refuses
    an occurrence number beyond the occurrences: an error *)
 elpi selector_expect 4 "error".
 elpi selector_expect 5 "2.1 2.2.2".
@@ -294,7 +294,7 @@ solve (goal Ctx _ Ty _ [] as G) [seal G] :-
 
 (* [elpi select_all_roundtrip Exp]: for every path p of the conclusion
    and of each hypothesis (a proposition), select_all's best candidate
-   (checked by the oracle: it denotes exactly {p}) is counted by kind:
+   (checked by the semantics: it denotes exactly {p}) is counted by kind:
    "paths B C occurrence path", B a term pattern, C a context (C1, C2,
    C3), occurrence an occurrence number (E1, A2), path: no ssreflect form,
    the path only.  It prints the counts and fails unless they are Exp
@@ -328,33 +328,25 @@ solve (goal Ctx _ Ty _ [str Exp] as G) [seal G] :-
 }}.
 
 (* The select_all round trip on the same goals: of the 531 paths, the best
-   candidate (each one checked by the oracle to denote exactly the path)
-   is a term pattern for 142, a context for 135, needs an occurrence
-   number for 142, and is the path alone (no ssreflect form) for 112. *)
-(* The goals of point_paths_test.v, in its order.  In all: 531 paths, 387
-   univocal, 0 multiple, 15 mismatches, 129 refused, 0 without pattern.
-   What the cases that are not univocal say about the translation path ->
-   [X in C] of subterm_pattern.v (ssreflect being the judge):
-   - refused, [X in X] (75): the whole part, and every path widened to it
-     (the paths inside an implicit argument, the return type of a match):
-     set refuses X in X ("indeterminate pattern");
-   - refused, X applied to holes (45): the head of an application, X _ _
-     (or X _ _ _ for a head with three arguments): "partial term ... does
-     not match" (42), or "The pattern _ did not match" in a branch (3);
-   - refused, anomalies of set (9): patterns with X under a fun of the
-     pattern ([x0 : nat in X x0 + _], [k : X in _]): "Evar not declared"
-     (5, caught by run_tactic_string) or "Uncaught exception Not_found"
-     (4, reported by set as an error);
-   - mismatches (15), 13 of them from X applied to the variables bound above it
-     (X a b, [x : nat in X x], exists y, X c y) is matched up to eta, and
-     the goal that set gives does not tell apart the readings: X a b
-     against a + b gives X := Nat.add, z a b in the goal, the head (we
-     read 2.2.2.2.0, not 2.2.2.2); X u v against u = v gives the prefix
-     @eq nat; exists y, X c y gives fun y => z c y, the fun or its body
-     (we read the body); plus the cast goal, where set erases the cast
-     (n : nat) and [X in (X : nat) = _] reads as the cast (flagged), and
-     the head of the root of the string goal, X _ _ _, which matches the
-     Ascii applications inside the strings. *)
+   candidate (each one checked by the semantics to denote exactly the path)
+   is a term pattern for 142, a context for 133, needs an occurrence
+   number for 143, and is the path alone (no ssreflect form) for 113. *)
+(* The goals of point_paths_test.v, in its order.  In all: 531 paths, 320
+   univocal, 0 multiple, 78 mismatches, 133 refused, 0 without pattern
+   (the Elpi semantics; on the same patterns it agrees with set, see
+   tests/corpus_point_paths.v).  What the cases that are not univocal say
+   about the translation path -> [X in C] of subterm_pattern.v:
+   - refused, outside the fragment (96): X at the head of an application
+     (X _ _) and [X in X] (the whole part, and every path widened to it:
+     the paths inside an implicit argument, the return type of a match);
+     set refuses these too ("partial term", "indeterminate pattern");
+   - refused, the context has no instance (37): mostly contexts with X
+     under a binder of the pattern ([x0 : nat in X x0 + _]), on which set
+     fails as well;
+   - mismatches (78): X applied to the variables bound above it (X a b,
+     [x : nat in X x], forall y, X y) is matched up to eta: X a b against
+     a + b gives X := Nat.add, the head (2.2.2.2.0, not 2.2.2.2); X u v
+     against u = v gives the prefix @eq nat. *)
 Goal forall a : nat, 1 + 1 + a = double (1 + a).
 intros a.
 elpi select_roundtrip "22 19 0 0 3 0".
@@ -375,19 +367,19 @@ Abort.
 Goal forall (p : nat * nat), (let '(a, b) := p in a + b) = 0 -> True.
 intros p H.
 elpi select_roundtrip "21 13 0 4 4 0".
-elpi select_all_roundtrip "21 8 3 4 6".
+elpi select_all_roundtrip "21 6 1 2 12".
 Abort.
 
 Goal forall (n : nat) (b : bool), match n with 0 => true | S k => Nat.eqb k n end = (if b then false else true).
 intros n b.
 elpi select_roundtrip "22 17 0 2 3 0".
-elpi select_all_roundtrip "22 5 2 10 5".
+elpi select_all_roundtrip "22 5 2 7 8".
 Abort.
 
 Goal forall (b : bool), match b as x return (if x then nat else bool) with true => 0 | false => true end = match b as x return (if x then nat else bool) with true => 0 | false => true end.
 intros b.
 elpi select_roundtrip "35 26 0 0 9 0".
-elpi select_all_roundtrip "35 3 2 21 9".
+elpi select_all_roundtrip "35 3 2 16 14".
 Abort.
 
 Goal forall x : nat, (forall x : nat, x = x) -> forall y, (fun x => x + y) x = x.
@@ -404,8 +396,8 @@ Abort.
 Goal forall n : nat, (n : nat) = n.
 intros n.
 change ((n : nat) = n).
-elpi select_roundtrip "8 5 0 0 3 0".
-elpi select_all_roundtrip "8 3 2 1 2".
+elpi select_roundtrip "8 2 0 3 3 0".
+elpi select_all_roundtrip "8 3 1 1 3".
 Abort.
 
 Module C.
@@ -438,20 +430,20 @@ Notation "'IF' c 'THEN' a 'ELSE' b" := (if c then a else b) (at level 200).
 Goal forall (b : bool) (n : nat), (IF b THEN n ELSE 0) = n.
 intros b n.
 elpi select_roundtrip "11 8 0 0 3 0".
-elpi select_all_roundtrip "11 5 2 3 1".
+elpi select_all_roundtrip "11 4 2 3 2".
 Abort.
 End IfMatch.
 
 Goal forall (b : bool) (n : nat), (if b then n else 0) = n.
 intros b n.
 elpi select_roundtrip "11 8 0 0 3 0".
-elpi select_all_roundtrip "11 5 2 3 1".
+elpi select_all_roundtrip "11 4 2 3 2".
 Abort.
 
 Goal forall n : nat, match n with 0 => true | S _ => false end = true.
 intros n.
 elpi select_roundtrip "13 10 0 0 3 0".
-elpi select_all_roundtrip "13 4 2 5 2".
+elpi select_all_roundtrip "13 4 2 3 4".
 Abort.
 
 Goal forall n : nat, n + 0 = n.
@@ -468,7 +460,7 @@ Abort.
 Goal forall (n : nat), match n with 0 => true | S k => Nat.eqb k n end = true -> (forall z : nat, z = z) -> True.
 intros n H H'.
 elpi select_roundtrip "24 11 0 6 7 0".
-elpi select_all_roundtrip "24 6 2 9 7".
+elpi select_all_roundtrip "24 6 2 7 9".
 Abort.
 
 Lemma two_is : 2 = 1 + 1. Proof. reflexivity. Qed.
@@ -481,7 +473,7 @@ Abort.
 Goal forall a : nat, (if true then a else 0) = double 2.
 intros a.
 elpi select_roundtrip "17 13 0 0 4 0".
-elpi select_all_roundtrip "17 9 2 5 1".
+elpi select_all_roundtrip "17 8 2 5 2".
 Abort.
 
 Goal two_is = two_is.
